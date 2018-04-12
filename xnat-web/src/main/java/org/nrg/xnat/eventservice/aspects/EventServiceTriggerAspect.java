@@ -35,23 +35,27 @@ public class EventServiceTriggerAspect {
     }
 
 
-//    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
-//            "&& args(item, user, ..)" +
-//            "&& execution(* save(..))")
-//    public void triggerOnItemSave(final JoinPoint joinPoint, ItemI item,UserI user) throws Throwable{
-//        try {
-//            String userLogin = user != null ? user.getLogin() : null;
-//
-//            log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
-//                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
-//                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
-//                    "  UserI = " + userLogin);
-//
-//        } catch (Throwable e){
-//            log.error("Exception processing triggerOnItemSave" + e.getMessage());
-//            throw e;
-//        }
-//    }
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+            "&& args(item, user, ..)" +
+            "&& execution(* save(..))")
+    public void triggerOnItemSave(final JoinPoint joinPoint, ItemI item,UserI user) throws Throwable{
+        try {
+            String userLogin = user != null ? user.getLogin() : null;
+
+            if(!(StringUtils.equals(item.getXSIType(), "xnat:subjectData") || StringUtils.containsIgnoreCase(item.getXSIType(),"SessionData") || StringUtils.equals(item.getXSIType(), "xnat:projectData") ))
+                return;
+
+            log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                    "  UserI = " + userLogin);
+            log.debug("\n\n" + item.getItem().toString() + "\n\n");
+
+        } catch (Throwable e){
+            log.error("Exception processing triggerOnItemSave" + e.getMessage());
+            throw e;
+        }
+    }
 
 
     @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +

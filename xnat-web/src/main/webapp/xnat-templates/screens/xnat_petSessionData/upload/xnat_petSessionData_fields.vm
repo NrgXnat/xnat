@@ -24,52 +24,6 @@
 				#set ($datatype = 'xnat:petSessionData')
 			#end
 			#parse('/screens/xnat_imageSessionData/upload/scanners.vm')
-
-			#*
-			<script type="text/javascript">
-				window.ss=new Object();
-
-				#if($project)
-					window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=xnat_petSessionData";
-				#end
-
-				window.ss.local_values=new Array();
-				window.ss.custom = new Array();
-				window.ss.valueField="scanner";
-
-				## Push the current scanner name into the array.
-				## Use the custom array to insure that the value is displayed weather we
-				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
-				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-				if ('#escapeAll("$!currScannerName")') {
-                    window.ss.custom.push('#escapeAll("$!currScannerName")');
-				}
-
-					#foreach ($pValue in $scanners)
-					#if($pValue.get(0))
-						## Don't add the current scanner name since we added it above.
-						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
-							#set($tempScannerName=$!turbineUtils.escapeHTML($pValue.get(0)))
-                        	window.ss.local_values.push({"scanner":"$tempScannerName"});
-						#end
-					#end
-				#end
-			</script>
-
-            <!-- datatype: '$!datatype' -->
-
-			#xdatComboBox("xnat:petSessionData.scanner" $item "window.ss" $vr)
-
-			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
-
-			#define ($scannerInfoText)
-				#scannerInfo('xnat:petSessionData' $item)
-			#end
-
-			$!scannerInfoText.trim()
-
-			*#
-
 		</td>
 	#end
 </tr>

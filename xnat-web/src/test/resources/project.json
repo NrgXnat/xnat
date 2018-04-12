@@ -1,0 +1,10 @@
+{
+    "type": "Project",
+    "id": "SampleProjectID",
+    "label": "SampleProjectTitle",
+    "xsiType": "xnat:projectData",
+    "uri": "/archive/projects/SampleProjectID",
+    "resources": [],
+    "subjects": [],
+    "directory": "/data/xnat/archive/SampleProjectID/arc001"
+}

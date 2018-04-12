@@ -1,0 +1,1627 @@
+{
+    "type": "Session",
+    "id": "XNAT_E00003",
+    "label": "Sample_MR3",
+    "xsiType": "xnat:mrSessionData",
+    "uri": "/archive/experiments/XNAT_E00003",
+    "scans": [{
+        "type": "Scan",
+        "id": "4",
+        "label": "4 - t1_mpr_1mm_p2_pos50",
+        "xsiType": "xnat:mrScanData",
+        "uri": "/archive/experiments/XNAT_E00003/scans/4",
+        "resources": [{
+            "type": "Resource",
+            "id": "DICOM",
+            "label": "DICOM",
+            "xsiType": "xnat:resourceCatalog",
+            "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM",
+            "directory": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM",
+            "files": [
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-37-1ns7g34.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-37-1ns7g34.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-37-1ns7g34.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-37-1ns7g34.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-60-d1bpkk.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-60-d1bpkk.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-60-d1bpkk.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-60-d1bpkk.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-173-1pq6qk5.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-173-1pq6qk5.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-173-1pq6qk5.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-173-1pq6qk5.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-28-13nw7z7.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-28-13nw7z7.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-28-13nw7z7.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-28-13nw7z7.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-129-1yxrce.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-129-1yxrce.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-129-1yxrce.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-129-1yxrce.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-90-kxy26l.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-90-kxy26l.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-90-kxy26l.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-90-kxy26l.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-107-6vfn9.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-107-6vfn9.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-107-6vfn9.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-107-6vfn9.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-80-nrjcls.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-80-nrjcls.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-80-nrjcls.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-80-nrjcls.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-104-1tr7bzj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-104-1tr7bzj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-104-1tr7bzj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-104-1tr7bzj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-7-1c4ehiv.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-7-1c4ehiv.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-7-1c4ehiv.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-7-1c4ehiv.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-117-xyp7e0.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-117-xyp7e0.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-117-xyp7e0.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-117-xyp7e0.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-53-gtesxg.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-53-gtesxg.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-53-gtesxg.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-53-gtesxg.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-152-eo978x.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-152-eo978x.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-152-eo978x.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-152-eo978x.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-155-1ph6x20.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-155-1ph6x20.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-155-1ph6x20.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-155-1ph6x20.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-84-fth664.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-84-fth664.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-84-fth664.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-84-fth664.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-5-a0ro5.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-5-a0ro5.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-5-a0ro5.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-5-a0ro5.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-130-1gz4au.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-130-1gz4au.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-130-1gz4au.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-130-1gz4au.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-17-kyek2g.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-17-kyek2g.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-17-kyek2g.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-17-kyek2g.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-34-j9incn.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-34-j9incn.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-34-j9incn.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-34-j9incn.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-115-1oo8ua4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-115-1oo8ua4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-115-1oo8ua4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-115-1oo8ua4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-163-17y46yc.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-163-17y46yc.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-163-17y46yc.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-163-17y46yc.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-176-x7ktdi.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-176-x7ktdi.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-176-x7ktdi.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-176-x7ktdi.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-103-ka4dbk.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-103-ka4dbk.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-103-ka4dbk.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-103-ka4dbk.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-24-xti4px.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-24-xti4px.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-24-xti4px.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-24-xti4px.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-151-1ldvpyc.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-151-1ldvpyc.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-151-1ldvpyc.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-151-1ldvpyc.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-30-1ypw03g.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-30-1ypw03g.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-30-1ypw03g.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-30-1ypw03g.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-31-1i6cus8.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-31-1i6cus8.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-31-1i6cus8.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-31-1i6cus8.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-89-18t8969.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-89-18t8969.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-89-18t8969.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-89-18t8969.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-161-1ykbf72.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-161-1ykbf72.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-161-1ykbf72.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-161-1ykbf72.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-68-1778u18.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-68-1778u18.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-68-1778u18.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-68-1778u18.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-150-lspfqv.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-150-lspfqv.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-150-lspfqv.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-150-lspfqv.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-157-173wp2q.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-157-173wp2q.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-157-173wp2q.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-157-173wp2q.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-159-qok6u8.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-159-qok6u8.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-159-qok6u8.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-159-qok6u8.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-16-q1zr8e.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-16-q1zr8e.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-16-q1zr8e.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-16-q1zr8e.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-14-1v9s45u.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-14-1v9s45u.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-14-1v9s45u.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-14-1v9s45u.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-56-10rn7pm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-56-10rn7pm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-56-10rn7pm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-56-10rn7pm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-77-ustve3.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-77-ustve3.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-77-ustve3.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-77-ustve3.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-101-i0j7pm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-101-i0j7pm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-101-i0j7pm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-101-i0j7pm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-4-1vfhcxu.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-4-1vfhcxu.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-4-1vfhcxu.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-4-1vfhcxu.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-6-is90eg.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-6-is90eg.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-6-is90eg.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-6-is90eg.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-174-1ap96c9.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-174-1ap96c9.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-174-1ap96c9.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-174-1ap96c9.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-128-1hwbpns.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-128-1hwbpns.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-128-1hwbpns.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-128-1hwbpns.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-29-34oasn.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-29-34oasn.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-29-34oasn.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-29-34oasn.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-146-98ivq1.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-146-98ivq1.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-146-98ivq1.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-146-98ivq1.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-12-134zanw.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-12-134zanw.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-12-134zanw.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-12-134zanw.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-110-1imu5so.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-110-1imu5so.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-110-1imu5so.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-110-1imu5so.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-52-18iz8v2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-52-18iz8v2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-52-18iz8v2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-52-18iz8v2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-120-g2xptj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-120-g2xptj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-120-g2xptj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-120-g2xptj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-74-1pc3gql.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-74-1pc3gql.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-74-1pc3gql.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-74-1pc3gql.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-160-j75rew.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-160-j75rew.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-160-j75rew.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-160-j75rew.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-20-14m0bg7.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-20-14m0bg7.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-20-14m0bg7.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-20-14m0bg7.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-132-whrr93.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-132-whrr93.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-132-whrr93.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-132-whrr93.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-54-1i9bepf.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-54-1i9bepf.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-54-1i9bepf.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-54-1i9bepf.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-88-16ysae1.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-88-16ysae1.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-88-16ysae1.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-88-16ysae1.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-93-17eukl5.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-93-17eukl5.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-93-17eukl5.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-93-17eukl5.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-102-d3ldur.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-102-d3ldur.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-102-d3ldur.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-102-d3ldur.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-122-1fbvbg.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-122-1fbvbg.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-122-1fbvbg.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-122-1fbvbg.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-45-1shm15i.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-45-1shm15i.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-45-1shm15i.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-45-1shm15i.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-32-gk8ryr.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-32-gk8ryr.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-32-gk8ryr.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-32-gk8ryr.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-83-1g8iwim.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-83-1g8iwim.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-83-1g8iwim.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-83-1g8iwim.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-55-ztnbus.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-55-ztnbus.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-55-ztnbus.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-55-ztnbus.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-36-482ity.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-36-482ity.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-36-482ity.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-36-482ity.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-76-1wufzai.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-76-1wufzai.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-76-1wufzai.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-76-1wufzai.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-85-ip593z.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-85-ip593z.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-85-ip593z.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-85-ip593z.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-98-xyilg3.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-98-xyilg3.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-98-xyilg3.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-98-xyilg3.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-119-14z3dkf.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-119-14z3dkf.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-119-14z3dkf.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-119-14z3dkf.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-137-tetn9.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-137-tetn9.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-137-tetn9.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-137-tetn9.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-114-anfthq.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-114-anfthq.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-114-anfthq.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-114-anfthq.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-141-8nl4e1.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-141-8nl4e1.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-141-8nl4e1.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-141-8nl4e1.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-175-rx2myt.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-175-rx2myt.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-175-rx2myt.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-175-rx2myt.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-133-15nzulr.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-133-15nzulr.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-133-15nzulr.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-133-15nzulr.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-5cw0xw.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-5cw0xw.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-5cw0xw.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-5cw0xw.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-65-2fiskx.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-65-2fiskx.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-65-2fiskx.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-65-2fiskx.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-164-1n6ubcb.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-164-1n6ubcb.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-164-1n6ubcb.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-164-1n6ubcb.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-168-4djo9f.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-168-4djo9f.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-168-4djo9f.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-168-4djo9f.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-142-pixirl.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-142-pixirl.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-142-pixirl.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-142-pixirl.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-167-107fw9i.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-167-107fw9i.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-167-107fw9i.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-167-107fw9i.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-86-188tl4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-86-188tl4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-86-188tl4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-86-188tl4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-170-1bd0wwt.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-170-1bd0wwt.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-170-1bd0wwt.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-170-1bd0wwt.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-42-y2mtrm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-42-y2mtrm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-42-y2mtrm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-42-y2mtrm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-43-7bbq1b.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-43-7bbq1b.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-43-7bbq1b.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-43-7bbq1b.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-61-10mg3tq.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-61-10mg3tq.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-61-10mg3tq.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-61-10mg3tq.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-158-h6ljbz.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-158-h6ljbz.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-158-h6ljbz.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-158-h6ljbz.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-172-1c7nnf4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-172-1c7nnf4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-172-1c7nnf4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-172-1c7nnf4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-78-p4uwpb.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-78-p4uwpb.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-78-p4uwpb.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-78-p4uwpb.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-25-1k1v88d.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-25-1k1v88d.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-25-1k1v88d.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-25-1k1v88d.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-106-1emwlwm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-106-1emwlwm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-106-1emwlwm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-106-1emwlwm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-92-o3dd3n.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-92-o3dd3n.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-92-o3dd3n.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-92-o3dd3n.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-99-c8j6z9.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-99-c8j6z9.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-99-c8j6z9.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-99-c8j6z9.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-116-gimcnl.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-116-gimcnl.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-116-gimcnl.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-116-gimcnl.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-138-7e87nj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-138-7e87nj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-138-7e87nj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-138-7e87nj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-109-7hqmhl.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-109-7hqmhl.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-109-7hqmhl.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-109-7hqmhl.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-26-mlqsun.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-26-mlqsun.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-26-mlqsun.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-26-mlqsun.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-148-1dff3o2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-148-1dff3o2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-148-1dff3o2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-148-1dff3o2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-49-1ea1gob.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-49-1ea1gob.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-49-1ea1gob.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-49-1ea1gob.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-91-1tqhwan.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-91-1tqhwan.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-91-1tqhwan.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-91-1tqhwan.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-19-14q2nrt.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-19-14q2nrt.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-19-14q2nrt.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-19-14q2nrt.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-108-1g53993.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-108-1g53993.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-108-1g53993.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-108-1g53993.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-82-1md8d8c.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-82-1md8d8c.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-82-1md8d8c.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-82-1md8d8c.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-112-zf4yl2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-112-zf4yl2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-112-zf4yl2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-112-zf4yl2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-33-18qdq2k.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-33-18qdq2k.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-33-18qdq2k.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-33-18qdq2k.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-97-1day1bj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-97-1day1bj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-97-1day1bj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-97-1day1bj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-9-6lv376.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-9-6lv376.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-9-6lv376.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-9-6lv376.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-38-mjk7p4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-38-mjk7p4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-38-mjk7p4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-38-mjk7p4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-121-1b8xugl.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-121-1b8xugl.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-121-1b8xugl.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-121-1b8xugl.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-22-zo8dd2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-22-zo8dd2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-22-zo8dd2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-22-zo8dd2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-8-1phd8qk.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-8-1phd8qk.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-8-1phd8qk.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-8-1phd8qk.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-95-1rwhbix.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-95-1rwhbix.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-95-1rwhbix.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-95-1rwhbix.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-15-w3obfc.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-15-w3obfc.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-15-w3obfc.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-15-w3obfc.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-136-8q9a9d.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-136-8q9a9d.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-136-8q9a9d.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-136-8q9a9d.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-71-rkujj0.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-71-rkujj0.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-71-rkujj0.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-71-rkujj0.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-67-wqgiau.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-67-wqgiau.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-67-wqgiau.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-67-wqgiau.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-154-1klj20l.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-154-1klj20l.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-154-1klj20l.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-154-1klj20l.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-23-1psv7mu.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-23-1psv7mu.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-23-1psv7mu.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-23-1psv7mu.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-149-18qwnr7.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-149-18qwnr7.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-149-18qwnr7.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-149-18qwnr7.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-144-yi0fou.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-144-yi0fou.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-144-yi0fou.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-144-yi0fou.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-70-128tlq2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-70-128tlq2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-70-128tlq2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-70-128tlq2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-145-x0xi9j.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-145-x0xi9j.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-145-x0xi9j.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-145-x0xi9j.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-131-6gycri.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-131-6gycri.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-131-6gycri.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-131-6gycri.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-147-efsjib.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-147-efsjib.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-147-efsjib.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-147-efsjib.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-143-10uf4th.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-143-10uf4th.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-143-10uf4th.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-143-10uf4th.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-66-f63g8n.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-66-f63g8n.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-66-f63g8n.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-66-f63g8n.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-13-foy4c5.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-13-foy4c5.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-13-foy4c5.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-13-foy4c5.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-140-1g64h0f.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-140-1g64h0f.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-140-1g64h0f.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-140-1g64h0f.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-73-1m7rpc4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-73-1m7rpc4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-73-1m7rpc4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-73-1m7rpc4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-105-1c4v5os.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-105-1c4v5os.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-105-1c4v5os.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-105-1c4v5os.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-47-rci3zi.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-47-rci3zi.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-47-rci3zi.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-47-rci3zi.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-162-11rsbxd.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-162-11rsbxd.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-162-11rsbxd.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-162-11rsbxd.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-169-vt3ynm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-169-vt3ynm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-169-vt3ynm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-169-vt3ynm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-57-1tzt8qo.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-57-1tzt8qo.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-57-1tzt8qo.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-57-1tzt8qo.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-50-1cs1o0g.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-50-1cs1o0g.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-50-1cs1o0g.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-50-1cs1o0g.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-44-6jc8jf.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-44-6jc8jf.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-44-6jc8jf.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-44-6jc8jf.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-111-1a5nrwm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-111-1a5nrwm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-111-1a5nrwm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-111-1a5nrwm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-171-l3kd22.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-171-l3kd22.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-171-l3kd22.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-171-l3kd22.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-51-1hn7dhj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-51-1hn7dhj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-51-1hn7dhj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-51-1hn7dhj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-48-1mi94y8.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-48-1mi94y8.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-48-1mi94y8.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-48-1mi94y8.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-125-78y3js.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-125-78y3js.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-125-78y3js.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-125-78y3js.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-3-11z5euc.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-3-11z5euc.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-3-11z5euc.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-3-11z5euc.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-156-jn39pw.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-156-jn39pw.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-156-jn39pw.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-156-jn39pw.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-79-1mly6rx.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-79-1mly6rx.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-79-1mly6rx.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-79-1mly6rx.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-135-7v2xxt.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-135-7v2xxt.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-135-7v2xxt.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-135-7v2xxt.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-139-bciqx2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-139-bciqx2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-139-bciqx2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-139-bciqx2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-40-emklwp.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-40-emklwp.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-40-emklwp.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-40-emklwp.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-62-x3rle4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-62-x3rle4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-62-x3rle4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-62-x3rle4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-81-1g6s3p8.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-81-1g6s3p8.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-81-1g6s3p8.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-81-1g6s3p8.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-39-1xv3dkw.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-39-1xv3dkw.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-39-1xv3dkw.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-39-1xv3dkw.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-63-1v2ptqz.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-63-1v2ptqz.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-63-1v2ptqz.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-63-1v2ptqz.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-118-1waa0zy.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-118-1waa0zy.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-118-1waa0zy.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-118-1waa0zy.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-126-b0js2v.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-126-b0js2v.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-126-b0js2v.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-126-b0js2v.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-58-326ftn.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-58-326ftn.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-58-326ftn.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-58-326ftn.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-166-vmybhk.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-166-vmybhk.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-166-vmybhk.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-166-vmybhk.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-96-i59nq2.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-96-i59nq2.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-96-i59nq2.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-96-i59nq2.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-10-ydsz91.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-10-ydsz91.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-10-ydsz91.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-10-ydsz91.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-11-11qrks4.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-11-11qrks4.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-11-11qrks4.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-11-11qrks4.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-35-rn2jrw.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-35-rn2jrw.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-35-rn2jrw.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-35-rn2jrw.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-69-1icvi1e.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-69-1icvi1e.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-69-1icvi1e.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-69-1icvi1e.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-75-107uq3x.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-75-107uq3x.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-75-107uq3x.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-75-107uq3x.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-127-8xl54b.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-127-8xl54b.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-127-8xl54b.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-127-8xl54b.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-153-l0m1ri.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-153-l0m1ri.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-153-l0m1ri.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-153-l0m1ri.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-87-d989rp.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-87-d989rp.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-87-d989rp.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-87-d989rp.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-18-16ggh38.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-18-16ggh38.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-18-16ggh38.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-18-16ggh38.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-113-1njnctq.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-113-1njnctq.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-113-1njnctq.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-113-1njnctq.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-64-k35l0y.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-64-k35l0y.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-64-k35l0y.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-64-k35l0y.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-72-1j410fp.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-72-1j410fp.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-72-1j410fp.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-72-1j410fp.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-123-17b68kv.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-123-17b68kv.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-123-17b68kv.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-123-17b68kv.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-59-y1ouzm.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-59-y1ouzm.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-59-y1ouzm.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-59-y1ouzm.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-134-1n4onec.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-134-1n4onec.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-134-1n4onec.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-134-1n4onec.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-27-1k5knra.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-27-1k5knra.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-27-1k5knra.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-27-1k5knra.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-94-a5wa49.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-94-a5wa49.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-94-a5wa49.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-94-a5wa49.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-165-hdow03.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-165-hdow03.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-165-hdow03.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-165-hdow03.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-21-1v9xk9q.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-21-1v9xk9q.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-21-1v9xk9q.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-21-1v9xk9q.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-41-1g4h6m7.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-41-1g4h6m7.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-41-1g4h6m7.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-41-1g4h6m7.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-124-25hz3j.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-124-25hz3j.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-124-25hz3j.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-124-25hz3j.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-46-72oncu.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-46-72oncu.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-46-72oncu.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-46-72oncu.dcm"
+                },
+                {
+                    "type": "File",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM/files/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-100-110ab1j.dcm",
+                    "name": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-100-110ab1j.dcm",
+                    "path": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-100-110ab1j.dcm",
+                    "tags": [""],
+                    "format": "DICOM",
+                    "file": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-100-110ab1j.dcm"
+                }
+            ],
+            "integer-id": 4
+        }],
+        "directory": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4",
+        "frames": 176,
+        "modality": "MR",
+        "quality": "usable",
+        "scanner": "MEDPC",
+        "uid": "1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0",
+        "integer-id": 4,
+        "scan-type": "t1_mpr_1mm_p2_pos50",
+        "scanner-manufacturer": "SIEMENS",
+        "scanner-model": "TrioTim",
+        "series-description": "t1_mpr_1mm_p2_pos50",
+        "start-time": "09:37:11"
+    }],
+    "assessors": [],
+    "resources": [],
+    "directory": "/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/",
+    "project-id": "SampleProjectID",
+    "subject-id": "XNAT_S00001",
+    "modality": "MR"
+}

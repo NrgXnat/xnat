@@ -10,15 +10,17 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.utils.XftStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Map;
 
 import static org.nrg.xdat.security.SecurityManager.*;
 
@@ -26,6 +28,7 @@ import static org.nrg.xdat.security.SecurityManager.*;
  * @author Tim
  */
 @SuppressWarnings("serial") //$NON-NLS-1$
+@Slf4j
 public class PermissionCriteria implements PermissionCriteriaI {
     private static final String ALL              = "*";
     private static final String EQUALS           = "equals";
@@ -37,8 +40,6 @@ public class PermissionCriteria implements PermissionCriteriaI {
     private static final String COMPARISON_TYPE  = "comparison_type";
     private static final String FIELD_VALUE      = "field_value";
     private static final String FIELD            = "field";
-
-    private static final Logger logger = LoggerFactory.getLogger(PermissionCriteria.class);
 
     private String  field      = null;
     private String  comparison = null;
@@ -54,6 +55,21 @@ public class PermissionCriteria implements PermissionCriteriaI {
 
     public PermissionCriteria(String elementName) {
         this.elementName = elementName;
+    }
+
+    public PermissionCriteria(final String elementName, final Map<String, Object> properties) {
+        this.elementName = elementName;
+        setField((String) properties.get(FIELD));
+        setFieldValue(properties.get(FIELD_VALUE));
+        setComparisonType((String) properties.get(COMPARISON_TYPE));
+
+        setRead(BooleanUtils.toBoolean((int) properties.get(READ_ELEMENT)));
+        setDelete(BooleanUtils.toBoolean((int) properties.get(DELETE_ELEMENT)));
+        setEdit(BooleanUtils.toBoolean((int) properties.get(EDIT_ELEMENT)));
+        setCreate(BooleanUtils.toBoolean((int) properties.get(CREATE_ELEMENT)));
+        setActivate(BooleanUtils.toBoolean((int) properties.get(ACTIVATE_ELEMENT)));
+
+        authorized = StringUtils.equalsAnyIgnoreCase((String) properties.get("active_status"), ViewManager.ACTIVE, ViewManager.LOCKED);
     }
 
     public PermissionCriteria(String elementName, ItemI i) throws Exception {
@@ -180,18 +196,18 @@ public class PermissionCriteria implements PermissionCriteriaI {
     @Override
     public boolean canAccess(final String access, final SecurityValues values) throws Exception {
         if (!getAction(access)) {
-            logger.info("Action {} does not appear to be valid", access);
+            log.info("Action {} does not appear to be valid", access);
             return false;
         }
-        if (logger.isInfoEnabled()) {
-            logger.info("Checking access to action {} with security values {}", access, values.toString());
+        if (log.isInfoEnabled()) {
+            log.info("Checking access to action {} with security values {}", access, values.toString());
         }
 
         // dot syntax
         final Object value = values.getHash().get(getField());
 
         if (value == null) {
-            logger.info("Tried to check access to action {} with field {}, but that field doesn't exist in the security values", access, getField());
+            log.info("Tried to check access to action {} with field {}, but that field doesn't exist in the security values", access, getField());
             return false;
         }
 
@@ -199,31 +215,31 @@ public class PermissionCriteria implements PermissionCriteriaI {
         final Object compareTo = getFieldValue();
 
         if (compareTo == null) {
-            logger.info("Tried to test field {} value {}, but the compare to from getFieldValue() was null, access denied", getField(), fieldValue);
+            log.info("Tried to test field {} value {}, but the compare to from getFieldValue() was null, access denied", getField(), fieldValue);
             return false;
         }
 
         final String compareToString = compareTo.toString();
         if (StringUtils.equals(ALL, compareToString)) {
-            logger.info("Test field {} value {}, the compare to from getFieldValue() was \"{}\", access granted", getField(), fieldValue, ALL);
+            log.info("Test field {} value {}, the compare to from getFieldValue() was \"{}\", access granted", getField(), fieldValue, ALL);
             return true;
         }
 
         final String[] parsedValues = fieldValue.split("\\s*,\\s*");
-        if (logger.isInfoEnabled()) {
-            logger.info("Testing {} parsed values against compare-to string {}: {}", parsedValues.length, compareToString, Joiner.on(", ").join(parsedValues));
+        if (log.isInfoEnabled()) {
+            log.info("Testing {} parsed values against compare-to string {}: {}", parsedValues.length, compareToString, Joiner.on(", ").join(parsedValues));
         }
 
         for (final String single : parsedValues) {
-            logger.info("Testing field value {} against compare-to value {}", single, compareToString);
+            log.info("Testing field value {} against compare-to value {}", single, compareToString);
             if (StringUtils.equalsIgnoreCase(single, compareToString)) {
-                logger.info("Access granted based on field value {} and compare-to value {}", single, compareToString);
+                log.info("Access granted based on field value {} and compare-to value {}", single, compareToString);
                 return true;
             }
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Access denied with compare-to value matching none of the field values: {}", compareToString, Joiner.on(", ").join(parsedValues));
+        if (log.isInfoEnabled()) {
+            log.info("Access denied with compare-to value matching none of the field values: {}", compareToString, Joiner.on(", ").join(parsedValues));
         }
 
         return false;

@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import lombok.Getter;
@@ -19,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
@@ -32,7 +32,6 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -43,6 +42,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -67,7 +68,7 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI getGroup(String groupId) {
+    public UserGroupI getGroup(final String groupId) {
         final UserGroup group = (UserGroup) getCache().get(groupId);
         if (group != null) {
             return group;
@@ -103,12 +104,13 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public List<String> getGroupIdsForUser(UserI user) {
-        List<String> grps = Lists.newArrayList();
-        for (XdatUserGroupid g : ((XDATUser) user).getGroups_groupid()) {
-            grps.add(g.getGroupid());
-        }
-        return grps;
+    public List<String> getGroupIdsForUser(final UserI user) {
+        return Lists.transform(((XDATUser) user).getGroups_groupid(), new Function<XdatUserGroupid, String>() {
+            @Override
+            public String apply(final XdatUserGroupid userGroupid) {
+                return userGroupid.getGroupid();
+            }
+        });
     }
 
     @Override
@@ -132,13 +134,25 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public void reloadGroupForUser(UserI user, String groupId) {
-        // ((XDATUser) user).refreshGroup(groupId);
+    public void removeUsersFromGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
+        for (final UserI user : users) {
+            for (final XdatUserGroupid map : ((XDATUser) user).getGroups_groupid()) {
+                if (StringUtils.equals(map.getGroupid(), groupId)) {
+                    SaveItemHelper.authorizedDelete(map.getItem(), currentUser, eventMeta);
+                }
+            }
+            ((XDATUser) user).resetCriteria();
+        }
     }
 
     @Override
-    public void reloadGroupsForUser(UserI user) {
-        // ((XDATUser) user).initGroups();
+    public void reloadGroupForUser(final UserI user, final String groupId) {
+        ((XDATUser) user).refreshGroup(groupId);
+    }
+
+    @Override
+    public void reloadGroupsForUser(final UserI user) {
+        ((XDATUser) user).getGroups();
     }
 
     @SuppressWarnings("Duplicates")
@@ -153,49 +167,34 @@ public class UserGroupManager implements UserGroupServiceI {
             group.setDisplayname(displayName);
             group.setTag(value);
 
-            UserGroupI existing = Groups.getGroup(id);
-
-            if (existing == null) {
-                //optimized version for expediency
-                wrk = PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), "ADMIN", value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Initialized permissions"));
-
-                assert wrk != null;
-                SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, wrk.buildEvent());
-
-                existing = Groups.getGroup(id);
-
-                initPermissions(existing, create, read, delete, edit, activate, ess, value, authenticatedUser);
-
-                wrk.setId(existing.getPK().toString());
-
-
-                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-
-                try {
-                    DBAction.InsertMetaDatas(XdatElementAccess.SCHEMA_ELEMENT_NAME);
-                    DBAction.InsertMetaDatas(XdatFieldMappingSet.SCHEMA_ELEMENT_NAME);
-                    DBAction.InsertMetaDatas(XdatFieldMapping.SCHEMA_ELEMENT_NAME);
-                } catch (Exception e2) {
-                    log.error("", e2);
-                }
-
-                try {
-                    final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-                    eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), existing.getId(), XftItemEvent.UPDATE));
-                } catch (Exception e1) {
-                    log.error("", e1);
-                }
-
-                try {
-                    PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-
-                return Groups.getGroup(id);
-            } else {
+            if (_template.queryForObject(QUERY_CHECK_GROUP_EXISTS, new MapSqlParameterSource("groupId", id), Boolean.class)) {
                 throw new Exception("Group already exists");
             }
+            //optimized version for expediency
+            wrk = PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), "ADMIN", value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Initialized permissions"));
+            assert wrk != null;
+
+            SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, wrk.buildEvent());
+
+            final UserGroupI persisted = new UserGroup(_template.queryForObject(QUERY_GET_PRIMARY_KEY, new MapSqlParameterSource("groupId", id), Integer.class), id, displayName, value);
+
+            initPermissions(persisted, create, read, delete, edit, activate, ess, value, authenticatedUser);
+
+            wrk.setId(persisted.getPK().toString());
+
+            PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+
+            ElementSecurity.updateElementAccessAndFieldMapMetaData();
+
+            XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), id, XftItemEvent.UPDATE));
+
+            try {
+                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
+            } catch (Exception e) {
+                log.error("", e);
+            }
+
+            return Groups.getGroup(id);
         } catch (Exception e) {
             log.error("", e);
             try {
@@ -210,7 +209,6 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) throws Exception {
-
         //hijacking the code her to manually create a group if it is brand new.  Should make project creation much quicker.
         Long matches = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(ID) FROM xdat_usergroup WHERE ID='" + id + "'", "COUNT", authenticatedUser.getDBName(), null);
         if (matches == 0) {
@@ -264,13 +262,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             if (modified) {
                 PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-
-                try {
-                    final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-                    eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.UPDATE));
-                } catch (Exception e1) {
-                    log.error("", e1);
-                }
+                XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.UPDATE));
 
                 try {
                     PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
@@ -296,39 +288,18 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI addUserToGroup(final String groupId, UserI newUser, UserI currentUser, EventMetaI ci) throws Exception {
+    public UserGroupI addUserToGroup(final String groupId, final UserI newUser, final UserI currentUser, final EventMetaI ci) throws Exception {
         final UserGroupI userGroup = Groups.getGroup(groupId);
+        addUserToGroup(userGroup, currentUser, newUser, ci);
+        return userGroup;
+    }
 
-        if (userGroup.getTag() != null) {
-            //remove from existing groups
-            final List<String> groupIdsToRemove = new ArrayList<>();
-            for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(newUser).entrySet()) {
-                if (entry.getValue().getTag() != null && entry.getValue().getTag().equals(userGroup.getTag())) {
-                    final String userGroupId = entry.getValue().getId();
-                    if (userGroupId.equals(groupId)) {
-                        return userGroup;
-                    }
-
-                    //find mapping object to delete
-                    if (Groups.isMember(newUser, userGroupId)) {
-                        groupIdsToRemove.add(userGroupId);
-                    }
-                }
-            }
-            if (groupIdsToRemove.size() > 0) {
-                for (final String removedGroupId : groupIdsToRemove) {
-                    Groups.removeUserFromGroup(newUser, currentUser, removedGroupId, ci);
-                }
-            }
+    @Override
+    public UserGroupI addUsersToGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
+        final UserGroupI userGroup = Groups.getGroup(groupId);
+        for (final UserI user : users) {
+            addUserToGroup(userGroup, currentUser, user, eventMeta);
         }
-
-        if (!_template.queryForObject(CONFIRM_QUERY, new MapSqlParameterSource("groupId", groupId).addValue("userId", newUser.getID()), Boolean.class)) {
-            final XdatUserGroupid map = new XdatUserGroupid(currentUser);
-            map.setProperty(map.getXSIType() + ".groups_groupid_xdat_user_xdat_user_id", newUser.getID());
-            map.setGroupid(groupId);
-            SaveItemHelper.authorizedSave(map, currentUser, false, false, ci);
-        }
-
         return userGroup;
     }
 
@@ -362,8 +333,8 @@ public class UserGroupManager implements UserGroupServiceI {
     @Override
     public UserGroupI createGroup(Map<String, ?> params) throws GroupFieldMappingException {
         try {
-            PopulateItem populater = new PopulateItem(params, null, XdatUsergroup.SCHEMA_ELEMENT_NAME, true);
-            ItemI        found     = populater.getItem();
+            final PopulateItem populator = new PopulateItem(params, null, XdatUsergroup.SCHEMA_ELEMENT_NAME, true);
+            final ItemI        found     = populator.getItem();
             return new UserGroup(new XdatUsergroup(found));
         } catch (Exception e) {
             throw new GroupFieldMappingException(e);
@@ -393,13 +364,7 @@ public class UserGroupManager implements UserGroupServiceI {
             log.error("", e);
         }
 
-
-        try {
-            final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-            eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
-        } catch (Exception e1) {
-            log.error("", e1);
-        }
+        XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
 
         try {
             PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
@@ -461,17 +426,8 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         SaveItemHelper.authorizedSave(xdatGroup, user, false, true, meta);
-
-        ((UserGroup) group).init(xdatGroup.getItem());
-        ((UserGroup) group).clearUserGroup();
-
-        try {
-            final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-            eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
-            Groups.reloadGroupsForUser(user);
-        } catch (Exception e1) {
-            log.error("", e1);
-        }
+        XDAT.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), XftItemEvent.UPDATE));
+        Groups.reloadGroupsForUser(user);
     }
 
     public void validateGroupByTag(XdatUsergroup tempGroup, String tag) throws InvalidValueException {
@@ -486,6 +442,39 @@ public class UserGroupManager implements UserGroupServiceI {
                     throw new InvalidValueException();
                 }
             }
+        }
+    }
+
+    private void addUserToGroup(final UserGroupI userGroup, final UserI currentUser, final UserI user, final EventMetaI eventMeta) throws Exception {
+        final String groupId = userGroup.getId();
+        if (userGroup.getTag() != null) {
+            //remove from existing groups
+            final List<String> groupIdsToRemove = new ArrayList<>();
+            for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
+                if (entry.getValue().getTag() != null && entry.getValue().getTag().equals(userGroup.getTag())) {
+                    final String userGroupId = entry.getValue().getId();
+                    if (userGroupId.equals(groupId)) {
+                        return;
+                    }
+
+                    //find mapping object to delete
+                    if (Groups.isMember(user, userGroupId)) {
+                        groupIdsToRemove.add(userGroupId);
+                    }
+                }
+            }
+            if (groupIdsToRemove.size() > 0) {
+                for (final String removedGroupId : groupIdsToRemove) {
+                    Groups.removeUserFromGroup(user, currentUser, removedGroupId, eventMeta);
+                }
+            }
+        }
+
+        if (!_template.queryForObject(CONFIRM_QUERY, new MapSqlParameterSource("groupId", groupId).addValue("userId", user.getID()), Boolean.class)) {
+            final XdatUserGroupid map = new XdatUserGroupid(currentUser);
+            map.setProperty(map.getXSIType() + ".groups_groupid_xdat_user_xdat_user_id", user.getID());
+            map.setGroupid(groupId);
+            SaveItemHelper.authorizedSave(map, currentUser, false, false, eventMeta);
         }
     }
 
@@ -523,15 +512,7 @@ public class UserGroupManager implements UserGroupServiceI {
                 ea.setProperty("xdat_usergroup_xdat_usergroup_id", impl.getXdatUsergroupId());
             }
 
-            final XdatFieldMappingSet fms;
-            ArrayList                 al = ea.getPermissions_allowSet();
-            if (al.size() > 0) {
-                fms = ea.getPermissions_allowSet().get(0);
-            } else {
-                fms = new XdatFieldMappingSet(user);
-                fms.setMethod("OR");
-                ea.setPermissions_allowSet(fms);
-            }
+            final XdatFieldMappingSet fms = ea.getOrCreateFieldMappingSet(user);
 
             XdatFieldMapping fm = null;
 
@@ -626,16 +607,17 @@ public class UserGroupManager implements UserGroupServiceI {
                     Template     template = Velocity.getTemplate("/screens/" + templateName);
                     template.merge(context, sw);
 
-                    ArrayList<String> stmts = XftStringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                    PoolDBUtils.ExecuteBatch(stmts, null, authenticatedUser.getUsername());
+                    PoolDBUtils.ExecuteBatch(XftStringUtils.DelimitedStringToArrayList(sw.toString(), ";"), null, authenticatedUser.getUsername());
                 }
             }
         } catch (Exception ignored) {
         }
     }
 
-    private static final String ALL_GROUPS_QUERY = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
-    private static final String CONFIRM_QUERY    = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+    private static final String QUERY_CHECK_GROUP_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_usergroup WHERE id = :groupId) AS exists";
+    private static final String ALL_GROUPS_QUERY         = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
+    private static final String QUERY_GET_PRIMARY_KEY    = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
+    private static final String CONFIRM_QUERY            = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;

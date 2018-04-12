@@ -15,17 +15,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.ecs.xhtml.title;
 import org.json.JSONObject;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -553,6 +546,23 @@ public class XFTTable implements XFTTableI {
 
     public Map<Object, Object> convertToHashtable(String keyColumn, String valueColumn) {
         return convertToMap(keyColumn, valueColumn, new Hashtable<>());
+    }
+
+    public <T, V> Map<T, V> convertToMap(String keyColumn, String valueColumn, Class<T> keyType, Class<V> valueType) {
+        final Map<T, V> map = new HashMap<>();
+
+        XFTTable t = cloneTable();
+
+        final Integer keyIndex = t.getColumnIndex(keyColumn);
+        final Integer valueIndex = t.getColumnIndex(valueColumn);
+
+        t.resetRowCursor();
+        while (t.hasMoreRows()) {
+            final Object[] row = t.nextRow();
+            map.put((T) row[keyIndex], (V) row[valueIndex]);
+        }
+
+        return map;
     }
 
     public Map<Object, Object> convertToMap(String keyColumn, String valueColumn, Map<Object, Object> al) {

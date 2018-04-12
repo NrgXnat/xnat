@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.exception;
 
 /**
@@ -16,11 +15,24 @@ package org.nrg.xft.exception;
  */
 @SuppressWarnings("serial")
 public class ItemNotFoundException  extends Exception{
-	public String ELEMENT = "";
-	public ItemNotFoundException(String name)
-	{
+	public final String ELEMENT;
+	public final String ID;
+
+	public ItemNotFoundException(final String name) {
 		super("Item not found: '" + name + "'");
 		ELEMENT = name;
+		ID = name;
+	}
+
+	public ItemNotFoundException(final String xsiType, final String id) {
+		super("Item not found: '" + xsiType + "' with ID " + id);
+		ELEMENT = xsiType;
+		ID = id;
+	}
+	
+	@Override
+	public String toString() {
+		return ELEMENT + "' with ID " + ID;
 	}
 }
 

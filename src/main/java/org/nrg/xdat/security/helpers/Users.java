@@ -34,6 +34,7 @@ import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
@@ -375,11 +376,13 @@ public class Users {
         }
 
         //check if it was added since init
-        final String queried = XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login FROM xdat_user WHERE xdat_user_id = :xdatUserId", new MapSqlParameterSource("xdatUserId", xdatUserId), String.class);
-        if (StringUtils.isNotBlank(queried)) {
+        try {
+            final String queried = XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login FROM xdat_user WHERE xdat_user_id = :xdatUserId", new MapSqlParameterSource("xdatUserId", xdatUserId), String.class);
             getCachedUserIds().put(xdatUserId, queried);
+            return queried;
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
-        return queried;
     }
 
     /**
@@ -390,7 +393,7 @@ public class Users {
      * @return The user's ID
      */
     public static Integer getUserId(final String username) {
-        if (username == null) {
+        if (StringUtils.isBlank(username)) {
             return null;
         }
 
@@ -405,12 +408,13 @@ public class Users {
         }
 
         // Check if it was added since init
-        final Integer userId = XDAT.getNamedParameterJdbcTemplate().queryForObject("select xdat_user_id FROM xdat_user WHERE login = :username", new MapSqlParameterSource("username", username), Integer.class);
-        if (userId != null) {
+        try {
+            final Integer userId = XDAT.getNamedParameterJdbcTemplate().queryForObject("select xdat_user_id FROM xdat_user WHERE login = :username", new MapSqlParameterSource("username", username), Integer.class);
             cache.put(userId, username);
+            return userId;
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
-        return userId;
-
     }
 
     /**
@@ -459,7 +463,11 @@ public class Users {
      */
     @SuppressWarnings("RedundantThrows")
     public static Date getLastLogin(UserI user) throws Exception {
-        return XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id = :xdatUserId ORDER BY login_date DESC LIMIT 1", new MapSqlParameterSource("xdatUserId", user.getID()), Date.class);
+        try {
+            return XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id = :xdatUserId ORDER BY login_date DESC LIMIT 1", new MapSqlParameterSource("xdatUserId", user.getID()), Date.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     /**

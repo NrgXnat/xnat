@@ -11,6 +11,7 @@
 package org.nrg.xdat.om.base.auto;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatElementAccessI;
@@ -255,6 +256,17 @@ public abstract class AutoXdatElementAccess extends org.nrg.xdat.base.BaseElemen
 		setProperty(SCHEMA_ELEMENT_NAME + "/xdat_element_access_id",v);
 		_XdatElementAccessId=null;
 		} catch (Exception e1) {logger.error(e1);}
+	}
+
+	public XdatFieldMappingSet getOrCreateFieldMappingSet(final UserI user) throws Exception {
+		final List<XdatFieldMappingSet> fieldMappingSets = getPermissions_allowSet();
+		if (!fieldMappingSets.isEmpty()) {
+			return fieldMappingSets.get(0);
+		}
+		final XdatFieldMappingSet fieldMappingSet = new XdatFieldMappingSet(user);
+		fieldMappingSet.setMethod("OR");
+		setPermissions_allowSet(fieldMappingSet);
+		return fieldMappingSet;
 	}
 
 	public static ArrayList<org.nrg.xdat.om.XdatElementAccess> getAllXdatElementAccesss(org.nrg.xft.security.UserI user,boolean preLoad)

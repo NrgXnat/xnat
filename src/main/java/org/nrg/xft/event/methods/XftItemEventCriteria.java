@@ -1,9 +1,12 @@
 package org.nrg.xft.event.methods;
 
+import com.google.common.base.Predicate;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.XftItemEvent;
 import org.springframework.util.CollectionUtils;
@@ -23,44 +26,50 @@ import static lombok.AccessLevel.PRIVATE;
 @Setter(PRIVATE)
 @Slf4j
 public class XftItemEventCriteria {
-    public static final class XftItemEventCriteriaBuilder {
-        private XftItemEventCriteriaBuilder() {
+    public static final class Builder {
+        private Builder() {
         }
 
-        public static XftItemEventCriteriaBuilder builder() {
-            return new XftItemEventCriteriaBuilder();
+        private static Builder builder() {
+            return new Builder();
         }
 
-        public XftItemEventCriteriaBuilder xsiType(final String xsiType) {
+        public Builder xsiType(final String xsiType) {
             _xsiTypeRegex.add(Pattern.compile("^" + Pattern.quote(xsiType) + "$"));
             return this;
         }
 
-        public XftItemEventCriteriaBuilder xsiTypeRegex(final String xsiTypeRegex) {
+        public Builder xsiTypeRegex(final String xsiTypeRegex) {
             _xsiTypeRegex.add(Pattern.compile(xsiTypeRegex));
             return this;
         }
 
-        public XftItemEventCriteriaBuilder action(final String action) {
+        public Builder action(final String action) {
             _actionRegex.add(Pattern.compile("^" + Pattern.quote(action) + "$"));
             return this;
         }
 
-        public XftItemEventCriteriaBuilder actionRegex(final String actionRegex) {
+        public Builder actionRegex(final String actionRegex) {
             _actionRegex.add(Pattern.compile(actionRegex));
             return this;
         }
 
-        public XftItemEventCriteria build() {
-            return new XftItemEventCriteria(_xsiTypeRegex, _actionRegex);
+        public Builder predicate(final Predicate<XftItemEvent> predicate) {
+            _predicates.add(predicate);
+            return this;
         }
 
-        private final List<Pattern> _xsiTypeRegex = new ArrayList<>();
-        private final List<Pattern> _actionRegex  = new ArrayList<>();
+        public XftItemEventCriteria build() {
+            return new XftItemEventCriteria(_xsiTypeRegex, _actionRegex, _predicates);
+        }
+
+        private final List<Pattern>                 _xsiTypeRegex = new ArrayList<>();
+        private final List<Pattern>                 _actionRegex  = new ArrayList<>();
+        private final List<Predicate<XftItemEvent>> _predicates   = new ArrayList<>();
     }
 
-    public static XftItemEventCriteriaBuilder builder() {
-        return XftItemEventCriteriaBuilder.builder();
+    public static Builder builder() {
+        return Builder.builder();
     }
 
     public static final List<Pattern> UNIVERSAL_LIST = Collections.singletonList(Pattern.compile("^.*$"));
@@ -70,15 +79,36 @@ public class XftItemEventCriteria {
      */
     public static final XftItemEventCriteria UNIVERSAL = builder().build();
 
+    public static final Predicate<XftItemEvent> isProjectGroup = new Predicate<XftItemEvent>() {
+        @Override
+        public boolean apply(@Nullable final XftItemEvent event) {
+            return event != null &&
+                   StringUtils.isNotBlank(event.getId()) &&
+                   StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType()) &&
+                   XdatUsergroup.PROJECT_GROUP.matcher(event.getId()).matches();
+        }
+    };
+
     /**
      * Convenience method for creating a criteria instance that just filters on the {@link XFTItem#getXSIType() item's XSI type}.
      *
-     * @param xsiType A regular expression defining matching XSI types.
+     * @param xsiType The XSI type to match.
      *
      * @return A new criteria object.
      */
     public static XftItemEventCriteria getXsiTypeCriteria(final String xsiType) {
         return builder().xsiType(xsiType).build();
+    }
+
+    /**
+     * Convenience method for creating a criteria instance that just filters on the item's action.
+     *
+     * @param action The action to match.
+     *
+     * @return A new criteria object.
+     */
+    public static XftItemEventCriteria getActionCriteria(final String action) {
+        return builder().action(action).build();
     }
 
     /**
@@ -90,27 +120,30 @@ public class XftItemEventCriteria {
      * @return Returns true if the event matches the criteria, false otherwise.
      */
     public boolean matches(final XftItemEvent event) {
-        return matchesXsiType(event.getXsiType()) && matchesAction(event.getAction());
+        return matchesXsiType(event.getXsiType()) && matchesAction(event.getAction()) && matchesPredicates(event);
     }
 
     /**
      * Creates a new criteria object, with one or more regular expression to match the desired {@link XFTItem#getXSIType() item's XSI type}
      * and {@link XftItemEvent#getAction() event action}.
      *
-     * @param xsiTypes A list of regular expressions defining matching XSI types.
-     * @param actions  A list of regular expressions defining matching actions.
+     * @param xsiTypes   A list of regular expressions defining matching XSI types.
+     * @param actions    A list of regular expressions defining matching actions.
+     * @param predicates A list of predicates defining matching event properties.
      */
-    private XftItemEventCriteria(final List<Pattern> xsiTypes, final List<Pattern> actions) {
-        final boolean hasXsiTypes = !CollectionUtils.isEmpty(xsiTypes);
-        final boolean hasActions  = !CollectionUtils.isEmpty(actions);
+    private XftItemEventCriteria(final List<Pattern> xsiTypes, final List<Pattern> actions, final List<Predicate<XftItemEvent>> predicates) {
+        final boolean hasXsiTypes   = !CollectionUtils.isEmpty(xsiTypes);
+        final boolean hasActions    = !CollectionUtils.isEmpty(actions);
+        final boolean hasPredicates = !CollectionUtils.isEmpty(predicates);
 
         if (log.isDebugEnabled()) {
-            log.debug("Creating XFT item event criteria with XSI type patterns '{}' and action patterns '{}'", hasXsiTypes ? StringUtils.join(xsiTypes, ", ") : "N/A", hasActions ? StringUtils.join(actions, ", ") : "N/A");
+            log.debug("Creating XFT item event criteria with XSI type patterns '{}', action patterns '{}', and {} predicates", hasXsiTypes ? StringUtils.join(xsiTypes, ", ") : "N/A", hasActions ? StringUtils.join(actions, ", ") : "N/A", hasPredicates ? predicates.size() : 0);
         }
 
         // If we have an empty list, that's a universal match.
         _xsiTypeRegex = hasXsiTypes ? xsiTypes : UNIVERSAL_LIST;
         _actionRegex = hasActions ? actions : UNIVERSAL_LIST;
+        _predicates = hasPredicates ? predicates : Collections.<Predicate<XftItemEvent>>emptyList();
     }
 
     private boolean matchesXsiType(final String xsiType) {
@@ -119,6 +152,18 @@ public class XftItemEventCriteria {
 
     private boolean matchesAction(final String action) {
         return testRegexList(_actionRegex, action);
+    }
+
+    private boolean matchesPredicates(final XftItemEvent event) {
+        if (_predicates.isEmpty()) {
+            return true;
+        }
+        for (final Predicate<XftItemEvent> predicate : _predicates) {
+            if (predicate.apply(event)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean testRegexList(final List<Pattern> patterns, final String target) {
@@ -133,6 +178,7 @@ public class XftItemEventCriteria {
         return false;
     }
 
-    private final List<Pattern> _xsiTypeRegex;
-    private final List<Pattern> _actionRegex;
+    private final List<Pattern>                 _xsiTypeRegex;
+    private final List<Pattern>                 _actionRegex;
+    private final List<Predicate<XftItemEvent>> _predicates;
 }

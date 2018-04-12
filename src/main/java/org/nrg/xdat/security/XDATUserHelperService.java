@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.services.UserHelperServiceI;
@@ -21,6 +20,7 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +28,9 @@ import java.util.Map;
 @Slf4j
 public class XDATUserHelperService extends UserHelperServiceI {
     public XDATUserHelperService(final UserI user) throws UserNotFoundException, UserInitException {
+        if (user == null) {
+            throw new UserNotFoundException("null");
+        }
         _user = (user instanceof XDATUser) ? (XDATUser) user : new XDATUser(user.getUsername());
     }
 
@@ -122,7 +125,7 @@ public class XDATUserHelperService extends UserHelperServiceI {
             return _user.getCreateableElementDisplays();
         } catch (Exception e) {
             log.error("", e);
-            return Lists.newArrayList();
+            return Collections.emptyList();
         }
     }
 

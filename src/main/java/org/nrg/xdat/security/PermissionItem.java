@@ -10,10 +10,10 @@
 
 package org.nrg.xdat.security;
 
-import java.util.Comparator;
-
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.Comparator;
 
 
 /**
@@ -22,27 +22,15 @@ import org.nrg.xft.utils.XftStringUtils;
  * @author Tim
  */
 public class PermissionItem {
-    private String  fullFieldName   = null;
-    private String  shortFieldName  = null;
-    private Object  value           = null;
-    private String  displayName     = null;
-    private boolean read            = false;
-    private boolean create          = false;
-    private boolean delete          = false;
-    private boolean edit            = false;
-    private boolean activate        = false;
-    private String  comparison_type = "equals";
-    private boolean authenticated   = false;
-    private boolean wasSet          = false;
-
+    @SuppressWarnings("RedundantThrows")
     public void set(PermissionCriteriaI c) throws MetaDataException {
         if (c.getField().equalsIgnoreCase(XftStringUtils.StandardizeXMLPath(fullFieldName)) && c.getFieldValue().toString().equalsIgnoreCase(value.toString())) {
-            this.setCreate(c.getCreate());
-            this.setEdit(c.getEdit());
-            this.setDelete(c.getDelete());
-            this.setRead(c.getRead());
-            this.setActivate(c.getActivate());
-            this.setComparison_type("=");
+            setCreate(c.getCreate());
+            setEdit(c.getEdit());
+            setDelete(c.getDelete());
+            setRead(c.getRead());
+            setActivate(c.getActivate());
+            setComparison_type("=");
             wasSet = true;
         }
     }
@@ -173,8 +161,8 @@ public class PermissionItem {
      * {@inheritDoc}
      */
     public String toString() {
-        return this.getFullFieldName() +
-               " " + this.getValue() +
+        return getFullFieldName() +
+               " " + getValue() +
                " " + canCreate() +
                " " + canRead() +
                " " + canEdit() +
@@ -197,7 +185,7 @@ public class PermissionItem {
 
     @SuppressWarnings("unused")
     public String getComparison_type() {
-        return this.comparison_type;
+        return comparison_type;
     }
 
     /**
@@ -222,42 +210,47 @@ public class PermissionItem {
         return wasSet;
     }
 
-    public static Comparator GetComparator() {
+    public static Comparator<PermissionItem> GetComparator() {
         return new PermissionItem().getComparator();
     }
 
-    public Comparator getComparator() {
+    public Comparator<PermissionItem> getComparator() {
         return new PIComparator();
     }
 
-    public class PIComparator implements Comparator {
+    public class PIComparator implements Comparator<PermissionItem> {
         public PIComparator() {
         }
 
-        public int compare(Object o1, Object o2) {
-            PermissionItem value1 = (PermissionItem) (o1);
-            PermissionItem value2 = (PermissionItem) (o2);
-
-            if (value1 == null) {
-                if (value2 == null) {
+        @Override
+        public int compare(final PermissionItem item1, final PermissionItem item2) {
+            if (item1 == null) {
+                if (item2 == null) {
                     return 0;
                 } else {
                     return -1;
                 }
             }
-            if (value2 == null) {
+            if (item2 == null) {
                 return 1;
             }
 
-            if (value1.getValue().equals(value2.getValue())) {
-                return ((Comparable) value1.getValue()).compareTo(value2.getValue());
-            } else {
-                Comparable i1      = (Comparable) value1.getValue();
-                Comparable i2      = (Comparable) value2.getValue();
-                int        _return = i1.compareTo(i2);
-                return _return;
-            }
+            //noinspection unchecked
+            return ((Comparable) item1.getValue()).compareTo(item2.getValue());
         }
     }
+
+    private String  fullFieldName   = null;
+    private String  shortFieldName  = null;
+    private Object  value           = null;
+    private String  displayName     = null;
+    private boolean read            = false;
+    private boolean create          = false;
+    private boolean delete          = false;
+    private boolean edit            = false;
+    private boolean activate        = false;
+    private String  comparison_type = "equals";
+    private boolean authenticated   = false;
+    private boolean wasSet          = false;
 }
 

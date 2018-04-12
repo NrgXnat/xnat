@@ -10,7 +10,6 @@
 package org.nrg.xdat.security.helpers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -24,6 +23,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+
+import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 
 @Slf4j
 public class UserHelper {
@@ -72,19 +73,23 @@ public class UserHelper {
      * @return An instance of the {@link UserHelperServiceI user helper service}.
      */
     public static UserHelperServiceI getUserHelperService(final UserI user) {
+        if (user == null) {
+            throw new NrgServiceRuntimeException(ConfigurationError, "You can't construct an instance of the user helper class without passing in a user object, but I just got a null");
+        }
+
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
         if (_userHelperCtor == null) {
             try {
                 _userHelperCtor = getUserHelperImplementationClass().getConstructor(UserI.class);
             } catch (NoSuchMethodException e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The specified user helper class must have a constructor that accepts the UserI interface: " + _userHelperCtor.getName());
+                throw new NrgServiceRuntimeException(ConfigurationError, "The specified user helper class must have a constructor that accepts the UserI interface: " + _userHelperCtor.getName());
             }
         }
 
         try {
             return _userHelperCtor.newInstance(user);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "An error occurred trying to create a new instance of the specified user helper class: " + _userHelperCtor.getName());
+            throw new NrgServiceRuntimeException(ConfigurationError, "An error occurred trying to create a new instance of the specified user helper class: " + _userHelperCtor.getName(), e);
         }
     }
 
@@ -101,7 +106,7 @@ public class UserHelper {
                 }
             }
         } catch (ClassNotFoundException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Couldn't find the specified package for the user helper class: " + packageName);
+            throw new NrgServiceRuntimeException(ConfigurationError, "Couldn't find the specified package for the user helper class: " + packageName);
         } catch (IOException e) {
             log.error("An unknown exception occurred", e);
         }
@@ -111,7 +116,7 @@ public class UserHelper {
         try {
             return Class.forName(className).asSubclass(UserHelperServiceI.class);
         } catch (ClassNotFoundException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The configured user helper service class could not be found on the classpath: " + className);
+            throw new NrgServiceRuntimeException(ConfigurationError, "The configured user helper service class could not be found on the classpath: " + className);
         }
     }
 

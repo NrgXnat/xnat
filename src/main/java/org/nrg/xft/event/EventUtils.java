@@ -179,7 +179,9 @@ public class EventUtils {
 	public final static String MODIFY_VIA_WEB_FORM="Modified via web form";
 	public static final String DELETE_VIA_WEB_SERVICE = "Removed via web service";
 	public static final String ADD_USER_TO_PROJECT = "Added user to project";
+	public static final String ADD_USERS_TO_PROJECT = "Added users to project";
 	public static final String REMOVE_USER_FROM_PROJECT = "Removed user from project";
+	public static final String REMOVE_USERS_FROM_PROJECT = "Removed users from project";
 	public static final String MODIFY_VIA_STORE_XAR = "Modified via store xar";
 	public static final String MODIFY_VIA_STORE_XML="Modified via store xml";
 	public static final String PIPELINE="Pipeline";

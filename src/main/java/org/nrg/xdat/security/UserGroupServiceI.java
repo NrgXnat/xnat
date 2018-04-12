@@ -10,7 +10,6 @@
 package org.nrg.xdat.security;
 
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 
@@ -25,7 +24,7 @@ import java.util.Map;
  * Added to allow different implementations of User Group activities
  */
 public interface UserGroupServiceI {
-	class InvalidValueException extends Exception {
+    class InvalidValueException extends Exception {
 
 	}
 
@@ -117,7 +116,19 @@ public interface UserGroupServiceI {
 	 */
 	void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception;
 
-	/**
+    /**
+     * Remove users from the group (including updating database if necessary)
+     *
+     * @param groupId           The ID of the group from which the user should be removed.
+     * @param authenticatedUser The user requesting the removal.
+     * @param users             The users to remove from the group.
+     * @param eventMeta         The event metadata.
+     *
+     * @throws Exception When an error occurs.
+     */
+    void removeUsersFromGroup(final String groupId, final UserI authenticatedUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception;
+
+    /**
 	 * Refresh the user group for this user (this updates any local copies of the group for this user).  This should be eliminated by a more clear caching mechanism.
 	 *
 	 * @param user       The user to refresh.
@@ -181,6 +192,20 @@ public interface UserGroupServiceI {
 	 */
 	UserGroupI addUserToGroup(String group_id, UserI newUser,UserI authenticatedUser, EventMetaI ci) throws Exception;
 
+    /**
+     * Add a list of users to the group (includes potential modification to the database).
+     *
+     * @param groupId           The ID of the group to which the user should be added.
+     * @param authenticatedUser The user adding the user to the group.
+     * @param users             The list of users to add to the group.
+     * @param eventMeta         The event metadata.
+     *
+     * @return The group with the newly added users.
+     *
+     * @throws Exception When an error occurs.
+     */
+    UserGroupI addUsersToGroup(final String groupId, final UserI authenticatedUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception;
+
 	/**
 	 * The data type or classification identifier used to identify the group data type.
 	 *
@@ -188,7 +213,6 @@ public interface UserGroupServiceI {
 	 * @return The data type identifier.
 	 */
 	String getGroupDatatype();
-
 
     /**
      * Return a freshly created group object populated with the passed parameters.

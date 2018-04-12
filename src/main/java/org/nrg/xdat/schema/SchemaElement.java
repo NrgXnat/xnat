@@ -8,20 +8,13 @@
  */
 
 
-package org.nrg.xdat.schema; 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+package org.nrg.xdat.schema;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection;
-import org.nrg.xdat.display.DisplayField;
-import org.nrg.xdat.display.DisplayFieldElement;
-import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.display.ElementDisplay;
-import org.nrg.xdat.display.SQLQueryField;
+import org.nrg.xdat.display.*;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xft.XFT;
@@ -29,12 +22,14 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.*;
 
 /**
  * @author Tim
@@ -42,7 +37,7 @@ import org.nrg.xft.utils.XftStringUtils;
  */
 public class SchemaElement implements SchemaElementI {
 	static Logger logger = Logger.getLogger(SchemaElement.class);
-	private GenericWrapperElement element = null;
+	private GenericWrapperElement element;
 	private ElementDisplay display = null;
 	private Hashtable arcs = null;
 
@@ -152,11 +147,13 @@ public class SchemaElement implements SchemaElementI {
 	}
 
     public String getSingularDescription(){
-        return getElementSecurity().getSingularDescription();
+		final ElementSecurity security = getElementSecurity();
+		return security != null ? security.getSingularDescription() : "";
     }
 
     public String getPluralDescription(){
-        return getElementSecurity().getPluralDescription();
+		final ElementSecurity security = getElementSecurity();
+		return security != null ? security.getPluralDescription() : "";
     }
 
     public boolean hasDisplayValueOption() {
@@ -203,6 +200,7 @@ public class SchemaElement implements SchemaElementI {
 		return getDisplay() != null;
 	}
 	
+	@SuppressWarnings("unused")
 	public DisplayField getSQLQueryField(String id, String header, boolean visible, boolean searchable, String dataType, String sqlColName, String subQuery, String schemaField, String schemaQueryField){
 		DisplayField df=this.getDisplay().getDisplayField(id);
 		if(df==null){
@@ -251,14 +249,10 @@ public class SchemaElement implements SchemaElementI {
 				dfe.setName("Field1");
 				dfe.setSchemaElementName(s + XFT.PATH_SEPARATOR + pk.getName());
 				df.addDisplayFieldElement(dfe);
-				try {
-					ed.addDisplayFieldWException(df);
+				if (addDisplayField(ed, df)) {
 					return df;
-				} catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
-	                logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
-					logger.error("",e);
 				}
-		 	}
+			}
 		}else{
 			if(!GenericWrapperElement.IsMultipleReference(s)){
 				DisplayField df = new DisplayField(this.getDisplay());
@@ -272,16 +266,23 @@ public class SchemaElement implements SchemaElementI {
 				dfe.setName("Field1");
 				dfe.setSchemaElementName(s);
 				df.addDisplayFieldElement(dfe);
-				try {
-					ed.addDisplayFieldWException(df);
+				if (addDisplayField(ed, df)) {
 					return df;
-				} catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
-	                logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
-					logger.error("",e);
 				}
 			}
 		}
 		return null;
+	}
+
+	private boolean addDisplayField(final ElementDisplay ed, final DisplayField df) {
+		try {
+			ed.addDisplayFieldWException(df);
+			return true;
+		} catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
+logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
+			logger.error("",e);
+		}
+		return false;
 	}
 
 	/**
@@ -419,16 +420,14 @@ public class SchemaElement implements SchemaElementI {
 		return getDefinedFieldManager().getDefinedFields(this);
 	}
 	
-	public List<String> buildDefinedFields()
-	{
-		final List<String> _alldefinedfields = new ArrayList<>();
-	    for (final String s:getDefinedFields(false))
-	    {
-	        _alldefinedfields.add((this.getFullXMLName() + "/" + s).intern());
-	    }
-	    return _alldefinedfields;
+	public List<String> buildDefinedFields() {
+		return Lists.transform(getDefinedFields(false), new Function<String, String>() {
+			@Override
+			public String apply(final String fieldName) {
+				return getFullXMLName() + "/" + fieldName;
+			}
+		});
 	}
-		
 	
 	private static DefinedFieldManager dfm;
 	private synchronized static DefinedFieldManager getDefinedFieldManager(){

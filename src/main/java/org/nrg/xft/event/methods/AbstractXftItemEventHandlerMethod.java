@@ -83,5 +83,5 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
     }
 
     private final List<XftItemEventCriteria> _criteria;
-    private final String _name;
+    private final String                     _name;
 }

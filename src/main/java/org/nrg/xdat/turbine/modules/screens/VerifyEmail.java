@@ -24,6 +24,7 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -165,8 +166,9 @@ public class VerifyEmail extends VelocitySecureScreen {
     private boolean disabledDueToInactivity(final UserI user) {
         try {
             final NamedParameterJdbcTemplate template = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
-            final Long result = template.queryForObject(DISABLED_INACTIVE_USER_QUERY, new MapSqlParameterSource("userId", user.getID()), Long.class);
-            return result != null && result > 0;
+            return template.queryForObject(DISABLED_INACTIVE_USER_QUERY, new MapSqlParameterSource("userId", user.getID()), Long.class) > 0;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
         } catch (Exception e) {
             log.error(e.getMessage());
         }

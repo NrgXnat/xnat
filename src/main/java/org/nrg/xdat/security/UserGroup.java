@@ -24,215 +24,275 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.security.UserI;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.*;
 
 @Slf4j
-public class UserGroup implements UserGroupI{
-	public UserGroup(XdatUsergroup gp) throws Exception{
-		id=gp.getId();
-		pk=gp.getXdatUsergroupId();
-		displayName=gp.getDisplayname();
-		init(gp.getItem());
-	}
-	
-	public UserGroup(){
-
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.nrg.xdat.security.UserGroupI#getId()
-	 */
-	@Override
-	public String getId(){
-		return id;
-	}
-
-	@Override
-	public String getTag(){
-		return tag;
-	}
-
-	@Override
-	public String getDisplayname(){
-		return displayName;
-	}
-
-	protected synchronized Map<String,ElementAccessManager> getAccessManagers() {
-        if (accessManagers.isEmpty()){
-            try {
-                init(getUserGroupImpl());
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        }
-        return accessManagers;
-    }
-    
-    public void clearUserGroup(){
-		xdatGroup = null;
-	}
-
-    public XdatUsergroup getUserGroupImpl(){
-    	if(xdatGroup==null){
-    		return XdatUsergroup.getXdatUsergroupsById(id, Users.getAdminUser(), true);
-    	}else{
-    		return xdatGroup;
-    	}
-    }
-    
-    private XdatUsergroup getSavedUserGroupImpl(UserI user){
-    	if(xdatGroup==null){
-    		xdatGroup=XdatUsergroup.getXdatUsergroupsById(id, user, true);
-    		
-    		if(xdatGroup==null){
-    			xdatGroup= new XdatUsergroup(user);
-    			xdatGroup.setId(this.getId());
-    			xdatGroup.setTag(this.getTag());
-    			xdatGroup.setDisplayname(this.getDisplayname());
-    		}
-    	}
-    	return xdatGroup;
-    }
-
-    public synchronized void init(ItemI item) throws Exception {
-		if (item == null) {
-			log.info("Tried to init() a user group that doesn't have an item set yet. This might mean it's being created.");
-			return;
-		}
-
-    	tag = item.getStringProperty("tag");
-
-		final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
-		if (childItems != null) {
-			for (final ItemI childItem : childItems) {
-				final ElementAccessManager elementAccessManager = new ElementAccessManager(childItem);
-				accessManagers.put(elementAccessManager.getElement(), elementAccessManager);
-			}
-		}
-
-		final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
-		if (features != null) {
-			for (final GroupFeature feature : features) {
-				if (feature.isBlocked()) {
-					blocked.add(feature.getFeature());
-				} else if (feature.isOnByDefault()) {
-					_features.add(feature.getFeature());
-				}
-			}
-		}
-	}
-
-	public String toString(){
-    	final StringBuilder sb = new StringBuilder();
-    	sb.append(getId()).append("\n");
-    	sb.append(getTag()).append("\n");
-    	
-    	for(ElementAccessManager eam:this.getAccessManagers().values()){
-    		sb.append(eam.toString()).append("\n");
-    	}
-    	
-    	return sb.toString();
+public class UserGroup implements UserGroupI {
+    /**
+     * Creates a new user group bean from an {@link XdatUsergroup} object.
+     *
+     * @param group The group for initialization.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    public UserGroup(final XdatUsergroup group) throws Exception {
+        init(group);
     }
 
     /**
-     * @return Returns a list of stored search objects
+     * Creates a new user group bean from an {@link XdatUsergroup} object. This uses the JDBC template to retrieve
+     * data from related objects from the database where possible. This provides some performance advantages over
+     * retrieving related objects through the XFT application framework.
+     *
+     * @param group    The group for initialization.
+     * @param template Template used for direct database queries.
+     *
+     * @throws Exception When something goes wrong.
      */
-    protected List<XdatStoredSearch> getStoredSearches() {
-        if (_storedSearches.isEmpty()) {
-			synchronized (_storedSearches) {
-				try {
-                    for (final XdatStoredSearch search : XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id)) {
-                        _storedSearches.put(search.getId(), search);
-                    }
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-			}
-		}
-        return ImmutableList.copyOf(_storedSearches.values());
+    public UserGroup(final XdatUsergroup group, final NamedParameterJdbcTemplate template) throws Exception {
+        init(group, template);
     }
-
 
     /**
-	 * Retrieves the stored search associated with the submitted ID.
-     * @param id The ID of the stored search to retrieve.
-     * @return Returns the stored search for the given ID
+     * Creates a new user group bean based on the {@link XdatUsergroup#getId() group's ID}. Note that this ID is <i>not</i>
+     * the primary key in the database, which is the {@link XdatUsergroup#getXdatUsergroupId()} method. This uses the JDBC
+     * template to retrieve data from related objects from the database. This provides a performance advantage over retrieving
+     * related objects through the XFT application framework.
+     *
+     * @param id       The ID of the group for initialization.
+     * @param template Template used for direct database queries.
      */
-    protected XdatStoredSearch getStoredSearch(String id) {
-    	if (_storedSearches.isEmpty()) {
-    		getStoredSearches();
-		}
-        return _storedSearches.get(id);
+    public UserGroup(final String id, final NamedParameterJdbcTemplate template) throws ItemNotFoundException {
+        init(id, template);
     }
 
-    protected void replacePreLoadedSearch(final XdatStoredSearch search){
-		try {
-			final String id  = search.getStringProperty("ID");
-			_storedSearches.put(id, search);
-		} catch (ElementNotFoundException | FieldNotFoundException e) {
-			log.error("", e);
-		}
-	}
+    public UserGroup(final int xdatUsergroupId, final String id, final String displayName, final String tag) {
+        pk = xdatUsergroupId;
+        this.id = id;
+        this.displayName = displayName;
+        this.tag = tag;
+    }
+
+    /**
+     * Creates an empty user group object.
+     */
+    public UserGroup() {
+
+    }
+
+    /**
+     * Gets the {@link XdatUsergroup#getId() user group ID property}. Note that this is <i>not</i> the primary key in the
+     * database for the group. For that, call the {@link #getPK()} method.
+     *
+     * @return Returns the {@link XdatUsergroup#getId() user group ID property}.
+     */
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * Gets the {@link XdatUsergroup#getTag()} user group tag property}. This generally corresponds to the project with
+     * which the group is associated.
+     *
+     * @return Returns the {@link XdatUsergroup#getTag() user group tag property}.
+     */
+    @Override
+    public String getTag() {
+        return tag;
+    }
+
+    /**
+     * Gets the {@link XdatUsergroup#getDisplayname() user group display name property}.
+     *
+     * @return Returns the {@link XdatUsergroup#getDisplayname() user group display name property}.
+     */
+    @Override
+    public String getDisplayname() {
+        return displayName;
+    }
 
     /**
      * ArrayList: 0:elementName 1:ArrayList of PermissionItems
+     *
      * @return Returns a list of the lists of PermissionItems for each element
+     *
      * @throws Exception When an error occurs.
      */
+    @Override
     @SuppressWarnings("unchecked")
-	public List<List<Object>> getPermissionItems(String login) throws Exception {
-		if (!_permissionItemsByLogin.containsKey(login)) {
-			final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
+    public List<List<Object>> getPermissionItems(String login) throws Exception {
+        if (!_permissionItemsByLogin.containsKey(login)) {
+            final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
 
-			Collections.sort(elements, elements.get(0).getComparator());
+            Collections.sort(elements, elements.get(0).getComparator());
 
-			for (ElementSecurity es : elements) {
-				final List<PermissionItem> permissionItems = (this.getTag() == null) ? es.getPermissionItems(login) : es.getPermissionItemsForTag(this.getTag());
-				boolean                    isAuthenticated = true;
-				boolean                    wasSet          = false;
-				for (PermissionItem pi : permissionItems) {
-					final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
-					if (eam != null) {
-						final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(), pi.getValue());
-						if (pc != null) {
-							pi.set(pc);
-						}
-					}
-					if (!pi.isAuthenticated()) {
-						isAuthenticated = false;
-					}
-					if (pi.wasSet()) {
-						wasSet = true;
-					}
-				}
+            for (ElementSecurity es : elements) {
+                final List<PermissionItem> permissionItems = (this.getTag() == null) ? es.getPermissionItems(login) : es.getPermissionItemsForTag(this.getTag());
+                boolean                    isAuthenticated = true;
+                boolean                    wasSet          = false;
+                for (PermissionItem pi : permissionItems) {
+                    final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
+                    if (eam != null) {
+                        final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(), pi.getValue());
+                        if (pc != null) {
+                            pi.set(pc);
+                        }
+                    }
+                    if (!pi.isAuthenticated()) {
+                        isAuthenticated = false;
+                    }
+                    if (pi.wasSet()) {
+                        wasSet = true;
+                    }
+                }
 
-				final List<Object> elementManager = new ArrayList<>();
-				elementManager.add(es.getElementName());
-				elementManager.add(permissionItems);
-				elementManager.add(es.getSchemaElement().getSQLName());
-				elementManager.add((isAuthenticated) ? Boolean.TRUE : Boolean.FALSE);
-				elementManager.add((wasSet) ? Boolean.TRUE : Boolean.FALSE);
-				elementManager.add(es);
+                final List<Object> elementManager = new ArrayList<>();
+                elementManager.add(es.getElementName());
+                elementManager.add(permissionItems);
+                elementManager.add(es.getSchemaElement().getSQLName());
+                elementManager.add((isAuthenticated) ? Boolean.TRUE : Boolean.FALSE);
+                elementManager.add((wasSet) ? Boolean.TRUE : Boolean.FALSE);
+                elementManager.add(es);
 
-				if (permissionItems.size() > 0) {
-					_permissionItemsByLogin.put(login, elementManager);
-				}
-			}
-		}
+                if (permissionItems.size() > 0) {
+                    _permissionItemsByLogin.put(login, elementManager);
+                }
+            }
+        }
 
-		return ImmutableList.copyOf(_permissionItemsByLogin.get(login));
-	}
+        return ImmutableList.copyOf(_permissionItemsByLogin.get(login));
+    }
 
-	@Override
-	public Integer getPK() {
-		return pk;
-	}
+    @Override
+    public Integer getPK() {
+        return pk;
+    }
 
-    public Map<String,List<PermissionCriteriaI>> getAllPermissions() {
-		if (_permissionCriteriaByDataType.isEmpty()) {
-			for(final ElementAccessManager manager : getAccessManagers().values()) {
+    @Override
+    public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
+        if (!_permissionCriteriaByDataType.containsKey(type)) {
+            getAllPermissions();
+        }
+
+        return ImmutableList.copyOf(_permissionCriteriaByDataType.get(type));
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
+    @Override
+    public void setDisplayname(String displayName) {
+        this.displayName = displayName;
+    }
+
+    @Override
+    public void setPK(Integer pk) {
+        this.pk = pk;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(getId()).append("\n");
+        sb.append(getTag()).append("\n");
+
+        for (final ElementAccessManager eam : getAccessManagers().values()) {
+            sb.append(eam.toString()).append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    public List<String> getFeatures() {
+        return ImmutableList.copyOf(_features);
+    }
+
+    public List<String> getBlockedFeatures() {
+        return ImmutableList.copyOf(_blocked);
+    }
+
+    /**
+     * Gets the {@link XdatUsergroup} instance with which this object is associated.
+     *
+     * @return The associated {@link XdatUsergroup}.
+     */
+    public XdatUsergroup getUserGroupImpl() {
+        if (xdatGroup == null) {
+            return XdatUsergroup.getXdatUsergroupsById(id, Users.getAdminUser(), true);
+        } else {
+            return xdatGroup;
+        }
+    }
+
+    public void addPermission(String elementName, PermissionCriteriaI pc, UserI authenticatedUser) throws Exception {
+        XdatUsergroup xdatGroup = getSavedUserGroupImpl(authenticatedUser);
+
+        XdatElementAccess xea = null;
+        for (XdatElementAccess temp : xdatGroup.getElementAccess()) {
+            if (temp.getElementName().equals(elementName)) {
+                xea = temp;
+                break;
+            }
+        }
+
+        if (xea == null) {
+            xea = new XdatElementAccess(authenticatedUser);
+            xea.setElementName(elementName);
+            xdatGroup.setElementAccess(xea);
+        }
+
+        final XdatFieldMappingSet       fieldMappingSet;
+        final List<XdatFieldMappingSet> set = xea.getPermissions_allowSet();
+        if (set.size() == 0) {
+            fieldMappingSet = new XdatFieldMappingSet(authenticatedUser);
+            fieldMappingSet.setMethod("OR");
+            xea.setPermissions_allowSet(fieldMappingSet);
+        } else {
+            fieldMappingSet = set.get(0);
+        }
+
+
+        XdatFieldMapping xfm = null;
+
+        for (XdatFieldMapping t : fieldMappingSet.getAllow()) {
+            if (t.getField().equals(pc.getField()) && t.getFieldValue().equals(pc.getFieldValue())) {
+                xfm = t;
+                break;
+            }
+        }
+
+        if (xfm == null) {
+            xfm = new XdatFieldMapping(authenticatedUser);
+            xfm.setField(pc.getField());
+            xfm.setFieldValue((String) pc.getFieldValue());
+            fieldMappingSet.setAllow(xfm);
+        }
+
+        xfm.setCreateElement(pc.getCreate());
+        xfm.setReadElement(pc.getRead());
+        xfm.setEditElement(pc.getEdit());
+        xfm.setDeleteElement(pc.getDelete());
+        xfm.setActiveElement(pc.getActivate());
+        xfm.setComparisonType("equals");
+    }
+
+    public Map<String, List<PermissionCriteriaI>> getAllPermissions() {
+        if (_permissionCriteriaByDataType.isEmpty()) {
+            for (final ElementAccessManager manager : getAccessManagers().values()) {
                 final String element = manager.getElement();
                 for (final PermissionSetI permissions : manager.getPermissionSets()) {
                     if (permissions.isActive()) {
@@ -244,139 +304,208 @@ public class UserGroup implements UserGroupI{
                     }
                 }
             }
-		}
+        }
 
-		return Maps.transformValues(Multimaps.asMap(_permissionCriteriaByDataType), new Function<Collection<PermissionCriteriaI>, List<PermissionCriteriaI>>() {
-			@Override
-			public List<PermissionCriteriaI> apply(final Collection<PermissionCriteriaI> input) {
-				return new ArrayList<>(input);
-			}
-		});
+        return Maps.transformValues(Multimaps.asMap(_permissionCriteriaByDataType), new Function<Collection<PermissionCriteriaI>, List<PermissionCriteriaI>>() {
+            @Override
+            public List<PermissionCriteriaI> apply(final Collection<PermissionCriteriaI> input) {
+                return new ArrayList<>(input);
+            }
+        });
     }
 
+    @SuppressWarnings("unused")
+    public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field) {
+        final String compositeKey = formatTypeAndField(dataType, field);
+        if (!_permissionCriteriaByDataTypeAndField.containsKey(compositeKey)) {
+            getPermissionsByDataType(dataType);
+        }
 
-    public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
-    	if (!_permissionCriteriaByDataType.containsKey(type)) {
-    		getAllPermissions();
-		}
-
-        return ImmutableList.copyOf(_permissionCriteriaByDataType.get(type));
+        return _permissionCriteriaByDataTypeAndField.containsKey(compositeKey) ? ImmutableList.copyOf(_permissionCriteriaByDataTypeAndField.get(compositeKey)) : Collections.<PermissionCriteriaI>emptyList();
     }
 
-	@SuppressWarnings("unused")
-	public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field){
-		final String compositeKey = formatTypeAndField(dataType, field);
-		if (!_permissionCriteriaByDataTypeAndField.containsKey(compositeKey)) {
-			getPermissionsByDataType(dataType);
-		}
-
-		return _permissionCriteriaByDataTypeAndField.containsKey(compositeKey) ? ImmutableList.copyOf(_permissionCriteriaByDataTypeAndField.get(compositeKey)) : Collections.<PermissionCriteriaI>emptyList();
+    /**
+     * @return Returns a list of stored search objects
+     */
+    protected List<XdatStoredSearch> getStoredSearches() {
+        if (_storedSearches.isEmpty()) {
+            synchronized (_storedSearches) {
+                try {
+                    for (final XdatStoredSearch search : XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id)) {
+                        _storedSearches.put(search.getId(), search);
+                    }
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            }
+        }
+        return ImmutableList.copyOf(_storedSearches.values());
     }
 
-	@Override
-	public void setId(String id) {
-		this.id=id;
-	}
-
-	@Override
-	public void setTag(String tag) {
-		this.tag=tag;
-	}
-
-	@Override
-	public void setDisplayname(String displayName) {
-		this.displayName=displayName;
-	}
-
-	@Override
-	public void setPK(Integer pk) {
-		this.pk=pk;
-	}
-	
-    public void addPermission(String elementName,PermissionCriteriaI pc, UserI authenticatedUser) throws Exception
-    {
-    	XdatUsergroup xdatGroup=getSavedUserGroupImpl(authenticatedUser);
-    	
-    	XdatElementAccess xea = null;
-		for(XdatElementAccess temp:xdatGroup.getElementAccess()){
-			if(temp.getElementName().equals(elementName)){
-				xea=temp;
-				break;
-			}
-		}
-		
-		if(xea==null){
-			xea=new XdatElementAccess(authenticatedUser);
-			xea.setElementName(elementName);
-			xdatGroup.setElementAccess(xea);
-		}
-		
-		final XdatFieldMappingSet fieldMappingSet;
-		final List<XdatFieldMappingSet> set=xea.getPermissions_allowSet();
-		if(set.size()==0){
-			fieldMappingSet = new XdatFieldMappingSet(authenticatedUser);
-			fieldMappingSet.setMethod("OR");
-			xea.setPermissions_allowSet(fieldMappingSet);
-		}else{
-			fieldMappingSet=set.get(0);
-		}
-		
-		
-		XdatFieldMapping xfm=null;
-		
-		for(XdatFieldMapping t:fieldMappingSet.getAllow()){
-			if(t.getField().equals(pc.getField()) && t.getFieldValue().equals(pc.getFieldValue())){
-				xfm=t;
-				break;
-			}
-		}
-		
-		if(xfm==null){
-			xfm=new XdatFieldMapping(authenticatedUser);
-			xfm.setField(pc.getField());
-			xfm.setFieldValue((String)pc.getFieldValue());
-			fieldMappingSet.setAllow(xfm);
-		}
-		
-		xfm.setCreateElement(pc.getCreate());
-		xfm.setReadElement(pc.getRead());
-		xfm.setEditElement(pc.getEdit());
-		xfm.setDeleteElement(pc.getDelete());
-		xfm.setActiveElement(pc.getActivate());
-		xfm.setComparisonType("equals");
-    }
-    
-    public List<String> getFeatures(){
-    	return ImmutableList.copyOf(_features);
-    }
-    
-    public List<String> getBlockedFeatures(){
-    	return ImmutableList.copyOf(blocked);
+    /**
+     * Retrieves the stored search associated with the submitted ID.
+     *
+     * @param id The ID of the stored search to retrieve.
+     *
+     * @return Returns the stored search for the given ID
+     */
+    protected XdatStoredSearch getStoredSearch(String id) {
+        if (_storedSearches.isEmpty()) {
+            getStoredSearches();
+        }
+        return _storedSearches.get(id);
     }
 
-	private GroupFeatureService getGroupFeatureService() {
-    	if (_groupFeatureService == null) {
-			_groupFeatureService = XDAT.getContextService().getBean(GroupFeatureService.class);
-    	}
-		return _groupFeatureService;
-	}
+    protected void replacePreLoadedSearch(final XdatStoredSearch search) {
+        try {
+            final String id = search.getStringProperty("ID");
+            _storedSearches.put(id, search);
+        } catch (ElementNotFoundException | FieldNotFoundException e) {
+            log.error("", e);
+        }
+    }
 
-	private static String formatTypeAndField(final String type, final String field) {
-		return type + "/" + field;
-	}
+    protected synchronized Map<String, ElementAccessManager> getAccessManagers() {
+        if (_accessManagers.isEmpty()) {
+            try {
+                init(getUserGroupImpl());
+            } catch (Exception e) {
+                log.error("", e);
+            }
+        }
+        return _accessManagers;
+    }
 
-	private String        id          = null;
-	private Integer       pk          = null;
-	private String        tag         = null;
-	private String        displayName = null;
-	private XdatUsergroup xdatGroup   = null;
-	private GroupFeatureService _groupFeatureService;
+    private synchronized void init(final XdatUsergroup group) throws Exception {
+        init(group, null);
+    }
 
-	private final Map<String, ElementAccessManager>     accessManagers                        = new HashMap<>();
-	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
-	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
-	private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
-	private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
-	private final List<String>                          _features                             = new ArrayList<>();
-	private final List<String>                          blocked                               = new ArrayList<>();
+    private synchronized void init(final XdatUsergroup group, final NamedParameterJdbcTemplate template) throws Exception {
+        id = group.getId();
+        pk = group.getXdatUsergroupId();
+        displayName = group.getDisplayname();
+
+        final ItemI item = group.getItem();
+
+        if (item == null) {
+            log.info("Tried to init() a user group that doesn't have an item set yet. This might mean it's being created.");
+            return;
+        }
+
+        tag = item.getStringProperty("tag");
+
+        if (template == null) {
+            initializeAccessManagers(item);
+        } else {
+            initializeAccessManagers(template);
+        }
+
+        initializeFeatures();
+    }
+
+    private synchronized void init(final String id, final NamedParameterJdbcTemplate template) throws ItemNotFoundException {
+        try {
+            final Map<String, Object> parameters = template.queryForMap(QUERY_GROUP_ATTRIBUTES, new MapSqlParameterSource("id", id));
+
+            this.id = id;
+            pk = (Integer) parameters.get("xdat_usergroup_id");
+            displayName = (String) parameters.get("displayname");
+            tag = (String) parameters.get("tag");
+
+            initializeAccessManagers(template);
+            initializeFeatures();
+        } catch (EmptyResultDataAccessException e) {
+            log.info("Someone tried to retrieve a group with the ID {}, but that doesn't seem to exist.", id);
+            throw new ItemNotFoundException(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
+        }
+    }
+
+    private void initializeAccessManagers(final NamedParameterJdbcTemplate template) {
+        _accessManagers.putAll(ElementAccessManager.initialize(template, QUERY_ELEMENT_ACCESS, new MapSqlParameterSource("xdatUsergroupId", pk)));
+    }
+
+    private void initializeAccessManagers(final ItemI item) throws Exception {
+        final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
+        if (childItems != null) {
+            for (final ItemI childItem : childItems) {
+                final ElementAccessManager elementAccessManager = new ElementAccessManager(childItem);
+                _accessManagers.put(elementAccessManager.getElement(), elementAccessManager);
+            }
+        }
+    }
+
+    private void initializeFeatures() {
+        final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
+        if (features != null) {
+            for (final GroupFeature feature : features) {
+                if (feature.isBlocked()) {
+                    _blocked.add(feature.getFeature());
+                } else if (feature.isOnByDefault()) {
+                    _features.add(feature.getFeature());
+                }
+            }
+        }
+    }
+
+    private XdatUsergroup getSavedUserGroupImpl(UserI user) {
+        if (xdatGroup == null) {
+            xdatGroup = XdatUsergroup.getXdatUsergroupsById(id, user, true);
+
+            if (xdatGroup == null) {
+                xdatGroup = new XdatUsergroup(user);
+                xdatGroup.setId(getId());
+                xdatGroup.setTag(getTag());
+                xdatGroup.setDisplayname(getDisplayname());
+            }
+        }
+        return xdatGroup;
+    }
+
+    private GroupFeatureService getGroupFeatureService() {
+        if (_groupFeatureService == null) {
+            _groupFeatureService = XDAT.getContextService().getBean(GroupFeatureService.class);
+        }
+        return _groupFeatureService;
+    }
+
+    private static String formatTypeAndField(final String type, final String field) {
+        return type + "/" + field;
+    }
+
+    private static final String QUERY_GROUP_ATTRIBUTES = "SELECT xdat_usergroup_id, displayname, tag FROM xdat_usergroup WHERE id = :id";
+    private static final String QUERY_ELEMENT_ACCESS   = "SELECT " +
+                                                         "  xea.element_name    AS element_name, " +
+                                                         "  xeamd.status        AS active_status, " +
+                                                         "  xfms.method         AS method, " +
+                                                         "  xfm.field           AS field, " +
+                                                         "  xfm.field_value     AS field_value, " +
+                                                         "  xfm.comparison_type AS comparison_type, " +
+                                                         "  xfm.read_element    AS read_element, " +
+                                                         "  xfm.edit_element    AS edit_element, " +
+                                                         "  xfm.create_element  AS create_element, " +
+                                                         "  xfm.delete_element  AS delete_element, " +
+                                                         "  xfm.active_element  AS active_element " +
+                                                         "FROM xdat_usergroup usergroup " +
+                                                         "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                         "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                         "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                         "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                         "WHERE " +
+                                                         "  usergroup.xdat_usergroup_id = :xdatUsergroupId " +
+                                                         "ORDER BY element_name, field";
+
+    private String              id          = null;
+    private Integer             pk          = null;
+    private String              tag         = null;
+    private String              displayName = null;
+    private XdatUsergroup       xdatGroup   = null;
+    private GroupFeatureService _groupFeatureService;
+
+    private final Map<String, ElementAccessManager>     _accessManagers                       = new HashMap<>();
+    private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+    private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+    private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
+    private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
+    private final List<String>                          _features                             = new ArrayList<>();
+    private final List<String>                          _blocked                              = new ArrayList<>();
 }

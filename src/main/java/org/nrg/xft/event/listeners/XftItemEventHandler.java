@@ -1,5 +1,7 @@
 package org.nrg.xft.event.listeners;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.methods.XftItemEventHandlerMethod;
@@ -10,6 +12,7 @@ import reactor.bus.EventBus;
 import reactor.bus.selector.Selectors;
 import reactor.fn.Consumer;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +33,13 @@ public class XftItemEventHandler implements Consumer<Event<XftItemEvent>> {
     @Override
     public void accept(final Event<XftItemEvent> event) {
         final XftItemEvent xftItemEvent = event.getData();
+        log.debug("Accepted XFTItem event: {}", xftItemEvent.toString());
+
         final List<XftItemEventHandlerMethod> methods = getMethodsForEvent(xftItemEvent);
+        log.debug("Found {} methods to handle XFTItem event '{}'", methods.size(), xftItemEvent);
+
         for (final XftItemEventHandlerMethod method : methods) {
+            log.debug("Handling XFTItem event {} with method {}", xftItemEvent, method.getClass().getName());
             method.handleEvent(xftItemEvent);
         }
     }
@@ -43,17 +51,24 @@ public class XftItemEventHandler implements Consumer<Event<XftItemEvent>> {
      */
     @Autowired
     public void setMethods(final List<XftItemEventHandlerMethod> methods) {
+        log.debug("A total of {} XFTItem event handler methods were found", methods.size());
         _methods.addAll(methods);
     }
 
+    /**
+     * Returns all configured methods that match the submitted event.
+     *
+     * @param event The event to test.
+     *
+     * @return The list of methods that match the event.
+     */
     private List<XftItemEventHandlerMethod> getMethodsForEvent(final XftItemEvent event) {
-        final List<XftItemEventHandlerMethod> resolved = new ArrayList<>();
-        for (final XftItemEventHandlerMethod method : _methods) {
-            if (method.matches(event)) {
-                resolved.add(method);
+        return FluentIterable.from(_methods).filter(new Predicate<XftItemEventHandlerMethod>() {
+            @Override
+            public boolean apply(@Nullable final XftItemEventHandlerMethod method) {
+                return method != null && method.matches(event);
             }
-        }
-        return resolved;
+        }).toList();
     }
 
     private final List<XftItemEventHandlerMethod> _methods = new ArrayList<>();

@@ -10,12 +10,14 @@
 
 package org.nrg.xft.security;
 
+import com.google.common.base.Function;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xft.exception.MetaDataException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
@@ -61,6 +63,14 @@ public interface UserI extends UserDetails,Serializable{
 
     UserAuthI setAuthorization(UserAuthI newUserAuth);
     UserAuthI getAuthorization();
+
+    Function<UserI, String> USERI_TO_USERNAME = new Function<UserI, String>() {
+        @Nullable
+        @Override
+        public String apply(final UserI user) {
+            return user.getUsername();
+        }
+    };
 }
 
 

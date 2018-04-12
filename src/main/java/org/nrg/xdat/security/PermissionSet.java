@@ -11,8 +11,11 @@
 package org.nrg.xdat.security;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
+import com.google.common.base.Function;
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
@@ -22,23 +25,32 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
+
+import javax.annotation.Nullable;
+
 /**
  * @author Tim
  *
  */
 public class PermissionSet implements PermissionSetI{
-    static org.apache.log4j.Logger logger = Logger.getLogger(PermissionSet.class);
-	List<PermissionCriteriaI> permCriteria = null;
-	List<PermissionSetI> permSets = null;
-	private String method=null;
+	private final List<PermissionCriteriaI> permCriteria = new ArrayList<>();
+	private final List<PermissionSetI> permSets = new ArrayList<>();
+	private final String method;
 	
-	public PermissionSet(String elementName, ItemI i) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
-	{
-		this.setMethod(i.getStringProperty("method"));
-		
-		permCriteria = new ArrayList<PermissionCriteriaI>();
-		permSets = new ArrayList<PermissionSetI>();
-		
+	public PermissionSet(final String elementName, final List<Map<String, Object>> propertySets) {
+		// Method is the same across the property sets.
+		method = (String) propertySets.get(0).get("method");
+		permCriteria.addAll(Lists.transform(propertySets, new Function<Map<String,Object>, PermissionCriteriaI>() {
+			@Override
+			public PermissionCriteriaI apply(final Map<String, Object> propertySet) {
+				return new PermissionCriteria(elementName, propertySet);
+			}
+		}));
+	}
+
+	public PermissionSet(String elementName, ItemI i) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception {
+		method = i.getStringProperty("method");
+
 		for (ItemI sub:i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.allow"))
 		{
 			permCriteria.add(new PermissionCriteria(elementName,sub));
@@ -65,11 +77,6 @@ public class PermissionSet implements PermissionSetI{
 	public String getMethod()
 	{
 		return method;
-	}
-	
-	public void setMethod(String m)
-	{
-		method= XftStringUtils.intern(m);
 	}
 	
 	/* (non-Javadoc)

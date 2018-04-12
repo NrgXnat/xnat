@@ -12,6 +12,7 @@ package org.nrg.xdat.security;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -43,9 +44,9 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -61,29 +62,10 @@ import static org.nrg.xdat.security.SecurityManager.*;
  * @author Tim
  */
 @SuppressWarnings({"unchecked"})
+@Slf4j
 public class XDATUser extends XdatUser implements UserI, Serializable {
-    private static final long   serialVersionUID = -8144623503683531831L;
-    private static final Logger logger           = LoggerFactory.getLogger(XDATUser.class);
-
-    private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
-    private static final SimpleGrantedAuthority AUTHORITY_ADMIN     = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority AUTHORITY_USER      = new SimpleGrantedAuthority("ROLE_USER");
-
-    private       Hashtable<String, ElementAccessManager> accessManagers             = null;
-    private       boolean                                 extended                   = false;
-    private final Set<String>                             roleNames                  = new HashSet<>();
-    private       boolean                                 rolesNotUpdatedFromService = true;
-    private       ArrayList<XdatStoredSearch>             stored_searches            = null;
-
-    private final List<ElementDisplay> _searchableElementDisplays = new ArrayList<>();
-
-    private long startTime = Calendar.getInstance().getTimeInMillis();
-
-    private       UserAuthI             _authorization;
-    private final Set<GrantedAuthority> _authorities = new HashSet<>();
-
     /**
-     * DO NOT USE THIS.  IT is only for use in unit testings.  Use XDATUser(login).
+     * DO NOT USE THIS.  IT is primarily for use in unit testings.  Use XDATUser(login).
      */
     public XDATUser() {
     }
@@ -188,17 +170,25 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public synchronized void init() throws Exception {
-        final long startTime = Calendar.getInstance().getTimeInMillis();
-        accessManagers = new Hashtable<>();
+        init(null);
+    }
 
-        for (final Object o : this.getChildItems(SCHEMA_ELEMENT_NAME + ".element_access")) {
-            final ItemI                sub = (ItemI) o;
-            final ElementAccessManager eam = new ElementAccessManager(sub);
-            accessManagers.put(eam.getElement(), eam);
+    public synchronized void init(final NamedParameterJdbcTemplate template) throws Exception {
+        final long startTime = Calendar.getInstance().getTimeInMillis();
+        _accessManagers.clear();
+
+        if (template == null) {
+            for (final Object o : this.getChildItems(SCHEMA_ELEMENT_NAME + ".element_access")) {
+                final ItemI                sub = (ItemI) o;
+                final ElementAccessManager eam = new ElementAccessManager(sub);
+                _accessManagers.put(eam.getElement(), eam);
+            }
+        } else {
+            _accessManagers.putAll(ElementAccessManager.initialize(template, QUERY_USER_PERMISSIONS, new MapSqlParameterSource("userId", getXdatUserId())));
         }
 
-        this.stored_searches = null;
-        this.clearLocalCache();
+        _storedSearches.clear();
+        clearLocalCache();
 
         if (XFT.VERBOSE) {
             System.out.println("User Init(" + this.getUsername() + "): " + (Calendar.getInstance().getTimeInMillis() - startTime) + "ms");
@@ -230,10 +220,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return (String) getProperty("login");
         } catch (ElementNotFoundException e) {
-            logger.error("Element '{}' not found", e.ELEMENT, e);
+            log.error("Element '{}' not found", e.ELEMENT, e);
             return null;
         } catch (FieldNotFoundException e) {
-            logger.error("Field '{}' not found", e.FIELD, e);
+            log.error("Field '{}' not found", e.FIELD, e);
             return null;
         }
     }
@@ -247,7 +237,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getFirstname();
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -261,7 +251,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getLastname();
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -275,7 +265,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getEmail();
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -290,9 +280,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getIntegerProperty("xdat_user_id");
         } catch (ElementNotFoundException e) {
-            logger.error("Element '{}' not found", e.ELEMENT, e);
+            log.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("Field '{}' not found", e.FIELD, e);
+            log.error("Field '{}' not found", e.FIELD, e);
         }
         return null;
     }
@@ -378,10 +368,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected Map<String, ElementAccessManager> getAccessManagers() throws Exception {
-        if (this.accessManagers == null) {
-            this.init();
+        if (_accessManagers.isEmpty()) {
+            init();
         }
-        return this.accessManagers;
+        return _accessManagers;
     }
 
     /**
@@ -506,7 +496,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 r.add(sub.getStringProperty("role_name"));
             }
         } catch (Throwable e) {
-            logger.info("Error loading roles from old role store. Will use role service instead.");
+            log.info("Error loading roles from old role store. Will use role service instead.");
         }
 
         try {
@@ -523,13 +513,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                     rolesNotUpdatedFromService = false;
                 } else {
-                    logger.error("skipping user role service review... service is null");
+                    log.error("skipping user role service review... service is null");
                 }
             } catch (NoSuchBeanDefinitionException e) {
-                logger.warn("Unable to update roles for user " + getUsername() + " due to not finding the user role service. Will mark as incomplete.");
+                log.warn("Unable to update roles for user " + getUsername() + " due to not finding the user role service. Will mark as incomplete.");
             }
         } catch (Throwable e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
         }
 
         return r;
@@ -541,14 +531,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return A list of the available system roles.
      */
     public List<String> getRoleNames() {
-        if (roleNames.size() == 0 || rolesNotUpdatedFromService) {
+        if (_roleNames.size() == 0 || rolesNotUpdatedFromService) {
             try {
-                roleNames.addAll(loadRoleNames());
+                _roleNames.addAll(loadRoleNames());
             } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
         }
-        return ImmutableList.copyOf(roleNames);
+        return ImmutableList.copyOf(_roleNames);
     }
 
     /**
@@ -608,11 +598,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             });
             return elementDisplays;
         } catch (ElementNotFoundException e) {
-            logger.error("Element '{}' not found", e.ELEMENT, e);
+            log.error("Element '{}' not found", e.ELEMENT, e);
         } catch (XFTInitException e) {
-            logger.error("There was an error initializing or accessing XFT", e);
+            log.error("There was an error initializing or accessing XFT", e);
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
         }
         return Collections.emptyList();
     }
@@ -641,11 +631,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("Element '{}' not found", e.ELEMENT, e);
+                log.error("Element '{}' not found", e.ELEMENT, e);
             } catch (XFTInitException e) {
-                logger.error("There was an error initializing or accessing XFT", e);
+                log.error("There was an error initializing or accessing XFT", e);
             } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
             Collections.sort(_searchableElementDisplays, comp);
         }
@@ -659,29 +649,28 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return A list of the available stored searches.
      */
     protected List<XdatStoredSearch> getStoredSearches() {
-        if (this.stored_searches == null) {
+        if (_storedSearches.isEmpty()) {
             try {
-                stored_searches = XdatStoredSearch.GetPreLoadedSearchesByAllowedUser(this.getLogin());
-
+                _storedSearches.addAll(XdatStoredSearch.GetPreLoadedSearchesByAllowedUser(getLogin()));
             } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
         }
-        return stored_searches;
+        return _storedSearches;
     }
 
     protected void replacePreLoadedSearch(XdatStoredSearch i) {
         try {
             ItemI old = getStoredSearch(i.getStringProperty("ID"));
             if (old != null) {
-                stored_searches.remove(old);
+                _storedSearches.remove(old);
             }
         } catch (ElementNotFoundException e) {
-            logger.error("Element '{}' not found", e.ELEMENT, e);
+            log.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("Field '{}' not found", e.FIELD, e);
+            log.error("Field '{}' not found", e.FIELD, e);
         }
-        stored_searches.add(i);
+        _storedSearches.add(i);
     }
 
     /**
@@ -700,43 +689,26 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         } catch (ElementNotFoundException e) {
-            logger.error("Element '{}' not found", e.ELEMENT, e);
+            log.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("Field '{}' not found", e.FIELD, e);
+            log.error("Field '{}' not found", e.FIELD, e);
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
         }
         return null;
     }
 
-
+    /**
+     * This delegates to the {@link GroupsAndPermissionsCache} implementation.
+     *
+     * @return The groups to which the user belongs.
+     */
     public Map<String, UserGroupI> getGroups() {
         try {
-            final Map<String, UserGroupI> groups = getCache().getGroupsForUser(getUsername());
-            if (!groups.isEmpty()) {
-                return groups;
-            }
+            return getCache().getGroupsForUser(getUsername());
         } catch (UserNotFoundException e) {
-            // This is not meaningful here.
+            return Collections.emptyMap();
         }
-
-        try {
-            final Map<String, UserGroupI> groups   = new HashMap<>();
-            final XFTTable                table    = XFTTable.Execute("SELECT groupid FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id = " + getXdatUserId(), getDBName(), getLogin());
-            final List<String>            groupIds = table.convertColumnToArrayList("groupid");
-
-            for (final String groupId : groupIds) {
-                final UserGroupI group = Groups.getGroup(groupId);
-                if (group != null) {
-                    groups.put(groupId, group);
-                }
-            }
-            return ImmutableMap.copyOf(groups);
-        } catch (SQLException | DBPoolException e) {
-            logger.error("An error occurred trying to get groups for the user " + getUsername(), e);
-        }
-
-        return Collections.emptyMap();
     }
 
     protected Date getPreviousLogin() throws SQLException, Exception {
@@ -816,7 +788,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
 
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
         }
         return results;
     }
@@ -830,10 +802,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return t.toArrayListOfLists();
     }
 
-    private Hashtable<String, ArrayList<ItemI>> userSessionCache = new Hashtable<>();
-
     protected ArrayList<ItemI> getCachedItems(String elementName, String security_permission, boolean preLoad) {
-        if (!userSessionCache.containsKey(elementName + security_permission + preLoad)) {
+        if (!_userSessionCache.containsKey(elementName + security_permission + preLoad)) {
             ItemSearch       search = new ItemSearch();
             ArrayList<ItemI> items  = new ArrayList<>();
             try {
@@ -858,26 +828,26 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
 
-                userSessionCache.put(elementName + security_permission + preLoad, items);
+                _userSessionCache.put(elementName + security_permission + preLoad, items);
             } catch (ElementNotFoundException e) {
-                logger.error("Element '{}' not found", e.ELEMENT, e);
+                log.error("Element '{}' not found", e.ELEMENT, e);
             } catch (IllegalAccessException e) {
-                logger.error("An error occurred trying to access an object", e);
+                log.error("An error occurred trying to access an object", e);
             } catch (MetaDataException e) {
-                logger.error("An error occurred trying to read XFT metadata", e);
+                log.error("An error occurred trying to read XFT metadata", e);
             } catch (Throwable e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
         }
 
-        return userSessionCache.get(elementName + security_permission + preLoad);
+        return _userSessionCache.get(elementName + security_permission + preLoad);
     }
 
     protected void clearLocalCache() {
-        userSessionCache = new Hashtable<>();
-        total_counts = null;
+        _userSessionCache.clear();
+        _totalCounts.clear();
         _permissionCriteria.clear();
-        _editableProjects = null;
+        _editableProjects.clear();
         _isSiteAdmin = null;
     }
 
@@ -885,32 +855,27 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getCache().getReadableCounts(this);
     }
 
-    Map total_counts = null;
-
     protected Map<String, Long> getTotalCounts() {
-        if (total_counts == null) {
+        if (_totalCounts.isEmpty()) {
             try {
-                total_counts = new Hashtable<>();
+                final Long projectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_projectData", "count", this.getDBName(), this.getUsername());
+                _totalCounts.put("xnat:projectData", projectCount);
 
-                Long proj_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_projectData", "count", this.getDBName(), this.getUsername());
-                total_counts.put("xnat:projectData", proj_count);
+                final Long subjectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_subjectData", "count", this.getDBName(), this.getUsername());
+                _totalCounts.put("xnat:subjectData", subjectCount);
 
-                Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_subjectData", "count", this.getDBName(), this.getUsername());
-                total_counts.put("xnat:subjectData", sub_count);
-
-                XFTTable t = XFTTable.Execute("SELECT element_name, COUNT(ID) FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
-
-                total_counts.putAll(t.convertToHashtable("element_name", "count"));
+                final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(ID) FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
+                _totalCounts.putAll(table.convertToMap("element_name", "count", String.class, Long.class));
             } catch (SQLException e) {
-                logger.error("An error occurred running an SQL query: [{}] {}", e.getErrorCode(), e.getSQLState(), e);
+                log.error("An error occurred running an SQL query: [{}] {}", e.getErrorCode(), e.getSQLState(), e);
             } catch (DBPoolException e) {
-                logger.error("An error occurred accessing the database", e);
+                log.error("An error occurred accessing the database", e);
             } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
         }
 
-        return total_counts;
+        return _totalCounts;
     }
 
     protected ArrayList<ItemI> getCachedItemsByFieldValue(String elementName, String security_permission, boolean preLoad, String field, Object value) {
@@ -926,11 +891,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         }
                     }
                 } catch (XFTInitException e) {
-                    logger.error("There was an error initializing or accessing XFT", e);
+                    log.error("There was an error initializing or accessing XFT", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("Element '{}' not found", e.ELEMENT, e);
+                    log.error("Element '{}' not found", e.ELEMENT, e);
                 } catch (FieldNotFoundException e) {
-                    logger.error("Field '{}' not found", e.FIELD, e);
+                    log.error("Field '{}' not found", e.FIELD, e);
                 }
             }
         }
@@ -953,11 +918,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                     hash.put(id, value);
                 } catch (XFTInitException e) {
-                    logger.error("There was an error initializing or accessing XFT", e);
+                    log.error("There was an error initializing or accessing XFT", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("Element '{}' not found", e.ELEMENT, e);
+                    log.error("Element '{}' not found", e.ELEMENT, e);
                 } catch (FieldNotFoundException e) {
-                    logger.error("Field '{}' not found", e.FIELD, e);
+                    log.error("Field '{}' not found", e.FIELD, e);
                 }
             }
         }
@@ -979,9 +944,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 if (elementAccessManager != null) {
                     final List<PermissionCriteriaI> criteria = elementAccessManager.getCriteria();
                     _permissionCriteria.get(type).addAll(criteria);
-                    logger.info("Found {} criteria from the element access manager for data type {}", criteria.size(), type);
+                    log.info("Found {} criteria from the element access manager for data type {}", criteria.size(), type);
                 } else {
-                    logger.info("Couldn't find an element access manager for data type {}", type);
+                    log.info("Couldn't find an element access manager for data type {}", type);
                 }
 
                 try {
@@ -990,13 +955,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     return null;
                 }
             } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
+                log.error("An unknown error occurred", e);
             }
 
             final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(this);
             final Set<String>             groupIds   = userGroups.keySet();
-            if (logger.isInfoEnabled()) {
-                logger.info("Found {} user groups for the user {}: {}", groupIds.size(), getUsername(), Joiner.on(", ").join(groupIds));
+            if (log.isInfoEnabled()) {
+                log.info("Found {} user groups for the user {}: {}", groupIds.size(), getUsername(), Joiner.on(", ").join(groupIds));
             }
 
             for (final String groupId : groupIds) {
@@ -1004,15 +969,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 if (group != null) {
                     final List<PermissionCriteriaI> permissions = group.getPermissionsByDataType(type);
                     if (permissions != null) {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Searched for permission criteria for user {} on type {} in group {}: {}", getUsername(), type, groupId, dumpCriteriaList(permissions));
+                        if (log.isInfoEnabled()) {
+                            log.info("Searched for permission criteria for user {} on type {} in group {}: {}", getUsername(), type, groupId, dumpCriteriaList(permissions));
                         }
                         _permissionCriteria.get(type).addAll(permissions);
                     } else {
-                        logger.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", type, getUsername(), groupId);
+                        log.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", type, getUsername(), groupId);
                     }
                 } else {
-                    logger.warn("Tried to retrieve group {} for user {}, but this returned null.", groupId, getUsername());
+                    log.warn("Tried to retrieve group {} for user {}, but this returned null.", groupId, getUsername());
                 }
             }
 
@@ -1021,25 +986,25 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     final UserI                     guest       = Users.getGuest();
                     final List<PermissionCriteriaI> permissions = ((XDATUser) guest).getPermissionsByDataType(type);
                     if (permissions != null) {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Searched for permission criteria from guest for user {} on type {}: {}", getUsername(), type, dumpCriteriaList(permissions));
+                        if (log.isInfoEnabled()) {
+                            log.info("Searched for permission criteria from guest for user {} on type {}: {}", getUsername(), type, dumpCriteriaList(permissions));
                         }
                         _permissionCriteria.get(type).addAll(permissions);
                     } else {
-                        logger.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", type);
+                        log.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", type);
                     }
                 } catch (Exception e) {
-                    logger.error("An error occurred trying to retrieve the guest user", e);
+                    log.error("An error occurred trying to retrieve the guest user", e);
                 }
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Retrieved permission criteria for user {} on the data type {}: {}", getUsername(), type, dumpCriteriaList(_permissionCriteria.get(type)));
+            if (log.isInfoEnabled()) {
+                log.info("Retrieved permission criteria for user {} on the data type {}: {}", getUsername(), type, dumpCriteriaList(_permissionCriteria.get(type)));
             }
         } else {
-            if (logger.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 final Collection<PermissionCriteriaI> permissionCriteria = _permissionCriteria.get(type);
-                logger.debug("Found {} cached criteria for the type {} in user {}", permissionCriteria.size(), type, getUsername(), dumpCriteriaList(permissionCriteria));
+                log.debug("Found {} cached criteria for the type {} in user {}", permissionCriteria.size(), type, getUsername(), dumpCriteriaList(permissionCriteria));
             }
         }
 
@@ -1054,7 +1019,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _authorization;
     }
 
-    public UserAuthI setAuthorization(UserAuthI auth) {
+    public UserAuthI setAuthorization(final UserAuthI auth) {
         return _authorization = auth;
     }
 
@@ -1069,7 +1034,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
                 _authorities.add(AUTHORITY_USER);
             }
-            List<String> groups = Groups.getGroupIdsForUser(this);
+            final List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {
                 for (String group : groups) {
                     if (group != null) {
@@ -1077,9 +1042,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("Created granted authorities list for user " + getLogin() + ": " + Joiner.on(", ").join(_authorities));
-            }
+            log.debug("Created granted authorities list for user {}: {}", getUsername(), Joiner.on(", ").join(_authorities));
         }
         return ImmutableSet.copyOf(_authorities);
     }
@@ -1132,7 +1095,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         } catch (Exception e) {
-            logger.error("An unknown error occurred", e);
+            log.error("An unknown error occurred", e);
         }
 
         return false;
@@ -1201,8 +1164,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     }
 
-    private List<String> _editableProjects;
-
     protected boolean hasAccessTo(final String projectId) throws Exception {
         return Roles.isSiteAdmin(this) || getAccessibleProjects().contains(projectId);
     }
@@ -1215,8 +1176,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<String> getAccessibleProjects() throws Exception {
-        if (_editableProjects == null) {
-            _editableProjects = new ArrayList<>();
+        if (_editableProjects.isEmpty()) {
             for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
                 if (_editableProjects.contains(id)) {
@@ -1227,7 +1187,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         _editableProjects.add(id);
                     }
                 } catch (Exception e) {
-                    logger.error("Exception caught testing prearchive access", e);
+                    log.error("Exception caught testing prearchive access", e);
                 }
             }
             // if the user is an admin also add unassigned projects
@@ -1254,7 +1214,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.warn("Couldn't find schema element '{}' for secure element '{}', was it removed from the system?", e.ELEMENT, secureElement.getElementName());
+                log.warn("Couldn't find schema element '{}' for secure element '{}', was it removed from the system?", e.ELEMENT, secureElement.getElementName());
             }
         }
         return false;
@@ -1306,7 +1266,46 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     };
 
+    private static final long   serialVersionUID = -8144623503683531831L;
+
+    private static final String QUERY_USER_PERMISSIONS = "SELECT " +
+                                                          "  xea.element_name    AS element_name, " +
+                                                          "  xeamd.status        AS active_status, " +
+                                                          "  xfms.method         AS method, " +
+                                                          "  xfm.field           AS field, " +
+                                                          "  xfm.field_value     AS field_value, " +
+                                                          "  xfm.comparison_type AS comparison_type, " +
+                                                          "  xfm.read_element    AS can_read, " +
+                                                          "  xfm.edit_element    AS can_edit, " +
+                                                          "  xfm.create_element  AS can_create, " +
+                                                          "  xfm.delete_element  AS can_delete, " +
+                                                          "  xfm.active_element  AS can_active " +
+                                                          "FROM xdat_user u " +
+                                                          "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
+                                                          "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                          "WHERE " +
+                                                          "  u.xdat_user_id = :userId";
+
+    private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+    private static final SimpleGrantedAuthority AUTHORITY_ADMIN     = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority AUTHORITY_USER      = new SimpleGrantedAuthority("ROLE_USER");
+
+    private final Map<String, ElementAccessManager> _accessManagers            = new HashMap<>();
+    private final Set<String>                       _roleNames                 = new HashSet<>();
+    private final List<XdatStoredSearch>            _storedSearches            = new ArrayList<>();
+    private final List<ElementDisplay>              _searchableElementDisplays = new ArrayList<>();
+    private final Set<GrantedAuthority>             _authorities               = new HashSet<>();
+    private final Map<String, Long>                 _totalCounts               = new HashMap<>();
+    private final List<String>                      _editableProjects          = new ArrayList<>();
+    private final Map<String, ArrayList<ItemI>>     _userSessionCache          = new HashMap<>();
     private final Multimap<String, PermissionCriteriaI> _permissionCriteria = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+
+    private boolean   extended                   = false;
+    private boolean   rolesNotUpdatedFromService = true;
+    private long      startTime                  = Calendar.getInstance().getTimeInMillis();
+    private UserAuthI _authorization = null;
 
     private GroupsAndPermissionsCache _cache       = null;
     private Boolean                   _isSiteAdmin = null;

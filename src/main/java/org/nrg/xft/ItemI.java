@@ -9,19 +9,8 @@
 
 package org.nrg.xft;
 
-import java.io.ByteArrayOutputStream;
-import java.io.Externalizable;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.MetaDataException;
@@ -31,6 +20,15 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.Externalizable;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
 
 /**
  * @author Tim

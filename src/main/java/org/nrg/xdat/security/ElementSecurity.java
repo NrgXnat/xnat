@@ -10,13 +10,16 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.beans.XnatDataModelBean;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
@@ -53,10 +56,9 @@ import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.io.IOException;
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
@@ -67,38 +69,27 @@ import java.util.*;
 @SuppressWarnings("serial")
 @Slf4j
 public class ElementSecurity extends ItemWrapper {
-    private static final String                             XDAT_ELEMENT_SECURITY = "xdat:element_security";
-    public static final  String                             SCHEMA_ELEMENT_NAME   = XDAT_ELEMENT_SECURITY;
-    public static        Hashtable<String, ElementSecurity> elements              = null;
-    public static        Hashtable                          elementDistinctIds    = new Hashtable(); //Hashtable of Hashtables /level 1 key=elementName /level2 key=fieldName (or default if ref)/Level 3 key= pk value ,value=display name
-
-    private String                                      elementName           = null;
-    private ArrayList<String>                           primarySecurityFields = new ArrayList<>();
-    private ArrayList<ElementAction>                    elementActions        = new ArrayList<>();
-    private ArrayList<XdatElementSecurityListingAction> listingActions        = new ArrayList<>();
-
-    private static final Object lock = new Object();
+    public static final String SCHEMA_ELEMENT_NAME = "xdat:element_security";
 
     public ElementSecurity() {
     }
 
     /**
      * Retrieves the system's element security objects.
+     *
      * @return The map of element security objects.
+     *
      * @throws Exception When something goes wrong.
      */
-    public static Hashtable<String, ElementSecurity> GetElementSecurities() throws Exception {
-        if (elements == null || elements.size() == 0) {
-            synchronized (lock) {
-                if (elements == null || elements.size() == 0) {
-                    elements = new Hashtable<>();
-                    ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY), new CriteriaCollection("AND"));
-                    for (final Object anItem : al) {
-                        ItemI item = (ItemI) anItem;
-                        ElementSecurity es = new ElementSecurity(item);
-                        es.getItem().internValues();
-                        elements.put(es.getElementName(), es);
-                    }
+    public static Map<String, ElementSecurity> GetElementSecurities() throws Exception {
+        synchronized (lock) {
+            if (elements.isEmpty()) {
+                ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(SCHEMA_ELEMENT_NAME), new CriteriaCollection("AND"));
+                for (final Object anItem : al) {
+                    ItemI           item = (ItemI) anItem;
+                    ElementSecurity es   = new ElementSecurity(item);
+                    es.getItem().internValues();
+                    elements.put(es.getElementName(), es);
                 }
             }
         }
@@ -111,14 +102,14 @@ public class ElementSecurity extends ItemWrapper {
      * will be registered now.
      *
      * @return Returns true if any new data model definitions were found.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean registerNewTypes() throws Exception {
-        @SuppressWarnings("unchecked")
-        final Map<String, ElementSecurity> elements = (Map<String, ElementSecurity>) GetElementSecurities().clone();
+        @SuppressWarnings("unchecked") final Map<String, ElementSecurity> elements = GetElementSecurities();
 
-        boolean _new = false;
-        UserI admin = Users.getAdminUser();
+        boolean _new  = false;
+        UserI   admin = Users.getAdminUser();
         assert admin != null;
         for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
             for (String s : def.getSecuredElements()) {
@@ -143,8 +134,8 @@ public class ElementSecurity extends ItemWrapper {
                         es.initExistingPermissions(admin.getUsername());
 
                         final boolean hasSingular = StringUtils.isNotBlank(bean.getSingular());
-                        final boolean hasPlural = StringUtils.isNotBlank(bean.getPlural());
-                        final boolean hasCode = StringUtils.isNotBlank(bean.getCode());
+                        final boolean hasPlural   = StringUtils.isNotBlank(bean.getPlural());
+                        final boolean hasCode     = StringUtils.isNotBlank(bean.getCode());
                         if (hasSingular || hasPlural || hasCode) {
                             es.setSingular(bean.getSingular());
                             es.setPlural(bean.getPlural());
@@ -167,7 +158,7 @@ public class ElementSecurity extends ItemWrapper {
                             }
                             query.append(" where element_name = '").append(bean.getType()).append("'");
                             final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
-                            final int results = template.update(query.toString());
+                            final int          results  = template.update(query.toString());
                             if (log.isInfoEnabled()) {
                                 log.info("Updated " + results + " rows with the query: " + query.toString());
                             }
@@ -200,24 +191,18 @@ public class ElementSecurity extends ItemWrapper {
      *
      */
     public static void refresh() {
-
         synchronized (lock) {
-            elements = null;
-            elementDistinctIds = new Hashtable();
-            //	    XdatStoredSearch.RefreshPreLoadedSearches();
-            //	    UserCache.Clear();
-            //        UserGroupManager.Refresh();
-            //        guestPermissions= new Hashtable();
-            //        guestLoaded=false;
-
+            elements.clear();
             CacheManager.GetInstance().clearAll();
         }
     }
 
     /**
-     * @param elementName    The name of the element to retrieve.
+     * @param elementName The name of the element to retrieve.
+     *
      * @return The requested element.
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static ElementSecurity GetElementSecurity(String elementName) throws Exception {
         return GetElementSecurities().get(elementName);
@@ -274,12 +259,14 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * Gets a list of the insecure elements in the system.
+     *
      * @return A list of insecure elements.
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static ArrayList<ElementSecurity> GetInSecureElements() throws Exception {
-        final ArrayList<ElementSecurity> securityElements  = new ArrayList<>();
-        final Collection<ElementSecurity> values = GetElementSecurities().values();
+        final ArrayList<ElementSecurity>  securityElements = new ArrayList<>();
+        final Collection<ElementSecurity> values           = GetElementSecurities().values();
         for (final ElementSecurity value : values) {
             if (!value.isSecure()) {
                 securityElements.add(value);
@@ -290,7 +277,9 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * Tests the specified element for element security configuration.
+     *
      * @param elementName The name of the element to test.
+     *
      * @return Returns whether element security has been defined for this element
      */
     public static boolean HasDefinedElementSecurity(String elementName) {
@@ -304,11 +293,12 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @return Returns a list of all the secure elements
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static ArrayList<ElementSecurity> GetSecureElements() throws Exception {
-        final ArrayList<ElementSecurity> elements = new ArrayList<>();
-        final Collection<ElementSecurity> values = GetElementSecurities().values();
+        final ArrayList<ElementSecurity>  elements = new ArrayList<>();
+        final Collection<ElementSecurity> values   = GetElementSecurities().values();
         for (final ElementSecurity value : values) {
             if (value.isSecure()) {
                 elements.add(value);
@@ -318,7 +308,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public static ArrayList<String> GetSecurityElements() throws Exception {
-        final ArrayList<String> elements   = new ArrayList<String>();
+        final ArrayList<String> elements = new ArrayList<>();
         for (final ElementSecurity element : GetSecureElements()) {
             for (final String fieldPath : element.getPrimarySecurityFields()) {
                 final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldPath);
@@ -327,9 +317,9 @@ public class ElementSecurity extends ItemWrapper {
                         elements.add(field.getReferenceElementName().getFullForeignType());
                     }
                 } // else {
-			        // if (! se.contains(f.getParentElement().getFullXMLName())) {
-			        //     se.add(f.getParentElement().getFullXMLName());
-                    // }
+                // if (! se.contains(f.getParentElement().getFullXMLName())) {
+                //     se.add(f.getParentElement().getFullXMLName());
+                // }
                 // }
             }
         }
@@ -337,7 +327,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public static ArrayList<ElementSecurity> GetQuarantinedElements() throws Exception {
-        ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
+        ArrayList<ElementSecurity> al = new ArrayList<>();
         try {
             Collection<ElementSecurity> ess = GetElementSecurities().values();
             for (ElementSecurity es : ess) {
@@ -353,7 +343,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public static ArrayList<ElementSecurity> GetPreLoadElements() throws Exception {
-        ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
+        ArrayList<ElementSecurity> al = new ArrayList<>();
         try {
             Collection<ElementSecurity> ess = GetElementSecurities().values();
             for (ElementSecurity es : ess) {
@@ -369,15 +359,17 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @param elementName
+     * Tests whether the specified element is secured.
+     *
+     * @param elementName The name of the element to test.
+     *
      * @return Whether the element is in the system's list of secure elements
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static boolean IsSecureElement(String elementName) throws Exception {
-        Iterator iter = GetSecureElements().iterator();
-        while (iter.hasNext()) {
-            ElementSecurity es = (ElementSecurity) iter.next();
-            if (es.getElementName().equalsIgnoreCase(elementName)) {
+        for (final ElementSecurity elementSecurity : GetSecureElements()) {
+            if (StringUtils.equalsIgnoreCase(elementSecurity.getElementName(), elementName)) {
                 return true;
             }
         }
@@ -385,399 +377,282 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @param elementName
-     * @return Whether the element is in the system's list of secure elements and the supplied action is secure
-     * @throws Exception When something goes wrong. 
+     * Tests whether the specified element and action are secured.
+     *
+     * @param elementName The name of the element to test.
+     * @param action      The name of the action to test.
+     *
+     * @return Whether the element is in the system's list of secure elements
+     *
+     * @throws Exception When something goes wrong.
      */
     public static boolean IsSecureElement(String elementName, String action) throws Exception {
-        Iterator iter = GetSecureElements().iterator();
-        while (iter.hasNext()) {
-            ElementSecurity es = (ElementSecurity) iter.next();
-            if (es.getElementName().equalsIgnoreCase(elementName)) {
-                return es.isSecure(action);
+        for (final ElementSecurity elementSecurity : GetSecureElements()) {
+            if (StringUtils.equalsIgnoreCase(elementSecurity.getElementName(), elementName)) {
+                return elementSecurity.isSecure(action);
             }
         }
         return false;
     }
 
     /**
-     * @param elementName
-     * @return Whether the element is in the system's list of insecure elements
-     * @throws Exception When something goes wrong. 
+     * Tests whether the specified element is not secured.
+     *
+     * @param elementName The name of the element to test.
+     *
+     * @return Whether the element is not in the system's list of secure elements
+     *
+     * @throws Exception When something goes wrong.
      */
     public static boolean IsInSecureElement(String elementName) throws Exception {
-        Iterator iter = GetInSecureElements().iterator();
-        while (iter.hasNext()) {
-            ElementSecurity es = (ElementSecurity) iter.next();
-            if (es.getElementName().equalsIgnoreCase(elementName)) {
+        for (final ElementSecurity elementSecurity : GetInSecureElements()) {
+            if (StringUtils.equalsIgnoreCase(elementSecurity.getElementName(), elementName)) {
                 return true;
             }
         }
         return false;
     }
 
+    /**
+     * Gets all browseable elements from the list of element securities.
+     *
+     * @return A list of available browseable elements.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    @SuppressWarnings("unused")
     public static ArrayList<ElementSecurity> GetBrowseableElements() throws Exception {
-        ArrayList<ElementSecurity>  al  = new ArrayList<ElementSecurity>();
-        Collection<ElementSecurity> ess = GetElementSecurities().values();
-        for (ElementSecurity es : ess) {
-            if (es.isBrowseable()) {
-                al.add(es);
+        return Lists.newArrayList(Collections2.filter(GetElementSecurities().values(), new Predicate<ElementSecurity>() {
+            @Override
+            public boolean apply(@Nullable final ElementSecurity elementSecurity) {
+                return elementSecurity != null && elementSecurity.isBrowseable();
             }
-        }
-
-        return al;
+        }));
     }
 
     /**
-     * @param elementName
-     * @return Whether element is browseable
-     * @throws Exception When something goes wrong. 
+     * Tests whether the specified element is browseable.
+     *
+     * @param elementName The name of the element to test.
+     *
+     * @return Whether the element is browseable.
+     *
+     * @throws Exception When something goes wrong.
      */
     public static boolean IsBrowseableElement(String elementName) throws Exception {
-        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-        if (es != null) {
-            return es.isBrowseable();
-        } else {
-            return false;
-        }
+        final ElementSecurity elementSecurity = GetElementSecurity(elementName);
+        return elementSecurity != null && elementSecurity.isBrowseable();
     }
 
     /**
-     * @param elementName
-     * @return Whether element is searchable
-     * @throws Exception When something goes wrong. 
+     * Tests whether the specified element is searchable.
+     *
+     * @param elementName The name of the element to test.
+     *
+     * @return Whether the element is searchable.
+     *
+     * @throws Exception When something goes wrong.
      */
     public static boolean IsSearchable(String elementName) throws Exception {
-        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-
-        if (es != null) {
-            return es.isSearchable();
-        } else {
-            return false;
-        }
+        final ElementSecurity elementSecurity = GetElementSecurity(elementName);
+        return elementSecurity != null && elementSecurity.isSearchable();
     }
 
     /**
-     * @param elementName
-     * @return Whether element has primary security fields
-     * @throws Exception When something goes wrong. 
+     * Tests whether the specified element has primary security fields.
+     *
+     * @param elementName The name of the element to test.
+     *
+     * @return Whether the element has primary security fields.
+     *
+     * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public static boolean HasPrimarySecurityFields(String elementName) throws Exception {
-        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-        if (es.getPrimarySecurityFields().size() > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        final ElementSecurity elementSecurity = GetElementSecurity(elementName);
+        return elementSecurity != null && !elementSecurity.getPrimarySecurityFields().isEmpty();
     }
 
     /**
-     * @param i The item for which to create the security element.
+     * Creates a new element security entry for the specified {@link ItemI item}.
+     *
+     * @param item The item for which to create the security element.
      */
-    public ElementSecurity(ItemI i) {
-        this.setItem(i);
+    public ElementSecurity(final ItemI item) {
+        setItem(item);
         try {
-            this.elementName = getElementName();
+            elementName = getElementName();
 
-            Iterator psfs = getChildItems(org.nrg.xft.XFT.PREFIX + ":element_security.primary_security_fields.primary_security_field").iterator();
-            while (psfs.hasNext()) {
-                ItemI  child = (ItemI) psfs.next();
-                String s     = (String) child.getProperty("primary_security_field");
-                if (s != null) {
-                    this.addPrimarySecurityField(s);
+            for (final Object child : getChildItems(XFT.PREFIX + ":element_security.primary_security_fields.primary_security_field")) {
+                final String primarySecurityField = (String) ((ItemI) child).getProperty("primary_security_field");
+                if (StringUtils.isNotBlank(primarySecurityField)) {
+                    addPrimarySecurityField(primarySecurityField);
                 }
             }
 
-            Iterator eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.element_actions.element_action").getItems("xdat:element_action_type.sequence").iterator();
-            while (eas.hasNext()) {
-                ItemI         child = (ItemI) eas.next();
-                ElementAction ea    = new ElementAction(child);
+            for (final ItemI child : getChildItemCollection(XFT.PREFIX + ":element_security.element_actions.element_action").getItems("xdat:element_action_type.sequence")) {
+                final ElementAction ea = new ElementAction(child);
                 ea.getItem().internValues();
-                this.addElementAction(ea);
+                addElementAction(ea);
             }
 
-            eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.listing_actions.listing_action").getItems("xdat:element_security_listing_action.sequence").iterator();
-            while (eas.hasNext()) {
-                ItemI                            child = (ItemI) eas.next();
-                XdatElementSecurityListingAction ea    = new XdatElementSecurityListingAction(child);
+            for (final ItemI child : getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.listing_actions.listing_action").getItems("xdat:element_security_listing_action.sequence")) {
+                final XdatElementSecurityListingAction ea = new XdatElementSecurityListingAction(child);
                 ea.getItem().internValues();
-                this.addListingAction(ea);
+                addListingAction(ea);
             }
         } catch (XFTInitException e) {
-            log.error("", e);
+            log.error("An error occurred accessing XFT while trying to create a new element security entry for an item of type {}", item.getXSIType(), e);
         } catch (ElementNotFoundException e) {
-            log.error("", e);
+            log.error("Couldn't find the element {} while trying to create a new element security entry for an item of type {}", e.ELEMENT, item.getXSIType(), e);
         } catch (FieldNotFoundException e) {
-            log.error("", e);
+            log.error("Couldn't find the field {} while trying to create a new element security entry for an item of type {}: {}", e.FIELD, item.getXSIType(), e.MESSAGE, e);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("An unexpected error occurred =while trying to create a new element security entry for an item of type {}", e);
         }
-
     }
 
     /**
+     * Gets the name of the element for this security object.
+     *
      * @return The element's name
-     * @throws XFTInitException When an error occurs in XFT.
+     *
+     * @throws XFTInitException         When an error occurs in XFT.
      * @throws ElementNotFoundException When a specified element isn't found on the object.
-     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
+     * @throws FieldNotFoundException   When one of the requested fields can't be found in the data object.
      */
     public String getElementName() throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
         try {
             return (String) getProperty("element_name");
         } catch (FieldEmptyException e) {
-            log.error("", e);
+            log.error("The field {} was empty while trying to get the element name: {}", e.FIELD, e.MESSAGE, e);
             return null;
         }
     }
 
     /**
+     * Gets the sequence number for this element.
+     *
      * @return The sequence for this element
-     * @throws XFTInitException When an error occurs in XFT.
+     *
+     * @throws XFTInitException         When an error occurs in XFT.
      * @throws ElementNotFoundException When a specified element isn't found on the object.
-     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
+     * @throws FieldNotFoundException   When one of the requested fields can't be found in the data object.
      */
     public Integer getSequence() throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
         try {
             return (Integer) getProperty("sequence");
         } catch (FieldEmptyException e) {
-            log.error("", e);
+            log.error("The field {} was empty while trying to get the element sequence: {}", e.FIELD, e.MESSAGE, e);
             return null;
         }
     }
 
     /**
-     * @return Returns the element
-     * @throws Exception When something goes wrong. 
+     * Gets the {@link SchemaElement schema element} for this element.
+     *
+     * @return Returns the schema element.
+     *
+     * @throws Exception When something goes wrong.
      */
     public SchemaElement getSchemaElement() throws Exception {
         return SchemaElement.GetElement(getElementName());
     }
 
     /**
+     * Indicates whether this element is secure.
+     *
      * @return Returns whether element is secure
      */
     public boolean isSecure() {
-        try {
-            Integer s = (Integer) getProperty("secure");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
+        return testIntegerPropertyForBoolean("secure", false);
     }
 
     /**
      * @return Returns whether action is secure
      */
     public boolean isSecure(String action) {
-        if (this.isSecure()) {
-            String name = "secure_" + action;
-            try {
-                Integer s = (Integer) getProperty(name);
-                if (s != null) {
-                    if (s.intValue() == 1) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return true;
-                }
-            } catch (Exception e) {
-                return true;
-            }
-        } else {
-            return false;
-        }
+        return isSecure() && testIntegerPropertyForBoolean("secure_" + action, true);
     }
 
     /**
      * @return Returns whether read is secure
      */
     public boolean isSecureRead() {
-        try {
-            Integer s = (Integer) getProperty("secure_read");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
+        return testIntegerPropertyForBoolean("secure_read", true);
     }
 
     /**
      * @return Returns whether edit is secure
      */
     public boolean isSecureEdit() {
-        try {
-            Integer s = (Integer) getProperty("secure_edit");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
+        return testIntegerPropertyForBoolean("secure_edit", true);
     }
 
     /**
      * @return Returns whether creation is secure
      */
     public boolean isSecureCreate() {
-        try {
-            Integer s = (Integer) getProperty("secure_create");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
+        return testIntegerPropertyForBoolean("secure_create", true);
     }
 
     /**
      * @return Returns whether deletion is secure.
      */
     public boolean isSecureDelete() {
-        try {
-            Integer s = (Integer) getProperty("secure_delete");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
+        return testIntegerPropertyForBoolean("secure_delete", true);
     }
 
     /**
-     * @return  Returns whether the element is browseable.
+     * @return Returns whether the element is browseable.
      */
     public boolean isBrowseable() {
-        try {
-            Integer s = (Integer) getProperty("browse");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
+        return testIntegerPropertyForBoolean("browse", false);
     }
-
 
     /**
      * @return Returns whether the element is searchable.
      */
     public boolean isSearchable() {
-        try {
-            Integer s = (Integer) getProperty("searchable");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            log.error("An exception occurred", e);
-            return false;
-        }
+        return testIntegerPropertyForBoolean("search", false);
     }
 
     /**
      * @return Returns whether the password is secure.
      */
     public boolean isSecurePassword() {
-        try {
-            Integer s = (Integer) getProperty("secure_password");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
+        return testIntegerPropertyForBoolean("secure_password", false);
     }
 
     /**
      * @return Returns whether the IP is secure
      */
     public boolean isSecureIP() {
-        try {
-            Integer s = (Integer) getProperty("secure_ip");
-            if (s != null) {
-                if (s.intValue() == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
+        return testIntegerPropertyForBoolean("secure_ip", false);
     }
 
     /**
-     * @param s
+     * Adds the specified value as a primary security field.
+     *
+     * @param field The field to add to the primary security fields.
      */
-    public void addPrimarySecurityField(String s) {
-        primarySecurityFields.add(s);
+    public void addPrimarySecurityField(final String field) {
+        primarySecurityFields.add(field);
     }
 
     /**
+     * Gets the list of primary security fields.
+     *
      * @return Returns the list of primary security fields
      */
-    public ArrayList<String> getPrimarySecurityFields() {
+    public List<String> getPrimarySecurityFields() {
         return primarySecurityFields;
     }
 
     /**
      * @return Returns the list of element actions.
      */
-    public ArrayList<ElementAction> getElementActions() {
+    public List<ElementAction> getElementActions() {
         return elementActions;
     }
 
@@ -833,50 +708,41 @@ public class ElementSecurity extends ItemWrapper {
     /**
      * @return Returns the list of listing actions
      */
-    public ArrayList<XdatElementSecurityListingAction> getListingActions() {
+    public List<XdatElementSecurityListingAction> getListingActions() {
         return listingActions;
     }
 
-    String laJSON = null;
-
+    /**
+     * Returns the listing actions as JSON.
+     *
+     * @return JSON representation of the listing actions.
+     */
+    @SuppressWarnings("unused")
     public String getListingActionsJSON() {
-        if (laJSON == null) {
-            StringBuffer sb = new StringBuffer("[");
-            int          c  = 0;
-            for (XdatElementSecurityListingAction la : this.listingActions) {
-                if (c++ > 0) {
-                    sb.append(",");
+        if (StringUtils.isBlank(listingActionsJson)) {
+            listingActionsJson = "[" + StringUtils.join(Lists.transform(listingActions, new Function<XdatElementSecurityListingAction, String>() {
+                @Override
+                public String apply(final XdatElementSecurityListingAction action) {
+                    return "{action: \"" + action.getElementActionName() + "\", display: \"" + action.getDisplayName() + "\"" +
+                           (action.getPopup() != null ? ", popup: \"" + action.getPopup() + "\"" : "") +
+                           (action.getSequence() != null ? ", sequence: " + action.getSequence() : "") +
+                           (action.getImage() != null ? ", image: \"" + action.getImage() + "\"" : "") +
+                           (action.getParameterstring() != null ? ", params: \"" + action.getParameterstring() + "\"" : "") +
+                           "}";
                 }
-                sb.append("{");
-                sb.append("action:\"").append(la.getElementActionName()).append("\"");
-                sb.append(",display:\"").append(la.getDisplayName()).append("\"");
-                if (la.getPopup() != null) {
-                    sb.append(",popup:\"").append(la.getPopup()).append("\"");
-                }
-                if (la.getSequence() != null) {
-                    sb.append(",sequence:").append(la.getSequence()).append("");
-                }
-                if (la.getImage() != null) {
-                    sb.append(",image:\"").append(la.getImage()).append("\"");
-                }
-                if (la.getParameterstring() != null) {
-                    sb.append(",params:\"").append(la.getParameterstring()).append("\"");
-                }
-
-                sb.append("}");
-            }
-            sb.append("]");
-            laJSON = sb.toString();
+            }), ", ") + "]";
         }
-        return laJSON;
+        return listingActionsJson;
     }
 
     /**
-     * @param ea
+     * Adds a listing action to the element security.
+     *
+     * @param listingAction The listing action to add.
      */
-    public void addListingAction(org.nrg.xdat.om.XdatElementSecurityListingAction ea) {
-        listingActions.add(ea);
-        laJSON = null;
+    public void addListingAction(XdatElementSecurityListingAction listingAction) {
+        listingActions.add(listingAction);
+        listingActionsJson = null;
     }
 
     public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
@@ -902,7 +768,8 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @return Returns a list of the PermissionsItems for the user
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public List<PermissionItem> getPermissionItems(String login) throws Exception {
         if (permissionItems == null) {
@@ -942,7 +809,8 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @return Returns whether the element has a displayField
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public boolean hasDisplayValueOption() throws Exception {
         SchemaElement  se           = SchemaElement.GetElement(elementName);
@@ -959,8 +827,10 @@ public class ElementSecurity extends ItemWrapper {
     /**
      * @param elementName
      * @param fieldName
+     *
      * @return Returns a hastable of the distinct id values for the supplied information
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception {
         //Hashtable hash1 = (Hashtable)elementDistinctIds.get(elementName); REMOVED TO PREVENT CACHING
@@ -1101,8 +971,10 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param item
+     *
      * @return Returns a SecurityValues object containing a map of item membership
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static SecurityValues GetSecurityValues(ItemI item) throws InvalidItemException, Exception {
         ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
@@ -1115,7 +987,9 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param item
+     *
      * @return Returns a SecurityValues object containing a map of item membership
+     *
      * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
      */
     public SecurityValues getSecurityValues(ItemI item) throws FieldNotFoundException, InvalidItemException {
@@ -1289,7 +1163,8 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @return A sorted List of Strings
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static ArrayList GetElementNames() throws Exception {
         ArrayList<String>           al  = new ArrayList<String>();
@@ -1304,7 +1179,8 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @return A sorted List of Strings
-     * @throws Exception When something goes wrong. 
+     *
+     * @throws Exception When something goes wrong.
      */
     public static ArrayList GetNonXDATElementNames() throws Exception {
         ArrayList<String>           al  = new ArrayList<String>();
@@ -1393,31 +1269,32 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     //method added to facilitate the adding of permissions once you've created a new data type.  It loads a vm to build the requisite SQL.
-    public void initExistingPermissions(String userName) {
-        InputStream is = null;
-        try {
-            is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm");
+    public void initExistingPermissions(final String userName) {
+        try (final InputStream is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm")) {
             if (is != null) {
-                final List<String> stmts   = Lists.newArrayList();
-                final Scanner      scanner = new Scanner(is).useDelimiter(";");
+                final List<String> statements = Lists.newArrayList();
+                final Scanner      scanner    = new Scanner(is).useDelimiter(";");
                 while (scanner.hasNext()) {
-                    String query = scanner.next();
+                    final String query = scanner.next();
                     if (StringUtils.isNotBlank(query)) {
-                        stmts.add(query.replace("$!element_name", this.getElementName()).replace("$element_name", this.getElementName()));
+                        statements.add(query.replace("$!element_name", getElementName()).replace("$element_name", getElementName()));
                     }
                 }
-                PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
+                PoolDBUtils.ExecuteBatch(statements, getDBName(), userName);
             }
         } catch (Exception ignore) {
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-            }
         }
 
+        try {
+            updateElementAccessAndFieldMapMetaData();
+            XDAT.triggerEvent(new XftItemEvent(SCHEMA_ELEMENT_NAME, getElementName(), XftItemEvent.CREATE));
+            PoolDBUtils.ClearCache(getDBName(), userName, Groups.getGroupDatatype());
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
+
+    static void updateElementAccessAndFieldMapMetaData() {
         try {
             DBAction.InsertMetaDatas(XdatElementAccess.SCHEMA_ELEMENT_NAME);
             DBAction.InsertMetaDatas(XdatFieldMappingSet.SCHEMA_ELEMENT_NAME);
@@ -1425,281 +1302,39 @@ public class ElementSecurity extends ItemWrapper {
         } catch (Exception e2) {
             log.error("", e2);
         }
-
-        try {
-    		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-            eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
-        } catch (NoSuchBeanDefinitionException e) {
-            log.info("Didn't find the NrgEventService instance, it probably hasn't been initialized yet.");
-        } catch (Exception e1) {
-            log.error("", e1);
-        }
-
-        try {
-            PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
-        } catch (Exception e) {
-            log.error("", e);
-        }
     }
-//    
-//    public static Hashtable<String,Hashtable<String,GuestPermission>> guestPermissions = new Hashtable<String,Hashtable<String,GuestPermission>>();
-//    public static boolean guestLoaded = false;
-//    
-//    public static boolean GetGuestPermission(String elementName, String action, Object value){
-//        GuestPermission perm = null;
-//        Hashtable<String,GuestPermission> permissions = guestPermissions.get(elementName);
-//        if (permissions == null)
-//        {
-//            if (!guestLoaded)
-//            {
-//                guestLoaded=true;
-//                String query ="SELECT element_name, create_element, read_element, edit_element, delete_element, active_element, field_value FROM xdat_element_access ea LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id=fm.xdat_field_mapping_set_xdat_field_mapping_set_id LEFT JOIN xdat_user u ON ea.xdat_user_xdat_user_id=u.xdat_user_id WHERE u.login='guest';";
-//                try {
-//                    XFTTable table = XFTTable.Execute(query, ((ElementSecurity)GetElementSecurities().entrySet()).getDBName(), null);
-//                                        
-//                    if (table.size()>0)
-//                    {
-//                        
-//                        table.resetRowCursor();
-//                        while(table.hasMoreRows()){
-//                            Object[] row = table.nextRow();
-//                            String name = (String)row[0];
-//                            Integer create = (Integer)row[1];
-//                            Integer read = (Integer)row[2];
-//                            Integer edit = (Integer)row[3];
-//                            Integer delete = (Integer)row[4];
-//                            Integer activate = (Integer)row[5];
-//                            String v = (String)row[6];
-//                            
-//                            GuestPermission temp = new ElementSecurity.GuestPermission(name,v,edit,read,delete,create,activate);
-//                            
-//                                                        
-//                            if (guestPermissions.get(name)==null){
-//                                Hashtable<String,GuestPermission> level1 = new Hashtable<String,GuestPermission>();
-//                                guestPermissions.put(name, level1);
-//                                level1.put(v, temp);
-//                            }else{
-//                                guestPermissions.get(name).put(v, temp);
-//                            }
-//                        }
-//                    }
-//                } catch (SQLException e) {
-//                    log.error("",e);
-//                } catch (DBPoolException e) {
-//                    log.error("",e);
-//                } catch (Exception e) {
-//                    log.error("",e);
-//                }
-//                
-//                permissions=guestPermissions.get(elementName);
-//            }            
-//        }
-//        
-//        if (permissions !=null){
-//            perm = permissions.get(value);
-//        
-//            if (perm!=null){
-//                if (action.equals(SecurityManager.READ)){
-//                    return perm.isRead();
-//                }else if (action.equals(SecurityManager.EDIT)){
-//                    return perm.isEdit();
-//                }else if (action.equals(SecurityManager.DELETE)){
-//                    return perm.isDelete();
-//                }else if (action.equals(SecurityManager.CREATE)){
-//                    return perm.isCreate();
-//                }else if (action.equals(SecurityManager.ACTIVATE)){
-//                    return perm.isActivate();
-//                }
-//            }
-//        }
-//        
-//        
-//        return false;
-//    }
-//    
-//    public static class GuestPermission{
-//        private String elementName = null;
-//        private String value = null;
-//        
-//        private boolean edit = false;
-//        private boolean read = false;
-//        private boolean delete = false;
-//        private boolean create = false;
-//        private boolean activate = false;
-//        
-//        public GuestPermission(String en, String v, boolean e, boolean r, boolean d, boolean c, boolean a){
-//            elementName=en;
-//            value=v;
-//            edit=e;
-//            read=r;
-//            delete=d;
-//            create=c;
-//            activate=a;
-//        }
-//        
-//        public GuestPermission(String en, String v, Integer e, Integer r, Integer d, Integer c, Integer a){
-//            elementName=en;
-//            value=v;
-//            if (e!=null && e.intValue()==1)
-//                edit=true;
-//            if (r!=null && r.intValue()==1)
-//                read=true;
-//            if (d!=null && d.intValue()==1)
-//                delete=true;
-//            if (c!=null && c.intValue()==1)
-//                create=true;
-//            if (a!=null && a.intValue()==1)
-//                activate=true;
-//        }
-//
-//        /**
-//         * @return the activate
-//         */
-//        public boolean isActivate() {
-//            return activate;
-//        }
-//
-//        /**
-//         * @param activate the activate to set
-//         */
-//        public void setActivate(boolean activate) {
-//            this.activate = activate;
-//        }
-//
-//        /**
-//         * @return the create
-//         */
-//        public boolean isCreate() {
-//            return create;
-//        }
-//
-//        /**
-//         * @param create the create to set
-//         */
-//        public void setCreate(boolean create) {
-//            this.create = create;
-//        }
-//
-//        /**
-//         * @return the delete
-//         */
-//        public boolean isDelete() {
-//            return delete;
-//        }
-//
-//        /**
-//         * @param delete the delete to set
-//         */
-//        public void setDelete(boolean delete) {
-//            this.delete = delete;
-//        }
-//
-//        /**
-//         * @return the edit
-//         */
-//        public boolean isEdit() {
-//            return edit;
-//        }
-//
-//        /**
-//         * @param edit the edit to set
-//         */
-//        public void setEdit(boolean edit) {
-//            this.edit = edit;
-//        }
-//
-//        /**
-//         * @return the elementName
-//         */
-//        public String getElementName() {
-//            return elementName;
-//        }
-//
-//        /**
-//         * @param elementName the elementName to set
-//         */
-//        public void setElementName(String elementName) {
-//            this.elementName = elementName;
-//        }
-//
-//        /**
-//         * @return the read
-//         */
-//        public boolean isRead() {
-//            return read;
-//        }
-//
-//        /**
-//         * @param read the read to set
-//         */
-//        public void setRead(boolean read) {
-//            this.read = read;
-//        }
-//
-//        /**
-//         * @return the value
-//         */
-//        public String getValue() {
-//            return value;
-//        }
-//
-//        /**
-//         * @param value the value to set
-//         */
-//        public void setValue(String value) {
-//            this.value = value;
-//        }
-//        
-//    }
-
 
     public Comparator getComparator() {
         return new ESComparator();
     }
 
-    public class ESComparator implements Comparator {
+    public class ESComparator implements Comparator<ElementSecurity> {
         public ESComparator() {
         }
 
-        public int compare(Object o1, Object o2) {
+        public int compare(final ElementSecurity elementSecurity1, final ElementSecurity elementSecurity2) {
             try {
-                ElementSecurity value1 = (ElementSecurity) (o1);
-                ElementSecurity value2 = (ElementSecurity) (o2);
-
-                if (value1 == null) {
-                    if (value2 == null) {
+                if (elementSecurity1 == null) {
+                    if (elementSecurity2 == null) {
                         return 0;
                     } else {
                         return -1;
                     }
                 }
-                if (value2 == null) {
+                if (elementSecurity2 == null) {
                     return 1;
                 }
-
-                if (((Comparable) value1.getElementName()).equals((Comparable) value2.getElementName())) {
-                    return ((Comparable) value1.getElementName()).compareTo((Comparable) value2.getElementName());
-                } else {
-                    Comparable i1      = (Comparable) value1.getElementName();
-                    Comparable i2      = (Comparable) value2.getElementName();
-                    int        _return = i1.compareTo(i2);
-                    return _return;
-                }
+                return StringUtils.compare(elementSecurity1.getElementName(), elementSecurity2.getElementName());
             } catch (XFTInitException e) {
-                log.error("", e);
-                return 0;
+                log.error("An error occurred accessing XFT while trying to compare element security entries for items of type {} and {}", elementSecurity1.getXSIType(), elementSecurity2.getXSIType(), e);
             } catch (ElementNotFoundException e) {
-                log.error("", e);
-                return 0;
+                log.error("Couldn't find the element {} while trying to compare element security entries for items of type {} and {}", e.ELEMENT, elementSecurity1.getXSIType(), elementSecurity2.getXSIType(), e);
             } catch (FieldNotFoundException e) {
-                log.error("", e);
-                return 0;
+                log.error("Couldn't find the field {} while trying to compare element security entries for items of type {} and {}: {}", e.FIELD, elementSecurity1.getXSIType(), elementSecurity2.getXSIType(), e.MESSAGE, e);
             }
+            return 0;
         }
     }
-
-
-    //FIELD
 
     private Boolean _Accessible = null;
 
@@ -1973,5 +1608,35 @@ public class ElementSecurity extends ItemWrapper {
 
         return elementName;
     }
+
+    /**
+     * Gets the specified integer property and tests whether the value is 1 (true) or not 1 (false). If the property is null or an exception
+     * occurs retrieving the property, the default value is returned.
+     *
+     * @param property     The property to test.
+     * @param defaultValue The default value to return if the property value is null or an exception occurs.
+     *
+     * @return If the property exists and has a value, this method returns true if the value is 1, returns false if the value is not 1. If there is no value or an exception occurs, returns the default value.
+     */
+    private boolean testIntegerPropertyForBoolean(final String property, final boolean defaultValue) {
+        try {
+            return ObjectUtils.defaultIfNull((Integer) getProperty(property), defaultValue ? 1 : 0) == 1;
+        } catch (ElementNotFoundException e) {
+            log.error("Couldn't find the element {} while trying to get the secure state for an item of type {}", e.ELEMENT, getItem().getXSIType(), e);
+        } catch (FieldNotFoundException e) {
+            log.error("Couldn't find the field {} while trying to get the secure state for an item of type {}: {}", e.FIELD, getItem().getXSIType(), e.MESSAGE, e);
+        }
+        return defaultValue;
+    }
+
+    private static final Map<String, ElementSecurity> elements = new HashMap<>();
+    private static final Object                       lock     = new Object();
+
+    private final List<String>                           primarySecurityFields = new ArrayList<>();
+    private final List<ElementAction>                    elementActions        = new ArrayList<>();
+    private final List<XdatElementSecurityListingAction> listingActions        = new ArrayList<>();
+
+    private String elementName        = null;
+    private String listingActionsJson = null;
 }
 

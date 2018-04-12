@@ -13,25 +13,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import reactor.bus.Event;
-import reactor.fn.Predicate;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -104,52 +96,6 @@ public class Groups {
             }
         }
         return _cache;
-    }
-
-    /**
-     * Tests whether an {@link XftItemEvent} is related to an {@link XdatUsergroup} object. Note that this doesn't test
-     * for a <i>particular</i> group, just whether the event was related to a group.
-     */
-    public static final Predicate<Object> IS_GROUP_XFTITEM_EVENT = new Predicate<Object>() {
-        @Override
-        public boolean test(final Object object) {
-            return object instanceof XftItemEvent && isXdatUsergroupEvent((XftItemEvent) object);
-        }
-    };
-
-    /**
-     * Indicates whether the event is related to an {@link XdatUsergroup} object. This method returns true if the
-     * {@link Event#getData()} event item} is an instance of {@link XftItemEvent} and that event is related to an
-     * {@link XdatUsergroup} object, as determined by calling {@link #isXdatUsergroupEvent(XftItemEvent)}.
-     *
-     * @param event The event to be evaluated.
-     *
-     * @return Returns true if the event is related to an {@link XdatUsergroup} object.
-     *
-     * @see #isXdatUsergroupEvent(XftItemEvent)
-     * @see #IS_GROUP_XFTITEM_EVENT
-     */
-    public static boolean isXdatUsergroupEvent(@Nonnull final Event event) {
-        final Object data = event.getData();
-        return !(data instanceof XftItemEvent) || isXdatUsergroupEvent((XftItemEvent) data);
-    }
-
-    /**
-     * Indicates whether the event is related to an {@link XdatUsergroup} object. This method returns true if the
-     * {@link XftItemEvent} {@link XftItemEvent#getItem() is related to an} {@link XdatUsergroup} object.
-     *
-     * @param event The event to be evaluated.
-     *
-     * @return Returns true if the event is related to an {@link XdatUsergroup} object.
-     *
-     */
-    public static boolean isXdatUsergroupEvent(@Nonnull final XftItemEvent event) {
-        final Object item = event.getItem();
-        try {
-            return (item instanceof XFTItem && ((XFTItem) item).instanceOf(XdatUsergroup.SCHEMA_ELEMENT_NAME)) || XdatUsergroup.class.isAssignableFrom(item.getClass());
-        } catch (ElementNotFoundException ignored) {
-            return false;
-        }
     }
 
     /**
@@ -237,6 +183,20 @@ public class Groups {
      */
     public static void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception {
         getUserGroupService().removeUserFromGroup(user, authenticatedUser, groupId, ci);
+    }
+
+    /**
+     * Remove users from the group (including updating database if necessary)
+     *
+     * @param groupId           The ID of the group from which the user should be removed.
+     * @param authenticatedUser The user requesting the removal.
+     * @param users             The users to remove from the group.
+     * @param eventMeta         The event metadata.
+     *
+     * @throws Exception When an error occurs.
+     */
+    public static void removeUsersFromGroup(final String groupId, final UserI authenticatedUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
+        getUserGroupService().removeUsersFromGroup(groupId, authenticatedUser, users, eventMeta);
     }
 
     /**
@@ -366,6 +326,23 @@ public class Groups {
     }
 
     /**
+     * Add a list of users to the group (includes potential modification to the database).
+     *
+     * @param groupId           The ID of the group to which the user should be added.
+     * @param authenticatedUser The user adding the user to the group.
+     * @param users             The list of users to add to the group.
+     * @param eventMeta         The event metadata.
+     *
+     * @return The group with the newly added users.
+     *
+     * @throws Exception When an error occurs.
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    public static UserGroupI addUsersToGroup(final String groupId, final UserI authenticatedUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
+        return getUserGroupService().addUsersToGroup(groupId, authenticatedUser, users, eventMeta);
+    }
+
+    /**
      * return all UserGroups on this server.  (this may be an expensive operation on larger servers)  We might want to get rid of this.
      *
      * @return A list of all user groups.
@@ -431,26 +408,6 @@ public class Groups {
 
     public static void save(UserGroupI tempGroup, UserI user, EventMetaI meta) throws Exception {
         getUserGroupService().save(tempGroup, user, meta);
-    }
-
-    /**
-     * Creates a new {@link UserGroupI} object from the submitted {@link XdatUsergroup} object. This is a convenience method
-     * that handles and logs exceptions that might occur during the instantiation operation. If an error does occur, it's logged
-     * and this method returns null.
-     *
-     * @param group The group to convert.
-     *
-     * @return The corresponding user group object or null if an error occurred.
-     */
-    public static UserGroupI createUserGroupFromXdatUsergroup(final XdatUsergroup group) {
-        if (group != null) {
-            try {
-                return new UserGroup(group);
-            } catch (Exception e) {
-                log.error("An error occurred trying to create a UserGroup object from the XdatUsergroup object for group {}", group.getId(), e);
-            }
-        }
-        return null;
     }
 
     private static UserGroupServiceI         _singleton;

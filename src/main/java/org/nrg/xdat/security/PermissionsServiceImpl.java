@@ -9,24 +9,29 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
+import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -40,22 +45,22 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xft.event.XftItemEvent.UPDATE;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
 @Service
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
     @Autowired
-    public PermissionsServiceImpl(final NamedParameterJdbcTemplate template) {
+    public PermissionsServiceImpl(final NamedParameterJdbcTemplate template, final NrgEventService eventService) {
         _template = template;
+        _eventService = eventService;
     }
 
     @Override
@@ -65,47 +70,42 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
-
         if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
             return null;
-        } else {
-            List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
-
-            CriteriaCollection cc = new CriteriaCollection("OR");
-            for (PermissionCriteriaI crit : criteria) {
-                if (crit.getRead()) {
-                    cc.add(DisplayCriteria.buildCriteria(root, crit));
-                }
-            }
-
-            if (cc.numClauses() == 0) {
-                return null;
-            }
-
-            return cc;
         }
+
+        final CriteriaCollection collection = new CriteriaCollection("OR");
+        for (final PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+            if (criteria.getRead()) {
+                collection.add(DisplayCriteria.buildCriteria(root, criteria));
+            }
+        }
+
+        if (collection.numClauses() == 0) {
+            return null;
+        }
+
+        return collection;
     }
 
     @Override
     public CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI root) throws Exception {
         if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
             return null;
-        } else {
-            List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
-
-            CriteriaCollection cc = new CriteriaCollection("OR");
-            for (PermissionCriteriaI crit : criteria) {
-                if (crit.getRead()) {
-                    cc.add(SearchCriteria.buildCriteria(crit));
-                }
-            }
-
-            if (cc.numClauses() == 0) {
-                return null;
-            }
-
-            return cc;
         }
+
+        final CriteriaCollection collection = new CriteriaCollection("OR");
+        for (PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+            if (criteria.getRead()) {
+                collection.add(SearchCriteria.buildCriteria(criteria));
+            }
+        }
+
+        if (collection.numClauses() == 0) {
+            return null;
+        }
+
+        return collection;
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -214,108 +214,63 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException {
+        final String xsiType = item.getXSIType();
         try {
-            // Check readability
-            if (!canRead(user, item)) {
-                final String itemId  = getItemIId(item);
-                final String message = String.format("User '%s' does not have read access to the %s instance with ID %s", user.getUsername(), item.getXSIType(), itemId);
-                log.error(message);
-                throw new IllegalAccessException("Access Denied: " + message);
-            }
-
-            // Check quarantine: if this item has a metadata element (which stores active status) and the user can't
-            // activate this...
-            if (item.getProperty("meta") != null && !canActivate(user, item)) {
-                // Then check to see if it's not active. You can't access inactive things.
-                if (!item.isActive()) {
-                    final String itemId  = getItemIId(item);
-                    final String message = String.format("The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.", item.getXSIType(), itemId, user.getUsername());
+            final String itemId = getItemIId(item);
+            try {
+                // Check readability
+                if (!canRead(user, item)) {
+                    final String message = String.format("User '%s' does not have read access to the %s instance with ID %s", user.getUsername(), xsiType, itemId);
                     log.error(message);
                     throw new IllegalAccessException("Access Denied: " + message);
                 }
-            }
 
-            final List<ItemI> invalidItems = new ArrayList<>();
-            for (final Object object : item.getChildItems()) {
-                final ItemI   child   = (ItemI) object;
-                final boolean canRead = canRead(user, child);
-                if (canRead) {
-                    secureChild(user, child);
-                } else {
-                    invalidItems.add(child);
+                // Check quarantine: if this item has a metadata element (which stores active status) and the user can't
+                // activate this...
+                if (item.getProperty("meta") != null && !canActivate(user, item)) {
+                    // Then check to see if it's not active. You can't access inactive things.
+                    if (!item.isActive()) {
+                        final String message = String.format("The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.", xsiType, itemId, user.getUsername());
+                        log.error(message);
+                        throw new IllegalAccessException("Access Denied: " + message);
+                    }
                 }
-            }
 
-            if (invalidItems.size() > 0) {
-                for (final Object invalidItem : invalidItems) {
-                    XFTItem invalid = (XFTItem) invalidItem;
-                    XFTItem parent  = (XFTItem) item;
-                    parent.removeItem(invalid);
-                    item = parent;
+                final List<ItemI> invalidItems = new ArrayList<>();
+                for (final Object object : item.getChildItems()) {
+                    final ItemI   child   = (ItemI) object;
+                    final boolean canRead = canRead(user, child);
+                    if (canRead) {
+                        secureChild(user, child);
+                    } else {
+                        invalidItems.add(child);
+                    }
                 }
+
+                if (!invalidItems.isEmpty()) {
+                    for (final Object invalidItem : invalidItems) {
+                        XFTItem invalid = (XFTItem) invalidItem;
+                        XFTItem parent  = (XFTItem) item;
+                        parent.removeItem(invalid);
+                        item = parent;
+                    }
+                }
+            } catch (MetaDataException | IllegalAccessException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("An error occurred trying to secure the item of type '{}' with ID '{}'", xsiType, itemId, e);
             }
-        } catch (MetaDataException | IllegalAccessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("", e);
+        } catch (XFTInitException e) {
+            log.error("An error occurred trying to access XFT when trying to get the element_name property from this ItemI object:\n{}", item, e);
+        } catch (ElementNotFoundException e) {
+            log.error("Couldn't find the element of type {}: {}", e.ELEMENT, e);
+        } catch (FieldNotFoundException e) {
+            log.error("Couldn't find the field named {} for type {}: {}", e.FIELD, xsiType, e.MESSAGE);
+        } catch (InvocationTargetException e) {
+            log.error("An error occurred trying to call a method on the class '{}' to get the item ID", item.getClass().getName(), e);
         }
 
         return item;
-    }
-
-    private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, action, root, values);
-    }
-
-    private String getItemIId(final ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, IllegalAccessException, InvocationTargetException {
-        final String itemId;
-        if (item instanceof XFTItem) {
-            itemId = ((XFTItem) item).getIDValue();
-        } else if (item instanceof org.nrg.xdat.base.BaseElement) {
-            itemId = ((org.nrg.xdat.base.BaseElement) item).getStringProperty("ID");
-        } else {
-            final Method getId = Reflection.getMatchingMethod(item.getClass(), "getId", new Object[0]);
-            if (getId != null) {
-                itemId = (String) getId.invoke(item);
-            } else {
-                final Method getID = Reflection.getMatchingMethod(item.getClass(), "getID", new Object[0]);
-                if (getID != null) {
-                    itemId = (String) getID.invoke(item);
-                } else {
-                    itemId = "Couldn't determine item's ID, attaching full XML\n" + item.toString();
-                }
-            }
-        }
-        return itemId;
-    }
-
-    private void secureChild(UserI user, ItemI item) throws Exception {
-        List<ItemI> invalidItems = new ArrayList<>();
-
-        for (final Object o : item.getChildItems()) {
-            ItemI   child = (ItemI) o;
-            boolean b     = canRead(user, child);
-
-            if (b) {
-                if (child.getProperty("meta") != null && !canActivate(user, child)) {
-                    if (!child.isActive()) {
-                        b = false;
-                    }
-                }
-            }
-
-            if (b) {
-                secureChild(user, child);
-            } else {
-                invalidItems.add(child);
-            }
-        }
-
-        if (invalidItems.size() > 0) {
-            for (final ItemI invalid : invalidItems) {
-                ((XFTItem) item).removeItem(invalid);
-            }
-        }
     }
 
     @Override
@@ -376,13 +331,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return can(user, item, SecurityManager.DELETE);
     }
 
-
     @Override
     public boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
-        String  rootElement = XftStringUtils.GetRootElementName(xmlPath);
+        String rootElement = XftStringUtils.GetRootElementName(xmlPath);
         if (!ElementSecurity.HasDefinedElementSecurity(rootElement)) {
             return true;
         } else if (ElementSecurity.IsInSecureElement(rootElement)) {
@@ -429,33 +383,31 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return values != null && values.size() > 0;
     }
 
-
-    @SuppressWarnings("unchecked")
     @Override
-    public List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
+    public List<Object> getAllowedValues(final UserI user, final String elementName, final String xmlPath, final String action) {
         final List allowedValues = new ArrayList();
 
         try {
             final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
             if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
-
-                final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
-
-                CriteriaCollection cc = new CriteriaCollection("OR");
-                for (PermissionCriteriaI crit : criteria) {
-                    if (crit.getAction(action) && !allowedValues.contains(crit.getFieldValue())) {
-                        allowedValues.add(crit.getFieldValue());
+                final CriteriaCollection collection = new CriteriaCollection("OR");
+                for (final PermissionCriteriaI criteria : getPermissionsForUser(user, rootXmlName)) {
+                    if (criteria.getAction(action) && !allowedValues.contains(criteria.getFieldValue())) {
+                        //noinspection unchecked
+                        allowedValues.add(criteria.getFieldValue());
                     }
                 }
             } else {
+                //noinspection unchecked
                 allowedValues.addAll(GenericWrapperElement.GetUniqueValuesForField(xmlPath));
             }
 
             Collections.sort(allowedValues);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}', XML path '{}'", user.getUsername(), action, elementName, xmlPath, e);
         }
 
+        //noinspection unchecked
         return ImmutableList.copyOf(allowedValues);
     }
 
@@ -464,20 +416,18 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final Map<String, Object> allowedValues = Maps.newHashMap();
 
         try {
-            SchemaElement root = SchemaElement.GetElement(elementName);
+            final SchemaElement root = SchemaElement.GetElement(elementName);
 
             if (ElementSecurity.IsSecureElement(root.getFullXMLName(), action)) {
-                List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
-
-                CriteriaCollection cc = new CriteriaCollection("OR");
-                for (PermissionCriteriaI crit : criteria) {
-                    if (crit.getAction(action)) {
-                        allowedValues.put(crit.getField(), crit.getFieldValue());
+                final CriteriaCollection collection = new CriteriaCollection("OR");
+                for (final PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+                    if (criteria.getAction(action)) {
+                        allowedValues.put(criteria.getField(), criteria.getFieldValue());
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("", e);
+            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}'", user.getUsername(), action, elementName, e);
         }
 
         return ImmutableMap.copyOf(allowedValues);
@@ -494,141 +444,41 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
-    public void setPermissions(UserI effected, UserI authenticated, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, EventMetaI ci) {
-        try {
-            ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
-
-            XdatElementAccess ea   = null;
-            for (final XdatElementAccess temp : ((XDATUser) effected).getElementAccess()) {
-                if (temp.getElementName().equals(elementName)) {
-                    ea = temp;
-                    break;
-                }
-            }
-
-            if (ea == null) {
-                ea = new XdatElementAccess(authenticated);
-                ea.setElementName(elementName);
-                ea.setProperty("xdat_user_xdat_user_id", effected.getID());
-            }
-
-            XdatFieldMappingSet fms;
-            ArrayList           al  = ea.getPermissions_allowSet();
-            if (al.size() > 0) {
-                fms = ea.getPermissions_allowSet().get(0);
-            } else {
-                fms = new XdatFieldMappingSet(authenticated);
-                fms.setMethod("OR");
-                ea.setPermissions_allowSet(fms);
-            }
-
-            XdatFieldMapping fm = null;
-
-            for (final XdatFieldMapping fieldMapping : fms.getAllow()) {
-                if (fieldMapping.getFieldValue().equals(value) && fieldMapping.getField().equals(psf)) {
-                    fm = fieldMapping;
-                }
-            }
-
-            if (fm == null) {
-                if (create || read || edit || delete || activate) {
-                    fm = new XdatFieldMapping(authenticated);
-                } else {
-                    return;
-                }
-            } else if (!(create || read || edit || delete || activate)) {
-                if (fms.getAllow().size() == 1) {
-                    SaveItemHelper.authorizedDelete(fms.getItem(), authenticated, ci);
-                    return;
-                } else {
-                    SaveItemHelper.authorizedDelete(fm.getItem(), authenticated, ci);
-                    return;
-                }
-            }
-
-
-            fm.setField(psf);
-            fm.setFieldValue(value);
-
-            fm.setCreateElement(create);
-            fm.setReadElement(read);
-            fm.setEditElement(edit);
-            fm.setDeleteElement(delete);
-            fm.setActiveElement(activate);
-            fm.setComparisonType("equals");
-            fms.setAllow(fm);
-
-            if (fms.getXdatFieldMappingSetId() != null) {
-                fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
-
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, true, false, ci);
-                    fm.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, false, false, ci);
-                }
-            } else if (ea.getXdatElementAccessId() != null) {
-                fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, true, false, ci);
-                    fms.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, false, false, ci);
-                }
-            } else {
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, true, false, ci);
-                    ea.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, false, false, ci);
-                }
-                ((XDATUser) effected).setElementAccess(ea);
-            }
-        } catch (XFTInitException e) {
-            log.error("An error occurred initializing XFT", e);
-        } catch (ElementNotFoundException e) {
-            log.error("Did not find the requested element on the item", e);
-        } catch (FieldNotFoundException e) {
-            log.error("Field not found {}: {}", e.FIELD, e.MESSAGE, e);
-        } catch (InvalidValueException e) {
-            log.error("Invalid value specified: {}", effected.getID(), e);
-        } catch (Exception e) {
-            log.error("", e);
-        }
+    public void setPermissions(final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
+        setPermissionsInternal(true, affected, authenticated, elementName, fieldName, fieldValue, create, read, delete, edit, activate, activateChanges, ci);
     }
 
     @Override
     public boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
-        ArrayList<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
-
-        UserI guest = Users.getGuest();
+        final List<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
+        final UserI                 guest           = Users.getGuest();
 
         switch (accessibility) {
             case "public":
-                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
+                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
 
-                for (ElementSecurity es : securedElements) {
-                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, true, false, false, true, true, ci);
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                for (final ElementSecurity securedElement : securedElements) {
+                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, true, false, false, true, true, ci);
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
                     }
                 }
                 break;
             case "protected":
-                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, false, true, ci);
-                for (ElementSecurity es : securedElements) {
-                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, false, true, ci);
+                for (final ElementSecurity securedElement : securedElements) {
+                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
                     }
                 }
                 break;
             default: // "private"
-                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, false, false, false, false, true, ci);
-                for (ElementSecurity es : securedElements) {
-                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
-                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, false, false, false, false, true, ci);
+                for (final ElementSecurity securedElement : securedElements) {
+                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
+                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
                     }
                 }
                 break;
@@ -636,6 +486,9 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
         ((XDATUser) authenticatedUser).resetCriteria();
         Users.getGuest(true);
+
+        _eventService.triggerEvent(new XftItemEvent("xnat:projectData", tag, UPDATE));
+
         return true;
     }
 
@@ -650,65 +503,261 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
-    public void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
-        for (PermissionCriteriaI crit : criteria) {
-            ((UserGroup) group).addPermission(crit.getElementName(), crit, authenticatedUser);
+    public void setPermissionsForGroup(final UserGroupI group, final List<PermissionCriteriaI> criteria, final EventMetaI meta, final UserI authenticatedUser) throws Exception {
+        for (final PermissionCriteriaI criterion : criteria) {
+            ((UserGroup) group).addPermission(criterion.getElementName(), criterion, authenticatedUser);
         }
+        _eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), UPDATE));
     }
 
     @Override
-    public String getUserPermissionsSQL(UserI user) {
-        return String.format("SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user u JOIN xdat_user_groupID map ON u.xdat_user_id=map.groups_groupid_xdat_user_xdat_user_id JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE u.login='guest' UNION SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE map.groups_groupid_xdat_user_xdat_user_id=%s", user.getID());
+    public String getUserPermissionsSQL(final UserI user) {
+        return String.format(QUERY_USER_PERMISSIONS, user.getUsername());
     }
 
     @Override
     public List<String> getUserReadableProjects(final UserI user) {
-        return _template.queryForList(QUERY_READABLE_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+        return _template.queryForList(QUERY_READABLE_PROJECTS, new MapSqlParameterSource("usernames", Arrays.asList("guest", user.getUsername())), String.class);
     }
 
     @Override
     public List<String> getUserEditableProjects(final UserI user) {
-        return _template.queryForList(QUERY_EDITABLE_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+        return _template.queryForList(QUERY_EDITABLE_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
     }
 
     @Override
     public List<String> getUserOwnedProjects(final UserI user) {
-        return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+        return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
     }
 
-    private static final String QUERY_USER_PROJECTS     = "SELECT DISTINCT xfm.field_value AS project " +
-                                                          "FROM xdat_field_mapping xfm " +
-                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
-                                                          "  LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
-                                                          "  LEFT JOIN xdat_usergroup usergroup ON xea.xdat_usergroup_xdat_usergroup_id = usergroup.xdat_usergroup_id " +
-                                                          "  LEFT JOIN xdat_user_groupid groupid ON usergroup.id = groupid.groupid " +
-                                                          "  LEFT JOIN xdat_user xu ON groupid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
+    private void setPermissionsInternal(final boolean triggerEvent, final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
+        try {
+            final ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
+
+            final Optional<XdatElementAccess> optional = FluentIterable.from(((XDATUser) affected).getElementAccess()).firstMatch(new Predicate<XdatElementAccess>() {
+                @Override
+                public boolean apply(@Nullable final XdatElementAccess elementAccess) {
+                    return elementAccess != null && StringUtils.equals(elementName, elementAccess.getElementName());
+                }
+            });
+
+            final XdatElementAccess elementAccess;
+            if (optional.isPresent()) {
+                elementAccess = optional.get();
+            } else {
+                elementAccess = new XdatElementAccess(authenticated);
+                elementAccess.setElementName(elementName);
+                elementAccess.setProperty("xdat_user_xdat_user_id", affected.getID());
+            }
+
+            final boolean isAccessible = create || read || edit || delete || activate;
+
+            final XdatFieldMappingSet fieldMappingSet = elementAccess.getOrCreateFieldMappingSet(authenticated);
+            final XdatFieldMapping    fieldMapping    = getFieldMapping(authenticated, fieldMappingSet, fieldName, fieldValue, isAccessible);
+
+            if (fieldMapping == null) {
+                return;
+            }
+
+            if (!isAccessible) {
+                final XFTItem item;
+                if (fieldMappingSet.getAllow().size() == 1) {
+                    item = fieldMappingSet.getItem();
+                } else {
+                    item = fieldMapping.getItem();
+                }
+                SaveItemHelper.authorizedDelete(item, authenticated, ci);
+                if (triggerEvent) {
+                    _eventService.triggerEvent(new XftItemEvent(item.getXSIType(), item.getIDValue(), UPDATE));
+                }
+                return;
+            }
+
+            fieldMapping.setField(fieldName);
+            fieldMapping.setFieldValue(fieldValue);
+            fieldMapping.setCreateElement(create);
+            fieldMapping.setReadElement(read);
+            fieldMapping.setEditElement(edit);
+            fieldMapping.setDeleteElement(delete);
+            fieldMapping.setActiveElement(activate);
+            fieldMapping.setComparisonType("equals");
+            fieldMappingSet.setAllow(fieldMapping);
+
+            if (fieldMappingSet.getXdatFieldMappingSetId() != null) {
+                fieldMapping.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fieldMappingSet.getXdatFieldMappingSetId());
+
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, true, false, ci);
+                    fieldMapping.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, false, false, ci);
+                }
+            } else if (elementAccess.getXdatElementAccessId() != null) {
+                fieldMappingSet.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", elementAccess.getXdatElementAccessId());
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, true, false, ci);
+                    fieldMappingSet.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, false, false, ci);
+                }
+            } else {
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, true, false, ci);
+                    elementAccess.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, false, false, ci);
+                }
+                ((XDATUser) affected).setElementAccess(elementAccess);
+            }
+            if (triggerEvent) {
+                _eventService.triggerEvent(new XftItemEvent(elementName, fieldValue, UPDATE));
+            }
+        } catch (XFTInitException e) {
+            log.error("An error occurred initializing XFT", e);
+        } catch (ElementNotFoundException e) {
+            log.error("Did not find the requested element on the item", e);
+        } catch (FieldNotFoundException e) {
+            log.error("Field not found {}: {}", e.FIELD, e.MESSAGE, e);
+        } catch (InvalidValueException e) {
+            log.error("Invalid value specified: {}", affected.getID(), e);
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
+
+    private XdatFieldMapping getFieldMapping(final UserI user, final XdatFieldMappingSet fieldMappingSet, final String fieldName, final String fieldValue, final boolean isAccessible) {
+        final Optional<XdatFieldMapping> optional = FluentIterable.from(fieldMappingSet.getAllow()).firstMatch(new Predicate<XdatFieldMapping>() {
+            @Override
+            public boolean apply(@Nullable final XdatFieldMapping fieldMapping) {
+                return fieldMapping != null && StringUtils.equals(fieldValue, fieldMapping.getFieldValue()) && StringUtils.equals(fieldName, fieldMapping.getField());
+            }
+        });
+
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+
+        return isAccessible ? new XdatFieldMapping(user) : null;
+    }
+
+    private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
+        return securityCheck(user, action, root, values);
+    }
+
+    private String getItemIId(final ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, IllegalAccessException, InvocationTargetException {
+        final String itemId;
+        if (item instanceof XFTItem) {
+            itemId = ((XFTItem) item).getIDValue();
+        } else if (item instanceof org.nrg.xdat.base.BaseElement) {
+            itemId = ((org.nrg.xdat.base.BaseElement) item).getStringProperty("ID");
+        } else {
+            final Method getId = Reflection.getMatchingMethod(item.getClass(), "getId", new Object[0]);
+            if (getId != null) {
+                itemId = (String) getId.invoke(item);
+            } else {
+                final Method getID = Reflection.getMatchingMethod(item.getClass(), "getID", new Object[0]);
+                if (getID != null) {
+                    itemId = (String) getID.invoke(item);
+                } else {
+                    itemId = "Couldn't determine item's ID, attaching full XML\n" + item.toString();
+                }
+            }
+        }
+        return itemId;
+    }
+
+    private void secureChild(UserI user, ItemI item) throws Exception {
+        List<ItemI> invalidItems = new ArrayList<>();
+
+        for (final Object o : item.getChildItems()) {
+            ItemI   child = (ItemI) o;
+            boolean b     = canRead(user, child);
+
+            if (b) {
+                if (child.getProperty("meta") != null && !canActivate(user, child)) {
+                    if (!child.isActive()) {
+                        b = false;
+                    }
+                }
+            }
+
+            if (b) {
+                secureChild(user, child);
+            } else {
+                invalidItems.add(child);
+            }
+        }
+
+        if (invalidItems.size() > 0) {
+            for (final ItemI invalid : invalidItems) {
+                ((XFTItem) item).removeItem(invalid);
+            }
+        }
+    }
+
+    private static class PermissionsBean {
+        PermissionsBean(final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
+            _affected = affected;
+            _authenticated = authenticated;
+            _elementName = elementName;
+            _fieldName = fieldName;
+            _fieldValue = fieldValue;
+            _create = create;
+            _read = read;
+            _delete = delete;
+            _edit = edit;
+            _activate = activate;
+            _activateChanges = activateChanges;
+            _ci = ci;
+        }
+
+        final UserI      _affected;
+        final UserI      _authenticated;
+        final String     _elementName;
+        final String     _fieldName;
+        final String     _fieldValue;
+        final Boolean    _create;
+        final Boolean    _read;
+        final Boolean    _delete;
+        final Boolean    _edit;
+        final Boolean    _activate;
+        final boolean    _activateChanges;
+        final EventMetaI _ci;
+    }
+
+    private static final String QUERY_USER_PERMISSIONS  = "SELECT " +
+                                                          "  xea.element_name, " +
+                                                          "  xfm.field, " +
+                                                          "  xfm.field_value " +
+                                                          "FROM xdat_user u " +
+                                                          "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                          "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                          "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
                                                           "WHERE " +
-                                                          "  xu.login = :username " +
-                                                          "  AND xea.element_name = 'xnat:projectData' " +
-                                                          "  AND xfm.%s = 1 " +
-                                                          "  AND xfm.comparison_type = 'equals' " +
-                                                          "  AND xfm.field_value != '*' " +
+                                                          "  xfm.field_value != '*' AND " +
+                                                          "  xfm.read_element = 1 AND " +
+                                                          "  u.login IN ('guest', '%s')";
+    private static final String QUERY_USER_PROJECTS     = "SELECT " +
+                                                          "  DISTINCT xfm.field_value AS project " +
+                                                          "FROM xdat_user u " +
+                                                          "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                          "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                          "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                          "WHERE " +
+                                                          "  xfm.comparison_type = 'equals' AND " +
+                                                          "  xfm.field_value != '*' AND " +
+                                                          "  xea.element_name = 'xnat:projectData' AND " +
+                                                          "  xfm.%s = 1 AND " +
+                                                          "  u.login IN (:usernames) " +
                                                           "ORDER BY project";
     private static final String QUERY_OWNED_PROJECTS    = String.format(QUERY_USER_PROJECTS, "delete_element");
     private static final String QUERY_EDITABLE_PROJECTS = String.format(QUERY_USER_PROJECTS, "edit_element");
-    private static final String QUERY_READABLE_PROJECTS = "SELECT DISTINCT xfm.field_value AS project " +
-                                                          "FROM xdat_field_mapping xfm " +
-                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
-                                                          "  LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
-                                                          "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id " +
-                                                          "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id " +
-                                                          "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id " +
-                                                          "WHERE " +
-                                                          "  xu.login = 'guest' " +
-                                                          "  AND xea.element_name = 'xnat:projectData' " +
-                                                          "  AND xfm.create_element = 0 " +
-                                                          "  AND xfm.read_element = 1 " +
-                                                          "  AND xfm.edit_element = 0 " +
-                                                          "  AND xfm.delete_element = 0 " +
-                                                          "  AND xfm.active_element = 0 " +
-                                                          "  AND xfm.comparison_type = 'equals' " +
-                                                          "UNION DISTINCT " + String.format(QUERY_USER_PROJECTS, "read_element");
+    private static final String QUERY_READABLE_PROJECTS = String.format(QUERY_USER_PROJECTS, "read_element");
 
     private final NamedParameterJdbcTemplate _template;
+    private final NrgEventService            _eventService;
 }

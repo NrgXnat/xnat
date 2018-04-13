@@ -21,6 +21,7 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.*;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -77,6 +78,11 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final HttpServletResponse response, final ResourceAlreadyExistsException exception) {
         return getExceptionResponseEntity(request, exception);
+    }
+
+    @ExceptionHandler(XFTInitException.class)
+    public ResponseEntity<?> handleXFTInitException (final HttpServletRequest request, final HttpServletResponse response, final XFTInitException exception) {
+        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "An XFT init exception occurred.");
     }
 
     @ExceptionHandler(NrgServiceException.class)

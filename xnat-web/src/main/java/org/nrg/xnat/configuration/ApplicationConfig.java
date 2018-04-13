@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
@@ -38,6 +39,7 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.TaskScheduler;
 
+import javax.servlet.ServletContext;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,8 +60,8 @@ import java.util.List;
 @Slf4j
 public class ApplicationConfig {
     @Bean
-    public ThemeService themeService() {
-        return new ThemeServiceImpl();
+    public ThemeService themeService(final SerializerService serializer, final ServletContext context) {
+        return new ThemeServiceImpl(serializer, context);
     }
 
     @Bean

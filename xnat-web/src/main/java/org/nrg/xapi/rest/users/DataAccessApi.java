@@ -4,10 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.authorization.GuestUserAccessXapiAuthorization;
@@ -23,24 +20,26 @@ import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 @Api(description = "Data Access API")
 @XapiRestController
@@ -66,11 +65,40 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "displays", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "datatypes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
+    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
+    @ResponseBody
+    public ResponseEntity<Set<String>> getAvailableDataTypes() throws XFTInitException {
+        return new ResponseEntity<>(getAvailableElements(), OK);
+    }
+
+    @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "datatypes/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
+    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
+    @ResponseBody
+    public ResponseEntity<GenericWrapperElement> getDataType(@ApiParam("The data type to be normalized.") @PathVariable final String dataType) throws XFTInitException {
+        log.info("Trying to get the data type");
+        try {
+            return new ResponseEntity<>(GenericWrapperElement.GetElement("FieldDefinitionSet"), OK);
+        } catch (ElementNotFoundException e) {
+            return new ResponseEntity<>(NOT_FOUND);
+        }
+    }
+
+    @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "displays", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<String>> getAvailableElementDisplays() {
-        return new ResponseEntity<>(AVAILABLE_ELEMENT_DISPLAYS, HttpStatus.OK);
+        return new ResponseEntity<>(AVAILABLE_ELEMENT_DISPLAYS, OK);
     }
 
     @ApiOperation(value = "Gets the last modified timestamp for the current user.", notes = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.", response = String.class, responseContainer = "List")
@@ -78,11 +106,11 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "displays/modified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "displays/modified", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<Date> getLastModified() {
-        return new ResponseEntity<>(_cache.getLastUpdateTime(getSessionUser()), HttpStatus.OK);
+        return new ResponseEntity<>(_cache.getLastUpdateTime(getSessionUser()), OK);
     }
 
     @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.", notes = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
@@ -90,7 +118,7 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "displays/{display}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "displays/{display}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<ElementDisplayModel>> getElementDisplays(@PathVariable final String display) throws DataFormatException {
@@ -140,7 +168,7 @@ public class DataAccessApi extends AbstractXapiRestController {
             }
         }), Predicates.<ElementDisplayModel>notNull()));
 
-        return new ResponseEntity<>(models, HttpStatus.OK);
+        return new ResponseEntity<>(models, OK);
     }
 
     @ApiOperation(value = "Returns a map indicating the status of the cache initialization.", response = String.class, responseContainer = "Map")
@@ -149,17 +177,38 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
                    @ApiResponse(code = 404, message = "Indicates that the cache implementation doesn't have the ability to report its status."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "cache/status", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "cache/status", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Map<String, String>> getCacheStatus() {
         if (Initializing.class.isAssignableFrom(_cache.getClass())) {
             final Initializing initializing = (Initializing) _cache;
-            return new ResponseEntity<>(initializing.getInitializationStatus(), HttpStatus.OK);
+            return new ResponseEntity<>(initializing.getInitializationStatus(), OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(NOT_FOUND);
     }
 
+    private Set<String> getAvailableElements() throws XFTInitException {
+        if (_availableElements.isEmpty()) {
+            synchronized (_availableElements) {
+                try {
+                    _availableElements.addAll(Lists.transform(GenericWrapperElement.GetAllElements(false), new Function<GenericWrapperElement, String>() {
+                        @Override
+                        public String apply(final GenericWrapperElement element) {
+                            return element.getType().toString();
+                        }
+                    }));
+                } catch (ElementNotFoundException ignored) {
+                    //
+                }
+            }
+        }
+        return _availableElements;
+    }
+
+
     private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList(BROWSEABLE, BROWSEABLE_CREATEABLE, CREATEABLE, SEARCHABLE, SEARCHABLE_BY_DESC, SEARCHABLE_BY_PLURAL_DESC);
+
+    private final Set<String> _availableElements = new ConcurrentSkipListSet<>();
 
     private final GroupsAndPermissionsCache _cache;
 }

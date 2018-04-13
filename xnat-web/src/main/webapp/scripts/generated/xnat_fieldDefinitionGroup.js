@@ -391,7 +391,7 @@ this.xsiType="xnat:fieldDefinitionGroup";
 
 	this.toXML=function(xmlTxt,preventComments){
 		xmlTxt+="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-		xmlTxt+="\n<xnat:FieldDefinitionSet";
+		xmlTxt+="\n<xnat:FieldDefinitionGroup";
 		xmlTxt+=this.getXMLAtts();
 		xmlTxt+=" xmlns:arc=\"http://nrg.wustl.edu/arc\"";
 		xmlTxt+=" xmlns:cat=\"http://nrg.wustl.edu/catalog\"";
@@ -406,7 +406,7 @@ this.xsiType="xnat:fieldDefinitionGroup";
 		xmlTxt+=" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
 		xmlTxt+=">";
 		xmlTxt+=this.getXMLBody(preventComments)
-		xmlTxt+="\n</xnat:FieldDefinitionSet>";
+		xmlTxt+="\n</xnat:FieldDefinitionGroup>";
 		return xmlTxt;
 	}
 

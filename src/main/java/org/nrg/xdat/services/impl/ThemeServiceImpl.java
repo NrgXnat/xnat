@@ -9,17 +9,16 @@
 
 package org.nrg.xdat.services.impl;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.services.ThemeService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
 import java.io.*;
 import java.nio.file.Path;
@@ -32,34 +31,24 @@ import java.util.zip.ZipInputStream;
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
 @Service
+@Slf4j
 public class ThemeServiceImpl implements ThemeService {
-    private static final Logger         _log = LoggerFactory.getLogger(ThemeServiceImpl.class);
-
-    private static String webRelativeThemePath="themes";
-    private static ThemeConfig themeConfig = null;
-    private static Path themesPath;
-    private static File themeFile = null;
-
-    private static final int FILE_BUFFER_SIZE = 4096;
-
     @Autowired
-    private SerializerService _serializer;
-    @Autowired
-    private ServletContext servletContext;
+    public ThemeServiceImpl(final SerializerService serializer, final ServletContext context) {
+        _serializer = serializer;
+        _themesPath = Paths.get(context.getRealPath("/"), WEB_RELATIVE_THEME_PATH);
+        _themeFile = _themesPath.resolve("theme.json").toFile();
 
-    @PostConstruct
-    public void postServiceConstruction(){
-        themesPath = Paths.get(servletContext.getRealPath("/"), webRelativeThemePath);
-        themeFile = themesPath.resolve("theme.json").toFile();
-        File checkThemesPath = themesPath.toFile();
+        final File checkThemesPath = _themesPath.toFile();
         if (!checkThemesPath.exists()) {
             checkThemesPath.mkdir();
         }
-        servletContext.setAttribute("ThemeService", this);
+
+        context.setAttribute("ThemeService", this);
     }
 
     public String getThemesPath() {
-        return themesPath.toString();
+        return _themesPath.toString();
     }
 
     /**
@@ -68,12 +57,12 @@ public class ThemeServiceImpl implements ThemeService {
      * @return The currently selected system theme configuration
      */
     public ThemeConfig getTheme(String role) {
-        if(themeConfig != null){
-            return themeConfig;
+        if(_themeConfig != null){
+            return _themeConfig;
         } else {                        // Read the last saved theme selection from the theme.json file in the themes
-            if (themeFile.exists()) {   // directory in the event it can't be found in the application context.
+            if (_themeFile.exists()) {   // directory in the event it can't be found in the application context.
                 try {                   // (ie. the server was just started/restarted)
-                    BufferedReader reader = new BufferedReader(new FileReader(themeFile));
+                    BufferedReader reader = new BufferedReader(new FileReader(_themeFile));
                     StringBuilder sb = new StringBuilder();
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -81,21 +70,22 @@ public class ThemeServiceImpl implements ThemeService {
                     }
                     reader.close();
                     String contents = sb.toString();
-                    themeConfig = _serializer.deserializeJson(contents, ThemeConfig.class);
+                    _themeConfig = _serializer.deserializeJson(contents, ThemeConfig.class);
                 } catch (IOException e) {
-                    _log.error("An error occurred trying to retrieve the theme file " + themeFile.getAbsolutePath(), e);
+                    log.error("An error occurred trying to retrieve the theme file " + _themeFile.getAbsolutePath(), e);
                 }
             }
             try {
-                setTheme(themeConfig);
+                setTheme(_themeConfig);
             } catch (ThemeNotFoundException e) {
-                _log.error("The specified theme {} wasn't found.", themeConfig.getName());
+                log.error("The specified theme {} wasn't found.", _themeConfig.getName());
             }
         }
+        //noinspection StatementWithEmptyBody
         if (role != null) {
             // TODO: implement search through the roles array in the ThemeConfig object for a matching ThemeConfig object for the specified role
         }
-        return themeConfig;
+        return _themeConfig;
     }
     public ThemeConfig getTheme() {
         return getTheme(null);
@@ -115,26 +105,15 @@ public class ThemeServiceImpl implements ThemeService {
      * If no global theme is selected or no overriding page with specified type is found the calling method should continue with it's default XNAT behavior.
      * @return a path string the referenced theme and type if found. Otherwise returns null.
      */
-    public String getThemePage(String pageName, String type) {
-        String pagePath;
-        ThemeConfig theme = getTheme();
-        if(theme == null){
+    public String getThemePage(final String pageName, final String type) {
+        if (StringUtils.isBlank(pageName)) {
             return null;
-        } else if (pageName == null){
-            return null;
-        } else { // Read the last saved theme selection from the theme.json file in the themes
-            pagePath = checkThemeFileExists(theme, pageName, type);
         }
-        return pagePath;
-    }
-
-    /**
-     * Checks for the existence of a file name with a given set of accepted file extensions in the theme directory
-     * and returns a relative web path string the referenced page if found.
-     * @return a relative web path string prioritized by extension to the referenced page if found. Otherwise returns null.
-     */
-    private String checkThemeFileExists(ThemeConfig theme, String pageName) {
-        return checkThemeFileExists(theme, pageName, null);
+        final ThemeConfig theme = getTheme();
+        if (theme == null) {
+            return null;
+        }
+        return checkThemeFileExists(theme, pageName, type);
     }
 
     private String checkThemeFileExists(ThemeConfig theme, String pageName, final String type) {
@@ -144,27 +123,27 @@ public class ThemeServiceImpl implements ThemeService {
         String[] scriptExts = new String[]{"js"};
         String[] styleExts = new String[]{"css"};
         if("page".equals(type)){
-            extensions = (String[]) ArrayUtils.addAll(extensions, pageExts);
+            extensions = ArrayUtils.addAll(extensions, pageExts);
         }
         if("script".equals(type)){
-            extensions = (String[]) ArrayUtils.addAll(extensions, scriptExts);
+            extensions = ArrayUtils.addAll(extensions, scriptExts);
         }
         if("style".equals(type)){
-            extensions = (String[]) ArrayUtils.addAll(extensions, styleExts);
+            extensions = ArrayUtils.addAll(extensions, styleExts);
         }
         final boolean useTypeSeparator;
         if(type == null){
             useTypeSeparator = false;
-            extensions = (String[]) ArrayUtils.addAll(extensions, pageExts);
-            extensions = (String[]) ArrayUtils.addAll(extensions, scriptExts);
-            extensions = (String[]) ArrayUtils.addAll(extensions, styleExts);
+            extensions = ArrayUtils.addAll(extensions, pageExts);
+            extensions = ArrayUtils.addAll(extensions, scriptExts);
+            extensions = ArrayUtils.addAll(extensions, styleExts);
         } else {
             useTypeSeparator = true;
         }
         for (String ext : extensions) {
             File themePageFile = (useTypeSeparator ? Paths.get(theme.getPath(), type + "s", pageName + "." + ext) : Paths.get(theme.getPath(), pageName + "." + ext)).toFile();
             if(themePageFile.exists()) {
-                pagePath = safeJoin("/" + webRelativeThemePath, theme.getName(), type + "s", pageName + "." + ext);
+                pagePath = safeJoin("/" + WEB_RELATIVE_THEME_PATH, theme.getName(), type + "s", pageName + "." + ext);
                 break;
             }
         }
@@ -175,27 +154,25 @@ public class ThemeServiceImpl implements ThemeService {
      * Sets the currently selected system theme in the theme.json file in the web application's themes folder and caches it.
      * @param themeConfig the theme configuration object to apply
      */
-    public ThemeConfig setTheme(ThemeConfig themeConfig) throws ThemeNotFoundException {
+    public ThemeConfig setTheme(final ThemeConfig themeConfig) throws ThemeNotFoundException {
         try {
-            if (themeConfig == null){
-                themeConfig = new ThemeConfig();
-            }
-            if(themeExists(themeConfig.getName())) {
-                String themeJson = _serializer.toJson(themeConfig);
-                if (!themeFile.exists()) {
-                    themeFile.createNewFile();
+            final ThemeConfig working = ObjectUtils.defaultIfNull(themeConfig, new ThemeConfig());
+            if(themeExists(working.getName())) {
+                final String themeJson = _serializer.toJson(working);
+                if (!_themeFile.exists()) {
+                    _themeFile.createNewFile();
                 }
-                FileWriter writer = new FileWriter(themeFile);
+                FileWriter writer = new FileWriter(_themeFile);
                 writer.write(themeJson);
                 writer.flush();
                 writer.close();
-                ThemeServiceImpl.themeConfig = themeConfig;
+                _themeConfig = working;
             } else {
-                throw new ThemeNotFoundException(themeConfig.getName());
+                throw new ThemeNotFoundException(working.getName());
             }
         } catch (IOException e) {
             // TODO: rethrow this and respond as an internal server error
-            _log.error("An error occurred retrieving a theme", e);
+            log.error("An error occurred retrieving a theme", e);
         }
         return themeConfig;
     }
@@ -215,7 +192,7 @@ public class ThemeServiceImpl implements ThemeService {
      * @param enabled flag specifying whether or not the theme should be active.
      */
     public ThemeConfig setTheme(String name, boolean enabled) throws ThemeNotFoundException {
-        return setTheme(new ThemeConfig(name, themesPath + File.separator + name, enabled));
+        return setTheme(new ThemeConfig(name, _themesPath + File.separator + name, enabled));
     }
 
     /**
@@ -235,7 +212,7 @@ public class ThemeServiceImpl implements ThemeService {
     public List<TypeOption> loadExistingThemes() {
         ArrayList<TypeOption> themeOptions = new ArrayList<>();
         themeOptions.add(new TypeOption(null, "None"));
-        File f = themesPath.toFile(); // current directory
+        File f = _themesPath.toFile(); // current directory
         FileFilter directoryFilter = new FileFilter() {
             public boolean accept(File file) {
                 return file.isDirectory();
@@ -277,34 +254,32 @@ public class ThemeServiceImpl implements ThemeService {
      * Extracts a zipped theme package from an given InputStream.
      * @param inputStream from which to read the zipped data
      * @return List of root level directories (theme names) that were extracted
-     * @throws IOException
+     * @throws IOException When an error occurs accessing a file or directory.
      */
     public List<String> extractTheme(InputStream inputStream) throws IOException {
         final List<String> rootDirs = new ArrayList<>();
-        ZipInputStream zipIn = new ZipInputStream(inputStream);
-        ZipEntry entry = zipIn.getNextEntry();
-        while (entry != null) {  // iterate over entries in the zip file
-            String filePath = this.getThemesPath() + File.separator + entry.getName();
-            if (!entry.isDirectory()) {  // if the entry is a file, extract it      // TODO: Make sure we get a directory the first iteration through (fail otherwise) so that no files get dumped in the root themes directory
-                this.extractFile(zipIn, filePath);
-            } else {  // if the entry is a directory, make the directory
-                String rootDir = entry.getName();
-                int slashIndex = rootDir.indexOf('/');
-                if(slashIndex>1){
-                    int nextSlashIndex = rootDir.indexOf('/', slashIndex+1);
-                    if(nextSlashIndex<0) {
-                        rootDir = rootDir.substring(0, slashIndex);
-                        rootDirs.add(rootDir);
+        try (final ZipInputStream zipIn = new ZipInputStream(inputStream)) {
+            ZipEntry entry;
+            while ((entry = zipIn.getNextEntry()) != null) {  // iterate over entries in the zip file
+                final String filePath = this.getThemesPath() + File.separator + entry.getName();
+                if (!entry.isDirectory()) {  // if the entry is a file, extract it      // TODO: Make sure we get a directory the first iteration through (fail otherwise) so that no files get dumped in the root themes directory
+                    extractFile(zipIn, filePath);
+                } else {  // if the entry is a directory, make the directory
+                    String rootDir    = entry.getName();
+                    int    slashIndex = rootDir.indexOf('/');
+                    if (slashIndex > 1) {
+                        int nextSlashIndex = rootDir.indexOf('/', slashIndex + 1);
+                        if (nextSlashIndex < 0) {
+                            rootDir = rootDir.substring(0, slashIndex);
+                            rootDirs.add(rootDir);
+                        }
                     }
+                    File dir = new File(filePath);
+                    dir.mkdir();
                 }
-                File dir = new File(filePath);
-                dir.mkdir();
+                zipIn.closeEntry();
             }
-            zipIn.closeEntry();
-            entry = zipIn.getNextEntry();
         }
-        zipIn.close();
-        inputStream.close();
         return rootDirs;
     }
 
@@ -312,7 +287,7 @@ public class ThemeServiceImpl implements ThemeService {
      * Extracts a single zip entry (file entry)
      * @param zip zip input stream to extract it from
      * @param path to the file within the zip package
-     * @throws IOException
+     * @throws IOException When an error occurs accessing a file or directory.
      */
     private void extractFile(ZipInputStream zip, String path) throws IOException {
         BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(path));
@@ -323,4 +298,13 @@ public class ThemeServiceImpl implements ThemeService {
         }
         os.close();
     }
+
+    private static final String WEB_RELATIVE_THEME_PATH ="themes";
+    private static final int    FILE_BUFFER_SIZE        = 4096;
+
+    private final SerializerService _serializer;
+    private final Path                    _themesPath;
+    private final File                    _themeFile;
+
+    private ThemeConfig _themeConfig = null;
 }

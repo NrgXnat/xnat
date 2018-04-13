@@ -9,6 +9,7 @@
 
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
@@ -28,6 +29,7 @@ import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.serializers.GenericWrapperElementSerializer;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 @SuppressWarnings({"unchecked","rawtypes"})
+@JsonSerialize(using = GenericWrapperElementSerializer.class)
 public class GenericWrapperElement extends XFTElementWrapper implements SchemaElementI{	
 	private static final Logger    logger                 = LoggerFactory.getLogger(GenericWrapperElement.class);
 	private static       Hashtable HIDDEN_SUPERIOR_FIELDS = new Hashtable();

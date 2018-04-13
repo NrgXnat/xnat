@@ -20,8 +20,14 @@ function ClassMapping(){
 			'security',
             'workflow',
             'wrk',
-            'xdat',
+            'xdat'
         ];
+
+        // special stupid hack for custom variables
+        if (name === "xnat:FieldDefinitionSet") {
+            if(window.xnat_fieldDefinitionGroup==undefined)dynamicJSLoad('xnat_fieldDefinitionGroup','generated/xnat_fieldDefinitionGroup.js');
+            return new xnat_fieldDefinitionGroup();
+        }
 
         if (reservedPrefixes.indexOf(prefix) < 0) {
             /*************************************
@@ -32,7 +38,7 @@ function ClassMapping(){
             // 	if(window.xnat_mrSessionData==undefined)dynamicJSLoad('xnat_mrSessionData','generated/xnat_mrSessionData.js');
             // 	return new xnat_mrSessionData();
             // }
-            // if(name=="xnat:mrSessionData"){
+            // if(name=="http://nrg.wustl.edu/xnat:mrSessionData"){
             // 	if(window.xnat_mrSessionData==undefined)dynamicJSLoad('xnat_mrSessionData','generated/xnat_mrSessionData.js');
             // 	return new xnat_mrSessionData();
             // }
@@ -54,14 +60,14 @@ function ClassMapping(){
             // 	if(window.xnat_mrSessionData==undefined)dynamicJSLoad('xnat_mrSessionData','generated/xnat_mrSessionData.js');
             // 	return new xnat_mrSessionData();
             // }
-            // if(name=="xnat:MRSession"){
+            // if(name=="http://nrg.wustl.edu/xnat:MRSession"){
             // 	if(window.xnat_mrSessionData==undefined)dynamicJSLoad('xnat_mrSessionData','generated/xnat_mrSessionData.js');
             // 	return new xnat_mrSessionData();
             // }
         }
         else {
             /*************************************************
-             * These is where ugly hacks and legacy crap lives
+             * These is where ugly hacks and legacy junk lives
              *************************************************/
 
             if (prefix === 'arc') {

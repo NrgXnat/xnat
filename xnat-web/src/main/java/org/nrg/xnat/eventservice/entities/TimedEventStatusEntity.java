@@ -129,6 +129,7 @@ public class TimedEventStatusEntity implements Serializable {
         OBJECT_FILTER_MISMATCH_HALT,
         ACTION_CALLED,
         ACTION_STEP,
+        ACTION_ERROR,
         ACTION_FAILED,
         ACTION_COMPLETE,
         FAILED

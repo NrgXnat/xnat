@@ -72,7 +72,7 @@ public class TestAction extends SingleActionProvider {
     }
 
     @Override
-    public Map<String, ActionAttributeConfiguration> getAttributes() {
+    public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user) {
         return null;
     }
 }

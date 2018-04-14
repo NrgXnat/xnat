@@ -19,43 +19,49 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
 
     private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
-    public abstract Map<String, ActionAttributeConfiguration> getAttributes();
-
-    public Action getAction() {
-        return Action.builder().id(getName())
-                        .actionKey(getActionKey() )
-                        .displayName(getDisplayName())
-                        .description(getDescription())
-                        .provider(this)
-                        .attributes(getAttributes())
-                        .build();
-
-    }
+    public abstract Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user);
 
     @Override
     public String getName() { return this.getClass().getName(); }
 
     @Override
-    public List<Action> getAllActions() { return new ArrayList<>(Arrays.asList(getAction())); }
-
-    @Override
-    public List<Action> getActions(UserI user) {
-        return getAllActions();
+    public List<Action> getAllActions() {
+        return new ArrayList<>(Arrays.asList(
+                Action.builder().id(getName())
+                      .actionKey(getActionKey() )
+                      .displayName(getDisplayName())
+                      .description(getDescription())
+                      .provider(this)
+                      .build()
+        ));
     }
 
-    @Override
-    public List<Action> getActions(String xnatType, UserI user) {
-        return getAllActions();
-    }
+//    @Override
+//    public List<Action> getActions(UserI user) {
+//        return getAllActions();
+//    }
+//
+//    @Override
+//    public List<Action> getActions(String xnatType, UserI user) {
+//        return getAllActions();
+//    }
 
     @Override
     public List<Action> getActions(String projectId, String xnatType, UserI user) {
-        return getAllActions();
+        return new ArrayList<>(Arrays.asList(
+                Action.builder().id(getName())
+                      .actionKey(getActionKey() )
+                      .displayName(getDisplayName())
+                      .description(getDescription())
+                      .attributes(getAttributes(projectId, xnatType, user))
+                      .provider(this)
+                      .build()
+        ));
     }
 
     @Override
     public Boolean isActionAvailable(String actionKey, String projectId, String xnatType, UserI user) {
-        return getAction().actionKey().contentEquals(actionKey);
+        return getActions(projectId, xnatType, user).get(0).actionKey().contentEquals(actionKey);
     }
 
     public String getActionKey() {

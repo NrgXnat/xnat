@@ -80,7 +80,7 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActions(UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            List<Action> providerActions = provider.getActions(user);
+            List<Action> providerActions = provider.getActions(null, null, user);
             if(providerActions != null)
                 actions.addAll(providerActions);
         }
@@ -91,7 +91,7 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActions(String xnatType, UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            actions.addAll(provider.getActions(xnatType, user));
+            actions.addAll(provider.getActions(null, xnatType, user));
         }
         return actions;
     }
@@ -109,7 +109,7 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActionsByProvider(String providerName, UserI user) {
         for(EventServiceActionProvider provider : componentManager.getActionProviders()){
             if(provider != null && provider.getName() != null && provider.getName().contentEquals(providerName)) {
-                return provider.getActions(user);
+                return provider.getActions(null, null, user);
             }
         }
         return new ArrayList<>();
@@ -117,7 +117,7 @@ public class ActionManagerImpl implements ActionManager {
 
     @Override
     public List<Action> getActionsByProvider(EventServiceActionProvider provider, UserI user) {
-        return provider.getActions(user);
+        return provider.getActions(null, null, user);
     }
 
     @Override

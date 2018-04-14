@@ -407,7 +407,7 @@ public class EventServiceImpl implements EventService {
                 .className(actionProvider.getName())
                 .displayName((actionProvider.getDisplayName()))
                 .description(actionProvider.getDescription())
-                .actions(actionProvider.getActions(null))
+                .actions(actionProvider.getAllActions())
                 .build();
     }
 

@@ -174,7 +174,7 @@ public class EventServiceIntegrationTest {
         when(mockEventServiceLoggingAction.getName()).thenReturn("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDisplayName()).thenReturn("MockEventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDescription()).thenReturn("MockEventServiceLoggingAction");
-        when(mockEventServiceLoggingAction.getActions(Matchers.any(UserI.class))).thenReturn(null);
+        when(mockEventServiceLoggingAction.getActions(Matchers.any(String.class),Matchers.any(String.class),Matchers.any(UserI.class))).thenReturn(null);
 
 
     }
@@ -1235,7 +1235,7 @@ public class EventServiceIntegrationTest {
         }
 
         @Override
-        public Map<String, ActionAttributeConfiguration> getAttributes() {
+        public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user) {
             return null;
         }
     }

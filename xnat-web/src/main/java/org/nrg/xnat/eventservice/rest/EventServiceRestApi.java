@@ -254,7 +254,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                       final @RequestParam(value = "xnattype", required = false) String xnatType)
             throws NrgServiceRuntimeException {
         final UserI user = XDAT.getUserDetails();
-        if(projectId != null && xnatType != null)
+        if(projectId != null)
             return eventService.getActions(projectId, xnatType, user);
         else
             return eventService.getActions(xnatType, user);

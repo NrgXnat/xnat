@@ -1,12 +1,11 @@
 {
-    "name": "Email Test",
+    "name": "Send Email Test",
     "active": true,
     "event-id": "org.nrg.xnat.eventservice.events.ProjectCreatedEvent",
     "action-key": "org.nrg.xnat.eventservice.actions.EventServiceEmailAction:org.nrg.xnat.eventservice.actions.EventServiceEmailAction",
     "attributes": {
-        "subject": "Test Subject",
-        "from": "tacofort@gmail.com",
-        "to": "mkelsey@gmail.com",
+        "subject": "Test Email",
+        "to": "xnattester",
         "body": "Don't underestimate the power of a puffer."
     }
 }

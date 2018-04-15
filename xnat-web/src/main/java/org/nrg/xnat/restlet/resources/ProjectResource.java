@@ -22,6 +22,7 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -36,7 +37,6 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
-import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ public class ProjectResource extends ItemResource {
     private XnatProjectdata project = null;
     private final String projectId;
 
-    public ProjectResource(Context context, Request request, Response response) throws ResourceException {
+    public ProjectResource(Context context, Request request, Response response) {
         super(context, request, response);
 
         // This was part of a fix for XNAT-3453, but it breaks other non-standard REST ways of setting project properties.
@@ -86,7 +86,7 @@ public class ProjectResource extends ItemResource {
     public void handleDelete() {
         final UserI user = getUser();
 
-        if (user == null || user.isGuest()) {
+        if (user.isGuest()) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
         } else {
             if (filepath != null && !filepath.equals("")) {
@@ -273,6 +273,7 @@ public class ProjectResource extends ItemResource {
                             if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
                                 project.preSave();
                                 BaseXnatProjectdata.createProject(project, user, allowDataDeletion, true, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
+                                XDAT.triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, XftItemEvent.CREATE));
                             } else {
                                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
                             }
@@ -343,7 +344,7 @@ public class ProjectResource extends ItemResource {
         }
 
         @Override
-        public Representation handle(SecureResource resource, Variant variant) throws Exception {
+        public Representation handle(SecureResource resource, Variant variant) {
             MediaType mt = resource.overrideVariant(variant);
             ProjectResource projResource = (ProjectResource) resource;
             if (resource.filepath != null && !resource.filepath.equals("")) {

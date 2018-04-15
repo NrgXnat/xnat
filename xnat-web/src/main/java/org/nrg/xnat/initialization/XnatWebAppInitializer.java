@@ -77,7 +77,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected String[] getServletMappings() {
-        return new String[]{"/admin/*", "/xapi/*"};
+        return new String[]{"/admin/*", "/xapi/*", "/pages/*"};
     }
 
     @Override

@@ -9,13 +9,11 @@
 
 package org.nrg.xapi.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xnat.configuration.WebConfig;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,6 +35,7 @@ import java.util.Locale;
 @Configuration
 @EnableSwagger2
 @ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.spawner.configuration"}, includeFilters = @Filter(ControllerAdvice.class))
+@Slf4j
 public class RestApiConfig {
     @Bean
     public UserFactory userFactory(final XdatUserAuthService service) {
@@ -45,7 +44,7 @@ public class RestApiConfig {
 
     @Bean
     public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
-        _log.debug("Initializing the Swagger Docket object");
+        log.debug("Initializing the Swagger Docket object");
         // TODO: When updating to Swagger 2.5.0 or later, remove the pathMapping("/xapi") call at the end.
         return new Docket(DocumentationType.SWAGGER_2).select()
                                                       .apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class))
@@ -70,6 +69,4 @@ public class RestApiConfig {
     private String getMessage(final MessageSource messageSource, final String messageId) {
         return messageSource.getMessage(messageId, null, Locale.getDefault());
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);
 }

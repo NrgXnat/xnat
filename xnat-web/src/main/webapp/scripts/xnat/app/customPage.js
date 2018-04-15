@@ -135,8 +135,8 @@ var XNAT = getObject(XNAT);
             }
 
             // then core jsp and html files
-            paths.push('/page/' + _pg + '/content.jsp');
-            paths.push('/page/' + _pg + '/content.html');
+            paths.push('/pages/view/' + _pg + '/content');
+            paths.push('/pages/view/' + _pg + '/content.html');
 
             return paths;
 

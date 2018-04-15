@@ -1,3 +1,4 @@
+<%--@elvariable id="themeService" type="org.nrg.xdat.services.ThemeService"--%>
 <%@ tag description="Initialize Variables" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -11,8 +12,6 @@
   ~
   ~ Released under the Simplified BSD.
   --%>
-
-<jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl" scope="request"/>
 
 <c:if test="${empty requestScope.hasInit}">
 

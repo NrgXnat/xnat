@@ -46,7 +46,7 @@ import java.util.Map;
 @Configuration
 @EnableWebMvc
 @EnableAspectJAutoProxy
-@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization"})
+@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Autowired
     public void setJackson2ObjectMapperBuilder(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
@@ -130,12 +130,12 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public ViewResolver viewResolver() {
-        return new InternalResourceViewResolver() {{
-            setExposeContextBeansAsAttributes(true);
-            setViewClass(JstlView.class);
-            setPrefix("/WEB-INF/views/");
-            setSuffix(".jsp");
-        }};
+        final InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+        resolver.setExposeContextBeansAsAttributes(true);
+        resolver.setViewClass(JstlView.class);
+        resolver.setPrefix("/page/");
+        resolver.setSuffix("/index.jsp");
+        return resolver;
     }
 
     private static final Map<String, Object> MARSHALLER_PROPERTIES = new HashMap<String, Object>() {{

@@ -43,8 +43,6 @@ public class ThemeServiceImpl implements ThemeService {
         if (!checkThemesPath.exists()) {
             checkThemesPath.mkdir();
         }
-
-        context.setAttribute("ThemeService", this);
     }
 
     public String getThemesPath() {

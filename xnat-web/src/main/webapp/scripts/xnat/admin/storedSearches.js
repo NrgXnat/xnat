@@ -192,7 +192,7 @@ var XNAT = getObject(XNAT);
                             .td(escapeHtml( search.description ))
                             .td(escapeHtml( search['root_element_name'] ))
                             .td({ addClass: 'right' },[ showUserCount(searchJson['allowed_user']) ])
-                            .td({ addClass: 'center' },[
+                            .td({ addClass: 'center nowrap' },[
                                 editLink(search.id, [ spawn('button.btn2.btn-sm','Edit') ]),
                                 spacer(10),
                                 viewLink(search.id, [ spawn('button.btn2.btn-sm','View') ])

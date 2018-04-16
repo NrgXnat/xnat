@@ -9,138 +9,146 @@
 
 package org.nrg.xft.event;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.EventI;
+import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.search.ItemSearch;
 
 /**
  * The Class XftItemEvent.
  */
+@Slf4j
 public class XftItemEvent implements EventI {
-	
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = 199850020591951620L;
-	
-	/** The Constant CREATE. */
-	public final static String CREATE="C";
-	
-	/** The Constant READ. */
-	public final static String READ="R";
-	
-	/** The Constant UPDATE. */
-	public final static String UPDATE="U";
-	
-	/** The Constant DELETE. */
-	public final static String DELETE="D";
-	
-	/** The xsi type. */
-	private String xsiType=null;
-	
-	/** The i. */
-	private Object i=null;
-	
-	/** The action. */
-	private String action=null;
-	
-	/** The id. */
-	private Object id=null;
-	
-	/**
-	 * Instantiates a new xft item event.
-	 *
-	 * @param xsiType the xsi type
-	 * @param action the action
-	 */
-	public XftItemEvent(String xsiType,String action){
-		this.xsiType=xsiType;
-		this.action=action;
-	}
-	
-	/**
-	 * Instantiates a new xft item event.
-	 *
-	 * @param xsiType the xsi type
-	 * @param id the id
-	 * @param action the action
-	 */
-	public XftItemEvent(String xsiType,Object id,String action){
-		this.xsiType=xsiType;
-		this.id=id;
-		this.action=action;
-	}
-	
-	/**
-	 * Gets the action.
-	 *
-	 * @return the action
-	 */
-	public String getAction() {
-		return action;
-	}
-	
-	/**
-	 * Sets the action.
-	 *
-	 * @param action the new action
-	 */
-	public void setAction(String action) {
-		this.action = action;
-	}
-	
-	/**
-	 * Gets the item.
-	 *
-	 * @return the item
-	 */
-	public Object getItem() {
-		return i;
-	}
-	
-	/**
-	 * Sets the item.
-	 *
-	 * @param i the new item
-	 */
-	public void setItem(Object i) {
-		this.i = i;
-	}
-	
-	/**
-	 * Gets the xsi type.
-	 *
-	 * @return the xsi type
-	 */
-	public String getXsiType() {
-		return xsiType;
-	}
-	
-	/**
-	 * Sets the xsi type.
-	 *
-	 * @param xsiType the new xsi type
-	 */
-	public void setXsiType(String xsiType) {
-		this.xsiType = xsiType;
-	}
+    /**
+     * The Constant CREATE.
+     */
+    public final static String CREATE = "C";
 
-	/**
-	 * Gets the id.
-	 *
-	 * @return the id
-	 */
-	public Object getId() {
-		return id;
-	}
+    /**
+     * The Constant READ.
+     */
+    public final static String READ = "R";
 
-	/**
-	 * Sets the id.
-	 *
-	 * @param id the new id
-	 */
-	public void setId(Object id) {
-		this.id = id;
-	}
+    /**
+     * The Constant UPDATE.
+     */
+    public final static String UPDATE = "U";
 
-	@Override
-	public String toString() {
-		return xsiType + " " + id + " " + action;
-	}
+    /**
+     * The Constant DELETE.
+     */
+    public final static String DELETE = "D";
+
+    /**
+     * Instantiates a new XFTItem event.
+     *
+     * @param item The {@link XFTItem}
+     */
+    public XftItemEvent(final BaseElement item, final String action) throws ElementNotFoundException, FieldNotFoundException {
+        _item = item;
+        _xsiType = item.getXSIType();
+        _id = item.getStringProperty("ID");
+        _action = action;
+    }
+
+    /**
+     * Instantiates a new XFTItem event.
+     *
+     * @param item The {@link XFTItem}
+     */
+    public XftItemEvent(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
+        _item = item;
+        _xsiType = item.getXSIType();
+        _id = item.getIDValue();
+        _action = action;
+    }
+
+    /**
+     * Instantiates a new XFTItem event.
+     *
+     * @param xsiType the xsi type
+     * @param action  the action
+     */
+    public XftItemEvent(final String xsiType, final String action) {
+        _xsiType = xsiType;
+        _id = null;
+        _action = action;
+    }
+
+    /**
+     * Instantiates a new XFTItem event.
+     *
+     * @param xsiType the xsi type
+     * @param id      the id
+     * @param action  the action
+     */
+    public XftItemEvent(final String xsiType, final String id, final String action) {
+        _xsiType = xsiType;
+        _id = id;
+        _action = action;
+    }
+
+    /**
+     * Gets the xsi type.
+     *
+     * @return the xsi type
+     */
+    public String getXsiType() {
+        return _xsiType;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return the id
+     */
+    public String getId() {
+        return _id;
+    }
+
+    /**
+     * Gets the action.
+     *
+     * @return the action
+     */
+    public String getAction() {
+        return _action;
+    }
+
+    /**
+     * Gets the item. This method returns an Object rather than an XFTItem because the object may sometimes be
+     * the OM version rather than the generic XFTItem (e.g. {@link XdatUsergroup}), as when initialized with the
+     * {@link #XftItemEvent(BaseElement, String)} constructor.
+     *
+     * @return the item
+     */
+    public Object getItem() {
+        if (_item == null) {
+            final String xmlPath = _xsiType + "/ID";
+            try {
+                _item = ItemSearch.GetItem(xmlPath, _id, Users.getAdminUser(), false);
+            } catch (Exception e) {
+                log.warn("An error occurred trying to retrieve the XFTItem for object via XMLPath {} with ID {}", xmlPath, _id, e);
+            }
+        }
+        return _item;
+    }
+
+    @Override
+    public String toString() {
+        return _xsiType + " " + _id + " " + _action;
+    }
+
+    private final String _xsiType;
+    private final String _action;
+    private final String _id;
+
+    private Object _item;
 }
+

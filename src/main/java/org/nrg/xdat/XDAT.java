@@ -22,11 +22,13 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -34,6 +36,7 @@ import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -52,7 +55,10 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -523,6 +529,26 @@ public class XDAT implements Initializable, Configurable{
 	    return _notificationService;
 	}
 
+	public static void triggerEvent(final EventI event) {
+		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event);
+	}
+
+	public static void triggerEvent(final String xsiType, final String id, final String action) {
+		triggerEvent(new XftItemEvent(xsiType, id, action));
+	}
+
+	public static void triggerEvent(final String xsiType, final String action) {
+		triggerEvent(new XftItemEvent(xsiType, action));
+	}
+
+	public static void triggerEvent(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
+		triggerEvent(new XftItemEvent(item, action));
+	}
+
+	public static void triggerEvent(final BaseElement element, final String action) throws ElementNotFoundException, FieldNotFoundException {
+		triggerEvent(new XftItemEvent(element, action));
+	}
+
     public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
         _screenTemplatesFolders.put(path, screenTemplatesFolder);
     }
@@ -874,9 +900,10 @@ public class XDAT implements Initializable, Configurable{
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, tempPass, grantedAuthorities);
 		if (!user.isGuest()) {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
+            return true;
 		}
-		return true;
-    }
+        return false;
+	}
 
     public static void sendJmsRequest(final Object request) {
         sendJmsRequest(XDAT.getContextService().getBean(JmsTemplate.class), request);

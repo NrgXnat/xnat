@@ -23,7 +23,7 @@
         var container = '#user-stored-search-table-container';
 
         function spawnStoredSearchTable() {
-            var $dataRows = [];
+            var dataRows$ = [];
             var username = '$!item.getProperty("login")'
 
             if (!username) return false;
@@ -61,15 +61,15 @@
 
         function renderStoredSearchTable(container){
             // console.log('renderUsersTable');
-            var $container = container ? $$(container) : $('#user-stored-search-table-container');
+            var container$ = container ? $$(container) : $('#user-stored-search-table-container');
             var _searchTable;
-            if ($container.length) {
-                    $container.html('loading...');
+            if (container$.length) {
+                    container$.html('loading...');
                 // setTimeout(function(){
                 _searchTable = XNAT.spawner.spawn({
                     searchTable: spawnStoredSearchTable()
                 });
-                _searchTable.render($container.empty(), 200);
+                _searchTable.render(container$.empty(), 200);
             }
         }
 

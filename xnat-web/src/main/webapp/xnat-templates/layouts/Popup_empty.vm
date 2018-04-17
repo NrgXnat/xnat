@@ -31,4 +31,10 @@ $navigation.setTemplate("/bodyOpen.vm")
 <div id="mylogger"></div>
 #addGlobalCustomScreens("footer")
 
-$navigation.setTemplate("/htmlClose.vm")
+##$navigation.setTemplate("/htmlClose.vm")
+
+</div><!-- /page_wrapper -->
+##$navigation.setTemplate("/powered_by.vm")
+<script type="text/javascript" src="$content.getURI('scripts/footer.js')"></script>
+</body>
+</html>

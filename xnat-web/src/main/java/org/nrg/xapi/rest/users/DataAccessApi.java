@@ -60,10 +60,12 @@ public class DataAccessApi extends AbstractXapiRestController {
         _cache = cache;
     }
 
-    @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
+    @ApiOperation(value = "Gets a list of the available data types on the system, preceded by a timestamp indicating when the list of data types was generated.",
+                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).  The first element in this list is a timestamp indicating when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
+                  response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available data types."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
@@ -72,24 +74,28 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(getAvailableElements(), OK);
     }
 
-    @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
+    @ApiOperation(value = "Gets information about the requested data type.",
+                  notes = "The available element displays from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
+                  response = GenericWrapperElement.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the available data type."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<GenericWrapperElement> getDataType(@ApiParam("The data type to be normalized.") @PathVariable final String dataType) throws XFTInitException {
-        log.info("Trying to get the data type");
+    public ResponseEntity<GenericWrapperElement> getDataType(@ApiParam("The data type to be retrieved.") @PathVariable final String dataType) throws XFTInitException {
+        log.info("Trying to get the data type {}", dataType);
         try {
-            return new ResponseEntity<>(GenericWrapperElement.GetElement("FieldDefinitionSet"), OK);
+            return new ResponseEntity<>(GenericWrapperElement.GetElement(dataType), OK);
         } catch (ElementNotFoundException e) {
             return new ResponseEntity<>(NOT_FOUND);
         }
     }
 
-    @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "Gets a list of the available element displays.",
+                  notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
+                  response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
@@ -101,7 +107,9 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(AVAILABLE_ELEMENT_DISPLAYS, OK);
     }
 
-    @ApiOperation(value = "Gets the last modified timestamp for the current user.", notes = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "Gets the last modified timestamp for the current user.",
+                  notes = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.",
+                  response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
@@ -113,7 +121,9 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_cache.getLastUpdateTime(getSessionUser()), OK);
     }
 
-    @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.", notes = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.",
+                  notes = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
+                  response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of element displays of the specified type for the current user."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
@@ -187,10 +197,18 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(NOT_FOUND);
     }
 
+    /**
+     * Gets the names of all of the available data types on the system, with the first element being a timestamp indicating when the list was generated.
+     *
+     * @return All of the available data type names as a set.
+     *
+     * @throws XFTInitException When an error occurs accessing XFT.
+     */
     private Set<String> getAvailableElements() throws XFTInitException {
         if (_availableElements.isEmpty()) {
             synchronized (_availableElements) {
                 try {
+                    _availableElements.add(Long.toString(Calendar.getInstance().getTimeInMillis()));
                     _availableElements.addAll(Lists.transform(GenericWrapperElement.GetAllElements(false), new Function<GenericWrapperElement, String>() {
                         @Override
                         public String apply(final GenericWrapperElement element) {
@@ -198,13 +216,12 @@ public class DataAccessApi extends AbstractXapiRestController {
                         }
                     }));
                 } catch (ElementNotFoundException ignored) {
-                    //
+                    // Nothing to see here, people, move along.
                 }
             }
         }
         return _availableElements;
     }
-
 
     private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList(BROWSEABLE, BROWSEABLE_CREATEABLE, CREATEABLE, SEARCHABLE, SEARCHABLE_BY_DESC, SEARCHABLE_BY_PLURAL_DESC);
 

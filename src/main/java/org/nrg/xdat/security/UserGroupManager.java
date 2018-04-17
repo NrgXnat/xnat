@@ -42,8 +42,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -186,7 +184,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
             ElementSecurity.updateElementAccessAndFieldMapMetaData();
 
-            XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), id, XftItemEvent.UPDATE));
+            XDAT.triggerEvent(XftItemEvent.build(Groups.getGroupDatatype(), id, XftItemEvent.UPDATE));
 
             try {
                 PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
@@ -262,7 +260,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             if (modified) {
                 PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-                XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.UPDATE));
+                XDAT.triggerEvent(XftItemEvent.build(Groups.getGroupDatatype(), group.getId(), XftItemEvent.UPDATE));
 
                 try {
                     PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
@@ -364,7 +362,7 @@ public class UserGroupManager implements UserGroupServiceI {
             log.error("", e);
         }
 
-        XDAT.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
+        XDAT.triggerEvent(XftItemEvent.build(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
 
         try {
             PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
@@ -426,7 +424,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         SaveItemHelper.authorizedSave(xdatGroup, user, false, true, meta);
-        XDAT.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), XftItemEvent.UPDATE));
+        XDAT.triggerEvent(XftItemEvent.build(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), XftItemEvent.UPDATE));
         Groups.reloadGroupsForUser(user);
     }
 

@@ -9,8 +9,11 @@
 
 package org.nrg.xft.event;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.event.EventI;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.helpers.Users;
@@ -20,30 +23,32 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 
+import static lombok.AccessLevel.PRIVATE;
+
 /**
  * The Class XftItemEvent.
  */
+@Data
+@Builder
+@AllArgsConstructor(access = PRIVATE)
+@Accessors(prefix = "_")
 @Slf4j
-public class XftItemEvent implements EventI {
-    /**
-     * The Constant CREATE.
-     */
-    public final static String CREATE = "C";
+public class XftItemEvent implements XftItemEventI {
+    public XftItemEvent build(final BaseElement item, final String action) throws ElementNotFoundException, FieldNotFoundException {
+        return new XftItemEvent(item, action);
+    }
 
-    /**
-     * The Constant READ.
-     */
-    public final static String READ = "R";
+    public XftItemEvent build(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
+        return new XftItemEvent(item, action);
+    }
 
-    /**
-     * The Constant UPDATE.
-     */
-    public final static String UPDATE = "U";
+    public static XftItemEvent build(final String xsiType, final String action) {
+        return build(xsiType, null, action);
+    }
 
-    /**
-     * The Constant DELETE.
-     */
-    public final static String DELETE = "D";
+    public static XftItemEvent build(final String xsiType, final String id, final String action) {
+        return new XftItemEvent(xsiType, id, action);
+    }
 
     /**
      * Instantiates a new XFTItem event.
@@ -94,37 +99,20 @@ public class XftItemEvent implements EventI {
         _action = action;
     }
 
-    /**
-     * Gets the xsi type.
-     *
-     * @return the xsi type
-     */
-    public String getXsiType() {
-        return _xsiType;
+    protected XftItemEvent(final String action) {
+        _xsiType = null;
+        _id = null;
+        _action = action;
     }
 
-    /**
-     * Gets the id.
-     *
-     * @return the id
-     */
-    public String getId() {
-        return _id;
-    }
-
-    /**
-     * Gets the action.
-     *
-     * @return the action
-     */
-    public String getAction() {
-        return _action;
+    protected XftItemEvent() {
+        throw new IllegalArgumentException("You must specify an action to construct an XFT item event.");
     }
 
     /**
      * Gets the item. This method returns an Object rather than an XFTItem because the object may sometimes be
      * the OM version rather than the generic XFTItem (e.g. {@link XdatUsergroup}), as when initialized with the
-     * {@link #XftItemEvent(BaseElement, String)} constructor.
+     * {@link #XftItemEvent(XFTItem, String)} constructor.
      *
      * @return the item
      */
@@ -146,9 +134,8 @@ public class XftItemEvent implements EventI {
     }
 
     private final String _xsiType;
-    private final String _action;
     private final String _id;
+    private final String _action;
 
     private Object _item;
 }
-

@@ -22,7 +22,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -56,6 +55,7 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -529,7 +529,7 @@ public class XDAT implements Initializable, Configurable{
 	    return _notificationService;
 	}
 
-	public static void triggerEvent(final EventI event) {
+	public static void triggerEvent(final XftItemEventI event) {
 		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event);
 	}
 
@@ -875,7 +875,7 @@ public class XDAT implements Initializable, Configurable{
         return channel;
     }
 
-	public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception {
+	public static void loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception {
 		final PopulateItem populator = PopulateItem.Populate(data, XFT.PREFIX + ":user", true);
 		final ItemI found = populator.getItem();
 		final String tempPass = data.getParameters().getString("xdat:user.primary_password");
@@ -900,9 +900,7 @@ public class XDAT implements Initializable, Configurable{
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, tempPass, grantedAuthorities);
 		if (!user.isGuest()) {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
-            return true;
 		}
-        return false;
 	}
 
     public static void sendJmsRequest(final Object request) {

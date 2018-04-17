@@ -76,8 +76,7 @@ var XNAT = getObject(XNAT);
         var name =
                 getQueryStringValue('view') ||
                 getUrlHashValue('#view=', end) ||
-                getUrlHashValue('#/', end) ||
-                getUrlHash();
+                getUrlHashValue('#/', end);
         return customPage.name = escapeHtml(name);
     };
 
@@ -135,7 +134,7 @@ var XNAT = getObject(XNAT);
             }
 
             // then core jsp and html files
-            paths.push('/pages/view/' + _pg + '/content');
+            paths.push('/pages/view/' + _pg + '/content.jsp');
             paths.push('/pages/view/' + _pg + '/content.html');
 
             return paths;
@@ -183,11 +182,11 @@ var XNAT = getObject(XNAT);
     // update the page if necessary on hash change
     $(window).on('hashchange', function(e){
         var currentPage = customPage.name;
-        var newPage = XNAT.app.customPage.getName();
+        var newPage = customPage.getName();
         //only get a new page if the page part has changed
-        if (newPage !== '!' && newPage !== currentPage) {
+        if (newPage && newPage !== '!' && newPage !== currentPage) {
             e.preventDefault();
-            XNAT.app.customPage.getPage(newPage);
+            customPage.getPage(newPage);
         }
     });
 

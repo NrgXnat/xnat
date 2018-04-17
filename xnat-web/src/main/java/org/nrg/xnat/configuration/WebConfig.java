@@ -134,7 +134,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         resolver.setExposeContextBeansAsAttributes(true);
         resolver.setViewClass(JstlView.class);
         resolver.setPrefix("/page/");
-        resolver.setSuffix("/index.jsp");
+        // resolver.setSuffix("/index.jsp");
         return resolver;
     }
 

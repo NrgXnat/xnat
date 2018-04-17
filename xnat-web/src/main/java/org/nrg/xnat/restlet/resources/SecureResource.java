@@ -15,7 +15,9 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.fileupload.DefaultFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.TurbineException;
 import org.json.JSONException;
@@ -26,13 +28,16 @@ import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -47,9 +52,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.EventDetails;
-import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.*;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -61,6 +64,8 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.archive.Rename;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.FileWriterWrapper;
 import org.nrg.xnat.itemBuilders.WorkflowBasedHistoryBuilder;
 import org.nrg.xnat.restlet.XnatItemRepresentation;
@@ -92,6 +97,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
@@ -1318,6 +1324,7 @@ public abstract class SecureResource extends Resource {
         final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, item.getXSIType(), item.getId(), item.getProject(), event);
         final EventMetaI ci = workflow.buildEvent();
 
+        final MultiXftItemEvent.MultiXftItemEventBuilder builder = MultiXftItemEvent.multiItemBuilder();
         try {
             if (isQueryVariableTrue("removeFiles")) {
                 final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
@@ -1327,11 +1334,17 @@ public abstract class SecureResource extends Resource {
                     if (om instanceof XnatAbstractresource) {
                         XnatAbstractresource resourceA = (XnatAbstractresource) om;
                         resourceA.deleteWithBackup(item.getArchiveRootPath(), user, ci);
+                        builder.item(resource);
                     }
                 }
             }
             DBAction.DeleteItem(item.getItem().getCurrentDBVersion(), user, ci, false);
-
+            if (BaseElement.class.isAssignableFrom(item.getClass())) {
+                builder.element((BaseElement) item);
+            } else {
+                builder.typesAndId(ImmutablePair.of(item.getXSIType(), item.getId()));
+            }
+            XDAT.triggerEvent(builder.build());
             WorkflowUtils.complete(workflow, ci);
         } catch (Exception e) {
             WorkflowUtils.fail(workflow, ci);
@@ -1491,10 +1504,138 @@ public abstract class SecureResource extends Resource {
             throw new org.nrg.action.ServerException("Error modifying status", e);
         }
     }
-
+    
     protected void respondToException(Exception exception, Status status) {
         logger.error("Transaction got a status: " + status, exception);
         getResponse().setStatus(status, exception.getMessage());
+    }
+
+    protected Representation representProjectsForArchivableItem(final String label, final XnatProjectdata project, final Map<XnatProjectdataI, String> projects, final MediaType mediaType) {
+        final XFTTable table = new XFTTable();
+        table.initTable(new ArrayList<>(Arrays.asList("label", "ID", "Secondary_ID", "Name")));
+
+        Object[] row = new Object[4];
+        row[0] = label;
+        row[1] = project.getId();
+        row[2] = project.getSecondaryId();
+        row[3] = project.getName();
+        table.rows().add(row);
+
+        for (final XnatProjectdataI key : projects.keySet()) {
+            table.rows().add(ArrayUtils.toArray(projects.get(key), key.getId(), key.getSecondaryId(), key.getName()));
+        }
+
+        return representTable(table, mediaType, new Hashtable<String, Object>());
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final String newLabel) throws Exception {
+        XnatExperimentdataShare pp = new XnatExperimentdataShare(user);
+        pp.setProject(newProject.getId());
+        if(newLabel!=null)pp.setLabel(newLabel);
+        pp.setProperty("sharing_share_xnat_experimentda_id", experiment.getId());
+        BaseXnatExperimentdata.SaveSharedProject(pp, experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+    }
+
+    protected void deleteItem(final XnatProjectdata proj, final BaseElement item) {
+        if (!ArchivableItem.class.isAssignableFrom(item.getClass())) {
+            throw new IllegalArgumentException("The BaseElement item must also implement the ArchivableItem interface, but the class " + item.getClass().getName() + " doesn't.");
+        }
+
+        try {
+            final XnatProjectdata     newProject = getProjectFromFilePath(proj, (ArchivableItem) item);
+            final PersistentWorkflowI wrk        = WorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(item.getXSIType())));
+            final EventMetaI          c          = wrk.buildEvent();
+
+            try {
+                final boolean                         removeFiles = isQueryVariableTrue("removeFiles");
+                final XnatProjectdata                 project     = (newProject != null) ? newProject : proj;
+                final Class<? extends BaseElement> itemType    = item.getClass();
+
+                final String message;
+                if (XnatPvisitdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatPvisitdata) item).delete(project, user, removeFiles, c);
+                } else if (XnatImagesessiondata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatImagesessiondata) item).delete(project, user, removeFiles, c);
+                } else if (XnatSubjectdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatSubjectdata) item).delete(project, user, removeFiles, c);
+                } else if (XnatExperimentdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatExperimentdata) item).delete(project, user, removeFiles, c);
+                } else {
+                    message = null;
+                }
+                if (message != null) {
+                    WorkflowUtils.fail(wrk, c);
+                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
+                } else {
+                    XDAT.triggerEvent(item, XftItemEvent.DELETE);
+                    WorkflowUtils.complete(wrk, c);
+                }
+            } catch (Exception e) {
+                try {
+                    WorkflowUtils.fail(wrk, c);
+                } catch (Exception e1) {
+                    logger.error("", e1);
+                }
+                logger.error("", e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            }
+        } catch (PersistentWorkflowUtils.EventRequirementAbsent e) {
+            logger.error("Forbidden: " + e.getMessage(), e);
+            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+        } catch (NotFoundException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    protected XnatProjectdata getProjectFromFilePath(final XnatProjectdata project, final ArchivableItem item) throws NotFoundException {
+        if (filepath != null && !filepath.equals("")) {
+            if (filepath.startsWith("projects/")) {
+                final String          newProjectId = filepath.substring(9);
+                final XnatProjectdata newProject   = XnatProjectdata.getXnatProjectdatasById(newProjectId, user, false);
+                if (newProject == null) {
+                    throw new NotFoundException(newProjectId);
+                }
+                return newProject;
+            } else {
+                throw new IllegalArgumentException("Illegal file path '" + filepath + "' does not start with 'projects/'.");
+            }
+        } else if (!item.getProject().equals(project.getId())) {
+            return project;
+        }
+        return null;
+    }
+
+    protected boolean rename(final XnatProjectdata proj, final ArchivableItem existing, final String label, final UserI user) {
+        try {
+            new Rename(proj, existing, label, user, getReason(), getEventType()).call();
+        } catch (Rename.ProcessingInProgress e) {
+            final String message = "Specified session is being processed (" + e.getPipeline_name() + ").";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (Rename.DuplicateLabelException | Rename.LabelConflictException e) {
+            final String message = "Specified label " + label + " is already in use.";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (Rename.FolderConflictException e) {
+            final String message = "File system destination contains pre-existing files";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (InvalidArchiveStructure | URISyntaxException e) {
+            final String message = "Non-standard archive structure in existing experiment directory.";
+            logger.error(message, e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, message);
+            return false;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     /**

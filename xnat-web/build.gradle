@@ -40,12 +40,13 @@ buildscript {
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.10.1"
-        classpath "io.franzbecker:gradle-lombok:1.11"
+        classpath "io.franzbecker:gradle-lombok:1.12"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"    }
+        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
+    }
 }
 
 group "org.nrg.xnat"

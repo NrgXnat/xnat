@@ -82,7 +82,7 @@ public class ApplicationConfig {
         return new InitializingTasksExecutor(scheduler, tasks);
     }
 
-    @Bean
+    @Bean(name = {"siteConfigPreferences", "siteConfig"})
     public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }

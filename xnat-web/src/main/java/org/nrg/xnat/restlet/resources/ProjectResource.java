@@ -104,12 +104,6 @@ public class ProjectResource extends ItemResource {
                         try {
                             project.delete(removeFiles, user, ci);
                             PersistentWorkflowUtils.complete(workflow, ci);
-                            if(XDAT.getBoolSiteConfigurationProperty("security.allowProjectIdReuse", false)) {
-                                Date curr = new Date();
-                                long timestamp = curr.getTime();
-                                String query = "UPDATE xnat_projectdata_history SET id = '" + project.getId() + timestamp + "' where id = '" + project.getId() + "';";
-                                PoolDBUtils.ExecuteNonSelectQuery(query, project.getItem().getDBName(), user.getLogin());
-                            }
                         } catch (Exception e) {
                             logger.error("", e);
                             PersistentWorkflowUtils.fail(workflow, ci);
@@ -295,7 +289,6 @@ public class ProjectResource extends ItemResource {
 
     @Override
     public Representation represent(Variant variant) {
-
         if (project != null) {
             FilteredResourceHandlerI handler = null;
             try {

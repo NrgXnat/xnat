@@ -12,31 +12,24 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
-import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatProjectparticipantI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
-import org.nrg.xnat.archive.Rename;
-import org.nrg.xnat.archive.Rename.DuplicateLabelException;
-import org.nrg.xnat.archive.Rename.FolderConflictException;
-import org.nrg.xnat.archive.Rename.LabelConflictException;
-import org.nrg.xnat.archive.Rename.ProcessingInProgress;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.TurbineScreenRepresentation;
@@ -50,16 +43,11 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXParseException;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Map;
-
 public class SubjectResource extends ItemResource {
     private static final String PRIMARY = "primary";
 
     protected XnatProjectdata proj = null;
-    protected String subID = null;
+    protected String subID;
     protected XnatSubjectdata sub = null;
     protected XnatSubjectdata existing = null;
 
@@ -153,7 +141,7 @@ public class SubjectResource extends ItemResource {
 
                             if (newLabel != null) {
                                 XnatSubjectdata existing = XnatSubjectdata.getXnatSubjectdatasById(sub.getId(), user, false);
-                                if (!sub.getLabel().equals(existing.getLabel())) {
+                                if (existing != null && !sub.getLabel().equals(existing.getLabel())) {
                                     sub.setLabel(existing.getLabel());
                                 }
                             }
@@ -306,38 +294,7 @@ public class SubjectResource extends ItemResource {
 									return;
 								}
 
-								Rename renamer = new Rename(proj,existing,label,user,getReason(),getEventType());
-								try {
-									renamer.call();
-								} catch (ProcessingInProgress e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified session is being processed (" + e.getPipeline_name() +").");
-									return;
-								} catch (DuplicateLabelException e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified label is already in use.");
-									return;
-								} catch (LabelConflictException e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified label is already in use.");
-									return;
-								} catch (FolderConflictException e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"File system destination contains pre-existing files");
-									return;
-								} catch (InvalidArchiveStructure e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,"Non-standard archive structure in existing experiment directory.");
-									return;
-								} catch (URISyntaxException e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,"Non-standard archive structure in existing experiment directory.");
-									return;
-								} catch (Exception e) {
-									logger.error("", e);
-									this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-									return;
-								}
+								rename(proj, existing, label, user);
 							}
 							return;
 						}
@@ -362,11 +319,6 @@ public class SubjectResource extends ItemResource {
                     EventMetaI c = wrk.buildEvent();
 
                     try {
-                        // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
-                        boolean applyAnonScript = (null != existing && existing.getLabel().equals(sub.getLabel()));
- 						
-						
-
 						//check for unexpected modifications of ID and Project
 						if(existing !=null && !StringUtils.equals(existing.getId(),sub.getId())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"ID cannot be modified");
@@ -381,10 +333,14 @@ public class SubjectResource extends ItemResource {
 
                         // Save the experiment.
                         if (SaveItemHelper.authorizedSave(sub, user, false, this.isQueryVariableTrue("allowDataDeletion"), c)) {
+                            XDAT.triggerEvent(new XftItemEvent(sub.getXSIType(), sub.getId(), XftItemEvent.CREATE));
                             WorkflowUtils.complete(wrk, c);
         					Users.clearCache(user);
                             MaterializedView.deleteByUser(user);
-                            
+
+                            // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
+                            boolean applyAnonScript = (null != existing && existing.getLabel().equals(sub.getLabel()));
+
                             if(applyAnonScript){
                                for(final XnatSubjectassessordata expt : sub.getExperiments_experiment("xnat:imageSessionData")){
                                     try{
@@ -404,7 +360,7 @@ public class SubjectResource extends ItemResource {
                     
                     postSaveManageStatus(sub);
 
-                    this.returnString(sub.getId(), (existing == null) ? Status.SUCCESS_CREATED : Status.SUCCESS_OK);
+                    returnString(sub.getId(), (existing == null) ? Status.SUCCESS_CREATED : Status.SUCCESS_OK);
                 }
             } else {
                 this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
@@ -438,53 +394,9 @@ public class SubjectResource extends ItemResource {
             }
         }
         if (sub == null) {
-            this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified subject.");
-            return;
-        }
-
-        XnatProjectdata newProject = null;
-
-        if (filepath != null && !filepath.equals("")) {
-            if (filepath.startsWith("projects/")) {
-                String newProjectS = filepath.substring(9);
-                newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
-                if (newProject == null) {
-                    this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project: " + newProjectS);
-                    return;
-                }
-            } else {
-                this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-                return;
-            }
-        } else if (!sub.getProject().equals(proj.getId())) {
-            newProject = proj;
-        }
-
-        PersistentWorkflowI wrk;
-        try {
-            wrk = WorkflowUtils.buildOpenWorkflow(user, sub.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(sub.getXSIType())));
-            EventMetaI c = wrk.buildEvent();
-
-            try {
-                String msg = sub.delete((newProject != null) ? newProject : proj, user, this.isQueryVariableTrue("removeFiles"), c);
-                if (msg != null) {
-                    WorkflowUtils.fail(wrk, c);
-                    this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, msg);
-                } else {
-                    WorkflowUtils.complete(wrk, c);
-                }
-            } catch (Exception e) {
-                try {
-                    WorkflowUtils.fail(wrk, c);
-                } catch (Exception e1) {
-                    logger.error("", e1);
-                }
-                logger.error("", e);
-                this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-            }
-        } catch (EventRequirementAbsent e1) {
-            logger.error("", e1);
-            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e1.getMessage());
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified subject.");
+        } else {
+            deleteItem(proj, sub);
         }
     }
 
@@ -503,48 +415,22 @@ public class SubjectResource extends ItemResource {
         }
 
         if (sub != null) {
-            String filepath = this.getRequest().getResourceRef().getRemainingPart();
+            String filepath = getRequest().getResourceRef().getRemainingPart();
             if (filepath != null && filepath.contains("?")) {
                 filepath = filepath.substring(0, filepath.indexOf("?"));
             }
-
             if (filepath != null && filepath.startsWith("/")) {
                 filepath = filepath.substring(1);
             }
             if (filepath != null && filepath.equals("status")) {
                 return returnStatus(sub, mt);
-            } else if (filepath != null && filepath.startsWith("projects")) {
-                XFTTable t = new XFTTable();
-                ArrayList<String> al = new ArrayList<>();
-                al.add("label");
-                al.add("ID");
-                al.add("Secondary_ID");
-                al.add("Name");
-                t.initTable(al);
-
-                Object[] row = new Object[4];
-                row[0] = sub.getLabel();
-                XnatProjectdata primary = sub.getPrimaryProject(false);
-                row[1] = primary.getId();
-                row[2] = primary.getSecondaryId();
-                row[3] = primary.getName();
-                t.rows().add(row);
-
-                for (Map.Entry<XnatProjectdataI, String> entry : sub.getProjectDatas().entrySet()) {
-                    row = new Object[4];
-                    row[0] = entry.getValue();
-                    row[1] = entry.getKey().getId();
-                    row[2] = entry.getKey().getSecondaryId();
-                    row[3] = entry.getKey().getName();
-                    t.rows().add(row);
-                }
-
-                return representTable(t, mt, new Hashtable<String, Object>());
+            } else if (StringUtils.startsWith(filepath, "projects")) {
+                return representProjectsForArchivableItem(sub.getLabel(), sub.getPrimaryProject(false), sub.getProjectDatas(), mt);
             } else {
-                return this.representItem(sub.getItem(), mt);
+                return representItem(sub.getItem(), mt);
             }
         } else {
-            StringBuilder message = new StringBuilder("Unable to find the specified subject. ");
+            final StringBuilder message = new StringBuilder("Unable to find the specified subject. ");
             if (proj == null) {
                 message.append("When searching by subject ID only, you must specify the accession number and not the subject label, which is not unique across the XNAT system. ");
                 message.append(subID).append(" is not a known subject accession ID.");

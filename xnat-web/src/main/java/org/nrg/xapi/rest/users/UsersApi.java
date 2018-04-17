@@ -13,6 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -361,7 +362,7 @@ public class UsersApi extends AbstractXapiRestController {
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
-            if (model.isVerified() && model.isEnabled() && (!oldEnabledFlag || !oldVerifiedFlag)) {
+            if (BooleanUtils.toBooleanDefaultIfNull(model.isVerified(), false) && BooleanUtils.toBooleanDefaultIfNull(model.isEnabled(), false) && (!oldEnabledFlag || !oldVerifiedFlag)) {
                 //When a user is enabled and verified, send a new user email
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
@@ -371,7 +372,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(_factory.getUser(user), OK);
         } catch (Exception e) {
-            log.error("Error occurred modifying user " + user.getLogin());
+            log.error("Error occurred modifying user '{}'", user.getUsername(), e);
             return new ResponseEntity<>(INTERNAL_SERVER_ERROR);
         }
     }

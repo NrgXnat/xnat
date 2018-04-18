@@ -412,8 +412,8 @@ public class DataAccessApi extends AbstractXapiRestController {
 
     private Set<String> getDataTypeNames(final GenericWrapperElement element) {
         final String name       = element.getName();
-        final String properName = element.getProperName();
-        final String prefix     = element.getSchemaTargetNamespacePrefix();
+        final String prefix     = element.getSchemaTargetNamespacePrefix() + ":";
+        final String properName = StringUtils.removeStart(element.getProperName(), prefix);
         final String uri        = element.getSchemaTargetNamespaceURI();
         return Sets.newHashSet(prefix + ":" + name, prefix + ":" + properName, uri + ":" + name, uri + ":" + properName);
     }

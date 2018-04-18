@@ -51,6 +51,7 @@ function ClassMapping(){
         }
 
         var jsName = nameMap[name];
+        var Fn = function(){};
 
         if (jsName !== undef) {
             if (window[jsName] === undef) {

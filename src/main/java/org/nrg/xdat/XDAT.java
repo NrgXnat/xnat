@@ -57,8 +57,6 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -534,19 +532,15 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	public static void triggerEvent(final String xsiType, final String id, final String action) {
-		triggerEvent(new XftItemEvent(xsiType, id, action));
+		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).build());
 	}
 
-	public static void triggerEvent(final String xsiType, final String action) {
-		triggerEvent(new XftItemEvent(xsiType, action));
+	public static void triggerEvent(final XFTItem item, final String action) {
+		triggerEvent(XftItemEvent.builder().item(item).action(action).build());
 	}
 
-	public static void triggerEvent(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
-		triggerEvent(new XftItemEvent(item, action));
-	}
-
-	public static void triggerEvent(final BaseElement element, final String action) throws ElementNotFoundException, FieldNotFoundException {
-		triggerEvent(new XftItemEvent(element, action));
+	public static void triggerEvent(final BaseElement element, final String action) {
+		triggerEvent(XftItemEvent.builder().element(element).action(action).build());
 	}
 
     public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {

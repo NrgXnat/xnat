@@ -3,6 +3,7 @@ package org.nrg.xft.event.methods;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,7 +17,7 @@ public class CacheManagerXftItemEventHandlerMethod extends AbstractXftItemEventH
     }
 
     @Override
-    protected boolean handleEventImpl(final XftItemEvent event) {
+    protected boolean handleEventImpl(final XftItemEventI event) {
         try {
             CacheManager.GetInstance().handleXftItemEvent(event);
             return true;

@@ -487,7 +487,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         ((XDATUser) authenticatedUser).resetCriteria();
         Users.getGuest(true);
 
-        _eventService.triggerEvent(XftItemEvent.build("xnat:projectData", tag, UPDATE));
+        _eventService.triggerEvent(XftItemEvent.builder().typeAndId("xnat:projectData", tag).action(UPDATE).build());
 
         return true;
     }
@@ -507,7 +507,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         for (final PermissionCriteriaI criterion : criteria) {
             ((UserGroup) group).addPermission(criterion.getElementName(), criterion, authenticatedUser);
         }
-        _eventService.triggerEvent(XftItemEvent.build(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), UPDATE));
+        _eventService.triggerEvent(XftItemEvent.builder().typeAndId(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId()).action(UPDATE).build());
     }
 
     @Override
@@ -568,7 +568,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 }
                 SaveItemHelper.authorizedDelete(item, authenticated, ci);
                 if (triggerEvent) {
-                    _eventService.triggerEvent(XftItemEvent.build(item.getXSIType(), item.getIDValue(), UPDATE));
+                    _eventService.triggerEvent(XftItemEvent.builder().typeAndId(item.getXSIType(), item.getIDValue()).action(UPDATE).build());
                 }
                 return;
             }
@@ -610,7 +610,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 ((XDATUser) affected).setElementAccess(elementAccess);
             }
             if (triggerEvent) {
-                _eventService.triggerEvent(XftItemEvent.build(elementName, fieldValue, UPDATE));
+                _eventService.triggerEvent(XftItemEvent.builder().typeAndId(elementName, fieldValue).action(UPDATE).build());
             }
         } catch (XFTInitException e) {
             log.error("An error occurred initializing XFT", e);

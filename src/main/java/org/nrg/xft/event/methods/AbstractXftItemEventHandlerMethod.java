@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 
@@ -44,7 +44,7 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
      *
      * @return Should return true if the event was handled successfully, false otherwise.
      */
-    protected abstract boolean handleEventImpl(final XftItemEvent event);
+    protected abstract boolean handleEventImpl(final XftItemEventI event);
 
     /**
      * Handles the event for this method.
@@ -54,7 +54,7 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
      * @return A future that returns the final result of the handler.
      */
     @Async
-    public Future<Boolean> handleEvent(final XftItemEvent event) {
+    public Future<Boolean> handleEvent(final XftItemEventI event) {
         final boolean handled = handleEventImpl(event);
         if (handled) {
             log.debug("The {} method handled an XFT item event: {}", getName(), event.toString());
@@ -73,7 +73,7 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
      * @return Returns true if this method can handle the event, false otherwise.
      */
     @Override
-    public boolean matches(final XftItemEvent event) {
+    public boolean matches(final XftItemEventI event) {
         for (final XftItemEventCriteria criteria : getCriteria()) {
             if (criteria.matches(event)) {
                 return true;

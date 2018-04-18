@@ -1,7 +1,7 @@
 package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xapi.rest.users.DataAccessApi;
+import org.nrg.xapi.rest.schemas.SchemaApi;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -15,8 +15,8 @@ import java.util.List;
 @Slf4j
 public class InitializeXftElementsTask extends AbstractInitializingTask {
     @Autowired
-    public InitializeXftElementsTask(final DataAccessApi dataAccessApi) {
-        _dataAccessApi = dataAccessApi;
+    public InitializeXftElementsTask(final SchemaApi schemaApi) {
+        _schemaApi = schemaApi;
     }
 
     @Override
@@ -34,11 +34,11 @@ public class InitializeXftElementsTask extends AbstractInitializingTask {
             if (elements.isEmpty()) {
                 throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "No elements available yet. Deferring execution.");
             }
-            _dataAccessApi.initialize();
+            _schemaApi.initialize();
         } catch (XFTInitException | ElementNotFoundException e) {
             throw new InitializingTaskException(InitializingTaskException.Level.Error, "XFT threw an error. Please check that out. This will block use of the data access API.", e);
         }
     }
 
-    private final DataAccessApi _dataAccessApi;
+    private final SchemaApi _schemaApi;
 }

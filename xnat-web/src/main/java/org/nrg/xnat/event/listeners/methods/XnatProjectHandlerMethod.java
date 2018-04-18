@@ -9,7 +9,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.AbstractXftItemEventHandlerMethod;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.security.UserI;
@@ -28,10 +28,10 @@ public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod 
     }
 
     @Override
-    protected boolean handleEventImpl(final XftItemEvent event) {
+    protected boolean handleEventImpl(final XftItemEventI event) {
         try {
             final UserI  guest     = Users.getGuest(true);
-            final String projectId = event.getId().toString();
+            final String projectId = event.getId();
             final String access    = Permissions.getProjectAccess(_template, projectId);
 
             log.info("Setting guest access to project {} to {}", projectId, access);

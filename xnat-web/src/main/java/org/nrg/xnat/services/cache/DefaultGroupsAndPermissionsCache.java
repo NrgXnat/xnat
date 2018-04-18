@@ -40,6 +40,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -83,8 +84,8 @@ import static org.nrg.xapi.rest.users.DataAccessApi.READABLE;
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate) {
-        super(XftItemEventCriteria.getXsiTypeCriteria(XdatUsergroup.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+        super(XftItemEventCriteria.builder().xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME).action(XftItemEvent.CREATE).build(),
+              XftItemEventCriteria.getXsiTypeCriteria(XdatUsergroup.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XdatElementSecurity.SCHEMA_ELEMENT_NAME));
 
         _cache = cacheManager.getCache(CACHE_NAME);
@@ -566,27 +567,27 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     @Override
-    protected boolean handleEventImpl(final XftItemEvent event) {
+    protected boolean handleEventImpl(final XftItemEventI event) {
         final String type   = event.getXsiType();
         final String id     = event.getId();
         final String action = event.getAction();
 
         try {
             switch (action) {
-                case XftItemEvent.CREATE:
+                case XftItemEventI.CREATE:
                     log.debug("New {} created with ID {}, caching new instance", type, id);
                     return !cacheGroups(getGroups(type, id)).isEmpty();
 
-                case XftItemEvent.UPDATE:
+                case XftItemEventI.UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", type, id);
                     return !cacheGroups(getGroups(type, id)).isEmpty();
 
-                case XftItemEvent.DELETE:
+                case XftItemEventI.DELETE:
                     log.debug("The {} {} was deleted, removing instance from cache", type, id);
                     _cache.evict(id);
                     return true;
 
-                case XftItemEvent.READ:
+                case XftItemEventI.READ:
                     log.debug("The read action happened on {} {}, no cache update required", type, id);
                     return true;
 
@@ -612,11 +613,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
         switch (type) {
-            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
-                return Collections.<UserGroupI>singletonList(new UserGroup(id, _template));
-
             case XnatProjectdata.SCHEMA_ELEMENT_NAME:
                 return getGroupsForTag(id);
+
+            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
+                return Collections.<UserGroupI>singletonList(new UserGroup(id, _template));
 
             case XdatElementSecurity.SCHEMA_ELEMENT_NAME:
                 return getGroupsForDataType(id);

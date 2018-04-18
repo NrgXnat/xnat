@@ -33,7 +33,7 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.UserProjectCache;
-import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +68,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     @Override
-    protected boolean handleEventImpl(final XftItemEvent event) {
+    protected boolean handleEventImpl(final XftItemEventI event) {
         // TODO: Catch event where user is added to or removed from site admins.
         final String projectId = getProjectIdFromEvent(event);
         log.info("Got an XFTItemEvent for project '{}'", projectId);
@@ -581,7 +581,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, projectId).addValue(QUERY_KEY_ACCESS_LEVEL, accessLevel);
     }
 
-    private static String getProjectIdFromEvent(final XftItemEvent event) {
+    private static String getProjectIdFromEvent(final XftItemEventI event) {
         final String id = event.getId();
         if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, event.getXsiType())) {
             log.info("Got an XFTItemEvent for a project, returning the event ID: {}", id);

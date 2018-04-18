@@ -9,7 +9,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.ObjectUtils;
-import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.AbstractXftItemEventHandlerMethod;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 
@@ -58,7 +58,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      * {@inheritDoc}
      */
     @Override
-    abstract protected boolean handleEventImpl(final XftItemEvent event);
+    abstract protected boolean handleEventImpl(final XftItemEventI event);
 
     /**
      * {@inheritDoc}

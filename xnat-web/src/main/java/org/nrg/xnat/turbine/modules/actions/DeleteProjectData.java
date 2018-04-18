@@ -19,6 +19,7 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatProjectparticipantI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -30,7 +31,7 @@ import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.MultiXftItemEvent;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -54,7 +55,7 @@ public class DeleteProjectData extends SecureAction {
         final boolean deleteProject = TurbineUtils.HasPassedParameter("delete_project", data);
         final boolean removeFiles   = TurbineUtils.HasPassedParameter("removeFiles", data);
 
-        final MultiXftItemEvent.MultiXftItemEventBuilder builder = MultiXftItemEvent.multiItemBuilder().action(XftItemEventI.DELETE);
+        final XftItemEvent.Builder builder = XftItemEvent.builder().action(XftItemEventI.DELETE);
 
         boolean preventProjectDelete    = false;
         boolean preventProjectDeleteByP = false;
@@ -211,9 +212,7 @@ public class DeleteProjectData extends SecureAction {
                     }
 
                     //DELETE storedSearches
-                    Iterator bundles = project.getBundles().iterator();
-                    while (bundles.hasNext()) {
-                        ItemI bundle = (ItemI) bundles.next();
+                    for (final XdatStoredSearch bundle : project.getBundles()) {
                         try {
                             SaveItemHelper.authorizedDelete(bundle.getItem(), user, ci);
                         } catch (Throwable e) {

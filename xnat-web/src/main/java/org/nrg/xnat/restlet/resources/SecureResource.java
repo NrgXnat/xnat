@@ -1324,7 +1324,7 @@ public abstract class SecureResource extends Resource {
         final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, item.getXSIType(), item.getId(), item.getProject(), event);
         final EventMetaI ci = workflow.buildEvent();
 
-        final MultiXftItemEvent.MultiXftItemEventBuilder builder = MultiXftItemEvent.multiItemBuilder();
+        final XftItemEvent.Builder builder = XftItemEvent.builder();
         try {
             if (isQueryVariableTrue("removeFiles")) {
                 final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
@@ -1342,7 +1342,7 @@ public abstract class SecureResource extends Resource {
             if (BaseElement.class.isAssignableFrom(item.getClass())) {
                 builder.element((BaseElement) item);
             } else {
-                builder.typesAndId(ImmutablePair.of(item.getXSIType(), item.getId()));
+                builder.typeAndId(ImmutablePair.of(item.getXSIType(), item.getId()));
             }
             XDAT.triggerEvent(builder.build());
             WorkflowUtils.complete(workflow, ci);

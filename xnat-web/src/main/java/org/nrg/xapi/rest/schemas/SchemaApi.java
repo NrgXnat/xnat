@@ -365,11 +365,23 @@ public class SchemaApi extends AbstractXapiRestController {
      * @return The set of names for the data type.
      */
     private List<String> getDataTypeNames(final GenericWrapperElement element) {
-        final String prefix     = element.getSchemaTargetNamespacePrefix() + ":";
         final String uri        = element.getSchemaTargetNamespaceURI();
+        final String prefix     = element.getSchemaTargetNamespacePrefix();
+        final String altPrefix  = StringUtils.substringAfterLast(uri, "/");
         final String name       = element.getName();
-        final String properName = StringUtils.removeStart(element.getProperName(), prefix);
-        return Arrays.asList(prefix + name, prefix + properName, uri + ":" + name, uri + ":" + properName);
+        final String properName = StringUtils.removeStart(element.getProperName(), prefix + ":");
+        return Arrays.asList(
+                prefix + ":" + name,
+                prefix + "_" + name,
+                prefix + ":" + properName,
+                prefix + "_" + properName,
+                altPrefix + ":" + name,
+                altPrefix + "_" + name,
+                altPrefix + ":" + properName,
+                altPrefix + "_" + properName,
+                uri + ":" + name,
+                uri + ":" + properName
+        );
     }
 
     /**

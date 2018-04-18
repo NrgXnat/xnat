@@ -32,13 +32,13 @@ function loadOptions(optionString){
 			}
 		}
 	}
-	
+
 	return options;
 }
 
 function instanciateObject(name){
 	if(window.classMapping==undefined){
-		dynamicJSLoad("ClassMapping","generated/ClassMapping.js");
+		dynamicJSLoad("ClassMapping","generated/CreateClassMapping.js");
 		window.classMapping=new ClassMapping();
 	}
 	var fn = window.classMapping.newInstance;

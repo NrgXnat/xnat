@@ -81,7 +81,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
         final UserI user = XDAT.getUserDetails();
         context.put("user", user);
-        context.put("cacheLastModified", XDAT.getContextService().getBean(GroupsAndPermissionsCache.class).getLastUpdateTime(user));
+        context.put("cacheLastModified", XDAT.getContextService().getBean(GroupsAndPermissionsCache.class).getUserLastUpdateTime(user));
         context.put("turbineUtils", TurbineUtils.GetInstance());
         context.put("displayManager", DisplayManager.GetInstance());
         context.put("systemName", TurbineUtils.GetSystemName());

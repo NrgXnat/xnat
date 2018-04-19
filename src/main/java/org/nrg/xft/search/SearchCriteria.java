@@ -11,6 +11,8 @@
 package org.nrg.xft.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.PermissionCriteriaI;
@@ -61,7 +63,6 @@ public class SearchCriteria implements SQLClause {
             return " (" + getField_name() + getComparison_type() + valueToDB() + ")";
         }
     }
-
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
         if (qo == null) {
@@ -329,12 +330,51 @@ public class SearchCriteria implements SQLClause {
         this.elementName = elementName;
     }
 
+    @Override
     public String toString() {
         try {
             return this.getSQLClause();
         } catch (Exception e) {
             return "error";
         }
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof SearchCriteria)) {
+            return false;
+        }
+
+        final SearchCriteria that = (SearchCriteria) other;
+
+        return new EqualsBuilder()
+                .append(overrideFormatting, that.overrideFormatting)
+                .append(getElementName(), that.getElementName())
+                .append(xmlPath, that.xmlPath)
+                .append(getField_name(), that.getField_name())
+                .append(getValue(), that.getValue())
+                .append(getComparison_type(), that.getComparison_type())
+                .append(getField(), that.getField())
+                .append(getCleanedType(), that.getCleanedType())
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(getElementName())
+                .append(xmlPath)
+                .append(getField_name())
+                .append(getValue())
+                .append(getComparison_type())
+                .append(getField())
+                .append(getCleanedType())
+                .append(overrideFormatting)
+                .toHashCode();
     }
 
     public ArrayList getSchemaFields() {

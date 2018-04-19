@@ -2,7 +2,6 @@ package org.nrg.xft.event.methods;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.cache.CacheManager;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class CacheManagerXftItemEventHandlerMethod extends AbstractXftItemEventHandlerMethod {
     public CacheManagerXftItemEventHandlerMethod() {
-        super();
+        super(XftItemEventCriteria.getXsiTypeCriteria("xdat:meta_element"));
     }
 
     @Override

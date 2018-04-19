@@ -4,7 +4,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.event.EventI;
 import org.nrg.xft.XFTItem;
 
+import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface XftItemEventI extends EventI {
     /**
@@ -26,6 +29,27 @@ public interface XftItemEventI extends EventI {
      * The Constant DELETE.
      */
     String DELETE = "D";
+
+    /**
+     * Indicates that an object was shared to a new project. Events with this
+     * action should include the "target" property with the new project ID.
+     */
+    String SHARE = "S";
+
+    /**
+     * Indicates that an object was moved. Events with this action should
+     * include the "origin" and "target" properties with the two project IDs.
+     */
+    String MOVE = "M";
+
+    Map<String, String> ACTIONS = new HashMap<String, String>() {{
+        put(CREATE, "create");
+        put(READ, "read");
+        put(UPDATE, "update");
+        put(DELETE, "delete");
+        put(SHARE, "share");
+        put(MOVE, "move");
+    }};
 
     /**
      * Indicates whether this event affected only a single item or more than one.
@@ -78,4 +102,13 @@ public interface XftItemEventI extends EventI {
      * @return Returns the associated {@link XFTItem} objects.
      */
     List<XFTItem> getItems();
+
+    /**
+     * Provides a way to include extra information about the event in cases where a simple description such as {@link #UPDATE}
+     * is insufficient. The properties included in the map are dependent on the event and its context.
+     *
+     * @return A map of properties and values.
+     */
+    @Nonnull
+    Map<String, ?> getProperties();
 }

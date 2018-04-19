@@ -60,12 +60,12 @@ public class XDATUserHelperService extends UserHelperServiceI {
     }
 
     @Override
-    public Map getReadableCounts() {
+    public Map<String, Long> getReadableCounts() {
         return _user.getReadableCounts();
     }
 
     @Override
-    public Map getTotalCounts() {
+    public Map<String, Long> getTotalCounts() {
         return _user.getTotalCounts();
     }
 

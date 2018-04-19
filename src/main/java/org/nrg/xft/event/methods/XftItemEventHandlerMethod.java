@@ -15,6 +15,12 @@ import java.util.concurrent.Future;
  */
 public interface XftItemEventHandlerMethod {
     /**
+     * Provides a name for this handler method.
+     *
+     * @return The method name.
+     */
+    String getName();
+    /**
      * Indicates whether this handler method wants to handle the submitted event.
      *
      * @param event The event to test.

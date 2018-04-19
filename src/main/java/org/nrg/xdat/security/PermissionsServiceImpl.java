@@ -31,7 +31,6 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -51,7 +50,9 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xft.event.XftItemEvent.UPDATE;
+import static org.nrg.xft.event.XftItemEvent.builder;
+import static org.nrg.xft.event.XftItemEventI.DELETE;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
 @Service
@@ -449,47 +450,13 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
+    public boolean initializeDefaultAccessibility(final String tag, final String accessibility, final boolean forceInit, final UserI authenticatedUser, final EventMetaI ci) throws Exception {
+        return setAccessibilityInternal(false, tag, accessibility, forceInit, authenticatedUser, ci);
+    }
+
+    @Override
     public boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
-        final List<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
-        final UserI                 guest           = Users.getGuest();
-
-        switch (accessibility) {
-            case "public":
-                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
-
-                for (final ElementSecurity securedElement : securedElements) {
-                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, true, false, false, true, true, ci);
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
-                    }
-                }
-                break;
-            case "protected":
-                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, false, true, ci);
-                for (final ElementSecurity securedElement : securedElements) {
-                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
-                    }
-                }
-                break;
-            default: // "private"
-                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, false, false, false, false, true, ci);
-                for (final ElementSecurity securedElement : securedElements) {
-                    if (securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
-                        setPermissionsInternal(false, guest, authenticatedUser, securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
-                    }
-                }
-                break;
-        }
-
-        ((XDATUser) authenticatedUser).resetCriteria();
-        Users.getGuest(true);
-
-        _eventService.triggerEvent(XftItemEvent.builder().typeAndId("xnat:projectData", tag).action(UPDATE).build());
-
-        return true;
+        return setAccessibilityInternal(true, tag, accessibility, forceInit, authenticatedUser, ci);
     }
 
     @Override
@@ -507,7 +474,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         for (final PermissionCriteriaI criterion : criteria) {
             ((UserGroup) group).addPermission(criterion.getElementName(), criterion, authenticatedUser);
         }
-        _eventService.triggerEvent(XftItemEvent.builder().typeAndId(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId()).action(UPDATE).build());
+        _eventService.triggerEvent(builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
     }
 
     @Override
@@ -530,10 +497,45 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
     }
 
+    private boolean setAccessibilityInternal(final boolean triggerEvent, String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
+        final List<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
+        final UserI                 guest           = Users.getGuest();
+
+        if (StringUtils.equals("public", accessibility)) {
+            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
+            for (final ElementSecurity securedElement : securedElements) {
+                final String elementName = securedElement.getElementName();
+                if (securedElement.hasField(elementName + "/project") && securedElement.hasField(elementName + "/sharing/share/project")) {
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", tag, false, true, false, false, true, true, ci);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                }
+            }
+        } else {
+            // Main diff between protected and private is that the project ID is readable by guest in protected, so set that once and apply privileges.
+            // Other than that, nothing else is readable by guest in protected or private.
+            final boolean readableByGuest = StringUtils.equals("protected", accessibility);
+            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, readableByGuest, false, false, false, readableByGuest, ci);
+            for (final ElementSecurity securedElement : securedElements) {
+                final String elementName = securedElement.getElementName();
+                if (securedElement.hasField(elementName + "/project") && securedElement.hasField(elementName + "/sharing/share/project")) {
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", tag, false, false, false, false, false, true, ci);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                }
+            }
+        }
+
+        ((XDATUser) authenticatedUser).resetCriteria();
+        Users.getGuest(true);
+
+        if (triggerEvent) {
+            _eventService.triggerEvent(builder().typeAndId("xnat:projectData", tag).action(UPDATE).property("accessibility", accessibility).build());
+        }
+
+        return true;
+    }
+
     private void setPermissionsInternal(final boolean triggerEvent, final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
         try {
-            final ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
-
             final Optional<XdatElementAccess> optional = FluentIterable.from(((XDATUser) affected).getElementAccess()).firstMatch(new Predicate<XdatElementAccess>() {
                 @Override
                 public boolean apply(@Nullable final XdatElementAccess elementAccess) {
@@ -568,7 +570,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 }
                 SaveItemHelper.authorizedDelete(item, authenticated, ci);
                 if (triggerEvent) {
-                    _eventService.triggerEvent(XftItemEvent.builder().typeAndId(item.getXSIType(), item.getIDValue()).action(UPDATE).build());
+                    _eventService.triggerEvent(builder().item(item).action(DELETE).build());
                 }
                 return;
             }
@@ -610,7 +612,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 ((XDATUser) affected).setElementAccess(elementAccess);
             }
             if (triggerEvent) {
-                _eventService.triggerEvent(XftItemEvent.builder().typeAndId(elementName, fieldValue).action(UPDATE).build());
+                _eventService.triggerEvent(builder().typeAndId(elementName, fieldValue).action(UPDATE).build());
             }
         } catch (XFTInitException e) {
             log.error("An error occurred initializing XFT", e);

@@ -12,6 +12,7 @@ package org.nrg.xft.event.entities;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.event.AutomationEvent;
 import org.nrg.framework.event.EventClass;
 import org.nrg.framework.event.Filterable;
@@ -122,4 +123,8 @@ public class WorkflowStatusEvent extends AutomationEvent {
 		return justification;
 	}
 
+	@Override
+	public String toString() {
+		return workflow != null ? "Workflow " + workflow.getId() + " status: " + workflow.getStatus() : ("Status: " + status + (StringUtils.isNotBlank(justification) ? " justification: \"" + justification + "\"" : ""));
+	}
 }

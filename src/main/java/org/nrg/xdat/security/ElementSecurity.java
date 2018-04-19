@@ -38,8 +38,6 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
@@ -63,6 +61,8 @@ import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 /**
  * @author Tim
@@ -1288,7 +1288,7 @@ public class ElementSecurity extends ItemWrapper {
 
         try {
             updateElementAccessAndFieldMapMetaData();
-            XDAT.triggerEvent(SCHEMA_ELEMENT_NAME, getElementName(), XftItemEventI.CREATE);
+            XDAT.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, getElementName(), CREATE);
             PoolDBUtils.ClearCache(getDBName(), userName, Groups.getGroupDatatype());
         } catch (Exception e) {
             log.error("", e);

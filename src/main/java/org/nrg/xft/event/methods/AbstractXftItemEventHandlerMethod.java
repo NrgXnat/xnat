@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.event.XftItemEventI;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -13,28 +14,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static lombok.AccessLevel.PROTECTED;
-import static org.nrg.xft.event.methods.XftItemEventCriteria.UNIVERSAL;
-
-@Getter(PROTECTED)
+@Getter
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventHandlerMethod {
-    /**
-     * Creates a "universal" handler method: all XSI types and actions will match this method. Be careful! This can result in serious
-     * performance degradation if the method implementation is compute intensive.
-     */
-    protected AbstractXftItemEventHandlerMethod() {
-        this(UNIVERSAL);
+    protected AbstractXftItemEventHandlerMethod(final XftItemEventCriteria first, final XftItemEventCriteria... criteria) {
+        this(null, first, criteria);
     }
 
-    protected AbstractXftItemEventHandlerMethod(final XftItemEventCriteria first, final XftItemEventCriteria... criteria) {
-        this(Arrays.asList(ArrayUtils.add(criteria, first)));
+    protected AbstractXftItemEventHandlerMethod(final String name, final XftItemEventCriteria first, final XftItemEventCriteria... criteria) {
+        this(name, Arrays.asList(ArrayUtils.add(criteria, first)));
     }
 
     protected AbstractXftItemEventHandlerMethod(final List<XftItemEventCriteria> criteria) {
+        this(null, criteria);
+    }
+
+    protected AbstractXftItemEventHandlerMethod(final String name, final List<XftItemEventCriteria> criteria) {
         _criteria = ImmutableList.copyOf(criteria);
-        _name = getClass().getName();
+        _name = StringUtils.defaultIfBlank(name, getClass().getSimpleName());
     }
 
     /**
@@ -54,12 +52,13 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
      * @return A future that returns the final result of the handler.
      */
     @Async
+    @Override
     public Future<Boolean> handleEvent(final XftItemEventI event) {
         final boolean handled = handleEventImpl(event);
         if (handled) {
-            log.debug("The {} method handled an XFT item event: {}", getName(), event.toString());
+            log.debug("The {} method handled an XFT item event: {}", getName(), event);
         } else {
-            log.info("The {} method failed to handle an XFT item event: {}. Look for logging info in the appropriate place.", getName(), event.toString());
+            log.info("The {} method failed to handle an XFT item event: {}. Look for logging info in the appropriate place.", getName(), event);
         }
         return new AsyncResult<>(handled);
     }
@@ -76,10 +75,16 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
     public boolean matches(final XftItemEventI event) {
         for (final XftItemEventCriteria criteria : getCriteria()) {
             if (criteria.matches(event)) {
+                log.info("XFT item event criteria {} matches event {}", criteria, event);
                 return true;
             }
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return getName() + ": " + StringUtils.join(_criteria, ", ");
     }
 
     private final List<XftItemEventCriteria> _criteria;

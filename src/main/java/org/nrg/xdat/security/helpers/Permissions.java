@@ -617,6 +617,25 @@ public class Permissions {
     }
 
     /**
+     * Set the accessibility (public/protected/private) of the entity represented by the tag. This is
+     * used when creating a new project so that events aren't triggered for the permissions updates,
+     * just the actual create operation.
+     *
+     * @param tag               The tag to set.
+     * @param accessibility     The accessibility level to set.
+     * @param forceInit         Whether the entity should be initialized.
+     * @param authenticatedUser The user setting the accessibility.
+     * @param ci                Event metadata.
+     *
+     * @return Returns whether the accessibility was set for entity
+     *
+     * @throws Exception When an unknown or unexpected error occurs.
+     */
+    public static boolean initializeDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception {
+        return getPermissionsService().initializeDefaultAccessibility(tag, accessibility, forceInit, authenticatedUser, ci);
+    }
+
+    /**
      * Set the accessibility (public/protected/private) of the entity represented by the tag
      *
      * @param tag               The tag to set.
@@ -755,12 +774,20 @@ public class Permissions {
         return Roles.isSiteAdmin(user) || isProjectPublic(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
     }
 
-    private static List<String> getAllProtectedProjects(final JdbcTemplate template) {
+    public static List<String> getAllProtectedProjects(final JdbcTemplate template) {
         return template.queryForList(QUERY_GET_PROTECTED_PROJECTS, String.class);
     }
 
-    private static List<String> getAllPublicProjects(final JdbcTemplate template) {
+    public static List<String> getAllProtectedProjects(final NamedParameterJdbcTemplate template) {
+        return template.queryForList(QUERY_GET_PROTECTED_PROJECTS, EmptySqlParameterSource.INSTANCE, String.class);
+    }
+
+    public static List<String> getAllPublicProjects(final JdbcTemplate template) {
         return template.queryForList(QUERY_GET_PUBLIC_PROJECTS, String.class);
+    }
+
+    public static List<String> getAllPublicProjects(final NamedParameterJdbcTemplate template) {
+        return template.queryForList(QUERY_GET_PUBLIC_PROJECTS, EmptySqlParameterSource.INSTANCE, String.class);
     }
 
     public static boolean canEditProject(final UserI user, final String projectId) {

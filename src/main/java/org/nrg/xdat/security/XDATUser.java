@@ -621,11 +621,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected List<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
         if (_searchableElementDisplays.isEmpty()) {
-            final Map<Object, Object> counts = getReadableCounts();
+            final Map<String, Long> counts = getReadableCounts();
             try {
                 for (final ElementDisplay ed : getReadableElementDisplays()) {
                     if (ElementSecurity.IsSearchable(ed.getElementName())) {
-                        if (counts.containsKey(ed.getElementName()) && ((Long) counts.get(ed.getElementName()) > 0)) {
+                        if (counts.containsKey(ed.getElementName()) && (counts.get(ed.getElementName()) > 0)) {
                             _searchableElementDisplays.add(ed);
                         }
                     }
@@ -851,7 +851,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         _isSiteAdmin = null;
     }
 
-    protected Map<Object, Object> getReadableCounts() {
+    protected Map<String, Long> getReadableCounts() {
         return getCache().getReadableCounts(this);
     }
 

@@ -11,16 +11,15 @@ package org.nrg.xft.event;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.helpers.Users;
@@ -30,10 +29,11 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 
 /**
  * The Class XftItemEvent.
@@ -42,7 +42,6 @@ import java.util.List;
 @Accessors(prefix = "_")
 @Slf4j
 public class XftItemEvent implements XftItemEventI {
-
     public static Builder builder() {
         return new Builder();
     }
@@ -50,18 +49,26 @@ public class XftItemEvent implements XftItemEventI {
     @SuppressWarnings("unused")
     public static class Builder {
         public Builder xsiType(final String xsiType) {
-            if (!_typeAndIds.isEmpty()) {
+            if (_typeAndIds.size() > 1) {
                 throw new RuntimeException("You can only set the XSI type along with the ID for a single-item event, but there are already items set for this builder.");
             }
-            _xsiType = xsiType;
+            if (_typeAndIds.isEmpty()) {
+                _typeAndIds.add(new ImmutablePair<String, String>(xsiType, null));
+            } else {
+                _typeAndIds.set(0, new ImmutablePair<>(xsiType, _typeAndIds.get(0).getValue()));
+            }
             return this;
         }
 
         public Builder id(final String id) {
-            if (!_typeAndIds.isEmpty()) {
+            if (_typeAndIds.size() > 1) {
                 throw new RuntimeException("You can only set the ID along with the XSI type for a single-item event, but there are already items set for this builder.");
             }
-            _id = id;
+            if (_typeAndIds.isEmpty()) {
+                _typeAndIds.add(new ImmutablePair<String, String>(null, id));
+            } else {
+                _typeAndIds.set(0, new ImmutablePair<>(_typeAndIds.get(0).getKey(), id));
+            }
             return this;
         }
 
@@ -112,39 +119,44 @@ public class XftItemEvent implements XftItemEventI {
             return items(Lists.newArrayList(Iterables.filter(Lists.transform(elements, BASEELEMENT_TO_XFTITEM_FUNCTION), Predicates.<XFTItem>notNull())));
         }
 
+        public Builder property(final String property, final Object value) {
+            _properties.put(property, value);
+            return this;
+        }
+
+        public Builder properties(final Map<String, ?> properties) {
+            _properties.putAll(properties);
+            return this;
+        }
+
         public XftItemEvent build() {
             if (StringUtils.isBlank(_action)) {
                 throw new RuntimeException("You can't have an event without an action.");
             }
 
             final boolean hasTypeAndIds = !_typeAndIds.isEmpty();
-            final boolean hasXsiType    = StringUtils.isNotBlank(_xsiType);
-            final boolean hasId         = StringUtils.isNotBlank(_id);
+            final boolean hasXsiType    = hasTypeAndIds && StringUtils.isNotBlank(_typeAndIds.get(0).getKey());
+            final boolean hasId         = hasTypeAndIds && StringUtils.isNotBlank(_typeAndIds.get(0).getValue());
 
-            if (!hasTypeAndIds && !hasXsiType) {
+            if (!hasTypeAndIds) {
                 throw new RuntimeException("You can't have an event without it having affected something.");
             }
 
-            if (hasTypeAndIds && hasXsiType) {
+            if (!hasXsiType) {
                 throw new RuntimeException("You can only set the XSI type along with the ID for a single-item event, but there are already other items set for this builder.");
             }
 
-            if (hasXsiType && !hasId) {
+            if (!hasId) {
                 throw new RuntimeException("You must set the ID along with the XSI type for a single-item event, or there's no way to tell which object was affected.");
             }
 
-            if (hasXsiType) {
-                _typeAndIds.add(ImmutablePair.of(_xsiType, _id));
-            }
-
-            return new XftItemEvent(_typeAndIds, _items, _action);
+            return new XftItemEvent(_typeAndIds, _action, _properties, _items);
         }
 
         private final List<Pair<String, String>> _typeAndIds = new ArrayList<>();
         private final List<XFTItem>              _items      = new ArrayList<>();
-        private       String                     _xsiType;
-        private       String                     _id;
         private       String                     _action;
+        private       Map<String, Object>        _properties = new HashMap<>();
     }
 
     /**
@@ -153,9 +165,7 @@ public class XftItemEvent implements XftItemEventI {
      * @param item The {@link XFTItem}
      */
     public XftItemEvent(final BaseElement item, final String action) throws ElementNotFoundException, FieldNotFoundException {
-        _items.add(item.getItem());
-        _typeAndIds.add(ImmutablePair.of(item.getXSIType(), item.getStringProperty("ID")));
-        _action = action;
+        this(Collections.<Pair<String, String>>singletonList(ImmutablePair.of(item.getXSIType(), item.getStringProperty("ID"))), action, null, Collections.singletonList(item.getItem()));
     }
 
     /**
@@ -164,20 +174,7 @@ public class XftItemEvent implements XftItemEventI {
      * @param item The {@link XFTItem}
      */
     public XftItemEvent(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
-        _items.add(item);
-        _typeAndIds.add(ImmutablePair.of(item.getXSIType(), item.getIDValue()));
-        _action = action;
-    }
-
-    /**
-     * Instantiates a new XFTItem event.
-     *
-     * @param xsiType the xsi type
-     * @param action  the action
-     */
-    public XftItemEvent(final String xsiType, final String action) {
-        _typeAndIds.add(ImmutablePair.of(xsiType, (String) null));
-        _action = action;
+        this(Collections.<Pair<String, String>>singletonList(ImmutablePair.of(item.getXSIType(), item.getIDValue())), action, null, Collections.singletonList(item));
     }
 
     /**
@@ -188,25 +185,30 @@ public class XftItemEvent implements XftItemEventI {
      * @param action  the action
      */
     public XftItemEvent(final String xsiType, final String id, final String action) {
-        _typeAndIds.add(ImmutablePair.of(xsiType, id));
-        _action = action;
+        this(Collections.<Pair<String, String>>singletonList(ImmutablePair.of(xsiType, id)), action, null, null);
     }
 
     public XftItemEvent(final List<Pair<String, String>> typeAndIds, final String action) {
-        _typeAndIds.addAll(typeAndIds != null && !typeAndIds.isEmpty() ? ImmutableList.copyOf(typeAndIds) : Collections.<Pair<String, String>>emptyList());
-        _action = action;
+        this(typeAndIds, action, null, null);
     }
 
     protected XftItemEvent(final List<Pair<String, String>> typeAndIds, final List<XFTItem> items, final String action) {
-        _typeAndIds.addAll(typeAndIds != null && !typeAndIds.isEmpty() ? ImmutableList.copyOf(typeAndIds) : Collections.<Pair<String, String>>emptyList());
-        _items.addAll(items != null && !items.isEmpty() ? ImmutableList.copyOf(items) : Collections.<XFTItem>emptyList());
+        this(typeAndIds, action, null, items);
+    }
+
+    protected XftItemEvent(final List<Pair<String, String>> typeAndIds, final String action, final Map<String, Object> properties, final List<XFTItem> items) {
+        final boolean hasTypeAndIds = typeAndIds != null && !typeAndIds.isEmpty();
+        final boolean hasXftItems = items != null && !items.isEmpty();
+        if (!hasTypeAndIds && !hasXftItems) {
+            throw new NrgServiceRuntimeException(ConfigurationError, "You must specify at least one XSI type and ID pair or XFTItem: an action must happen to something.");
+        }
+        _typeAndIds = hasTypeAndIds ? ImmutableList.copyOf(typeAndIds) : getTypeAndIdsFromXftItems(items);
         _action = action;
+        _properties = ImmutableMap.copyOf(ObjectUtils.defaultIfNull(properties, Collections.<String, Object>emptyMap()));
+        _items = new ArrayList<>(ObjectUtils.defaultIfNull(items, Collections.<XFTItem>emptyList()));
     }
 
-    protected XftItemEvent() {
-        throw new IllegalArgumentException("You must specify an action to construct an XFT item event.");
-    }
-
+    @Override
     public boolean isMultiItemEvent() {
         return _typeAndIds.size() > 1;
     }
@@ -230,6 +232,7 @@ public class XftItemEvent implements XftItemEventI {
      *
      * @return the item
      */
+    @Override
     public XFTItem getItem() {
         checkSingleItemState();
         if (_items.isEmpty()) {
@@ -250,16 +253,14 @@ public class XftItemEvent implements XftItemEventI {
     public String toString() {
         switch (_typeAndIds.size()) {
             case 0:
-                return "Action " + getAction() + " on uninitialized item(s)";
+                return "Action '" + getAction() + "' on uninitialized item(s)";
 
             case 1:
-                final Pair<String, String> item = _typeAndIds.get(0);
-                return item.getKey() + " " + item.getValue() + " " + _action;
+                return "Action '" + getAction() + "' on " + PAIR_TO_STRING_FUNCTION.apply(_typeAndIds.get(0));
 
             default:
-                return getAction() + " on " + StringUtils.join(Lists.transform(getTypeAndIds(), PAIR_TO_STRING_FUNCTION), ", ");
+                return "Action '" + getAction() + "' on [" + StringUtils.join(Lists.transform(getTypeAndIds(), PAIR_TO_STRING_FUNCTION), ", ") + "]";
         }
-
     }
 
     private static final Function<BaseElement, XFTItem> BASEELEMENT_TO_XFTITEM_FUNCTION = new Function<BaseElement, XFTItem>() {
@@ -302,6 +303,11 @@ public class XftItemEvent implements XftItemEventI {
         }
     };
 
+    @Nonnull
+    private static List<Pair<String, String>> getTypeAndIdsFromXftItems(final List<XFTItem> items) {
+        return Lists.newArrayList(Iterables.filter(Lists.transform(items, XFTITEM_TO_PAIR_FUNCTION), Predicates.<Pair<String,String>>notNull()));
+    }
+
     private void checkSingleItemState() {
         if (_typeAndIds.isEmpty()) {
             throw new IllegalArgumentException("Can't get an item because there's no XSI type and ID specified.");
@@ -317,7 +323,7 @@ public class XftItemEvent implements XftItemEventI {
      * Gets the XSI type and ID of each item associated with the event as a pair, where the XSI type is the left or key property and the ID is the right
      * or value property.
      */
-    private final List<Pair<String, String>> _typeAndIds = new ArrayList<>();
+    private final List<Pair<String, String>> _typeAndIds;
 
     /**
      * Gets the items. This method differs from the singular {@link XftItemEvent} in two ways: it returns a list of {@link XFTItem} objects rather than
@@ -328,5 +334,10 @@ public class XftItemEvent implements XftItemEventI {
      * @return Returns the list of items for the event.
      */
     @SuppressWarnings("JavaDoc")
-    private final List<XFTItem> _items = new ArrayList<>();
+    private final List<XFTItem> _items;
+
+    /**
+     * Contains the properties for event-specific data.
+     */
+    private final Map<String, Object> _properties;
 }

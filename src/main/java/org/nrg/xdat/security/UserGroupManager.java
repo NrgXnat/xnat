@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xdat.security;
 
 import com.google.common.base.Function;
@@ -35,8 +34,6 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
@@ -52,9 +49,9 @@ import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.xft.event.XftItemEventI.*;
 
 @Service
 @Getter(PRIVATE)
@@ -188,7 +185,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
             // Don't trigger an event for project groups: those should be handled as part of the project create event.
             if (!XdatUsergroup.PROJECT_GROUP.matcher(id).matches()) {
-                XDAT.triggerEvent(Groups.getGroupDatatype(), id, XftItemEvent.CREATE);
+                XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), id, CREATE);
             }
 
             try {
@@ -265,7 +262,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             if (modified) {
                 PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-                XDAT.triggerEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.UPDATE);
+                XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), UPDATE);
 
                 try {
                     PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
@@ -362,7 +359,7 @@ public class UserGroupManager implements UserGroupServiceI {
             XdatUsergroup tmp = XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(group.getPK(), user, false);
             assert tmp != null;
             SaveItemHelper.authorizedDelete(tmp.getItem(), user, ci);
-            XDAT.triggerEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE);
+            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), DELETE);
         } catch (Throwable e) {
             log.error("", e);
         }
@@ -428,7 +425,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         SaveItemHelper.authorizedSave(xdatGroup, user, false, true, meta);
-        XDAT.triggerEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), XftItemEvent.UPDATE);
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), UPDATE);
         Groups.reloadGroupsForUser(user);
     }
 

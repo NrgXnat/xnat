@@ -17,7 +17,7 @@ public interface GroupsAndPermissionsCache extends XnatCache {
 
     Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
 
-    Map getReadableCounts(final UserI user);
+    Map<String, Long>  getReadableCounts(final UserI user);
 
     List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
 
@@ -131,7 +131,7 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      *
      * @return The date and time of the latest update to the specified group.
      */
-    Date getLastUpdateTime(final String groupId);
+    Date getGroupLastUpdateTime(final String groupId);
 
     /**
      * Returns the timestamp for the most recently updated group associated with the indicated user.
@@ -140,7 +140,16 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      *
      * @return The date and time of the latest update to any groups associated with the specified user.
      */
-    Date getLastUpdateTime(final UserI user);
+    Date getUserLastUpdateTime(final UserI user);
+
+    /**
+     * Returns the timestamp for the most recently updated group associated with the indicated user.
+     *
+     * @param username The name of the user to test.
+     *
+     * @return The date and time of the latest update to any groups associated with the specified user.
+     */
+    Date getUserLastUpdateTime(final String username);
 
     /**
      * This method retrieves the group with the specified group ID and puts it in the cache. This method

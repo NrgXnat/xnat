@@ -42,8 +42,8 @@ public abstract class UserHelperServiceI {
 	public abstract List<List> getQueryResults(String xmlPaths, String rootElement);
 	
 	public abstract boolean isOwner(String tag);
-	public abstract Map getReadableCounts();
-	public abstract Map getTotalCounts();
+	public abstract Map<String, Long> getReadableCounts();
+	public abstract Map<String, Long> getTotalCounts();
 	
 	public abstract List<ItemI> getCachedItems(String elementName, String security_permission, boolean preLoad);
 	public abstract List<ItemI> getCachedItemsByFieldValue(String elementName, String security_permission, boolean preLoad, String field, Object value);

@@ -9,22 +9,22 @@
 
 package org.nrg.xft.cache;
 
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 
 import java.util.Hashtable;
 import java.util.Map;
 
+import static org.nrg.xft.event.XftItemEventI.*;
+
 public class CacheManager {
 
-    private Map<String, Map<Object, Object>> cache = new Hashtable<String, Map<Object, Object>>();
+    private Map<String, Map<Object, Object>> cache = new Hashtable<>();
 
     private static CacheManager cm = null;
 
     public synchronized static CacheManager GetInstance() {
         if (cm == null) {
-            CacheManager temp = new CacheManager();
-            cm = temp;
+            cm = new CacheManager();
         }
 
         return cm;
@@ -62,7 +62,7 @@ public class CacheManager {
 
         Map<Object, Object> items = cache.get(xsiType);
         if (items == null) {
-            items = new Hashtable<Object, Object>();
+            items = new Hashtable<>();
             cache.put(xsiType, items);
         }
 
@@ -72,14 +72,13 @@ public class CacheManager {
     public synchronized Object remove(String xsiType, Object id) {
         Map<Object, Object> items = cache.get(xsiType);
         if (items == null) {
-            items = cache.put(xsiType, new Hashtable<Object, Object>());
+            items = cache.put(xsiType, new Hashtable<>());
         }
 
-        return items.remove(id);
+        return items != null ? items.remove(id) : null;
     }
 
     public void handleXftItemEvent(final XftItemEventI e) {
-
         if (e.getXsiType() == null) {
             return;
         }
@@ -90,24 +89,28 @@ public class CacheManager {
             return;//if null, then we aren't listening to this type yet.
         }
 
-        if ((e.getAction().equals(XftItemEvent.CREATE))) {
-            if (e.getId() != null && e.getItem() != null) {
-                items.put(e.getId(), e.getItem());
-            }
-        } else if ((e.getAction().equals(XftItemEvent.UPDATE))) {
-            if (e.getId() != null && e.getItem() != null) {
-                items.put(e.getId(), e.getItem());
-            } else if (e.getId() != null) {
-                items.remove(e.getId());
-            } else {
-                items.clear();
-            }
-        } else if ((e.getAction().equals(XftItemEvent.DELETE))) {
-            if (e.getId() != null) {
-                items.remove(e.getId());
-            } else {
-                items.clear();
-            }
+        switch (e.getAction()) {
+            case CREATE:
+                if (e.getId() != null && e.getItem() != null) {
+                    items.put(e.getId(), e.getItem());
+                }
+                break;
+            case UPDATE:
+                if (e.getId() != null && e.getItem() != null) {
+                    items.put(e.getId(), e.getItem());
+                } else if (e.getId() != null) {
+                    items.remove(e.getId());
+                } else {
+                    items.clear();
+                }
+                break;
+            case DELETE:
+                if (e.getId() != null) {
+                    items.remove(e.getId());
+                } else {
+                    items.clear();
+                }
+                break;
         }
     }
 

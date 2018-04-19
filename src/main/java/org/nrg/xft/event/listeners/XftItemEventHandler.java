@@ -3,6 +3,7 @@ package org.nrg.xft.event.listeners;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventHandlerMethod;
@@ -20,8 +21,9 @@ import java.util.List;
 @Service
 @Slf4j
 public class XftItemEventHandler implements Consumer<Event<XftItemEventI>> {
+    @Autowired
     public XftItemEventHandler(final EventBus eventBus) {
-        eventBus.on(Selectors.type(XftItemEvent.class), this);
+        eventBus.on(Selectors.type(XftItemEventI.class), this);
     }
 
     /**
@@ -34,13 +36,19 @@ public class XftItemEventHandler implements Consumer<Event<XftItemEventI>> {
     @Override
     public void accept(final Event<XftItemEventI> event) {
         final XftItemEventI xftItemEvent = event.getData();
-        log.debug("Accepted XFTItem event: {}", xftItemEvent.toString());
+        log.debug("Accepted XFTItem event: {}", xftItemEvent);
 
         final List<XftItemEventHandlerMethod> methods = getMethodsForEvent(xftItemEvent);
-        log.debug("Found {} methods to handle XFTItem event '{}'", methods.size(), xftItemEvent);
+        if (log.isInfoEnabled()) {
+            if (methods.isEmpty()) {
+                log.info("Found no methods to handle XFTItem event \"{}\"", xftItemEvent);
+            } else {
+                log.info("Found {} methods to handle XFTItem event \"{}\":\n * {}", methods.size(), xftItemEvent, StringUtils.join(methods, "\n * "));
+            }
+        }
 
         for (final XftItemEventHandlerMethod method : methods) {
-            log.debug("Handling XFTItem event {} with method {}", xftItemEvent, method.getClass().getName());
+            log.debug("Handling XFTItem event {} with method \"{}\"", xftItemEvent, method);
             method.handleEvent(xftItemEvent);
         }
     }
@@ -52,7 +60,7 @@ public class XftItemEventHandler implements Consumer<Event<XftItemEventI>> {
      */
     @Autowired
     public void setMethods(final List<XftItemEventHandlerMethod> methods) {
-        log.debug("A total of {} XFTItem event handler methods were found", methods.size());
+        log.debug("A total of {} XFTItem event handler methods were found: {}", methods.size(), StringUtils.join(methods, ", "));
         _methods.addAll(methods);
     }
 
@@ -67,6 +75,7 @@ public class XftItemEventHandler implements Consumer<Event<XftItemEventI>> {
         return FluentIterable.from(_methods).filter(new Predicate<XftItemEventHandlerMethod>() {
             @Override
             public boolean apply(@Nullable final XftItemEventHandlerMethod method) {
+                log.trace("Evaluating method {} for match with event {}", method, event);
                 return method != null && method.matches(event);
             }
         }).toList();

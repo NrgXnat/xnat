@@ -22,6 +22,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -55,7 +56,6 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
@@ -527,20 +527,44 @@ public class XDAT implements Initializable, Configurable{
 	    return _notificationService;
 	}
 
-	public static void triggerEvent(final XftItemEventI event) {
+	public static void triggerEvent(final EventI event) {
 		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event);
 	}
 
-	public static void triggerEvent(final String xsiType, final String id, final String action) {
+	public static void triggerEvent(final String description, final EventI event, final boolean notifyClassListeners) {
+		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event, notifyClassListeners);
+	}
+
+	public static void triggerEvent(final String description, final EventI event) {
+		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event);
+	}
+
+	public static void triggerEvent(final EventI event, final Object replyTo) {
+		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event, replyTo);
+	}
+
+	public static void triggerXftItemEvent(final String xsiType, final String id, final String action) {
 		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).build());
 	}
 
-	public static void triggerEvent(final XFTItem item, final String action) {
+	public static void triggerXftItemEvent(final XFTItem item, final String action) {
 		triggerEvent(XftItemEvent.builder().item(item).action(action).build());
 	}
 
-	public static void triggerEvent(final BaseElement element, final String action) {
+	public static void triggerXftItemEvent(final BaseElement element, final String action) {
 		triggerEvent(XftItemEvent.builder().element(element).action(action).build());
+	}
+
+	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
+		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).properties(properties).build());
+	}
+
+	public static void triggerXftItemEvent(final XFTItem item, final String action, final Map<String, ?> properties) {
+		triggerEvent(XftItemEvent.builder().item(item).action(action).properties(properties).build());
+	}
+
+	public static void triggerXftItemEvent(final BaseElement element, final String action, final Map<String, ?> properties) {
+		triggerEvent(XftItemEvent.builder().element(element).action(action).properties(properties).build());
 	}
 
     public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {

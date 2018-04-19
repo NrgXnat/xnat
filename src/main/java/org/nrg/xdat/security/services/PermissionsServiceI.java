@@ -329,7 +329,9 @@ public interface PermissionsServiceI {
     void setPermissions(UserI effected, UserI authenticated, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, EventMetaI ci);
 
     /**
-     * Set the accessibility (public/protected/private) of the entity represented by the tag
+     * Set the accessibility (public/protected/private) of the entity represented by the tag. This is
+     * used when creating a new entity so that events aren't triggered for the permissions updates,
+     * just the actual create operation.
      *
      * @param tag               The tag.
      * @param accessibility     The accessibility setting for the tag.
@@ -339,8 +341,20 @@ public interface PermissionsServiceI {
      * @return True if the accessibility was set for entity, false otherwise.
      * @throws Exception When something goes wrong. 
      */
-    boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception;
+    boolean initializeDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception;
 
+    /**
+     * Set the accessibility (public/protected/private) of the entity represented by the tag
+     *
+     * @param tag               The tag.
+     * @param accessibility     The accessibility setting for the tag.
+     * @param forceInit         Whether initialization of the tag should be forced.
+     * @param authenticatedUser The authenticated user.
+     * @param ci                Associated event metadata.
+     * @return True if the accessibility was set for entity, false otherwise.
+     * @throws Exception When something goes wrong.
+     */
+    boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception;
 
     /**
      * Get all active permission criteria for this user group / data type combination.

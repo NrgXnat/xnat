@@ -32,7 +32,6 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
@@ -43,6 +42,8 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @Slf4j
 public class DeleteProjectData extends SecureAction {
@@ -55,7 +56,7 @@ public class DeleteProjectData extends SecureAction {
         final boolean deleteProject = TurbineUtils.HasPassedParameter("delete_project", data);
         final boolean removeFiles   = TurbineUtils.HasPassedParameter("removeFiles", data);
 
-        final XftItemEvent.Builder builder = XftItemEvent.builder().action(XftItemEventI.DELETE);
+        final XftItemEvent.Builder builder = XftItemEvent.builder().action(DELETE);
 
         boolean preventProjectDelete    = false;
         boolean preventProjectDeleteByP = false;
@@ -191,7 +192,7 @@ public class DeleteProjectData extends SecureAction {
 
                 if (deleteProject && !preventProjectDelete && !preventProjectDeleteByP) {
                     SaveItemHelper.authorizedDelete(project.getItem().getCurrentDBVersion(), user, ci);
-                    builder.element(project);
+                    XDAT.triggerEvent(builder.element(project).build());
 
                     //DELETE field mappings
                     ItemSearch is = ItemSearch.GetItemSearch("xdat:field_mapping", user);

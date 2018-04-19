@@ -20,8 +20,6 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.status.StatusProducerI;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.*;
@@ -38,6 +36,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.JustificationAbsent;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
@@ -48,6 +47,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
+import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -62,11 +62,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 // Migration: I'm not sure why StatusProducer is deprecated
 @SuppressWarnings("deprecation")
@@ -284,6 +284,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             subject.setId(newID);
             try {
                 SaveItemHelper.authorizedSave(subject, user, false, false, c);
+                XDAT.triggerXftItemEvent(subject, CREATE);
             } catch (Exception e) {
                 failed("unable to save new subject " + newID);
                 throw new ServerException("Unable to save new subject " + subject, e);
@@ -564,6 +565,9 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 SaveHandlerI<XnatImagesessiondata> saveImpl = new SaveHandlerI<XnatImagesessiondata>() {
                     public void save(XnatImagesessiondata merged) throws Exception {
                         if (SaveItemHelper.authorizedSave(merged, user, false, false, c)) {
+                            final Date inserted = merged.getItem().getInsertDate();
+                            final Date lastModified = merged.getItem().getLastModified();
+                            XDAT.triggerXftItemEvent(merged, lastModified == null || lastModified.getTime() - inserted.getTime() == 0 ? CREATE : UPDATE);
                             Users.clearCache(user);
                             try {
                                 MaterializedView.deleteByUser(user);

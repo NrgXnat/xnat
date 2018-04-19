@@ -23,6 +23,7 @@ import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
@@ -42,6 +43,8 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXParseException;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 public class SubjectResource extends ItemResource {
     private static final String PRIMARY = "primary";
@@ -333,7 +336,7 @@ public class SubjectResource extends ItemResource {
 
                         // Save the experiment.
                         if (SaveItemHelper.authorizedSave(sub, user, false, this.isQueryVariableTrue("allowDataDeletion"), c)) {
-                            XDAT.triggerEvent(new XftItemEvent(sub.getXSIType(), sub.getId(), XftItemEvent.CREATE));
+                            XDAT.triggerXftItemEvent(sub, CREATE);
                             WorkflowUtils.complete(wrk, c);
         					Users.clearCache(user);
                             MaterializedView.deleteByUser(user);

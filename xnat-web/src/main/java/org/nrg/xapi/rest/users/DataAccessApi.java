@@ -87,7 +87,7 @@ public class DataAccessApi extends AbstractXapiRestController {
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<Date> getLastModified() {
-        return new ResponseEntity<>(_cache.getLastUpdateTime(getSessionUser()), OK);
+        return new ResponseEntity<>(_cache.getUserLastUpdateTime(getSessionUser()), OK);
     }
 
     @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.",

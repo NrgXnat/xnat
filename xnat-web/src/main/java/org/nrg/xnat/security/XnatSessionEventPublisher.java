@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.security.UserI;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -110,6 +111,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         log.debug("Servlet context initialized: {}", event.getServletContext().getContextPath());
         _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
         _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
+        _cache = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(GroupsAndPermissionsCache.class);
     }
 
     @Override
@@ -153,4 +155,5 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
 
     private SiteConfigPreferences      _preferences;
     private NamedParameterJdbcTemplate _template;
+    private GroupsAndPermissionsCache  _cache;
 }

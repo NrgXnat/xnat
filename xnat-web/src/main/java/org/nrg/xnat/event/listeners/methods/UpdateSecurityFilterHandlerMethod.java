@@ -10,6 +10,7 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xapi.rest.aspects.XapiRequestMappingAspect;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.XnatLogoutSuccessHandler;
@@ -19,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
-import org.springframework.security.access.SecurityMetadataSource;
 import org.springframework.security.config.http.ChannelAttributeFactory;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
@@ -79,7 +79,7 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
      * Processes the submitted bean. This implementation is only interested in two particular beans:
      *
      * <ul>
-     * <li>It sets the {@link #getMetadataSource() security metadata source} on Spring's <b>FilterSecurityInterceptor</b></li>
+     * <li>It updates the security metadata source on Spring's <b>FilterSecurityInterceptor</b></li>
      * <li>
      * It also sets the {@link XnatAppInfo#getOpenUrls() open (i.e. unrestricted)} and {@link XnatAppInfo#getAdminUrls() administrative URLs}
      * on the {@link XapiRequestMappingAspect XAPI security manager object}.
@@ -115,16 +115,47 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
 
     private void updateSecurityFilter() {
         if (_interceptor != null) {
-            final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource();
-            log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:\n{}", displayMetadataSource(_interceptor.getSecurityMetadataSource()));
-            log.debug("Updating the bean with the following metadata configuration:\n{}", displayMetadataSource(metadataSource));
-            _interceptor.setSecurityMetadataSource(metadataSource);
+            log.info("Building a security metadata map from the system configuration and settings.");
+            final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
+
+            if (_openUrls.isEmpty()) {
+                log.warn("No open URLs found in configuration. This may be OK, but isn't normal.");
+            } else {
+                log.info(" * Found {} open URLs to configure, setting to 'permitAll': {}", _openUrls.size(), StringUtils.join(_openUrls, ", "));
+                for (final String url : _openUrls) {
+                    map.put(new AntPathRequestMatcher(url), SecurityConfig.createList(PERMIT_ALL));
+                }
+            }
+
+            if (_openUrls.isEmpty()) {
+                log.warn("No admin URLs found in configuration. This may be OK, but isn't normal.");
+            } else {
+                log.info(" * Found {} admin URLs to configure, setting to '{}': {}", _adminUrls.size(), ADMIN_EXPRESSION, StringUtils.join(_adminUrls, ", "));
+                for (final String adminUrl : _adminUrls) {
+                    final String fullUrl;
+                    if (adminUrl.endsWith("/*")) {
+                        fullUrl = adminUrl + "*";
+                    } else if (adminUrl.endsWith("/")) {
+                        fullUrl = adminUrl + "**";
+                    } else if (!adminUrl.endsWith("/**")) {
+                        fullUrl = adminUrl + "/**";
+                    } else {
+                        fullUrl = adminUrl;
+                    }
+                    map.put(new AntPathRequestMatcher(fullUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
+                }
+            }
+
+            final String secure = _requireLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;
+            log.info(" * All non-open and non-admin URLs match the default pattern '{}', system {} login, setting to '{}'", DEFAULT_PATTERN, _requireLogin ? "requires" : "does not require", secure);
+            map.put(new AntPathRequestMatcher(DEFAULT_PATTERN), SecurityConfig.createList(secure));
+            _interceptor.setSecurityMetadataSource(new ExpressionBasedFilterInvocationSecurityMetadataSource(map, new DefaultWebSecurityExpressionHandler()));
         }
     }
 
     private void updateRequireLogin() {
         _logoutSuccessHandler.setRequireLogin(_requireLogin);
-        _interceptor.setSecurityMetadataSource(getMetadataSource());
+        updateSecurityFilter();
     }
 
     private void updateSecurityChannel() {
@@ -135,45 +166,6 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
             final FilterInvocationSecurityMetadataSource metadataSource = new DefaultFilterInvocationSecurityMetadataSource(map);
             _channelProcessingFilter.setSecurityMetadataSource(metadataSource);
         }
-    }
-
-    private ExpressionBasedFilterInvocationSecurityMetadataSource getMetadataSource() {
-        final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
-
-        for (final String url : _openUrls) {
-            log.debug("Setting permitAll on the open URL: {}", url);
-            map.put(new AntPathRequestMatcher(url), SecurityConfig.createList(PERMIT_ALL));
-        }
-
-        for (final String adminUrl : _adminUrls) {
-            log.debug("Setting permissions on the admin URL: {}", adminUrl);
-            String tempAdminUrl = adminUrl;
-            if (tempAdminUrl.endsWith("/*")) {
-                tempAdminUrl += "*";
-            } else if (tempAdminUrl.endsWith("/")) {
-                tempAdminUrl += "**";
-            } else if (!tempAdminUrl.endsWith("/**")) {
-                tempAdminUrl += "/**";
-            }
-            map.put(new AntPathRequestMatcher(tempAdminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
-        }
-
-        final String secure = _requireLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;
-        log.debug("Setting {} on the default pattern: {}", secure, DEFAULT_PATTERN);
-        map.put(new AntPathRequestMatcher(DEFAULT_PATTERN), SecurityConfig.createList(secure));
-        return new ExpressionBasedFilterInvocationSecurityMetadataSource(map, new DefaultWebSecurityExpressionHandler());
-    }
-
-    private static String displayMetadataSource(final SecurityMetadataSource metadataSource) {
-        if (metadataSource == null) {
-            return "*** No metadata source found";
-        }
-
-        final StringBuilder builder = new StringBuilder();
-        for (final ConfigAttribute attribute : metadataSource.getAllConfigAttributes()) {
-            builder.append("*** Attribute: ").append(attribute.getAttribute());
-        }
-        return builder.toString();
     }
 
     private static final String PERMIT_ALL         = "permitAll";

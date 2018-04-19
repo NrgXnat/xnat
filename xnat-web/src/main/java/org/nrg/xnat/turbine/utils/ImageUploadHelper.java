@@ -9,54 +9,43 @@
 
 package org.nrg.xnat.turbine.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.channels.FileLock;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
-import javax.servlet.http.HttpSession;
-
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.nrg.PrearcImporter;
-import org.nrg.action.ClientException;
-import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducer;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
 
-public class ImageUploadHelper extends StatusProducer implements Callable<List<File>>{
-	public static final String SESSIONS_RESPONSE = "SESSIONS";
-	static org.apache.log4j.Logger logger = Logger.getLogger(ImageUploadHelper.class);
-	private final String project;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.channels.FileLock;
+import java.util.*;
+import java.util.concurrent.Callable;
 
-	private final UserI user;
+@Slf4j
+public class ImageUploadHelper extends StatusProducer implements Callable<List<File>> {
+	private final String           project;
 
 	private final File src;
 	private final File dest;
 
 	private Map<String,Object> additionalValues;
 
-	public ImageUploadHelper(final Object uID,final UserI user,final String project,final File src, final File dest,final Map<String,Object> additionalVariables)
-	{
-		super((uID==null)?user:uID);
-		this.user=user;
+	public ImageUploadHelper(final Object uID,final UserI user,final String project,final File src, final File dest,final Map<String,Object> additionalVariables) {
+		super(ObjectUtils.defaultIfNull(uID, user));
 		this.project = project;
 		this.src=src;
 		this.dest=dest;
 		this.additionalValues=additionalVariables;
 	}
 
-	public List<File> call() throws ClientException,ServerException
-	{
+	public List<File> call() {
 		final PrearcImporter pw = PrearcImporterFactory.getFactory().getPrearcImporter(project, dest, src);
 		pw.setAdditionalValues(additionalValues);
 		for(final StatusListenerI listener: this.getListeners()){
@@ -114,31 +103,30 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 									
 									value=String.format(format, formatValues);
 								}
-								
+
 								try {
 									item.setProperty(key, value);
+								} catch (FieldNotFoundException e) {
+									log.warn("Couldn't set field {} on item of type '{}' to value '{}' (field not found): {}", e.FIELD, item.getXSIType(), value, e.MESSAGE);
+								} catch (InvalidValueException e) {
+									log.warn("Couldn't set field {} on item of type '{}' to value '{}' (invalid value): {}", key, item.getXSIType(), value, e.getMessage());
 								} catch (Throwable e) {
-									logger.error("",e);
-									failed("failed to set appropriate field for '" + f.getName() + "'.  Data may be publicly accessible until archived.");
+									final String message = "Failed to set appropriate field for '" + f.getName() + "'. Data may be publicly accessible until archived.";
+									log.error(message, e);
+									failed(message);
 								}
 							}
 
-							final FileOutputStream fos=new FileOutputStream(xml);
-							final OutputStreamWriter fw;
-							try {
-								FileLock fl=fos.getChannel().lock();
-								try{
-									fw = new OutputStreamWriter(fos);
-									item.toXML(fos,false);
-									fw.flush();
-								}finally{
+							try (final FileOutputStream fos = new FileOutputStream(xml)) {
+								final FileLock fl = fos.getChannel().lock();
+								try {
+									item.toXML(fos, false);
+								} finally {
 									fl.release();
 								}
-							}finally{
-								fos.close();
 							}
 						} catch (Throwable e) {
-							logger.error("",e);
+							log.error("", e);
 							failed("failed to set appropriate field(s) for '" + f.getName() + "'.  Data may be publicly accessible until archived.");
 						}
 					}
@@ -151,19 +139,20 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 
 		for (final StatusMessage s : localListener.getCachedMessages()){
 			if (s.getStatus().equals(StatusMessage.Status.FAILED)){
-				logger.error(s.getMessage());
+				log.error(s.getMessage());
 			}else{
-				logger.info(s.getMessage());
+				log.info(s.getMessage());
 			}
 		}
 
 		return response;
 	}
 
+	@SuppressWarnings("unused")
 	public class PrearcListener implements StatusListenerI{
 		final HttpSession session;
 		final String sessionAttribute;
-		final ArrayList<String[]> messages = new ArrayList<String[]>();
+		final ArrayList<String[]> messages = new ArrayList<>();
 
 		public PrearcListener(HttpSession s, String sa)
 		{
@@ -208,10 +197,10 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 		public void addMessage(String level, String message){
 			messages.add(new String[]{level,message});
 		}
-	};
+	}
 
 	public class LocalListener implements StatusListenerI{
-		private Collection<StatusMessage> cache=new ArrayList<StatusMessage>();
+		private Collection<StatusMessage> cache= new ArrayList<>();
 		public void notify(StatusMessage message) {
 			cache.add(message);
 		}
@@ -219,5 +208,5 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 		public Collection<StatusMessage> getCachedMessages(){
 			return cache;
 		}
-	};
+	}
 }

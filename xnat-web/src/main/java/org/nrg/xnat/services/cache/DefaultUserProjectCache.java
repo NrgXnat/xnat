@@ -37,7 +37,6 @@ import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -58,13 +57,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     @Autowired
     public DefaultUserProjectCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final XnatUserProvider primaryAdminUserProvider) {
-        super(XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME), XftItemEventCriteria.builder().predicate(XftItemEventCriteria.isProjectGroup).build());
+        super(cacheManager,
+              XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
 
-        _cache = cacheManager.getCache(CACHE_NAME);
         _template = template;
-        _adminUserProvider = primaryAdminUserProvider;
-
-        registerCacheEventListener();
+        _adminUserProvider = primaryAdminUserProvider; 
     }
 
     @Override
@@ -73,7 +71,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         final String projectId = getProjectIdFromEvent(event);
         log.info("Got an XFTItemEvent for project '{}'", projectId);
 
-        final ProjectCache projectCache = _cache.get(projectId, ProjectCache.class);
+        final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
 
         // If there was no cached project, maybe it was cached as a non-existent project and has been created?
         if (projectCache == null) {
@@ -98,7 +96,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
-            _cache.evict(projectId);
+            getCache().evict(projectId);
         }
 
         initializeProjectCache(projectId);
@@ -254,16 +252,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return null;
     }
 
-    private void registerCacheEventListener() {
-        final Object nativeCache = _cache.getNativeCache();
-        if (nativeCache instanceof net.sf.ehcache.Cache) {
-            ((net.sf.ehcache.Cache) nativeCache).getCacheEventNotificationService().registerListener(this);
-            log.debug("Registered user project cache as net.sf.ehcache.Cache listener");
-        } else {
-            log.warn("I don't know how to handle the native cache type {}", nativeCache.getClass().getName());
-        }
-    }
-
     private boolean hasAccess(final String userId, final String idOrAlias, final AccessLevel accessLevel) {
         if (isCachedNonexistentProject(idOrAlias)) {
             return false;
@@ -414,7 +402,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             log.debug("Found project ID {} for the ID or alias {}, returning project cache for that ID.", projectId, idOrAlias);
 
             // And then return the project cache.
-            final ProjectCache projectCache = _cache.get(projectId, ProjectCache.class);
+            final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
             if (projectCache == null) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Found cached project ID " + projectId + " for ID or alias " + idOrAlias + ", which should only ever happen if the project is cached, but the project cache is null.");
             }
@@ -434,7 +422,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         if (_aliasMapping.containsKey(idOrAlias)) {
             final String projectId = _aliasMapping.get(idOrAlias);
             log.info("Found project ID {} for ID or alias {}, this was probably initialized by another thread.", projectId, idOrAlias);
-            return _cache.get(projectId, ProjectCache.class);
+            return getCache().get(projectId, ProjectCache.class);
         }
 
         log.info("Initializing project cache for ID or alias {}", idOrAlias);
@@ -462,7 +450,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         log.debug("Caching project cache for {}", projectId);
-        _cache.put(projectId, projectCache);
+        cacheObject(projectId, projectCache);
 
         // Hooray, we found the project, so let's cache the ID and all the aliases.
         cacheProjectIdsAndAliases(projectId, project.getAliases_alias());
@@ -649,7 +637,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final Set<String>         _nonexistentUsers = new HashSet<>();
     private final Map<String, String> _aliasMapping     = new HashMap<>();
 
-    private final Cache                      _cache;
     private final NamedParameterJdbcTemplate _template;
     private final XnatUserProvider           _adminUserProvider;
 

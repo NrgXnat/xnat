@@ -1,8 +1,8 @@
 package org.nrg.xnat.event.listeners.methods;
 
+import com.google.common.base.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -16,6 +16,8 @@ import org.nrg.xft.security.UserI;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
+
 /**
  * Clears the XFT cache when an item is updated.
  */
@@ -23,7 +25,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod {
     public XnatProjectHandlerMethod(final NamedParameterJdbcTemplate template) {
-        super(XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME));
+        // super(XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME));
+        // For now this is a no-op criteria, because I don't think this handler actually does anything worthwhile.
+        super(XftItemEventCriteria.builder().predicate(new Predicate<XftItemEventI>() {
+            @Override
+            public boolean apply(@Nullable final XftItemEventI input) {
+                return false;
+            }
+        }).build());
         _template = template;
     }
 

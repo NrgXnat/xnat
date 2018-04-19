@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.LapStopWatch;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;

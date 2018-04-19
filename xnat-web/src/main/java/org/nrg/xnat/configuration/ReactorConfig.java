@@ -9,19 +9,24 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xft.event.listeners.XftItemEventHandler;
+import org.nrg.xnat.event.util.UncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import reactor.Environment;
 import reactor.bus.EventBus;
+import reactor.core.Dispatcher;
+import reactor.core.dispatch.WorkQueueDispatcher;
 
 /**
  * The Class ReactorConfig.
  */
 @Configuration
 @ComponentScan("org.nrg.xft.event.methods")
+@Slf4j
 public class ReactorConfig {
     @Bean
     public NrgEventService eventService(final EventBus eventBus) {
@@ -52,6 +57,11 @@ public class ReactorConfig {
      */
     @Bean
     public EventBus createEventBus(Environment env) {
-        return EventBus.create(env, Environment.THREAD_POOL);
+        return EventBus.create(env, reactorDispatcher());
+    }
+
+    @Bean
+    public Dispatcher reactorDispatcher() {
+        return new WorkQueueDispatcher("multThreadedQueueDispatcher", 20, 2048, new UncaughtExceptionHandler());
     }
 }

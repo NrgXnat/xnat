@@ -24,7 +24,6 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
@@ -51,6 +50,8 @@ import org.xml.sax.SAXException;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 public class ExperimentResource extends ItemResource {
     public ExperimentResource(Context context, Request request, Response response) {
@@ -387,7 +388,7 @@ public class ExperimentResource extends ItemResource {
                         // We only need to fire an event if this is a new experiment, since that can affect the browseable
                         // elements display if it's the first of its type in its project.
                         if (_existing != null) {
-                            XDAT.triggerEvent(_experiment, XftItemEvent.CREATE);
+                            XDAT.triggerXftItemEvent(_experiment, CREATE);
                         }
                         WorkflowUtils.complete(wrk, c);
                         Users.clearCache(user);

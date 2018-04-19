@@ -73,7 +73,7 @@ public class SearchElementListResource extends SecureResource {
 			removals.clear();
 
 			final UserI user = getUser();
-			final Map counts = getQueryVariable("readable") != null ? UserHelper.getUserHelperService(user).getReadableCounts() : UserHelper.getUserHelperService(user).getTotalCounts();
+			final Map<String, Long> counts = getQueryVariable("readable") != null ? UserHelper.getUserHelperService(user).getReadableCounts() : UserHelper.getUserHelperService(user).getTotalCounts();
 
 			if(this.getQueryVariable("used")!=null){
 				for(ElementSecurity es: allES.values()){

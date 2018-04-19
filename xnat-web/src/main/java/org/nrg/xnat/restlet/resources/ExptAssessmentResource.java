@@ -389,7 +389,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 		//if we attempt to delete an assessment from a shared project, the assessment shouldn't be deleted (just unshared)
 		//if its the primary project, it should b deleted
-		//REST/projects/SHARED/.../experiments/ID should unshare
+		//REST/projects/SHARE/.../experiments/ID should unshare
 		//REST/projects/PRIMARY/.../experiments/ID should delete
 		XnatProjectdata deleteFromProject=null;
 

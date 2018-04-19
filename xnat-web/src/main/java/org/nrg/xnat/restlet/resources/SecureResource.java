@@ -102,6 +102,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
 
+import static org.nrg.xft.event.XftItemEventI.DELETE;
+
 @SuppressWarnings("deprecation")
 public abstract class SecureResource extends Resource {
     private static final String COMPRESSION = "compression";
@@ -1567,7 +1569,7 @@ public abstract class SecureResource extends Resource {
                     WorkflowUtils.fail(wrk, c);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                 } else {
-                    XDAT.triggerEvent(item, XftItemEvent.DELETE);
+                    XDAT.triggerXftItemEvent(item, DELETE);
                     WorkflowUtils.complete(wrk, c);
                 }
             } catch (Exception e) {

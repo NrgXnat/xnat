@@ -10,7 +10,6 @@
 package org.nrg.xnat.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -35,6 +34,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
@@ -481,6 +481,7 @@ public class XnatAppInfo {
      *
      * @return A set of the system's open URLs.
      */
+    @Nonnull
     public List<String> getOpenUrls() {
         return ImmutableList.copyOf(_openUrls);
     }
@@ -490,6 +491,7 @@ public class XnatAppInfo {
      *
      * @return A set of administrator-only URLs.
      */
+    @Nonnull
     public List<String> getAdminUrls() {
         return ImmutableList.copyOf(_adminUrls);
     }

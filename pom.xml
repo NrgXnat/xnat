@@ -73,9 +73,9 @@
         <spawner.version>${xnat.version}</spawner.version>
         <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <xdat.version>1.7.5-auth-B3-SNAPSHOT</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.config.version>1.7.5-auth-B3-SNAPSHOT</nrg.config.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>

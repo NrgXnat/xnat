@@ -40,7 +40,7 @@ buildscript {
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.10.1"
-        classpath "io.franzbecker:gradle-lombok:1.12"
+        classpath "io.franzbecker:gradle-lombok:1.11"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
@@ -127,6 +127,11 @@ if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
     war.baseName = "xnat-web"
+}
+
+lombok {
+    version = "1.16.20"
+    sha256 = ""
 }
 
 configurations {
@@ -269,6 +274,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-ldap"
     implementation "org.springframework.security:spring-security-taglibs"
     implementation "org.springframework.ldap:spring-ldap-core"
+    implementation "org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE"
+    implementation "org.springframework.security:spring-security-jwt:1.0.8.RELEASE"
 
     implementation "org.hibernate:hibernate-core"
     implementation "org.hibernate:hibernate-ehcache"

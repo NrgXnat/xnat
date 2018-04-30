@@ -99,10 +99,18 @@ public class PropertiesConfig {
     public List<String> configFilesLocations() {
         // The configuration service should be converted to use List<Path> instead of List<String> and this bean should
         // be deprecated and removed.
-        if (_configFolderLocations.size() == 0) {
+        if (_configFolderLocations.isEmpty()) {
             configPaths();
         }
         return _configFolderLocations;
+    }
+
+    @Bean
+    public List<Path> configFiles() {
+        if (_configFiles.isEmpty()) {
+            configPaths();
+        }
+        return _configFiles;
     }
 
     @Bean
@@ -119,18 +127,27 @@ public class PropertiesConfig {
 
     @Bean
     public ConfigPaths configPaths() {
-        if (__configPaths.size() == 0) {
+        if (_configPaths.isEmpty()) {
             final Map<String, String> paths = new HashMap<>();
             for (int index = 0; index < CONFIG_LOCATIONS.size(); index++) {
                 paths.put(CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
                 final Path path = getConfigFolder(_environment, CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index), XNAT_CONF_FILE, CONFIG_URLS);
                 if (path != null) {
                     log.info("Adding path {} to the list of available configuration folders.", path);
-                    __configPaths.add(path);
-                    _configFolderLocations.add(path.toString());
+                    final boolean isFile = path.toFile().isFile();
+                    final Path    folder      = isFile ? path.getParent() : path;
+                    if (!_configPaths.contains(folder)) {
+                        _configPaths.add(folder);
+                    }
+                    if (!_configFolderLocations.contains(folder.toString())) {
+                        _configFolderLocations.add((folder).toString());
+                    }
+                    if (isFile && !_configFiles.contains(path)) {
+                        _configFiles.add(path);
+                    }
                 }
             }
-            if (__configPaths.size() == 0) {
+            if (_configPaths.isEmpty()) {
                 final StringBuilder writer = new StringBuilder("No XNAT home specified in any of the accepted locations:\n");
                 for (final String variable : paths.keySet()) {
                     writer.append(" * ");
@@ -145,7 +162,7 @@ public class PropertiesConfig {
                 throw new RuntimeException(writer.toString());
             }
         }
-        return __configPaths;
+        return _configPaths;
     }
 
     @Bean
@@ -191,7 +208,7 @@ public class PropertiesConfig {
                 log.debug("The location {} and path {} did not resolve to a usable path.", CONFIG_LOCATIONS.get(index), paths.get(index));
             }
         }
-        if (configPaths.size() == 0) {
+        if (configPaths.isEmpty()) {
             throw new RuntimeException("No XNAT home specified in any of the accepted locations: " + Joiner.on(", ").join(urls));
         }
         return configPaths;
@@ -225,7 +242,7 @@ public class PropertiesConfig {
                 if (file.getName().equals(configFile) || StringUtils.equals(candidate.toString(), environment.getProperty(JAVA_XNAT_CONFIG))) {
                     // So its parent is a config folder, QED.
                     log.debug("Environment variable {} resolved to path {}, this is a known configuration file so returning this.", variable, candidate);
-                    return candidate.getParent();
+                    return candidate;
                 }
             }
         }
@@ -240,9 +257,10 @@ public class PropertiesConfig {
 
     private static Environment _environment;
 
-    private final ConfigPaths  __configPaths          = new ConfigPaths();
+    private final ConfigPaths  _configPaths           = new ConfigPaths();
     private final List<String> _configFolderLocations = new ArrayList<>();
+    private final List<Path>   _configFiles           = new ArrayList<>();
 
-    private Path        _xnatHome;
+    private Path _xnatHome;
 
 }

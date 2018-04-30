@@ -12,7 +12,7 @@ package org.nrg.xft.search;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
@@ -28,6 +28,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 
 import java.util.*;
 
@@ -168,25 +170,29 @@ public class ItemSearch implements SearchI {
 		{
 		    login = user.getUsername();
 		}
-//
-//	    if (criteriaCollection != null && criteriaCollection.size() > 0)
-//			query = "SELECT * FROM (" + query + ") SEARCH WHERE " + criteriaCollection.getSQLClause(qo);
-//		query += ";";
 
-	    XFTTable table = TableSearch.Execute(query,element.getDbName(),login);
-	    ItemCollection items = populateItems(element,table,qo,extend,this.allowMultiples);
-	    //items.finalizeLoading(); moved to populateItems
+		if (StringUtils.isNotBlank(login) && log.isTraceEnabled()) {
+			try {
+				log.trace("Running query for user '{}' on element '{}':\nQuery: '{}'\nResults: {}", login, element, query, XDAT.getNamedParameterJdbcTemplate().queryForMap(query, EmptySqlParameterSource.INSTANCE));
+			} catch (EmptyResultDataAccessException e) {
+				log.trace("Running query for user '{}' on element '{}':\nQuery: '{}'\nResults: No results were found.", login, element, query);
+			}
+		}
+		final XFTTable table = TableSearch.Execute(query, element.getDbName(), login);
+		final ItemCollection items = populateItems(element, table, qo, extend, this.allowMultiples);
+		log.debug("Got {} results for user '{}' query '{}'", items.size(), StringUtils.defaultIfBlank(login, "<no user>"), query);
 	    query = null;
 		return items;
 	}
 
 	public XFTTable executeToTable(boolean showMetaFields) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{
-		QueryOrganizer qo = new QueryOrganizer(element,user,this.level);
-	    Hashtable<String,String> field_names = ViewManager.GetFieldMap(element,level,allowMultiples,rootItem);
-	    for(String s: field_names.keySet())
+		final QueryOrganizer qo = new QueryOrganizer(element,user,this.level);
+		//noinspection unchecked
+		final Hashtable<String,String> fieldNames = ViewManager.GetFieldMap(element,level,allowMultiples,rootItem);
+	    for(final String fieldName: fieldNames.keySet())
 	    {
-	        if(showMetaFields || (s.indexOf("/meta/")==-1 && !s.endsWith("_info")))
-	        	qo.addDirectField(s);
+	        if(showMetaFields || (!fieldName.contains("/meta/") && !fieldName.endsWith("_info")))
+	        	qo.addDirectField(fieldName);
 	    }
 
 
@@ -207,28 +213,19 @@ public class ItemSearch implements SearchI {
 //			query = "SELECT * FROM (" + query + ") SEARCH WHERE " + criteriaCollection.getSQLClause(qo);
 //		query += ";";
 
-	    XFTTable t= TableSearch.Execute(query,element.getDbName(),login);
+	    final XFTTable table = TableSearch.Execute(query,element.getDbName(),login);
 
-	    Iterator possibleFieldNames = qo.getAllFields().iterator();
-		while (possibleFieldNames.hasNext())
-		{
+		for (final Object o : qo.getAllFields()) {
+			final String key = (String) o;
+			final String colName = qo.translateXMLPath(key).toLowerCase();
 
-		    //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::1");
-			String key = (String)possibleFieldNames.next();
-			//org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
-		    String colName = (String)qo.translateXMLPath(key).toLowerCase();
-
-		    Integer i = t.getColumnIndex(colName);
-	    	if(i!=null){
-	    		if(key.indexOf("/")==-1){
-		    		t.getColumns()[i]=key;
-	    		}else{
-		    		t.getColumns()[i]=key.substring(key.indexOf("/")+1);
-	    		}
-	    	}
+			final Integer i = table.getColumnIndex(colName);
+			if (i != null) {
+				table.getColumns()[i] = !key.contains("/") ? key : key.substring(key.indexOf("/") + 1);
+			}
 		}
 
-	    return t;
+	    return table;
 	}
 
 //    public List<Object> getKeys() throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{

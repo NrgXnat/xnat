@@ -335,7 +335,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getCreateableElementDisplays() throws Exception {
-        return getCache().getActionElementDisplays(this, CREATE);
+        return getGroupsAndPermissionsCache().getActionElementDisplays(this, CREATE);
     }
 
     /**
@@ -346,7 +346,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getEditableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
-        return getCache().getActionElementDisplays(this, EDIT);
+        return getGroupsAndPermissionsCache().getActionElementDisplays(this, EDIT);
     }
 
     /**
@@ -357,7 +357,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getReadableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
-        return getCache().getActionElementDisplays(this, READ);
+        return getGroupsAndPermissionsCache().getActionElementDisplays(this, READ);
     }
 
     /**
@@ -559,7 +559,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected Map<String, ElementDisplay> getBrowseableElementDisplayMap() {
-        return getCache().getBrowseableElementDisplays(this);
+        return getGroupsAndPermissionsCache().getBrowseableElementDisplays(this);
     }
 
     protected ElementDisplay getBrowseableElementDisplay(final String elementName) {
@@ -705,7 +705,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      */
     public Map<String, UserGroupI> getGroups() {
         try {
-            return getCache().getGroupsForUser(getUsername());
+            return getGroupsAndPermissionsCache().getGroupsForUser(getUsername());
         } catch (UserNotFoundException e) {
             return Collections.emptyMap();
         }
@@ -852,7 +852,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected Map<String, Long> getReadableCounts() {
-        return getCache().getReadableCounts(this);
+        return getGroupsAndPermissionsCache().getReadableCounts(this);
     }
 
     protected Map<String, Long> getTotalCounts() {
@@ -1176,6 +1176,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<String> getAccessibleProjects() throws Exception {
+        final List<String> projects = Permissions.getAccessibleProjects(this);
+        if (projects != null) {
+            return projects;
+        }
         if (_editableProjects.isEmpty()) {
             for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
@@ -1220,11 +1224,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return false;
     }
 
-    private GroupsAndPermissionsCache getCache() {
-        if (_cache == null) {
-            _cache = XDAT.getContextService().getBean(GroupsAndPermissionsCache.class);
+    private GroupsAndPermissionsCache getGroupsAndPermissionsCache() {
+        if (_groupsAndPermissionsCache == null) {
+            _groupsAndPermissionsCache = XDAT.getContextService().getBean(GroupsAndPermissionsCache.class);
         }
-        return _cache;
+        return _groupsAndPermissionsCache;
     }
 
     private final static Comparator DescriptionComparator = new Comparator() {
@@ -1266,47 +1270,47 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     };
 
-    private static final long   serialVersionUID = -8144623503683531831L;
+    private static final long serialVersionUID = -8144623503683531831L;
 
     private static final String QUERY_USER_PERMISSIONS = "SELECT " +
-                                                          "  xea.element_name    AS element_name, " +
-                                                          "  xeamd.status        AS active_status, " +
-                                                          "  xfms.method         AS method, " +
-                                                          "  xfm.field           AS field, " +
-                                                          "  xfm.field_value     AS field_value, " +
-                                                          "  xfm.comparison_type AS comparison_type, " +
-                                                          "  xfm.read_element    AS can_read, " +
-                                                          "  xfm.edit_element    AS can_edit, " +
-                                                          "  xfm.create_element  AS can_create, " +
-                                                          "  xfm.delete_element  AS can_delete, " +
-                                                          "  xfm.active_element  AS can_active " +
-                                                          "FROM xdat_user u " +
-                                                          "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
-                                                          "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                          "WHERE " +
-                                                          "  u.xdat_user_id = :userId";
+                                                         "  xea.element_name    AS element_name, " +
+                                                         "  xeamd.status        AS active_status, " +
+                                                         "  xfms.method         AS method, " +
+                                                         "  xfm.field           AS field, " +
+                                                         "  xfm.field_value     AS field_value, " +
+                                                         "  xfm.comparison_type AS comparison_type, " +
+                                                         "  xfm.read_element    AS can_read, " +
+                                                         "  xfm.edit_element    AS can_edit, " +
+                                                         "  xfm.create_element  AS can_create, " +
+                                                         "  xfm.delete_element  AS can_delete, " +
+                                                         "  xfm.active_element  AS can_active " +
+                                                         "FROM xdat_user u " +
+                                                         "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
+                                                         "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                         "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                         "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                         "WHERE " +
+                                                         "  u.xdat_user_id = :userId";
 
     private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
     private static final SimpleGrantedAuthority AUTHORITY_ADMIN     = new SimpleGrantedAuthority("ROLE_ADMIN");
     private static final SimpleGrantedAuthority AUTHORITY_USER      = new SimpleGrantedAuthority("ROLE_USER");
 
-    private final Map<String, ElementAccessManager> _accessManagers            = new HashMap<>();
-    private final Set<String>                       _roleNames                 = new HashSet<>();
-    private final List<XdatStoredSearch>            _storedSearches            = new ArrayList<>();
-    private final List<ElementDisplay>              _searchableElementDisplays = new ArrayList<>();
-    private final Set<GrantedAuthority>             _authorities               = new HashSet<>();
-    private final Map<String, Long>                 _totalCounts               = new HashMap<>();
-    private final List<String>                      _editableProjects          = new ArrayList<>();
-    private final Map<String, ArrayList<ItemI>>     _userSessionCache          = new HashMap<>();
-    private final Multimap<String, PermissionCriteriaI> _permissionCriteria = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+    private final Map<String, ElementAccessManager>     _accessManagers            = new HashMap<>();
+    private final Set<String>                           _roleNames                 = new HashSet<>();
+    private final List<XdatStoredSearch>                _storedSearches            = new ArrayList<>();
+    private final List<ElementDisplay>                  _searchableElementDisplays = new ArrayList<>();
+    private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
+    private final Map<String, Long>                     _totalCounts               = new HashMap<>();
+    private final List<String>                          _editableProjects          = new ArrayList<>();
+    private final Map<String, ArrayList<ItemI>>         _userSessionCache          = new HashMap<>();
+    private final Multimap<String, PermissionCriteriaI> _permissionCriteria        = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
 
     private boolean   extended                   = false;
     private boolean   rolesNotUpdatedFromService = true;
     private long      startTime                  = Calendar.getInstance().getTimeInMillis();
-    private UserAuthI _authorization = null;
+    private UserAuthI _authorization             = null;
 
-    private GroupsAndPermissionsCache _cache       = null;
-    private Boolean                   _isSiteAdmin = null;
+    private GroupsAndPermissionsCache _groupsAndPermissionsCache = null;
+    private Boolean                   _isSiteAdmin               = null;
 }

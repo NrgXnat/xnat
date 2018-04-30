@@ -118,11 +118,11 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             final String                    username = user.getUsername();
             if (criteria.size() == 0) {
                 if (!user.isGuest()) {
-                    log.error("{}: No permission criteria found for user {} with action {} on the schema element {} and the following security values: {}.",
-                              (new Exception()).getStackTrace()[0].toString(),
+                    log.error("{}: No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
+                              new Exception().getStackTrace()[0].toString(),
                               username,
                               action,
-                              root.getFormattedName(),
+                              rootXmlName,
                               values.toString());
                 }
                 return false;

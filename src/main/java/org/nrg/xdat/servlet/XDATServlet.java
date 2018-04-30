@@ -9,10 +9,16 @@
 
 package org.nrg.xdat.servlet;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
-import org.nrg.framework.utilities.*;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.framework.utilities.OrderedProperties;
+import org.nrg.framework.utilities.PropertiesLookup;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
@@ -35,6 +41,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
@@ -103,13 +110,7 @@ public class XDATServlet extends HttpServlet {
      * @throws Exception When an error occurs.
      */
     private boolean updateDatabase(String conf) throws Exception {
-        Long user_count;
-        try {
-            user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
-        } catch (SQLException e) {
-            // xdat_user table doesn't exist
-            user_count = null;
-        }
+        final Long userCount = getUserCount();
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         final Properties prop = new Properties();
@@ -124,13 +125,14 @@ public class XDATServlet extends HttpServlet {
         }
 
         if ((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))) {
-            if (user_count != null) {
-                final DatabaseUpdater du = new DatabaseUpdater((user_count == 0) ? conf : null);//user_count==0 means users need to be created.
+            final Path generatedSqlLogPath = getGeneratedSqlLogPath();
+            if (userCount != null) {
+                final DatabaseUpdater du = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
 
                 //only interested in the required ones here.
                 @SuppressWarnings("unchecked")
                 final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
-                if (sql.size() > 0) {
+                if (!sql.isEmpty()) {
                     _shouldUpdateViews = false;
                     System.out.println("===========================");
                     System.out.println("Database out of date... updating");
@@ -167,8 +169,9 @@ public class XDATServlet extends HttpServlet {
                 System.out.println("===========================");
                 // xdat-user table doesn't exist, assume this is an empty
                 // database
-                final DatabaseUpdater du = new DatabaseUpdater(conf);
-                du.addStatements(SQLCreateGenerator.GetSQLCreate(false));
+                final DatabaseUpdater du = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
+                final List<String>    sql = SQLCreateGenerator.GetSQLCreate(false);
+                du.addStatements(sql);
                 du.run();// start and wait for it
 
                 System.out.println("===========================");
@@ -180,6 +183,15 @@ public class XDATServlet extends HttpServlet {
             _shouldUpdateViews = true;
             (new DelayedSequenceChecker()).start();
             return false;
+        }
+    }
+
+    private Long getUserCount() throws Exception {
+        try {
+            return (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
+        } catch (SQLException e) {
+            // xdat_user table doesn't exist
+            return null;
         }
     }
 
@@ -196,32 +208,40 @@ public class XDATServlet extends HttpServlet {
      */
     public class DatabaseUpdater extends Thread {
         public static final String INIT_SQL_PATTERN = "classpath*:META-INF/xnat/**/init_*.sql";
-        final String conf;
-        final List<String> sql = Lists.newArrayList();
 
         /**
-         * @param conf Location of the WEB-INF/conf.  Should be NULL if you don't want to look for init scripts and run them.
+         * Creates a new instance of the updater class.
+         *
+         * @param conf                Location of the WEB-INF/conf.  Set to NULL to skip init scripts.
+         * @param generatedSqlLogPath The path to a file where SQL statements are logged. If null, no logging occurs.
          */
-        public DatabaseUpdater(String conf) {
-            this.conf = conf;
+        public DatabaseUpdater(final String conf, final Path generatedSqlLogPath, final String... generatedSqlLogHeaders) {
+            _conf = conf;
+            _generatedSqlLogPath = generatedSqlLogPath;
+            _generatedSqlLogHeaders = generatedSqlLogHeaders;
         }
 
         public void addStatements(List<String> more) {
-            sql.addAll(more);
+            _sql.addAll(more);
         }
 
         public void run() {
-            PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
-            try {
+            final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
+            try (final PrintWriter writer = new PrintWriter(_generatedSqlLogPath != null ? new BufferedWriter(new FileWriter(_generatedSqlLogPath.toFile())) : CharStreams.nullWriter())) {
                 transaction.start();
                 //prep accessory tables, may involve procedure calls
                 logger.info("Initializing administrative functions...");
-                transaction.execute(GenericWrapperUtils.GetExtensionTables());
+                if (_generatedSqlLogPath != null && _generatedSqlLogHeaders.length > 0) {
+                    for (final String header : _generatedSqlLogHeaders) {
+                        writer.println(StringUtils.prependIfMissing("-- ", header));
+                    }
+                }
+                execute(transaction, writer, GenericWrapperUtils.GetExtensionTables());
 
                 //manually execute create statements
-                if (sql.size() > 0) {
+                if (!_sql.isEmpty()) {
                     logger.info("Initializing database schema...");
-                    transaction.execute(sql);
+                    execute(transaction, writer, _sql);
                 }
 
                 //update the stored functions used for retrieving XFTItems and manipulating them
@@ -231,22 +251,22 @@ public class XDATServlet extends HttpServlet {
                 for (Object o : XFTManager.GetInstance().getOrderedElements()) {
                     GenericWrapperElement element = (GenericWrapperElement) o;
                     List<String>[] func = GenericWrapperUtils.GetFunctionStatements(element);
-                    transaction.execute(func[0]);
+                    execute(transaction, writer, func[0]);
                     runAfter.addAll(func[1]);
                 }
 
-                if (conf != null) {
+                if (_conf != null) {
                     //create the views defined in the display documents
                     logger.info("Initializing database views...");
-                    transaction.execute(DisplayManager.GetCreateViewsSQL());
+                    execute(transaction, writer, DisplayManager.GetCreateViewsSQL());
                 }
 
-                transaction.execute(runAfter);
+                execute(transaction, writer, runAfter);
 
-                if (conf != null) {
+                if (_conf != null) {
                     final List<String> initScripts = getInitScripts();
                     if (initScripts.size() > 0) {
-                        transaction.execute(initScripts);
+                        execute(transaction, writer, initScripts);
                     }
                 }
 
@@ -328,6 +348,20 @@ public class XDATServlet extends HttpServlet {
             }
             return statements;
         }
+
+        private void execute(final PoolDBUtils.Transaction transaction, final PrintWriter writer, final Collection<String> statements) throws SQLException {
+            if (_generatedSqlLogPath != null) {
+                for (final String statement : statements) {
+                    writer.println(statement);
+                }
+            }
+            transaction.execute(statements);
+        }
+
+        final private List<String> _sql = new ArrayList<>();
+        final private String       _conf;
+        final private Path         _generatedSqlLogPath;
+        private final String[]     _generatedSqlLogHeaders;
     }
 
     /**
@@ -359,6 +393,41 @@ public class XDATServlet extends HttpServlet {
             }
         });
         return filtered;
+    }
+
+    /**
+     * Checks whether the XNAT configuration property <b>xnat.database.sql.log</b> is set to <b>true</b>. If not, this
+     * method returns null and generated SQL shouldn't be logged. The folder for this output can be specified with the
+     * <b>xnat.database.sql.log.folder</b> property, but defaults to the <b>xnat.home</b> folder. In either case, the
+     * filename is <b>xnat-<i>timestamp</i>.sql</b>. You can specify the full path, including the file name, with the
+     * <b>xnat.database.sql.log.file</b> property.
+     *
+     * @return The path to the log file for generated SQL if specified, null otherwise.
+     */
+    private static Path getGeneratedSqlLogPath() {
+        //noinspection unchecked
+        final List<Path> configFiles = (List<Path>) XDAT.getContextService().getBean("configFiles");
+        final Properties properties = new Properties();
+        for (final Path path : configFiles) {
+            final File file = path.toFile();
+            if (file.exists()) {
+                try (final BufferedReader reader = new BufferedReader(new FileReader(file))){
+                    properties.load(reader);
+                } catch (IOException e) {
+                    logger.error("An error occurred trying to read the properties file {}", file.toURI(), e);
+                }
+            }
+        }
+
+        if (!BooleanUtils.toBoolean(properties.getProperty("xnat.database.sql.log", "false"))) {
+            logger.debug("xnat.database.sql.log either doesn't exist or is not set to true, no generated SQL log path considered.");
+            return null;
+        }
+
+        final String timestamp           = Long.toString(Calendar.getInstance().getTimeInMillis());
+        final Path   generatedSqlLogPath = Paths.get(StrSubstitutor.replace(properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString()), ImmutableMap.<String, Object>of("timestamp", timestamp)));
+        logger.info("Found path specified for generated SQL log path: {}", generatedSqlLogPath);
+        return generatedSqlLogPath;
     }
 
     private void replaceLogging() {

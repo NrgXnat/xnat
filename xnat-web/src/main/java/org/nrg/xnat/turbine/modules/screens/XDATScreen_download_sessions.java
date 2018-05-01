@@ -20,7 +20,9 @@ import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -134,7 +136,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
 
-                context.put("assessors", Lists.transform(_parameterized.query(QUERY_GET_SESSION_ASSESSORS, new HashMap<String, Object>() {{
+                String assessorsQueryToUse = QUERY_GET_SESSION_ASSESSORS;
+                if(Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)){
+                    assessorsQueryToUse = QUERY_GET_SESSION_ASSESSORS_ADMIN;
+                }
+                context.put("assessors", Lists.transform(_parameterized.query(assessorsQueryToUse, new HashMap<String, Object>() {{
                     put("sessionIds", sessionsUserCanAccess);
                     put("userId", user.getID());
                 }}, new RowMapper<List<String>>() {
@@ -239,9 +245,10 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                            "ORDER BY type";
 
     /**
-     * Requires one parameter:
+     * Requires two parameters:
      *
      * <ul>
+     * <li><b>userId</b> is a the ID of the user whose permissions should be used</li>
      * <li><b>sessions</b> is a list of session IDs</li>
      * </ul>
      */
@@ -336,6 +343,105 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                               "            AND perms.field_value = expts.project " +
                                                               " GROUP  BY element_name " +
                                                               " ORDER  BY element_name;   ";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_ASSESSORS_ADMIN = "SELECT element_name, " +
+            "        Count(*) AS count " +
+            " FROM   (SELECT xea.element_name, " +
+            "                xfm.field, " +
+            "                xfm.field_value " +
+            "         FROM   xdat_user u " +
+            "                JOIN xdat_user_groupid map " +
+            "                  ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+            "                JOIN xdat_usergroup gp " +
+            "                  ON map.groupid = gp.id " +
+            "                JOIN xdat_element_access xea " +
+            "                  ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+            "                JOIN xdat_field_mapping_set xfms " +
+            "                  ON " +
+            " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+            " JOIN xdat_field_mapping xfm " +
+            "   ON " +
+            " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+            " AND read_element = 1 " +
+            " AND field_value != '' " +
+            " AND field != '' " +
+            " WHERE  u.login = 'guest' " +
+            "  UNION " +
+            "  SELECT xea.element_name, " +
+            "         xfm.field, " +
+            "         xfm.field_value " +
+            "  FROM   xdat_user_groupid map " +
+            "         JOIN xdat_usergroup gp " +
+            "           ON map.groupid = gp.id " +
+            "         JOIN xdat_element_access xea " +
+            "           ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+            "         JOIN xdat_field_mapping_set xfms " +
+            "           ON " +
+            " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+            " JOIN xdat_field_mapping xfm " +
+            "   ON " +
+            " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+            " AND read_element = 1 " +
+            " AND field_value != '' " +
+            " AND field != '' " +
+            " WHERE TRUE " +
+            " OR xfm.field_value IN (SELECT proj.id " +
+            "         FROM   xnat_projectdata proj " +
+            "         JOIN (SELECT field_value, " +
+            "                        read_element AS " +
+            "                                                        project_read " +
+            "                                FROM   xdat_element_access " +
+            "                                ea " +
+            "                                LEFT JOIN xdat_field_mapping_set fms " +
+            "                                ON ea.xdat_element_access_id = " +
+            "                                fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+            "                                LEFT JOIN xdat_user u " +
+            "                                ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+            "                                LEFT JOIN xdat_field_mapping fm " +
+            "                                ON fms.xdat_field_mapping_set_id = " +
+            "                                fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+            "                                WHERE  login = 'guest' " +
+            "                                AND read_element = 1 " +
+            "                                AND element_name = 'xnat:projectData')project_read " +
+            " ON proj.id = project_read.field_value " +
+            " JOIN (SELECT field_value, " +
+            "       read_element AS subject_read " +
+            "               FROM   xdat_element_access ea " +
+            "               LEFT JOIN xdat_field_mapping_set fms " +
+            "               ON ea.xdat_element_access_id = " +
+            "               fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+            "               LEFT JOIN xdat_user u " +
+            "               ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+            "               LEFT JOIN xdat_field_mapping fm " +
+            "               ON fms.xdat_field_mapping_set_id = " +
+            "               fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+            "               WHERE  login = 'guest' " +
+            "               AND read_element = 1 " +
+            "               AND field = 'xnat:subjectData/project')subject_read " +
+            " ON proj.id = subject_read.field_value)) perms             " +
+            " INNER JOIN (SELECT iad.id, " +
+            "                    element_name " +
+            "                    || '/project' AS field, " +
+            "                    expt.project, " +
+            "                    expt.label " +
+            "             FROM   xnat_imageassessordata iad " +
+            "                    LEFT JOIN xnat_experimentdata expt " +
+            "                           ON iad.id = expt.id " +
+            "                    LEFT JOIN xdat_meta_element xme " +
+            "                           ON expt.extension = xme.xdat_meta_element_id " +
+            "             WHERE  iad.imagesession_id IN ( :sessionIds ) " +
+            "             ) expts " +
+            "         ON perms.field = expts.field " +
+            "            AND perms.field_value = expts.project " +
+            " GROUP  BY element_name " +
+            " ORDER  BY element_name;   ";
 
     /**
      * Requires one parameter:

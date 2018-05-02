@@ -22,13 +22,13 @@ import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
@@ -41,7 +41,9 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class ExptAssessmentResource extends ItemResource {
 	XnatProjectdata proj=null;
@@ -159,23 +161,8 @@ public class ExptAssessmentResource extends ItemResource {
 
 
 							if(this.getQueryVariable("primary")!=null && this.getQueryVariable("primary").equals("true")){
-								if(!Permissions.canDelete(user,assessor)){
-									this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient privileges for experiments in this project.");
-									return;
-								}
-
-                                List<String> assessorList = null;
-                                if(this.getQueryVariable("moveAssessors")!=null) {
-                                    String moveAssessors = this.getQueryVariable("moveAssessors");
-                                    assessorList = Arrays.asList(moveAssessors.split(","));
-                                }
-
-								EventMetaI c=BaseXnatExperimentdata.ChangePrimaryProject(user, assessor, newProject, newLabel,newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():EventUtils.MODIFY_PROJECT), assessorList);
-
-								if(matched!=null){
-									SaveItemHelper.authorizedRemoveChild(assessor.getItem(), "xnat:experimentData/sharing/share", matched.getItem(), user,c);
-									assessor.removeSharing_share(index);
-								}
+								changeExperimentPrimaryProject(assessor, proj, newProject, newLabel, matched, index);
+								return;
 							}else{
 								if(matched==null){
 									if(newLabel!=null){
@@ -223,8 +210,7 @@ public class ExptAssessmentResource extends ItemResource {
 					if(this.proj!=null){
 						if(assessor.getProject()==null || assessor.getProject().equals("")){
 							assessor.setProject(this.proj.getId());
-						}else if(assessor.getProject().equals(this.proj.getId())){
-						}else{
+						}else if(!StringUtils.equals(assessor.getProject(), proj.getId())) {
 							boolean matched=false;
 							for(XnatExperimentdataShareI pp : assessor.getSharing_share()){
 								if(pp.getProject().equals(this.proj.getId())){
@@ -318,8 +304,6 @@ public class ExptAssessmentResource extends ItemResource {
 						return;
 					}
 
-
-
 					final ValidationResults vr = assessor.validate();
 
 					if (vr != null && !vr.isValid())
@@ -345,7 +329,8 @@ public class ExptAssessmentResource extends ItemResource {
 						return;
 					}
 
-					create(assessor, false, allowDataDeletion, newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():EventUtils.getAddModifyAction(assessor.getXSIType(), (existing==null))));
+					final EventDetails event = newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : EventUtils.getAddModifyAction(assessor.getXSIType(), (existing == null)));
+					create(assessor, false, allowDataDeletion, event);
 
 					postSaveManageStatus(assessor);
 					

@@ -11,11 +11,12 @@ package org.nrg.xapi.rest.settings;
 
 import com.google.common.base.Joiner;
 import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
-import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -24,8 +25,6 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,6 +47,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 @Api(description = "Site Configuration Management API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
+@Slf4j
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
     public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final NamedParameterJdbcTemplate template) {
@@ -67,12 +67,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
     public ResponseEntity<Map<String, Object>> getSiteConfigProperties(final HttpServletRequest request) {
         final String username = getSessionUser().getUsername();
         if (!_appInfo.isInitialized()) {
-            _log.info("The site is being initialized by user {}. Setting default values from context.", username);
+            log.info("The site is being initialized by user {}. Setting default values from context.", username);
             if (!_preferences.containsKey("siteUrl") || StringUtils.isBlank(_preferences.getSiteUrl())) {
                 _preferences.setSiteUrl(XnatHttpUtils.getServerRoot(request));
             }
         } else {
-            _log.debug("User {} requested the site configuration.", username);
+            log.debug("User {} requested the site configuration.", username);
         }
 
         return new ResponseEntity<>((Map<String, Object>) _preferences, HttpStatus.OK);
@@ -84,10 +84,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
-    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws InitializationException {
+    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) {
         // Is this call initializing the system?
-        final boolean isInitialized = _appInfo.isInitialized();
-        final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && (boolean) properties.get("initialized");
+        final boolean isInitialized  = _appInfo.isInitialized();
+        final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
         for (final String name : properties.keySet()) {
             try {
                 // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
@@ -107,9 +107,9 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 } else {
                     _preferences.set(value.toString(), name);
                 }
-                _log.info("Set property {} to value: {}", name, value);
+                log.info("Set property {} to value: {}", name, value);
             } catch (InvalidPreferenceName invalidPreferenceName) {
-                _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+                log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }
         }
 
@@ -130,8 +130,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
     @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public ResponseEntity<Map<String, Object>> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
         }
 
         final Map<String, Object> values = new HashMap<>();
@@ -155,8 +155,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         final Object value = _preferences.get(property);
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
         }
         return new ResponseEntity<>(value, HttpStatus.OK);
     }
@@ -168,8 +168,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
-                                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
-        _log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
+                                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) {
+        log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);
@@ -177,7 +177,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
             try {
                 _preferences.set(value, property);
             } catch (InvalidPreferenceName invalidPreferenceName) {
-                _log.error("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
+                log.error("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
@@ -191,8 +191,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "buildInfo", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Properties> getBuildInfo() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the application build information.");
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the application build information.");
         }
 
         return new ResponseEntity<>(_appInfo.getSystemProperties(), HttpStatus.OK);
@@ -204,8 +204,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "buildInfo/attributes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Map<String, String>>> getBuildAttributeInfo() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the extended application build attributes.");
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the extended application build attributes.");
         }
 
         return new ResponseEntity<>(_appInfo.getSystemAttributes(), HttpStatus.OK);
@@ -217,8 +217,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "uptime", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, String>> getSystemUptime() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the system uptime map.");
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the system uptime map.");
         }
 
         return new ResponseEntity<>(_appInfo.getUptime(), HttpStatus.OK);
@@ -230,16 +230,27 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "uptime/display", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<String> getFormattedSystemUptime() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the formatted system uptime.");
+        if (log.isDebugEnabled()) {
+            log.debug("User " + getSessionUser().getUsername() + " requested the formatted system uptime.");
         }
 
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 
-    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
+    private static boolean getInitializedValue(final Object initialized) {
+        if (initialized == null) {
+            return false;
+        }
+        if (initialized instanceof Boolean) {
+            return (Boolean) initialized;
+        }
+        if (initialized instanceof String) {
+            return BooleanUtils.toBoolean((String) initialized);
+        }
+        return BooleanUtils.toBoolean(initialized.toString());
+    }
 
-    private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);
+    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;

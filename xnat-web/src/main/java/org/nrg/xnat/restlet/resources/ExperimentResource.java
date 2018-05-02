@@ -12,23 +12,19 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.archive.ValidationException;
@@ -47,11 +43,6 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXException;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 public class ExperimentResource extends ItemResource {
     public ExperimentResource(Context context, Request request, Response response) {
@@ -169,16 +160,6 @@ public class ExperimentResource extends ItemResource {
                     XnatProjectdata newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
                     String newLabel = getQueryVariable("label");
                     if (newProject != null) {
-                        if (_experiment.getProject().equals(newProject.getId())) {
-                            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project:" + newProject.getId());
-                            return;
-                        }
-
-                        if (!Permissions.canRead(user, _experiment)) {
-                            setGuestDataResponse("Specified user account has insufficient privileges for experiments in this project.");
-                            return;
-                        }
-
                         int index = 0;
                         XnatExperimentdataShare matched = null;
                         for (XnatExperimentdataShareI pp : _experiment.getSharing_share()) {
@@ -194,33 +175,8 @@ public class ExperimentResource extends ItemResource {
                         }
 
                         if (getQueryVariable("primary") != null && getQueryVariable("primary").equals("true")) {
-                            if (newLabel == null || newLabel.equals("")) newLabel = _experiment.getLabel();
-                            if (newLabel == null || newLabel.equals("")) newLabel = _experiment.getId();
-
-
-                            if (!Permissions.canDelete(user, _experiment)) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient privileges for experiments in this project.");
-                                return;
-                            }
-
-                            XnatExperimentdata match = XnatExperimentdata.GetExptByProjectIdentifier(newProject.getId(), newLabel, user, false);
-                            if (match != null) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified label is already in use.");
-                                return;
-                            }
-
-                            List<String> assessorList = null;
-                            if (getQueryVariable("moveAssessors") != null) {
-                                String moveAssessors = getQueryVariable("moveAssessors");
-                                assessorList = Arrays.asList(moveAssessors.split(","));
-                            }
-
-                            EventMetaI c = BaseXnatExperimentdata.ChangePrimaryProject(user, _experiment, newProject, newLabel, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.MODIFY_PROJECT), assessorList);
-
-                            if (matched != null) {
-                                SaveItemHelper.authorizedRemoveChild(_experiment.getItem(), "xnat:experimentData/sharing/share", matched.getItem(), user, c);
-                                _experiment.removeSharing_share(index);
-                            }
+                            changeExperimentPrimaryProject(_experiment, _project, newProject, newLabel, matched, index);
+                            return;
                         } else {
                             if (matched == null) {
 
@@ -384,16 +340,7 @@ public class ExperimentResource extends ItemResource {
                     // Preserve the previous version of the experiment before we save it.
                     XnatExperimentdata previous = getExistingExperiment(_experiment);
 
-                    if (SaveItemHelper.authorizedSave(_experiment, user, false, allowDataDeletion, c)) {
-                        // We only need to fire an event if this is a new experiment, since that can affect the browseable
-                        // elements display if it's the first of its type in its project.
-                        if (_existing != null) {
-                            XDAT.triggerXftItemEvent(_experiment, CREATE);
-                        }
-                        WorkflowUtils.complete(wrk, c);
-                        Users.clearCache(user);
-                        MaterializedView.deleteByUser(user);
-
+                    if (_existing == null ? create(_experiment, false, allowDataDeletion, wrk, c) : update(_experiment, false, allowDataDeletion, wrk, c)) {
                         if (_project.getArcSpecification().getQuarantineCode() != null && _project.getArcSpecification().getQuarantineCode().equals(1)) {
                             _experiment.quarantine(user);
                         }

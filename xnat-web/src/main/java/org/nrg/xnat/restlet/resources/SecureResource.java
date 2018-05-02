@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.noelios.restlet.http.HttpConstants;
 import org.apache.commons.beanutils.BeanUtils;
@@ -52,7 +53,10 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.*;
+import org.nrg.xft.event.EventDetails;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -1385,34 +1389,36 @@ public abstract class SecureResource extends Resource {
     }
 
     @SuppressWarnings("unused")
-    public void create(ArchivableItem parent, ItemI sub, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
-        PersistentWorkflowI wrk = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, parent.getItem(), event);
-        EventMetaI c = wrk.buildEvent();
+    public boolean create(final ArchivableItem parent, final ItemI sub, final boolean overwriteSecurity, final boolean allowDataDeletion, final EventDetails event) throws Exception {
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, parent.getItem(), event);
+        final EventMetaI meta = workflow.buildEvent();
 
         try {
-            if (SaveItemHelper.authorizedSave(sub, user, false, false, c)) {
-                WorkflowUtils.complete(wrk, c);
+            if (SaveItemHelper.authorizedSave(sub, user, false, false, meta)) {
+                WorkflowUtils.complete(workflow, meta);
+                Users.clearCache(user);
                 MaterializedView.deleteByUser(user);
+                return true;
             }
+            return false;
         } catch (Exception e) {
-            WorkflowUtils.fail(wrk, c);
+            WorkflowUtils.fail(workflow, meta);
             throw e;
         }
     }
 
-    public void create(ArchivableItem sub, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
-        PersistentWorkflowI wrk = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, sub.getItem(), event);
-        EventMetaI c = wrk.buildEvent();
+    public boolean create(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, item.getItem(), event);
+        final EventMetaI meta = workflow.buildEvent();
+        return create(item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
 
-        try {
-            if (SaveItemHelper.authorizedSave(sub, user, overwriteSecurity, allowDataDeletion, c)) {
-                WorkflowUtils.complete(wrk, c);
-                MaterializedView.deleteByUser(user);
-            }
-        } catch (Exception e) {
-            WorkflowUtils.fail(wrk, c);
-            throw e;
-        }
+    public boolean create(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        return createOrUpdateImpl(true, item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
+
+    public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        return createOrUpdateImpl(false, item, overwriteSecurity, allowDataDeletion, workflow, meta);
     }
 
     protected static Representation returnStatus(ItemI i, MediaType mt) {
@@ -1530,12 +1536,55 @@ public abstract class SecureResource extends Resource {
         return representTable(table, mediaType, new Hashtable<String, Object>());
     }
 
+    protected void changeExperimentPrimaryProject(final XnatExperimentdata experiment, final XnatProjectdata source, final XnatProjectdata destination, final String newLabel, final XnatExperimentdataShare share, final int index) throws Exception {
+        if (!Permissions.canDelete(user, experiment)) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient privileges for experiments in this project.");
+            return;
+        }
+
+        if (experiment.getProject().equals(destination.getId())) {
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project: " + destination.getId());
+            return;
+        }
+
+        final String workingLabel = StringUtils.defaultIfBlank(newLabel, StringUtils.defaultIfBlank(experiment.getLabel(), experiment.getId()));
+
+        final XnatExperimentdata match = XnatExperimentdata.GetExptByProjectIdentifier(destination.getId(), workingLabel, user, false);
+
+        if (match != null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified label is already in use.");
+        }
+
+        final List<String> assessorList = StringUtils.isNotBlank(getQueryVariable("moveAssessors")) ? Arrays.asList(getQueryVariable("moveAssessors").split(",")) : null;
+
+        final EventMetaI meta = BaseXnatExperimentdata.ChangePrimaryProject(user, experiment, destination, workingLabel, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.MODIFY_PROJECT), assessorList);
+        XDAT.triggerXftItemEvent(experiment, XftItemEvent.MOVE, ImmutableMap.<String, Object>of("origin", source.getId(), "target", destination.getId()));
+
+        if (share != null) {
+            SaveItemHelper.authorizedRemoveChild(experiment.getItem(), "xnat:experimentData/sharing/share", share.getItem(), user, meta);
+            experiment.removeSharing_share(index);
+        }
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment) throws Exception {
+        shareExperimentToProject(user, newProject, experiment, null);
+    }
+
     protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final String newLabel) throws Exception {
-        XnatExperimentdataShare pp = new XnatExperimentdataShare(user);
-        pp.setProject(newProject.getId());
-        if(newLabel!=null)pp.setLabel(newLabel);
-        pp.setProperty("sharing_share_xnat_experimentda_id", experiment.getId());
-        BaseXnatExperimentdata.SaveSharedProject(pp, experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+        shareExperimentToProject(user, newProject, experiment, new XnatExperimentdataShare(user), newLabel);
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final XnatExperimentdataShare shared, final String newLabel) throws Exception {
+        final String newProjectId = newProject.getId();
+
+        shared.setProject(newProjectId);
+        shared.setProperty("sharing_share_xnat_experimentda_id", experiment.getId());
+        if(StringUtils.isNotBlank(newLabel)) {
+            shared.setLabel(newLabel);
+        }
+
+        BaseXnatExperimentdata.SaveSharedProject(shared, experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+        XDAT.triggerXftItemEvent(experiment, XftItemEvent.SHARE, ImmutableMap.<String, Object>of("target", newProjectId));
     }
 
     protected void deleteItem(final XnatProjectdata proj, final BaseElement item) {
@@ -1816,5 +1865,26 @@ public abstract class SecureResource extends Resource {
         boolean canHandle(SecureResource resource);
 
         Representation handle(SecureResource resource, Variant variant) throws Exception;
+    }
+
+    private boolean createOrUpdateImpl(final boolean isCreate, final ArchivableItem item, final boolean overwriteSecurity, final boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        try {
+            if (SaveItemHelper.authorizedSave(item, user, overwriteSecurity, allowDataDeletion, meta)) {
+                if (isCreate) {
+                    final XFTItem xftItem = item.getItem();
+                    if (xftItem.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME) || xftItem.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME) || xftItem.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
+                        XDAT.triggerXftItemEvent(xftItem, XftItemEvent.CREATE);
+                    }
+                }
+                WorkflowUtils.complete(workflow, meta);
+                Users.clearCache(user);
+                MaterializedView.deleteByUser(user);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            WorkflowUtils.fail(workflow, meta);
+            throw e;
+        }
     }
 }

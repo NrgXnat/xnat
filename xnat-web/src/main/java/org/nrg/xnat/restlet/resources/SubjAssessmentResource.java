@@ -12,25 +12,22 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.*;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.archive.ValidationException;
@@ -52,7 +49,11 @@ import org.restlet.resource.Variant;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.xml.sax.SAXException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 public class SubjAssessmentResource extends SubjAssessmentAbst {
 	XnatProjectdata proj=null;
@@ -158,18 +159,17 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
 	@Override
 	public void handlePut() {
-        XFTItem item = null;
-
 		final UserI user = getUser();
 		try {
 			final boolean allowDataDeletion = isQueryVariableTrue("allowDataDeletion");
+            final String  specifiedProjectId = proj != null ? proj.getId() : null;
 
 			XFTItem template=null;
 			if (existing!=null && !allowDataDeletion){
 				template=existing.getItem().getCurrentDBVersion();
 			}
 
-			item=this.loadItem(null,true,template);
+			XFTItem item=this.loadItem(null,true,template);
 			
 				if(item==null){
 					String xsiType=this.getQueryVariable("xsiType");
@@ -180,7 +180,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 				
 				if(item==null){
 				if(proj!=null){
-					XnatSubjectassessordata om =(XnatSubjectassessordata)XnatSubjectassessordata.GetExptByProjectIdentifier(proj.getId(), this.exptID,user, false);
+                    XnatSubjectassessordata om = (XnatSubjectassessordata) XnatSubjectassessordata.GetExptByProjectIdentifier(specifiedProjectId, this.exptID, user, false);
 					if(om!=null){
 						item=om.getItem();
 					}
@@ -202,14 +202,17 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 				if(item.instanceOf("xnat:subjectAssessorData")){
 					expt = (XnatSubjectassessordata)BaseElement.GetGeneratedItem(item);
 					
+                final String currentProjectId = expt.getProject();
+
 				if(filepath!=null && !filepath.equals("")){
 					if(filepath.startsWith("projects/")){
 						String newProjectS= filepath.substring(9);
 						XnatProjectdata newProject=XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
 						String newLabel = this.getQueryVariable("label");
 						if(newProject!=null){
-							if(expt.getProject().equals(newProject.getId())){
-								this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Already assigned to project:"+ newProject.getId());
+                            final String newProjectId = newProject.getId();
+                            if (currentProjectId.equals(newProjectId)) {
+                                this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project:" + newProjectId);
 								return;
 							}
 							
@@ -224,8 +227,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 								if(pp.getProject().equals(newProject.getId())){
 									matched=(XnatExperimentdataShare)pp;
 									if(newLabel!=null && !pp.getLabel().equals(newLabel)){										
-										pp.setLabel(newLabel);
-										BaseXnatExperimentdata.SaveSharedProject((XnatExperimentdataShare)pp, expt, user,newEventInstance(EventUtils.CATEGORY.DATA,EventUtils.RENAME_IN_SHARED_PROJECT));
+									    shareExperimentToProject(user, newProject, expt, matched, newLabel);
 									}
 									break;
 								}
@@ -233,56 +235,36 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							}
 
 							if(this.getQueryVariable("primary")!=null && this.getQueryVariable("primary").equals("true")){
-								if(newLabel==null || newLabel.equals(""))newLabel=expt.getLabel();
-								if(newLabel==null || newLabel.equals(""))newLabel=expt.getId();
-
-								
-								if(!Permissions.canDelete(user,expt)){
-									this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient privileges for experiments in this project.");
-									return;
-								}
-								
-								XnatExperimentdata match=XnatExperimentdata.GetExptByProjectIdentifier(newProject.getId(), newLabel,user, false);
-								if(match!=null){
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified label is already in use.");
-									return;
-								}
-
-                                List<String> assessorList = null;
-                                if(this.getQueryVariable("moveAssessors")!=null) {
-                                    String moveAssessors = this.getQueryVariable("moveAssessors");
-                                    assessorList = Arrays.asList(moveAssessors.split(","));
+                                if (newLabel == null || newLabel.equals("")) {
+                                    newLabel = expt.getLabel();
                                 }
-
-								EventMetaI c=BaseXnatExperimentdata.ChangePrimaryProject(user, expt, newProject, newLabel, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.MODIFY_PROJECT), assessorList);
-
-								if(matched!=null){
-									SaveItemHelper.authorizedRemoveChild(expt.getItem(), "xnat:experimentData/sharing/share", matched.getItem(), user,c);
-									expt.removeSharing_share(index);
+                                if (newLabel == null || newLabel.equals("")) {
+                                    newLabel = expt.getId();
 								}
+								
+                                changeExperimentPrimaryProject(expt, proj, newProject, newLabel, matched, index);
+									return;
 							}else{
 								if(matched==null){
-
 									if(newLabel!=null){
-										XnatExperimentdata temp=XnatExperimentdata.GetExptByProjectIdentifier(newProject.getId(), newLabel, null, false);
+                                        XnatExperimentdata temp = XnatExperimentdata.GetExptByProjectIdentifier(newProjectId, newLabel, null, false);
 										if(temp!=null){
 											this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Label already in use:"+ newLabel);
 											return;
 										}
 									}
-										if(Permissions.canCreate(user,expt.getXSIType()+"/project", newProject.getId())){
+                                    if (Permissions.canCreate(user, expt.getXSIType() + "/project", newProjectId)) {
 											shareExperimentToProject(user, newProject, expt, newLabel);
 										}else{
-											this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for experiments in the " + newProject.getId() + " project.");
+                                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for experiments in the " + newProjectId + " project.");
 											return;
 										}
 								}else{
-									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Already assigned to project:"+ newProject.getId());
+                                    this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project:" + newProjectId);
 									return;
 								}
 							}
 							
-
 							this.returnDefaultRepresentation();
 						}else{
 							this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to identify project: " + newProjectS);
@@ -297,15 +279,14 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						expt.setLabel(this.exptID);
 					}
 					//MATCH PROJECT
-					if(this.proj==null && expt.getProject()!=null){
-						proj = XnatProjectdata.getXnatProjectdatasById(expt.getProject(), user, false);
+                    if (proj == null && currentProjectId != null) {
+                        proj = XnatProjectdata.getXnatProjectdatasById(currentProjectId, user, false);
 					}
 					
 					if(this.proj!=null){
-						if(expt.getProject()==null || expt.getProject().equals("")){
-							expt.setProject(this.proj.getId());
-						}else if(expt.getProject().equals(this.proj.getId())){
-						}else{
+                        if (currentProjectId == null || currentProjectId.equals("")) {
+                            expt.setProject(specifiedProjectId);
+                        } else if (!StringUtils.equals(currentProjectId, specifiedProjectId)) {
 							boolean matched=false;
 							for(XnatExperimentdataShareI pp : expt.getSharing_share()){
 								if(pp.getProject().equals(this.proj.getId())){
@@ -315,7 +296,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							}
 							
 							if(!matched){
-								XnatExperimentdataShare pp= new XnatExperimentdataShare((UserI)user);
+                                XnatExperimentdataShare pp = new XnatExperimentdataShare(user);
 								pp.setProject(this.proj.getId());
 								expt.setSharing_share(pp);
 							}
@@ -326,7 +307,9 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					}
 					
 					// Find the pre-existing experiment
-					if(existing==null){ existing = getExistingExperiment(expt); }
+                    if (existing == null) {
+                        existing = getExistingExperiment(expt);
+                    }
 
 					//MATCH SUBJECT
 					if(this.subject!=null){
@@ -339,8 +322,8 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						if(expt.getSubjectId()!=null && !expt.getSubjectId().equals("")){
 							this.subject=XnatSubjectdata.getXnatSubjectdatasById(expt.getSubjectId(), user, false);
 							
-							if(this.subject==null && expt.getProject()!=null && expt.getLabel()!=null){
-								this.subject=XnatSubjectdata.GetSubjectByProjectIdentifier(expt.getProject(), expt.getSubjectId(),user, false);
+                            if (this.subject == null && currentProjectId != null && expt.getLabel() != null) {
+                                this.subject = XnatSubjectdata.GetSubjectByProjectIdentifier(currentProjectId, expt.getSubjectId(), user, false);
 							}
 							
 							if(this.subject==null){
@@ -359,7 +342,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					
 							if(this.subject==null){
 								
-								this.subject = new XnatSubjectdata((UserI)user);
+                                this.subject = new XnatSubjectdata(user);
 								this.subject.setProject(this.proj.getId());
 								this.subject.setLabel(expt.getSubjectId());
 								this.subject.setId(XnatSubjectdata.CreateNewID());
@@ -390,7 +373,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						}
 						
 						//MATCHED
-						if(!existing.getProject().equals(expt.getProject())){
+                        if (!existing.getProject().equals(currentProjectId)) {
 							this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Project must be modified through separate URI.");
 							return;
 						}
@@ -409,14 +392,13 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 									// and XNAT unique subject identifier
 									if (!expt.getSubjectId().equals(s.getId())) {
 										// only accept subjects that are associated with this project
-										if (s.hasProject(proj.getId())){
+                                        if (s.hasProject(specifiedProjectId)) {
 											expt.setSubjectId(s.getId());
 										}
 									}
-								}
-								else {
+                                } else {
 									try {
-										this.subject = new XnatSubjectdata((UserI)user);
+										this.subject = new XnatSubjectdata(user);
 										this.subject.setProject(this.proj.getId());
 										this.subject.setLabel(this.getQueryVariable("subject_ID"));
 										this.subject.setId(XnatSubjectdata.CreateNewID());
@@ -426,8 +408,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 										}
 										BaseXnatSubjectdata.save(this.subject, false, true,user,newEventInstance(EventUtils.CATEGORY.DATA,EventUtils.AUTO_CREATE_SUBJECT));
 										expt.setSubjectId(this.subject.getId());
-									} 
-									catch (ResourceException e) {
+                                    } catch (ResourceException e) {
 										this.getResponse().setStatus(e.getStatus(), "Specified user account has insufficient create privileges for subjects in this project.");
 									} 	
 								}
@@ -441,7 +422,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							String label=this.getQueryVariable("label");
 
 							if(!label.equals(existing.getLabel())){
-								XnatExperimentdata match=XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), label,user, false);
+                                XnatExperimentdata match = XnatExperimentdata.GetExptByProjectIdentifier(specifiedProjectId, label, user, false);
 								if(match!=null){
 									this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified label is already in use.");
 									return;
@@ -457,17 +438,15 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted experiment record must include the subject.");
 						return;
 					}
-					
-					PersistentWorkflowI wrk= WorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(expt.getXSIType(), (existing==null))));
-					EventMetaI c=wrk.buildEvent();
-					
-					if(this.isQueryVariableTrue(XNATRestConstants.FIX_SCAN_TYPES) || this.containsAction(XNATRestConstants.FIX_SCAN_TYPES)){
+
+                    final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(expt.getXSIType(), (existing==null))));
+                    final EventMetaI meta = workflow.buildEvent();
+
+					if(isQueryVariableTrue(XNATRestConstants.FIX_SCAN_TYPES) || containsAction(XNATRestConstants.FIX_SCAN_TYPES)){
 						if(expt instanceof XnatImagesessiondata){
-							FixScanTypes fst=new FixScanTypes(expt,user,proj,false,c);
-							fst.call();
+							new FixScanTypes(expt,user,proj,false, meta).call();
 						}
 					}
-
 
 					if(StringUtils.isNotBlank(expt.getLabel()) && !XftStringUtils.isValidId(expt.getId())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
@@ -476,13 +455,11 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					
 					final ValidationResults vr = expt.validate();
 		            
-		            if (vr != null && !vr.isValid())
-		            {
+                    if (vr != null && !vr.isValid()) {
 		            	this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,vr.toFullString());
 						return;
 		            }
 					
-					try {
 						// Preserve the previous version of the experiment before we save it. 
 						XnatSubjectassessordata previous  = getExistingExperiment(expt);
 
@@ -492,7 +469,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							return;
 						}
 						
-						if(existing !=null && !StringUtils.equals(existing.getProject(),expt.getProject())){
+                    if (existing != null && !StringUtils.equals(existing.getProject(), currentProjectId)) {
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Project must be modified through separate URI.");
 							return;
 						}
@@ -503,51 +480,42 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							return;
 						}
 			            
-						
-						if(SaveItemHelper.authorizedSave(expt,user,false,allowDataDeletion,c)){
-							WorkflowUtils.complete(wrk, c);
-							Users.clearCache(user);
-							MaterializedView.deleteByUser(user);
+                    if (create(expt, false, allowDataDeletion, workflow, meta)) {
+                        if (existing != null) {
+                            XDAT.triggerXftItemEvent(expt, CREATE);
+                        }
 
 							if(this.proj.getArcSpecification().getQuarantineCode()!=null && this.proj.getArcSpecification().getQuarantineCode().equals(1)){
 								expt.quarantine(user);
 							}
 						
-							if (previous != null && expt != null && expt instanceof XnatImagesessiondata && expt.getSubjectId() != null && !expt.getSubjectId().equals(previous.getSubjectId())) {
+                        final String subjectId = expt.getSubjectId();
+                        if (previous != null && expt instanceof XnatImagesessiondata && subjectId != null && !subjectId.equals(previous.getSubjectId())) {
 								try {
 									// re-apply this project's edit script
-									expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, expt.getProject(), expt.getArchiveRootPath()));
-								}
-								catch (TransactionException e) {
+                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, currentProjectId, expt.getArchiveRootPath()));
+                            } catch (TransactionException e) {
 									this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
 								}
 							}
 						}
-					} catch (Exception e1) {
-						WorkflowUtils.fail(wrk, c);
-						throw e1;
-					}
 
 					postSaveManageStatus(expt);
 
 					if(Permissions.canEdit(user,expt.getItem())){
 						if((this.isQueryVariableTrue(XNATRestConstants.PULL_DATA_FROM_HEADERS) || this.containsAction(XNATRestConstants.PULL_DATA_FROM_HEADERS) ) && expt instanceof XnatImagesessiondata){
 							try {
-								wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA,EventUtils.DICOM_PULL));
-								c=wrk.buildEvent();
+                                final PersistentWorkflowI dicomPullWorkflow = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.DICOM_PULL));
+                                final EventMetaI          dicomPullMeta     = dicomPullWorkflow.buildEvent();
 								try {
-									PullSessionDataFromHeaders pull=new PullSessionDataFromHeaders((XnatImagesessiondata)expt,user,this.allowDataDeletion(),this.isQueryVariableTrue("overwrite"),false,c);
-									pull.call();
-									WorkflowUtils.complete(wrk, c);
+									new PullSessionDataFromHeaders((XnatImagesessiondata)expt,user,this.allowDataDeletion(),this.isQueryVariableTrue("overwrite"),false,meta).call();
+									WorkflowUtils.complete(dicomPullWorkflow, dicomPullMeta);
 								} catch (Exception e) {
-									WorkflowUtils.fail(wrk, c);
+									WorkflowUtils.fail(dicomPullWorkflow, dicomPullMeta);
 									throw e;
 								}
 								
-							} catch (SAXException e){
-								logger.error("",e);
-								this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage());
-							} catch (ValidationException e){
+							} catch (SAXException | ValidationException e){
 								logger.error("",e);
 								this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage());
 							} catch (Exception e) {
@@ -558,8 +526,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						}
 						
 						if(this.isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || this.containsAction(XNATRestConstants.TRIGGER_PIPELINES)){
-							TriggerPipelines tp=new TriggerPipelines(expt,this.isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL),user);
-							tp.call();
+							new TriggerPipelines(expt, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user).call();
 						}
 					}
 				}
@@ -573,7 +540,6 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 			logger.error("",e);
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(),e.getMessage());
-			return;
 		} catch (Exception e) {
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			logger.error("",e);

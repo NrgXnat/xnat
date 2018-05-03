@@ -300,9 +300,11 @@ public class XDATServlet extends HttpServlet {
                 //this is to trigger a review of the Data Types that have been defined in jar configurations.
                 //it needs to run after all the db initialization is done.
 
-                if (ElementSecurity.registerNewTypes()) {
-                    //when the database is updated directly (rather then through XFT), the sequences can get out of sync.  This would cause issues down the road.
-                    //so we fix them
+                final List<String> newTypes = ElementSecurity.registerNewTypes();
+                if (!newTypes.isEmpty()) {
+                    // When the database is updated directly (rather then through XFT), the sequences can get out of
+                    // sync.  This would cause issues down the road so we fix them here.
+                    logger.info("Created {} new data types in the system: \"{}\"", newTypes.size(), StringUtils.join(newTypes, "\", \""));
                     DBAction.AdjustSequences();
                 }
             } catch (Throwable e) {

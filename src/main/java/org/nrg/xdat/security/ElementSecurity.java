@@ -29,6 +29,7 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
@@ -106,20 +107,21 @@ public class ElementSecurity extends ItemWrapper {
      *
      * @throws Exception When something goes wrong.
      */
-    public static boolean registerNewTypes() throws Exception {
+    public static List<String> registerNewTypes() throws Exception {
         @SuppressWarnings("unchecked") final Map<String, ElementSecurity> elements = GetElementSecurities();
 
-        boolean _new  = false;
-        UserI   admin = Users.getAdminUser();
-        assert admin != null;
-        for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
-            for (String s : def.getSecuredElements()) {
+        final List<String> newTypes = new ArrayList<>();
 
-                if ((StringUtils.isNotBlank(s)) && !elements.containsKey(s)) {
-                    if (GenericWrapperElement.GetFieldForXMLPath(s + "/project") != null) {
-                        ElementSecurity es = ElementSecurity.newElementSecurity(s);
-                        es.initExistingPermissions(admin.getUsername());
-                        _new = true;
+        final UserI admin = Users.getAdminUser();
+        assert admin != null;
+
+        for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
+            for (final String securedElements : dataModelDefinition.getSecuredElements()) {
+                if ((StringUtils.isNotBlank(securedElements)) && !elements.containsKey(securedElements)) {
+                    if (GenericWrapperElement.GetFieldForXMLPath(securedElements + "/project") != null) {
+                        final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(securedElements);
+                        elementSecurity.initExistingPermissions(admin.getUsername());
+                        newTypes.add(elementSecurity.getElementName());
                     }
                 }
             }
@@ -131,16 +133,17 @@ public class ElementSecurity extends ItemWrapper {
             for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
                 if (!elements.containsKey(bean.getType()) && bean.isSecured()) {
                     if (GenericWrapperElement.GetFieldForXMLPath(bean.getType() + "/project") != null) {
-                        ElementSecurity es = ElementSecurity.newElementSecurity(bean.getType());
-                        es.initExistingPermissions(admin.getUsername());
+                        final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(bean.getType());
+                        elementSecurity.initExistingPermissions(admin.getUsername());
+                        newTypes.add(elementSecurity.getElementName());
 
                         final boolean hasSingular = StringUtils.isNotBlank(bean.getSingular());
                         final boolean hasPlural   = StringUtils.isNotBlank(bean.getPlural());
                         final boolean hasCode     = StringUtils.isNotBlank(bean.getCode());
                         if (hasSingular || hasPlural || hasCode) {
-                            es.setSingular(bean.getSingular());
-                            es.setPlural(bean.getPlural());
-                            es.setPlural(bean.getPlural());
+                            elementSecurity.setCode(StringUtils.defaultIfBlank(bean.getCode(), ""));
+                            elementSecurity.setSingular(StringUtils.defaultIfBlank(bean.getSingular(), ""));
+                            elementSecurity.setPlural(StringUtils.defaultIfBlank(bean.getPlural(), ""));
                             final StringBuilder query = new StringBuilder("update xdat_element_security set ");
                             if (hasSingular) {
                                 query.append("singular = '").append(bean.getSingular()).append("'");
@@ -158,13 +161,11 @@ public class ElementSecurity extends ItemWrapper {
                                 query.append("code = '").append(bean.getCode()).append("'");
                             }
                             query.append(" where element_name = '").append(bean.getType()).append("'");
+
                             final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
                             final int          results  = template.update(query.toString());
-                            if (log.isInfoEnabled()) {
-                                log.info("Updated " + results + " rows with the query: " + query.toString());
-                            }
+                            log.info("Updated {} rows with the query: {}", results, query.toString());
                         }
-                        _new = true;
                     }
                 }
             }
@@ -172,12 +173,12 @@ public class ElementSecurity extends ItemWrapper {
 
         ElementSecurity.refresh();
 
-        return _new;
+        return newTypes;
     }
 
     public String toString() {
         try {
-            return this.getElementName();
+            return getElementName();
         } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             log.error("", e);
         }
@@ -214,33 +215,34 @@ public class ElementSecurity extends ItemWrapper {
             return GetElementSecurity(elementName);
         }
 
-        UserI user = Users.getUser("admin");
+        final UserI user = Users.getUser("admin");
 
-        XFTItem es = XFTItem.NewItem("xdat:element_security", user);
-        es.setProperty("element_name", elementName);
-        es.setProperty("secondary_password", "0");
-        es.setProperty("secure_ip", "0");
-        es.setProperty("secure", "1");
-        es.setProperty("browse", "1");
-        es.setProperty("sequence", "2");
-        es.setProperty("quarantine", "0");
-        es.setProperty("pre_load", "0");
-        es.setProperty("searchable", "1");
-        es.setProperty("secure_read", "1");
-        es.setProperty("secure_edit", "1");
-        es.setProperty("secure_create", "1");
-        es.setProperty("secure_delete", "1");
-        es.setProperty("accessible", "1");
+        final XFTItem securityItem = XFTItem.NewItem("xdat:element_security", user);
+        securityItem.setProperty("element_name", elementName);
+        securityItem.setProperty("secondary_password", "0");
+        securityItem.setProperty("secure_ip", "0");
+        securityItem.setProperty("secure", "1");
+        securityItem.setProperty("browse", "1");
+        securityItem.setProperty("sequence", "2");
+        securityItem.setProperty("quarantine", "0");
+        securityItem.setProperty("pre_load", "0");
+        securityItem.setProperty("searchable", "1");
+        securityItem.setProperty("secure_read", "1");
+        securityItem.setProperty("secure_edit", "1");
+        securityItem.setProperty("secure_create", "1");
+        securityItem.setProperty("secure_delete", "1");
+        securityItem.setProperty("accessible", "1");
 
-        es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName + "/sharing/share/project");
-        es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[1]/primary_security_field", elementName + "/project");
+        securityItem.setProperty("element_security_set_element_se_xdat_security_id", TurbineUtils.GetSystemID());
+        securityItem.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName + "/sharing/share/project");
+        securityItem.setProperty("xdat:element_security/primary_security_fields/primary_security_field[1]/primary_security_field", elementName + "/project");
 
-        addElementAction(es, 0, "xml", "View XML", "2", "View", "NULL");
-        addElementAction(es, 1, "edit", "Edit", "0", "NULL", "edit");
-        addElementAction(es, 2, "xml_file", "Download XML", "7", "Download", "NULL");
-        addElementAction(es, 3, "email_report", "Email", "8", "NULL", "NULL");
+        addElementAction(securityItem, 0, "xml", "View XML", "2", "View", "NULL");
+        addElementAction(securityItem, 1, "edit", "Edit", "0", "NULL", "edit");
+        addElementAction(securityItem, 2, "xml_file", "Download XML", "7", "Download", "NULL");
+        addElementAction(securityItem, 3, "email_report", "Email", "8", "NULL", "NULL");
 
-        SaveItemHelper.authorizedSave(es, user, false, false, EventUtils.ADMIN_EVENT(user));
+        SaveItemHelper.authorizedSave(securityItem, user, false, false, EventUtils.ADMIN_EVENT(user));
 
         ElementSecurity.refresh();
         return ElementSecurity.GetElementSecurity(elementName);

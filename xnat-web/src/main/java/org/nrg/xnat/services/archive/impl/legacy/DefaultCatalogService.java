@@ -975,10 +975,21 @@ public class DefaultCatalogService implements CatalogService {
             if((scanFormats == null || scanFormats.size() <= 0)||(scanTypes == null || scanTypes.size() <= 0)){
                 return null;
             }
-
+            
+            List<String> cleanedUpScanTypes = new ArrayList<String>();
+            for (String scanType:scanTypes) {
+            	//A \ in scantype is stored in the database as \\
+            	//We will use what the database expects to query it
+            	if (scanType.contains("\\")) {
+            		cleanedUpScanTypes.add(scanType.replace("\\", "\\\\"));
+            	}else {
+            		cleanedUpScanTypes.add(scanType);
+            	}
+            }
+            
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
-            parameters.addValue("scanTypes", scanTypes);
+            parameters.addValue("scanTypes", cleanedUpScanTypes);
             parameters.addValue("scanFormats", scanFormats);
             final String query = getQuery(QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT, allowNullFormat, allowNullType);
 
@@ -990,8 +1001,11 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry = new CatEntryBean();
                 final String scanId = (String) scan.get("scan_id");
-                final String scanType = (String) scan.get("scan_type");
-
+                String scanType = (String) scan.get("scan_type");
+                //Replace forward and backward slash with an underscore
+                //ScanType from the database would have \\ and hence it needs to be replaced by single underscore.
+                scanType = scanType.replace("\\\\", "_");
+                scanType = scanType.replace("/", "_");
                 if(scan.get("resource") != null) {
                     final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
                     //Fix for BANNER-33
@@ -1005,6 +1019,7 @@ public class DefaultCatalogService implements CatalogService {
                     	}else {
                         	String path = null;
                         	try {
+                        		//Remove both the forward and the backward slash
                         		path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);
                         	}catch(InvalidPathException ipe) {
                            	 	path=getPath(options, project, subject, label, "scans", scanId, "resources", resource);

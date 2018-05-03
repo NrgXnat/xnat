@@ -1,4 +1,6 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- BEGIN /xdat-templates/screens/ForgotLogin.vm -->
+<script>window.isLoginPage = true</script>
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("NoMenuTop.vm")
 $page.setTitle("XDAT -- Register")
@@ -52,3 +54,4 @@ $page.setBgColor($ui.bgcolor)
   </table>
 </form>
 </div>
+<!-- END /xdat-templates/screens/ForgotLogin.vm -->

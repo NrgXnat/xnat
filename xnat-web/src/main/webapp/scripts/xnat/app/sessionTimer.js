@@ -558,7 +558,7 @@ var XNAT = getObject(XNAT);
             }
 
             // close dialog if closed from another window
-            if (cookie.SESSION_DIALOG_OPEN.is('false')) {
+            if (cookie.SESSION_DIALOG_OPEN.is('false') && timeout.warningDialog.isOpen) {
                 timeout.warningDialog.hide(0);
             }
 

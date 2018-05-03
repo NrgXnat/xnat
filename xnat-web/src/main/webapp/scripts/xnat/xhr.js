@@ -571,7 +571,7 @@ var XNAT = getObject(XNAT||{}),
                 changeValue($this, val);
             }
 
-            if (!/textarea/i.test(this.tagName) && !/password/i.test(this.type)) {
+            if (!/textarea/i.test(this.tagName) && !/password|radio/i.test(this.type)) {
                 $this.dataAttr('value', val);
             }
 

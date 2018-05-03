@@ -30,28 +30,53 @@ var XNAT = getObject(XNAT);
 
     // append non-root site context if applicable
     function dataStoreName(name){
-        var siteRoot = XNAT.url.rootUrl().replace(/^\//, '');
+        var siteRoot = XNAT.url.rootUrl().replace(/^\/*|\/*$/g, '');
         name = name || USERNAME;
         return (siteRoot && siteRoot !== '/') ? (name + '@' + siteRoot) : name;
     }
 
     // set the root property name to use for browsers' localStorage
     storage.setName = function(name){
-        return (storage.dataStore = dataStoreName(name));
+        return (storage.name = storage.dataStore = dataStoreName(name));
+    };
+
+    function dataStoreNameEnc(name){
+        return XNAT.util.sub64.dlxEnc(dataStoreName(name)).encoded;
+    }
+
+    storage.setNameEnc = function(name){
+        storage.nameEnc = dataStoreNameEnc(name);
+        return storage.setName(storage.nameEnc);
+    };
+
+    storage.getName = function(){
+        return storage.name;
+    };
+
+    function dataStoreNameDec(name){
+        return XNAT.util.sub64.dlxDec(name || storage.nameEnc).decoded;
+    }
+
+    storage.getNameDec = function(name){
+        return dataStoreNameDec(name);
     };
 
     function getDescendantProp(obj, desc) {
         var arr = desc.split('.');
+        var part;
         while (arr.length) {
-            obj = obj[arr.shift()];
+            part = arr.shift();
+            obj = obj.hasOwnProperty(part) ? obj[part] : {};
         }
         return obj;
     }
 
     function setDescendantProp(obj, desc, value) {
         var arr = desc.split('.');
+        var part;
         while (arr.length > 1) {
-            obj = obj[arr.shift()];
+            part = arr.shift();
+            obj = obj[part] === undef ? {} : obj[part];
         }
         // set [value] to '@DELETE' or '{DELETE}' to delete the item
         if (/^([@{]DELETE[}]*)$/i.test(value)) {
@@ -68,11 +93,20 @@ var XNAT = getObject(XNAT);
         }
     }
 
+
+    /**
+     *
+     * @param [dataStore]
+     * @param [key]
+     * @param [data]
+     * @returns {BrowserStorage}
+     * @constructor BrowserStorage
+     */
     function BrowserStorage(dataStore, key, data){
         if (dataStore instanceof BrowserStorage) {
             return dataStore;
         }
-        this.dataStore = dataStore || storage.dataStore || dataStoreName();
+        this.dataStore = dataStore || storage.dataStore || storage.setNameEnc();
         this.key = key || 'data';
         this.data = data || '';
     }
@@ -100,12 +134,15 @@ var XNAT = getObject(XNAT);
 
     /**
      * Save all data to the 'dataStore'
-     * @param {*} data - data object or string to save
+     * @param {*} [data] - data object or string to save
      * @returns {BrowserStorage}
      */
     BrowserStorage.fn.save = function(data){
-        var DATA = data && isString(data) ? JSON.parse(data) : data || '';
-        this.data = DATA || this.data || {};
+        var DATA = data && isString(data) ? JSON.parse(data) : data || null;
+        // this.data = DATA || this.data || this.getAll() || '';
+        // do we need to use extend() to prevent overwriting of values?
+        // probably.
+        this.data = extend(true, {}, this.getAll(), this.data, DATA);
         localStorage.setItem(this.dataStore, JSON.stringify(this.data));
         return this;
     };
@@ -130,13 +167,32 @@ var XNAT = getObject(XNAT);
      */
     BrowserStorage.fn.setValue = function(objPath, newValue){
         setDescendantProp(this.getAll(), objPath, newValue);
-        this.save(this.data);
+        localStorage.setItem(this.dataStore, JSON.stringify(this.data));
         return this;
     };
 
 
+    /**
+     * Delete the value at the specified path
+     * @param {String|Array} objPath(s) - a single path or an array of paths to delete
+     * @returns {*}
+     */
     BrowserStorage.fn['delete'] = function(objPath){
-        this.setValue(objPath, '@DELETE');
+        [].concat(objPath).forEach(function(path){
+            this.setValue(path, '@DELETE');
+        }, this);
+        return this;
+    };
+
+
+    /**
+     * Reset/replace ALL data for this storage instance
+     * @param {*} [data] - optional replacement data (replaces ALL data in the storage instance)
+     * @returns {*}
+     */
+    BrowserStorage.fn.reset = function(data){
+        this.data = data || '';
+        localStorage.setItem(this.dataStore, JSON.stringify(this.data));
         return this;
     };
 
@@ -148,7 +204,7 @@ var XNAT = getObject(XNAT);
      * @param {*} [data] - initial data to store
      */
     storage.init = function(dataStore, rootKey, data){
-        return new BrowserStorage(dataStore, rootKey, data);
+        return (new BrowserStorage(dataStore, rootKey, data)).save();
     };
 
     storage.getAll = function(dataStore){
@@ -168,8 +224,9 @@ var XNAT = getObject(XNAT);
         return storage.init(dataStore).delete(objPath).getAll();
     };
 
-
-    storage.userData = storage.init();
+    // initialize a default 'userData' data store
+    // XNAT.storage.userData.setValue('foo', 'bar');
+    storage.userData = storage.init(storage.setNameEnc());
 
     return XNAT.storage = storage;
 

@@ -22,8 +22,8 @@ function diddly(){}
 function getQueryStringValue(param){
     var search = window.location.search;
     if (!param || !search) { return '' }
-    if (search.indexOf(param) === -1) { return '' }
-    var val = search.split(param+'=')[1].split('&')[0].split('#')[0].replace(/\/*$/,''); // remove any 'bonus' trailing slashes
+    if (search.indexOf(param + '=') === -1) { return '' }
+    var val = search.split(param + '=')[1].split('&')[0].split('#')[0].replace(/\/*$/,''); // remove any 'bonus' trailing slashes
     return decodeURIComponent(val);
 }
 
@@ -1497,7 +1497,7 @@ function waitForIt(interval, test, callback){
             clearInterval(waiting);
             return called;
         }
-    }, interval || 10);
+    }, interval || 1);
     return waiting;
 }
 
@@ -1506,20 +1506,23 @@ function waitForIt(interval, test, callback){
 function waitForElement(interval, selector, callback){
     var counter = 0;
     var $element;
-    waitForIt(interval, function(){
-        if (++counter > 1000) {
+    waitForIt(interval || 1, function(){
+        if (++counter > 10000) {
             return true;
         }
         if (jsdebug) {
-            console.log('waiting for element...')
-            console.log(selector)
+            // console.log('waiting for element: ' + selector);
         }
-        return ($element = $$(selector)).length
+        $element = $(selector);
+        return $element.length
     }, function(){
-        if (counter > 1000) {
-            console.warn("Can't find element: " + selector);
+        if (counter > 10000) {
+            console.warn("can't find element: " + selector);
         }
         else {
+            if (jsdebug) {
+                // console.log('element found: ' + selector);
+            }
             callback.call($element[0], $element);
         }
     })

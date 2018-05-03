@@ -824,11 +824,31 @@ div.justification:before {
     color: #2d69b8;
 }
 
+/* hourglass icon for 'waiting' messages */
+div.message.waiting:before,
+div.info.waiting:before,
+div.note.waiting:before {
+    content: "\f252";
+}
+
 div.message.loginPage,
 div.error.loginPage,
 div.message.loginPage,
 div.note.loginPage {
     top: -40px;
+}
+
+/* slightly larger messages */
+div.alert.md,
+div.error.md,
+div.justification.md,
+div.message.md,
+div.info.md,
+div.note.md,
+div.success.md,
+div.warning.md {
+    font-size: 13px;
+    padding: 15px;
 }
 
 /* smaller messages */

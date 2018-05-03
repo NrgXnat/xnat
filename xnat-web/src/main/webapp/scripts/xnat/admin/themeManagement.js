@@ -104,7 +104,7 @@ var XNAT = getObject(XNAT);
 
     // returns object for active theme
     function getActiveTheme(callback){
-        var role = 'global';
+        var role = 'current';
         return XNAT.xhr.get(getThemeUrl(role), function(data){
             // themeSelector.empty();
             selectedTheme = data.name ? data.name : 'None';

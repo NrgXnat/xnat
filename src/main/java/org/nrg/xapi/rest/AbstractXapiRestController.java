@@ -16,6 +16,7 @@ import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -79,6 +80,13 @@ public abstract class AbstractXapiRestController {
         if (principal instanceof UserI) {
             log.debug("Found principal for user: {}", ((UserI) principal).getUsername());
             return (UserI) principal;
+        }
+        try {
+            return Users.getGuest();
+        } catch (UserNotFoundException e) {
+            log.warn("Tried to get guest user but couldn't find it.", e);
+        } catch (UserInitException e) {
+            log.error("Tried to get guest user but got a user init error.", e);
         }
         return null;
     }

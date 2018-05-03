@@ -1105,7 +1105,7 @@ public class Permissions {
                                                             + "      AND xfm.read_element = 1 "
                                                             + "      AND xfm.edit_element = 0 "
                                                             + "      AND xfm.delete_element = 0 "
-                                                            + "      AND xfm.active_element = 0 "
+                                                            + "      AND xfm.active_element = 1 "
                                                             + "      AND xfm.comparison_type = 'equals' "
                                                             + "ORDER BY project";
 

@@ -337,9 +337,7 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
                 throw new ClientException("Concurrent file sends of the same data is not supported.");
             } finally {
                 //release the file lock
-                if (lock != null) {
-                    lock.release();
-                }
+                lock.release();
             }
 
             log.trace("Stored object {}/{}/{} as {} for {}", project, studyInstanceUID, dicom.getString(Tag.SOPInstanceUID), session.getUrl(), source);

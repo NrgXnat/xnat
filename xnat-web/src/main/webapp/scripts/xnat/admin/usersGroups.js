@@ -182,7 +182,7 @@ var XNAT = getObject(XNAT);
     // RETURNS A DOM ELEMENT
     usersGroups.userSwitchElement = function(username, type, status){
         return XNAT.ui.input.switchbox({
-            value: firstDefined(status, 'false') + '',
+            value: firstDefined(status, '') + '',
             element: {
                 name: type,
                 className: 'user-' + type,
@@ -782,8 +782,8 @@ var XNAT = getObject(XNAT);
                             on: {
                                 click: function(e){
                                     e.preventDefault();
-                                    var modalId = $(this).closest('div.xnat-dialog').attr('id');
-                                    XNAT.dialog.close(modalId);
+                                    var modalId = $(this).closest('div.xnat-dialog').attr('data-dialog');
+                                    XNAT.dialog.getDialog(modalId).close();
                                     window.top.usernameForUserThatIsCurrentlyBeingEdited = data.username;
                                     userProjectsAndSecurity(e, data.username);
                                 }
@@ -942,10 +942,10 @@ var XNAT = getObject(XNAT);
             onClose: function(){
                 // always update the whole table when adding a user.
                 // usersGroups.spawnTabs();
-                renderUsersTable();
-                // if (updated) {
-                //     updateUsersTable(true);
-                // }
+                // renderUsersTable();
+                if (updated) {
+                    updateUsersTable(true);
+                }
             }
         })
     }

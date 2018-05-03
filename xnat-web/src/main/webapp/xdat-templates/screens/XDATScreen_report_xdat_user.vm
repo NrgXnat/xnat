@@ -315,8 +315,7 @@ $page.setVlinkColor($ui.vlink)
 
                                             td = document.createElement("TH");
                                             td.align = "left";
-                                            td.innerHTML = window.projectTracker.getProjectById(selectedtags[stX])
-                                                    .getDisplayName();
+                                            td.textContent = window.projectTracker.getProjectById(selectedtags[stX]).getDisplayName();
                                             tr.appendChild(td);
 
                                             var name = selectedgroups[stX];

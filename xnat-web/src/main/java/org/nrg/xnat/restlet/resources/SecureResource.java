@@ -17,6 +17,7 @@ import org.apache.commons.fileupload.DefaultFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
@@ -278,7 +279,7 @@ public abstract class SecureResource extends Resource {
      */
     private Form getBodyAsForm() {
         if (_body == null) {
-            Representation entity = getRequest().getEntity();
+            final Representation entity = getRequest().getEntity();
 
             if (entity != null && RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
                 _mediaType = entity.getMediaType();
@@ -411,9 +412,7 @@ public abstract class SecureResource extends Resource {
 
     public boolean isQueryVariable(String key, String value, boolean caseSensitive) {
         if (getQueryVariable(key) != null) {
-            if ((caseSensitive && getQueryVariable(key).equals(value)) || (!caseSensitive && getQueryVariable(key).equalsIgnoreCase(value))) {
-                return true;
-            }
+            return (caseSensitive && getQueryVariable(key).equals(value)) || (!caseSensitive && getQueryVariable(key).equalsIgnoreCase(value));
         }
         return false;
     }
@@ -986,10 +985,12 @@ public abstract class SecureResource extends Resource {
         return isQueryVariableTrueHelper(getQueryVariable(key, request));
     }
 
-    protected static boolean isQueryVariableTrueHelper(Object queryVariableObj) {
-        if (queryVariableObj != null && queryVariableObj instanceof String) {
-            String queryVariable = (String) queryVariableObj;
-            return !(queryVariable.equalsIgnoreCase("false") || queryVariable.equalsIgnoreCase("0"));
+    protected static boolean isQueryVariableTrueHelper(final Object queryVariableObj) {
+        if (queryVariableObj == null) {
+            return false;
+        }
+        if (queryVariableObj instanceof String) {
+            return !(StringUtils.equalsAnyIgnoreCase((String) queryVariableObj, "false", "0"));
         } else {
             return false;
         }
@@ -1010,7 +1011,7 @@ public abstract class SecureResource extends Resource {
     @Nonnull
     public UserI getUser() {
         try {
-            return user == null ? Users.getGuest() : user;
+            return ObjectUtils.defaultIfNull(user, Users.getGuest());
         } catch (UserNotFoundException | UserInitException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "An error occurred retrieving the guest user.", e);
         }

@@ -41,25 +41,13 @@ public abstract class AbstractXapiProjectRestController extends AbstractXapiRest
     protected HttpStatus canEditProject(final String projectId) throws Exception {
         final UserI user = getSessionUser();
         final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
-        if (project == null) {
-            return HttpStatus.NOT_FOUND;
-        }
-        if (!project.canEdit(user)) {
-            return HttpStatus.FORBIDDEN;
-        }
-        return null;
+        return project == null ? HttpStatus.NOT_FOUND : !project.canEdit(user) ? HttpStatus.FORBIDDEN : null;
     }
 
     @Nullable
     protected HttpStatus canDeleteProject(final String projectId) throws Exception {
         final UserI user = getSessionUser();
         final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
-        if (project == null) {
-            return HttpStatus.NOT_FOUND;
-        }
-        if (!project.canDelete(user)) {
-            return HttpStatus.FORBIDDEN;
-        }
-        return null;
+        return project == null ? HttpStatus.NOT_FOUND : !project.canDelete(user) ? HttpStatus.FORBIDDEN : null;
     }
 }

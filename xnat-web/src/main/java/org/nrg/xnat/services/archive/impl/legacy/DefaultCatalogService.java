@@ -3,14 +3,37 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
 package org.nrg.xnat.services.archive.impl.legacy;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.*;
+import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +48,16 @@ import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatAbstractresourceTag;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatReconstructedimagedata;
+import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -39,7 +71,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.uri.archive.*;
+import org.nrg.xnat.helpers.uri.archive.AssessorURII;
+import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
+import org.nrg.xnat.helpers.uri.archive.ProjectURII;
+import org.nrg.xnat.helpers.uri.archive.ReconURII;
+import org.nrg.xnat.helpers.uri.archive.ResourceURII;
+import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -55,16 +93,13 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URLEncoder;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-
-import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 /**
  * {@inheritDoc}
@@ -107,7 +142,7 @@ public class DefaultCatalogService implements CatalogService {
         // By default don't query for null types and formats
         boolean allowNullFormat = false;
         boolean allowNullType = false;
-        
+
         if(scanTypes==null) {
             unescapedScanTypes.add("");
         }
@@ -134,9 +169,9 @@ public class DefaultCatalogService implements CatalogService {
                 }
             }
         }
-        
-        
-        // This is a corner case if someone is trying to download a session that contains only resources 
+
+
+        // This is a corner case if someone is trying to download a session that contains only resources
         // of null format or null type (ECAT)
         //
         // In this situation, we need to add an empty string so the queries below don't fail with an exception
@@ -832,7 +867,7 @@ public class DefaultCatalogService implements CatalogService {
         final Multimap<String, String> matchingSessions = ArrayListMultimap.create();
         final Map<String, String[]> subjectLabelMap = Maps.newHashMap();
         final Map<String, Map<String, Map<String, String>>> sessionMap = Maps.newHashMap();
-        
+
         for (final String sessionInfo : sessions) {
             final String[] atoms = sessionInfo.split(":");
             final String projectId = atoms[0];
@@ -879,7 +914,7 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             final Set<String> sessionIds = new HashSet<>(matchingSessions.get(projectId));
-            
+
             // Now verify that the experiment is either in or shared into the specified project.
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionIds", sessionIds);
@@ -940,10 +975,21 @@ public class DefaultCatalogService implements CatalogService {
             if((scanFormats == null || scanFormats.size() <= 0)||(scanTypes == null || scanTypes.size() <= 0)){
                 return null;
             }
-
+            
+            List<String> cleanedUpScanTypes = new ArrayList<String>();
+            for (String scanType:scanTypes) {
+            	//A \ in scantype is stored in the database as \\
+            	//We will use what the database expects to query it
+            	if (scanType.contains("\\")) {
+            		cleanedUpScanTypes.add(scanType.replace("\\", "\\\\"));
+            	}else {
+            		cleanedUpScanTypes.add(scanType);
+            	}
+            }
+            
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
-            parameters.addValue("scanTypes", scanTypes);
+            parameters.addValue("scanTypes", cleanedUpScanTypes);
             parameters.addValue("scanFormats", scanFormats);
             final String query = getQuery(QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT, allowNullFormat, allowNullType);
 
@@ -955,14 +1001,56 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry = new CatEntryBean();
                 final String scanId = (String) scan.get("scan_id");
+                String scanType = (String) scan.get("scan_type");
+                //Replace forward and backward slash with an underscore
+                //ScanType from the database would have \\ and hence it needs to be replaced by single underscore.
+                scanType = scanType.replace("\\\\", "_");
+                scanType = scanType.replace("/", "_");
                 if(scan.get("resource") != null) {
                     final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
-                    entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    //Fix for BANNER-33
+                    if (options.isSimplified()) {
+                    	entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    }else {
+                    	//ScanType may have characters not conformant to naming conventions on the OS
+                    	//InvalidPathException should take care of that
+                    	if (null == scanType) {
+                        	entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    	}else {
+                        	String path = null;
+                        	try {
+                        		//Remove both the forward and the backward slash
+                        		path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);
+                        	}catch(InvalidPathException ipe) {
+                           	 	path=getPath(options, project, subject, label, "scans", scanId, "resources", resource);
+                        	}
+                        	if (null != path) 
+                        		entry.setName(path);
+                    	}
+                    }
                     entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                     _log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                     catalog.addEntries_entry(entry);
                 }else{
-                    entry.setName(getPath(options, project, subject, label, "scans", scanId));
+                    //Fix for BANNER-33
+                    if (options.isSimplified()) {
+                    	entry.setName(getPath(options, project, subject, label, "scans", scanId));
+                    }else {
+                    	//ScanType may have characters not conformant to naming conventions on the OS
+                    	//InvalidPathException should take care of that
+                    	if (null == scanType) {
+                        	entry.setName(getPath(options, project, subject, label, "scans", scanId));
+                    	}else {
+                        	String path = null;
+                        	try {
+                        		path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType);
+                        	}catch(InvalidPathException ipe) {
+                           	 	path=getPath(options, project, subject, label, "scans", scanId);
+                        	}
+                        	if (null != path) 
+                        		entry.setName(path);
+                    	}
+                    }
                     entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/files");
                     _log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, entry.getName(), entry.getUri());
                     catalog.addEntries_entry(entry);
@@ -1096,7 +1184,7 @@ public class DefaultCatalogService implements CatalogService {
         // If All isn't specified, just return a list of the actual values.
         return operations;
     }
-    
+
     // This function takes the query passed to it and determines if we also need to search on null scan format or a null scan type
     // If queryForNullType = true, this will return a modified query that also queries for scan.type IS NULL
     // If queryForNullFormat = true, this will return a modified query that also queries for scan.format IS NULL
@@ -1115,7 +1203,7 @@ public class DefaultCatalogService implements CatalogService {
     			}else {
     				return query;
     			}
-    			
+
     		case QUERY_FIND_SCANS_BY_SESSION:
     			if(queryForNullFormat && queryForNullType) {
     				// Search for Null Type and Null Format
@@ -1129,7 +1217,7 @@ public class DefaultCatalogService implements CatalogService {
     			}else {
     				return query;
     			}
-    			
+
     		case QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT:
     			if(queryForNullFormat && queryForNullType) {
     				// Search for Null Type and Null Format
@@ -1150,7 +1238,7 @@ public class DefaultCatalogService implements CatalogService {
     private static final String CATALOG_FORMAT                         = "%s-%s";
     private static final String CATALOG_SERVICE_CACHE                  = DefaultCatalogService.class.getSimpleName() + "Cache";
     private static final String CATALOG_CACHE_KEY_FORMAT               = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
-    
+
     private static final String QUERY_FIND_SCANS_BY_SESSION  = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
                                                                              "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
                                                                              "WHERE image_session_id IN (:sessionIds) AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats);";
@@ -1163,7 +1251,7 @@ public class DefaultCatalogService implements CatalogService {
     private static final String QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_TYPE_AND_NULL_FORMAT  = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
                                                                              "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
                                                                              "WHERE image_session_id IN (:sessionIds) AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND (res.label IN (:scanFormats) OR res.label IS NULL);";
-    
+
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1204,9 +1292,10 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "      (share.project = :projectId OR expt.project = :projectId) AND "
                                                                          + "      (scan.type IN (:scanTypes) OR scan.type IS NULL) "
                                                                          + "      AND (res.label IN (:scanFormats) OR res.label IS NULL);";
-    
+
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT    = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
+                                                                         + "  scan.type AS scan_type, "
                                                                          + "  res.label AS resource "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1214,6 +1303,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "ORDER BY scan";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT_WITH_NULL    = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
+                                                                         + "  scan.type AS scan_type, "
                                                                          + "  res.label AS resource "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1221,6 +1311,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "ORDER BY scan";
     private static final String QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT    = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
+                                                                         + "  scan.type AS scan_type, "
                                                                          + "  res.label AS resource "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1228,12 +1319,13 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "ORDER BY scan";
     private static final String QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT_WITH_NULL    = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
+                                                                         + "  scan.type AS scan_type, "
                                                                          + "  res.label AS resource "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
                                                                          + "WHERE scan.image_session_id = :sessionId AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND (res.label IN (:scanFormats) OR res.label IS NULL) "
                                                                          + "ORDER BY scan";
-    
+
     private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource "
                                                                          + "FROM xnat_abstractresource res  "
                                                                          + "  LEFT JOIN xnat_experimentdata_resource exptRes "

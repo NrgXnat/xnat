@@ -84,7 +84,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
-    ##    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.js"></script>
 
     <!-- window.available_elements -->
     <script>
@@ -93,25 +93,13 @@
         window.browseableElements = {};
 
         if (!window.isLoginPage) {
-            window.getBrowseableElements = XNAT.xhr.get({
-                url: serverRoot + '/xapi/access/displays/browseable',
-                // TODO: change 'async' property after UI is refactored for async rendering
-                async: false,
-                success: function(elements){
-                    var sortedElements = sortObjects(elements, 'plural');
-                    forEach(sortedElements, function(elementObj){
-                        elementObj.element_name = elementObj.elementName;
-                        elementObj.isExperiment = elementObj.experiment;
-                        elementObj.isSubjectAssessor = elementObj.subjectAssessor;
-                        elementObj.isImageAssessor = elementObj.imageAssessor;
-                        elementObj.isImageSession = elementObj.imageSession;
-                        elementObj.isImageScan = elementObj.imageScan;
-                        elementObj.lbg = '#f0f0f0';
-                        elementObj.dbg = '#505050';
-                        window.available_elements.push(elementObj);
-                        window.browseableElements[elementObj.element_name] = elementObj;
-                    });
-                }
+            console.log('getBrowseableElements');
+            XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(elements){
+                var sortedElements = sortObjects(elements, 'plural');
+                forEach(sortedElements, function(element){
+                    window.available_elements.push(element);
+                    window.browseableElements[element.element_name] = element;
+                });
             });
         }
 

@@ -204,22 +204,53 @@
     }
 
     // populate data list
-    if (window.available_elements !== undef && window.available_elements.length) {
-        var DATATYPES = [dataTypeItem({
-            element_name: 'xnat:subjectData',
-            plural: 'Subjects'
-        })];
-        var sortedTypes = sortObjects(window.available_elements, 'plural');
-        forEach(sortedTypes, function(type){
-            if (type.plural === undef) return;
-            if (/workflowData|subjectData/i.test(type.element_name)) return;
-            DATATYPES.push(dataTypeItem(type));
-        });
-        displaySimpleList($browseData, DATATYPES);
-    }
-    else {
-        $browseData.parent('li').addClass('disabled');
-    }
+    XNAT.app.dataTypeAccess.getElements['browseable'].ready(
+        // success
+        function(elements){
+
+            if (!elements || !elements.length) {
+                $browseData.parent('li').addClass('disabled');
+                return;
+            }
+
+            var DATATYPES = [dataTypeItem({
+                element_name: 'xnat:subjectData',
+                plural: 'Subjects'
+            })];
+
+            var sortedTypes = sortObjects(elements, 'plural');
+            forEach(sortedTypes, function(type){
+                if (type.plural === undef) return;
+                if (/workflowData|subjectData/i.test(type.element_name)) return;
+                DATATYPES.push(dataTypeItem(type));
+            });
+
+            displaySimpleList($browseData, DATATYPES);
+
+        },
+        // failure
+        function(e){
+            console.warn(e);
+            $browseData.parent('li').addClass('disabled');
+        }
+    );
+
+    // if (window.available_elements !== undef && window.available_elements.length) {
+    //     var DATATYPES = [dataTypeItem({
+    //         element_name: 'xnat:subjectData',
+    //         plural: 'Subjects'
+    //     })];
+    //     var sortedTypes = sortObjects(window.available_elements, 'plural');
+    //     forEach(sortedTypes, function(type){
+    //         if (type.plural === undef) return;
+    //         if (/workflowData|subjectData/i.test(type.element_name)) return;
+    //         DATATYPES.push(dataTypeItem(type));
+    //     });
+    //     displaySimpleList($browseData, DATATYPES);
+    // }
+    // else {
+    //     $browseData.parent('li').addClass('disabled');
+    // }
 
     // populate stored search list
     xnatJSON({

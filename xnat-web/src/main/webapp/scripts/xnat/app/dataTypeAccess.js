@@ -103,7 +103,8 @@ var XNAT = getObject(XNAT);
         padding: 0,
         top: '80px',
         footer: false,
-        content: '<div class="message waiting md">&nbsp; Loading data type cache...</div>'
+        mask: false,
+        content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>'
     });
     // ...and open it (maybe)
     window.setTimeout(function(){
@@ -200,9 +201,10 @@ var XNAT = getObject(XNAT);
                         function(){
                             console.log('ALL LOADED');
                             if (getFreshData) {
-                                window.setTimeout(function(){
-                                    window.location.reload(true);
-                                }, 500);
+                                cacheLoadingMessage.destroy();
+                                // window.setTimeout(function(){
+                                //     window.location.reload(true);
+                                // }, 500);
                             }
                             else {
                                 cacheLoadingMessage.destroy();

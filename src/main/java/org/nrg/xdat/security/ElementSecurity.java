@@ -28,6 +28,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
@@ -57,8 +58,10 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
@@ -1273,29 +1276,88 @@ public class ElementSecurity extends ItemWrapper {
 
     //method added to facilitate the adding of permissions once you've created a new data type.  It loads a vm to build the requisite SQL.
     public void initExistingPermissions(final String userName) {
+        final String elementName;
+        try {
+            elementName = getElementName();
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+            log.error("Got an error just trying to get the name of the element security object, bailing on the operation.", e);
+            return;
+        }
+
         try (final InputStream is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm")) {
             if (is != null) {
-                final List<String> statements = Lists.newArrayList();
+                final List<String> statements = new ArrayList<>();
                 final Scanner      scanner    = new Scanner(is).useDelimiter(";");
                 while (scanner.hasNext()) {
                     final String query = scanner.next();
                     if (StringUtils.isNotBlank(query)) {
-                        statements.add(query.replace("$!element_name", getElementName()).replace("$element_name", getElementName()));
+                        statements.add(query.replace("$!element_name", elementName).replace("$element_name", elementName));
                     }
                 }
-                PoolDBUtils.ExecuteBatch(statements, getDBName(), userName);
+
+                final JdbcTemplate template   = XDAT.getJdbcTemplate();
+                final List<String> publicProjects = Permissions.getAllPublicProjects(template);
+                if (!publicProjects.isEmpty()) {
+                    statements.add(QUERY_INSERT_ELEMENT_ACCESS.replace("$!element_name", elementName).replace("$element_name", elementName));
+                    statements.add(QUERY_INSERT_FIELD_MAPPING_SET.replace("$!element_name", elementName).replace("$element_name", elementName));
+                    statements.add(QUERY_INSERT_FIELD_MAPPINGS.replace("$!element_name", elementName).replace("$element_name", elementName));
+                }
+                if (log.isInfoEnabled()) {
+                    log.info("Creating permissions for new data type '{}'. Generated SQL is:\n{}    ", elementName, StringUtils.join(statements, "\n    "));
+                }
+                final int[] results = template.batchUpdate(statements.toArray(new String[0]));
+                log.info("Got {} query results: {}", results.length, StringUtils.join(results, ", "));
             }
-        } catch (Exception ignore) {
+        } catch (IOException e) {
+            log.error("Got an I/O exception trying to open the \"/screens/new_dataType_permissions.vm\" template", e);
         }
 
         try {
             updateElementAccessAndFieldMapMetaData();
-            XDAT.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, getElementName(), CREATE);
+            XDAT.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, elementName, CREATE);
             PoolDBUtils.ClearCache(getDBName(), userName, Groups.getGroupDatatype());
         } catch (Exception e) {
             log.error("", e);
         }
     }
+
+    private static final String QUERY_INSERT_ELEMENT_ACCESS    = "INSERT INTO xdat_element_access (element_name, xdat_user_xdat_user_id) " +
+                                                                 "  SELECT " +
+                                                                 "    '$!element_name' AS element_name, " +
+                                                                 "    xdat_user_id " +
+                                                                 "  FROM xdat_user u " +
+                                                                 "    LEFT JOIN xdat_element_access ea ON u.xdat_user_id = ea.xdat_user_xdat_user_id AND ea.element_name = '$!element_name' " +
+                                                                 "  WHERE " +
+                                                                 "    ea.element_name IS NULL AND " +
+                                                                 "    u.login = 'guest';";
+    private static final String QUERY_INSERT_FIELD_MAPPING_SET = "INSERT INTO xdat_field_mapping_set (method, permissions_allow_set_xdat_elem_xdat_element_access_id) " +
+                                                                 "  SELECT " +
+                                                                 "    'OR' AS method, " +
+                                                                 "    xdat_element_access_id " +
+                                                                 "  FROM xdat_element_access ea " +
+                                                                 "    LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                 "  WHERE ea.element_name = '$!element_name' AND fms.method IS NULL;";
+    private static final String QUERY_INSERT_FIELD_MAPPINGS    = "INSERT INTO xdat_field_mapping (field, field_value, create_element, read_element, edit_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id) " +
+                                                                 "  WITH public_projects AS ( " +
+                                                                 "      SELECT xfm.field_value AS project " +
+                                                                 "      FROM xdat_field_mapping xfm " +
+                                                                 "        LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
+                                                                 "        LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
+                                                                 "        LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                                 "        LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id " +
+                                                                 "        LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id " +
+                                                                 "      WHERE xu.login = 'guest' AND " +
+                                                                 "            xea.element_name = 'xnat:projectData' AND " +
+                                                                 "            xfm.read_element = 1 AND " +
+                                                                 "            xfm.active_element = 1 " +
+                                                                 "  ) " +
+                                                                 "  SELECT " +
+                                                                 "    '$!element_name/project', project, 0, 1, 0, 0, 1, 'equals', xdat_element_access_id " +
+                                                                 "  FROM public_projects, xdat_element_access ea " +
+                                                                 "    LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                 "    LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id = fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                 "  WHERE " +
+                                                                 "    ea.element_name = '$!element_name';";
 
     static void updateElementAccessAndFieldMapMetaData() {
         try {

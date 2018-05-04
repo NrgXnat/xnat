@@ -288,7 +288,7 @@ if (typeof jQuery == 'undefined') {
         });
 
 
-        $body.on('focus', 'a, button, :input, [tabindex]', function(e){
+        $body.on('focus', 'div.xmodal a, div.xmodal button, div.xmodal :input, div.xmodal [tabindex]', function(e){
             if (!xmodal.modals._ids.length || !$(xmodal.dialog.mask).length) {
                 return
             }

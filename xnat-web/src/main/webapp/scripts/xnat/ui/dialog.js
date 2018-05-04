@@ -494,12 +494,11 @@ window.xmodal = getObject(window.xmodal);
         // add data-attributes
         addDataAttrs(this.dialog$[0], {
             uid: this.uid,
-            dialog: this.uid,
             count: this.count
         });
 
         addDataAttrs(this.mask$[0], {
-            dialog: this.uid,
+            uid: this.uid,
             count: this.count
         });
 
@@ -625,7 +624,7 @@ window.xmodal = getObject(window.xmodal);
         var _topZ = dialog.zIndexTop(-1);
         var _thisZ = this.zIndex.dialog;
         // return if already on top
-        if (_thisZ >= _topZ) return this;
+        // if (_thisZ >= _topZ) return this;
         // make sure this dialog is on top
         // otherwise...
 
@@ -1422,8 +1421,11 @@ window.xmodal = getObject(window.xmodal);
             dialog.load(config)
         });
 
-        // body$.on('mousedown', 'div.xnat-dialog', function(e){
-        //     dialog.dialogs[this.id].toTop(false);
+        // body$.on('mousedown', 'div.xnat-dialog *', function(e){
+        //     console.log('mousedown');
+        //     var uid = $(this).closest('div.xnat-dialog').attr('data-uid');
+        //     dialog.dialogs[uid].toTop(false);
+        //     e.stopPropagation();
         // });
 
         // dialog.loadingbar = dialog.loadingBar = dialog.loading().hide();

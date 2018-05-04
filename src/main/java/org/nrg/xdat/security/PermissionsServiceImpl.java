@@ -66,7 +66,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
-        return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(dataType));
+        return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(_template, dataType));
     }
 
     @Override

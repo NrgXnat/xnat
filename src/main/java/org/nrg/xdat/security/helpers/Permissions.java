@@ -822,36 +822,55 @@ public class Permissions {
         return group == null ? null : group.getId().substring(projectId.length() + 1);
     }
 
-    public static boolean isProjectPublic(final String projectId) throws Exception {
+    public static boolean isProjectPublic(final NamedParameterJdbcTemplate template, final String projectId) {
+        return StringUtils.equals("public", getProjectAccess(template, projectId));
+    }
+
+    public static boolean isProjectPublic(final String projectId) {
         return StringUtils.equals("public", getProjectAccess(projectId));
     }
 
     @SuppressWarnings("unused")
-    public static boolean isProjectProtected(final String projectId) throws Exception {
+    public static boolean isProjectProtected(final NamedParameterJdbcTemplate template, final String projectId) {
+        return StringUtils.equals("protected", getProjectAccess(template, projectId));
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean isProjectProtected(final String projectId) {
         return StringUtils.equals("protected", getProjectAccess(projectId));
     }
 
     @SuppressWarnings("unused")
-    public static boolean isProjectPrivate(final String projectId) throws Exception {
+    public static boolean isProjectPrivate(final NamedParameterJdbcTemplate template, final String projectId) {
+        return StringUtils.equals("private", getProjectAccess(template, projectId));
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean isProjectPrivate(final String projectId) {
         return StringUtils.equals("private", getProjectAccess(projectId));
     }
 
-    public static String getProjectAccess(final String projectId) throws Exception {
+    public static String getProjectAccess(final String projectId) {
         return getProjectAccess(null, projectId);
     }
 
-    public static String getProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) throws Exception {
+    public static String getProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) {
         final NamedParameterJdbcTemplate found = getTemplate(template);
         if (found != null) {
             return getProjectAccessByQuery(found, projectId);
         }
-        final UserI guest = Users.getGuest();
-        if (Permissions.canRead(guest, "xnat:subjectData/project", projectId)) {
-            return "public";
-        } else if (Permissions.canRead(guest, "xnat:projectData/ID", projectId)) {
-            return "protected";
-        } else {
-            return "private";
+        try {
+            final UserI guest = Users.getGuest();
+            if (Permissions.canRead(guest, "xnat:subjectData/project", projectId)) {
+                return "public";
+            } else if (Permissions.canRead(guest, "xnat:projectData/ID", projectId)) {
+                return "protected";
+            } else {
+                return "private";
+            }
+        } catch (Exception e) {
+            log.error("An error occurred trying to retrieve accessibility for project {} through XFT", projectId, e);
+            return null;
         }
     }
 
@@ -883,7 +902,7 @@ public class Permissions {
         return _template;
     }
 
-    private static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
+    public static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("projectId", projectId);
         final boolean               exists     = template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class);
         if (!exists) {

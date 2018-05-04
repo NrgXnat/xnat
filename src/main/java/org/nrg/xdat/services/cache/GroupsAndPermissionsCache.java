@@ -21,6 +21,8 @@ public interface GroupsAndPermissionsCache extends XnatCache {
 
     List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
 
+    void clearUserCache(final String username);
+
     interface Listener {
         /**
          * Returns a set containing the IDs of the groups that have not yet been cached.

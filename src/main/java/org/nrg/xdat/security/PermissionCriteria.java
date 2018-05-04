@@ -30,16 +30,16 @@ import static org.nrg.xdat.security.SecurityManager.*;
 @SuppressWarnings("serial") //$NON-NLS-1$
 @Slf4j
 public class PermissionCriteria implements PermissionCriteriaI {
-    private static final String ALL              = "*";
-    private static final String EQUALS           = "equals";
-    private static final String ACTIVATE_ELEMENT = "active_element";
-    private static final String CREATE_ELEMENT   = "create_element";
-    private static final String EDIT_ELEMENT     = "edit_element";
-    private static final String DELETE_ELEMENT   = "delete_element";
-    private static final String READ_ELEMENT     = "read_element";
-    private static final String COMPARISON_TYPE  = "comparison_type";
-    private static final String FIELD_VALUE      = "field_value";
-    private static final String FIELD            = "field";
+    public static final String ALL              = "*";
+    public static final String EQUALS           = "equals";
+    public static final String ACTIVATE_ELEMENT = "active_element";
+    public static final String CREATE_ELEMENT   = "create_element";
+    public static final String EDIT_ELEMENT     = "edit_element";
+    public static final String DELETE_ELEMENT   = "delete_element";
+    public static final String READ_ELEMENT     = "read_element";
+    public static final String COMPARISON_TYPE  = "comparison_type";
+    public static final String FIELD_VALUE      = "field_value";
+    public static final String FIELD            = "field";
 
     private String  field      = null;
     private String  comparison = null;

@@ -169,6 +169,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getAccessManagers().get(s);
     }
 
+    private ElementAccessManager getAccessManager(final NamedParameterJdbcTemplate template, final String type) throws Exception {
+        return getAccessManagers(template).get(type);
+    }
+
     public synchronized void init() throws Exception {
         init(null);
     }
@@ -368,8 +372,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected Map<String, ElementAccessManager> getAccessManagers() throws Exception {
+        return getAccessManagers(null);
+    }
+
+    protected Map<String, ElementAccessManager> getAccessManagers(final NamedParameterJdbcTemplate template) throws Exception {
         if (_accessManagers.isEmpty()) {
-            init();
+            init(template);
         }
         return _accessManagers;
     }
@@ -930,16 +938,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return hash;
     }
 
-
     protected boolean isOwner(String tag) {
         final UserGroupI ug = this.getGroup(tag + "_owner");
         return ug != null;
     }
 
     public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
+        return getPermissionsByDataType(null, type);
+    }
+
+    public List<PermissionCriteriaI> getPermissionsByDataType(final NamedParameterJdbcTemplate template, final String type) {
         if (!_permissionCriteria.containsKey(type)) {
             try {
-                final ElementAccessManager elementAccessManager = getAccessManager(type);
+                final ElementAccessManager elementAccessManager = getAccessManager(template, type);
 
                 if (elementAccessManager != null) {
                     final List<PermissionCriteriaI> criteria = elementAccessManager.getCriteria();
@@ -1010,7 +1021,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
         return ImmutableList.copyOf(_permissionCriteria.get(type));
     }
-
 
     /******************************************
      /* Copied from XDATUserDetails

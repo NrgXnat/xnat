@@ -611,8 +611,8 @@ var XNAT = getObject(XNAT);
         function createTable(rows){
 
             var props = [], objRows = [],
-                LOOKUPREGEX = /^(\?\?[:=\s]*)/,
-                EVALREGEX = /^(!\?[:=\s]*)/,
+                LOOKUPREGEX = XNAT.parse.REGEX.lookupPrefix,
+                EVALREGEX = XNAT.parse.REGEX.evalPrefix,
                 DATAREGEX = /^(~data)/,
                 HIDDENREGEX = /^(~!)/,
                 hiddenItems = [],
@@ -624,13 +624,10 @@ var XNAT = getObject(XNAT);
 
             // handle 'rows' as a string for lookup or eval
             if (isString(rows)){
-                if (LOOKUPREGEX.test(rows)){
-                    rows = rows.replace(LOOKUPREGEX, '').trim();
-                    rows = lookupObjectValue(window, rows);
-                }
-                else if (EVALREGEX.test(rows)) {
-                    rows = rows.replace(EVALREGEX, '').trim();
-                    rows = eval(rows);
+                if (LOOKUPREGEX.test(rows) || EVALREGEX.test(rows)){
+                    XNAT.parse(rows).done(function(result){
+                        rows = result;
+                    });
                 }
             }
 
@@ -746,10 +743,6 @@ var XNAT = getObject(XNAT);
                             $(dataRows) :
                             ($tableContainer||$tableWrapper).find('.table-body').find('tr');
                     }
-                    // $dataRows =
-                    //         $dataRows.length ?
-                    //                 $dataRows :
-                    //                 ($tableContainer||$tableWrapper).find('.table-body').find('tr');
                     return $dataRows;
                 }
 
@@ -757,18 +750,10 @@ var XNAT = getObject(XNAT);
                     if (!val) { return false }
                     val = val.toLowerCase();
                     var filterClass = 'filter-' + name;
-                    // save the rows if there are none
+                    // cache the rows if not cached yet
                     cacheRows();
-                    // var rowStuff = [];
-                    // $dataRows.each(function(){
-                    //     rowStuff.push({
-                    //         row: this,
-                    //         args: arguments
-                    //     })
-                    // });
-                    // console.log(rowStuff);
                     $dataRows.addClass(filterClass).filter(function(){
-                        return $(this).find('td.'+ name).containsNC(val).length
+                        return $(this).find('td.' + name).containsNC(val).length
                     }).removeClass(filterClass);
                 }
 
@@ -790,6 +775,9 @@ var XNAT = getObject(XNAT);
                             tdContent.push(customFilters[name].call(newTable, newTable.table));
                         }
                         else {
+
+                            // TODO: move filtering functionality to work for ANY table, not just spawned XNAT.ui.dataTable() tables
+
                             $filterInput = $.spawn('input.filter-data', {
                                 type: 'text',
                                 title: name + ':filter',
@@ -824,25 +812,6 @@ var XNAT = getObject(XNAT);
                                 }
                                 filterRows(val, name);
                             });
-
-                            // $filterInput.on('keyup', function(e){
-                            //     var val = this.value;
-                            //     var key = e.which;
-                            //     // don't do anything on 'tab' keyup
-                            //     if (key == 9) return false;
-                            //     if (key == 27){ // key 27 = 'esc'
-                            //         this.value = val = '';
-                            //     }
-                            //     allFilterValues = filterInputs.map(function(filter){
-                            //         return filter[0].value || '';
-                            //     }).join('').trim();
-                            //     if (!allFilterValues) {
-                            //         $dataRows.show();
-                            //     }
-                            //     // no value, no filter
-                            //     //if (!val) return false;
-                            //     filterRows(val, name);
-                            // });
 
                             tdContent.push($filterInput[0]);
                         }
@@ -948,10 +917,9 @@ var XNAT = getObject(XNAT);
                                 }
                                 else if (stringable(applyFn)) {
                                     applyFn = (applyFn+'').trim();
-                                    // wrap eval() expression in {( expr )}
-                                    if (/^(\{\()(.*?)(\)})$/.test(applyFn)) {
-                                        applyFn = applyFn.replace(/^(\{\(\s*)/g, '(')
-                                                         .replace(/(\s*\)})$/g, ')');
+                                    // wrap eval() expression in {( expr )} or (( expr ))
+                                    if (XNAT.parse.REGEX.evalTest.test(applyFn)) {
+                                        applyFn = applyFn.replace(XNAT.parse.REGEX.evalTrim, '');
                                         itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     // or start with standard Spawner 'eval' string
@@ -1048,7 +1016,7 @@ var XNAT = getObject(XNAT);
             });
 
             $tableWrapper.removeClass('loading').find('.loading').remove();
-            newTable.table$.removeClass('hidden invisible').show();
+            newTable.table$.hidden(false);
 
             // close any 'loading' dialogs that are open
             $(function(){
@@ -1083,7 +1051,7 @@ var XNAT = getObject(XNAT);
             opts.url = tableData;
         }
 
-        var loadUrl = opts.load || opts.url;
+        var loadUrl = XNAT.url.parse(opts.load || opts.url || '');
 
         // request data for table rows
         if (loadUrl) {
@@ -1094,23 +1062,28 @@ var XNAT = getObject(XNAT);
             }
             else {
                 XNAT.xhr.get({
-                    url: XNAT.url.rootUrl(loadUrl),
+                    url: loadUrl,
                     dataType: opts.dataType || 'json',
                     success: function(json){
+                        var DATA = json;
                         // support custom path for returned data
                         if (opts.path) {
-                            json = lookupObjectValue(json, opts.path);
+                            DATA = lookupObjectValue(json, opts.path);
                         }
                         else {
                             // handle data returned in ResultSet.Result array
-                            json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                            DATA = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
                         }
                         // make sure there's data before rendering the table
                         if (isEmpty(json)) {
                             showMessage().noData(opts.messages ? opts.messages.noData || opts.messages.empty : '')
                         }
                         else {
-                            createTable(json);
+                            // transform data before rendering?
+                            if (isFunction(opts.apply || opts.transform)) {
+                                DATA = (opts.apply || opts.transform).call(opts, json);
+                            }
+                            createTable(DATA || json);
                         }
                     },
                     error: function(obj, status, message){
@@ -1140,7 +1113,12 @@ var XNAT = getObject(XNAT);
         //     return tableWrapper;
         // };
 
-        return {
+        var renderDone = false;
+        var renderTime = 0;
+        var INTERVAL = 10;
+
+        var obj = {
+            opts: opts,
             dataTable: newTable,
             table: newTable.table,
             element: tableWrapper,
@@ -1150,27 +1128,61 @@ var XNAT = getObject(XNAT);
                 return tableWrapper;
             },
             done: function(callback){
-                var result = newTable;
-                // do something with the table after it's created
-                if (isFunction(callback)) {
-                    result = callback.call(opts, newTable);
+                waitForIt(
+                    INTERVAL,
+                    // test
+                    function(){
+                        return renderDone;
+                    },
+                    // success callback
+                    function(){
+                        // do something with the table after it's created
+                        if (isFunction(callback)) {
+                            obj.result = callback.call(obj, newTable);
+                        }
+                    });
+                return obj;
+            },
+            fail: function(n, callback){
+                if (!callback){
+                    callback = n;
+                    n = 5000;
                 }
-                return result;
+                waitForIt(
+                    INTERVAL,
+                    // test
+                    function(){
+                        return (renderTime += INTERVAL) > (n || 30000)
+                    },
+                    // failure callback
+                    function(){
+                        callback.call(obj, newTable);
+                    })
             },
             // render: newTable.render
             render: function(container, empty, callback){
                 var $container = $$(container);
                 normalizeTableCells.call(tableWrapper);
+                // allow omission of [empty] argument
+                if (arguments.length === 2){
+                    if (isFunction(empty)) {
+                        callback = empty;
+                        empty = false;
+                    }
+                }
                 if (empty) {
                     $container.empty();
                 }
                 $container.append(tableWrapper);
                 if (isFunction(callback)) {
-                    callback.call(this, newTable);
+                    obj.result = callback.call(obj, newTable);
                 }
-                return tableWrapper;
+                renderDone = true;
+                return obj;
             }
         };
+
+        return obj;
 
     };
 

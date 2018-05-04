@@ -406,8 +406,8 @@ var XNAT = getObject(XNAT||{}),
         return ''+val;
     }
 
-    // replace url params with values from [name] or [data-param] attribute
-    // <form data-method="put" action="/xapi/theme/{{themeName}}">
+    // replace url params with values from [name] or [data-param] attribute (if it exists)
+    // <form data-method="put" action="/xapi/theme/[[themeName]]">
     //     <input type="text" name="themeName">
     // </form>
     function urlParams(form, url, params){
@@ -415,10 +415,15 @@ var XNAT = getObject(XNAT||{}),
         var $form = $$(form);
         var URL = url || $form.attr('action') || $form.data('url');
 
+        // replace items in url string
+        if (/{{|{\(/.test(URL)) {
+            URL = strReplace(URL);
+        }
+
         // which params are we replacing?
-        // /url/path/{{param1}}/{{param2}}
-        var urlParams = URL.split('{{').slice(1).map(function(name){
-            return name.split('}}')[0].trim();
+        // /url/path/[[param1]]/[[param2]]
+        var urlParams = URL.split('[[').slice(1).map(function(name){
+            return name.split(']]')[0].trim();
         });
 
         // return url if no params to replace
@@ -430,8 +435,12 @@ var XNAT = getObject(XNAT||{}),
         params = getObject(params);
 
         forEach(urlParams, function(name){
-            var _str = '{{' + name + '}}';
-            var _val = params[name] || $form.find('[name="' + name + '"]').val() || '';
+            var $input = $form.find('[name="' + name + '"]');
+            var _str = '[[' + name + ']]';
+            var _val = isDefined(params[name]) ? params[name]+'' : '';
+            if (!_val && $input.length) {
+                _val = $input.filter(':checked').val() || $input[0].value
+            }
             URL = URL.replace(_str, _val);
         });
 
@@ -726,7 +735,7 @@ var XNAT = getObject(XNAT||{}),
             this.value = eval(source);
         });
 
-        // replace {{param}} strings in url with
+        // replace [[param]] strings in url with
         // values from data or named form elements
         opts.url = urlParams($form, opts.url, opts.data);
 
@@ -778,9 +787,9 @@ var XNAT = getObject(XNAT||{}),
                     '<b>' + error.field + (error.message ? ':</b> ' + error.message : '</b>') +
                     '</li>'
             });
-            xmodal.message({
+            XNAT.dialog.message({
                 width: 500,
-                height: 300,
+                // height: 300,
                 title: 'Validation Failed',
                 content: '' +
                     '<p>Please correct errors with the following fields:</p> ' +
@@ -808,7 +817,7 @@ var XNAT = getObject(XNAT||{}),
             }
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
-                opts.data = JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false));
+                opts.data = firstDefined(opts.data, JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false)));
                 opts.processData = false;
                 if (opts.contentType === 'text/json') {
                     opts.contentType = 'text/plain';
@@ -817,7 +826,7 @@ var XNAT = getObject(XNAT||{}),
                     opts.contentType = 'application/json';
                 }
             }
-            else {
+            else if (firstDefined(opts.processData, true)) {
                 opts.data = $form.find(':input').not('.ignore').serialize();
             }
             opts.success = function(data){
@@ -842,6 +851,13 @@ var XNAT = getObject(XNAT||{}),
 
     };
     xhr.submit = xhr.form;
+
+    $.fn.submitForm = function(opts){
+        var $form = $(this);
+        return xhr.form($form, extend(true, {
+            method: $form.data('method') || this.method || 'POST'
+        }, opts))
+    };
 
     // $('form.foo').submitJSON();
     $.fn.submitJSON = function(opts){

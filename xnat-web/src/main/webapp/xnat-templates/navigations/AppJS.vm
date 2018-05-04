@@ -28,7 +28,6 @@
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
 
     <!-- Icon sets -->
-    ##<link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css?v=${XNAT_CSRF}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?v=${data.session.lastAccessedTime}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
@@ -57,6 +56,7 @@
 
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/util/sub64.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/parse.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
@@ -64,6 +64,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/storage.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/form.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/input.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/select.js"></script>

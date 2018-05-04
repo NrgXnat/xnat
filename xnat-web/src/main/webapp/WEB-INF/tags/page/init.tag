@@ -24,6 +24,7 @@
     <c:set var="username" value="-" scope="session"/>
     <c:set var="isAdmin" value="false" scope="session"/>
     <c:set var="isGuest" value="false" scope="session"/>
+    <c:set var="cacheLastModified" value="" scope="request"/>
 
     <%-- set vars for user --%>
     <sec:authorize access="isAuthenticated()">

@@ -116,7 +116,7 @@
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">Your XNAT session will auto-logout after a certain period of inactivity. You can reset that timer without reloading the page by clicking "renew."</span>
                 </span>
                 ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in
-                Auto-logout in: <b id="timeLeft">-:--:--</b> - <a id="timeLeftRenew" href="javascript:" onClick="XNAT.app.timeout.handleOk()">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
+                Auto-logout in: <b id="timeLeft">-:--:--</b> - <a class="renew-session" href="#!">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script type="text/javascript">
                     XNAT.cookie.set('guest', 'false');
                 </script>

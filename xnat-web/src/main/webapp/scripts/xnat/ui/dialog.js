@@ -1411,17 +1411,14 @@ window.xmodal = getObject(window.xmodal);
     $(document).ready(function(){
         // generate the loadingBar on DOM ready
         var body$ = window.body$ = $(document.body);
-        // elements with a 'data-dialog="@/url/to/your/template.html" attribute
+        // elements with a 'data-dialog-load="/url/to/your/template.html" attribute
         // will render a new dialog that loads the specified template
-        body$.on('click', '[data-dialog^="@"]', function(e){
+        body$.on('click', '[data-dialog-load]', function(e){
             e.preventDefault();
             var this$ = $(this);
-            var config = {};
-            var dialogOpts = this$.data('dialogOpts');
-            if (dialogOpts) {
-                config = parseOptions(dialogOpts);
-            }
-            config.url = this$.data('dialog').slice(1);
+            var dialogOpts = this$.attr('data-dialog-opts');
+            var config = dialogOpts ? parseOptions(dialogOpts) : {};
+            config.url = this$.attr('data-dialog-load');
             dialog.load(config)
         });
 

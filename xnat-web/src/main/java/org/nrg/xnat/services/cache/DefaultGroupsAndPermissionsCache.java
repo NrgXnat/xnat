@@ -146,25 +146,29 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (has(cacheId)) {
             // Here we can just return the value directly as a map, because we know there's something cached
             // and that what's cached is not a string.
-            log.info("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
-            return getCachedMap(cacheId);
+            final Map<String, ElementDisplay> browseables = getCachedMap(cacheId);
+            browseables.putAll(getGuestBrowseableElementDisplays());
+            log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
+            return browseables;
         }
 
-        log.debug("No cache entry found for user '{}' readable counts by ID '{}', initializing entry", username, cacheId);
-        final List<String> projects = getUserProjects(username);
-        for (final String project : projects) {
-            final String      projectCacheId = getCacheIdForProject(project);
-            final Set<String> projectUsers;
-            if (!has(projectCacheId)) {
-                projectUsers = new HashSet<>();
-            } else {
-                projectUsers = getCachedSet(projectCacheId);
+        if (!user.isGuest()) {
+            log.debug("No cache entry found for user '{}' readable counts by ID '{}', initializing entry", username, cacheId);
+            final List<String> projects = getUserProjects(username);
+            for (final String project : projects) {
+                final String      projectCacheId = getCacheIdForProject(project);
+                final Set<String> projectUsers;
+                if (!has(projectCacheId)) {
+                    projectUsers = new HashSet<>();
+                } else {
+                    projectUsers = getCachedSet(projectCacheId);
+                }
+                projectUsers.add(username);
+                cacheObject(projectCacheId, projectUsers);
             }
-            projectUsers.add(username);
-            cacheObject(projectCacheId, projectUsers);
         }
-        final Map<String, ElementDisplay> browseables = cacheBrowseableElementDisplays(user, cacheId);
-        browseables.putAll(getBrowseableElementDisplays(_guest));
+        final Map<String, ElementDisplay> browseables = updateBrowseableElementDisplays(user, cacheId);
+        browseables.putAll(getGuestBrowseableElementDisplays());
         return browseables;
     }
 
@@ -186,9 +190,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return getCachedMap(cacheId);
         }
 
+        return updateReadableCounts(user, cacheId);
+    }
+
+    private Map<String, Long> updateReadableCounts(final UserI user) {
+        return updateReadableCounts(user, getCacheIdForUserElements(user.getUsername(), READABLE));
+    }
+
+    private Map<String, Long> updateReadableCounts(final UserI user, final String cacheId) {
+        final String username = user.getUsername();
         try {
-            final Map<String, Long> readableCounts = new HashMap<>();
             try {
+                final Map<String, Long> readableCounts = new HashMap<>();
+
                 //projects
                 getUserReadableCount(user, readableCounts, "xnat:projectData", "xnat:projectData/ID");
 
@@ -241,48 +255,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return getCachedList(cacheId);
         }
 
-        final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
-        for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
-            try {
-                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
-                if (schemaElement != null) {
-                    if (schemaElement.hasDisplay()) {
-                        if (Permissions.canAny(user, elementSecurity.getElementName(), action)) {
-                            final ElementDisplay elementDisplay = schemaElement.getDisplay();
-                            if (elementDisplay != null) {
-                                elementDisplays.put(action, elementDisplay);
-                            }
-                        }
-                    }
-                } else {
-                    log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", elementSecurity.getElementName());
-                }
-            } catch (ElementNotFoundException e) {
-                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
-            } catch (Exception e) {
-                log.error("An exception occurred trying to retrieve a secure element schema", e);
-            }
-        }
-        for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
-            try {
-                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
-                if (schemaElement.hasDisplay()) {
-                    elementDisplays.put(action, schemaElement.getDisplay());
-                }
-            } catch (ElementNotFoundException e) {
-                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
-            } catch (Exception e) {
-                log.error("An exception occurred trying to retrieve an insecure element schema", e);
-            }
-        }
-        for (final String foundAction : elementDisplays.keySet()) {
-            final String               actionCacheId         = getCacheIdForActionElements(username, foundAction);
-            final List<ElementDisplay> actionElementDisplays = new ArrayList<>(elementDisplays.get(foundAction));
-            log.info("Caching {} elements for action {} for user {} with cache ID {}", actionElementDisplays.size(), action, username, actionCacheId);
-            cacheObject(actionCacheId, actionElementDisplays);
-        }
+        return updateActionElementDisplays(user, action);
+    }
 
-        return ImmutableList.copyOf(elementDisplays.get(action));
+    /**
+     * Finds all user element cache IDs for the specified user and evicts them from the cache.
+     *
+     * @param username The username to be cleared.
+     */
+    @Override
+    public void clearUserCache(final String username) {
+        for (final String cacheId : getCacheIdsForUserElements(username)) {
+            log.debug("Clearing cache ID '{}'", cacheId);
+            getCache().evict(cacheId);
+        }
     }
 
     /**
@@ -549,8 +535,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             case XnatProjectdata.SCHEMA_ELEMENT_NAME:
                 return handleProjectEvents(event);
 
-            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
             case XdatElementSecurity.SCHEMA_ELEMENT_NAME:
+                updateGuestBrowseableElementDisplays();
+
+            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
                 return handleGroupRelatedEvents(event);
 
             default:
@@ -656,32 +644,38 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private boolean handleExperimentEvents(final XftItemEventI event) {
         final String action = event.getAction();
         log.debug("Handling experiment {} event for {} {}", XftItemEventI.ACTIONS.get(action), event.getXsiType(), event.getId());
-        final Set<String> projectIds = new HashSet<>();
+        final String target, origin;
         switch (action) {
             case CREATE:
-                projectIds.add(_template.queryForObject(QUERY_GET_EXPERIMENT_PROJECT, new MapSqlParameterSource("experimentId", event.getId()), String.class));
+                target = _template.queryForObject(QUERY_GET_EXPERIMENT_PROJECT, new MapSqlParameterSource("experimentId", event.getId()), String.class);
+                origin = null;
                 break;
 
             case SHARE:
-                projectIds.add((String) event.getProperties().get("target"));
+                target = (String) event.getProperties().get("target");
+                origin = null;
                 break;
 
             case MOVE:
-                projectIds.add((String) event.getProperties().get("origin"));
-                projectIds.add((String) event.getProperties().get("target"));
+                origin = (String) event.getProperties().get("origin");
+                target = (String) event.getProperties().get("target");
                 break;
 
             default:
                 log.warn("I was informed that the '{}' action happened to experiment '{}' with ID '{}'. I don't know what to do with this action.", action, event.getXsiType(), event.getId());
+                return false;
         }
-        if (projectIds.isEmpty()) {
-            return false;
-        }
-        final Map<String, ElementDisplay> displays = getBrowseableElementDisplays(_guest);
-        if (!displays.containsKey(event.getXsiType())) {
+
+        final Map<String, ElementDisplay> displays = getGuestBrowseableElementDisplays();
+
+        // If the data type of the experiment isn't in the guest list AND the target project is public,
+        // OR if the origin project is both specified and public (meaning the data type might be REMOVED
+        // from the guest browseable element displays), then we update the guest browseable element displays.
+        if (!displays.containsKey(event.getXsiType()) && Permissions.isProjectPublic(_template, target) ||
+            !StringUtils.isBlank(origin) && Permissions.isProjectPublic(_template, origin)) {
             updateGuestBrowseableElementDisplays();
         }
-        updateUserReadableCounts(getProjectUsers(projectIds));
+        updateUserReadableCounts(StringUtils.isBlank(origin) ? getProjectUsers(target) : getProjectUsers(target, origin));
         return true;
     }
 
@@ -726,48 +720,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return false;
     }
 
-    private void updateUserReadableCounts(final Set<String> usernames) {
-        for (final String username : usernames) {
-            updateUserReadableCounts(username);
-        }
-    }
-
-    private void updateUserReadableCounts(final String username) {
-        final String cacheId = getCacheIdForUserElements(username, READABLE);
-        log.debug("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
-
-        // Check whether the user has readable counts and browseable elements cached. We only need to refresh
-        // for those who have them cached.
-        if (has(cacheId)) {
-            try {
-                log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
-                final XDATUser user = new XDATUser(username);
-
-                final Map<String, Long> readableCounts = getCachedMap(cacheId);
-                getUserReadableCount(user, readableCounts, "xnat:subjectData", "xnat:subjectData/ID");
-
-                log.debug("Found {} readable elements for user {}, caching with ID {}", readableCounts.size(), username, cacheId);
-                cacheObject(cacheId, readableCounts);
-
-                log.debug("Retrieving browseable element displays for user {} through cache ID {}", username, cacheId);
-                cacheBrowseableElementDisplays(user, getCacheIdForUserElements(username, BROWSEABLE));
-            } catch (UserNotFoundException e) {
-                log.warn("Got a user not found exception for username '{}', which is weird because this user has a cache entry.", username, e);
-            } catch (UserInitException e) {
-                log.error("An error occurred trying to retrieve the user '{}'", username, e);
-            } catch (Exception e) {
-                log.error("An unexpected error occurred trying to retrieve the readable counts for user '{}'", username, e);
-            }
-        }
-    }
-
-    private Map<String, ElementDisplay> cacheBrowseableElementDisplays(final UserI user, final String cacheId) {
+    private Map<String, ElementDisplay> updateBrowseableElementDisplays(final UserI user, final String cacheId) {
         final String                      username   = user.getUsername();
-        final Map<String, Long>           counts     = getReadableCounts(user);
+        final Map<String, Long>           counts     = updateReadableCounts(user);
         final Map<String, ElementDisplay> browseable = new HashMap<>();
 
         try {
-            final List<ElementDisplay> actionElementDisplays = getActionElementDisplays(user, SecurityManager.READ);
+            final List<ElementDisplay> actionElementDisplays = updateActionElementDisplays(user, SecurityManager.READ);
             log.debug("Found {} action element displays for user {}", actionElementDisplays.size(), username);
             for (final ElementDisplay elementDisplay : actionElementDisplays) {
                 final String elementName = elementDisplay.getElementName();
@@ -792,8 +751,97 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return Collections.emptyMap();
     }
 
-    protected Map<String, ElementDisplay> updateGuestBrowseableElementDisplays() {
-        return cacheBrowseableElementDisplays(_guest, GUEST_CACHE_ID);
+    private void updateUserReadableCounts(final Set<String> usernames) {
+        for (final String username : usernames) {
+            updateUserReadableCounts(username);
+        }
+    }
+
+    private void updateUserReadableCounts(final String username) {
+        final String cacheId = getCacheIdForUserElements(username, READABLE);
+        log.debug("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
+
+        // Check whether the user has readable counts and browseable elements cached. We only need to refresh
+        // for those who have them cached.
+        if (has(cacheId)) {
+            try {
+                log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
+                final XDATUser user = new XDATUser(username);
+
+                final Map<String, Long> readableCounts = getCachedMap(cacheId);
+                getUserReadableCount(user, readableCounts, "xnat:subjectData", "xnat:subjectData/ID");
+
+                log.debug("Found {} readable elements for user {}, caching with ID {}", readableCounts.size(), username, cacheId);
+                cacheObject(cacheId, readableCounts);
+
+                log.debug("Retrieving browseable element displays for user {} through cache ID {}", username, cacheId);
+                updateBrowseableElementDisplays(user, getCacheIdForUserElements(username, BROWSEABLE));
+            } catch (UserNotFoundException e) {
+                log.warn("Got a user not found exception for username '{}', which is weird because this user has a cache entry.", username, e);
+            } catch (UserInitException e) {
+                log.error("An error occurred trying to retrieve the user '{}'", username, e);
+            } catch (Exception e) {
+                log.error("An unexpected error occurred trying to retrieve the readable counts for user '{}'", username, e);
+            }
+        }
+    }
+
+    private List<ElementDisplay> updateActionElementDisplays(final UserI user, final String action) throws Exception {
+        final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
+        for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
+            try {
+                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                if (schemaElement != null) {
+                    if (schemaElement.hasDisplay()) {
+                        if (Permissions.canAny(user, elementSecurity.getElementName(), action)) {
+                            final ElementDisplay elementDisplay = schemaElement.getDisplay();
+                            if (elementDisplay != null) {
+                                elementDisplays.put(action, elementDisplay);
+                            }
+                        }
+                    }
+                } else {
+                    log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", elementSecurity.getElementName());
+                }
+            } catch (ElementNotFoundException e) {
+                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
+            } catch (Exception e) {
+                log.error("An exception occurred trying to retrieve a secure element schema", e);
+            }
+        }
+        for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
+            try {
+                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                if (schemaElement.hasDisplay()) {
+                    elementDisplays.put(action, schemaElement.getDisplay());
+                }
+            } catch (ElementNotFoundException e) {
+                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
+            } catch (Exception e) {
+                log.error("An exception occurred trying to retrieve an insecure element schema", e);
+            }
+        }
+
+        final String username = user.getUsername();
+        for (final String foundAction : elementDisplays.keySet()) {
+            final String               actionCacheId         = getCacheIdForActionElements(username, foundAction);
+            final List<ElementDisplay> actionElementDisplays = new ArrayList<>(elementDisplays.get(foundAction));
+            log.info("Caching {} elements for action {} for user {} with cache ID {}", actionElementDisplays.size(), action, username, actionCacheId);
+            cacheObject(actionCacheId, actionElementDisplays);
+        }
+
+        return ImmutableList.copyOf(elementDisplays.get(action));
+    }
+
+    private Map<String, ElementDisplay> getGuestBrowseableElementDisplays() {
+        if (has(GUEST_CACHE_ID)) {
+            return getCachedMap(GUEST_CACHE_ID);
+        }
+        return updateGuestBrowseableElementDisplays();
+    }
+
+    private Map<String, ElementDisplay> updateGuestBrowseableElementDisplays() {
+        return updateBrowseableElementDisplays(_guest, GUEST_CACHE_ID);
     }
 
     private void getUserReadableCount(final UserI user, final Map<String, Long> readableCounts, final String dataType, final String dataTypeIdField) throws Exception {
@@ -875,12 +923,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return size;
     }
 
-    private Set<String> getProjectUsers(final String projectId) {
-        return getProjectUsers(Collections.singletonList(projectId));
+    private Set<String> getProjectUsers(final String... projectIds) {
+        return getProjectUsers(Arrays.asList(projectIds));
     }
 
     private Set<String> getProjectUsers(final Collection<String> projectIds) {
-        return new HashSet<>(_template.queryForList(QUERY_GET_USERS_FOR_PROJECTS, new MapSqlParameterSource("projectIds", projectIds), String.class));
+        return projectIds.isEmpty() ? Collections.<String>emptySet() : new HashSet<>(_template.queryForList(QUERY_GET_USERS_FOR_PROJECTS, new MapSqlParameterSource("projectIds", projectIds), String.class));
     }
 
     private synchronized List<String> initializeTag(final String tag) {
@@ -959,7 +1007,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 log.debug("Got a {} event for cache {}, no specific element affected", event, cache.getName());
                 return;
             }
-            log.debug("Got a {} event for cache {} on ID {} with value of type {}", event, cache.getName(), element.getObjectKey(), element.getObjectValue().getClass().getName());
+            final Object objectValue = element.getObjectValue();
+            log.debug("Got a {} event for cache {} on ID {} with value of type {}", event, cache.getName(), element.getObjectKey(), objectValue != null ? objectValue.getClass().getName() : "<null>");
         }
     }
 
@@ -992,8 +1041,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return getCacheIdsForPrefix(USER_ELEMENT_PREFIX);
     }
 
-    private List<String> getCacheIdsForPrefix(final String prefix) {
-        return Lists.newArrayList(Iterables.filter(Iterables.filter(getEhCache().getKeys(), String.class), Predicates.containsPattern("^" + prefix + ":.*$")));
+    private List<String> getCacheIdsForUserElements(final String username) {
+        return getCacheIdsForPrefix(USER_ELEMENT_PREFIX, username);
+    }
+
+    private List<String> getCacheIdsForPrefix(final String... prefixes) {
+        return Lists.newArrayList(Iterables.filter(Iterables.filter(getEhCache().getKeys(), String.class), Predicates.containsPattern("^" + StringUtils.join(prefixes, ":") + ":.*$")));
     }
 
     private static String getCacheIdForTag(final String tag) {

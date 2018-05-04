@@ -191,7 +191,7 @@ var XNAT = getObject(XNAT);
             },
             onText: 'Yes',
             offText: 'No'
-        });
+        }).get();
     };
 
 
@@ -208,6 +208,7 @@ var XNAT = getObject(XNAT);
         // var username = $form.find('input#username').val();
 
         opts = cloneObject(opts);
+        opts.cache = false;
 
         var doSubmit = $form.submitJSON(opts);
 
@@ -407,6 +408,8 @@ var XNAT = getObject(XNAT);
     function getUserData(username){
         var _url = XNAT.url.restUrl('/xapi/users/profile/' + username);
         delete XNAT.data['/xapi/users/profile/' + username];
+        delete XNAT.data['/xapi/users/profiles'];
+        delete XNAT.data['/xapi/users/current'];
         delete XNAT.data['/xapi/users/' + username];
         return XNAT.xhr.get(_url)
     }
@@ -1257,7 +1260,7 @@ var XNAT = getObject(XNAT);
             var $dataRows = [];
 
             // load 'current' users initially
-            var URL = url || '/xapi/users/current';
+            var URL = XNAT.url.restUrl(url || '/xapi/users/current');
 
             // TODO:
             // TODO: set min-width as well as max-width

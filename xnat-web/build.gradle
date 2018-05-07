@@ -15,7 +15,7 @@ import io.swagger.models.License
 
 buildscript {
     ext {
-        vXnat = "1.7.6-eventservice-SNAPSHOT"
+        vXnat = "1.7.6-SNAPSHOT"
         vXnatDev = "1.7.6-eventservice-SNAPSHOT"
     }
     repositories {
@@ -51,7 +51,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = vXnat
+version = vXnatDev
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -75,9 +75,6 @@ repositories {
         name "dcm4che Maven Repository"
     }
     maven {
-        url "http://maven.imagej.net/content/groups/public"
-        name "ImageJ Maven Repository"
-    }
         url "http://maven.imagej.net/content/groups/public"
         name "ImageJ Maven Repository"
     }
@@ -206,17 +203,17 @@ configurations {
 }
 
 dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnat}"
+    mavenBom "org.nrg:parent:${vXnatDev}"
 }
 
 dependencies {
     // NRG dependencies first.
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models") {
+    implementation("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
         transitive = false
     }
-    implementation "org.nrg.xdat:core"
-    implementation "org.nrg:framework"
+    implementation "org.nrg.xdat:core:${vXnatDev}"
+    implementation "org.nrg:framework:${vXnatDev}"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"

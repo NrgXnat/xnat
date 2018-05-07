@@ -80,7 +80,7 @@ var XNAT = getObject(XNAT);
         getObject(XNAT.admin.storedSearches || {});
 
     function getStoredSearchListUrl(){
-        return rootUrl('/data/search/saved?format=json');
+        return rootUrl('/data/search/saved?all=true&format=json');
     }
     function getStoredSearchUrl(id){
         if (!id) {

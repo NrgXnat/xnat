@@ -16,6 +16,7 @@ import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.model.users.ElementDisplayModel;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
+import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.helpers.Roles;
@@ -158,27 +159,32 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(NOT_FOUND);
     }
 
-    @ApiOperation(value = "Clears the element cache for the specified user or the current user if no name is specified..")
+    @ApiOperation(value = "Clears the element cache for the current user=.")
+    @ApiResponses({@ApiResponse(code = 200, message = "The user's cache was properly cleared."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "cache/flush", method = DELETE, restrictTo = Authenticated)
+    @ResponseBody
+    public ResponseEntity<Void> flushUserCacheStatus() {
+        _cache.clearUserCache(getSessionUser().getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation(value = "Clears the element cache for the specified user.")
     @ApiResponses({@ApiResponse(code = 200, message = "The specified user's cache was properly cleared."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "cache/flush/{username}", method = DELETE, restrictTo = User)
     @ResponseBody
-    public ResponseEntity<Void> flushUserCacheStatus(@ApiParam("Indicates the name of the user whose cache should be flushed. If not provided, this flushes the cache of the current user.") @PathVariable(required = false) final String username) throws InsufficientPrivilegesException {
+    public ResponseEntity<Void> flushUserCacheStatus(@ApiParam("Indicates the name of the user whose cache should be flushed. If not provided, this flushes the cache of the current user.") @PathVariable @Username final String username) throws InsufficientPrivilegesException {
         final UserI user = getSessionUser();
 
-        final String target;
-        if (StringUtils.isNotBlank(username)) {
-            if (!Roles.isSiteAdmin(user) && !StringUtils.equalsIgnoreCase(username, user.getUsername())) {
-                throw new InsufficientPrivilegesException(user.getUsername(), username, "The user " + user.getUsername() + " attempted to clear the element cache for user " + username + ". This requires administrator privileges.");
-            }
-            target = username;
-        } else {
-            target = user.getUsername();
+        if (StringUtils.isNotBlank(username) && !StringUtils.equalsIgnoreCase(username, user.getUsername()) && !Roles.isSiteAdmin(user)) {
+            throw new InsufficientPrivilegesException(user.getUsername(), username, "The user " + user.getUsername() + " attempted to clear the element cache for user " + username + ". This requires administrator privileges.");
         }
 
-        _cache.clearUserCache(target);
+        _cache.clearUserCache(username);
 
         return ResponseEntity.ok().build();
     }

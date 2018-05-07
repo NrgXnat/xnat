@@ -55,8 +55,8 @@ public class Index extends SecureScreen {
             context.put("last_login", lastLogin);
         }
 
-        context.put("proj_count", userHelper.getTotalCounts().get("xnat:projectData"));
-        context.put("sub_count", userHelper.getTotalCounts().get("xnat:subjectData"));
+        context.put("proj_count", XDAT.getTotalCounts().get("xnat:projectData"));
+        context.put("sub_count", XDAT.getTotalCounts().get("xnat:subjectData"));
         context.put("isd_count", PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_imageSessionData", "count", user.getDBName(), user.getUsername()));
     }
 }

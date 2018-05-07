@@ -12,6 +12,7 @@ package org.nrg.xnat.initialization.tasks;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.schema.XFTManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
     @Override
     protected void callImpl() throws InitializingTaskException {
         try {
-            if (!_helper.tableExists("xdat_element_security")) {
+            if (!_helper.tableExists("xdat_element_security") || !XDATServlet.isDatabasePopulateOrUpdateCompleted()) {
                 throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
             }
         } catch (SQLException e) {

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xft.XFTTable;
@@ -73,7 +74,7 @@ public class SearchElementListResource extends SecureResource {
 			removals.clear();
 
 			final UserI user = getUser();
-			final Map<String, Long> counts = getQueryVariable("readable") != null ? UserHelper.getUserHelperService(user).getReadableCounts() : UserHelper.getUserHelperService(user).getTotalCounts();
+			final Map<String, Long> counts = getQueryVariable("readable") != null ? UserHelper.getUserHelperService(user).getReadableCounts() : XDAT.getTotalCounts();
 
 			if(this.getQueryVariable("used")!=null){
 				for(ElementSecurity es: allES.values()){

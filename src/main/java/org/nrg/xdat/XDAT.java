@@ -47,6 +47,7 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -117,6 +118,11 @@ public class XDAT implements Initializable, Configurable{
 	private static Map<String, File> _screenTemplatesFolders = new HashMap<>();
 
 	private String instanceSettingsLocation = null;
+
+	public static Map<String, Long> getTotalCounts() {
+		final GroupsAndPermissionsCache cache = getContextService().getBeanSafely(GroupsAndPermissionsCache.class);
+		return cache != null ? cache.getTotalCounts(): Collections.<String, Long>emptyMap();
+	}
 
     public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
@@ -704,59 +710,65 @@ public class XDAT implements Initializable, Configurable{
      * subscriber does <i>not</i> exist, one is created using the primary administrative user.
      * @param event    The site-wide event to be verified.
      */
-    public static void verifyNotificationType(NotificationType event) {
-        final String adminEmail = getSiteConfigPreferences().getAdminEmail();
-        final Channel channel = getHtmlMailChannel();
-        boolean created = false;
+    public static void verifyNotificationType(final NotificationType event) {
+		final String  adminEmail = getSiteConfigPreferences().getAdminEmail();
+		final Channel channel    = getHtmlMailChannel();
 
-        Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
-        if (category == null) {
-            category = getNotificationService().getCategoryService().newEntity();
-            category.setScope(CategoryScope.Site);
-            category.setEvent(event.toString());
-            getNotificationService().getCategoryService().create(category);
-            created = true;
-        }
+        final Definition definition = getOrCreateDefinition(event);
 
-        Definition definition;
-        List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
-        if (definitions == null || definitions.size() == 0) {
-            definition = getNotificationService().getDefinitionService().newEntity();
-            definition.setCategory(category);
-            getNotificationService().getDefinitionService().create(definition);
-            created = true;
-        } else {
-            definition = definitions.get(0);
-        }
+		final List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
+		if (subscriptions != null && !subscriptions.isEmpty()) {
+			// There are subscribers! Our work here is done.
+			return;
+		}
 
-        // If we created either the category or the definition, obviously there aren't any current subscribers, so we
-        // don't even bother to check. If we *didn't* create the category or the definition, there may be subscribers,
-        // so let's check that.
-        if (!created) {
-            List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
-            if (subscriptions != null && subscriptions.size() > 0) {
-                // There are subscribers! Our work here is done.
-                return;
-            }
-        }
-
-        // If we made it this far, there are no subscribers to the indicated site-wide event, so create a subscriber and
+		// If we made it this far, there are no subscribers to the indicated site-wide event, so create a subscriber and
         // set it to the system administrator.
-        Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(ADMIN_USERNAME_FOR_SUBSCRIPTION);
-        if (subscriber == null) {
-            try {
-                subscriber = getNotificationService().getSubscriberService().createSubscriber(ADMIN_USERNAME_FOR_SUBSCRIPTION, adminEmail);
-            } catch (DuplicateSubscriberException exception) {
-                // This shouldn't happen, since we just checked for the subscriber's existence.
-            }
-        }
-
+		final Subscriber subscriber = getOrCreateSubscriber(adminEmail);
         assert subscriber != null : "Unable to create or retrieve subscriber for the admin user";
 
         // We have an event and subscriber, let's bring them together.
         getNotificationService().subscribe(subscriber, SubscriberType.User, definition, channel);
     }
 
+	private static Definition getOrCreateDefinition(final NotificationType event) {
+		final Category category = getOrCreateCategory(event);
+
+		final List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
+		if (definitions != null && !definitions.isEmpty()) {
+			return definitions.get(0);
+		}
+
+		final Definition definition = getNotificationService().getDefinitionService().newEntity();
+		definition.setCategory(category);
+		getNotificationService().getDefinitionService().create(definition);
+		return definition;
+	}
+
+	private static Category getOrCreateCategory(final NotificationType event) {
+		final Category found = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
+		if (found != null) {
+			return found;
+		}
+		final Category category = getNotificationService().getCategoryService().newEntity();
+		category.setScope(CategoryScope.Site);
+		category.setEvent(event.toString());
+		getNotificationService().getCategoryService().create(category);
+		return category;
+	}
+
+	private static Subscriber getOrCreateSubscriber(final String adminEmail) {
+		final Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(ADMIN_USERNAME_FOR_SUBSCRIPTION);
+		if (subscriber != null) {
+			return subscriber;
+		}
+		try {
+			return getNotificationService().getSubscriberService().createSubscriber(ADMIN_USERNAME_FOR_SUBSCRIPTION, adminEmail);
+		} catch (DuplicateSubscriberException exception) {
+			// This shouldn't happen, since we just checked for the subscriber's existence.
+			return null;
+		}
+	}
 	/**
 	 * This returns a string containing a comma-separated list of all the email addresses subscribing to the given event.
 	 * @param event    The site-wide event to find subscribers for.
@@ -765,38 +777,18 @@ public class XDAT implements Initializable, Configurable{
 		final Channel channel = getHtmlMailChannel();
 		boolean created = false;
 
-		Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
-		if (category == null) {
-			category = getNotificationService().getCategoryService().newEntity();
-			category.setScope(CategoryScope.Site);
-			category.setEvent(event.toString());
-			getNotificationService().getCategoryService().create(category);
-		}
+		final Definition definition = getOrCreateDefinition(event);
 
-		Definition definition;
-		List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
-		if (definitions == null || definitions.size() == 0) {
-			definition = getNotificationService().getDefinitionService().newEntity();
-			definition.setCategory(category);
-			getNotificationService().getDefinitionService().create(definition);
-		} else {
-			definition = definitions.get(0);
-		}
-
-		List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
-		List<String> emails = new ArrayList<>();
-		if (subscriptions != null && subscriptions.size() > 0) {
+		final List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
+		final Set<String> emails = new HashSet<>();
+		if (subscriptions != null && !subscriptions.isEmpty()) {
 			// There are subscribers! Return them.
-			for(Subscription sub : subscriptions){
-				List<String> emailsForSubscriber = sub.getSubscriber().getEmailList();
-
-				//First remove any ones already in there to prevent duplicates
-				emails.removeAll(emailsForSubscriber);
-				emails.addAll(emailsForSubscriber);
+			for(final Subscription subscription : subscriptions){
+				emails.addAll(subscription.getSubscriber().getEmailList());
 			}
 		}
 
-		return StringUtils.join(emails, ',');
+		return StringUtils.join(emails, ", ");
 	}
 
 	/**

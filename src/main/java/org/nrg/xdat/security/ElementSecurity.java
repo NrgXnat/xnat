@@ -13,6 +13,8 @@ package org.nrg.xdat.security;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -98,7 +100,7 @@ public class ElementSecurity extends ItemWrapper {
                 }
             }
         }
-        return elements;
+        return ImmutableMap.copyOf(elements);
     }
 
     /**

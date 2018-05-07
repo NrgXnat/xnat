@@ -1,6 +1,7 @@
 package org.nrg.xdat.services.cache;
 
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
@@ -14,14 +15,6 @@ import static org.nrg.xdat.security.SecurityManager.*;
 public interface GroupsAndPermissionsCache extends XnatCache {
     String       CACHE_NAME = "GroupsAndPermissionsCache";
     List<String> ACTIONS    = Arrays.asList(READ, EDIT, CREATE);
-
-    Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
-
-    Map<String, Long>  getReadableCounts(final UserI user);
-
-    List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
-
-    void clearUserCache(final String username);
 
     interface Listener {
         /**
@@ -66,6 +59,58 @@ public interface GroupsAndPermissionsCache extends XnatCache {
 
         Listener getListener();
     }
+
+    /**
+     * Get the browseable element displays for the indicated user.
+     * 
+     * @param user The user to retrieve browseable element displays for.
+     *             
+     * @return The browseable element displays for the indicated user.
+     */
+    Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
+
+    /**
+     * Get the readable counts for the indicated user.
+     *
+     * @param user The user to retrieve readable counts for.
+     *
+     * @return The readable counts for the indicated user.
+     */
+    Map<String, Long> getReadableCounts(final UserI user);
+
+    /**
+     * Get the action element displays for the indicated user.
+     *
+     * @param user   The user for which to retrieve action element displays.
+     * @param action The action for which to retrieve action element displays.
+     *
+     * @return The action element displays for the indicated user.
+     */
+    List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
+
+    /**
+     * Get the permission criteria for the indicated user.
+     *
+     * @param user     The user for which to retrieve permission criteria.
+     * @param dataType The data type for which to retrieve permission criteria.
+     *
+     * @return The permission criteria for the indicated user.
+     */
+    List<PermissionCriteriaI> getPermissionCriteria(final UserI user, final String dataType);
+
+    /**
+     * Gets the total count of instances of data types in the system.
+     *
+     * @return A map of data types with the number of instances of each data type.
+     */
+    Map<String, Long> getTotalCounts();
+
+    /**
+     * Clears all cache entries for the indicated user.
+     *
+     * @param username The name of the user whose cache should be cleared.
+     */
+    void clearUserCache(final String username);
 
     /**
      * Indicates whether a group with the specified ID is already cached. Note that this doesn't check whether the

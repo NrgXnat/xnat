@@ -33,6 +33,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static org.nrg.xdat.security.PermissionCriteria.ACTIVATE_ELEMENT;
 import static org.nrg.xdat.security.PermissionCriteria.READ_ELEMENT;
 
 /**
@@ -44,8 +45,8 @@ public class ElementAccessManager {
         final List<Map<String, Object>> results = Lists.newArrayList(Iterables.filter(template.queryForList(query, parameters), new Predicate<Map<String, Object>>() {
             @Override
             public boolean apply(@Nullable final Map<String, Object> definition) {
-                // Use having read element as a proxy for not actually being populated properly.
-                return definition != null && definition.get(READ_ELEMENT) != null;
+                // Use having read and active elements as a proxy for not actually being populated properly.
+                return definition != null && definition.get(READ_ELEMENT) != null && definition.get(ACTIVATE_ELEMENT) != null;
             }
         }));
         if (results.isEmpty()) {

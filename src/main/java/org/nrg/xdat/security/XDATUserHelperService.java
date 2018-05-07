@@ -65,11 +65,6 @@ public class XDATUserHelperService extends UserHelperServiceI {
     }
 
     @Override
-    public Map<String, Long> getTotalCounts() {
-        return _user.getTotalCounts();
-    }
-
-    @Override
     public List<ItemI> getCachedItems(final String elementName, final String securityPermission, final boolean preLoad) {
         return _user.getCachedItems(elementName, securityPermission, preLoad);
     }

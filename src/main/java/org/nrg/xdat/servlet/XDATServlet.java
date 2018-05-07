@@ -59,12 +59,17 @@ public class XDATServlet extends HttpServlet {
     private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
 
     private static Boolean _shouldUpdateViews;
+    private static Boolean _isDatabasePopulateOrUpdateCompleted = false;
 
     // TODO: Added in to support CustomClasspathResourceLoader on 1.6.5 migration, needs to be removed and refactored.
     public static String WEBAPP_ROOT;
 
     public static Boolean shouldUpdateViews() {
         return _shouldUpdateViews;
+    }
+
+    public static Boolean isDatabasePopulateOrUpdateCompleted() {
+        return _isDatabasePopulateOrUpdateCompleted;
     }
 
     public void init(ServletConfig config) throws ServletException {
@@ -127,12 +132,11 @@ public class XDATServlet extends HttpServlet {
         if ((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))) {
             final Path generatedSqlLogPath = getGeneratedSqlLogPath();
             if (userCount != null) {
-                final DatabaseUpdater du = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
-
                 //only interested in the required ones here.
                 @SuppressWarnings("unchecked")
                 final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
                 if (!sql.isEmpty()) {
+                    final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
                     _shouldUpdateViews = false;
                     System.out.println("===========================");
                     System.out.println("Database out of date... updating");
@@ -144,8 +148,8 @@ public class XDATServlet extends HttpServlet {
                     // should be done before we continue
                     // the user can't use the site until these are
                     // completed.
-                    du.addStatements(sql);
-                    du.run();// use run to prevent a second thread.
+                    databaseUpdater.addStatements(sql);
+                    databaseUpdater.run();// use run to prevent a second thread.
                     return true;
                 } else {
                     System.out.println("Database up to date.");
@@ -159,6 +163,7 @@ public class XDATServlet extends HttpServlet {
                     //du.addStatements(sql);
                     //du.start();// start in a separate thread
                     _shouldUpdateViews = true;
+                    _isDatabasePopulateOrUpdateCompleted = true;
                     (new DelayedSequenceChecker()).start();//this isn't necessary if we did the du.start();
                     return false;
                 }
@@ -169,10 +174,10 @@ public class XDATServlet extends HttpServlet {
                 System.out.println("===========================");
                 // xdat-user table doesn't exist, assume this is an empty
                 // database
-                final DatabaseUpdater du = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
+                final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
                 final List<String>    sql = SQLCreateGenerator.GetSQLCreate(false);
-                du.addStatements(sql);
-                du.run();// start and wait for it
+                databaseUpdater.addStatements(sql);
+                databaseUpdater.run();// start and wait for it
 
                 System.out.println("===========================");
                 System.out.println("Database initialization complete.");
@@ -181,6 +186,7 @@ public class XDATServlet extends HttpServlet {
             }
         } else {
             _shouldUpdateViews = true;
+            _isDatabasePopulateOrUpdateCompleted = true;
             (new DelayedSequenceChecker()).start();
             return false;
         }
@@ -310,6 +316,7 @@ public class XDATServlet extends HttpServlet {
             } catch (Throwable e) {
                 logger.error("", e);
             }
+            _isDatabasePopulateOrUpdateCompleted = true;
         }
 
         private void rollback(final PoolDBUtils.Transaction transaction) {

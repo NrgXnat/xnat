@@ -65,8 +65,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
-    public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
-        return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(_template, dataType));
+    public List<PermissionCriteriaI> getPermissionsForUser(final UserI user, final String dataType) {
+        return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(dataType));
     }
 
     @Override
@@ -107,60 +107,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
 
         return collection;
-    }
-
-    private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
-        final String rootXmlName = root.getFullXMLName();
-        if (ElementSecurity.IsInSecureElement(rootXmlName)) {
-            return true;
-        } else {
-            final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
-            final String                    username = user.getUsername();
-            if (criteria.size() == 0) {
-                if (!user.isGuest()) {
-                    log.error("{}: No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
-                              new Exception().getStackTrace()[0].toString(),
-                              username,
-                              action,
-                              rootXmlName,
-                              values.toString());
-                }
-                return false;
-            }
-
-            if (log.isInfoEnabled()) {
-                log.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
-            }
-
-            for (final PermissionCriteriaI criterion : criteria) {
-                if (log.isInfoEnabled()) {
-                    log.info(" * Testing against criterion {}", criterion.toString());
-                }
-                if (criterion.canAccess(action, values)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
-                    }
-                    return true;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
-                    }
-                }
-            }
-
-            // If we've reached here, the security check has failed so let's provide some information on the context but
-            // only if this isn't the guest user and the log level is INFO or below...
-            if (!user.isGuest() && log.isInfoEnabled()) {
-                log.info("User {} not able to {} the schema element {} with the security values: {}. {}",
-                         username,
-                         action,
-                         root.getFormattedName(),
-                         values.toString(),
-                         dumpCriteriaList(criteria));
-            }
-        }
-
-        return false;
     }
 
     @Override
@@ -380,8 +326,16 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
-        List<Object> values = getAllowedValues(user, elementName, xmlPath, action);
-        return values != null && values.size() > 0;
+        return !getAllowedValues(user, elementName, xmlPath, action).isEmpty();
+    }
+
+    @Override
+    public boolean canAny(UserI user, String elementName, String action) {
+        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+            return false;
+        }
+        // consider caching, but this should not hit the database on every call anyways.
+        return !getAllowedValues(user, elementName, action).isEmpty();
     }
 
     @Override
@@ -391,8 +345,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         try {
             final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
             if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
-                final CriteriaCollection collection = new CriteriaCollection("OR");
-                for (final PermissionCriteriaI criteria : getPermissionsForUser(user, rootXmlName)) {
+                final List<PermissionCriteriaI> permissions = getPermissionsForUser(user, rootXmlName);
+                for (final PermissionCriteriaI criteria : permissions) {
                     if (criteria.getAction(action) && !allowedValues.contains(criteria.getFieldValue())) {
                         //noinspection unchecked
                         allowedValues.add(criteria.getFieldValue());
@@ -417,13 +371,22 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final Map<String, Object> allowedValues = Maps.newHashMap();
 
         try {
-            final SchemaElement root = SchemaElement.GetElement(elementName);
-
-            if (ElementSecurity.IsSecureElement(root.getFullXMLName(), action)) {
-                final CriteriaCollection collection = new CriteriaCollection("OR");
-                for (final PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+            final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
+            if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
+                final List<PermissionCriteriaI> permissions = getPermissionsForUser(user, rootXmlName);
+                if (log.isInfoEnabled()) {
+                    if (!permissions.isEmpty()) {
+                        log.info("Found {} permissions for user {} to {} data type {}:\n    {}", permissions.size(), user.getUsername(), action, elementName, StringUtils.join(permissions, "\n    "));
+                    } else {
+                        log.info("Found no permissions for user {} to {} data type {}", user.getUsername(), action, elementName);
+                    }
+                }
+                for (final PermissionCriteriaI criteria : permissions) {
                     if (criteria.getAction(action)) {
+                        log.debug("User {} can {} data type {} according to criteria for {} {}", user.getUsername(), action, elementName, criteria.getField(), criteria.getFieldValue());
                         allowedValues.put(criteria.getField(), criteria.getFieldValue());
+                    } else if (log.isDebugEnabled()) {
+                        log.debug("User {} can not {} data type {} according to criteria for {} {}", user.getUsername(), action, elementName, criteria.getField(), criteria.getFieldValue());
                     }
                 }
             }
@@ -432,16 +395,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
 
         return ImmutableMap.copyOf(allowedValues);
-    }
-
-    @Override
-    public boolean canAny(UserI user, String elementName, String action) {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
-            return false;
-        }
-        // consider caching, but this should not hit the database on every call anyways.
-        Map<String, Object> values = getAllowedValues(user, elementName, action);
-        return (values != null && values.size() > 0);
     }
 
     @Override
@@ -479,7 +432,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public String getUserPermissionsSQL(final UserI user) {
-        return String.format(QUERY_USER_PERMISSIONS, user.getUsername());
+        return String.format(QUERY_USER_READABLE_ELEMENTS, user.getUsername());
     }
 
     @Override
@@ -495,6 +448,60 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public List<String> getUserOwnedProjects(final UserI user) {
         return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
+    }
+
+    private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
+        final String rootXmlName = root.getFullXMLName();
+        if (ElementSecurity.IsInSecureElement(rootXmlName)) {
+            return true;
+        } else {
+            final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
+            final String                    username = user.getUsername();
+            if (criteria.size() == 0) {
+                if (!user.isGuest()) {
+                    log.error("{}: No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
+                              new Exception().getStackTrace()[0].toString(),
+                              username,
+                              action,
+                              rootXmlName,
+                              values.toString());
+                }
+                return false;
+            }
+
+            if (log.isInfoEnabled()) {
+                log.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
+            }
+
+            for (final PermissionCriteriaI criterion : criteria) {
+                if (log.isInfoEnabled()) {
+                    log.info(" * Testing against criterion {}", criterion.toString());
+                }
+                if (criterion.canAccess(action, values)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                    }
+                    return true;
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                    }
+                }
+            }
+
+            // If we've reached here, the security check has failed so let's provide some information on the context but
+            // only if this isn't the guest user and the log level is INFO or below...
+            if (!user.isGuest() && log.isInfoEnabled()) {
+                log.info("User {} not able to {} the schema element {} with the security values: {}. {}",
+                         username,
+                         action,
+                         root.getFormattedName(),
+                         values.toString(),
+                         dumpCriteriaList(criteria));
+            }
+        }
+
+        return false;
     }
 
     private boolean setAccessibilityInternal(final boolean triggerEvent, String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
@@ -727,38 +734,38 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final EventMetaI _ci;
     }
 
-    private static final String QUERY_USER_PERMISSIONS  = "SELECT " +
-                                                          "  xea.element_name, " +
-                                                          "  xfm.field, " +
-                                                          "  xfm.field_value " +
-                                                          "FROM xdat_user u " +
-                                                          "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                          "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                          "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                          "WHERE " +
-                                                          "  xfm.field_value != '*' AND " +
-                                                          "  xfm.read_element = 1 AND " +
-                                                          "  u.login IN ('guest', '%s')";
-    private static final String QUERY_USER_PROJECTS     = "SELECT " +
-                                                          "  DISTINCT xfm.field_value AS project " +
-                                                          "FROM xdat_user u " +
-                                                          "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                          "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                          "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                          "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                          "WHERE " +
-                                                          "  xfm.comparison_type = 'equals' AND " +
-                                                          "  xfm.field_value != '*' AND " +
-                                                          "  xea.element_name = 'xnat:projectData' AND " +
-                                                          "  xfm.%s = 1 AND " +
-                                                          "  u.login IN (:usernames) " +
-                                                          "ORDER BY project";
-    private static final String QUERY_OWNED_PROJECTS    = String.format(QUERY_USER_PROJECTS, "delete_element");
-    private static final String QUERY_EDITABLE_PROJECTS = String.format(QUERY_USER_PROJECTS, "edit_element");
-    private static final String QUERY_READABLE_PROJECTS = String.format(QUERY_USER_PROJECTS, "read_element");
+    private static final String QUERY_USER_READABLE_ELEMENTS = "SELECT " +
+                                                               "  xea.element_name, " +
+                                                               "  xfm.field, " +
+                                                               "  xfm.field_value " +
+                                                               "FROM xdat_user u " +
+                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                               "WHERE " +
+                                                               "  xfm.field_value != '*' AND " +
+                                                               "  xfm.read_element = 1 AND " +
+                                                               "  u.login IN ('guest', '%s')";
+    private static final String QUERY_USER_PROJECTS          = "SELECT " +
+                                                               "  DISTINCT xfm.field_value AS project " +
+                                                               "FROM xdat_user u " +
+                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                               "WHERE " +
+                                                               "  xfm.comparison_type = 'equals' AND " +
+                                                               "  xfm.field_value != '*' AND " +
+                                                               "  xea.element_name = 'xnat:projectData' AND " +
+                                                               "  xfm.%s = 1 AND " +
+                                                               "  u.login IN (:usernames) " +
+                                                               "ORDER BY project";
+    private static final String QUERY_OWNED_PROJECTS         = String.format(QUERY_USER_PROJECTS, "delete_element");
+    private static final String QUERY_EDITABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "edit_element");
+    private static final String QUERY_READABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "read_element");
 
     private final NamedParameterJdbcTemplate _template;
     private final NrgEventService            _eventService;

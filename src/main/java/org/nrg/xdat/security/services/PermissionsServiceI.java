@@ -400,6 +400,7 @@ public interface PermissionsServiceI {
      *
      * @return A list of the IDs of the projects that the specified user can read.
      */
+    @SuppressWarnings("unused")
     List<String> getUserReadableProjects(UserI user);
 
     /**
@@ -418,5 +419,6 @@ public interface PermissionsServiceI {
      *
      * @return A list of the IDs of the projects that the specified user owns.
      */
+    @SuppressWarnings("unused")
     List<String> getUserOwnedProjects(UserI user);
 }

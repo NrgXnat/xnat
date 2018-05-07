@@ -130,39 +130,11 @@ var XNAT = getObject(XNAT);
      * Stored Search Display Table *
      * --------------------------- */
 
-    storedSearches.ssTable = function(){
-        // initialize the table;
-        var ssTable = XNAT.table({
-            addClass: 'xnat-table compact',
-            style: {
-                'width': '100%',
-                'margin-top': '15px',
-                'margin-bottom': '15px'
-            }
-        });
+    var ssTable = function(searches){
 
-        // add table header row
-        ssTable.tr()
-            .th({ addClass: 'left' }, '<b>ID</b>')
-            .th('<b>Label</b>')
-            .th('<b>Description</b>')
-            .th('<b>Root Data Type</b>')
-            .th('<b>Users</b>')
-            .th('<b>Actions</b>');
+        // sort search list
+        searches = searches.sort(function(a,b){ return a['id'].toLowerCase().localeCompare(b['id'].toLowerCase()) });
 
-        function parseSearch(xml){
-            var searchXml = (xml.documentElement) ? xml.documentElement : x2js.parseXmlString(xml);
-            return x2js.xml2json(searchXml);
-        }
-
-        function showUserCount(userObj){
-            if (isArray(userObj)) {
-                return userObj.length
-            }
-            else {
-                return (userObj.login.toString().length > 0) ? '1' : '0'
-            }
-        }
         function editLink(id,content){
             content = content || id; 
             return spawn('a',{
@@ -177,50 +149,111 @@ var XNAT = getObject(XNAT);
             }, content);
         }
 
-        storedSearches.getStoredSearches().done(function(data){
-            var searches = data.ResultSet.Result;
-            if (searches.length) {
-                searches.sort(function(a,b){ return (a.id > b.id) ? 1 : -1 })
-                searches.forEach(function(search){
-
-                    storedSearches.getStoredSearch(search.id).done(function(searchData){
-                        var searchJson = parseSearch(searchData);
-
-                        ssTable.tr({ data: { id: search.id }})
-                            .td({ addClass: 'primary-link' }, [ editLink(search.id) ])
-                            .td(escapeHtml( search['brief_description'] ))
-                            .td(escapeHtml( search.description ))
-                            .td(escapeHtml( search['root_element_name'] ))
-                            .td({ addClass: 'right' },[ showUserCount(searchJson['allowed_user']) ])
-                            .td({ addClass: 'center nowrap' },[
-                                editLink(search.id, [ spawn('button.btn2.btn-sm','Edit') ]),
-                                spacer(10),
-                                viewLink(search.id, [ spawn('button.btn2.btn-sm','View') ])
-                            ]);
-                    });
-
-                });
+        return {
+            kind: 'table.dataTable',
+            name: 'adminSSlist',
+            id: 'adminSSlist',
+            data: searches,
+            table: { },
+            trs: function(tr, data){
+                tr.id = "tr-" + data.id;
+                addDataAttrs(tr, { filter: '0', data: data.id })
+            },
+            sortable: 'id, brief_description, description, root_element_name, USERS',
+            items: {
+                id: {
+                    label: 'ID',
+                    filter: false,
+                    apply: function(){
+                        return spawn('b', [ viewLink(this.id, this.id) ])
+                    }
+                },
+                brief_description: {
+                    label: 'Label',
+                    filter: true,
+                    apply: function(){
+                        return escapeHtml(this['brief_description'])
+                    }
+                },
+                description: {
+                    label: 'Description',
+                    filter: true,
+                    apply: function(){
+                        return escapeHtml(this['description'])
+                    }
+                },
+                root_element_name: {
+                    label: 'Root Data Type',
+                    filter: true
+                },
+                USERS: {
+                    label: 'Users',
+                    filter: true,
+                    td: { className: 'right allowed-users' }
+                },
+                ACTIONS: {
+                    label: 'Actions',
+                    td: { className: 'center nowrap' },
+                    apply: function(){
+                        return spawn('!', [
+                            editLink(this.id, [ spawn('button.btn2.btn-sm','Edit') ]),
+                            spacer(10),
+                            viewLink(this.id, [ spawn('button.btn2.btn-sm','View') ])
+                        ])
+                    }
+                }
             }
-            else {
-                ssTable.tr()
-                    .td({colSpan: 5}, 'No stored searches to display');
-            }
-        });
-
-        storedSearches.$table = $(ssTable.table);
-
-        return ssTable.table;
+        }
     };
 
     $(document).on('click','a.popup', function(event){
         event.preventDefault();
         XNAT.dialog.iframe(this.href, 'Edit Stored Search', 900, 600, { onClose: function(){ XNAT.admin.storedSearches.refresh() }});
     });
+
+    function parseSearch(xml){
+        var searchXml = (xml.documentElement) ? xml.documentElement : x2js.parseXmlString(xml);
+        return x2js.xml2json(searchXml);
+    }
+    function showUserCount(userObj){
+        if (isArray(userObj)) {
+            return userObj.length
+        }
+        else {
+            return (userObj.login.toString().length > 0) ? '1' : '0'
+        }
+    }
     
     storedSearches.init = storedSearches.refresh = function(container){
+        var _ssTable;
         container = $(container || '#stored-searches-container');
 
-        container.empty().append(storedSearches.ssTable());
+        storedSearches.getStoredSearches().done(function(data){
+            var searches = data.ResultSet.Result;
+            if (searches.length) {
+
+                _ssTable = XNAT.spawner.spawn({
+                    historyTable: ssTable(searches)
+                });
+                _ssTable.done(function(){
+                    container.empty();
+                    this.render(container);
+
+                    searches.forEach(function(search){
+                        storedSearches.getStoredSearch(search.id).done(function(searchData){
+                            var searchJson = parseSearch(searchData);
+
+                            $(document).find('tr#tr-'+search.id).find('.allowed-users').empty().html( showUserCount(searchJson['allowed_user']) );
+                        })
+                    })
+                });
+
+            }
+            else {
+                return spawn('p', 'No stored searches to display');
+            }
+        });
+
     };
 
     return XNAT.admin.storedSearches = XNAT.storedSearches = storedSearches;

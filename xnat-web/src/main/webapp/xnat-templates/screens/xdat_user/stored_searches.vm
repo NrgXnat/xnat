@@ -50,10 +50,13 @@
                         }, id)}
                     },
                     brief_description: {
-                        label: 'Search Name'
+                        label: 'Search Name',
+                        apply: function() {
+                            return escapeHtml(this['brief_description']);
+                        }
                     },
                     root_element_name: {
-                        label: 'Pivot'
+                        label: 'Root Data Type'
                     }
                 }
             }

@@ -90,6 +90,21 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      * If the history file isn't set, the history won't be recorded, but errors and warnings are still logged in the
      * standard log files.
      *
+     * @param bufferSize The size of the buffer to use when writing files.
+     * @param history    The file where the zip write history should recorded.
+     */
+    public AbstractZipStreamingResponseBody(final int bufferSize, final File history) {
+        this((Path) null, bufferSize, history);
+    }
+
+    /**
+     * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
+     * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
+     * sets the size of the transfer buffer to {@link FileUtils#LARGE_DOWNLOAD}. The history is written as a CSV file
+     * with the zip entry path, full path of the file written to the zip entry, and the total number of bytes written.
+     * If the history file isn't set, the history won't be recorded, but errors and warnings are still logged in the
+     * standard log files.
+     *
      * @param rootPath   The root path for resolving resources.
      * @param bufferSize The size of the buffer to use when writing files.
      * @param history    The file where the zip write history should recorded.
@@ -128,11 +143,11 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
         try (final ZipOutputStream zip = new ZipOutputStream(output)) {
             while (getResourceMap().hasNext()) {
                 final PathResourceMap.Mapping<String, Resource> map  = getResourceMap().next();
-                final String                                    path = _rootPath.resolve(map.getPath()).toString();
+                final String                                    path = _rootPath != null ? _rootPath.resolve(map.getPath()).toString() : map.getPath();
                 final File                                      file = map.getResource().getFile();
                 log.info("Preparing to write zip entry to path {}: {}", path, file.getAbsolutePath());
 
-                final ZipEntry entry = new ZipEntry(path);
+                final ZipEntry entry = new ZipEntry(map.getPath());
                 entry.setTime(file.lastModified());
 
                 long total = 0;

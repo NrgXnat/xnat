@@ -32,7 +32,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
@@ -50,7 +49,8 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Api(description = "XNAT Logging API")
@@ -113,15 +113,17 @@ public class LoggingApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "download", restrictTo = Admin, method = {POST, PUT}, consumes = APPLICATION_JSON_VALUE, produces = MEDIA_TYPE)
     public ResponseEntity<StreamingResponseBody> downloadLogFiles(@RequestBody final Map<String, String> parameters) throws IOException {
-        final String                     pathSpec          = parameters.get("path");
-        final String                     logFileSpec       = parameters.get("logFileSpec");
-        final boolean                    includeEmptyFiles = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBooleanObject(parameters.get("includeEmptyFiles")), false);
-        final Path                       path              = StringUtils.isBlank(pathSpec) ? _xnatHome.resolve("logs") : Paths.get(pathSpec);
-        final FileVisitorPathResourceMap resourceMap       = StringUtils.isBlank(logFileSpec) ? new FileVisitorPathResourceMap(path) : (new FileVisitorPathResourceMap(path, logFileSpec));
+        final String  pathSpec          = parameters.get("path");
+        final String  logFileSpec       = parameters.get("logFileSpec");
+        final boolean includeEmptyFiles = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBooleanObject(parameters.get("includeEmptyFiles")), false);
+
+        final Path                       path        = StringUtils.isBlank(pathSpec) ? _xnatHome.resolve("logs") : Paths.get(pathSpec);
+        final FileVisitorPathResourceMap resourceMap = StringUtils.isBlank(logFileSpec) ? new FileVisitorPathResourceMap(path) : (new FileVisitorPathResourceMap(path, logFileSpec));
         if (includeEmptyFiles) {
             resourceMap.setIncludeEmptyFiles(true);
         }
         resourceMap.process();
+
         log.debug("Processed resource map for requested log file download, found {} files", resourceMap.getFileCount());
         return ResponseEntity.ok()
                              .header(CONTENT_TYPE, MEDIA_TYPE)

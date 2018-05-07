@@ -133,7 +133,7 @@ public class DefaultCatalogService implements CatalogService {
 
                     final CatCatalogBean sessionCatalog = new CatCatalogBean();
                     sessionCatalog.setId(sessionId);
-                    sessionCatalog.setDescription(subject + " " + label);
+                    sessionCatalog.setDescription("Project: " + project + ", subject: " + subject + ", label: " + label);
 
                     final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options);
                     if (sessionsByScanTypesAndFormats != null) {

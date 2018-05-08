@@ -14,13 +14,17 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 @Aspect
 @Component
@@ -99,16 +103,24 @@ public class EventServiceTriggerAspect {
             "&& execution(* save(..))")
     public void triggerOnSessionSave(final JoinPoint joinPoint, XnatImagesessiondata item, UserI user) throws Throwable{
         try {
+            Object[] args = joinPoint.getArgs();
+            Boolean isUpdate = Arrays.stream(args)
+                               .filter(a -> a instanceof EventMetaI)
+                               .allMatch(a -> a instanceof ResourceModifierA.UpdateMeta);
             String userLogin = user != null ? user.getLogin() : null;
 
             log.debug("triggerOnSessionSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
                     "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
                     "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
                     "  UserI = " + userLogin);
-            eventService.triggerEvent(new SessionArchiveEvent(item, userLogin), item.getProject());
-            // Fire scan archive events
-            for (final XnatImagescandataI scan : item.getScans_scan()) {
-                eventService.triggerEvent(new ScanArchiveEvent(scan, userLogin), item.getProject());
+            if(isUpdate == false) {
+                eventService.triggerEvent(new SessionArchiveEvent(item, userLogin), item.getProject());
+                // Fire scan archive events
+                for (final XnatImagescandataI scan : item.getScans_scan()) {
+                    eventService.triggerEvent(new ScanArchiveEvent(scan, userLogin), item.getProject());
+                }
+            } else {
+                eventService.triggerEvent(new SessionUpdateEvent(item, userLogin), item.getProject());
             }
         } catch (Throwable e){
             log.error("Exception processing triggerOnSessionSave" + e.getMessage());

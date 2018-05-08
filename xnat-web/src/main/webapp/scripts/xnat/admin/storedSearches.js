@@ -188,7 +188,7 @@ var XNAT = getObject(XNAT);
                 },
                 USERS: {
                     label: 'Users',
-                    filter: true,
+                    filter: false,
                     td: { className: 'right allowed-users' }
                 },
                 ACTIONS: {
@@ -198,7 +198,7 @@ var XNAT = getObject(XNAT);
                         return spawn('!', [
                             editLink(this.id, [ spawn('button.btn2.btn-sm','Edit') ]),
                             spacer(10),
-                            viewLink(this.id, [ spawn('button.btn2.btn-sm','View') ])
+                            viewLink(this.id, [ spawn('button.btn2.btn-sm.ss-edit-button','View') ])
                         ])
                     }
                 }
@@ -223,6 +223,18 @@ var XNAT = getObject(XNAT);
             return (userObj.login.toString().length > 0) ? '1' : '0'
         }
     }
+    function userCheck(userObj){
+        if (isArray(userObj)) {
+            var allowed = false;
+            userObj.forEach(function(allowedUser){
+                if (window.username === allowedUser.login.toString()) allowed = true
+            });
+            return allowed;
+        }
+        else {
+            return window.username === userObj.login.toString();
+        }
+    }
     
     storedSearches.init = storedSearches.refresh = function(container){
         var _ssTable;
@@ -244,6 +256,10 @@ var XNAT = getObject(XNAT);
                             var searchJson = parseSearch(searchData);
 
                             $(document).find('tr#tr-'+search.id).find('.allowed-users').empty().html( showUserCount(searchJson['allowed_user']) );
+
+                            if (!userCheck(searchJson['allowed_user'])) {
+                                $(document).find('tr#tr-'+search.id).find('.ss-edit-button').prop('disabled','disabled').prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
+                            }
                         })
                     })
                 });

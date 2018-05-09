@@ -132,19 +132,20 @@ var XNAT = getObject(XNAT || {});
         var doWhat = !item ? 'New' : 'Edit';
         var oldPort = item && item.port ? item.port : null;
         var oldTitle = item && item.aeTitle ? item.aeTitle : null;
-        var modalDimensions = (Object.keys(dicomScpManager.identifiers).length > 1) ? { height: '320', width: '600'} : { height: '250', width: '350' };
+        var modalDimensions = (Object.keys(dicomScpManager.identifiers).length > 1) ? { height: '320', width: '600'} : { height: '250', width: '450' };
         isNew = firstDefined(isNew, doWhat === 'New');
         console.log(isNew);
         item = item || {};
         xmodal.open({
             title: doWhat + ' DICOM SCP Receiver',
-            template: tmpl.clone(),
+            template: tmpl.clone(true),
+            // content: tmpl.html(),
             width: modalDimensions.width,
             height: modalDimensions.height,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
-                var $form = obj.$modal.find('#dicom-scp-editor-panel');
+                var $form = obj.$modal.find('form');
                 var identifiers = dicomScpManager.identifiers;
                 var identifier_ids = Object.keys(identifiers);
                 if (identifier_ids.length > 1) {
@@ -161,6 +162,7 @@ var XNAT = getObject(XNAT || {});
                     });
                 }
                 if (item && isDefined(item.id)) {
+                    item.enabled = item.enabled + '';
                     $form.setValues(item);
                 }
             },
@@ -168,7 +170,7 @@ var XNAT = getObject(XNAT || {});
             okLabel: 'Save',
             okAction: function(obj){
                 // the form panel is 'dicomScpEditorTemplate' in site-admin-element.yaml
-                var $form = obj.$modal.find('#dicom-scp-editor-panel');
+                var $form = obj.$modal.find('form');
                 var $title = $form.find('#scp-title');
                 var $port = $form.find('#scp-port');
                 console.log(item.id);
@@ -296,7 +298,10 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm.edit', {
                 onclick: function(e){
                     e.preventDefault();
-                    dicomScpManager.dialog(item, false);
+                    dicomScpManager.getReceiver(item.id, function(receiver){
+                        item = receiver;
+                        dicomScpManager.dialog(receiver, false);
+                    })
                 }
             }, 'Edit');
         }

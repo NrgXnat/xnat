@@ -622,7 +622,7 @@ public class ElementSecurity extends ItemWrapper {
      * @return Returns whether the element is searchable.
      */
     public boolean isSearchable() {
-        return testIntegerPropertyForBoolean("search", false);
+        return testIntegerPropertyForBoolean("searchable", false);
     }
 
     /**

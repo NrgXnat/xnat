@@ -751,6 +751,11 @@ var XNAT = getObject(XNAT);
             return this;
         }
 
+        if (/^matches$/i.test(type)) {
+            this.matches(args);
+            return this;
+        }
+
         // start with '!' for negation
         // !eq:0
         if (/^![^!]/.test(type)){

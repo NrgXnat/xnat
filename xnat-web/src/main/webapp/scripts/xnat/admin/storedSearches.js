@@ -198,7 +198,7 @@ var XNAT = getObject(XNAT);
                         return spawn('!', [
                             editLink(this.id, [ spawn('button.btn2.btn-sm','Edit') ]),
                             spacer(10),
-                            viewLink(this.id, [ spawn('button.btn2.btn-sm.ss-edit-button','View') ])
+                            viewLink(this.id, [ spawn('button.btn2.btn-sm.ss-view-button','View') ])
                         ])
                     }
                 }
@@ -258,9 +258,10 @@ var XNAT = getObject(XNAT);
                             $(document).find('tr#tr-'+search.id).find('.allowed-users').empty().html( showUserCount(searchJson['allowed_user']) );
 
                             if (!userCheck(searchJson['allowed_user'])) {
-                                var linkToDisable = $(document).find('tr#tr-'+search.id).find('.ss-edit-button')
-                                linkToDisable.prop('disabled','disabled').prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
-                                $(document).off('click',linkToDisable);
+                                var linkToDisable = $(document).find('tr#tr-'+search.id).find('.ss-view-button')
+                                linkToDisable.parents('a').prop('href','#!');
+                                linkToDisable.prop('disabled','disabled')
+                                    .prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
                             }
                         })
                     })

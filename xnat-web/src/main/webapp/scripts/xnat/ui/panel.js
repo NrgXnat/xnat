@@ -1205,7 +1205,7 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts).get();
     };
 
-    panel.input.list = panel.input.arrayList = function(opts){
+    panel.input.list = panel.input.textList = panel.input.arrayList = function(opts){
         opts = cloneObject(opts);
         opts.data = getObject(opts.data);
         addClassName(opts, 'array-list');

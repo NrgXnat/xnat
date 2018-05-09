@@ -49,6 +49,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.xml.sax.InputSource;
 
 import javax.servlet.http.HttpServletRequest;
@@ -140,6 +141,102 @@ public class TurbineUtils {
     @SuppressWarnings("unused")
     public boolean loginRequired() {
         return XDAT.getSiteConfigPreferences().getRequireLogin();
+    }
+
+    /**
+     * Gets a bean with the indicated name. If no bean with that name is found, this method throws {@link
+     * NoSuchBeanDefinitionException}.
+     *
+     * @param name The name of the bean to be retrieved.
+     *
+     * @return An object from the context.
+     *
+     * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
+     */
+    public Object getBean(final String name) throws NoSuchBeanDefinitionException {
+        return XDAT.getContextService().getBean(name);
+    }
+
+    /**
+     * Gets a bean of the indicated type. If no bean of that type is found, this method throws {@link
+     * NoSuchBeanDefinitionException}.
+     *
+     * @param <T>  The type of the bean to be retrieved.
+     * @param type The class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     *
+     * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
+     */
+    public <T> T getBean(final Class<T> type) throws NoSuchBeanDefinitionException {
+        return XDAT.getContextService().getBean(type);
+    }
+
+    /**
+     * Gets a bean of the indicated type. If no bean of that type is found, null is returned.
+     *
+     * @param <T>  The type of the bean to be retrieved.
+     * @param type The class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     */
+    @SuppressWarnings("unused")
+    public <T> T getBeanSafely(final Class<T> type) {
+        try {
+            return getBean(type);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            // This is OK, just means the bean doesn't exist in the current context. Carry on.
+        }
+        // If we didn't find a valid bean of the type, return null.
+        return null;
+    }
+
+    /**
+     * Gets the bean with the indicated name and type.
+     *
+     * @param <T>  The type of the bean to be retrieved.
+     * @param name The name of the bean to be retrieved.
+     * @param type The class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     *
+     * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
+     */
+    public <T> T getBean(final String name, final Class<T> type) throws NoSuchBeanDefinitionException {
+        return XDAT.getContextService().getBean(name, type);
+    }
+
+    /**
+     * Gets the bean with the indicated name and type. If no bean with that name and type is found, null is returned.
+     *
+     * @param <T>  The type of the bean to be retrieved.
+     * @param name The name of the bean to be retrieved.
+     * @param type The class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     */
+    @SuppressWarnings("unused")
+    public <T> T getBeanSafely(final String name, final Class<T> type) {
+        try {
+            return getBean(name, type);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            // This is OK, just means the bean doesn't exist in the current context. Carry on.
+        }
+        // If we didn't find a valid bean of the type, return null.
+        return null;
+    }
+
+    /**
+     * Gets all beans with the indicated type.
+     *
+     * @param type The class of the bean to be retrieved.
+     * @param <T>  The parameterized class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     */
+    @SuppressWarnings("unused")
+    public <T> Map<String, T> getBeansOfType(final Class<T> type) {
+        return XDAT.getContextService().getBeansOfType(type);
     }
 
     @SuppressWarnings("unused")

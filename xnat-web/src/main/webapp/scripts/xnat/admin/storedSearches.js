@@ -165,7 +165,7 @@ var XNAT = getObject(XNAT);
                     label: 'ID',
                     filter: false,
                     apply: function(){
-                        return spawn('b', [ viewLink(this.id, this.id) ])
+                        return spawn('b', [ editLink(this.id, this.id) ])
                     }
                 },
                 brief_description: {
@@ -258,7 +258,9 @@ var XNAT = getObject(XNAT);
                             $(document).find('tr#tr-'+search.id).find('.allowed-users').empty().html( showUserCount(searchJson['allowed_user']) );
 
                             if (!userCheck(searchJson['allowed_user'])) {
-                                $(document).find('tr#tr-'+search.id).find('.ss-edit-button').prop('disabled','disabled').prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
+                                var linkToDisable = $(document).find('tr#tr-'+search.id).find('.ss-edit-button')
+                                linkToDisable.prop('disabled','disabled').prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
+                                $(document).off('click',linkToDisable);
                             }
                         })
                     })

@@ -350,7 +350,7 @@ generalSecuritySettings:
                         http: http
                         https: https
         enabledProviders:
-            kind: panel.input.text
+            kind: panel.input.textList
             label: Enabled Authentication Providers
             description: >
                 Specifies the authentication providers that are currently enabled on the XNAT server.

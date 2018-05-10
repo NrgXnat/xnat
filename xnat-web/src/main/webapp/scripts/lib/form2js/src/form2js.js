@@ -257,7 +257,8 @@
 
     function extractNodeValues(node, nodeCallback, useAttribute, getDisabled){
         if (node.disabled && !getDisabled) return [];
-
+        // only process HTML nodes - ideally only form controls
+        if (!(node instanceof HTMLElement)) return [];
         var callbackResult, fieldValue, arrayDelim, result;
         var parsedFieldName = getFieldName(node, useAttribute);
         var fieldName = parsedFieldName.name;

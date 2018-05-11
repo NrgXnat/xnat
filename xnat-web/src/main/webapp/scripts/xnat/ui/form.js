@@ -43,6 +43,12 @@ var XNAT = getObject(XNAT);
     }
 
 
+    function isForm(el){
+        var $el = $$(el);
+        var el0 = $el[0];
+        return el0.nodeName ? /form/i.test(el0.nodeName) : false;
+    }
+
 
     function isButton(el){
         return '' ||
@@ -202,8 +208,8 @@ var XNAT = getObject(XNAT);
         forEach(inputs, function(input, i){
             var name =
                     input.name ||
-                    input.title.split(':')[0].trim() ||
                     input.getAttribute['data-name'] ||
+                    input.title.split(':')[0].trim() ||
                     input.id;
             if (name) {
                 obj[name] = (isPlainObject(data)) ? data[name] || '' : data;
@@ -218,7 +224,7 @@ var XNAT = getObject(XNAT);
 
     /**
      * Set values for inputs/form(s) with [values]
-     * @param inputs {HTMLFormElement|Array}
+     * @param inputs {HTMLFormElement|HTMLCollection|Array|jQuery|*}
      * @param values {Object|String} - data object or 'parseable' string
      * @param [count] {Number} - hack to prevent infinite recursion
      */
@@ -287,8 +293,8 @@ var XNAT = getObject(XNAT);
 
     /**
      * Setup constructor for XNAT.form()
-     * @param formElement {HTMLFormElement|Array|String}
-     * @constructor
+     * @param formElement {*}
+     * @constructor Form
      */
     function Form(formElement){
 
@@ -493,6 +499,7 @@ var XNAT = getObject(XNAT);
         forOwn(this.formElement, function(name, el){
             obj[name] = el.value || '';
         });
+        this.values = obj;
         return obj;
     };
 
@@ -564,7 +571,7 @@ var XNAT = getObject(XNAT);
      * @param formElement
      * @returns {Form}
      */
-    form = function _form(formElement){
+    form = function XNATform(formElement){
         var newForm = new Form(formElement);
         if (formElement) {
             return newForm.getElements();
@@ -574,10 +581,105 @@ var XNAT = getObject(XNAT);
 
 
 
+    /**
+     * Return values from form fields as an object
+     * @param {*} inputs - form element or input element(s)
+     * @returns {*}
+     */
+    function getValues(inputs){
+
+        var $inputs = $$(inputs);
+        var form0;
+
+        if (!$inputs.length) return;
+
+        // [inputs] is a <form> element - this is ideal
+        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
+            form0 = $inputs[0];
+        }
+        // but [inputs] could be a collection of form inputs...
+        else {
+            // in which case, create a temporary <form> element
+            // and make duplicate elements to parse the values
+            // this focuses processing on needed elements
+            form0 = document.createElement('form');
+            forEach($inputs, function(input, i){
+                form0.appendChild(input.cloneNode(true))
+            });
+        }
+
+        // give the form a random id if there's no id value
+        form0.id = form0.id || randomID('form', false);
+
+        // name the form with the camelCase version of the id
+        // if no name value is assigned
+        form0.name = form0.name || toCamelCase(form0.id);
+
+        // form2js() does the heavy lifting
+        var values = form2js(form0);
+
+        // include the form element in the returned object
+        // (don't do that, it's a bad idea)
+        // values[0] = form0;
+
+        return values;
+
+    }
+
+    // XNAT.form.getValues('#foo-form');
+    form.getValues = getValues;
+
+    // $.getValues('#foo-form')
+    $.getValues = getValues;
+
+    // $('#foo-form').getValues();
+    $.fn.getValues = function(callback){
+        var values = getValues(this);
+        if (typeof callback === 'function') {
+            callback.call(this, values);
+        }
+        return values;
+    };
+
+
+    /**
+     * Return the value of a single input element
+     * If more than one input is passed, the name
+     * of the first element will be used for the key
+     * @param input
+     */
+    function getValue(input){
+        var $input = $$(input);
+        var input0 = $input[0];
+        var name = input0.name || input0.id || input0.title;
+        // gotta have a name
+        if (!name) return;
+        var values = getValues($input);
+        return values[name];
+    }
+
+    form.getValue = getValue;
+
+    $.fn.getValue = function(callback){
+        var value = getValue(this);
+        if (typeof callback === 'function') {
+            callback.call(this, value);
+        }
+        return value;
+    };
+
     // expose as static methods on XNAT.form
     form.setValue = setValue;
     form.setValues = setValues;
 
+    // make globally accessible through $
+    $.setValues = setValues;
+
+    // jQuery instance method to set values of selected form/inputs
+    $.fn.setValues = function(data, opts){
+        setValues(this, data, opts);
+        return this;
+    };
 
 
     /**
@@ -587,7 +689,7 @@ var XNAT = getObject(XNAT);
      * @param [inputs] {Array} - spawn() content array for child elements
      * @param [obj] {Object} - object map with values for form elements
      */
-    form.init = form.spawn = function _spawn(opts, inputs, obj){
+    form.init = form.spawn = function formSpawn(opts, inputs, obj){
         var spawnedForm = spawn('form', opts, [].concat(inputs));
         var newForm = new Form(spawnedForm);
         if (obj !== undef) {

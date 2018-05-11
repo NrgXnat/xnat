@@ -23,7 +23,7 @@ var XNAT = getObject(XNAT||{}),
 
     var xhr, url,
         root = this,
-        undefined;
+        undefined, undef;
 
     XNAT.xhr = xhr = getObject(XNAT.xhr||{});
     XNAT.url = url = getObject(XNAT.url||{});
@@ -374,7 +374,9 @@ var XNAT = getObject(XNAT||{}),
         'getXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
         'getText' : { method: 'GET', dataType: 'text', format: 'text' },
         'putJSON' : { method: 'PUT', contentType: 'application/json', processData: false },
-        'postJSON' : { method: 'POST', contentType: 'application/json', processData: false }
+        'postJSON' : { method: 'POST', contentType: 'application/json', processData: false },
+        'putXML' : { method: 'PUT', contentType: 'text/xml', processData: false },
+        'postXML' : { method: 'POST', contentType: 'text/xml', processData: false }
     };
 
     xhr.shorthands._delete = xhr.shorthands.delete_ = xhr.shorthands['delete'];
@@ -390,6 +392,8 @@ var XNAT = getObject(XNAT||{}),
     // XNAT.xhr.getText()
     // XNAT.xhr.putJSON()
     // XNAT.xhr.postJSON()
+    // XNAT.xhr.putXML()
+    // XNAT.xhr.postXML()
     // >>>
     forOwn(xhr.shorthands, function(type, opts){
         xhr[type] = function(/* url, data/null, opts_or_callback, callback */){
@@ -400,7 +404,7 @@ var XNAT = getObject(XNAT||{}),
 
     // only do JSON.stringify on Arrays or Objects
     function safeStringify(val){
-        if ($.isArray(val) || $.isPlainObject(val)) {
+        if (isArray(val) || isPlainObject(val)) {
             return JSON.stringify(val);
         }
         return ''+val;
@@ -475,7 +479,9 @@ var XNAT = getObject(XNAT||{}),
     xhr.formToJSON = formToJSON;
 
     $.fn.formToJSON = $.fn.toJSON = function(stringify){
-        return formToJSON(this, stringify);
+        var json = this.getValues();
+        return stringify ? JSON.stringify(json) : json;
+        // return formToJSON(this, stringify);
     };
 
     // helper function to fire $.fn.changeVal() if available
@@ -490,195 +496,6 @@ var XNAT = getObject(XNAT||{}),
         return $el;
     }
 
-    // set form element values from an object map
-    // 'inputs' can be a form element, selector, or array of inputs
-    function setValues(inputs, dataObj, opts){
-
-        // cache and check if form exists
-        var $inputs = $$(inputs),
-            values = getObject(dataObj);
-
-        if (!$inputs.length) return;
-
-        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
-            $inputs = $inputs.find(':input');
-        }
-
-        // apply values to each input
-        $inputs.not('button').each(function(){
-
-            var $this = $(this),
-                // dataObj *could* be a string - in that case use window
-                rootObj = isString(dataObj) ? (window[dataObj] || window) : dataObj,
-                lookupRegex = /^((\$\?|\?\?|!\?)(:|=|\|)?\s*)/,
-                name = this.name || this.title,
-                val;
-
-            // if there's a pre-existing value that starts with
-            // a special string, use that as the name
-            // - $? - lookup value via ajax
-            // - ?? - lookup value from a global var/object
-            // - !? - do a js eval to get the value
-            if (lookupRegex.test(this.value)) {
-                name = this.value.replace(lookupRegex, '');
-            }
-
-            if (!name) {
-                return;
-            }
-
-            val = lookupObjectValue(rootObj, name);
-
-            // add the value to the returned 'values' object
-            values[name] = val;
-
-            // don't set values of inputs with EXISTING
-            // values that start with "@?"
-            // -- those get parsed on submission
-            if (!val && this.value && /^(@\?)/.test(this.value)) {
-                return;
-            }
-
-            if (Array.isArray(val)) {
-                val = val.join(', ');
-                $this.addClass('array-list')
-            }
-            else {
-                val = stringable(val) ? val+'' : JSON.stringify(val);
-            }
-
-            //if (val === "") return;
-
-            if (/checkbox/i.test(this.type)) {
-                val = realValue(val);
-                // allow values other than 'true' or 'false'
-                this.checked = (this.value && val && isEqual(this.value, val)) ? true : val;
-                if (this.value === '') {
-                    this.value = val;
-                }
-                //changeValue($this, val);
-            }
-            else if (/radio/i.test(this.type)) {
-                this.checked = isEqual(this.value, val);
-                if (this.checked) {
-                    $this.trigger('change');
-                }
-            }
-            else if (this.multiple) {
-                if (stringable(val)) {
-                    val = (val+'').split(/\s*,\s*/);
-                }
-                if (Array.isArray(val)) {
-                    forEach(this.options, function(menuOption){
-                        if (val.indexOf(menuOption.value) > -1){
-                            menuOption.selected = true;
-                        }
-                    });
-                }
-            }
-            else {
-                changeValue($this, val);
-            }
-
-            if (!/textarea/i.test(this.tagName) && !/password|radio/i.test(this.type)) {
-                $this.dataAttr('value', val);
-            }
-
-            $this.removeClass('dirty').addClass('ready')
-                    .off('change.setValues')
-                    .on('change.setValues', function(){
-                        $(this).addClass('dirty');
-                    });
-
-        });
-
-        // XNAT.data =
-        //         getObject(XNAT.data||{});
-        //
-        // XNAT.data.forms =
-        //         getObject(XNAT.data.forms||{});
-        //
-        // // save data for future reference
-        // // ???
-        // XNAT.data.forms[formName] = values;
-
-        // probably more useful to return
-        // the values that were just set
-        return values;
-
-        //return $inputs;
-    }
-
-    // make globally accessible through $
-    $.setValues = setValues;
-
-    // this could be a handy jQuery method
-    $.fn.setValues = function(dataObj, opts){
-        setValues(this, dataObj, opts);
-        return this;
-    };
-
-    // return values of named form elements
-    // as an object using element 'name' attributes
-    // as the object property names
-    function getValues(inputs){
-
-        var $inputs = $$(inputs),
-            values = {},
-            $form, _form;
-
-        if (!$inputs.length) return;
-
-        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
-            $inputs = $inputs.find(':input');
-        }
-
-        $form = $($inputs[0]).closest('form');
-        _form = $form[0];
-        _form.id = _form.id || randomID('form_', false);
-        _form.name = _form.name || toCamelCase(_form.id);
-
-        $inputs.not('button').each(function(){
-
-            var $this = $(this),
-                name = this.name || this.id || this.title,
-                val = realValue($this.val()||'');
-
-            // make sure 'name' is camelCase
-            name = toCamelCase(name);
-
-            if (/checkbox/i.test(this.type)) {
-                values[name] = val || this.checked;
-            }
-            else if (/radio/i.test(this.type)) {
-                // only get the value of the 'checked' radio button
-                if (this.checked) {
-                    values[name] = val || this.checked;
-                }
-            }
-            else {
-                values[name] = val;
-            }
-
-        });
-
-        values[0] = _form;
-
-        return values;
-
-    }
-
-    // make globally accessible through $
-    $.getValues = getValues;
-
-    // get values of selected form elements
-    $.fn.getValues = function(callback){
-        var values = getValues(this);
-        if (typeof callback === 'function') {
-            callback.call(this, values);
-        }
-        return values;
-    };
 
     // accept either a form element or array (or collection)
     // of input elements for the 'inputs' argument
@@ -841,8 +658,7 @@ var XNAT = getObject(XNAT||{}),
         else if (/GET/i.test(opts.method)){
             opts.success = function(data){
                 callback.apply($form, arguments);
-                // DON'T TRUST RETURNED DATA
-                setValues($form, data);
+                $form.setValues(data);
             };
         }
 

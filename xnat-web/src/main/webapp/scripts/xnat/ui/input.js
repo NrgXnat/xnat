@@ -868,10 +868,9 @@ var XNAT = getObject(XNAT);
         };
 
     };
-    XNAT.ui.textarea = input.textarea;
 
     // add 'array-list' class to textarea.list elements
-    input.textarea.list = XNAT.ui.textarea.list = function(opts){
+    input.textarea.list = function(opts){
         opts = cloneObject(opts);
         opts.element = opts.element || {};
         opts.element.data = opts.element.data || {};
@@ -884,6 +883,9 @@ var XNAT = getObject(XNAT);
         addDataObjects(opts.element, { delim: delim });
         return input.textarea(opts);
     };
+
+    // alias to XNAT.ui.textarea
+    XNAT.ui.textarea = input.textarea;
 
     // after the page is finished loading, set empty
     // input values from [data-lookup] attribute

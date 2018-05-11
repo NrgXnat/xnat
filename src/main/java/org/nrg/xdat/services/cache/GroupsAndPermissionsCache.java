@@ -171,14 +171,14 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException;
 
     /**
-     * Returns the timestamp indicating when the specified group was last updated. If the group was only
+     * Returns the timestamp indicating when the specified cache entry was last updated. If the entry was only
      * inserted and not updated, the insert time is returned.
      *
-     * @param groupId The ID of the group to check.
+     * @param cacheId The ID of the cache entry to check.
      *
-     * @return The date and time of the latest update to the specified group.
+     * @return The date and time of the latest update to the specified cache entry.
      */
-    Date getGroupLastUpdateTime(final String groupId);
+    Date getCacheEntryLastUpdateTime(final String cacheId);
 
     /**
      * Returns the timestamp for the most recently updated group associated with the indicated user.

@@ -96,20 +96,20 @@ var XNAT = getObject(XNAT);
     userData.setValue('accessDisplays', userData.data.accessDisplays || {});
 
     // initialize the 'loading' dialog...
-    var cacheLoadingMessage = XNAT.dialog.init({
-        width: 300,
-        // title: 'Please wait...',
-        header: false,
-        padding: 0,
-        top: '80px',
-        footer: false,
-        mask: false,
-        content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>'
-    });
+    // var cacheLoadingMessage = XNAT.dialog.init({
+    //     width: 300,
+    //     // title: 'Please wait...',
+    //     header: false,
+    //     padding: 0,
+    //     top: '80px',
+    //     footer: false,
+    //     mask: false,
+    //     content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>'
+    // });
     // ...and open it (maybe)
-    window.setTimeout(function(){
-        cacheLoadingMessage.open();
-    }, 300);
+    // window.setTimeout(function(){
+    //     cacheLoadingMessage.open();
+    // }, 300);
 
     dataTypeAccess.reqCount = 0;
 
@@ -162,8 +162,8 @@ var XNAT = getObject(XNAT);
         return {
             ready: function(success, failure){
                 if (getFreshData) {
-                    getElementDisplays.done(success);
-                    getElementDisplays.fail(failure);
+                    getElementDisplays.done(success || diddly);
+                    getElementDisplays.fail(failure || diddly);
                 }
                 else {
                     dataTypeAccess.reqCount++;
@@ -185,7 +185,7 @@ var XNAT = getObject(XNAT);
     };
 
     // only load data types on non-login-type pages
-    if (!window.isLoginPage) {
+    if (!window.isLoginPage && !/(Login\.vm|Register\.vm|VerifyEmail\.vm|XDATRegisterUser)/.test(window.location.href)) {
         // this will be called for each item in the 'displays' array
         forEach(dataTypeAccess.displays, function(type, i){
             dataTypeAccess.getElements[type] = dataTypeAccess.getElements[type] || dataTypeAccess.getElements(type).ready(function(){
@@ -201,13 +201,13 @@ var XNAT = getObject(XNAT);
                         function(){
                             console.log('ALL LOADED');
                             if (getFreshData) {
-                                cacheLoadingMessage.destroy();
+                                // cacheLoadingMessage.destroy();
                                 // window.setTimeout(function(){
                                 //     window.location.reload(true);
                                 // }, 500);
                             }
                             else {
-                                cacheLoadingMessage.destroy();
+                                // cacheLoadingMessage.destroy();
                             }
                         }
                     );

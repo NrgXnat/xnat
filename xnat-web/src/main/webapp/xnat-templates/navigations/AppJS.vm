@@ -95,7 +95,7 @@
         window.available_elements = [];
         window.browseableElements = {};
 
-        if (!window.isLoginPage) {
+        if (!window.isLoginPage && !/(Login\.vm|Register\.vm|VerifyEmail\.vm|XDATRegisterUser)/.test(window.location.href)) {
             console.log('getBrowseableElements');
             XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(elements){
                 var sortedElements = sortObjects(elements, 'plural');

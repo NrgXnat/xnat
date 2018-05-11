@@ -216,12 +216,26 @@ var XNAT = getObject(XNAT);
         return x2js.xml2json(searchXml);
     }
     function showUserCount(userObj){
+        // HACK: force numeric sorting by generating hidden values with leading zeros
+        var leadingZeros = [0,0,0,0,0,0];
+        var numToDisplay, numString;
+
         if (isArray(userObj)) {
-            return userObj.length
+            numToDisplay = userObj.length.toString();
+            leadingZeros = leadingZeros.slice(numToDisplay.length-1,leadingZeros.length);
+            leadingZeros.push(numToDisplay);
+            numString = leadingZeros.join('');
         }
         else {
-            return (userObj.login.toString().length > 0) ? '1' : '0'
+            numToDisplay = (userObj.login.toString().length > 0) ? '1' : '0';
+            leadingZeros.push(numToDisplay);
+            numString = leadingZeros.join('');
         }
+
+        return spawn('!',[
+            spawn('i.hidden.sorting',numString),
+            spawn('span',numToDisplay)
+        ]);
     }
     function userCheck(userObj){
         if (isArray(userObj)) {

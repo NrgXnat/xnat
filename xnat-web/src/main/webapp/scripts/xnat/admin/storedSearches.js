@@ -216,24 +216,18 @@ var XNAT = getObject(XNAT);
         return x2js.xml2json(searchXml);
     }
     function showUserCount(userObj){
-        // HACK: force numeric sorting by generating hidden values with leading zeros
-        var leadingZeros = [0,0,0,0,0,0];
-        var numToDisplay, numString;
+        var numToDisplay;
 
         if (isArray(userObj)) {
             numToDisplay = userObj.length.toString();
-            leadingZeros = leadingZeros.slice(numToDisplay.length-1,leadingZeros.length);
-            leadingZeros.push(numToDisplay);
-            numString = leadingZeros.join('');
         }
         else {
             numToDisplay = (userObj.login.toString().length > 0) ? '1' : '0';
-            leadingZeros.push(numToDisplay);
-            numString = leadingZeros.join('');
         }
 
         return spawn('!',[
-            spawn('i.hidden.sorting',numString),
+            // HACK: force numeric sorting by generating hidden values with leading zeros
+            spawn('i.hidden.sorting',zeroPad(numToDisplay,6,'0')),
             spawn('span',numToDisplay)
         ]);
     }

@@ -63,7 +63,7 @@ var XNAT = getObject(XNAT);
     var userData = XNAT.storage.userData;
 
     // retrieve the *stored* value for last modified for comparison
-    var modifiedValue = userData.getValue('accessDisplaysModified');
+    var modifiedValue = userData.data['accessDisplaysModified'];
 
     // if there's no currently stored 'modified' value...
     // ...or if the stored value is different than the current value...

@@ -63,16 +63,12 @@
 
                         <c:if test="${not empty plugins}">
                             XNAT.xapi.plugins = ${plugins};
-                            XNAT.data['/xapi/plugins'] =
-                                XNAT.data['${SITE_ROOT}/xapi/plugins'] =
-                                    XNAT.xapi.plugins;
+                            XNAT.data['/xapi/plugins'] = XNAT.xapi.plugins;
                         </c:if>
 
                         <c:if test="${not empty spawnerNamespaces}">
                             XNAT.xapi.spawnerNamespaces = ${spawnerNamespaces};
-                            XNAT.data['/xapi/spawner/namespaces'] =
-                                XNAT.data['${SITE_ROOT}/xapi/spawner/namespaces'] =
-                                    XNAT.xapi.spawnerNamespaces;
+                            XNAT.data['/xapi/spawner/namespaces'] = XNAT.xapi.spawnerNamespaces;
                         </c:if>
 
                         XNAT.data = extend(true, {

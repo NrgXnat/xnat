@@ -29,9 +29,7 @@
 
             <c:if test="${not empty userProfiles}">
             XNAT.xapi.users.profiles = ${userProfiles};
-            XNAT.data['/xapi/users/profiles'] =
-                XNAT.data['${SITE_ROOT}/xapi/users/profiles'] =
-                    XNAT.xapi.users.profiles;
+            XNAT.data['/xapi/users/profiles'] = XNAT.xapi.users.profiles;
             </c:if>
 
             <c:if test="${not empty activeUsers}">
@@ -46,9 +44,7 @@
 
             <c:if test="${not empty siteConfig}">
             XNAT.data.siteConfig = ${siteConfig};
-            XNAT.data['/xapi/siteConfig'] =
-                XNAT.data['${SITE_ROOT}/xapi/siteConfig'] =
-                    XNAT.data.siteConfig;
+            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
             </c:if>
 
             // these properties MUST be set before spawning 'tabs' widgets

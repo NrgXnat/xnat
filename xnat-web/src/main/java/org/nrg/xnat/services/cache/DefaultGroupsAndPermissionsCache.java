@@ -11,6 +11,7 @@ package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
@@ -415,12 +416,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return StringUtils.isNotBlank(groupId) ? get(groupId) : null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Date getGroupLastUpdateTime(final String groupId) {
-        if (!has(groupId)) {
+    public Date getCacheEntryLastUpdateTime(final String cacheId) {
+        if (!has(cacheId)) {
             return null;
         }
-        return new Date(getLatestOfCreationAndUpdateTime(groupId));
+        return new Date(getLatestOfCreationAndUpdateTime(cacheId));
     }
 
     @Override
@@ -431,17 +435,23 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public Date getUserLastUpdateTime(final String username) {
         try {
-            final List<String> groupIds  = getGroupIdsForUser(username);
-            long               timestamp = 0;
-            for (final String groupId : groupIds) {
-                final Date lastUpdateTime = getGroupLastUpdateTime(groupId);
-                if (lastUpdateTime != null) {
-                    timestamp = Math.max(timestamp, lastUpdateTime.getTime());
-                }
+            final List<String> cacheIds = getGroupIdsForUser(username);
+            cacheIds.addAll(getCacheIdsForUsername(username));
+            if (log.isDebugEnabled()) {
+                log.debug("Found {} cache entries related to user {}: {}", cacheIds.size(), username, StringUtils.join(cacheIds, ", "));
             }
-            return new Date(timestamp);
+            final Date lastUpdateTime = new Date(Collections.max(Lists.transform(cacheIds, new Function<String, Long>() {
+                @Override
+                public Long apply(@Nullable final String cacheId) {
+                    final Date lastUpdateTime = getCacheEntryLastUpdateTime(cacheId);
+                    log.trace("User {} cache entry '{}' last updated: {}", username, cacheId, lastUpdateTime);
+                    return lastUpdateTime == null ? 0L : lastUpdateTime.getTime();
+                }
+            })));
+            log.debug("Found cache last update time for user {}: {}", username, lastUpdateTime);
+            return lastUpdateTime;
         } catch (UserNotFoundException ignored) {
-            // This doesn't happen because we've passed the user object in.
+            log.warn("Someone requested the cache last update time for user {} but that user wasn't found", username);
             return new Date();
         }
     }
@@ -632,14 +642,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 @Nullable
                                 @Override
                                 public String apply(@Nullable final String cacheId) {
-                                    if (StringUtils.isBlank(cacheId)) {
-                                        return null;
-                                    }
-                                    final Matcher matcher = REGEX_EXTRACT_USER_FROM_CACHE_ID.matcher(cacheId);
-                                    if (!matcher.matches()) {
-                                        return null;
-                                    }
-                                    return matcher.group("username");
+                                    return getUsernameFromCacheId(cacheId);
                                 }
                             }), Predicates.notNull())));
                             return !cacheGroups(getGroups(xsiType, id)).isEmpty();
@@ -667,6 +670,17 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return false;
+    }
+
+    private String getUsernameFromCacheId(final @Nullable String cacheId) {
+        if (StringUtils.isBlank(cacheId)) {
+            return null;
+        }
+        final Matcher matcher = REGEX_EXTRACT_USER_FROM_CACHE_ID.matcher(cacheId);
+        if (!matcher.matches()) {
+            return null;
+        }
+        return matcher.group("username");
     }
 
     private boolean handleSubjectEvents(final XftItemEventI event) {
@@ -882,7 +896,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return Collections.emptyMap();
     }
 
-    private Map<String, Long> updateTotalCounts() {
+    private void updateTotalCounts() {
         _totalCounts.clear();
         final Long projectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_projectData", EmptySqlParameterSource.INSTANCE, Long.class);
         _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectCount);
@@ -892,7 +906,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         for (final Map<String, Object> elementCount : elementCounts) {
             _totalCounts.put((String) elementCount.get("element_name"), (Long) elementCount.get("count"));
         }
-        return _totalCounts;
     }
 
     private List<ElementDisplay> updateActionElementDisplays(final UserI user, final String action) throws Exception {
@@ -1258,6 +1271,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return Lists.newArrayList(Iterables.filter(Iterables.filter(getEhCache().getKeys(), String.class), Predicates.containsPattern("^" + StringUtils.join(prefixes, ":") + ":.*$")));
     }
 
+    private List<String> getCacheIdsForUsername(final String username) {
+        return Lists.newArrayList(Iterables.filter(Iterables.filter(getEhCache().getKeys(), String.class), new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable final String cacheId) {
+                return StringUtils.equals(username, getUsernameFromCacheId(cacheId));
+            }
+        }));
+    }
+
     private static String getCacheIdForTag(final String tag) {
         return StringUtils.startsWith(tag, TAG_PREFIX) ? tag : createCacheIdFromElements(TAG_PREFIX, tag);
     }
@@ -1363,6 +1385,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String ACTION_PREFIX                  = "action";
     private static final String TAG_PREFIX                     = "tag";
     private static final String PROJECT_PREFIX                 = "project";
+    private static final String GROUP_ELEMENT_PREFIX           = "group";
     private static final String USER_ELEMENT_PREFIX            = "user";
     private static final String ELEMENT_ACCESS_MANAGERS_PREFIX = "eam";
 

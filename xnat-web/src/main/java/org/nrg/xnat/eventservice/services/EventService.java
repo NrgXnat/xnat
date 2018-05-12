@@ -55,7 +55,7 @@ public interface EventService {
     Subscription activateSubscription(long id) throws NotFoundException;
     Subscription deactivateSubscription(long id) throws NotFoundException;
 
-    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId);
+    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
 }

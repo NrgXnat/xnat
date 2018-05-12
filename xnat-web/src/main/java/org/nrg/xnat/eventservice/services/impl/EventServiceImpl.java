@@ -378,8 +378,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId) {
-        return subscriptionDeliveryEntityService.get(projectId, subscriptionId);
+    public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+        return subscriptionDeliveryEntityService.get(projectId, subscriptionId, includeFilterMismatches);
     }
 
     @Override

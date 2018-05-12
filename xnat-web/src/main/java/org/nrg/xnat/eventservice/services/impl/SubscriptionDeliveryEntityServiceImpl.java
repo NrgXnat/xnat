@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_DETECTED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_TRIGGERED;
@@ -84,13 +85,24 @@ public class SubscriptionDeliveryEntityServiceImpl
     }
 
     @Override
-    public List<SubscriptionDelivery> get(String projectId, Long subscriptionId) {
+    public List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+        List<SubscriptionDeliveryEntity> deliveryEntities = null;
         if(subscriptionId == null){
-            if(Strings.isNullOrEmpty(projectId)){ return toPojo(getAll()); }
-            else { return toPojo(getDao().findByProjectId(projectId)); }
+            if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getAll(); }
+            else { deliveryEntities = getDao().findByProjectId(projectId); }
         } else {
-            if(Strings.isNullOrEmpty(projectId)){ return toPojo(getDao().findBySubscriptionId(subscriptionId)); }
-            else { return toPojo(getDao().findByProjectIdAndSubscriptionId(projectId, subscriptionId)); }
+            if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getDao().findBySubscriptionId(subscriptionId); }
+            else { deliveryEntities = getDao().findByProjectIdAndSubscriptionId(projectId, subscriptionId); }
+        }
+        if(deliveryEntities == null) {
+            return new ArrayList<>();
+        } else if(includeFilterMismatches){
+            return toPojo(deliveryEntities);
+        } else {
+            return toPojo(
+                    deliveryEntities.stream()
+                                    .filter(de -> de.getStatus() != TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT)
+                                    .collect(Collectors.toList()));
         }
     }
 

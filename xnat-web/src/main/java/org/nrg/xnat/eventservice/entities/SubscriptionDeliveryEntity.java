@@ -21,6 +21,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private String actionInputs;
     private TriggeringEventEntity triggeringEventEntity;
     private List<TimedEventStatusEntity> timedEventStatuses = Lists.newArrayList();
+    private TimedEventStatusEntity.Status status;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, UUID eventUUID, String actionUserLogin,
                                       String projectId, String actionInputs) {
@@ -90,7 +91,13 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message){
         TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, this);
+        this.status = status;
         this.timedEventStatuses.add(timedEventStatus);
     }
+
+    public TimedEventStatusEntity.Status getStatus() { return status; }
+
+    public void setStatus(TimedEventStatusEntity.Status status) { this.status = status; }
+
 
 }

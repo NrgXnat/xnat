@@ -217,19 +217,21 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,
-            final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId)
+            final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
+            final @RequestParam(value = "includeFilterMismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
-        return eventService.getSubscriptionDeliveries(projectId, subscriptionId);
+        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch);
     }
 
     @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/delivered", method = GET)
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredProjectSubscriptions(
             final @PathVariable String project,
-            final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId)
+            final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId,
+            final @RequestParam(value = "includeFilterMismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
             throws Exception {
-        return eventService.getSubscriptionDeliveries(project, subscriptionId);
+        return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch);
     }
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/events", method = GET)

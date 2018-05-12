@@ -469,7 +469,7 @@ public class EventServiceIntegrationTest {
     @DirtiesContext
     public void checkSubscriptionDeliveryEntry() throws Exception {
         catchSubscribedEvent();
-        List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null);
+        List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null, null);
         assertThat("subscriptionDeliveries table is null. Expected one entry.",subscriptionDeliveries, notNullValue());
         assertThat("subscriptionDeliveries table is empty. Expected one entry.",subscriptionDeliveries.size(), is(1));
 
@@ -1000,10 +1000,10 @@ public class EventServiceIntegrationTest {
         }
         sw3.stop();
 
-        List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null);
-        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L);
-        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l);
-        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null);
+        List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
+        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true);
 
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));

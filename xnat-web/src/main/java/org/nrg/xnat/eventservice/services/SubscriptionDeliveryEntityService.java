@@ -20,5 +20,5 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     void setTriggeringEvent(Long deliveryId, String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel);
 
-    List<SubscriptionDelivery> get(String projectId, Long subscriptionId);
+    List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 }

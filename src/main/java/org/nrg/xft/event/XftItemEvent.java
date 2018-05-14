@@ -19,6 +19,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatUsergroup;
@@ -112,7 +113,13 @@ public class XftItemEvent implements XftItemEventI {
         }
 
         public Builder element(final BaseElement element) {
-            return item(element.getItem());
+            try {
+                return typeAndId(element.getXSIType(), element.getStringProperty("ID"));
+            } catch (ElementNotFoundException e) {
+                throw new NrgServiceRuntimeException(NrgServiceError.Instantiation, "Submitted a BaseElement of type '" + element.getClass().getName() + "', which doesn't seem to have a property named ID. I don't know how to handle this element: " + e.ELEMENT, e);
+            } catch (FieldNotFoundException e) {
+                throw new NrgServiceRuntimeException(NrgServiceError.Instantiation, "Submitted a BaseElement of type '" + element.getClass().getName() + "', which doesn't seem to have a property named ID. Got a field not found exception: " + e.FIELD, e);
+            }
         }
 
         public Builder elements(final List<BaseElement> elements) {

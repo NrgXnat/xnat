@@ -437,6 +437,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         try {
             final List<String> cacheIds = getGroupIdsForUser(username);
             cacheIds.addAll(getCacheIdsForUsername(username));
+            if (cacheIds.isEmpty()) {
+                return new Date();
+            }
             if (log.isDebugEnabled()) {
                 log.debug("Found {} cache entries related to user {}: {}", cacheIds.size(), username, StringUtils.join(cacheIds, ", "));
             }

@@ -39,7 +39,7 @@ buildscript {
         classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.10.1"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
         classpath "io.franzbecker:gradle-lombok:1.11"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
@@ -409,20 +409,34 @@ cargo {
 def buildDate = new Date()
 def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
 def revision = gitVersion().replace("${version}-", "")
+def isDirty = revision.endsWith ".dirty"
+def details = versionDetails()
 
-logger.info "Git version:            ${gitVersion()}"
-logger.info "Build-Date:             ${buildDate}"
-logger.info "Build-Number:           ${buildNumber}"
-logger.info "Implementation-Sha:     ${revision}"
-logger.info "Implementation-Version: ${version}"
+logger.info "Git version:             ${gitVersion()}"
+logger.info "Build-Date:              ${buildDate}"
+logger.info "Build-Number:            ${buildNumber}"
+logger.info "Implementation-Version:  ${version}"
+logger.info "Implementation-Sha-Full: ${details.gitHashFull}"
+logger.info "Implementation-Sha:      ${details.gitHash}"
+logger.info "Implementation-Commit:   ${details.commitDistance}"
+logger.info "Implementation-LastTag:  ${details.lastTag}"
+logger.info "Implementation-Branch:   ${details.branchName}"
+logger.info "Implementation-CleanTag: ${details.isCleanTag}"
+logger.info "Implementation-Dirty:    ${isDirty}"
 
 jar {
     manifest {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
-                "Implementation-Sha": revision,
-                "Implementation-Version": version
+                "Implementation-Version": version,
+                "Implementation-Sha": details.gitHash,
+                "Implementation-Sha-Full": details.gitHashFull,
+                "Implementation-Commit": details.commitDistance,
+                "Implementation-LastTag": details.lastTag,
+                "Implementation-Branch": details.branchName,
+                "Implementation-CleanTag": details.isCleanTag,
+                "Implementation-Dirty": isDirty
     }
 }
 
@@ -431,8 +445,14 @@ war {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
-                "Implementation-Sha": revision,
-                "Implementation-Version": version
+                "Implementation-Version": version,
+                "Implementation-Sha": details.gitHash,
+                "Implementation-Sha-Full": details.gitHashFull,
+                "Implementation-Commit": details.commitDistance,
+                "Implementation-LastTag": details.lastTag,
+                "Implementation-Branch": details.branchName,
+                "Implementation-CleanTag": details.isCleanTag,
+                "Implementation-Dirty": isDirty
     }
 }
 

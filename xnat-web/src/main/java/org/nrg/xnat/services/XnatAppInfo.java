@@ -12,7 +12,10 @@ package org.nrg.xnat.services;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -21,8 +24,6 @@ import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -47,6 +48,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.Attributes;
@@ -56,6 +58,7 @@ import java.util.regex.Pattern;
 import static org.nrg.xnat.utils.FileUtils.nodeToList;
 
 @Component
+@Slf4j
 public class XnatAppInfo {
     public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
     public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
@@ -87,23 +90,21 @@ public class XnatAppInfo {
 
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
             if (input != null) {
-                final Manifest manifest = new Manifest(input);
+                final Manifest   manifest   = new Manifest(input);
                 final Attributes attributes = manifest.getMainAttributes();
-                _properties.setProperty("buildNumber", attributes.getValue("Build-Number"));
-                _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
-                _properties.setProperty("version", attributes.getValue("Implementation-Version"));
-                _properties.setProperty("commit", attributes.getValue("Implementation-Sha"));
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
-                               _properties.getProperty("version"),
-                               _properties.getProperty("buildNumber"),
-                               _properties.getProperty("buildDate"),
-                               _properties.getProperty("commit"));
-                }
+                final String     rawVersion = attributes.getValue(MANIFEST_VERSION);
+
+                _properties.setProperty(PROPERTY_VERSION, rawVersion);
+                _properties.setProperty(PROPERTY_BUILD_NUMBER, attributes.getValue(MANIFEST_BUILD_NUMBER));
+                _properties.setProperty(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
+                _properties.setProperty(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
+                _properties.setProperty(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
+
                 for (final Object key : attributes.keySet()) {
                     final String name = key.toString();
-                    if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name)) {
-                        _properties.setProperty(name, attributes.getValue(name));
+                    if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name) && !MANIFEST_ATTRIBUTE_EXCLUSIONS.contains(name)) {
+                        final String propertyKey = MANIFEST_PROPERTY_MAPPING.containsKey(name) ? MANIFEST_PROPERTY_MAPPING.get(name) : name;
+                        _properties.setProperty(propertyKey, attributes.getValue(name));
                     }
                 }
                 final Map<String, Attributes> entries = manifest.getEntries();
@@ -116,20 +117,33 @@ public class XnatAppInfo {
                         keyedAttributes.put(property, attributes.getValue(property));
                     }
                 }
-            } else {
-                _log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");
-                _properties.setProperty("buildNumber", "Unknown");
-                _properties.setProperty("buildDate", FORMATTER.format(new Date()));
-                _properties.setProperty("version", "Unknown");
-                _properties.setProperty("commit", "Unknown");
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
-                               _properties.getProperty("version"),
-                               _properties.getProperty("buildNumber"),
-                               _properties.getProperty("buildDate"),
-                               _properties.getProperty("commit"));
 
+                _buildDate = parseDate(_properties.getProperty(PROPERTY_BUILD_DATE));
+                _properties.setProperty(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+
+                if (rawVersion.matches(NON_RELEASE_VERSION_REGEX)) {
+                    _versionDisplay = rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")";
+                } else {
+                    _versionDisplay = rawVersion;
                 }
+            } else {
+                log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");
+                _versionDisplay = "Unknown";
+                _buildDate = new Date();
+                _properties.setProperty(PROPERTY_BUILD_NUMBER, "Unknown");
+                _properties.setProperty(PROPERTY_BUILD_DATE, FORMATTER.format(_buildDate));
+                _properties.setProperty(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+                _properties.setProperty(PROPERTY_VERSION, "Unknown");
+                _properties.setProperty(PROPERTY_SHA, "Unknown");
+                _properties.setProperty(PROPERTY_DIRTY, "Unknown");
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
+                          _properties.getProperty(PROPERTY_VERSION),
+                          _properties.getProperty(PROPERTY_BUILD_NUMBER),
+                          _properties.getProperty(PROPERTY_BUILD_DATE),
+                          _properties.getProperty(PROPERTY_SHA),
+                          _properties.getProperty(PROPERTY_DIRTY));
             }
             if (!isInitialized()) {
                 try {
@@ -179,7 +193,7 @@ public class XnatAppInfo {
                         });
                     }
                 } catch (DataAccessException e) {
-                    _log.info("Nothing to migrate");
+                    log.info("Nothing to migrate");
                 }
             }
         }
@@ -188,10 +202,10 @@ public class XnatAppInfo {
     public void updateOpenUrlList() {
         /*
          * NOTE:  Currently there is no reason to call this method.  The open URL list is not checked for every REST call,
-		 * so Tomcat restarts are still required for changes to the openUrl list to take effect.  Leaving this method defined
-		 * for documentation of the Tomcat restart requirement, and in case further changes are made that would allow 
-		 * these changes to take effect without restart.
-		 */
+         * so Tomcat restarts are still required for changes to the openUrl list to take effect.  Leaving this method defined
+         * for documentation of the Tomcat restart requirement, and in case further changes are made that would allow
+         * these changes to take effect without restart.
+         */
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         _openUrls.clear();
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
@@ -199,9 +213,8 @@ public class XnatAppInfo {
             _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
             _openUrls.addAll(_openUrlsPref.getAllowedPluginOpenUrls());
         } catch (IOException e) {
-            _log.debug("Could not update open URL list", e);
+            log.debug("Could not update open URL list", e);
         }
-
     }
 
     /**
@@ -236,12 +249,12 @@ public class XnatAppInfo {
             try {
                 _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
                 if (_initialized) {
-                    if (_log.isInfoEnabled()) {
-                        _log.info("The site was not flagged as initialized, but found initialized preference set to true. Flagging as initialized.");
+                    if (log.isInfoEnabled()) {
+                        log.info("The site was not flagged as initialized, but found initialized preference set to true. Flagging as initialized.");
                     }
                 } else {
-                    if (_log.isInfoEnabled()) {
-                        _log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
+                    if (log.isInfoEnabled()) {
+                        log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
                     }
                     for (final String preference : _foundPreferences.keySet()) {
                         if (_foundPreferences.get(preference) != null) {
@@ -252,12 +265,12 @@ public class XnatAppInfo {
                             try {
                                 _preferences.set(_foundPreferences.get(preference), preference);
                             } catch (InvalidPreferenceName e) {
-                                _log.error("", e);
+                                log.error("", e);
                             } catch (NullPointerException e) {
-                                _log.error("Error getting site config preferences.", e);
+                                log.error("Error getting site config preferences.", e);
                             }
                         } else {
-                            _log.warn("Preference " + preference + " was null.");
+                            log.warn("Preference " + preference + " was null.");
                         }
                     }
                 }
@@ -339,14 +352,40 @@ public class XnatAppInfo {
         return _environment.getProperty(property, type, defaultValue);
     }
 
+    public Set<String> getSystemPropertyNames() {
+        return _properties.stringPropertyNames();
+    }
+
+    /**
+     * Returns the specified property.
+     *
+     * @param property The property to retrieve.
+     *
+     * @return The value of the specified property.
+     */
+    public String getSystemProperty(final String property) {
+        return getSystemProperty(property, null);
+    }
+
+    /**
+     * Returns the specified property.
+     *
+     * @param property     The property to retrieve.
+     * @param defaultValue The value to return if the property doesn't exist.
+     *
+     * @return The value of the specified property.
+     */
+    public String getSystemProperty(final String property, final String defaultValue) {
+        return _properties.getProperty(property, defaultValue);
+    }
+
     /**
      * Gets the version of the application.
      *
      * @return The version of the application.
      */
     public String getVersion() {
-        final String version = _properties.getProperty("version");
-        return version.matches(NON_RELEASE_VERSION_REGEX) ? version + " (build " + getBuildNumber() + " on " + getBuildDate() + ")" : version;
+        return _versionDisplay;
     }
 
     /**
@@ -355,7 +394,7 @@ public class XnatAppInfo {
      * @return The build number of the application.
      */
     public String getBuildNumber() {
-        return _properties.getProperty("buildNumber");
+        return _properties.getProperty(PROPERTY_BUILD_NUMBER);
     }
 
     /**
@@ -363,8 +402,36 @@ public class XnatAppInfo {
      *
      * @return The date the application was built.
      */
-    public String getBuildDate() {
-        return _properties.getProperty("buildDate");
+    public Date getBuildDate() {
+        return _buildDate;
+    }
+
+    /**
+     * Gets the abbreviated commit hash in the source repository from which the application was built.
+     *
+     * @return The commit hash from which the application was built.
+     */
+    public String getCommitHash() {
+        return _properties.getProperty(PROPERTY_SHA);
+    }
+
+    /**
+     * Indicates whether the applicated was built from "dirty" code, i.e. where there were changes in the repository that had not yet been committed
+     * to the repository.
+     *
+     * @return Returns true if there were any changes to the code that hadn't yet been committed at build time, false otherwise.
+     */
+    public boolean isDirty() {
+        return BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(_properties.getProperty(PROPERTY_DIRTY)), false);
+    }
+
+    /**
+     * Gets the full commit hash in the source repository from which the application was built.
+     *
+     * @return The full commit hash from which the application was built.
+     */
+    public String getCommitHashFull() {
+        return _properties.getProperty(PROPERTY_SHA_FULL);
     }
 
     /**
@@ -373,7 +440,16 @@ public class XnatAppInfo {
      * @return The commit number of the application.
      */
     public String getCommit() {
-        return _properties.getProperty("commit");
+        return _properties.getProperty(PROPERTY_COMMIT);
+    }
+
+    /**
+     * Gets the commit number in the source repository from which the application was built.
+     *
+     * @return The commit number of the application.
+     */
+    public String getBranch() {
+        return _properties.getProperty(PROPERTY_BRANCH);
     }
 
     /**
@@ -403,12 +479,12 @@ public class XnatAppInfo {
      * @return A map of values indicating the system uptime.
      */
     public Map<String, String> getUptime() {
-        final long diff = new Date().getTime() - _startTime.getTime();
-        final int days = (int) (diff / MILLISECONDS_IN_A_DAY);
-        final long daysRemainder = diff % MILLISECONDS_IN_A_DAY;
-        final int hours = (int) (daysRemainder / MILLISECONDS_IN_AN_HOUR);
-        final long hoursRemainder = daysRemainder % MILLISECONDS_IN_AN_HOUR;
-        final int minutes = (int) (hoursRemainder / MILLISECONDS_IN_A_MINUTE);
+        final long diff             = new Date().getTime() - _startTime.getTime();
+        final int  days             = (int) (diff / MILLISECONDS_IN_A_DAY);
+        final long daysRemainder    = diff % MILLISECONDS_IN_A_DAY;
+        final int  hours            = (int) (daysRemainder / MILLISECONDS_IN_AN_HOUR);
+        final long hoursRemainder   = daysRemainder % MILLISECONDS_IN_AN_HOUR;
+        final int  minutes          = (int) (hoursRemainder / MILLISECONDS_IN_A_MINUTE);
         final long minutesRemainder = hoursRemainder % MILLISECONDS_IN_A_MINUTE;
 
         final Map<String, String> uptime = new HashMap<>();
@@ -444,7 +520,7 @@ public class XnatAppInfo {
      */
     public String getFormattedUptime() {
         final Map<String, String> uptime = getUptime();
-        final StringBuilder buffer = new StringBuilder();
+        final StringBuilder       buffer = new StringBuilder();
         if (uptime.containsKey(DAYS)) {
             buffer.append(uptime.get(DAYS)).append(" days, ");
         }
@@ -512,6 +588,15 @@ public class XnatAppInfo {
         return checkUrls(request, _nonAdminErrorPathPatterns);
     }
 
+    private static Date parseDate(final String dateProperty) {
+        try {
+            return FORMATTER.parse(dateProperty);
+        } catch (ParseException e) {
+            log.warn("Unable to parse the build date value, returning current date for fail-over: {}", dateProperty);
+            return new Date();
+        }
+    }
+
     private String translateToBoolean(final String currentValue) {
         if (currentValue == null) {
             return null;
@@ -566,10 +651,10 @@ public class XnatAppInfo {
             final URI requestUri = new URI(request.getRequestURL().toString());
             final URI siteUrl    = new URI(_preferences.getSiteUrl());
 
-            final String refererHost = refererUri.getHost();
-            final String requestHost = requestUri.getHost();
-            final int refererPort = refererUri.getPort();
-            final int requestPort = requestUri.getPort();
+            final String refererHost   = refererUri.getHost();
+            final String requestHost   = requestUri.getHost();
+            final int    refererPort   = refererUri.getPort();
+            final int    requestPort   = requestUri.getPort();
             final String refererScheme = refererUri.getScheme();
             final String requestScheme = requestUri.getScheme();
 
@@ -580,7 +665,7 @@ public class XnatAppInfo {
                                                          refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort);
                     throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
                 }
-                _log.info("Referer host and port matched request host and port, valid referer.");
+                log.info("Referer host and port matched request host and port, valid referer.");
             } else if (StringUtils.isNotBlank(siteUrl.toString()) && StringUtils.equals(refererHost, siteUrl.getHost()) && refererPort == siteUrl.getPort()) {
                 final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererScheme, siteUrl.getScheme());
                 if (protocolMismatch) {
@@ -588,7 +673,7 @@ public class XnatAppInfo {
                                                          refererScheme, refererHost, refererPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
                     throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
                 }
-                _log.info("Referer host and port matched site URL host and port, valid referer.");
+                log.info("Referer host and port matched site URL host and port, valid referer.");
             } else {
                 final String message = String.format("The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
                                                      refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
@@ -597,7 +682,7 @@ public class XnatAppInfo {
 
             return refererUri;
         } catch (URISyntaxException e) {
-            _log.info("Couldn't check referer URI because of a syntax exception: " + request.getRequestURL().toString(), e);
+            log.info("Couldn't check referer URI because of a syntax exception: " + request.getRequestURL().toString(), e);
             return null;
         }
     }
@@ -611,22 +696,43 @@ public class XnatAppInfo {
         return false;
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(XnatAppInfo.class);
+    private static final String MANIFEST_BUILD_NUMBER = "Build-Number";
+    private static final String MANIFEST_BUILD_DATE   = "Build-Date";
+    private static final String MANIFEST_VERSION      = "Implementation-Version";
+    private static final String MANIFEST_SHA          = "Implementation-Sha";
+    private static final String MANIFEST_DIRTY        = "Implementation-Dirty";
+    private static final String MANIFEST_BRANCH       = "Implementation-Branch";
+    private static final String MANIFEST_COMMIT       = "Implementation-Commit";
+    private static final String MANIFEST_LASTTAG      = "Implementation-LastTag";
+    private static final String MANIFEST_SHA_FULL     = "Implementation-Sha-Full";
+    private static final String PROPERTY_BUILD_NUMBER = "buildNumber";
+    private static final String PROPERTY_BUILD_DATE   = "buildDate";
+    private static final String PROPERTY_VERSION      = "version";
+    private static final String PROPERTY_SHA          = "sha";
+    private static final String PROPERTY_DIRTY        = "isDirty";
+    private static final String PROPERTY_BRANCH       = "branch";
+    private static final String PROPERTY_SHA_FULL     = "shaFull";
+    private static final String PROPERTY_COMMIT       = "commit";
+    private static final String PROPERTY_TIMESTAMP    = "timestamp";
+    private static final String PROPERTY_TAG          = "tag";
 
-    private static final List<String>     PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
-    private static final ResourceLoader   RESOURCE_LOADER             = new DefaultResourceLoader();
-    private static final SimpleDateFormat FORMATTER                   = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
-    private static final AntPathMatcher   PATH_MATCHER                = new AntPathMatcher();
-    private static final int              MILLISECONDS_IN_A_DAY       = (24 * 60 * 60 * 1000);
-    private static final int              MILLISECONDS_IN_AN_HOUR     = (60 * 60 * 1000);
-    private static final int              MILLISECONDS_IN_A_MINUTE    = (60 * 1000);
-    private static final DecimalFormat    SECONDS_FORMAT              = new DecimalFormat("##.000");
-    private static final String           DAYS                        = "days";
-    private static final String           HOURS                       = "hours";
-    private static final String           MINUTES                     = "minutes";
-    private static final String           SECONDS                     = "seconds";
-    private static final Pattern          CHECK_VALID_PATTERN         = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
-    private static final Pattern          CHECK_TRUE_PATTERN          = Pattern.compile("^(?i)(1|true|t)$");
+    private static final List<String>        PRIMARY_MANIFEST_ATTRIBUTES   = Arrays.asList(MANIFEST_BUILD_NUMBER, MANIFEST_BUILD_DATE, MANIFEST_VERSION, MANIFEST_SHA, MANIFEST_DIRTY);
+    private static final List<String>        MANIFEST_ATTRIBUTE_EXCLUSIONS = Arrays.asList("Application-Name", "Manifest-Version", "Implementation-CleanTag");
+    private static final Map<String, String> MANIFEST_PROPERTY_MAPPING     = ImmutableMap.of(MANIFEST_BRANCH, PROPERTY_BRANCH, MANIFEST_COMMIT, PROPERTY_COMMIT, MANIFEST_LASTTAG, PROPERTY_TAG, MANIFEST_SHA_FULL, PROPERTY_SHA_FULL);
+
+    private static final ResourceLoader   RESOURCE_LOADER          = new DefaultResourceLoader();
+    private static final SimpleDateFormat FORMATTER                = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
+    private static final AntPathMatcher   PATH_MATCHER             = new AntPathMatcher();
+    private static final int              MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_A_MINUTE = (60 * 1000);
+    private static final DecimalFormat    SECONDS_FORMAT           = new DecimalFormat("##.000");
+    private static final String           DAYS                     = "days";
+    private static final String           HOURS                    = "hours";
+    private static final String           MINUTES                  = "minutes";
+    private static final String           SECONDS                  = "seconds";
+    private static final Pattern          CHECK_VALID_PATTERN      = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
+    private static final Pattern          CHECK_TRUE_PATTERN       = Pattern.compile("^(?i)(1|true|t)$");
 
     private final JdbcTemplate             _template;
     private final Environment              _environment;
@@ -647,4 +753,6 @@ public class XnatAppInfo {
     private final Date                             _startTime        = new Date();
     private final Properties                       _properties       = new Properties();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
+    private final String                           _versionDisplay;
+    private final Date                             _buildDate;
 }

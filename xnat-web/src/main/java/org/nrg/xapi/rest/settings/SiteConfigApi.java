@@ -36,10 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
@@ -209,6 +206,16 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
 
         return new ResponseEntity<>(_appInfo.getSystemAttributes(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns a map of extended build attributes.", notes = "The values are dependent on what attributes are set for the build. It is not unexpected that there are no extended build attributes.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "Extended build attributes successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "buildInfo/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    public ResponseEntity<String> getBuildProperty(@ApiParam("Indicates the specific property to be returned") @PathVariable final String property) {
+        log.debug("User {} requested the build property {}.", getSessionUser().getUsername(), property);
+        return ResponseEntity.ok(_appInfo.getSystemProperty(property));
     }
 
     @ApiOperation(value = "Returns the system uptime.", notes = "This returns the uptime as a map of time units: days, hours, minutes, and seconds.", response = String.class, responseContainer = "Map")

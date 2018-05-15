@@ -64,15 +64,8 @@ public class ModifyPassword extends ModifyAction {
             return;
         }
 
-        UserI existing = null;
-        if (found.getID() != null) {
-            existing = Users.getUser(found.getID());
-        }
-
         final String login = found.getLogin();
-        if (existing == null && login != null) {
-            existing = Users.getUser(login);
-        }
+        final UserI existing = found.getID() != null ? Users.getUser(found.getID()) : StringUtils.isNotBlank(login) ? Users.getUser(login) : null;
 
         if (existing == null) {
             redirect(false, "Unable to identify user for password modification.");
@@ -89,10 +82,12 @@ public class ModifyPassword extends ModifyAction {
                 return;
             }
 
-            if (StringUtils.isBlank(currentPassword) || StringUtils.isBlank(updatedPassword) || !Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
+            final boolean specifiedCurrentPassword = StringUtils.isNotBlank(currentPassword);
+            final boolean hasCurrentPassword       = StringUtils.isNotBlank(user.getPassword());
+            if ((!specifiedCurrentPassword && hasCurrentPassword) || StringUtils.isBlank(updatedPassword) || !Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
                 //User correctly entered their old password or they forgot their old password
                 final StringBuilder message = new StringBuilder("Your password was not updated: ");
-                if (StringUtils.isBlank(currentPassword) || StringUtils.isBlank(updatedPassword)) {
+                if (!specifiedCurrentPassword || StringUtils.isBlank(updatedPassword)) {
                     message.append("you must provide values for both your current and updated password.");
                 } else if (!Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
                     message.append("you entered an incorrect value for your current password.");

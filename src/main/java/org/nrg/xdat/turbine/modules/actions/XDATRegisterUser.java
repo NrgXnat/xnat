@@ -238,27 +238,17 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    private void preserveVariables(RunData data,Context context){
-        String username = TurbineUtils.HasPassedParameter("xdat:user.login", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.login", data)):"";
-        String email = TurbineUtils.HasPassedParameter("xdat:user.email", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.email", data)):"";
-        String firstName = TurbineUtils.HasPassedParameter("xdat:user.firstname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.firstname", data)):"";
-        String lastName = TurbineUtils.HasPassedParameter("xdat:user.lastname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.lastname", data)):"";
-        String par = (String)TurbineUtils.GetPassedParameter("par",data);
-        //phone, lab, and comments should already be preserved
-        if(!StringUtils.isEmpty(username)){
-            context.put("username", username);
-        }
-        if(!StringUtils.isEmpty(email)){
-            context.put("email", email);
-        }
-        if(!StringUtils.isEmpty(firstName)){
-            context.put("firstName", firstName);
-        }
-        if(!StringUtils.isEmpty(lastName)){
-            context.put("lastName", lastName);
-        }
-        if(!StringUtils.isEmpty(par)){
-            context.put("par", par);
+    protected void preserveVariables(final RunData data, final Context context) {
+        storeParameterIfAvailable(data, context, "username", "xdat:user.login");
+        storeParameterIfAvailable(data, context, "email", "xdat:user.email");
+        storeParameterIfAvailable(data, context, "firstName", "xdat:user.firstname");
+        storeParameterIfAvailable(data, context, "lastName", "xdat:user.lastname");
+        storeParameterIfAvailable(data, context, "par", "par");
+    }
+
+    protected void storeParameterIfAvailable(final RunData data, final Context context, final String key, final String value) {
+        if (TurbineUtils.HasPassedParameter(value, data)) {
+            context.put(key, value);
         }
     }
 

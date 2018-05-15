@@ -17,7 +17,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class ProjectSubscriptionCreator {
 
-    @JsonProperty("name") public abstract String name();
+    @Nullable @JsonProperty("name") public abstract String name();
     @JsonProperty("project-id") public abstract String projectId();
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @JsonProperty("event-id") public abstract String eventId();
@@ -33,7 +33,7 @@ public abstract class ProjectSubscriptionCreator {
     public abstract Builder toBuilder();
 
     @JsonCreator
-    public static ProjectSubscriptionCreator create(@Nonnull @JsonProperty("name") final String name,
+    public static ProjectSubscriptionCreator create(@Nullable @JsonProperty("name") final String name,
                                                     @JsonProperty("project-id")  String projectId,
                                                     @JsonProperty("active") final Boolean active,
                                                     @Nonnull @JsonProperty("event-id") final String eventId,

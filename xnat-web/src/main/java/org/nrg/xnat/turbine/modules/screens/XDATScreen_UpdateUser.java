@@ -135,10 +135,13 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("login", user.getUsername());
                     context.put("item", user);
                 }
-                if(XDAT.getSiteConfigPreferences().getRequireSaltedPasswords()
-                        && user.getSalt()==null){
+
+                if (StringUtils.isBlank(user.getPassword())) {
+                    context.put("noCurrentPassword", true);
+                } else if (XDAT.getSiteConfigPreferences().getRequireSaltedPasswords() && StringUtils.isBlank(user.getSalt())){
                     context.put("missingSalt", true);
                 }
+
                 if(XDAT.getSiteConfigPreferences().getEmailVerification()){
                     UserChangeRequest changeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestForUserAndField(user.getUsername(), "email");
                     if(changeRequest!=null){

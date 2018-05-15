@@ -1,10 +1,13 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="parameter" type="java.lang.String" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("Login.vm")
 
+#set ($message = $data.getMessage())
 
 <div class="clear" style="margin:2em 0;"></div>
 
@@ -28,9 +31,9 @@ $!template.setLayoutTemplate("Login.vm")
     <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
     <div class="clear" style="margin:2em 0;"></div>
     <div id="register_box">
-        #if($data.getMessage())
+        #if($message.startsWith("Registration error"))
             <div class="warning" style="border-bottom: 0">
-                <p><strong>Note: </strong><br />$data.getMessage()</p>
+                <p><strong>Note:</strong> $message</p>
             </div>
         #end
 
@@ -45,11 +48,10 @@ $!template.setLayoutTemplate("Login.vm")
     <div class="clear" style="margin:2em 0;"></div>
 
     <div id="login_box">
-        #if($data.getMessage())
+        #if($message.startsWith("Authentication failed"))
             <div class="message" style="border-bottom: 0">
-                <strong>Note: </strong> $data.getMessage()
+                <strong>Note:</strong> $message
             </div>
-
         #end
         <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
             <input type="hidden" name="operation" value="merge">
@@ -90,7 +92,8 @@ $!template.setLayoutTemplate("Login.vm")
             #if($turbineUtils.GetPassedParameter("par",$data))
                 #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
                     #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
-                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                        #set ($parameter = $turbineUtils.GetPassedParameter($key, $data))
+                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!parameter)">
                     #end
                 #end
             #end
@@ -102,60 +105,29 @@ $!template.setLayoutTemplate("Login.vm")
 
 <script>
     function showRegisterBox(){
-        jq('#register_box_container').removeClass('hidden');
-        jq('#login_box_container').addClass('hidden');
-    }
-    jq(document).on('click','.show-registration',function(){
-        jq(this).addClass('primary')
         jq('.show-login').removeClass('primary');
+        jq('#login_box_container').addClass('hidden');
+        jq('.show-registration').addClass('primary');
+        jq('#register_box_container').removeClass('hidden');
+    }
+
+    function showLoginBox(){
+        jq('.show-registration').removeClass('primary');
+        jq('#register_box_container').addClass('hidden');
+        jq('.show-login').addClass('primary');
+        jq('#login_box_container').removeClass('hidden');
+    }
+
+    jq(document).on('click','.show-registration',function(){
         showRegisterBox();
     });
 
-    function showLoginBox(){
-        jq('#register_box_container').addClass('hidden');
-        jq('#login_box_container').removeClass('hidden');
-    }
     jq(document).on('click','.show-login',function(){
-        jq(this).addClass('primary');
-        jq('.show-registration').removeClass('primary');
         showLoginBox();
     });
 
-    jq(document).ready(function(){
+    #if ($message.startsWith("Authentication failed"))
         // toggle login box if user attempted and failed to login and server returned an error message.
-        var errorMsg = '$data.getMessage()';
-        if (errorMsg.indexOf('login attempt failed') >= 0) {
-            showLoginBox();
-        }
-
-        // append merge inputs to register form
-        var registerForm = jq('#register_form');
-    })
+        showLoginBox();
+    #end
 </script>
-
-
-##    <div id="login_area">
-##        <div id="login_box">
-##            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="merge_form">
-##                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond with an existing XNAT user account. .</p>
-##                <p><label for="username">Username</label><input type="text" name="username"></p>
-##                <p><label for="password">Password</label><input type="password" name="password"></p>
-##                <p class="form-submit"><input type="submit" value="Submit"></p>
-##                <input type="hidden" name="operation" value="merge">
-##                <input type="hidden" name="authUsername" value="$userInfo.username">
-##                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
-##                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
-##                <input type="hidden" name="authEmail" value="$userInfo.email">
-##                <input type="hidden" name="authLastName" value="$userInfo.lastName">
-##                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
-##            </form>
-##        </div>
-##        <div id="login_box">
-##            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="register_form">
-##                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond with an existing XNAT user account. If you already have an XNAT account, enter your login credentials below and click <b>Submit</b>.</p>
-##                <div id="register_box">
-##                    #parse("/screens/register_box.vm")
-##                </div>
-##            </form>
-##        </div>
-##    </div>

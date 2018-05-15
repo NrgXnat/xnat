@@ -21,6 +21,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -36,14 +37,33 @@ public class RegisterExternalLogin extends XDATRegisterUser {
         if (StringUtils.equals("merge", operation)) {
             // If it's a merge with an existing account, we need to validate the username and password.
             final String username = (String) TurbineUtils.GetPassedParameter("username", data);
-            final String password = (String) TurbineUtils.GetPassedParameter("password", data);
-            final Authentication authentication = _provider.authenticate(new XnatDatabaseUsernamePasswordAuthenticationToken(username, password));
+            if (StringUtils.isBlank(username)) {
+                retryAuthentication(data, context, "You must provide a valid username.");
+                return;
+            }
+            if (StringUtils.equalsIgnoreCase("guest", username)) {
+                retryAuthentication(data, context, "You can't associate an external authentication account with the guest user.");
+                return;
+            }
 
-            // If the validation failed...
-            if (!authentication.isAuthenticated()) {
-                // Display an error message and route them back to the register page.
-                context.put("errorMessage", "The submitted username and password didn't match an existing XNAT account.");
-                data.getResponse().sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/RegisterExternalLogin.vm");
+            final String password = (String) TurbineUtils.GetPassedParameter("password", data);
+            if (StringUtils.isBlank(password)) {
+                retryAuthentication(data, context, "You must provide a password value.");
+                return;
+            }
+
+            try {
+                final Authentication authentication = _provider.authenticate(new XnatDatabaseUsernamePasswordAuthenticationToken(username, password));
+
+                // If the validation failed...
+                if (!authentication.isAuthenticated()) {
+                    // Let them know and try again.
+                    retryAuthentication(data, context, "The submitted username and password didn't match an existing XNAT account.");
+                    return;
+                }
+            } catch (AuthenticationException e) {
+                log.info("User logged in with username {} through auth method {}, then tried to associate with existing XNAT account '{}' but provided invalid credentials", TurbineUtils.GetPassedParameter("authUsername", data), TurbineUtils.GetPassedParameter("authMethodId", data), username);
+                retryAuthentication(data, context, "The submitted username and password didn't match an existing active XNAT account.");
                 return;
             }
         } else {
@@ -55,8 +75,15 @@ public class RegisterExternalLogin extends XDATRegisterUser {
     }
 
     @Override
-    public void directRequest(RunData data, Context context, UserI user) throws Exception {
+    public void directRequest(final RunData data, final Context context, final UserI user) throws Exception {
         super.directRequest(data, context, user);
+    }
+
+    private void retryAuthentication(final RunData data, final Context context, final String message) {
+        preserveVariables(data, context);
+        data.setRedirectURI(null);
+        data.setMessage("Authentication failed: " + message);
+        data.setScreenTemplate("RegisterExternalLogin.vm");
     }
 
     private void createUserAuthRecord(final RunData data, final String operation) {

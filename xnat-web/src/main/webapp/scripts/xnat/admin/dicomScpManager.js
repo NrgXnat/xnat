@@ -69,7 +69,7 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/dicomscp' + appended);
     }
 
-    function formatAeTitleAndPort(aeTitle, port) {
+    function formatAeTitleAndPort(aeTitle, port){
         return aeTitle + ':' + port;
     }
 
@@ -105,7 +105,7 @@ var XNAT = getObject(XNAT || {});
             url: rootUrl('/xapi/dicomscp/identifiers'),
             dataType: 'json',
             success: callback,
-            fail: function(e) { console.log (e.status, e.statusText);}
+            fail: function(e){ console.log(e.status, e.statusText);}
         })
     };
 
@@ -128,108 +128,155 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit receivers
     dicomScpManager.dialog = function(item, isNew){
-        var tmpl = $('#dicom-scp-editor-template');
+
         var doWhat = !item ? 'New' : 'Edit';
         var oldPort = item && item.port ? item.port : null;
         var oldTitle = item && item.aeTitle ? item.aeTitle : null;
-        var modalDimensions = (Object.keys(dicomScpManager.identifiers).length > 1) ? { height: '320', width: '600'} : { height: '250', width: '450' };
+        var modalDimensions =
+                Object.keys(dicomScpManager.identifiers).length > 1
+                    ? { height: '320px', width: '600px' }
+                    : { height: '250px', width: '500px' };
+
         isNew = firstDefined(isNew, doWhat === 'New');
+
         console.log(isNew);
+
         item = item || {};
-        xmodal.open({
-            title: doWhat + ' DICOM SCP Receiver',
-            template: tmpl.clone(true),
-            // content: tmpl.html(),
-            width: modalDimensions.width,
-            height: modalDimensions.height,
-            scroll: false,
-            padding: '0',
-            beforeShow: function(obj){
-                var $form = obj.$modal.find('form');
+
+        var $container = spawn('div.dicom-scp-editor-container');
+
+        // spawn the editor form directly into the dialog (no template)
+        XNAT.spawner
+            .resolve('siteAdmin/dicomScpEditor')
+            .ok(function(){
+
+                var spawneri = this;
+
+                var spawned$ = spawneri.get$();
+                var $form = spawned$.find('form[name="dicomScpEditor"]');
+
                 var identifiers = dicomScpManager.identifiers;
                 var identifier_ids = Object.keys(identifiers);
+
                 if (identifier_ids.length > 1) {
                     var identifierSelect = $form.find('#scp-identifier');
                     identifierSelect
-                        .prop('disabled',false)
+                        .prop('disabled', false)
                         .removeClass('hidden')
                         .parents('.panel-element').removeClass('hidden');
-                    identifier_ids.forEach(function(key,i){
-                        var option = '<option value="'+key+'"';
-                        option += (key=='dicomObjectIdentifier') ? ' selected' : ''; // preselect the default identifier.
-                        option += '>'+identifiers[key]+'</option>';
+                    identifier_ids.forEach(function(key, i){
+                        var option = '<option value="' + key + '"';
+                        option += (key === 'dicomObjectIdentifier') ? ' selected' : ''; // preselect the default identifier.
+                        option += '>' + identifiers[key] + '</option>';
                         identifierSelect.append(option);
                     });
                 }
+
                 if (item && isDefined(item.id)) {
-                    item.enabled = item.enabled + '';
-                    $form.setValues(item);
+                    // SET VALUES IN EDITOR DIALOG
+                    if (isNew) { item.enabled = true }
+                    // $form.setValues(item);
+                    $form.find('[name="id"]').val(item.id);
+                    $form.find('[name="aeTitle"]').val(item.aeTitle);
+                    $form.find('[name="port"]').val(item.port);
+                    $form.find('[name="enabled"]').val(item.enabled);
                 }
-            },
-            okClose: false,
-            okLabel: 'Save',
-            okAction: function(obj){
-                // the form panel is 'dicomScpEditorTemplate' in site-admin-element.yaml
-                var $form = obj.$modal.find('form');
-                var $title = $form.find('#scp-title');
-                var $port = $form.find('#scp-port');
-                console.log(item.id);
-                $form.submitJSON({
-                    method: isNew ? 'POST' : 'PUT',
-                    url: isNew ? scpUrl() : scpUrl(item.id),
-                    validate: function(){
 
-                        $form.find(':input').removeClass('invalid');
+                spawneri.render($container);
 
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
+                var scpEditorDialog = XNAT.dialog.open({
+                    title: doWhat + ' DICOM SCP Receiver',
+                    content: $container,
+                    width: modalDimensions.width,
+                    // height: modalDimensions.height,
+                    scroll: false,
+                    padding: 0,
+                    buttons: [
+                        {
+                            label: 'Save',
+                            close: false,
+                            isDefault: true,
+                            action: function(obj){
 
-                        [$port, $title].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
+                                // the form panel is 'dicomScpEditor' in site-admin-elements.yaml
 
-                        var newPort = $port.val();
-                        console.log(newPort);
+                                var $form = obj.dialog$.find('form[name="dicomScpEditor"]');
+                                var $aeTitle = $form.find('[name="aeTitle"]');
+                                var $port = $form.find('[name="port"]');
 
-                        var newTitle = $title.val();
-                        console.log(newTitle);
-
-                        var newAeTitleAndPort = formatAeTitleAndPort(newTitle, newPort);
-
-                        // only check for port conflicts if we're changing the port
-                        if (newTitle + '' !== oldTitle + '' || newPort + '' !== oldPort + '') {
-                            dicomScpManager.usedAeTitlesAndPorts.forEach(function(usedAeTitleAndPort){
-                                if (usedAeTitleAndPort+'' === newAeTitleAndPort+''){
-                                    errors++;
-                                    errorMsg += '<li>The AE title and port <b>' + newAeTitleAndPort + '</b> is already in use. Please use another AE title or port number.</li>';
-                                    $port.addClass('invalid');
-                                    return false;
+                                // set the value for 'customProcessing' on-the-fly
+                                var customProcessing$ = $form.find('[name="customProcessing"]');
+                                if (customProcessing$.length) {
+                                    customProcessing$[0].value = customProcessing$[0].checked + '';
                                 }
-                            });
+
+                                console.log(item.id);
+
+                                $form.submitJSON({
+                                    method: isNew ? 'POST' : 'PUT',
+                                    url: isNew ? scpUrl() : scpUrl(item.id),
+                                    validate: function(){
+
+                                        $form.find(':input').removeClass('invalid');
+
+                                        var errors = 0;
+                                        var errorMsg = 'Errors were found with the following fields: <ul>';
+
+                                        [$port, $aeTitle].forEach(function($el){
+                                            var el = $el[0];
+                                            if (!el.value) {
+                                                errors++;
+                                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                                                $el.addClass('invalid');
+                                            }
+                                        });
+
+                                        var newPort = $port.val();
+                                        console.log(newPort);
+
+                                        var newTitle = $aeTitle.val();
+                                        console.log(newTitle);
+
+                                        var newAeTitleAndPort = formatAeTitleAndPort(newTitle, newPort);
+
+                                        // only check for port conflicts if we're changing the port
+                                        if (newTitle + '' !== oldTitle + '' || newPort + '' !== oldPort + '') {
+                                            dicomScpManager.usedAeTitlesAndPorts.forEach(function(usedAeTitleAndPort){
+                                                if (usedAeTitleAndPort + '' === newAeTitleAndPort + '') {
+                                                    errors++;
+                                                    errorMsg += '<li>The AE title and port <b>' + newAeTitleAndPort + '</b> is already in use. Please use another AE title or port number.</li>';
+                                                    $port.addClass('invalid');
+                                                    return false;
+                                                }
+                                            });
+                                        }
+
+                                        errorMsg += '</ul>';
+
+                                        if (errors > 0) {
+                                            XNAT.dialog.message('Errors Found', errorMsg, { height: 300 });
+                                        }
+
+                                        return errors === 0;
+
+                                    },
+                                    success: function(){
+                                        refreshTable();
+                                        scpEditorDialog.close();
+                                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                                    }
+                                });
+                            }
+                        },
+                        {
+                            label: 'Cancel',
+                            close: true
                         }
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
-                        }
-
-                        return errors === 0;
-
-                    },
-                    success: function(){
-                        refreshTable();
-                        xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
-                    }
+                    ]
                 });
-            }
-        });
+
+            });
+
     };
 
     // create table for DICOM SCP receivers
@@ -278,10 +325,10 @@ var XNAT = getObject(XNAT || {});
                 }
             });
             return spawn('div.center', [
-                spawn('label.switchbox|title=' + item.aeTitle, [
+                ['label.switchbox|title=' + item.aeTitle, [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
-                ])
+                ]]
             ]);
         }
 
@@ -289,19 +336,30 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    dicomScpManager.dialog(item, false);
+                    if (item && item.id) {
+                        dicomScpManager.getReceiver(item.id, function(data){
+                            dicomScpManager.dialog(data, false);
+                        });
+                    }
+                    else {
+                        dicomScpManager.dialog({}, false);
+                    }
                 }
             }, [['b', text]]);
         }
 
-        function editButton(item) {
+        function editButton(item){
             return spawn('button.btn.sm.edit', {
                 onclick: function(e){
                     e.preventDefault();
-                    dicomScpManager.getReceiver(item.id, function(receiver){
-                        item = receiver;
-                        dicomScpManager.dialog(receiver, false);
-                    })
+                    if (item && item.id) {
+                        dicomScpManager.getReceiver(item.id, function(data){
+                            dicomScpManager.dialog(data, false);
+                        });
+                    }
+                    else {
+                        dicomScpManager.dialog({}, false);
+                    }
                 }
             }, 'Edit');
         }
@@ -320,8 +378,8 @@ var XNAT = getObject(XNAT || {});
                             XNAT.xhr.delete({
                                 url: scpUrl(item.id),
                                 success: function(){
-                                    console.log('"'+ item.aeTitle + '" deleted');
-                                    XNAT.ui.banner.top(1000, '<b>"'+ item.aeTitle + '"</b> deleted.', 'success');
+                                    console.log('"' + item.aeTitle + '" deleted');
+                                    XNAT.ui.banner.top(1000, '<b>"' + item.aeTitle + '"</b> deleted.', 'success');
                                     refreshTable();
                                 }
                             });
@@ -334,7 +392,7 @@ var XNAT = getObject(XNAT || {});
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
                 var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
-                scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port }})
+                scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port } })
                         .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
                         .td([['div.mono.center', item.port]]).addClass('port')
                         .td(identifierLabel).addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
@@ -342,7 +400,7 @@ var XNAT = getObject(XNAT || {});
                         .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 
-            if (container){
+            if (container) {
                 $$(container).append(scpTable.table);
             }
 
@@ -363,7 +421,7 @@ var XNAT = getObject(XNAT || {});
 
             dicomScpManager.identifiers = data;
 
-            var $manager = $$(container||'div#dicom-scp-manager');
+            var $manager = $$(container || 'div#dicom-scp-manager');
 
             dicomScpManager.$container = $manager;
 

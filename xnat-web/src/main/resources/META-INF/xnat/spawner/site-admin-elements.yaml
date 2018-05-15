@@ -909,10 +909,11 @@ pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
 
 pluginOpenUrlsConfig:
-    tag: "div"
+    kind: panel
+    name: pluginOpenUrlsConfig
+    header: false
+    footer: false
     contents:
-        pluginOpenUrlsContainer:
-            tag: "div#plugin-open-urls-config"
         pluginOpenUrlsScript:
             tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 
@@ -1240,6 +1241,72 @@ pipelineSettings:
     contents:
         ${processingUrl}
 
+dicomScpEditor:
+    kind: panel.form
+    name: dicomScpEditor
+    header: false
+    footer: false
+    load: ''
+    action: /xapi/dicomscp
+    contentType: json
+    element:
+        style:
+            border: none
+            marginBottom: 0
+    contents:
+        scpId:
+            kind: panel.input.hidden
+            id: scp-id
+            name: id
+            className: hidden
+        aeTitle:
+            kind: panel.input.text
+            id: scp-title
+            name: aeTitle
+            label: AE Title
+            #description: AE Title for DICOM Receiver
+            validation: not-empty
+        port:
+            kind: panel.input.number
+            id: scp-port
+            name: port
+            label: Port
+            #description: Port for DICOM Receiver
+            validation: integer
+        enabled:
+            kind: input.hidden
+            id: scp-enabled
+            name: enabled
+            className: hidden
+        customProcessing:
+            kind: panel.input.switchbox
+            name: customProcessing
+            label: " "
+            #show: false
+            className: hidden
+            onText: "Custom Processing: <b>Enabled</b>"
+            offText: "Custom Processing <b>Disabled</b>"
+            #description: Custom Processing for DICOM Receiver
+        identifier:
+            kind: panel.select.single
+            id: scp-identifier
+            name: identifier
+            label: Identifier
+            className: hidden
+            element:
+                title: Select DICOM Object Identifier
+                disabled: disabled
+            description: >
+                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
+#            fileNamer:
+#                kind: panel.input.text
+#                name: fileNamer
+#                label: File Namer
+#            identifier:
+#                kind: panel.input.text
+#                name: identifier
+#                label: Identifier
+
 dicomScpReceivers:
     kind: panel
     name: dicomScpReceivers
@@ -1255,58 +1322,6 @@ dicomScpReceivers:
                 <i>all other receivers</i> on the same port. Before performing
                 any operations like this, verify that there are no transmissions
                 currently in progress to any of the receivers on that port.
-        dicomScpEditorTemplate:
-            tag: "div#dicom-scp-editor-template.html-template"
-            contents:
-                dicomScpEditor:
-                    kind: panel.form
-                    name: dicomScpEditor
-                    id: dicom-scp-editor
-                    header: false
-                    footer: false
-                    action: /xapi/dicomscp
-                    contentType: json
-                    contents:
-                        pad:
-                            tag: div.pad20top
-                        scpId:
-                            kind: panel.input.hidden
-                            id: scp-id
-                            name: id
-                            className: hidden
-                        aeTitle:
-                            kind: panel.input.text
-                            id: scp-title
-                            name: aeTitle
-                            label: AE Title
-#                            description: AE Title for DICOM Receiver
-                            validation: not-empty
-                        port:
-                            kind: panel.input.number
-                            id: scp-port
-                            name: port
-                            label: Port
-#                            description: Port for DICOM Receiver
-                            validation: integer
-                        identifier:
-                            kind: panel.select.single
-                            id: scp-identifier
-                            name: identifier
-                            label: Identifier
-                            className: hidden
-                            element:
-                                title: Select DICOM Object Identifier
-                                disabled: disabled
-                            description: >
-                                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
-#                        fileNamer:
-#                            kind: panel.input.text
-#                            name: fileNamer
-#                            label: File Namer
-#                        identifier:
-#                            kind: panel.input.text
-#                            name: identifier
-#                            label: Identifier
         dicomScpManager:
             tag: "div#dicom-scp-manager"
         dicomScpManagerScript:

@@ -117,6 +117,11 @@ var XNAT = getObject(XNAT);
 
     // force reloading of display elements
     dataTypeAccess.getElements = function(type, opts){
+        // return existing function if it already exists
+        if (isFunction(dataTypeAccess.getElements[type])) {
+            console.log("exists: datatTypeAccess.getElements['" + type + "']");
+            return dataTypeAccess.getElements[type];
+        }
         var accessTypeKey = 'accessDisplays.' + type;
         getFreshData = getFreshData || userData.getValue(accessTypeKey) === undef;
         var getElementDisplays = function(){};
@@ -131,23 +136,30 @@ var XNAT = getObject(XNAT);
                 // },
                 success: function(datatypes){
                     var elements = [];
+                    var elementNames = [];
                     forEach(datatypes, function(element){
                         // map to old names for compatibility
-                        element.element_name = element.elementName;
-                        element.plural =
-                            element.plural ||
-                            element.singular ||
-                            element.properName ||
-                            element.elementName.split(':')[1] ||
-                            element.elementName;
-                        element.isExperiment = element.experiment;
-                        element.isSubjectAssessor = element.subjectAssessor;
-                        element.isImageAssessor = element.imageAssessor;
-                        element.isImageSession = element.imageSession;
-                        element.isImageScan = element.imageScan;
-                        // element.lbg = '#f0f0f0';
-                        // element.dbg = '#505050';
-                        elements.push(element);
+                        element.elementName =
+                            element.element_name =
+                                element.elementName;
+                        // only add unique elements
+                        if (elementNames.indexOf(element.elementName) === -1) {
+                            element.plural =
+                                element.plural ||
+                                element.singular ||
+                                element.properName ||
+                                element.elementName.split(':')[1] ||
+                                element.elementName;
+                            element.isExperiment = element.experiment;
+                            element.isSubjectAssessor = element.subjectAssessor;
+                            element.isImageAssessor = element.imageAssessor;
+                            element.isImageSession = element.imageSession;
+                            element.isImageScan = element.imageScan;
+                            // element.lbg = '#f0f0f0';
+                            // element.dbg = '#505050';
+                            elementNames.push(element.elementName);
+                            elements.push(element);
+                        }
                     });
                     userData.setValue(accessTypeKey, sortObjects(elements, 'plural'));
                 },

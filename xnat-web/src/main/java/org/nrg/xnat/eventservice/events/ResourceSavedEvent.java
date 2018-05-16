@@ -1,19 +1,19 @@
 package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
-import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
-@XnatEventServiceEvent(name="ProjectCreatedEvent")
-public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreatedEvent, XnatProjectdataI>  {
-    final String displayName = "Project Created";
-    final String description ="New project created.";
+@XnatEventServiceEvent(name="ResourceSavedEvent")
+public class ResourceSavedEvent extends CombinedEventServiceEvent<ResourceSavedEvent, XnatResourcecatalogI>  {
+    final String displayName = "Resource Saved";
+    final String description ="New resource catalog saved to session.";
 
-    public ProjectCreatedEvent(){};
+    public ResourceSavedEvent(){};
 
-    public ProjectCreatedEvent(final XnatProjectdataI payload, final String eventUser) {
+    public ResourceSavedEvent(final XnatResourcecatalogI payload, final String eventUser) {
         super(payload, eventUser);
     }
 
@@ -25,7 +25,7 @@ public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreate
 
     @Override
     public String getPayloadXnatType() {
-        return "xnat:projectData";
+        return "xnat:resourceCatalog";
     }
 
     @Override
@@ -36,7 +36,7 @@ public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreate
 
     @Override
     public EventServiceListener getInstance() {
-        return new ProjectCreatedEvent();
+        return new ResourceSavedEvent();
     }
 
 }

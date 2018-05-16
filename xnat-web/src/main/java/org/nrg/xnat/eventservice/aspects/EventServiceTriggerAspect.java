@@ -12,6 +12,7 @@ import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
@@ -43,24 +44,52 @@ public class EventServiceTriggerAspect {
             "&& args(item, user, ..)" +
             "&& execution(* save(..))")
     public void triggerOnItemSave(final JoinPoint joinPoint, ItemI item,UserI user) throws Throwable{
-        try {
-            String userLogin = user != null ? user.getLogin() : null;
+        if (log.isDebugEnabled()) {
+            try {
+                String userLogin = user != null ? user.getLogin() : null;
 
-            if(!(StringUtils.equals(item.getXSIType(), "xnat:subjectData") || StringUtils.containsIgnoreCase(item.getXSIType(),"SessionData") || StringUtils.equals(item.getXSIType(), "xnat:projectData") ))
-                return;
+                if (!(StringUtils.equals(item.getXSIType(), "xnat:subjectData")
+                        || StringUtils.containsIgnoreCase(item.getXSIType(), "SessionData")
+                        || StringUtils.equals(item.getXSIType(), "xnat:projectData")
+                        || StringUtils.equals(item.getXSIType(), "xnat:resourceCatalog")))
+                    return;
 
-            log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
-                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
-                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
-                    "  UserI = " + userLogin);
-            log.debug("\n\n" + item.getItem().toString() + "\n\n");
+                log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                        "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                        "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                        "  UserI = " + userLogin);
+                log.debug("\n\n" + item.getItem().toString() + "\n\n");
 
-        } catch (Throwable e){
-            log.error("Exception processing triggerOnItemSave" + e.getMessage());
-            throw e;
+            } catch(Throwable e){
+                log.error("Exception processing triggerOnItemSave" + e.getMessage());
+                throw e;
+            }
         }
     }
 
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+            "&& args(item, user, ..)" +
+            "&& execution(* save(..))")
+    public void triggerOnResourceSave(final JoinPoint joinPoint, XnatResourcecatalog item, UserI user) throws Throwable{
+        try {
+            Object[] args = joinPoint.getArgs();
+            Boolean isUpdate = Arrays.stream(args)
+                                     .filter(a -> a instanceof EventMetaI)
+                                     .allMatch(a -> a instanceof ResourceModifierA.UpdateMeta);
+
+
+            String userLogin = user != null ? user.getLogin() : null;
+
+            log.debug("triggerOnResourceSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                    "  UserI = " + userLogin);
+            eventService.triggerEvent(new ResourceSavedEvent(item, userLogin), null);
+        } catch (Throwable e){
+            log.error("Exception processing triggerOnResourceSave" + e.getMessage());
+            throw e;
+        }
+    }
 
     @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
             "&& args(item, user, ..)" +

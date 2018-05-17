@@ -37,7 +37,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.scope = scope;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<String> getProjectIdsList() {
         return projectIdsList;
     }
@@ -75,7 +75,6 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     private String scope;
 
-    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> projectIdsList;
 
     private int priority;

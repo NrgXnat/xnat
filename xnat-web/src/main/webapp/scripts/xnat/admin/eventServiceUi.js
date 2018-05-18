@@ -100,7 +100,7 @@ var XNAT = getObject(XNAT || {});
             '/xapi/events/actions?xnattype='+xsiType :
             '/xapi/events/allactions';
 
-        if (xsiType && projectId) path += '&projectid='+projectId;
+        if (xsiType && projectId) path += '&project='+projectId;
         return rootUrl(path);
     }
 
@@ -851,7 +851,7 @@ var XNAT = getObject(XNAT || {});
 
     function getHistoryUrl(project,sub){
         var params = [];
-        if (project) params.push('projectid='+project);
+        if (project) params.push('project='+project);
         if (sub) params.push('subscriptionid='+sub);
         var appended = (params.length) ? '?'+params.join('&') : '';
 

@@ -9,12 +9,9 @@
 
 
 package org.nrg.xft.db;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -30,20 +27,24 @@ import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XftStringUtils;
 
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @author Tim
  *
  */
+@Slf4j
 public class ViewManager {
-	static org.apache.log4j.Logger logger = Logger.getLogger(ViewManager.class);
-	public final static Hashtable FIELD_MAPS = new Hashtable();
-	public final static Hashtable<String,ArrayList<String>> FIELD_NAMES = new Hashtable<String,ArrayList<String>>();
-	public static final String ACTIVE = "active";
-	public static final String ALL = "all";
-	public static final String LOCKED = "locked";
-	public static final String OBSOLETE = "obsolete"; 
-	public static final String QUARANTINE = "quarantine";
-	public static final String DELETED = "deleted";
+	public final static Map<String, Map<String, String>> FIELD_MAPS  = new ConcurrentHashMap<>();
+	public final static Map<String, List<String>>        FIELD_NAMES = new ConcurrentHashMap<>();
+	public static final String                           ACTIVE      = "active";
+	public static final String                           ALL         = "all";
+	public static final String                           LOCKED      = "locked";
+	public static final String                           OBSOLETE    = "obsolete";
+	public static final String                           QUARANTINE  = "quarantine";
+	public static final String                           DELETED     = "deleted";
 	public final static String DEFAULT_LEVEL = ALL;
 	public final static String ACCESSIBLE=ViewManager.ACTIVE+","+ ViewManager.LOCKED+","+ ViewManager.QUARANTINE;
 	public final static boolean DEFAULT_MULTI = true;
@@ -138,7 +139,7 @@ public class ViewManager {
 							}
 						}
 					} catch (Exception e1) {
-						logger.error(
+						log.error(
 							"ELEMENT:'" + element.getFullXMLName() + "'",
 							e1);
 					}
@@ -657,7 +658,7 @@ public class ViewManager {
 					}
 					
 				} catch (Exception e1) {
-					logger.error(
+					log.error(
 						"ELEMENT:'" + e.getFullXMLName() + "'",
 						e1);
 				}
@@ -707,9 +708,9 @@ public class ViewManager {
         try {
             query = qo.buildQuery();
         } catch (IllegalAccessException e1) {
-            logger.error("",e1);
+            log.error("", e1);
         } catch (Exception e1) {
-            logger.error("",e1);
+            log.error("", e1);
         }
         return query;
 	    
@@ -910,7 +911,7 @@ public class ViewManager {
 	}
 	
 
-	public static Hashtable GetFieldMap(GenericWrapperElement e,boolean isRoot)throws XFTInitException,ElementNotFoundException
+	public static Map<String, String> GetFieldMap(GenericWrapperElement e,boolean isRoot)throws XFTInitException,ElementNotFoundException
 	{
 		return GetFieldMap(e,DEFAULT_LEVEL,DEFAULT_MULTI,isRoot);		
 	}
@@ -923,47 +924,47 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static Hashtable GetFieldMap(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException
-	{
-		if (FIELD_MAPS.get(e.getSQLName() + isRoot + level + allowMultiples) == null)
-		{
-			Hashtable hash = new Hashtable();
-			ArrayList al = new ArrayList();
-			Iterator fields = null;
-			if (PRE_LOAD_HISTORY && level.equalsIgnoreCase(ViewManager.ALL))
-			{
-				fields = GetFields(e,ViewManager.ALL,allowMultiples,isRoot).iterator();
-			}else if (level.equalsIgnoreCase(ViewManager.ALL)){
-				fields = GetFields(e,ViewManager.QUARANTINE,allowMultiples,isRoot).iterator();
-			}else{
-				fields = GetFields(e,level,allowMultiples,isRoot).iterator();
-			}
-				
-			int counter = 0;
-			while (fields.hasNext())
-			{
-				String [] field = (String[])fields.next();
-				String fieldName = (String)field[1];
-				String header = (String)field[2];
-				if (header != null && !header.equalsIgnoreCase(""))
-				{
-					fieldName = header + "_" + fieldName;
-				}
-				
-				String s = field[5];
-				s = XftStringUtils.StandardizeXMLPath(s);
-				hash.put(s.toLowerCase(),field[0] + Integer.toString(counter));
-				al.add(s);
-				counter++;
-			}
-			
-			FIELD_MAPS.put(e.getSQLName() + isRoot + level + allowMultiples,hash);
-			FIELD_NAMES.put(e.getSQLName() + isRoot + level + allowMultiples,al);
-		}
-		return (Hashtable)FIELD_MAPS.get(e.getSQLName() + isRoot + level + allowMultiples);
+	public synchronized static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
+		return getFieldElements(FIELD_MAPS, e, level, allowMultiples, isRoot);
 	}
-	
 
+	private static <T> T getFieldElements(final Map<String, T> elementMap, final GenericWrapperElement element, final String level, final boolean allowMultiples, final boolean isRoot) throws XFTInitException, ElementNotFoundException {
+		final String fieldElementKey = element.getSQLName() + isRoot + level + allowMultiples;
+		if (!elementMap.containsKey(fieldElementKey)) {
+			final String fullXMLName = element.getFullXMLName();
+			log.info("No entry found for element key {}: element {}, level {}, multiples {}, isRoot {}", fieldElementKey, fullXMLName, level, allowMultiples, isRoot);
+			final Map<String, String> fieldMap   = new HashMap<>();
+			final List<String>        fieldNames = new ArrayList<>();
+
+			final List<String[]> fields = new ArrayList<>();
+			if (PRE_LOAD_HISTORY && level.equalsIgnoreCase(ViewManager.ALL)) {
+				//noinspection unchecked
+				fields.addAll(GetFields(element, ViewManager.ALL, allowMultiples, isRoot));
+			} else if (level.equalsIgnoreCase(ViewManager.ALL)) {
+				//noinspection unchecked
+				fields.addAll(GetFields(element, ViewManager.QUARANTINE, allowMultiples, isRoot));
+			} else {
+				//noinspection unchecked
+				fields.addAll(GetFields(element, level, allowMultiples, isRoot));
+			}
+
+			log.debug("Starting to process {} fields for element key {}: element {}, level {}, multiples {}, isRoot {}", fields.size(), fullXMLName, PRE_LOAD_HISTORY, level);
+
+			int counter = 0;
+			for (final String[] field : fields) {
+				final String xmlPath = XftStringUtils.StandardizeXMLPath(field[5]);
+				final String value   = field[0] + Integer.toString(counter++);
+
+				log.debug("Setting element {} XML path '{}' to alias '{}'", fullXMLName, xmlPath, value);
+				fieldMap.put(xmlPath.toLowerCase(), value);
+				fieldNames.add(xmlPath);
+			}
+
+			FIELD_MAPS.put(fieldElementKey, fieldMap);
+			FIELD_NAMES.put(fieldElementKey, fieldNames);
+		}
+		return elementMap.get(fieldElementKey);
+	}
 	
 	/**
 	 * Returns XMLPath names of all child fields
@@ -973,8 +974,7 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public static ArrayList GetFieldNames(GenericWrapperElement e,boolean isRoot)throws XFTInitException,ElementNotFoundException
-	{
+	public static List<String> GetFieldNames(GenericWrapperElement e,boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return GetFieldNames(e,DEFAULT_LEVEL,DEFAULT_MULTI,isRoot);		
 	}
 	
@@ -987,7 +987,7 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public static ArrayList GetFieldNames(GenericWrapperElement e,boolean isRoot,boolean loadHistory)throws XFTInitException,ElementNotFoundException
+	public static List<String> GetFieldNames(GenericWrapperElement e,boolean isRoot,boolean loadHistory)throws XFTInitException,ElementNotFoundException
 	{
 		if (loadHistory)
 			return GetFieldNames(e,ALL,DEFAULT_MULTI,isRoot);
@@ -1005,43 +1005,8 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static ArrayList<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException
-	{
-		if (FIELD_NAMES.get(e.getSQLName() + isRoot + level + allowMultiples) == null)
-		{
-			Hashtable hash = new Hashtable();
-			ArrayList<String> al = new ArrayList<String>();
-			Iterator fields = null;
-			if (PRE_LOAD_HISTORY && level.equalsIgnoreCase(ViewManager.ALL))
-			{
-				fields = GetFields(e,ViewManager.ALL,allowMultiples,isRoot).iterator();
-			}else if (level.equalsIgnoreCase(ViewManager.ALL)){
-				fields = GetFields(e,ViewManager.QUARANTINE,allowMultiples,isRoot).iterator();
-			}else{
-				fields = GetFields(e,level,allowMultiples,isRoot).iterator();
-			}
-			int counter = 0;
-			while (fields.hasNext())
-			{
-				String [] field = (String[])fields.next();
-				String fieldName = (String)field[1];
-				String header = (String)field[2];
-				if (header != null && !header.equalsIgnoreCase(""))
-				{
-					fieldName = header + "_" + fieldName;
-				}
-				
-				String s = field[5];
-				s = XftStringUtils.StandardizeXMLPath(s);
-				hash.put(s.toLowerCase(),field[0] + Integer.toString(counter));
-				al.add(s);
-				counter++;
-			}
-			
-			FIELD_MAPS.put(e.getSQLName() + isRoot + level + allowMultiples,hash);
-			FIELD_NAMES.put(e.getSQLName() + isRoot + level + allowMultiples,al);
-		}
-		return (ArrayList)FIELD_NAMES.get(e.getSQLName() + isRoot + level + allowMultiples);
+	public synchronized static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
+		return getFieldElements(FIELD_NAMES, e, level, allowMultiples, isRoot);
 	}
 	
 	public static String GetViewColumnName(GenericWrapperElement e, String xmlPath,boolean isRoot)throws XFTInitException,ElementNotFoundException
@@ -1056,23 +1021,22 @@ public class ViewManager {
 	
 	public static String GetViewColumnName(GenericWrapperElement e, String xmlPath,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException
 	{
-		Hashtable hash = GetFieldMap(e,level,allowMultiples,isRoot);
-		String s = (String)hash.get(xmlPath.toLowerCase());
-		if (s == null)
-		{
-		    try {
-                
-	            String abbrxmlPath = GenericWrapperElement.GetVerifiedXMLPath(xmlPath);
-	            s = (String)hash.get(abbrxmlPath.toLowerCase());
-                if (s!=null)
-                {
-                    hash.put(xmlPath.toLowerCase(), s);
-                }
-	        } catch (Exception e1) {
-	            //logger.error("",e1);
-	        }
+		final Map<String, String> fieldMap = GetFieldMap(e, level, allowMultiples, isRoot);
+		final String        viewColumnName    = fieldMap.get(xmlPath.toLowerCase());
+		if (StringUtils.isNotBlank(viewColumnName)) {
+			return viewColumnName;
 		}
-		return s;		
+		try {
+			final String abbrxmlPath = GenericWrapperElement.GetVerifiedXMLPath(xmlPath).toLowerCase();
+			if (fieldMap.containsKey(abbrxmlPath)) {
+				final String aliased = fieldMap.get(abbrxmlPath);
+				fieldMap.put(xmlPath.toLowerCase(), aliased);
+				return aliased;
+			}
+		} catch (Exception e1) {
+			//log.error("",e1);
+		}
+		return null;
 	}
 	
 	public static void OutputFieldNames()
@@ -1122,14 +1086,11 @@ public class ViewManager {
 					sb.append("ac_s_").append(e.getSQLName()).append("_r");
 					sb.append("\n(ACTIVE - MULTIPLE - ROOT)\n");
 
-					Iterator iter = ViewManager.GetFieldNames(e,ViewManager.ACTIVE,true,true).iterator();
-					Hashtable hash=ViewManager.GetFieldMap(e,ViewManager.ACTIVE,true,true);
-					while (iter.hasNext())
-					{
-						String name = (String)iter.next();
+					final Map<String, String> fieldMap =ViewManager.GetFieldMap(e, ViewManager.ACTIVE, true, true);
+						for (final String name : ViewManager.GetFieldNames(e,ViewManager.ACTIVE,true,true)) {
 						try {
                             GenericWrapperField temp = (GenericWrapperField)GenericWrapperElement.GetFieldForXMLPath(name);
-                            String id = (String)hash.get(name.toLowerCase());
+                            String id = (String)fieldMap.get(name.toLowerCase());
                             try {
                                 id += "\t\t" +temp.getParentElement().getSQLName() + "."+temp.getSQLName();
                             } catch (RuntimeException e1) {

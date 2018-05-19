@@ -13,6 +13,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.turbine.util.RunData;
@@ -42,14 +43,12 @@ public class XDATScreen_uploadCSV1 extends SecureScreen {
         
         Hashtable<String,ArrayList<Object>> all = new Hashtable<String,ArrayList<Object>>();
         
-        ArrayList<String> fields =ViewManager.GetFieldNames(gwe,ViewManager.ACTIVE,false,true);
-        
         ArrayList<String> cleaned =new ArrayList<String>();
         ArrayList<String> required =new ArrayList<String>();
                 
         Hashtable<String,ArrayList<String>> extendable = new Hashtable<String,ArrayList<String>>();
         
-        for(String s: fields){
+        for(String s: ViewManager.GetFieldNames(gwe, ViewManager.ACTIVE, false, true)) {
             s = root + "/" + GenericWrapperElement.GetCompactXMLPath(s);
             if ((! s.endsWith("/meta/last_modified")) &&
                     (! s.endsWith("/meta/status")) &&
@@ -122,12 +121,10 @@ public class XDATScreen_uploadCSV1 extends SecureScreen {
                     gwe = GenericWrapperElement.GetElement(root);
                     
                     
-                    fields =ViewManager.GetFieldNames(gwe,ViewManager.ACTIVE,false,true);
-                    
                     cleaned =new ArrayList<String>();
                     extendable = new Hashtable<String,ArrayList<String>>();
                     
-                    for(String s: fields){
+                    for(String s: ViewManager.GetFieldNames(gwe,ViewManager.ACTIVE,false,true)){
                         s = root + "/" + GenericWrapperElement.GetCompactXMLPath(s);
                         if ((! s.endsWith("/meta/last_modified")) &&
                                 (! s.endsWith("/meta/status")) &&

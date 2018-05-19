@@ -9,7 +9,8 @@
 
 
 package org.nrg.xft.references;
-import org.apache.log4j.Logger;
+
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -21,25 +22,22 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
+import org.nrg.xft.utils.FileUtils;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.*;
+
+@Slf4j
 public class XFTReferenceManager {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XFTReferenceManager.class);
-	private static XFTReferenceManager instance = null;
-	
-	private Hashtable properNames = new Hashtable();
-	private Hashtable elementType = new Hashtable();
-	private ArrayList manyToOnes = new ArrayList();//ArrayList(0:subordinateElement,1:superiorElement,2:XFTSuperiorReference)
-	private ArrayList manyToManys = new ArrayList();//ArrayList(0:element,1:field,2:XFTManyToManyReference)
-	
-	private static Hashtable allXFTReferences = new Hashtable();
-	
-	private XFTReferenceManager()
-	{
-		
+	private static       XFTReferenceManager        instance         = null;
+	private static final Map<String, XFTReferenceI> allXFTReferences = new HashMap<>();
+
+	private final Map<String, String> properNames = new HashMap<>();
+	private final Map<String, String> elementType = new HashMap<>();
+	private final List<List<?>>       manyToOnes  = new ArrayList<>(); //ArrayList(0:subordinateElement,1:superiorElement,2:XFTSuperiorReference)
+	private final List<List<?>>       manyToManys = new ArrayList<>();//ArrayList(0:element,1:field,2:XFTManyToManyReference)
+
+	private XFTReferenceManager() {
+		log.info("Creating the XFTReferenceManager instance");
 	}
 	
 	/**
@@ -77,7 +75,7 @@ public class XFTReferenceManager {
 		{
 			if ((!elementName.equalsIgnoreCase("")) && (!namedType.equalsIgnoreCase("")))
 			{
-				this.getProperNames().put(namedType,elementName);
+				getProperNames().put(namedType,elementName);
 			}
 		}
 	}
@@ -125,15 +123,10 @@ public class XFTReferenceManager {
 	 */
 	private void addManyToOne(XFTSuperiorReference ref) throws XFTInitException,ElementNotFoundException
 	{
-		if(! checkManyToOnes(ref.getSubordinateElementName(),ref.getSubordinateFieldSQLName(),ref.getSuperiorElementName(),ref.getSuperiorFieldSQLName()))
+		if(!checkManyToOnes(ref.getSubordinateElementName(),ref.getSubordinateFieldSQLName(),ref.getSuperiorElementName(),ref.getSuperiorFieldSQLName()))
 		{
-			ArrayList sub = new ArrayList();
-			sub.add(ref.getSubordinateElementName());
-			sub.add(ref.getSuperiorElementName());
-			sub.add(ref);
-			sub.trimToSize();
-			GetInstance().manyToOnes.add(sub);
-			logger.debug("FOUND MANY-ONE RELATIONSHIP: '"+ref.getSubordinateElementName() +"'->'" + ref.getSuperiorElementName() + "'");
+			manyToOnes.add(Arrays.asList(ref.getSubordinateElementName(), ref.getSuperiorElementName(), ref));
+			log.debug("FOUND MANY-ONE RELATIONSHIP: '" + ref.getSubordinateElementName() + "'->'" + ref.getSuperiorElementName() + "'");
 		}
 	}
 	
@@ -147,21 +140,10 @@ public class XFTReferenceManager {
 	{
 		if (! checkManyToManys(ref.getElement1().getFullXMLName(),ref.getField1().getSQLName()))
 		{
-			ArrayList sub = new ArrayList();
-			sub.add(ref.getElement1());
-			sub.add(ref.getField1());
-			sub.add(ref);
-			sub.trimToSize();
-			GetInstance().manyToManys.add(sub);
-		
-			sub = new ArrayList();
-			sub.add(ref.getElement2());
-			sub.add(ref.getField2());
-			sub.add(ref);
-			sub.trimToSize();
-			GetInstance().manyToManys.add(sub);
+			manyToManys.add(Arrays.asList(ref.getElement1(), ref.getField1(), ref));
+			manyToManys.add(Arrays.asList(ref.getElement2(), ref.getField2(), ref));
 			
-			logger.debug("FOUND MANY-MANY RELATIONSHIP: '"+ref.getMappingTable()+ "'");
+			log.debug("FOUND MANY-MANY RELATIONSHIP: '" + ref.getMappingTable() + "'");
 		}
 	}
 
@@ -169,8 +151,8 @@ public class XFTReferenceManager {
 	 * ArrayList(0:element,1:field,2:XFTManyToManyReference)
 	 * @return Returns the manyToManys list
 	 */
-	private ArrayList getManyToManys() {
-		return manyToManys;
+	private List<List<?>> getManyToManys() {
+		return new ArrayList<>(manyToManys);
 	}
 
 	/**
@@ -179,18 +161,11 @@ public class XFTReferenceManager {
 	 */
 	public ArrayList getUniqueMappings() {
 		ArrayList al = new ArrayList();
-		
-		Iterator iter = manyToManys.iterator();
-		while (iter.hasNext())
-		{
-			ArrayList map = (ArrayList)iter.next();
-			if (! al.contains(map.get(2)))
-			{
-				al.add(map.get(2));
+		for (final List<?> manyToMany : getManyToManys()) {
+			if (!al.contains(manyToMany.get(2))) {
+				al.add(manyToMany.get(2));
 			}
 		}
-		
-		al.trimToSize();
 		return al;
 	}
 
@@ -198,8 +173,9 @@ public class XFTReferenceManager {
 	 * ArrayList(0:subordinateElement,1:superiorElement,2:XFTSuperiorReference)
 	 * @return Returns the manyToOnes list
 	 */
-	private ArrayList getManyToOnes() {
-		return manyToOnes;
+	private List<List<?>> getManyToOnes() {
+		//noinspection unchecked
+		return new ArrayList(manyToOnes);
 	}
 	
 	/**
@@ -213,40 +189,23 @@ public class XFTReferenceManager {
 	 */
 	private boolean checkManyToOnes(String subordinateElementName,String subordinateFieldName,String superiorElementName,String superiorFieldName) throws XFTInitException,ElementNotFoundException
 	{
-		Iterator iter = this.manyToOnes.iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
-			if (((String)child.get(0)).equalsIgnoreCase(subordinateElementName) && ((String)child.get(1)).equalsIgnoreCase(superiorElementName))
-			{
-				XFTSuperiorReference ref = (XFTSuperiorReference)child.get(2);
-				if (subordinateFieldName !=null)
-				{
-					if(! subordinateFieldName.equalsIgnoreCase(ref.getSubordinateFieldSQLName()))
-					{
+		for (final List<?> manyToOne : getManyToOnes()) {
+			if (((String) manyToOne.get(0)).equalsIgnoreCase(subordinateElementName) && ((String) manyToOne.get(1)).equalsIgnoreCase(superiorElementName)) {
+				XFTSuperiorReference ref = (XFTSuperiorReference) manyToOne.get(2);
+				if (subordinateFieldName != null) {
+					if (!subordinateFieldName.equalsIgnoreCase(ref.getSubordinateFieldSQLName())) {
 						return false;
 					}
-				}else
-				{
-					if (ref.getSubordinateField() != null)
-					{
+				} else {
+					if (ref.getSubordinateField() != null) {
 						return false;
 					}
 				}
-				if (superiorFieldName !=null)
-				{
-					if(! superiorFieldName.equalsIgnoreCase(ref.getSuperiorFieldSQLName()))
-					{
-						return false;
-					}
-				}else
-				{
-					if (ref.getSuperiorField() != null)
-					{
-						return false;
-					}
+				if (superiorFieldName != null) {
+					return superiorFieldName.equalsIgnoreCase(ref.getSuperiorFieldSQLName());
+				} else {
+					return ref.getSuperiorField() == null;
 				}
-				return true;
 			}
 		}
 		
@@ -262,14 +221,9 @@ public class XFTReferenceManager {
 	 */
 	private boolean checkManyToManys(String elementName,String fieldSQLName) throws XFTInitException,ElementNotFoundException
 	{
-		Iterator iter = this.manyToManys.iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
-			if (child.get(1) != null)
-			{
-				if (((GenericWrapperElement)child.get(0)).getFullXMLName().equalsIgnoreCase(elementName) && ((GenericWrapperField)child.get(1)).getSQLName().equalsIgnoreCase(fieldSQLName))
-				{
+		for (final List<?> manyToMany : getManyToManys()) {
+			if (manyToMany.get(1) != null) {
+				if (((GenericWrapperElement) manyToMany.get(0)).getFullXMLName().equalsIgnoreCase(elementName) && ((GenericWrapperField) manyToMany.get(1)).getSQLName().equalsIgnoreCase(fieldSQLName)) {
 					return true;
 				}
 			}
@@ -294,10 +248,7 @@ public class XFTReferenceManager {
 		    XFTReferenceI found = null;
 			if (f.isMultiple())
 			{
-				Iterator iter = GetInstance().getManyToManys().iterator();
-				while(iter.hasNext())
-				{
-					ArrayList child = (ArrayList)iter.next();
+				for (final List<?> child : GetInstance().getManyToManys()) {
 					if (((GenericWrapperElement)child.get(0)).getFullXMLName().equalsIgnoreCase(parent.getFullXMLName()) && ((GenericWrapperField)child.get(1)).getSQLName().equalsIgnoreCase(f.getSQLName()))
 					{
 					    found = ((XFTManyToManyReference)child.get(2));
@@ -307,10 +258,7 @@ public class XFTReferenceManager {
 				
 				if (found ==null)
 				{
-					Iterator iter2 = GetInstance().getManyToOnes().iterator();
-					while(iter2.hasNext())
-					{
-						ArrayList child = (ArrayList)iter2.next();
+					for (final List<?> child : GetInstance().getManyToOnes()) {
 						if (((String)child.get(1)).equalsIgnoreCase(f.getParentElement().getFullXMLName()))
 						{
 							XFTSuperiorReference ref = (XFTSuperiorReference)child.get(2);
@@ -341,10 +289,7 @@ public class XFTReferenceManager {
 			    
 			}else
 			{
-				Iterator iter = GetInstance().getManyToOnes().iterator();
-				while(iter.hasNext())
-				{
-					ArrayList child = (ArrayList)iter.next();
+				for (final List<?> child : GetInstance().getManyToOnes()) {
 					String rootElementName = (String)child.get(0);
 					String foreignElementName = f.getParentElement().getFullXMLName();
 					if (((String)child.get(0)).equalsIgnoreCase(foreignElementName))
@@ -400,16 +345,12 @@ public class XFTReferenceManager {
 	public static ArrayList FindHiddenSuperiorsFor(GenericWrapperElement e)throws XFTInitException,ElementNotFoundException
 	{
 		ArrayList al = new ArrayList();
-		
-		Iterator iter = GetInstance().getManyToOnes().iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
-			if (((String)child.get(0)).equalsIgnoreCase(e.getFullXMLName()))
-			{
-				XFTSuperiorReference ref = (XFTSuperiorReference)child.get(2);
-				if (ref.getSubordinateField() == null)
-				{
+
+		for (final Object o : GetInstance().getManyToOnes()) {
+			ArrayList child = (ArrayList) o;
+			if (((String) child.get(0)).equalsIgnoreCase(e.getFullXMLName())) {
+				XFTSuperiorReference ref = (XFTSuperiorReference) child.get(2);
+				if (ref.getSubordinateField() == null) {
 					al.add(ref);
 				}
 			}
@@ -428,20 +369,13 @@ public class XFTReferenceManager {
 	 */
 	public static ArrayList FindSuperiorsFor(GenericWrapperElement e)throws XFTInitException,ElementNotFoundException
 	{
-		ArrayList al = new ArrayList();
-		
-		Iterator iter = GetInstance().getManyToOnes().iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
-			if (((String)child.get(0)).equalsIgnoreCase(e.getFullXMLName()))
-			{
+		final ArrayList<XFTSuperiorReference> al = new ArrayList<>();
+		for (final List<?> child : GetInstance().getManyToOnes()) {
+			if (((String)child.get(0)).equalsIgnoreCase(e.getFullXMLName())) {
 				XFTSuperiorReference ref = (XFTSuperiorReference)child.get(2);
 				al.add(ref);
 			}
 		}
-		
-		al.trimToSize();
 		return al;
 	}
 	
@@ -454,20 +388,14 @@ public class XFTReferenceManager {
 	 */
 	public static ArrayList FindSubordinatesFor(GenericWrapperElement e)throws XFTInitException,ElementNotFoundException
 	{
-		ArrayList al = new ArrayList();
-		
-		Iterator iter = GetInstance().getManyToOnes().iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
+		final ArrayList<XFTSuperiorReference> al = new ArrayList<>();
+		for (final List<?> child : GetInstance().getManyToOnes()) {
 			if (((String)child.get(1)).equalsIgnoreCase(e.getFullXMLName()))
 			{
 				XFTSuperiorReference ref = (XFTSuperiorReference)child.get(2);
 				al.add(ref);
 			}
 		}
-		
-		al.trimToSize();
 		return al;
 	}
 
@@ -481,20 +409,14 @@ public class XFTReferenceManager {
 	 */
 	public static ArrayList FindManyToManysFor(GenericWrapperElement e)throws XFTInitException,ElementNotFoundException
 	{
-		ArrayList al = new ArrayList();
-		
-		Iterator iter = GetInstance().getManyToManys().iterator();
-		while(iter.hasNext())
-		{
-			ArrayList child = (ArrayList)iter.next();
+		final ArrayList<XFTManyToManyReference> al = new ArrayList<>();
+		for (final List<?> child : GetInstance().getManyToManys()) {
 			if (((GenericWrapperElement)child.get(0)).getFullXMLName().equalsIgnoreCase(e.getFullXMLName()))
 			{
 				XFTManyToManyReference ref = (XFTManyToManyReference)child.get(2);
 				al.add(ref);
 			}
 		}
-		
-		al.trimToSize();
 		return al;
 	}
 	
@@ -506,13 +428,9 @@ public class XFTReferenceManager {
 	 */
 	public static void init() throws XFTInitException,ElementNotFoundException
 	{
-		Iterator schemas = XFTManager.GetSchemas().iterator();
-		while (schemas.hasNext())
-		{
-			XFTSchema s = (XFTSchema)schemas.next();
+		for (final XFTSchema s : XFTManager.GetSchemas()) {
 			GetInstance().assignReferences(s);
 		}
-		
 	}
 	
 	public static void clean(){
@@ -529,52 +447,39 @@ public class XFTReferenceManager {
 	 */
 	private void assignReferences(XFTSchema s) throws XFTInitException,ElementNotFoundException
 	{
-		Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-		while (elements.hasNext())
-		{
-			GenericWrapperElement input = (GenericWrapperElement)elements.next();
+		for (final Object o : s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance())) {
+			GenericWrapperElement input = (GenericWrapperElement) o;
 
-			Iterator iter = input.getAllFields(false,true).iterator();
-			while (iter.hasNext())
-			{
-				GenericWrapperField xf = (GenericWrapperField)iter.next();
-				if (xf.isReference())
-				{
-					if (! xf.isMultiple())
-					{
+			for (final Object o1 : input.getAllFields(false, true)) {
+				GenericWrapperField xf = (GenericWrapperField) o1;
+				if (xf.isReference()) {
+					if (!xf.isMultiple()) {
 						XFTSuperiorReference ref = new XFTSuperiorReference(xf);
-						if (! xf.getName().equalsIgnoreCase(xf.getXMLType().getLocalType()))
-							XFTPseudonymManager.AddPseudonym(xf.getName(),xf.getXMLType().getLocalType());
+						if (!xf.getName().equalsIgnoreCase(xf.getXMLType().getLocalType())) {
+							XFTPseudonymManager.AddPseudonym(xf.getName(), xf.getXMLType().getLocalType());
+						}
 						addManyToOne(ref);
-					}else
-					{
-						if (xf.getRelationType().equalsIgnoreCase("single"))
-						{
+					} else {
+						if (xf.getRelationType().equalsIgnoreCase("single")) {
 							XFTSuperiorReference ref = new XFTSuperiorReference(xf);
 							addManyToOne(ref);
-						}else
-						{
-							GenericWrapperElement foreign = (GenericWrapperElement)xf.getReferenceElement();
-							Iterator foreignRefs = foreign.getAllFields(false,true).iterator();
-							boolean foundSubordinateField = false;
-							while (foreignRefs.hasNext())
-							{
-								GenericWrapperField temp = (GenericWrapperField)foreignRefs.next();
+						} else {
+							GenericWrapperElement foreign               = (GenericWrapperElement) xf.getReferenceElement();
+							boolean               foundSubordinateField = false;
+							for (final Object object : foreign.getAllFields(false, true)) {
+								GenericWrapperField temp = (GenericWrapperField) object;
 								if (temp.isReference()) {
-									String inputName = input.getLocalXMLName();
+									String inputName      = input.getLocalXMLName();
 									String referencedType = temp.getXMLType().getLocalType();
-									if  (referencedType.equalsIgnoreCase(inputName))
-									{
-										if (temp.isMultiple())
-										{
+									if (referencedType.equalsIgnoreCase(inputName)) {
+										if (temp.isMultiple()) {
 											//MANY TO MANY
-											XFTManyToManyReference ref = new XFTManyToManyReference(xf,temp);
+											XFTManyToManyReference ref = new XFTManyToManyReference(xf, temp);
 											ref.setMapping_name(temp.getRelationName());
 											ref.setUnique(temp.getRelationUnique());
 											addManyToMany(ref);
 											foundSubordinateField = true;
-										}else
-										{
+										} else {
 											//MANY TO ONE
 											XFTSuperiorReference ref = new XFTSuperiorReference(xf);
 											addManyToOne(ref);
@@ -584,29 +489,25 @@ public class XFTReferenceManager {
 									}
 								}
 							}
-							
-							if (! foundSubordinateField)
-							{
-								if (foreign.getWrapped().isCreatedChild())
-								{
+
+							if (!foundSubordinateField) {
+								if (foreign.getWrapped().isCreatedChild()) {
 									XFTSuperiorReference ref = new XFTSuperiorReference(xf);
 									addManyToOne(ref);
-								}else{
-									if (xf.getRelationType().equalsIgnoreCase("single"))
-									{
+								} else {
+									if (xf.getRelationType().equalsIgnoreCase("single")) {
 										XFTSuperiorReference ref = new XFTSuperiorReference(xf);
 										addManyToOne(ref);
-									}else
-									{
-										XFTManyToManyReference ref = new XFTManyToManyReference(xf,foreign);
+									} else {
+										XFTManyToManyReference ref = new XFTManyToManyReference(xf, foreign);
 										ref.setMapping_name(xf.getRelationName());
 										ref.setUnique(xf.getRelationUnique());
 										addManyToMany(ref);
 									}
 								}
 								//CHANGED 12-06-04 so that the default behavior is to make maxOccurs relationships many-to-many
-	//							XFTSuperiorReference ref = new XFTSuperiorReference(xf);
-	//							addManyToOne(ref);
+								//							XFTSuperiorReference ref = new XFTSuperiorReference(xf);
+								//							addManyToOne(ref);
 							}
 						}
 					}
@@ -618,14 +519,14 @@ public class XFTReferenceManager {
 	/**
 	 * @return Returns a hastable of the proper names
 	 */
-	public Hashtable getProperNames() {
+	public Map<String, String> getProperNames() {
 		return properNames;
 	}
 
 	/**
 	 * @return Returns the element type
 	 */
-	private Hashtable getElementType() {
+	private Map<String, String> getElementType() {
 		return elementType;
 	}
 
@@ -633,55 +534,43 @@ public class XFTReferenceManager {
 	 * @param hashtable
 	 */
     @SuppressWarnings("unused")
-	private void setElementType(Hashtable hashtable) {
-		elementType = hashtable;
+	private void setElementType(final Hashtable hashtable) {
+    	for (final Object key : hashtable.keySet()) {
+			final Object value = hashtable.get(key);
+			elementType.put(key.toString(), value != null ? value.toString() : null);
+		}
 	}
-	
-	
+
 	/**
 	 * Outputs all of the references defined in the XFTReferenceManager.
 	 */
-	public static void OutputReferences()
-	{
+	public static void OutputReferences() {
 		try {
-			StringBuffer sb = new StringBuffer("Element Types:");
-			
-			Enumeration enumer = GetInstance().getElementType().keys();
-			while(enumer.hasMoreElements())
-			{
-				String key =(String)enumer.nextElement();
+			final StringBuilder sb = new StringBuilder("Element Types:");
+			for (final String key : GetInstance().getElementType().keySet()) {
 				sb.append("\n").append(key).append("->").append(GetInstance().getElementType().get(key));
 			}
 			
 			sb.append("\n\nProper Names:");
-			enumer = GetInstance().getProperNames().keys();
-			while(enumer.hasMoreElements())
-			{
-				String key =(String)enumer.nextElement();
+			for (final String key : GetInstance().getProperNames().keySet()) {
 				sb.append("\n").append(key).append("->").append(GetInstance().getProperNames().get(key));
 			}
 			
 			sb.append("\n\nMany-To-Many:");
-			Iterator iter = GetInstance().getManyToManys().iterator();
-			while(iter.hasNext())
-			{
-				ArrayList key =(ArrayList)iter.next();
+			for (final List<?> key : GetInstance ().getManyToManys()) {
 				sb.append("\n").append(((GenericWrapperElement)key.get(0)).getName()).append("->").append(((GenericWrapperField)key.get(1)).getName()).append(":").append(((XFTManyToManyReference)key.get(2)).getMappingTable());
 			}
 			
 			sb.append("\n\nMany-To-One:");
-			iter = GetInstance().getManyToOnes().iterator();
-			while(iter.hasNext())
-			{
-				ArrayList key =(ArrayList)iter.next();
+			for (final List<?> key : GetInstance().getManyToOnes()) {
 				sb.append("\n").append(key.get(0)).append("(FK)->").append(key.get(1));
 			}
 			
-			org.nrg.xft.utils.FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "references.txt");
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error(e);
+			FileUtils.OutputToFile(sb.toString(), XFTManager.GetInstance().getSourceDir() + "references.txt");
+		} catch (XFTInitException e) {
+			log.error("An error occurred accessing XFT", e);
 		} catch (Exception e) {
-			logger.error(e);
+			log.error("An unexpected error occurred", e);
 		}
 	}
 	
@@ -700,98 +589,81 @@ public class XFTReferenceManager {
 	    
 	    if (possibleParents.size() > 0)
 	    {
-	        Iterator iter = possibleParents.iterator();
-	        while (iter.hasNext())
-	        {
-	            Object[] pp = (Object[])iter.next();
-	            GenericWrapperElement foreign = (GenericWrapperElement)pp[0];
-	            String xmlPath = (String)pp[1];
-	            GenericWrapperField gwf = (GenericWrapperField)pp[2];
-	            
-	            String extensionType = "";
+			for (final Object possibleParent : possibleParents) {
+				Object[]              pp      = (Object[]) possibleParent;
+				GenericWrapperElement foreign = (GenericWrapperElement) pp[0];
+				String                xmlPath = (String) pp[1];
+				GenericWrapperField   gwf     = (GenericWrapperField) pp[2];
 
-	            if (foreign.isExtension())
-	            {
-	                extensionType =  foreign.getExtensionType().getFullForeignType();
-	            }
-	            
-	            if (!root.getFullXMLName().equalsIgnoreCase(extensionType))
-	            {
-	                if (foreign.getAddin().equalsIgnoreCase(""))
-	                {
-	                    XFTReferenceI ref = gwf.getXFTReference();
-                        if (ref.isManyToMany())
-                        {
-                            CriteriaCollection cc = new CriteriaCollection("AND");
-                          
-	                          Iterator refCols = ((XFTManyToManyReference)ref).getMappingColumnsForElement(root).iterator();
-	                          while (refCols.hasNext())
-	                          {
-	                              XFTMappingColumn spec = (XFTMappingColumn)refCols.next();
-	                              Object o = item.getProperty(spec.getForeignKey().getXMLPathString());
-	                              SearchCriteria sc = new SearchCriteria();
-	                              sc.setField_name(spec.getLocalSqlName());
-	                              sc.setCleanedType(spec.getXmlType().getLocalType());
-	                              sc.setValue(o);
-	                              cc.add(sc);
-	                          }
-	                          
-	                          Long o =  DBAction.CountInstancesOfFieldValues(((XFTManyToManyReference)ref).getMappingTable(),foreign.getDbName(),cc);
-	                          i += o.intValue();
-                        }else{
-                             XFTSuperiorReference supRef = (XFTSuperiorReference)ref;
-                                                          
-                             if (supRef.getSubordinateElement().equals(root))
-                             {
-                                 //ROOT has the fk column (check if it is null)
-                                 Iterator refsCols = supRef.getKeyRelations().iterator();
-	                               while (refsCols.hasNext())
-	                               {
-	                                   XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
-	                                   Object o = item.getProperty(spec.getLocalCol());
-	                                   if (o != null)
-	                                   {
-	                                       i++;
-	                                       break;
-	                                   }
-	                               }
-                             }else{
-                                 //FOREIGN has the fk column
-                                 CriteriaCollection cc = new CriteriaCollection("AND");
-	                               
-	                               Iterator refsCols = supRef.getKeyRelations().iterator();
-	                               while (refsCols.hasNext())
-	                               {
-	                                   XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
-	                                   Object o = item.getProperty(spec.getForeignCol());
-	                                   SearchCriteria sc = new SearchCriteria();
-	                                   sc.setField_name(spec.getLocalCol());
-	                                   sc.setValue(DBAction.ValueParser(o,spec.getSchemaType().getLocalType(),true));
-	                                   cc.add(sc);
-	                               }
-	                               
-	                               Long o =  DBAction.CountInstancesOfFieldValues(foreign.getSQLName(),foreign.getDbName(),cc);
-	                               if (o.intValue() > 1)
-	                               {
-	                                   return new Integer(o.intValue());
-	                               }else{
-	                                   i += o.intValue();
-	                               } 
-                             }
-                                                              
-                        }
-	                }
-	            }
-	        }
+				String extensionType = "";
+
+				if (foreign.isExtension()) {
+					extensionType = foreign.getExtensionType().getFullForeignType();
+				}
+
+				if (!root.getFullXMLName().equalsIgnoreCase(extensionType)) {
+					if (foreign.getAddin().equalsIgnoreCase("")) {
+						XFTReferenceI ref = gwf.getXFTReference();
+						if (ref.isManyToMany()) {
+							CriteriaCollection cc = new CriteriaCollection("AND");
+
+							for (final Object object : ((XFTManyToManyReference) ref).getMappingColumnsForElement(root)) {
+								XFTMappingColumn spec = (XFTMappingColumn) object;
+								Object           o    = item.getProperty(spec.getForeignKey().getXMLPathString());
+								SearchCriteria   sc   = new SearchCriteria();
+								sc.setField_name(spec.getLocalSqlName());
+								sc.setCleanedType(spec.getXmlType().getLocalType());
+								sc.setValue(o);
+								cc.add(sc);
+							}
+
+							Long o = DBAction.CountInstancesOfFieldValues(((XFTManyToManyReference) ref).getMappingTable(), foreign.getDbName(), cc);
+							i += o.intValue();
+						} else {
+							XFTSuperiorReference supRef = (XFTSuperiorReference) ref;
+
+							if (supRef.getSubordinateElement().equals(root)) {
+								//ROOT has the fk column (check if it is null)
+								for (final XFTRelationSpecification spec: supRef.getKeyRelations()) {
+									Object                   o    = item.getProperty(spec.getLocalCol());
+									if (o != null) {
+										i++;
+										break;
+									}
+								}
+							} else {
+								//FOREIGN has the fk column
+								CriteriaCollection cc = new CriteriaCollection("AND");
+
+								for (final XFTRelationSpecification spec : supRef.getKeyRelations()) {
+									Object                   o    = item.getProperty(spec.getForeignCol());
+									SearchCriteria           sc   = new SearchCriteria();
+									sc.setField_name(spec.getLocalCol());
+									sc.setValue(DBAction.ValueParser(o, spec.getSchemaType().getLocalType(), true));
+									cc.add(sc);
+								}
+
+								Long o = DBAction.CountInstancesOfFieldValues(foreign.getSQLName(), foreign.getDbName(), cc);
+								if (o.intValue() > 1) {
+									return o.intValue();
+								} else {
+									i += o.intValue();
+								}
+							}
+
+						}
+					}
+				}
+			}
 	    }        
 
 		if (item.getGenericSchemaElement().isExtension())
 		{
 		    XFTItem extensionItem = item.getExtensionItem();
-		    i += NumberOfReferences(extensionItem).intValue();
+		    i += NumberOfReferences(extensionItem);
 		}
         
-	    return new Integer(i);
+	    return i;
 	}
 }
 

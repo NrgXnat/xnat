@@ -462,7 +462,7 @@ logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 		List<String> al = new ArrayList<>();
 	    try {
             GenericWrapperElement gwe = this.getGenericXFTElement();
-            ArrayList fields = ViewManager.GetFieldNames(gwe,ViewManager.QUARANTINE,true,true);
+            List<String> fields = ViewManager.GetFieldNames(gwe,ViewManager.QUARANTINE,true,true);
             Iterator iter = fields.iterator();
 
             ArrayList temp = new ArrayList();

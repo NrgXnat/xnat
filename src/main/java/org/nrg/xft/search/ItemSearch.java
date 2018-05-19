@@ -187,8 +187,7 @@ public class ItemSearch implements SearchI {
 
 	public XFTTable executeToTable(boolean showMetaFields) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{
 		final QueryOrganizer qo = new QueryOrganizer(element,user,this.level);
-		//noinspection unchecked
-		final Hashtable<String,String> fieldNames = ViewManager.GetFieldMap(element,level,allowMultiples,rootItem);
+		final Map<String,String> fieldNames = ViewManager.GetFieldMap(element,level,allowMultiples,rootItem);
 	    for(final String fieldName: fieldNames.keySet())
 	    {
 	        if(showMetaFields || (!fieldName.contains("/meta/") && !fieldName.endsWith("_info")))

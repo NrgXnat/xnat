@@ -93,7 +93,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	private Hashtable fieldIds =  null;//DATA,SINGLE,MULTI
 	private Hashtable xmlFieldNames = null;
-	private ArrayList allXmlFieldNames = null;
+	private List<String> allXmlFieldNames = null;
 
 	private ArrayList postLoaded = new ArrayList();
 
@@ -3400,16 +3400,16 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::1  (" + name + ")");
                 Iterator possibleFieldNames = qo.getAllFields().iterator();
                 //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::4");
-                Hashtable hash = ViewManager.GetFieldMap(e, ViewManager.DEFAULT_LEVEL, true, true);
+                Map<String, String> hash = ViewManager.GetFieldMap(e, ViewManager.DEFAULT_LEVEL, true, true);
                 //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::5");
                 while (possibleFieldNames.hasNext()) {
 
                     //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::1");
                     String key = (String) possibleFieldNames.next();
                     //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
-                    String colName = (String) hash.get(key.toLowerCase());
+                    String colName = hash.get(key.toLowerCase());
                     if (colName == null) {
-                        colName = (String) qo.translateXMLPath(key);
+                        colName = qo.translateXMLPath(key);
                     }
 
                     //String colName = (String)qo.translateXMLPath(key);
@@ -4290,25 +4290,22 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * @return Returns a list of all xml field names
 	 */
-	public ArrayList getAllXMLFieldNames()
-	{
-	    if (this.allXmlFieldNames==null)
-	    {
-	        this.allXmlFieldNames = new ArrayList();
+	public List<String> getAllXMLFieldNames() {
+	    if (allXmlFieldNames==null) {
 	        try {
-	            this.allXmlFieldNames = ViewManager.GetFieldNames(this.getGenericSchemaElement(),true);
+	            allXmlFieldNames = ViewManager.GetFieldNames(this.getGenericSchemaElement(),true);
             } catch (Exception e) {
                 logger.error("",e);
             }
 	    }
-	    return this.allXmlFieldNames;
+	    return allXmlFieldNames;
 	}
 
 	/**
 	 * @return Returns a list of xml field names
 	 * @throws Exception
 	 */
-	public ArrayList getSingleXMLFieldNames() throws Exception
+	public List<String> getSingleXMLFieldNames() throws Exception
 	{
 	    return ViewManager.GetFieldNames(this.getGenericSchemaElement(),ViewManager.QUARANTINE,false,true);
 	}

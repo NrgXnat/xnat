@@ -154,7 +154,13 @@ var XNAT = getObject(XNAT);
      * @returns {*}
      */
     BrowserStorage.fn.getValue = function(objPath){
-        return getDescendantProp(this.getAll(), objPath);
+        // tolerate root-level properties
+        if (this.data.hasOwnProperty(objPath)) {
+            return this.data[objPath];
+        }
+        else {
+            return getDescendantProp(this.getAll(), objPath);
+        }
     };
 
 
@@ -166,7 +172,13 @@ var XNAT = getObject(XNAT);
      * @example xnatStorage.setValue('foo.bar.baz', 'abc-xyz')
      */
     BrowserStorage.fn.setValue = function(objPath, newValue){
-        setDescendantProp(this.getAll(), objPath, newValue);
+        // tolerate root-level properties
+        if (objPath.indexOf('.') === -1) {
+            this.data[objPath] = newValue;
+        }
+        else {
+            setDescendantProp(this.getAll(), objPath, newValue);
+        }
         localStorage.setItem(this.dataStore, JSON.stringify(this.data));
         return this;
     };

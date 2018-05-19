@@ -29,4 +29,5 @@
     <br/><br/>
     #end
     #parse("screens/XDATScreen_password.vm")
+    #parse("screens/XDATScreen_aliasTokens.vm")
 #end

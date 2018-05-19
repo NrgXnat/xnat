@@ -95,6 +95,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _jmsTemplate = jmsTemplate;
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
         _totalCounts = new HashMap<>();
+        _missingElements = new HashMap<>();
         if (_helper.tableExists("xnat_projectdata")) {
             updateTotalCounts();
         }
@@ -888,7 +889,16 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             cacheObject(cacheId, browseable);
             return browseable;
         } catch (ElementNotFoundException e) {
-            log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
+            if (!_missingElements.containsKey(e.ELEMENT)) {
+                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now. This warning will only be displayed once. Set logging level to DEBUG to see a message each time this occurs for each element, along with a count of the number of times the element was referenced.", e.ELEMENT);
+                _missingElements.put(e.ELEMENT, 1L);
+            } else {
+                final long count = _missingElements.get(e.ELEMENT) + 1;
+                _missingElements.put(e.ELEMENT, count);
+                if (log.isDebugEnabled()) {
+                    log.debug("Element '{}' not found. This element has been referenced {} times.", e.ELEMENT, count);
+                }
+            }
         } catch (XFTInitException e) {
             log.error("There was an error initializing or accessing XFT", e);
         } catch (Exception e) {
@@ -1417,6 +1427,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
     private final Map<String, Long>          _totalCounts;
+    private final Map<String, Long>          _missingElements;
 
     private Listener _listener;
     private boolean  _initialized;

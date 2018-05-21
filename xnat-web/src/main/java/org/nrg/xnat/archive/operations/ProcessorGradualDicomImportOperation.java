@@ -21,6 +21,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
 import org.nrg.xnat.Labels;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.helpers.prearchive.DatabaseSession;
@@ -89,6 +90,14 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
         log.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
         dicomInputStream.setHandler(new StopTagInputHandler(lastTag));
         dicom = dicomInputStream.readDicomObject();
+
+        try{
+        String script = DefaultAnonUtils.getService().getStudyScript(dicom.getString(Tag.StudyInstanceUID));
+        getMizer().anonymize(dicom, "", "", "", script);
+        } catch (Throwable e) {
+            log.debug("Dicom anonymization failed: " + dicom, e);
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
+        }
 
         log.trace("handling file with query parameters {}", getParameters());
         try {

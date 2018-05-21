@@ -59,6 +59,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -153,8 +154,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     @Primary
     public CompositeSessionAuthenticationStrategy sessionAuthenticationStrategy() {
-        return new CompositeSessionAuthenticationStrategy(Arrays.asList(new SessionFixationProtectionStrategy(),
-                                                                        new RegisterSessionAuthenticationStrategy(sessionRegistry())));
+        final SessionRegistry                                sessionRegistry                                = sessionRegistry();
+        final SessionFixationProtectionStrategy              sessionFixationProtectionStrategy              = new SessionFixationProtectionStrategy();
+        final RegisterSessionAuthenticationStrategy          registerSessionAuthenticationStrategy          = new RegisterSessionAuthenticationStrategy(sessionRegistry);
+        final ConcurrentSessionControlAuthenticationStrategy concurrentSessionControlAuthenticationStrategy = new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
+        concurrentSessionControlAuthenticationStrategy.setMaximumSessions(_preferences.getConcurrentMaxSessions());
+        concurrentSessionControlAuthenticationStrategy.setExceptionIfMaximumExceeded(true);
+        return new CompositeSessionAuthenticationStrategy(Arrays.asList(sessionFixationProtectionStrategy, registerSessionAuthenticationStrategy, concurrentSessionControlAuthenticationStrategy));
     }
 
     @Bean
@@ -263,9 +269,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.sessionManagement()
             .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
             .maximumSessions(_preferences.getConcurrentMaxSessions())
+            .maxSessionsPreventsLogin(true)
             .sessionRegistry(sessionRegistry())
-            .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)))
-            .maxSessionsPreventsLogin(true);
+            .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
         http.headers().frameOptions().sameOrigin()
             .cacheControl().disable()

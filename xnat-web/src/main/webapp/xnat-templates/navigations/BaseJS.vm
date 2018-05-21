@@ -1,17 +1,21 @@
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="appInfo" type="org.nrg.xnat.services.XnatAppInfo" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+#set ($appInfo = $turbineUtils.getBean("appInfo"))
 
 ## Base JavaScript files
 
 <!-- START BaseJS.vm -->
 
-#set ($versionString = "v=175rc1")
+#set ($versionString = "x=$appInfo.buildDate.hashCode()")
 
 #set ($SITE_ROOT = $content.getURI(""))
 #set ($debugParam = $data.getParameters().getString('debug'))
 #set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
 #set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
 
-#set ($js = "js?$versionString")
+#set ($js = "js?${versionString}")
 
 #if ($DEBUG)
     #set ($minjs = "${js}")

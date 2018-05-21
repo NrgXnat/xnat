@@ -408,20 +408,37 @@ cargo {
 // Pulls in the Jenkins BUILD_NUMBER environment variable if available.
 def buildDate = new Date()
 def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
-def revision = gitVersion().replace("${version}-", "")
-def isDirty = revision.endsWith ".dirty"
-def details = versionDetails()
+def isDirty, branchName, gitHash, gitHashFull, commitDistance, lastTag, isCleanTag
 
-logger.info "Git version:             ${gitVersion()}"
+try {
+    def gitDetails = versionDetails()
+    isDirty = gitVersion().endsWith ".dirty"
+    branchName = gitDetails.branchName ?: "Unknown"
+    gitHash = gitDetails.gitHash
+    gitHashFull = gitDetails.gitHashFull
+    commitDistance = gitDetails.commitDistance
+    lastTag = gitDetails.lastTag
+    isCleanTag = gitDetails.isCleanTag
+} catch (IllegalArgumentException e) {
+    logger.info "Got an error trying to read VCS metadata from git. It's possible this project is not under VCS control. Using placeholder values for manifest entries."
+    isDirty = true
+    branchName = "Unknown"
+    gitHash = "None"
+    gitHashFull = "None"
+    commitDistance = 0
+    lastTag = "None"
+    isCleanTag = false
+}
+
 logger.info "Build-Date:              ${buildDate}"
 logger.info "Build-Number:            ${buildNumber}"
 logger.info "Implementation-Version:  ${version}"
-logger.info "Implementation-Sha-Full: ${details.gitHashFull}"
-logger.info "Implementation-Sha:      ${details.gitHash}"
-logger.info "Implementation-Commit:   ${details.commitDistance}"
-logger.info "Implementation-LastTag:  ${details.lastTag}"
-logger.info "Implementation-Branch:   ${details.branchName}"
-logger.info "Implementation-CleanTag: ${details.isCleanTag}"
+logger.info "Implementation-Sha-Full: ${gitHashFull}"
+logger.info "Implementation-Sha:      ${gitHash}"
+logger.info "Implementation-Commit:   ${commitDistance}"
+logger.info "Implementation-LastTag:  ${lastTag}"
+logger.info "Implementation-Branch:   ${branchName}"
+logger.info "Implementation-CleanTag: ${isCleanTag}"
 logger.info "Implementation-Dirty:    ${isDirty}"
 
 jar {
@@ -430,12 +447,12 @@ jar {
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
                 "Implementation-Version": version,
-                "Implementation-Sha": details.gitHash,
-                "Implementation-Sha-Full": details.gitHashFull,
-                "Implementation-Commit": details.commitDistance,
-                "Implementation-LastTag": details.lastTag,
-                "Implementation-Branch": details.branchName,
-                "Implementation-CleanTag": details.isCleanTag,
+                "Implementation-Sha": gitHash,
+                "Implementation-Sha-Full": gitHashFull,
+                "Implementation-Commit": commitDistance,
+                "Implementation-LastTag": lastTag,
+                "Implementation-Branch": branchName,
+                "Implementation-CleanTag": isCleanTag,
                 "Implementation-Dirty": isDirty
     }
 }
@@ -446,12 +463,12 @@ war {
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
                 "Implementation-Version": version,
-                "Implementation-Sha": details.gitHash,
-                "Implementation-Sha-Full": details.gitHashFull,
-                "Implementation-Commit": details.commitDistance,
-                "Implementation-LastTag": details.lastTag,
-                "Implementation-Branch": details.branchName,
-                "Implementation-CleanTag": details.isCleanTag,
+                "Implementation-Sha": gitHash,
+                "Implementation-Sha-Full": gitHashFull,
+                "Implementation-Commit": commitDistance,
+                "Implementation-LastTag": lastTag,
+                "Implementation-Branch": branchName,
+                "Implementation-CleanTag": isCleanTag,
                 "Implementation-Dirty": isDirty
     }
 }

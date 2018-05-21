@@ -575,13 +575,13 @@ var XNAT = getObject(XNAT);
                 spawneri = spawneri || spawner.spawn(data);
                 if (xhr.status === 200) {
                     if (isFunction(success)) {
-                        success.call(resolve, data, txtStatus, xhr)
+                        success.call(spawneri, data, txtStatus, xhr)
                     }
                 }
                 else {
                     // try something else if element isn't present
                     if (isFunction(failure)) {
-                        failure.call(resolve, data, txtStatus, xhr)
+                        failure.call(spawneri, data, txtStatus, xhr)
                     }
                 }
             });
@@ -601,7 +601,7 @@ var XNAT = getObject(XNAT);
                 spawneri = spawneri || spawner.spawn(data);
                 if (xhr.status !== 200) {
                     if (isFunction(callback)) {
-                        callback.apply(resolve, arguments)
+                        callback.apply(spawneri, arguments)
                     }
                 }
             });

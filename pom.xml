@@ -82,11 +82,11 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.2-SNAPSHOT</nrg.mizer.version>
+        <nrg.mizer.version>1.0.4-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.2-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.2-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom-edit6.version>1.0.3-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
@@ -97,11 +97,11 @@
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
 
-        <spring-framework.version>4.3.10.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.3.RELEASE</spring-security.version>
-        <spring-ldap.version>2.3.1.RELEASE</spring-ldap.version>
+        <spring-framework.version>4.3.17.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.6.RELEASE</spring-security.version>
+        <spring-ldap.version>2.3.2.RELEASE</spring-ldap.version>
         <swagger.version>2.7.0</swagger.version>
-        <native-json.version>0.4</native-json.version>
+        <native-json.version>0.5</native-json.version>
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.9.8</ant.version>
@@ -114,10 +114,10 @@
         <axis.version>1.4</axis.version>
         <msv.version>2013.6.1</msv.version>
         <cglib.version>2.2.2</cglib.version>
-        <commons-beanutils.version>1.9.2</commons-beanutils.version>
+        <commons-beanutils.version>1.9.3</commons-beanutils.version>
         <commons-codec.version>1.10</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <commons-collections4.version>4.0</commons-collections4.version>
+        <commons-collections4.version>4.1</commons-collections4.version>
         <commons-configuration.version>1.10</commons-configuration.version>
         <commons-configuration2.version>2.1</commons-configuration2.version>
         <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
@@ -126,9 +126,9 @@
         <commons-email.version>1.4</commons-email.version>
         <commons-fileupload.version>1.3.1</commons-fileupload.version>
         <commons-httpclient.version>3.1</commons-httpclient.version>
-        <commons-io.version>2.4</commons-io.version>
+        <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.5</commons-lang3.version>
+        <commons-lang3.version>3.7</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>

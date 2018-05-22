@@ -76,7 +76,8 @@
 
                         <c:if test="${not empty siteConfig}">
                         XNAT.data.siteConfig =
-                            XNAT.data['/xapi/siteConfig'] = ${siteConfig};
+                            XNAT.data['/xapi/siteConfig'] =
+                                XNAT.data['${SITE_ROOT}/xapi/siteConfig'] = ${siteConfig};
                         </c:if>
 
                         // these properties MUST be set before spawning 'tabs' widgets

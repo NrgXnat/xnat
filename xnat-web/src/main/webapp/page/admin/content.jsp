@@ -68,12 +68,14 @@
                             // get rid of the 'targetSource' property
                             delete XNAT.data.siteConfig.targetSource;
                             XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
+                            XNAT.data['${SITE_ROOT}/xapi/siteConfig'] = XNAT.data.siteConfig;
                         </c:if>
 
                         <%-- can't use empty/undefined object --%>
                         <c:if test="${not empty notifications}">
                             XNAT.data.notifications = ${notifications};
                             XNAT.data['/xapi/notifications'] = XNAT.data.notifications;
+                            XNAT.data['${SITE_ROOT}/xapi/notifications'] = XNAT.data.notifications;
                         </c:if>
 
                         // these properties MUST be set before spawning 'tabs' widgets

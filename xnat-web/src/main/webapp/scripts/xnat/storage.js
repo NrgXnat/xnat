@@ -32,7 +32,7 @@ var XNAT = getObject(XNAT);
     function dataStoreName(name){
         var siteRoot = XNAT.url.rootUrl().replace(/^\/*|\/*$/g, '');
         name = name || USERNAME;
-        return (siteRoot && siteRoot !== '/') ? (name + '@' + siteRoot) : name;
+        return (siteRoot && siteRoot !== '/') ? (siteRoot + '+' + name) : name;
     }
 
     // set the root property name to use for browsers' localStorage

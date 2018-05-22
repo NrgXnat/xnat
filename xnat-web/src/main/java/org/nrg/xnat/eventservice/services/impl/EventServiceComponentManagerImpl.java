@@ -5,13 +5,20 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.xnat.*;
+import org.nrg.xnat.eventservice.model.xnat.Assessor;
+import org.nrg.xnat.eventservice.model.xnat.Project;
+import org.nrg.xnat.eventservice.model.xnat.Scan;
+import org.nrg.xnat.eventservice.model.xnat.Session;
+import org.nrg.xnat.eventservice.model.xnat.Subject;
+import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
@@ -114,7 +121,13 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         }
 
         if(XnatImageassessordataI.class.isAssignableFrom(object.getClass())) {
-            return new Assessor((XnatImageassessordataI) object);
+            String rootPath = null;
+            try {
+                rootPath = ((XnatImageassessordata) object).getArchiveRootPath();
+            } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
+                e.printStackTrace();
+            }
+            return new Assessor((XnatImageassessordataI) object, null, rootPath);
         }
         else if(XnatProjectdata.class.isAssignableFrom(object.getClass())) {
             return new Project((XnatProjectdata) object);

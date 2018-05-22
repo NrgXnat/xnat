@@ -26,8 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
@@ -36,6 +40,7 @@ public class Assessor extends XnatModelObject {
     private List<Resource> resources;
     @JsonProperty("project-id") private String projectId;
     @JsonProperty("session-id") private String sessionId;
+    @JsonProperty("props") private Map props;
     private String directory;
 
     private static final Logger log = LoggerFactory.getLogger(Assessor.class);
@@ -96,6 +101,17 @@ public class Assessor extends XnatModelObject {
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImageassessordataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
                 resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+            }
+        }
+
+        Hashtable assessorProps = assessor.getProps();
+        if(assessorProps != null && assessorProps.size() > 0){
+            this.props = new HashMap();
+            Set<String> keySet = assessorProps.keySet();
+            for(String key : keySet){
+                if(assessorProps.get(key) instanceof String || assessorProps.get(key) instanceof Boolean || assessorProps.get(key) instanceof Number ){
+                    this.props.put(key, assessorProps.get(key));
+                }
             }
         }
     }
@@ -194,6 +210,10 @@ public class Assessor extends XnatModelObject {
     public void setDirectory(final String directory) {
         this.directory = directory;
     }
+
+    public Map getProps() { return props; }
+
+    public void setProps(Map props) { this.props = props; }
 
     @Override
     public XFTItem getXftItem(final UserI userI) {

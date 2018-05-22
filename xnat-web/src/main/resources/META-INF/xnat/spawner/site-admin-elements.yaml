@@ -909,11 +909,10 @@ pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
 
 pluginOpenUrlsConfig:
-    kind: panel
-    name: pluginOpenUrlsConfig
-    header: false
-    footer: false
+    tag: "div"
     contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
         pluginOpenUrlsScript:
             tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 

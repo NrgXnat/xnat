@@ -93,15 +93,18 @@ var XNAT = getObject(XNAT||{});
 
     url.domain = url.getDomain();
 
-    url.getPort = function(){
-        return window.location.port;
+    // return the current location's port number
+    // (if present), optionally prefixed with [sep]
+    url.getPort = function(sep){
+        var port = window.location.port;
+        return port ? (sep || '') + port : '';
     };
 
     url.fullUrl = function(_url){
         if (window.location.origin) {
             return window.location.origin + rootUrl(_url);
         }
-        return url.getProtocol() + '//' + url.getDomain() + ':' + url.getPort() + rootUrl(_url);
+        return url.getProtocol() + '//' + url.getDomain() + url.getPort(':') + rootUrl(_url);
     };
 
     // better encodeURIComponent() that catches

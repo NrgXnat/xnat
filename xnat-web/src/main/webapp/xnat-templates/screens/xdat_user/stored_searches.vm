@@ -72,7 +72,7 @@
                 _searchTable = XNAT.spawner.spawn({
                     searchTable: spawnStoredSearchTable()
                 });
-                _searchTable.render(container$.empty(), 200);
+                _searchTable.render(container$.empty());
             }
         }
 

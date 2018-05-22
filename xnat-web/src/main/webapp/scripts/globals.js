@@ -79,11 +79,11 @@ window.jsdebug = window.jsdebug ||
         // Create aliases to use only when debugging
         debugMethod = 'debug' + method.charAt(0).toUpperCase() + method.slice(1);
         window[debugMethod] = window.jsdebug || window.debug ? console[method] : noop;
-        // explicitly define functions to make IDEs happy
-        window.debugLog = window['debugLog'] || noop;
-        window.debugWarn = window['debugWarn'] || noop;
-        window.debugError = window['debugError'] || noop;
     }
+    // explicitly define functions to make IDEs happy
+    window.debugLog = window['debugLog'] || noop;
+    window.debugWarn = window['debugWarn'] || noop;
+    window.debugError = window['debugError'] || noop;
 }());
 
 (function(){

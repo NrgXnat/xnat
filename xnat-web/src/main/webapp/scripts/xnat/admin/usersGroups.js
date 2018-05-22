@@ -457,7 +457,7 @@ var XNAT = getObject(XNAT);
                     XNAT.dialog.loadingBar.show();
                     XNAT.spawner.spawn({
                         usersTable: usersGroups.spawnUsersTable(url)
-                    }).render($container.empty(), 20, function(){
+                    }).render($container.empty(), function(){
                         XNAT.dialog.loadingBar.hide();
                     });
                 }, 10);
@@ -1747,7 +1747,7 @@ var XNAT = getObject(XNAT);
             setTimeout(function(){
                 XNAT.dialog.loadingBar.show();
                 usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-                usersGroups.tabs.render($container.empty(), 20, function(){
+                usersGroups.tabs.render($container.empty(), function(){
                     XNAT.dialog.loadingBar.hide()
                 });
             }, 1);

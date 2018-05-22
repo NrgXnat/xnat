@@ -436,17 +436,15 @@ var XNAT = getObject(XNAT);
             return spawneri;
         };
 
-        spawneri.render = function(container, wait, callback){
+        spawneri.render = function(container, callback){
 
             console.log('spawneri.render');
 
             var $container = $$(container).hide();
 
-            wait = firstDefined(wait, 100);
-
-            $container.append(frag).fadeIn(wait);
-
             setTimeout(function(){
+
+                $container.append(frag).fadeIn(100);
 
                 // fire collected callbacks
                 callbacks.forEach(function(fn){
@@ -462,7 +460,7 @@ var XNAT = getObject(XNAT);
                     callback.call(spawneri, obj);
                 }
 
-            }, wait * 2);
+            }, 1);
 
             // $container.fadeIn(wait, function(){
             //     console.log('append ' + (appendCount+=1));

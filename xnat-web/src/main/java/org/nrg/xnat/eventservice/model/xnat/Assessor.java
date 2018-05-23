@@ -116,6 +116,20 @@ public class Assessor extends XnatModelObject {
         }
     }
 
+    public static Assessor populateSample() {
+        Assessor assessor = new Assessor();
+        assessor.setId("SampleAssessorID");
+        assessor.setLabel("SampleAssessorLabel");
+        assessor.setXsiType("xnat:imageAssessorData");
+        assessor.setSessionId("XNAT_E000056");
+        assessor.setProjectId("SampleProjectID");
+        Map props = new HashMap();
+        props.put("subjectid", "XNAT_S00004");
+        props.put("collectiontype", "AIM");
+        assessor.setProps(props);
+        return assessor;
+    }
+
     public static Function<URIManager.ArchiveItemURI, Assessor> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Assessor>() {
             @Nullable

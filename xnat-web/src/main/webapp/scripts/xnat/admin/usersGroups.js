@@ -1028,26 +1028,24 @@ var XNAT = getObject(XNAT);
     function newUserDialog(){
         var updated = false;
         var formContainer$ = null;
-        var userForm$ = null;
         return XNAT.dialog.open({
             width: 600,
             // height: 500,
             speed: 200,
             title: 'Create New User',
-            content: '<div class="new-user-form"></div>',
-            beforeShow: function(obj){
-                formContainer$ = obj.dialog$.find('div.new-user-form');
+            content: (function(){
+                formContainer$ = $.spawn('div.new-user-form');
                 renderUserAccountForm(null, formContainer$);
-            },
-            afterShow: function(){
-                userForm$ = formContainer$.find('form')
-            },
+                return formContainer$[0];
+            })(),
             buttons: [
                 {
                     label: 'Save',
                     close: false,
                     isDefault: true,
                     action: function(obj){
+                        // userAccountForm
+                        var userForm$ = formContainer$.find('form');
                         var _username = userForm$.find('input[name="username"]').val();
                         // make sure new username is not a duplicate
                         var getUserList = usersGroups.userData().usernames();

@@ -440,11 +440,11 @@ var XNAT = getObject(XNAT);
 
             console.log('spawneri.render');
 
-            var $container = $$(container).hide();
+            var $container = $$(container).hide().append(frag);
 
-            setTimeout(function(){
+            window.setTimeout(function(){
 
-                $container.append(frag).fadeIn(100);
+                $container.fadeIn(100);
 
                 // fire collected callbacks
                 callbacks.forEach(function(fn){

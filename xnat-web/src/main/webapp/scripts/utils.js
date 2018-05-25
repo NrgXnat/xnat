@@ -777,7 +777,8 @@ function sortTableToo($tbody, col, reverse){
     var _tbody = $tbody[0];
     var startTime = Date.now();
     var endTime = 0;
-    var trs = $tbody.find('> tr').detach().toArray().sort(function(a, b){
+    // rows don't need to be detached before sorting
+    var trs = $(_tbody.rows).toArray().sort(function(a, b){
         var aValue, bValue;
         if (col === -1) {
             aValue = getDataAttrValue(a, 'index');
@@ -820,7 +821,7 @@ function sortTableToo($tbody, col, reverse){
             endTime = (Date.now() - startTime);
             console.log(endTime);
 
-        }, 100);
+        }, 1);
 
     }
 }
@@ -835,7 +836,7 @@ jQuery.fn.tableSort = function(){
         $tbody = $table.closest('.table-group-container').find('table.table-data > tbody');
     }
     else {
-        $tbody = $table.find('tbody');
+        $tbody = $table.find('> tbody');
     }
     var tbody = $tbody[0];
     var trs = toArray(tbody.rows).map(function(tr, i){
@@ -857,8 +858,8 @@ jQuery.fn.tableSort = function(){
           .each(function(){
 
               var $this = $(this);
-              $this.find('i').remove();
-              $this.append('<i>&nbsp;</i>');
+              $this.find('i.arrows').remove();
+              $this.append('<i class="arrows">&nbsp;</i>');
 
               $this.on('click.sort', function(){
 
@@ -879,7 +880,8 @@ jQuery.fn.tableSort = function(){
                       }
                   }
 
-                  $table.find('th.sort').removeClass('asc desc');
+                  // only modify cells in the same row
+                  $th.closest('tr').find('th.sort').removeClass('asc desc');
 
                   if (!sortClass) {
                       // sortTable(tbody, -1, sortOrder);
@@ -907,7 +909,7 @@ $(function(){
         $table.tableSort();
     });
     // even if it's not available on DOM ready
-    $('body').on('click', 'table:not(.sort-ready) th.sort', function(){
+    $(document).on('click', 'table:not(.sort-ready) th.sort', function(){
         var $th = $(this),
             $table = $th.closest('table');
         // exit if table is already sort-ready

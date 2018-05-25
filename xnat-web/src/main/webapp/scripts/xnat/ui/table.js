@@ -693,7 +693,7 @@ var XNAT = getObject(XNAT);
                         //if (!opts.sortable) return;
                         if (val.sort || opts.sortable === true || (opts.sortable||[]).indexOf(name) !== -1) {
                             addClassName(newTable.last.th, 'sort');
-                            newTable.last.th.appendChild(spawn('i', '&nbsp;'))
+                            newTable.last.th.appendChild(spawn('i.arrows', '&nbsp;'))
                         }
 
                     });

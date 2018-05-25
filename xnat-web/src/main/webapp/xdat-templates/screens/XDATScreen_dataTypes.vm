@@ -28,7 +28,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     <form name="form1" method="post" action="$link.setAction("ManageDataTypes")">
 
         <div class="data-table" style="margin-bottom:15px;">
-            <table id="data-type-table" class="xnat-table clean sortable">
+        <table id="data-type-table" class="xnat-table clean sortable">
+            <thead>
             <tr>
                 <th class="sort"><b>Element</b></th>
                 <th class="sort name-singular">
@@ -56,6 +57,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     <span title="The order in which data types will show up in listings.">Sequence</span>
                 </th>
             </tr>
+            </thead>
+            <tbody>
             #set($dt_count=0)
             #set($row=0)
             #foreach($data_type in $data_types)
@@ -134,6 +137,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                 </td>
             </tr>
             #end
+            </tbody>
         </table>
 
         </div>

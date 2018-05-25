@@ -25,8 +25,8 @@ var XNAT = getObject(XNAT);
     var REGEX = {};
 
     // does the string start with one of these...?
-    // ??  !?  #?  $?  */  ~/  {{  ((
-    REGEX.parseable = /^(\?\?|!\?|#\?|\$\?|\*\/|~\/|{{|\(\()/;
+    // ??  !?  #?  $?  {{  ((
+    REGEX.parseable = /^(\?\?|!\?|#\?|\$\?|{{|\(\()/;
 
     // search for a value at a specific object path location in returned data object
     // value: '$? /data/stuff/thing | :ResultSet:Result:0:contents'   // use lookupObjectValue()

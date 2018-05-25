@@ -1,9 +1,9 @@
 package org.nrg.xnat.eventservice.actions;
 
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
+import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public class TestAction extends SingleActionProvider {
 
 
     @Override
-    public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user, final Long deliveryId) {
+    public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
         if (event instanceof EventServiceEvent) {
             detectedEvents.add(event);
             actionUser = user.getLogin();

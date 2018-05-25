@@ -23,7 +23,9 @@ import java.util.Date;
 import java.util.List;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_CALLED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_FAILED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.RESOLVING_ATTRIBUTES;
 
 @Service
 public class ActionManagerImpl implements ActionManager {
@@ -225,8 +227,6 @@ public class ActionManagerImpl implements ActionManager {
         PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
         EventServiceActionProvider provider = getActionProviderByKey(subscription.actionKey());
         if(provider!= null) {
-            log.debug("Passing event to Action Provider: " + provider.getName());
-            subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
             processAsync(provider, subscription, esEvent, user, deliveryId);
             if(workflow !=null){
                 try {
@@ -257,11 +257,20 @@ public class ActionManagerImpl implements ActionManager {
         log.debug("Started Async process on thread: {}", Thread.currentThread().getName());
         try {
             log.debug("Resolving subscription event/action attributes.");
+            subscriptionDeliveryEntityService.addStatus(deliveryId, RESOLVING_ATTRIBUTES, new Date(), "Resolving subscription event/action attributes.");
             Subscription resolvedSubscription = eventPropertyService.resolveEventPropertyVariables(subscription, esEvent, user, deliveryId);
-            log.debug("Passing event/action processing off to action provider : " + provider.getName());
-            provider.processEvent(esEvent, resolvedSubscription, user, deliveryId);
+            try{
+                log.debug("Passing event/action processing off to action provider : " + provider.getName());
+                subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
+                provider.processEvent(esEvent, resolvedSubscription, user, deliveryId);
+            } catch (Throwable e){
+                log.error("Exception thrown calling provider processEvent\n" + e.getMessage(),e);
+                subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_FAILED, new Date(), "Exception thrown calling provider processEvent.  " + provider.getName());
+
+            }
         } catch (Throwable e){
-            log.error("Exception thrown calling provider processEvent\n" + e.getMessage(),e);
+            log.error("Exception thrown while resolving attributes on " + subscription.name() + "\nFor: " + subscription.attributes().toString());
+            subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), "Exception thrown while resolving attributes on " + subscription.name());
         }
         log.debug("Ending Async process on thread: {}", Thread.currentThread().getName());
     }

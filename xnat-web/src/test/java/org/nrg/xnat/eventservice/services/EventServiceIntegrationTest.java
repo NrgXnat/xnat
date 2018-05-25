@@ -1229,7 +1229,7 @@ public class EventServiceIntegrationTest {
         }
 
         @Override
-        public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user,
+        public void processEvent(EventServiceEvent event, Subscription subscription, UserI user,
                                  Long deliveryId) {
 
         }

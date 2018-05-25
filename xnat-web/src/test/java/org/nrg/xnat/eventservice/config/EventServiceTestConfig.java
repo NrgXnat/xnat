@@ -43,9 +43,9 @@ public class EventServiceTestConfig {
                                      ActionManager actionManager,
                                      SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                                      UserManagementServiceI userManagementService,
-                                     EventFilterService eventFilterService,
+                                     EventPropertyService eventPropertyService,
                                      ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventFilterService, mapper);
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper);
     }
 
     @Bean
@@ -55,9 +55,9 @@ public class EventServiceTestConfig {
                                          ActionManager actionManager,
                                          SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
                                          UserManagementServiceI userManagementService,
-                                         EventFilterService eventFilterService,
+                                         EventPropertyService eventPropertyService,
                                          ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventFilterService, mapper);
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper);
     }
 
     @Bean
@@ -106,14 +106,16 @@ public class EventServiceTestConfig {
 
     @Bean
     public ActionManager actionManager(EventServiceComponentManager componentManager,
-                                       SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
-        return new ActionManagerImpl(componentManager, subscriptionDeliveryEntityService);
+                                       SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
+                                       EventPropertyService eventPropertyService) {
+        return new ActionManagerImpl(componentManager, subscriptionDeliveryEntityService, eventPropertyService);
     }
 
     @Bean
     public ActionManager mockActionManager(EventServiceComponentManager mockComponentManager,
-                                           SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService) {
-        return new ActionManagerImpl(mockComponentManager, mockSubscriptionDeliveryEntityService);
+                                           SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
+                                           EventPropertyService eventPropertyService) {
+        return new ActionManagerImpl(mockComponentManager, mockSubscriptionDeliveryEntityService, eventPropertyService);
     }
 
     @Bean
@@ -162,7 +164,7 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventFilterService eventFilterService(EventServiceComponentManager componentManager, ObjectMapper mapper){return new EventFilterServiceImpl(componentManager, mapper);}
+    public EventPropertyService eventPropertyService(EventServiceComponentManager componentManager, ObjectMapper mapper){return new EventPropertyServiceImpl(componentManager, mapper);}
 
     //** Combined Events/Listener **//
     @Bean

@@ -158,8 +158,7 @@ public class EventPropertyServiceImpl implements EventPropertyService {
         return resolvedSubscription;
     }
 
-
-    private List<EventPropertyNode> generateEventPropertyValues(EventServiceEvent event, UserI user) {
+    public List<EventPropertyNode> generateEventPropertyValues(EventServiceEvent event, UserI user) {
         List eventProperties = new ArrayList<EventPropertyNode>();
         eventProperties.add(EventPropertyNode.withName("event-id", "string").withValue(event.getId()));
         eventProperties.add(EventPropertyNode.withName("event-display-name", "string").withValue(event.getDisplayName()));

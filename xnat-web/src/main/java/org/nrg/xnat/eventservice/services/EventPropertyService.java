@@ -20,6 +20,8 @@ public interface EventPropertyService {
 
     List<EventPropertyNode> generateEventPropertyKeys(EventServiceEvent event);
 
+    List<EventPropertyNode> generateEventPropertyValues(EventServiceEvent event, UserI user);
+
     Subscription resolveEventPropertyVariables(Subscription subscription, EventServiceEvent esEvent, UserI user, Long deliveryId);
 
     Map<String, JsonPathFilterNode> generateEventFilterNodes(@Nonnull Class eventPayloadClass);

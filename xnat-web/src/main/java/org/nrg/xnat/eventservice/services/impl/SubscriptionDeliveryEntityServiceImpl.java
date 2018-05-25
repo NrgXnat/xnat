@@ -96,7 +96,7 @@ public class SubscriptionDeliveryEntityServiceImpl
         }
         if(deliveryEntities == null) {
             return new ArrayList<>();
-        } else if(includeFilterMismatches){
+        } else if(includeFilterMismatches != null && includeFilterMismatches == true){
             return toPojo(deliveryEntities);
         } else {
             return toPojo(

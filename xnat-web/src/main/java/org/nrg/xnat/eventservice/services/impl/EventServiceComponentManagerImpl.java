@@ -143,6 +143,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
                     String sessionUri = session.getUri();
                     return new Scan((XnatImagescandataI) object, sessionUri, null);
                 }
+
             }
             log.error("User:" + (user != null ? user.getLogin() : "NULL") + " could not load Scan or parent Session:" + imageSessionId);
             return null;

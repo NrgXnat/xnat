@@ -15,8 +15,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface EventService {
+    
     List<SimpleEvent> getEvents() throws Exception;
-    SimpleEvent getEvent(UUID uuid) throws Exception;
+    List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception;
+    SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;
+    SimpleEvent getEvent(String eventId, Boolean loadDetails) throws Exception;
 
     @Deprecated
     List<Listener> getInstalledListeners();
@@ -34,6 +37,7 @@ public interface EventService {
     Action getActionByKey(String actionKey, UserI user);
 
     Map<String, JsonPathFilterNode> getEventFilterNodes(String eventId);
+    List<EventPropertyNode> getEventPropertyNodes(String eventId);
 
     List<Subscription> getSubscriptions();
     Subscription getSubscription(Long id) throws NotFoundException;

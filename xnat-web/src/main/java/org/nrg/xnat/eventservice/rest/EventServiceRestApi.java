@@ -92,10 +92,17 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getEventFilterNodes(eventId);
     }
 
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties/{event-id}"}, method = GET, produces = JSON)
+    @ApiOperation(value = "Get a event properties for a given Event ID")
+    @ResponseBody
+    public List<EventPropertyNode> retrieveEventProperties(final @PathVariable(name="event-id") String eventId) {
+        return eventService.getEventPropertyNodes(eventId);
+    }
+
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON)
-    @ApiOperation(value = "Generate a subscription RegEx filter string from nodeFilter set")
-    public String generateFilterRegEx(final @RequestBody  Map<String, JsonPathFilterNode> nodeFilters) {
-        return eventService.generateFilterRegEx(nodeFilters);
+    @ApiOperation(value = "Generate a subscription RegEx filter string from filter node set")
+    public String generateFilterRegEx(final @RequestBody  Map<String, JsonPathFilterNode> filterNodes) {
+        return eventService.generateFilterRegEx(filterNodes);
     }
 
 
@@ -236,8 +243,23 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/events", method = GET)
     @ResponseBody
-    public List<SimpleEvent> getEvents() throws Exception {
-        return eventService.getEvents();
+    public List<SimpleEvent> getEvents(final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
+        if(loadDetails != null) {
+            return eventService.getEvents(loadDetails);
+        }else{
+            return eventService.getEvents();
+        }
+    }
+
+    @XapiRequestMapping(restrictTo = Authenticated, value = "/events/event", method = GET, params = {"event-id"})
+    @ResponseBody
+    public SimpleEvent getEvent(final @RequestParam(value = "event-id", required = true) String eventId,
+                                      final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
+        if(loadDetails != null) {
+            return eventService.getEvent(eventId, loadDetails);
+        }else{
+            return eventService.getEvent(eventId, false);
+        }
     }
 
 

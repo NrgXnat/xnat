@@ -14,9 +14,9 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
+import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.slf4j.Logger;
@@ -147,10 +147,10 @@ public class EventServiceEmailAction extends SingleActionProvider {
     }
 
     @Override
-    public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user, final Long deliveryId) {
+    public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
 
         log.debug("Attempting to send email with EventServiceEmailAction.");
-        final Map<String,String> inputValues = subscription.getAttributes() != null ? subscription.getAttributes() : Maps.newHashMap();
+        final Map<String,String> inputValues = subscription.attributes() != null ? subscription.attributes() : Maps.newHashMap();
 
         MailMessage mailMessage = new MailMessage();
 
@@ -169,13 +169,13 @@ public class EventServiceEmailAction extends SingleActionProvider {
                 .splitToList(inputValues.get(BCC_KEY) != null ? inputValues.get(BCC_KEY) : "");
 
 
-        if(!areRecipientsAllowed(toUsersList, subscription.getProjectId(), user)){
+        if(!areRecipientsAllowed(toUsersList, subscription.projectId(), user)){
             failWithMessage(deliveryId, "TO: Recipients are not allowed for User: " + user.getLogin());
             return;
-        }else if(!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, subscription.getProjectId(), user)){
+        }else if(!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, subscription.projectId(), user)){
             failWithMessage(deliveryId, "CC: Recipients are not allowed for User: " + user.getLogin());
             return;
-        }else if(!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, subscription.getProjectId(), user)){
+        }else if(!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, subscription.projectId(), user)){
             failWithMessage(deliveryId, "BCC: Recipients are not allowed for User: " + user.getLogin());
             return;
         }
@@ -229,7 +229,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
             failWithMessage(deliveryId,"Email service failed to send message. \nCheck configuration");
         }
 
-        log.error("EventServiceLoggingAction called for RegKey " + subscription.getListenerRegistrationKey());
+        log.error("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
 
     }
 

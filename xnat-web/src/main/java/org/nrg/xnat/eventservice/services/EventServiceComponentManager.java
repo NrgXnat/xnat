@@ -18,4 +18,6 @@ public interface EventServiceComponentManager {
     List<EventServiceActionProvider> getActionProviders();
 
     XnatModelObject getModelObject(Object object, UserI user);
+
+    Class<?> getModelObjectClass(Class<?> objectClass);
 }

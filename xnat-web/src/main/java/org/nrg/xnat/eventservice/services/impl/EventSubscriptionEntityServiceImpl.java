@@ -348,7 +348,7 @@ public class EventSubscriptionEntityServiceImpl
 
     // Generate descriptive subscription name
     private String autoGenerateUniqueSubscriptionName(Subscription subscription){
-        String uniqueName = subscription.name();
+        String uniqueName = Strings.isNullOrEmpty(subscription.name()) ? "" : subscription.name();
         try {
             UserI actionUser = userManagementService.getUser(subscription.subscriptionOwner());
             String actionName = actionManager.getActionByKey(subscription.actionKey(), actionUser) != null ?

@@ -1,9 +1,9 @@
 package org.nrg.xnat.eventservice.services;
 
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.Subscription;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,5 +33,5 @@ public interface EventServiceActionProvider {
     String actionIdToActionKey(String actionId);
 
 
-    void processEvent(final EventServiceEvent event, SubscriptionEntity subscription, final UserI user, final Long deliveryId);
+    void processEvent(final EventServiceEvent event, Subscription subscription, final UserI user, final Long deliveryId);
 }

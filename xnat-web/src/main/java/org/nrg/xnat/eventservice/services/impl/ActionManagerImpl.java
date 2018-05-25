@@ -7,9 +7,9 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
@@ -32,11 +32,13 @@ public class ActionManagerImpl implements ActionManager {
 
     private final EventServiceComponentManager componentManager;
     private final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
+    private EventPropertyService eventPropertyService;
 
     @Autowired
-    public ActionManagerImpl(final EventServiceComponentManager componentManager, SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
+    public ActionManagerImpl(final EventServiceComponentManager componentManager, final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService, final EventPropertyService eventPropertyService) {
         this.componentManager = componentManager;
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
+        this.eventPropertyService = eventPropertyService;
     }
 
 
@@ -181,20 +183,20 @@ public class ActionManagerImpl implements ActionManager {
     //    WorkflowUtils.fail(workflow, event);
     //}
     @Override
-    public PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user) {
+    public PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, EventServiceEvent esEvent, UserI user) {
         try {
             if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem()instanceof XFTItem) {
                 XFTItem eventXftItem = ((BaseElement)esEvent.getObject()).getItem();
-                log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
+                log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
                         EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
-                                subscription.getName(), "Event Service Action Called", subscription.getActionProvider()));
+                                subscription.name(), "Event Service Action Called", subscription.actionKey()));
                 WorkflowUtils.save(workflow, workflow.buildEvent());
                 log.debug("Created workflow " + workflow.getId());
                 return workflow;
             }
             else {
-                log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.getName() + ".");
+                log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.name() + ".");
             }
         }catch (Exception e){
             log.error("Failed to create workflow entry for " + esEvent.getId() + "\n" + e.getMessage());
@@ -218,10 +220,10 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId) {
+    public void processEvent(Subscription subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId) {
         log.debug("ActionManager.processEvent started on Thread: " + Thread.currentThread().getName());
         PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
-        EventServiceActionProvider provider = getActionProviderByKey(subscription.getActionKey());
+        EventServiceActionProvider provider = getActionProviderByKey(subscription.actionKey());
         if(provider!= null) {
             log.debug("Passing event to Action Provider: " + provider.getName());
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
@@ -236,8 +238,8 @@ public class ActionManagerImpl implements ActionManager {
                 }
             }
         } else {
-            String errorMessage = "Could not find Action Provider for ActionKey: " + subscription.getActionKey();
-            subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), "Could not find Action Provider for ActionKey: " + subscription.getActionKey());
+            String errorMessage = "Could not find Action Provider for ActionKey: " + subscription.actionKey();
+            subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), "Could not find Action Provider for ActionKey: " + subscription.actionKey());
             workflow.setStatus(errorMessage);
             try {
                 WorkflowUtils.fail(workflow, workflow.buildEvent());
@@ -251,10 +253,13 @@ public class ActionManagerImpl implements ActionManager {
 
     @Async
     @Override
-    public void processAsync(EventServiceActionProvider provider, SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId){
+    public void processAsync(EventServiceActionProvider provider, Subscription subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId){
         log.debug("Started Async process on thread: {}", Thread.currentThread().getName());
         try {
-            provider.processEvent(esEvent, subscription, user, deliveryId);
+            log.debug("Resolving subscription event/action attributes.");
+            Subscription resolvedSubscription = eventPropertyService.resolveEventPropertyVariables(subscription, esEvent, user, deliveryId);
+            log.debug("Passing event/action processing off to action provider : " + provider.getName());
+            provider.processEvent(esEvent, resolvedSubscription, user, deliveryId);
         } catch (Throwable e){
             log.error("Exception thrown calling provider processEvent\n" + e.getMessage(),e);
         }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 
 @AutoValue
@@ -20,10 +21,11 @@ public abstract class SimpleEvent {
     @JsonProperty("payload") public abstract String payloadClass();
     @JsonProperty("xnat-type") public abstract String xnatType();
     @JsonProperty("is-xsi-type") public abstract boolean isXsiType();
-    @Nullable @JsonProperty("node-filters") public abstract Map<String, JsonPathFilterNode> nodeFilters();
+    @Nullable @JsonProperty("filter-nodes") public abstract Map<String, JsonPathFilterNode> nodeFilters();
+    @Nullable @JsonProperty("event-properties") public abstract List<EventPropertyNode> eventProperties();
 
 
-    public static SimpleEvent create( @JsonProperty("id") String id,
+    public static SimpleEvent create(@JsonProperty("id") String id,
                                      @JsonProperty("listener") String listenerService,
                                      @JsonProperty("display-name") String displayName,
                                      @JsonProperty("description") String description,
@@ -64,6 +66,8 @@ public abstract class SimpleEvent {
         public abstract Builder isXsiType(boolean isXsiType);
 
         public abstract Builder nodeFilters(Map<String, JsonPathFilterNode> nodeFilters);
+
+        public abstract Builder eventProperties(List<EventPropertyNode> eventProperties);
 
         public abstract SimpleEvent build();
     }

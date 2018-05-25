@@ -16,7 +16,7 @@ public abstract class EventFilter {
     @JsonIgnore @Nullable @JsonProperty("id") public abstract Long id();
     @Nullable @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("json-path-filter") public abstract String jsonPathFilter();
-    @Nullable @JsonProperty("node-filters") public abstract Map<String, JsonPathFilterNode> nodeFilters();
+    @Nullable @JsonProperty("filter-nodes") public abstract Map<String, JsonPathFilterNode> nodeFilters();
 
     public static Builder builder() {
         return new AutoValue_EventFilter.Builder();
@@ -37,6 +37,7 @@ public abstract class EventFilter {
 
     }
 
+    public abstract EventFilter.Builder toBuilder(); 
     public void populateJsonPathFilter() {
         // TODO: construct JSONPath filter from nodeFilters
     }

@@ -25,7 +25,7 @@ public class ProjectDeletedEvent extends CombinedEventServiceEvent<ProjectDelete
 
     @Override
     public String getPayloadXnatType() {
-        return "arc:project";
+        return "xnat:projectData";
     }
 
     @Override

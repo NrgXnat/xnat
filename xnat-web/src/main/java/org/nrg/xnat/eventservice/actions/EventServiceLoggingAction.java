@@ -1,9 +1,9 @@
 package org.nrg.xnat.eventservice.actions;
 
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
+import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +54,8 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     }
 
     @Override
-    public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user, final Long deliveryId) {
-        log.error("EventServiceLoggingAction called for RegKey " + subscription.getListenerRegistrationKey());
+    public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
+        log.error("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
 
     }
 

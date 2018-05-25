@@ -128,7 +128,7 @@ public class SubscriptionDeliveryEntityServiceImpl
                 .build();
         try{
             subscriptionDelivery = subscriptionDelivery.toBuilder()
-                    .event(eventService.getEvent(entity.getEventUUID()))
+                    .event(eventService.getEvent(entity.getEventUUID(), true))
                     .build();
         } catch (Exception e) {
             log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());

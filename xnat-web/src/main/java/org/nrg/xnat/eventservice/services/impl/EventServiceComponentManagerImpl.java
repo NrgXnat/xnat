@@ -159,4 +159,31 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
 
 
 
+  @Override
+    public Class<?> getModelObjectClass(Class<?> objectClass){
+        if(objectClass == null){
+            return null;
+        }
+
+        if(XnatImageassessordataI.class.isAssignableFrom(objectClass)) {
+            return Assessor.class;
+        }
+        else if(XnatProjectdata.class.isAssignableFrom(objectClass)) {
+            return Project.class;
+        }
+        else if(XnatResourcecatalog.class.isAssignableFrom(objectClass)) {
+            return org.nrg.xnat.eventservice.model.xnat.Resource.class;
+        }
+        else if(XnatImagescandataI.class.isAssignableFrom(objectClass)) {
+            return Scan.class;
+        }
+        else if(XnatImagesessiondataI.class.isAssignableFrom(objectClass)) {
+            return Session.class;
+        }
+        else if(XnatSubjectdataI.class.isAssignableFrom(objectClass)) {
+            return Subject.class;
+        }
+        return null;
+    }
+
 }

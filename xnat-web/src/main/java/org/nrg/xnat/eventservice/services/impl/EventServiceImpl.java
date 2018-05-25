@@ -43,7 +43,7 @@ public class EventServiceImpl implements EventService {
     private ActionManager actionManager;
     private SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
     private UserManagementServiceI userManagementService;
-    private EventFilterService eventFilterService;
+    private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
 
     @Autowired
@@ -53,7 +53,7 @@ public class EventServiceImpl implements EventService {
                             ActionManager actionManager,
                             SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                             UserManagementServiceI userManagementService,
-                            EventFilterService eventFilterService,
+                            EventPropertyService eventPropertyService,
                             ObjectMapper mapper) {
         this.contextService = contextService;
         this.subscriptionService = subscriptionService;
@@ -62,7 +62,7 @@ public class EventServiceImpl implements EventService {
         this.actionManager = actionManager;
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         this.userManagementService = userManagementService;
-        this.eventFilterService = eventFilterService;
+        this.eventPropertyService = eventPropertyService;
         this.mapper = mapper;
     }
 
@@ -170,16 +170,30 @@ public class EventServiceImpl implements EventService {
     public Map<String, JsonPathFilterNode> getEventFilterNodes(String eventId) {
         EventServiceEvent event = componentManager.getEvent(eventId);
         if(event != null && !StringUtils.isNullOrEmpty(event.getPayloadXnatType())) {
-            return eventFilterService.generateEventFilterNodes(event);
+            return eventPropertyService.generateEventFilterNodes(event);
+        }
+        return null;
+    }
+
+    @Override
+    public List<EventPropertyNode> getEventPropertyNodes(String eventId) {
+        EventServiceEvent event = componentManager.getEvent(eventId);
+        if(event != null && !StringUtils.isNullOrEmpty(event.getPayloadXnatType())) {
+            return eventPropertyService.generateEventPropertyKeys(event);
         }
         return null;
     }
 
     @Override
     public List<SimpleEvent> getEvents() throws Exception {
+        return getEvents(false);
+    }
+
+    @Override
+    public List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception {
         List<SimpleEvent> events = new ArrayList();
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
-            SimpleEvent simpleEvent = toPojo(e);
+            SimpleEvent simpleEvent = getEvent(e.getEventUUID(), loadDetails);
             Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
             if(eventFilterNodes != null && eventFilterNodes.size()>0){
                 simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
@@ -189,11 +203,44 @@ public class EventServiceImpl implements EventService {
         return events;
     }
 
+
     @Override
-    public SimpleEvent getEvent(UUID uuid) throws Exception {
-        for(EventServiceEvent e :componentManager.getInstalledEvents()){
+    public SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception {
+         for(EventServiceEvent e :componentManager.getInstalledEvents()){
             if(e.getEventUUID().equals(uuid)){
-                return toPojo(e);
+                SimpleEvent simpleEvent = toPojo(e);
+                if(loadDetails){
+                    Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
+                    if(eventFilterNodes != null && eventFilterNodes.size()>0){
+                        simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
+                    }
+                    List<EventPropertyNode> eventPropertyNodes = getEventPropertyNodes(simpleEvent.id());
+                    if(eventPropertyNodes != null && !eventPropertyNodes.isEmpty()){
+                        simpleEvent = simpleEvent.toBuilder().eventProperties(eventPropertyNodes).build();
+                    }
+                }
+                return simpleEvent;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public SimpleEvent getEvent(@Nonnull final String eventId, Boolean loadDetails) throws Exception {
+        for(EventServiceEvent e : componentManager.getInstalledEvents()){
+            if(eventId.contentEquals(e.getId())){
+                SimpleEvent simpleEvent = toPojo(e);
+                if(loadDetails){
+                    Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
+                    if(eventFilterNodes != null && eventFilterNodes.size()>0){
+                        simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
+                    }
+                    List<EventPropertyNode> eventPropertyNodes = getEventPropertyNodes(simpleEvent.id());
+                    if(eventPropertyNodes != null && !eventPropertyNodes.isEmpty()){
+                        simpleEvent = simpleEvent.toBuilder().eventProperties(eventPropertyNodes).build();
+                    }
+                }
+                return simpleEvent;
             }
         }
         return null;
@@ -283,18 +330,7 @@ public class EventServiceImpl implements EventService {
 
                         // ** Serialized event object ** //
                         try {
-                            jsonObject = eventFilterService.serializePayloadObject(esEvent.getObject(), actionUser);
-                            //modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
-                            //if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                            //    // Serialize data object
-                            //    log.debug("Serializing event object as known Model Object.");
-                            //    jsonObject = mapper.writeValueAsString(modelObject);
-                            //} else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
-                            //    log.debug("Serializing event object as unknown object type.");
-                            //    jsonObject = mapper.writeValueAsString(esEvent.getObject());
-                            //} else {
-                            //    log.debug("Could not serialize event object in: " + esEvent.toString());
-                            //}
+                            jsonObject = eventPropertyService.serializePayloadObject(esEvent.getObject(), actionUser);
                             if(!Strings.isNullOrEmpty(jsonObject)) {
                                 String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
                                 log.debug("Serialized Object: " + objectSubString + "...");
@@ -344,10 +380,7 @@ public class EventServiceImpl implements EventService {
                         } catch (Throwable e){
                             log.error("Could not build TriggeringEventEntity ", e.getMessage(), e);
                         }
-                        // call Action Manager with payload
-                        SubscriptionEntity subscriptionEntity = subscriptionService.get(subscription.id());
-
-                        actionManager.processEvent(subscriptionEntity, esEvent, actionUser, deliveryId);
+                         actionManager.processEvent(subscription, esEvent, actionUser, deliveryId);
                     } catch (UserNotFoundException |UserInitException e) {
                         log.error("Failed to process subscription:" + subscription.name());
                         log.error(e.getMessage());
@@ -384,7 +417,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters) {
-        return eventFilterService.generateJsonPathFilter(nodeFilters);
+        return eventPropertyService.generateJsonPathFilter(nodeFilters);
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {

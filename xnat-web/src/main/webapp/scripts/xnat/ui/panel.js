@@ -260,232 +260,232 @@ var XNAT = getObject(XNAT || {});
 
     // populate the data fields if this panel is in the 'active' tab
     // (only getting values for the active tab should cut down on requests)
-    function loadDataNot(form, obj){
-
-        obj = cloneObject(obj);
-
-        // 'load' is a url, object, or eval string
-        obj.load = obj.load || obj.url;
-
-        // 'onload' is a callback function
-        if (typeof obj.onload === 'string') {
-            obj.onload = eval(obj.onload);
-        }
-        else {
-            obj.onload = obj.onload || diddly;
-        }
-
-        // need a form to put the data into!
-        // and a 'load' property too
-        if (!form || !obj.load) {
-            loadingDialog().close();
-            return;
-        }
-
-        var $form = $$(form);
-        var _form = $form[0];
-        var values = {};
-        var name;
-        var tmp = '';
-
-        obj.load = (obj.load+'').trim();
-
-        // if 'load' starts with '#?' execute global (namespaced) function
-        var fnExe = XNAT.parse.REGEX.fnPrefix.test(obj.load) ? XNAT.parse(obj.load) : null;
-        if (fnExe && fnExe.done) {
-            try {
-                fnExe.done(function(){
-                    var obj = this;
-                    if (isPlainObject(obj.result)) {
-                        $form.setValues(obj.result);
-                    }
-                });
-                return fnExe;
-            }
-            catch (e) {
-                if (jsdebug) console.error(e);
-                return;
-            }
-        }
-
-        obj.queryString = '';
-
-        // save query string
-        // if (/.{3}[?]/.test(obj.load)){
-        //     tmp = obj.load.split('?');
-        //     obj.queryString = '?' + tmp[tmp.length-1];
-        //     tmp = '';
-        // }
-
-        // regex for loading returned value to one specific input
-        var loadInput = /\s*[>:]\s*\[\[\s*(.+)\s*]]\s*/;
-        var loadParts = [];
-
-        // extract name of form element to receive loaded value
-        // (if raw data is returned instead of JSON with key: value)
-        // append element name to 'load' value, like:
-        // /data/projects/foo/quarantine_code > [[quarantine]]
-        if (loadInput.test(obj.load)){
-            loadParts = obj.load.split(loadInput);
-            name = loadParts[1];
-            obj.load = loadParts[0] + obj.queryString;
-        }
-
-        // if 'load' starts with '$?', '~/', or just '/'
-        // then values need to load via REST
-        var ajaxPrefix = /^(\$\?|~\/|\/)/;
-        var doAjax = ajaxPrefix.test(obj.load);
-
-        // if 'load' starts with '!?' do an eval()
-        var evalPrefix = /^!\?/;
-
-        // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
-        var lookupPrefix = /^\?\?/;
-
-        // ...BUT...
-        // if there's an existing property name:
-        // XNAT.data['/rest/url']
-        // that matches the URL, then use that
-        if (doAjax) {
-            // remove ajax prefix
-            obj.load = obj.load.replace(ajaxPrefix, '') .trim();
-            // add serverRoot to load url
-            obj.load = XNAT.url.rootUrl(obj.load);
-            // replace url params
-            obj.load = urlParams($form, obj.load);
-            // if data is already cached...
-            if (!obj.reload && XNAT.data && XNAT.data[obj.load]) {
-                // don't do another request
-            doAjax = false;
-            obj.prop = obj.load;
-            obj.load = '??:XNAT:data'
-        }
-        }
-
-        if (!doAjax) {
-
-            var doLookup = lookupPrefix.test(obj.load);
-            if (doLookup) {
-                obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
-                obj.prop = obj.prop || obj.load.split('|')[1] || '';
-
-                // get the values
-                if (name) {
-                    values[name] = lookupObjectValue(window, obj.load, obj.prop)[name];
-                }
-                else {
-                values = lookupObjectValue(window, obj.load, obj.prop);
-                }
-
-                // set values of form elements
-                $form.setValues(values);
-
-                loadingDialog().close();
-
-                obj.onload.call(_form, values);
-
-                return _form;
-
-            }
-
-            var doEval = evalPrefix.test(obj.load);
-            if (doEval) {
-                obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
-            }
-
-            // lastly try to eval the 'load' value
-            try {
-                if (name) {
-                    values[name] = (eval(obj.load))[name];
-                }
-                else {
-                values = eval(obj.load);
-                }
-                // set values of form elements
-                $form.setValues(values);
-            }
-            catch (e) {
-                console.log(e);
-            }
-
-            loadingDialog().close();
-
-            obj.onload.call(_form, values);
-
-            return _form;
-
-        }
-
-        //////////
-        // REST
-        //////////
-
-        var ajaxUrl = obj.refresh || '';
-
-        // if 'load' starts with $?, do ajax request
-        //var ajaxPrefix = '$?';
-        var ajaxProp = '';
-
-        // value: $? /path/to/data | obj:prop:name
-        // value: ~/path/to/data|obj.prop.name
-        if (doAjax) {
-            ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
-            ajaxProp = obj.load.split('|')[1] || '';
-        }
-
-        // need a url to get the data
-        if (!ajaxUrl || !stringable(ajaxUrl)) {
-            loadingDialog().close();
-            return _form;
-        }
-
-        // force GET method
-        obj.method = 'GET';
-
-        // setup the ajax request
-        // override values with an
-        // 'ajax' or 'xhr' property
-        obj.ajax = extend(true, {
-            method: obj.method,
-            url: XNAT.url.rootUrl(ajaxUrl)
-        }, obj.ajax || obj.xhr);
-
-        obj.ajax.success = function(data){
-
-            if (ajaxProp){
-                data = data[ajaxProp];
-            }
-            $form.dataAttr('status', 'clean');
-
-            if (name) {
-                values[name] = data;
-            }
-            else {
-                values = data;
-            }
-
-            // cache returned data
-            XNAT.data[obj.ajax.url] = values;
-
-            // set values of form elements
-            $form.setValues(values);
-
-            obj.onload.apply(_form, arguments);
-
-        };
-
-        obj.ajax.error = function(){
-            $form.dataAttr('status', 'error');
-        };
-
-        obj.ajax.complete = function(){
-            loadingDialog().close();
-        };
-
-        // return the ajax thing for method chaining
-        return XNAT.xhr.request(obj.ajax);
-
-    }
+    // function loadDataNot(form, obj){
+    //
+    //     obj = cloneObject(obj);
+    //
+    //     // 'load' is a url, object, or eval string
+    //     obj.load = obj.load || obj.url;
+    //
+    //     // 'onload' is a callback function
+    //     if (typeof obj.onload === 'string') {
+    //         obj.onload = eval(obj.onload);
+    //     }
+    //     else {
+    //         obj.onload = obj.onload || diddly;
+    //     }
+    //
+    //     // need a form to put the data into!
+    //     // and a 'load' property too
+    //     if (!form || !obj.load) {
+    //         loadingDialog().close();
+    //         return;
+    //     }
+    //
+    //     var $form = $$(form);
+    //     var _form = $form[0];
+    //     var values = {};
+    //     var name;
+    //     var tmp = '';
+    //
+    //     obj.load = (obj.load+'').trim();
+    //
+    //     // if 'load' starts with '#?' execute global (namespaced) function
+    //     var fnExe = XNAT.parse.REGEX.fnPrefix.test(obj.load) ? XNAT.parse(obj.load) : null;
+    //     if (fnExe && fnExe.done) {
+    //         try {
+    //             fnExe.done(function(){
+    //                 var obj = this;
+    //                 if (isPlainObject(obj.result)) {
+    //                     $form.setValues(obj.result);
+    //                 }
+    //             });
+    //             return fnExe;
+    //         }
+    //         catch (e) {
+    //             if (jsdebug) console.error(e);
+    //             return;
+    //         }
+    //     }
+    //
+    //     obj.queryString = '';
+    //
+    //     // save query string
+    //     // if (/.{3}[?]/.test(obj.load)){
+    //     //     tmp = obj.load.split('?');
+    //     //     obj.queryString = '?' + tmp[tmp.length-1];
+    //     //     tmp = '';
+    //     // }
+    //
+    //     // regex for loading returned value to one specific input
+    //     var loadInput = /\s*[>:]\s*\[\[\s*(.+)\s*]]\s*/;
+    //     var loadParts = [];
+    //
+    //     // extract name of form element to receive loaded value
+    //     // (if raw data is returned instead of JSON with key: value)
+    //     // append element name to 'load' value, like:
+    //     // /data/projects/foo/quarantine_code > [[quarantine]]
+    //     if (loadInput.test(obj.load)){
+    //         loadParts = obj.load.split(loadInput);
+    //         name = loadParts[1];
+    //         obj.load = loadParts[0] + obj.queryString;
+    //     }
+    //
+    //     // if 'load' starts with '$?', '~/', or just '/'
+    //     // then values need to load via REST
+    //     var ajaxPrefix = /^(\$\?|~\/|\/)/;
+    //     var doAjax = ajaxPrefix.test(obj.load);
+    //
+    //     // if 'load' starts with '!?' do an eval()
+    //     var evalPrefix = /^!\?/;
+    //
+    //     // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
+    //     var lookupPrefix = /^\?\?/;
+    //
+    //     // ...BUT...
+    //     // if there's an existing property name:
+    //     // XNAT.data['/rest/url']
+    //     // that matches the URL, then use that
+    //     if (doAjax) {
+    //         // remove ajax prefix
+    //         obj.load = obj.load.replace(ajaxPrefix, '') .trim();
+    //         // add serverRoot to load url
+    //         obj.load = XNAT.url.rootUrl(obj.load);
+    //         // replace url params
+    //         obj.load = urlParams($form, obj.load);
+    //         // if data is already cached...
+    //         if (!obj.reload && XNAT.data && XNAT.data[obj.load]) {
+    //             // don't do another request
+    //         doAjax = false;
+    //         obj.prop = obj.load;
+    //         obj.load = '??:XNAT:data'
+    //     }
+    //     }
+    //
+    //     if (!doAjax) {
+    //
+    //         var doLookup = lookupPrefix.test(obj.load);
+    //         if (doLookup) {
+    //             obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
+    //             obj.prop = obj.prop || obj.load.split('|')[1] || '';
+    //
+    //             // get the values
+    //             if (name) {
+    //                 values[name] = lookupObjectValue(window, obj.load, obj.prop)[name];
+    //             }
+    //             else {
+    //             values = lookupObjectValue(window, obj.load, obj.prop);
+    //             }
+    //
+    //             // set values of form elements
+    //             $form.setValues(values);
+    //
+    //             loadingDialog().close();
+    //
+    //             obj.onload.call(_form, values);
+    //
+    //             return _form;
+    //
+    //         }
+    //
+    //         var doEval = evalPrefix.test(obj.load);
+    //         if (doEval) {
+    //             obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
+    //         }
+    //
+    //         // lastly try to eval the 'load' value
+    //         try {
+    //             if (name) {
+    //                 values[name] = (eval(obj.load))[name];
+    //             }
+    //             else {
+    //             values = eval(obj.load);
+    //             }
+    //             // set values of form elements
+    //             $form.setValues(values);
+    //         }
+    //         catch (e) {
+    //             console.log(e);
+    //         }
+    //
+    //         loadingDialog().close();
+    //
+    //         obj.onload.call(_form, values);
+    //
+    //         return _form;
+    //
+    //     }
+    //
+    //     //////////
+    //     // REST
+    //     //////////
+    //
+    //     var ajaxUrl = obj.refresh || '';
+    //
+    //     // if 'load' starts with $?, do ajax request
+    //     //var ajaxPrefix = '$?';
+    //     var ajaxProp = '';
+    //
+    //     // value: $? /path/to/data | obj:prop:name
+    //     // value: ~/path/to/data|obj.prop.name
+    //     if (doAjax) {
+    //         ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
+    //         ajaxProp = obj.load.split('|')[1] || '';
+    //     }
+    //
+    //     // need a url to get the data
+    //     if (!ajaxUrl || !stringable(ajaxUrl)) {
+    //         loadingDialog().close();
+    //         return _form;
+    //     }
+    //
+    //     // force GET method
+    //     obj.method = 'GET';
+    //
+    //     // setup the ajax request
+    //     // override values with an
+    //     // 'ajax' or 'xhr' property
+    //     obj.ajax = extend(true, {
+    //         method: obj.method,
+    //         url: XNAT.url.rootUrl(ajaxUrl)
+    //     }, obj.ajax || obj.xhr);
+    //
+    //     obj.ajax.success = function(data){
+    //
+    //         if (ajaxProp){
+    //             data = data[ajaxProp];
+    //         }
+    //         $form.dataAttr('status', 'clean');
+    //
+    //         if (name) {
+    //             values[name] = data;
+    //         }
+    //         else {
+    //             values = data;
+    //         }
+    //
+    //         // cache returned data
+    //         XNAT.data[obj.ajax.url] = values;
+    //
+    //         // set values of form elements
+    //         $form.setValues(values);
+    //
+    //         obj.onload.apply(_form, arguments);
+    //
+    //     };
+    //
+    //     obj.ajax.error = function(){
+    //         $form.dataAttr('status', 'error');
+    //     };
+    //
+    //     obj.ajax.complete = function(){
+    //         loadingDialog().close();
+    //     };
+    //
+    //     // return the ajax thing for method chaining
+    //     return XNAT.xhr.request(obj.ajax);
+    //
+    // }
 
     // creates a panel that's a form that can be submitted
     // TODO: REFACTOR THIS BEAST
@@ -496,6 +496,7 @@ var XNAT = getObject(XNAT || {});
         opts.title = opts.title || opts.label || opts.header;
         opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
         opts.action = opts.action || opts.url;
+        opts.load = opts.load || opts.url || opts.action;
 
         var payloadRegex = /<\s*\[\[(.*)]]$/;
         var parts;
@@ -513,7 +514,7 @@ var XNAT = getObject(XNAT || {});
         var dataObj = {
             panel: toDashed(opts.name),
             method: (opts.method || 'POST').toLowerCase(),
-            load: opts.load || opts.action
+            load: opts.load
         };
 
         if (opts.payload) {
@@ -529,7 +530,7 @@ var XNAT = getObject(XNAT || {});
         opts.reset = firstDefined(opts.reset, 'Discard Changes');
 
         if (opts.action !== undef) {
-            opts.action = opts.action.replace(XNAT.parse.REGEX.ajaxPrefix, '/');
+            opts.action = opts.action.replace(XNAT.parse.REGEX.ajaxPrefix, '');
             opts.action = (opts.action && /^[*~/.]/.test(opts.action)) ? XNAT.url.rootUrl(opts.action) : opts.action || '#!';
         }
         else {
@@ -544,7 +545,7 @@ var XNAT = getObject(XNAT || {});
             if (isPlainObject(opts.params)) {
                 forOwn(opts.params, function(key, val){
                     opts.params[key] = strReplace(val);
-        });
+                });
             }
             else if (Array.isArray(opts.params)) {
                 opts.params = opts.params.map(function(param){
@@ -630,7 +631,7 @@ var XNAT = getObject(XNAT || {});
         opts.onload = isFunction(opts.onload) ? opts.onload : diddly;
 
         // custom event for reloading data (refresh)
-        $formPanel.on('reload-data', function(){
+        $formPanel.on('reload-data', function reloadData(){
 
             var form$ = $(this);
             var loadUrl = opts.refresh || opts.load || opts.url || form$.data('load') || form$.attr('action');
@@ -640,10 +641,15 @@ var XNAT = getObject(XNAT || {});
             form$.find('.ready').removeClass('ready');
             form$.find('.dirty').removeClass('dirty');
 
-            // prepending '*/' will force fresh data to be loaded from the server
-            loadUrl = loadUrl.replace(XNAT.parse.REGEX.ajaxPrefix, '*/');
+            // deleting the cached data will force a refresh
+            if (XNAT.data && XNAT.data[loadUrl]) {
+                delete XNAT.data[loadUrl]
+            }
 
-            XNAT.form.setValues(form$, loadUrl);
+            // prepending '$? *' will force fresh data to be loaded from the server
+            var loadUrlX = '$? *' + loadUrl.replace(XNAT.parse.REGEX.ajaxPrefix, '');
+
+            XNAT.form.setValues(form$, loadUrlX);
 
             // loadData(this, {
             //     load: _load,
@@ -882,7 +888,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         function loadValues(){
-            var loadUrl = (opts.load || opts.url || '').replace(XNAT.parse.REGEX.ajaxPrefix, '$?/');
+            var loadUrl = '$?' + (opts.load || opts.url || '').replace(XNAT.parse.REGEX.ajaxPrefix, '');
             try {
                 XNAT.form.setValues($formPanel, loadUrl);
             }

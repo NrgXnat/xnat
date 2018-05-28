@@ -1805,7 +1805,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
     #else
         <span class="tip_text">
             $!tipText.get(0) ## This displays the first item in the list as the main text.
-        <span style="top:20px;white-space:nowrap;left:-10;width:auto;" class="tip shadowed">
+        <span style="top:20px;white-space:nowrap;left:-10px;width:auto;" class="tip shadowed">
             #set($current = 1)
             #set($size = $tipText.size())
             #set($delimiter = "<br/>")

@@ -60,7 +60,7 @@ var XNAT = getObject(XNAT);
 
     /**
      * Set the value for a single form element
-     * @param input {HTMLElement} - a single form input element
+     * @param input {HTMLElement|String} - a single form input element or selector
      * @param value {*} - data to apply to [input]
      */
     function setValue(input, value){
@@ -79,8 +79,8 @@ var XNAT = getObject(XNAT);
         var inputTag = input0.tagName;
         var inputType = input0.type;
         var inputName = input0.name || input0.title || input0.id;
-        var inputValue = input$.val();
-        var val = value || '';
+        var inputValue = input$.val() || input$.attr('data-value');
+        var val = value || input$.attr('data-load') || '';
 
         // skip buttons (?)
         if (isButton(input0)) {
@@ -98,12 +98,13 @@ var XNAT = getObject(XNAT);
             }
             else {
                 ////////// RETURN //////////
-                // RETURN IF THIS IS NOT THE ELEMENT WE'RE LOOKING FOR
+                // RETURN IF THIS IS NOT THE
+                // ELEMENT WE'RE LOOKING FOR
                 return [inputName, val];
             }
         }
         else {
-            val = stringable(value) ? value+'' : JSON.stringify(value);
+            val = stringable(val) ? val+'' : JSON.stringify(val);
         }
 
 

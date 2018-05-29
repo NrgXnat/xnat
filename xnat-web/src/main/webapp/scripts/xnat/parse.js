@@ -364,7 +364,7 @@ var XNAT = getObject(XNAT);
                 // dataType: obj.dataType,
                 url: obj.url,
                 success: function(data){
-                    if (!obj.url || obj.url === '/') {
+                    if (!obj.url || obj.url === XNAT.url.rootUrl()) {
                         return;
                     }
                     XNAT.data[obj.cacheUrl] = data;

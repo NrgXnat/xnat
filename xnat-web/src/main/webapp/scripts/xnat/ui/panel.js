@@ -495,8 +495,8 @@ var XNAT = getObject(XNAT || {});
         opts.element = opts.element || opts.config || {};
         opts.title = opts.title || opts.label || opts.header;
         opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
-        opts.action = opts.action || opts.url;
-        opts.load = opts.load || opts.url || opts.action;
+        opts.action = firstDefined(opts.action, opts.url);
+        opts.load = firstDefined(opts.load, opts.url, opts.action);
 
         var payloadRegex = /<\s*\[\[(.*)]]$/;
         var parts;

@@ -309,6 +309,12 @@ var XNAT = getObject(XNAT);
             obj.url = obj.url.trim();
             obj.url = strReplace(obj.url);
 
+            // return early if url is empty
+            if (!obj.url) {
+                // --- RETURN --- //
+                return undef;
+            }
+
             // string to use for XNAT.data.* cache
             obj.cacheUrl = XNAT.url.rootUrl(obj.url);
 
@@ -358,6 +364,9 @@ var XNAT = getObject(XNAT);
                 // dataType: obj.dataType,
                 url: obj.url,
                 success: function(data){
+                    if (!obj.url || obj.url === '/') {
+                        return;
+                    }
                     XNAT.data[obj.cacheUrl] = data;
                     if (jsdebug) debugLog(XNAT.data[obj.cacheUrl]);
                 }
@@ -416,7 +425,7 @@ var XNAT = getObject(XNAT);
         var val;
         // execute a function by name to get the value
         // #?:NS.func.name()
-        // #?:NS.func.name   --  with or without trailing ()
+        // #? NS.func.name   --  with or without colon and trailing ()
         if (REGEX.fnTest.test(value)) {
 
             if (jsdebug) console.log('===== doFn =====');

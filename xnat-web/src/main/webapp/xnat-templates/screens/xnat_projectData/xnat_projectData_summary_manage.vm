@@ -172,15 +172,7 @@
             }
 
 </style>
-##<script type="text/javascript">
-##    writeScripts([
-##        scriptUrl('lib/ace/ace.js'),
-##        scriptUrl('seriesImportFilter.js'),
-##        scriptUrl('settingsManager.js'),
-##        scriptUrl('xnat/app/eventsManager.js')
-##    ]);
-##</script>
-<script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
+
 <script type="text/javascript" src="$content.getURI("scripts/seriesImportFilter.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/settingsManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/xnat/app/eventsManager.js")"></script>

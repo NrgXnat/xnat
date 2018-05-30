@@ -85,7 +85,7 @@
 
         var exptTypeMenu = jq('#exptType');
 
-        XNAT.app.dataTypeAccess.getElements['searchableByPluralDesc'].ready(function(elements){
+        XNAT.app.dataTypeAccess.getElements('searchableByPluralDesc').ready(function(elements){
 
             var sortedElements = sortObjects(elements, 'plural');
 
@@ -116,7 +116,10 @@
                                   .td({}, [['b', element.plural]])
                                   .td({ className: 'nowrap' }, [
                                       ['label', [
-                                          ['input|type=radio|checked|name=super_' + elementName],
+                                          ['input|type=radio|checked', {
+                                              name: 'super_' + elementName,
+                                              value: ''
+                                          }],
                                           '&nbsp;',
                                           'None'
                                       ]]

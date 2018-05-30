@@ -99,9 +99,9 @@
     <!-- other libraries -->
     <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.${js}"></script>
-    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.${minjs}"></script>
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.${js}"></script>
-    <script src="${SITE_ROOT}/scripts/lib/form2js/src/js2form.${js}"></script>
+    <%--<script src="${SITE_ROOT}/scripts/lib/form2js/src/js2form.${js}"></script>--%>
     <script src="${SITE_ROOT}/scripts/lib/x2js/xml2json.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/DefiantJS/dist/defiant.${minjs}"></script>
     <script src="${SITE_ROOT}/scripts/lib/jsonpath/jsonpath.${js}"></script>
@@ -154,9 +154,7 @@
         // will be converted
         // putting this here to be at the top of
         // the jQuery DOM-ready queue
-        jq(function(){
-            menuInit()
-        });
+        jq(function(){ menuInit() });
     </script>
 
     <script type="text/javascript">

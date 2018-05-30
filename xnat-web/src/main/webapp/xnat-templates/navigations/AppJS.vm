@@ -1,19 +1,17 @@
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="appInfo" type="org.nrg.xnat.services.XnatAppInfo" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+#* @vtlvariable name="SITE_ROOT" type="java.lang.String" *#
+#* @vtlvariable name="css" type="java.lang.String" *#
+#* @vtlvariable name="mincss" type="java.lang.String" *#
+#* @vtlvariable name="js" type="java.lang.String" *#
+#* @vtlvariable name="minjs" type="java.lang.String" *#
+#* @vtlvariable name="lastAccessed" type="java.lang.String" *#
 
 ## Main JavaScript and CSS files for XNAT
 
 <!-- START AppJS.vm -->
-
-#set ($appInfo = $turbineUtils.getBean("appInfo"))
-
-#set ($versionString = "x=$appInfo.buildDate.hashCode()")
-
-#set($SITE_ROOT = $content.getURI(""))
-#set($lastAccessed = "${data.session.lastAccessedTime}")
-
-#set ($js = "js?${versionString}")
 
 ## only load once
 #if ($!appJS != true)
@@ -33,14 +31,14 @@
 ##    #end
 
     <!-- app.css loaded first -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.${css}">
 
     <!-- Icon sets -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?x=${lastAccessed}">
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.${css}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.${css}">
 
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.${css}">
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.${js}"></script>
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.${js}"></script>
 
@@ -60,7 +58,7 @@
     #end
 
     <!-- XNAT JLAPI stylesheets -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.${css}">
 
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/util/sub64.${js}"></script>

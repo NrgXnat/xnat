@@ -5,6 +5,7 @@
 #* @vtlvariable name="requireReason" type="java.lang.String" *#
 #* @vtlvariable name="showReason" type="java.lang.String" *#
 #* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+#* @vtlvariable name="SITE_ROOT" type="java.lang.String" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
@@ -31,9 +32,6 @@
 
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
-
-#set ($versionString = "x=$appInfo.buildDate.hashCode()")
-#set ($SITE_ROOT = $content.getURI(""))
 
 #set ($projectName = $turbineUtils.getProjectName($om, $project))
 #if (!$projectName)
@@ -198,7 +196,7 @@ $navigation.setTemplate("/BaseJS.vm")
     // will be converted
     // putting this here to be at the top of
     // the jQuery DOM-ready queue
-    jq(function(){menuInit()});
+    jq(function(){ menuInit() });
 </script>
 <script src="${SITE_ROOT}/scripts/xdat.js"></script>
 <script src="${SITE_ROOT}/scripts/DynamicJSLoad.js"></script>
@@ -248,24 +246,24 @@ $navigation.setTemplate("/BaseJS.vm")
 </script>
 
 <!-- YUI css -->
-<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/xnat/xnat.css?${versionString}">
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/xnat/xnat.${css}">
 
 <!-- date input stuff -->
-<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
-<script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.${mincss}">
+<script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.${minjs}"></script>
 
-<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.css?${versionString}">
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.${css}">
 ##<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar.js"></script>
-<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.js"></script>
-<script src="${SITE_ROOT}/scripts/ezCalendar.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-${minjs}"></script>
+<script src="${SITE_ROOT}/scripts/ezCalendar.${js}"></script>
 
 
 ## pull in the XNAT app JavaScript files
 $navigation.setTemplate("/AppJS.vm")
 
 
-<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.css?${versionString}">
-<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.js"></script>
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.${css}">
+<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.${js}"></script>
 
 
 #addGlobalCustomScreens("header")

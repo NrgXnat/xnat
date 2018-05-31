@@ -6,6 +6,6 @@
 <p>---</p>
 <p>
     The $system Team<br>
-    <a href="$acceptUrl">$server</a><br>
+    <a href="$server">$server</a><br>
     <a href="mailto:$admin_email">$admin_email</a>
 </p>

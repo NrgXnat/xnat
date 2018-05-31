@@ -203,7 +203,8 @@ public class ProcessAccessRequest extends SecureAction {
         Template template;
         try {
             template = Velocity.getTemplate("/screens/email/RequestProjectAccessApprovalEmail.vm");
-            template.merge(context,sw);
+			context.put("displayManager", DisplayManager.GetInstance());
+			template.merge(context,sw);
         } catch (Exception exception) {
             logger.error("Unable to send mail", exception);
             throw exception;

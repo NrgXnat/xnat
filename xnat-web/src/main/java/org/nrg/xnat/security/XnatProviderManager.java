@@ -19,6 +19,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.velocity.VelocityContext;
 import org.hibernate.exception.DataException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
@@ -70,6 +71,14 @@ public class XnatProviderManager extends ProviderManager {
                 return provider != null ? provider.getProviderId() : null;
             }
         }));
+    }
+
+    public void updateDatabaseAfterSuccessfulLogin(Authentication authentication){
+        _eventPublisher.publishAuthenticationSuccess(authentication);
+    }
+
+    public void updateDatabaseAfterFailedLogin(AuthenticationException exception, Authentication authentication){
+        _eventPublisher.publishAuthenticationFailure(exception, authentication);
     }
 
     @Override
@@ -391,7 +400,8 @@ public class XnatProviderManager extends ProviderManager {
          * @param authentication The authentication that failed.
          */
         private synchronized void addFailedLoginAttempt(final Authentication authentication) {
-            final XdatUserAuth userAuth = _manager.getUserByAuth(authentication);
+            //final XdatUserAuth userAuth = _manager.getUserByAuth(authentication);
+            final XdatUserAuth userAuth = XDAT.getXdatUserAuthService().getUserByNameAndAuth((String) authentication.getPrincipal(), ((XnatDatabaseUsernamePasswordAuthenticationToken) authentication).getProviderId(), "");
             if (userAuth != null && !userAuth.getXdatUsername().equals("guest")) {
                 if (_preferences.getMaxFailedLogins() > 0) {
                     userAuth.setFailedLoginAttempts(userAuth.getFailedLoginAttempts() + 1);

@@ -33,7 +33,7 @@ $!template.setLayoutTemplate("Login.vm")
     <div id="register_box">
         #if($message.startsWith("Registration error"))
             <div class="warning" style="border-bottom: 0">
-                <p><strong>Note:</strong> $message</p>
+                <strong>Note:</strong> $message
             </div>
         #end
 
@@ -125,6 +125,28 @@ $!template.setLayoutTemplate("Login.vm")
     jq(document).on('click','.show-login',function(){
         showLoginBox();
     });
+
+    jq(document).ready(function(){
+        // if an LDAP user is using an email address as their username, truncate the front part of the email and remove any other interior puncutation before attempting to register it as an XNAT username
+        var registerUserLogin = document.getElementById('xdat:user.login'),
+            newLoginVal = registerUserLogin.value;
+
+        // find and replace punctuation allowed in email addresses
+        if (newLoginVal.match(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g)) {
+            newLoginVal = newLoginVal.replace(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g,'');
+            console.log('replaced email punctuation');
+        }
+
+        jq(registerUserLogin)
+                .val(newLoginVal)
+                .parents('#register_box')
+                .prepend(
+                    spawn(
+                        'div.message',
+                        {style: {'border-bottom': 'none'}},
+                        'XNAT usernames cannot contain punctuation. You will still be able to log in using your LDAP credentials upon account creation and verification.'
+        ));
+    })
 
     #if ($message.startsWith("Authentication failed"))
         // toggle login box if user attempted and failed to login and server returned an error message.

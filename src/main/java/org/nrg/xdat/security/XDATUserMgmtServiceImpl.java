@@ -183,6 +183,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         } catch (Exception ignored) {
         }
 
+        final XdatUserAuthService userAuthService = XDAT.getXdatUserAuthService();
         if (existing == null) {
             // NEW USER
             if (overrideSecurity || Roles.isSiteAdmin(authenticatedUser)) {
@@ -202,7 +203,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
                 SaveItemHelper.authorizedSave(((XDATUser) user), authenticatedUser, true, false, event);
                 XdatUserAuth newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
-                XDAT.getXdatUserAuthService().create(newUserAuth);
+                userAuthService.create(newUserAuth);
             } else {
                 throw new InvalidPermissionException("Unauthorized user modification attempt");
             }
@@ -254,11 +255,10 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
             // This means the password was actually updated, so reset the password updated date and failed login attempts.
             if (!StringUtils.equals(existing.getPassword(), user.getPassword())) {
-                final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
+                final XdatUserAuth auth = userAuthService.getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
                 if(auth!=null) {
                     auth.setPasswordUpdated(new Date());
-                    auth.setFailedLoginAttempts(0);
-                    XDAT.getXdatUserAuthService().update(auth);
+                    userAuthService.resetFailedLogins(auth);
                 }
             }
         }

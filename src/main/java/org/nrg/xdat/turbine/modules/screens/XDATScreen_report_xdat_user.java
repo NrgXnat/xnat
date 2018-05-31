@@ -7,16 +7,16 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xdat.turbine.modules.screens;
-import java.util.List;
 
-import org.apache.log4j.Logger;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
@@ -26,37 +26,30 @@ import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
- *
  */
+@SuppressWarnings("unused")
+@Slf4j
 public class XDATScreen_report_xdat_user extends AdminReport {
-	static Logger logger = Logger.getLogger(DefaultReport.class);
-    public void finalProcessing(RunData data,Context context)
-    {
-        try {            
-        	
-            UserI tempUser = Users.getUser(item.getStringProperty("login"));
-			context.put("userObject",tempUser);
-			context.put("userObjectHelper",UserHelper.getUserHelperService(tempUser));
-            context.put("allGroups",Groups.getAllGroups());
-            
-            // Does the user hanve any failed login attempts?
-            boolean hasFailedLoginAttempts = false;
-            List<XdatUserAuth> auths = XDAT.getXdatUserAuthService().getUsersByName(tempUser.getUsername());
-            for (UserAuthI auth : auths) {
-                if (auth.getFailedLoginAttempts() > 0) {
-                    hasFailedLoginAttempts = true;
+    public void finalProcessing(final RunData data, final Context context) {
+        try {
+            final UserI user = Users.getUser(item.getStringProperty("login"));
+            context.put("allRoles", Roles.getRoles());
+            context.put("userObject", user);
+            context.put("userObjectHelper", UserHelper.getUserHelperService(user));
+            context.put("allGroups", Groups.getAllGroups());
+
+            // Does the user have any failed login attempts?
+            context.put("hasFailedLoginAttempts", Lists.newArrayList(Iterables.filter(XDAT.getXdatUserAuthService().getUsersByXdatUsername(user.getUsername()), new Predicate<XdatUserAuth>() {
+                @Override
+                public boolean apply(final XdatUserAuth auth) {
+                    return auth.getFailedLoginAttempts() > 0;
                 }
-            }
-            context.put("hasFailedLoginAttempts", hasFailedLoginAttempts);
-            
+            })).size() > 0);
+
             // Has the user been blocked from requesting emails? (Resend Email Verification / Reset password)
-            final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
-            context.put("emailRequestsBlocked", requests.isEmailBlocked(tempUser.getEmail()));
-
-            context.put("allRoles",Roles.getRoles());
-
+            context.put("emailRequestsBlocked", XDAT.getContextService().getBean(EmailRequestLogService.class).isEmailBlocked(user.getEmail()));
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("An unexpected error occurred", e);
         }
     }
 }

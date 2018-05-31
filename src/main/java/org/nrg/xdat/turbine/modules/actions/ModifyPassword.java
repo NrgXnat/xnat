@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Date;
 
 /**
  * @author Tim
@@ -116,10 +117,9 @@ public class ModifyPassword extends ModifyAction {
 
                 //need to update password expiration
                 final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(existing.getUsername(), XdatUserAuthService.LOCALDB, "");
-                auth.setPasswordUpdated(new java.util.Date());
+                auth.setPasswordUpdated(new Date());
                 if(XDAT.getSiteConfigPreferences().getCanResetFailedLoginsWithForgotPassword()) {
-                    auth.setFailedLoginAttempts(0);
-                    auth.setLockoutTime(null);
+                    auth.resetFailedLogins();
                 }
                 XDAT.getXdatUserAuthService().update(auth);
 

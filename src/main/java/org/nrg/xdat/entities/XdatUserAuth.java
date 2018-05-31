@@ -20,26 +20,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import javax.persistence.*;
 import java.util.*;
 
+@SuppressWarnings("deprecation")
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
-
-    private static final long serialVersionUID = -1590002660142544162L;
-    private String  _xdatUsername;
-	private String  _authUser;
-	private String  _authMethod;
-	private String  _authMethodId;
-	private boolean _accountNonExpired;
-	private boolean _accountNonLocked;
-	private boolean _credentialsNonExpired;
-	private Date    _passwordUpdated;
-	private Integer _failedLoginAttempts;
-	private Date    _lastLoginAttempt;
-	private Date    _lastSuccessfulLogin;
-	private Date    _lockoutTime;
-	
 	public XdatUserAuth() {
 	}
 	
@@ -92,8 +78,8 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_lockoutTime = null;
 	}
 
-
-	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin, Date lockoutTime) {
+	@SuppressWarnings("unused")
+	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername, Integer failedLoginAttempts, Date lastSuccessfulLogin, Date lockoutTime) {
 		_authUser = user;
 		_authMethod = method;
 		_authMethodId = methodId;
@@ -108,7 +94,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_lockoutTime = lockoutTime;
 	}
 
-	public XdatUserAuth(XdatUserAuth other)
+	public XdatUserAuth(final XdatUserAuth other)
 	{
 		_authUser = other._authUser;
 		_authMethod = other._authMethod;
@@ -119,9 +105,18 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_credentialsNonExpired =other._credentialsNonExpired;
 		_xdatUsername = other._xdatUsername;
 		_passwordUpdated = other._passwordUpdated;
+		_lastLoginAttempt = other._lastLoginAttempt;
 		_failedLoginAttempts = other._failedLoginAttempts;
 		_lastSuccessfulLogin = other._lastSuccessfulLogin;
 		_lockoutTime = other._lockoutTime;
+	}
+
+	/**
+	 * Convenience method to reset failed login count, clear lockout time, etc.
+	 */
+	public void resetFailedLogins() {
+		setFailedLoginAttempts(0);
+		setLockoutTime(null);
 	}
 
 	/* (non-Javadoc)
@@ -278,7 +273,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	
     @Override
     public boolean equals(Object object) {
-        if (object == null || !(object instanceof XdatUserAuth)) {
+        if (!(object instanceof XdatUserAuth)) {
             return false;
         }
         UserAuthI other = (UserAuthI) object;
@@ -328,4 +323,19 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	public boolean isCredentialsNonExpired() {
 		return _credentialsNonExpired;
 	}
+
+	private static final long serialVersionUID = -1590002660142544162L;
+
+	private String  _xdatUsername;
+	private String  _authUser;
+	private String  _authMethod;
+	private String  _authMethodId;
+	private boolean _accountNonExpired;
+	private boolean _accountNonLocked;
+	private boolean _credentialsNonExpired;
+	private Date    _passwordUpdated;
+	private Integer _failedLoginAttempts;
+	private Date    _lastLoginAttempt;
+	private Date    _lastSuccessfulLogin;
+	private Date    _lockoutTime;
 }

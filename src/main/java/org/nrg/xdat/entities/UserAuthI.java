@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Date;
 
 public interface UserAuthI {
+	void resetFailedLogins();
 
 	String getXdatUsername();
 

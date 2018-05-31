@@ -16,12 +16,9 @@ public class UsernameAuthMappingNotFoundException extends NrgServiceRuntimeExcep
 
     private final String authMethodId;
 
-    @NonNull
     private final String email;
 
-    @NonNull
     private final String lastName;
 
-    @NonNull
     private final String firstName;
 }

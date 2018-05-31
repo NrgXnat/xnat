@@ -1,3 +1,12 @@
+#* @vtlvariable name="dataPopup" type="java.lang.Boolean" *#
+#* @vtlvariable name="element" type="org.nrg.xdat.schema.SchemaElement" *#
+#* @vtlvariable name="emailRequestsBlocked" type="java.lang.Boolean" *#
+#* @vtlvariable name="hasFailedLoginAttempts" type="java.lang.Boolean" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="search_field" type="java.lang.String" *#
+#* @vtlvariable name="search_value" type="java.lang.String" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
 #if($dataPopup)
 #else
     #set ($dataPopup = "false")

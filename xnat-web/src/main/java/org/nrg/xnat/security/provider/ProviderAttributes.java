@@ -1,10 +1,8 @@
 package org.nrg.xnat.security.provider;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,8 +10,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * Provides a convenient container for the attributes of an authentication provider stored in an instance of the {@link
- * XnatMulticonfigAuthenticationProvider} class.
+ * Provides a convenient container for the attributes of an authentication provider.
  */
 public class ProviderAttributes implements Comparable<ProviderAttributes> {
     public ProviderAttributes(final String providerId, final String authMethod, final String displayName, final Boolean visible, final Integer order, final Properties properties) {
@@ -32,8 +29,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     /**
      * Gets the provider ID for the XNAT authentication provider. This is used to map the properties associated with the
      * provider instance. Note that, if multiple provider configurations are defined for this instance, this method returns
-     * null. You should then call {@link XnatMulticonfigAuthenticationProvider#getProviderIds()} to get the list of configured
-     * provider IDs.
+     * null.
      *
      * @return The provider ID for the XNAT authentication provider or null if more than one provider is configured.
      */
@@ -55,8 +51,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     /**
      * Gets the display name for the XNAT authentication provider. This is what's displayed to the user when selecting
      * the authentication method. As with {@link #getProviderId()}, if multiple provider configurations are defined for this
-     * instance, this method returns null.  You should then call {@link XnatMulticonfigAuthenticationProvider#getName(String)}
-     * to get the name of a specified provider.
+     * instance, this method returns null.
      *
      * @return The display name for the specified XNAT authentication provider.
      */
@@ -66,9 +61,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
 
     /**
      * Indicates whether the provider should be visible to and selectable by users. <b>false</b> usually indicates an
-     * internal authentication provider, e.g. token authentication. Note that, if multiple provider configurations are defined
-     * for this instance, the return value for this method is meaningless. In that case, you should call {@link
-     * XnatMulticonfigAuthenticationProvider#isVisible(String)}.
+     * internal authentication provider, e.g. token authentication.
      *
      * @return <b>true</b> if the provider should be visible to and usable by users.
      */
@@ -82,9 +75,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
 
     /**
      * Indicates the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted. Note that, if multiple
-     * provider configurations are defined for this instance, this method returns 0. You should call {@link
-     * XnatMulticonfigAuthenticationProvider#getOrder(String)} in that case.
+     * show up in the login drop-down list and the order in which they are checked when a login is attempted.
      *
      * @return The order for this provider.
      */
@@ -94,9 +85,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
 
     /**
      * Sets the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted. Note that, if multiple
-     * provider configurations are defined for this instance, this method has no effect. You should call {@link
-     * XnatMulticonfigAuthenticationProvider#setOrder(String, int)} in that case.
+     * show up in the login drop-down list and the order in which they are checked when a login is attempted.
      *
      * @param order The order to set for this provider.
      */
@@ -116,18 +105,6 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
         return _properties.getProperty(property, defaultValue);
     }
 
-    public Properties asProperties() {
-        final Properties properties = new Properties(_properties);
-        properties.setProperty("id", _providerId);
-        properties.setProperty("type", _authMethod);
-        properties.setProperty("name", _displayName);
-        properties.setProperty("visible", Boolean.toString(_visible));
-        if (_order != -1) {
-            properties.setProperty("order", Integer.toString(_order));
-        }
-        return properties;
-    }
-
     @Override
     public int compareTo(@NotNull final ProviderAttributes that) {
         final int     thisOrder     = getOrder();
@@ -138,6 +115,11 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
             return isFirstBlank && isSecondBlank ? 0 : isFirstBlank ? -1 : 1;
         }
         return NumberUtils.compare(thisOrder, thatOrder);
+    }
+
+    @Override
+    public String toString() {
+        return "Provider " + _displayName + " (" + _authMethod + ": " + _providerId + ") " + _properties;
     }
 
     private static Properties getScrubbedProperties(final Properties properties) {

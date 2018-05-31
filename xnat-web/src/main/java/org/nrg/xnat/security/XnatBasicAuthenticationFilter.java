@@ -22,6 +22,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -50,9 +51,10 @@ import static org.nrg.xnat.utils.XnatHttpUtils.getBasicAuthCredentials;
 @Slf4j
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     @Autowired
-    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint) {
+    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint, final AuthenticationEventPublisher publisher) {
         super(manager, entryPoint);
         _authenticationDetailsSource = new WebAuthenticationDetailsSource();
+        _publisher = publisher;
     }
 
     @Autowired
@@ -176,4 +178,5 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     private final WebAuthenticationDetailsSource _authenticationDetailsSource;
     private       XnatProviderManager            _providerManager;
     private       SessionAuthenticationStrategy  _authenticationStrategy;
+    private final AuthenticationEventPublisher   _publisher;
 }

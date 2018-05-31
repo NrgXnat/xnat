@@ -22,6 +22,7 @@ import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
+import org.nrg.xnat.security.provider.XnatMulticonfigAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.validation.DateValidation;
@@ -38,6 +39,7 @@ import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
@@ -94,10 +96,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     public void setAuthenticationProviders(final List<AuthenticationProvider> providers) {
-        if (!containsDbAuthProvider(providers)) {
+        final List<AuthenticationProvider> expanded = expand(providers);
+        if (!containsDbAuthProvider(expanded)) {
             _providers.add(xnatDatabaseAuthenticationProvider());
         }
-        _providers.addAll(providers);
+        _providers.addAll(expanded);
     }
 
     @Autowired(required = false)
@@ -107,7 +110,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatProviderManager customAuthenticationManager() {
-        return new XnatProviderManager(_preferences, _userAuthService, _providers);
+        return new XnatProviderManager(_preferences, eventPublisher(), _userAuthService, _providers);
+    }
+
+    @Bean
+    public AuthenticationEventPublisher eventPublisher() {
+        return new XnatAuthenticationEventPublisher(_userAuthService, _preferences, _providers);
     }
 
     @Bean
@@ -264,7 +272,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
 
-        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
+        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint, eventPublisher()));
 
         http.sessionManagement()
             .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
@@ -311,6 +319,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             }
         }
         return false;
+    }
+
+    private static List<AuthenticationProvider> expand(final List<AuthenticationProvider> providers) {
+        final List<AuthenticationProvider> expanded = new ArrayList<>();
+        for (final AuthenticationProvider provider : providers) {
+            if (XnatMulticonfigAuthenticationProvider.class.isAssignableFrom(provider.getClass())) {
+                expanded.add(provider);
+                expanded.addAll(((XnatMulticonfigAuthenticationProvider) provider).getProviders());
+            } else {
+                expanded.add(provider);
+            }
+        }
+        return expanded;
     }
 
     private final SiteConfigPreferences      _preferences;

@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.HttpSecurityBuilder;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -60,15 +61,17 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
      *
      * @throws Exception When an error occurs during initialization.
      */
-    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint) throws Exception {
+    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint, final AuthenticationEventPublisher publisher) throws Exception {
         realmName(DEFAULT_REALM);
+        authenticationEventPublisher(publisher);
 
         final LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<>();
         entryPoints.put(X_REQUESTED_WITH, new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
 
         final DelegatingAuthenticationEntryPoint defaultEntryPoint = new DelegatingAuthenticationEntryPoint(entryPoints);
         defaultEntryPoint.setDefaultEntryPoint(entryPoint);
-        _authenticationEntryPoint = defaultEntryPoint;
+
+        authenticationEntryPoint(defaultEntryPoint);
     }
 
     /**
@@ -118,6 +121,11 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
         return this;
     }
 
+    public XnatBasicAuthConfigurer<B> authenticationEventPublisher(final AuthenticationEventPublisher publisher) {
+        _publisher = publisher;
+        return this;
+    }
+
     @Override
     public void init(final B http) {
         final ContentNegotiationStrategy contentNegotiationStrategy = getContentNegotiatingStrategy(http);
@@ -159,7 +167,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
     @Override
     public void configure(final B http) {
         final AuthenticationManager         authenticationManager     = http.getSharedObject(AuthenticationManager.class);
-        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(authenticationManager, _authenticationEntryPoint);
+        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(authenticationManager, _authenticationEntryPoint, _publisher);
         if (_authenticationDetailsSource != null) {
             basicAuthenticationFilter.setAuthenticationDetailsSource(_authenticationDetailsSource);
         }
@@ -175,6 +183,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
 
     private AuthenticationEntryPoint                           _authenticationEntryPoint;
     private AuthenticationDetailsSource<HttpServletRequest, ?> _authenticationDetailsSource;
+    private AuthenticationEventPublisher                       _publisher;
 
     private BasicAuthenticationEntryPoint _basicAuthenticationEntryPoint = new BasicAuthenticationEntryPoint();
 }

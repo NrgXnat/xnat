@@ -10,18 +10,13 @@
 package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.schema.XFTManager;
-import org.nrg.xnat.security.XnatProviderManager;
 import org.nrg.xnat.task.AbstractXnatRunnable;
-import org.nrg.xnat.turbine.modules.screens.Login;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.security.access.event.AuthorizationFailureEvent;
-import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -36,16 +31,6 @@ public class InitializingTasksExecutor {
         log.debug("Creating InitializingTasksExecutor bean with a scheduler of type {} and {} tasks", scheduler.getClass().getName(), tasks.size());
         _tasks = tasks;
         _scheduler = scheduler;
-    }
-
-    @EventListener
-    public void authenticationSuccess(final AuthenticationSuccessEvent event) {
-        XDAT.getContextService().getBean(XnatProviderManager.class).updateDatabaseAfterSuccessfulLogin(event.getAuthentication());
-    }
-
-    @EventListener
-    public void authenticationFailure(final AuthorizationFailureEvent event) {
-        XDAT.getContextService().getBean(XnatProviderManager.class).updateDatabaseAfterFailedLogin(null,event.getAuthentication());
     }
 
     @EventListener

@@ -211,9 +211,8 @@ public class UserSettingsRestlet extends SecureResource {
 
     private void handleAction() {
         if (_action == UserAction.Reset) {
-            for (XdatUserAuth auth : _auths) {
-                auth.setFailedLoginAttempts(0);
-                XDAT.getXdatUserAuthService().update(auth);
+            for (final XdatUserAuth auth : _auths) {
+                XDAT.getXdatUserAuthService().resetFailedLogins(auth);
             }
         } else if (_action == UserAction.ResetEmailRequests) {
             try {

@@ -27,6 +27,14 @@ public interface XnatMulticonfigAuthenticationProvider extends XnatAuthenticatio
     List<String> getProviderIds();
 
     /**
+     * Gets the providers for the XNAT authentication provider. If only one provider is configured, then a list is returned
+     * with just that single provider.
+     *
+     * @return The provider IDs for the XNAT authentication provider.
+     */
+    List<XnatAuthenticationProvider> getProviders();
+
+    /**
      * Gets the {@link XnatAuthenticationProvider authentication provider instance} with the indicated provider ID.
      *
      * @param providerId The ID of the provider to retrieve.

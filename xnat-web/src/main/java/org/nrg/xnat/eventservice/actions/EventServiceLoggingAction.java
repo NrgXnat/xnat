@@ -1,5 +1,7 @@
 package org.nrg.xnat.eventservice.actions;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
@@ -7,6 +9,7 @@ import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -21,6 +24,9 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     private String description = "Sample action for EventService Event logs event.";
     private Map<String, ActionAttributeConfiguration> attributes;
     private Boolean enabled = true;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     public EventServiceLoggingAction() {
     }
@@ -55,7 +61,12 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     @Override
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
-        log.error("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
+        log.debug("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
+        try {
+            log.debug(mapper.writeValueAsString(subscription));
+        } catch (JsonProcessingException e) {
+            log.error("Could not write subscription values to log. ", e.getMessage());
+        }
 
     }
 

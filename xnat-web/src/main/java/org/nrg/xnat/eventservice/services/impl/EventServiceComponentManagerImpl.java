@@ -4,6 +4,7 @@ import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -166,22 +167,22 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
             return null;
         }
 
-        if(XnatImageassessordataI.class.isAssignableFrom(objectClass)) {
+        if(objectClass.isAssignableFrom(XnatImageassessordataI.class)) {
             return Assessor.class;
         }
-        else if(XnatProjectdata.class.isAssignableFrom(objectClass)) {
+        else if(objectClass.isAssignableFrom(XnatProjectdataI.class)) {
             return Project.class;
         }
-        else if(XnatResourcecatalog.class.isAssignableFrom(objectClass)) {
+        else if(objectClass.isAssignableFrom(XnatResourcecatalog.class)) {
             return org.nrg.xnat.eventservice.model.xnat.Resource.class;
         }
-        else if(XnatImagescandataI.class.isAssignableFrom(objectClass)) {
+        else if(objectClass.isAssignableFrom(XnatImagescandataI.class)) {
             return Scan.class;
         }
-        else if(XnatImagesessiondataI.class.isAssignableFrom(objectClass)) {
+        else if(objectClass.isAssignableFrom(XnatImagesessiondataI.class)) {
             return Session.class;
         }
-        else if(XnatSubjectdataI.class.isAssignableFrom(objectClass)) {
+        else if(objectClass.isAssignableFrom(XnatSubjectdataI.class)) {
             return Subject.class;
         }
         return null;

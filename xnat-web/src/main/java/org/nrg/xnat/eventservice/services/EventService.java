@@ -44,6 +44,7 @@ public interface EventService {
     List<Subscription> getSubscriptions(String projectId);
     Subscription validateSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
+    Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException;
     Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException;
     void deleteSubscription(Long id) throws Exception;
     void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException;

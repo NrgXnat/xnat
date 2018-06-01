@@ -145,9 +145,11 @@ public class EventPropertyServiceImpl implements EventPropertyService {
                 for(Map.Entry<String, String> resolvableAttribute : resolvableAttributes){
                     log.debug("Resolving event property in " + resolvableAttribute.getValue());
                     List<EventPropertyNode> matchingPropertyNodes = eventPropertyNodes.stream()
-                            .filter(epn -> (epn.replacementKey() != null && (!Strings.isNullOrEmpty(resolvableAttribute.getValue()) && resolvableAttribute.getValue().contains(epn.replacementKey()))))
+                            .filter(epn -> (epn.replacementKey() != null &&
+                                    (!Strings.isNullOrEmpty(resolvableAttribute.getValue()) && StringUtils.containsIgnoreCase(resolvableAttribute.getValue(), epn.replacementKey()))))
                             .collect(Collectors.toList());
-                    String resolvedValue = "";
+                    String resolvedValue = matchingPropertyNodes.isEmpty() ? "" : matchingPropertyNodes.get(0).value();
+                    log.debug(" as: " + resolvedValue);
                     // TODO: There are properties in the key generator that are not in the value nodes ???
                     resolvedAttributes.put(resolvableAttribute.getKey(), resolvedValue);
                 }

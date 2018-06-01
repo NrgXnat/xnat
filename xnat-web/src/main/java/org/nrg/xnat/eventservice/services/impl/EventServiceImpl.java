@@ -73,6 +73,23 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException {
+        if(overpopulateAttributes != null && overpopulateAttributes == true){
+            Map<String, String> attributes = new HashMap<>(subscription.attributes());
+            try {
+                SimpleEvent event = getEvent(subscription.eventId(), true);
+                event.eventProperties().forEach(node -> attributes.put(node.name(), node.replacementKey()));
+                subscription = subscription.toBuilder().attributes(attributes).build();
+                log.debug("Overpopulating subscription attributes with: " + event.eventProperties().toString());
+            } catch (Exception e) {
+                log.error("Failed to overpopulate attributes on subscription: ", subscription.name() != null ? subscription.name() : subscription.id());
+            }
+        }
+
+        return createSubscription(subscription);
+    }
+
+    @Override
     public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException {
         return subscriptionService.update(subscription);
     }
@@ -194,10 +211,6 @@ public class EventServiceImpl implements EventService {
         List<SimpleEvent> events = new ArrayList();
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
             SimpleEvent simpleEvent = getEvent(e.getEventUUID(), loadDetails);
-            Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
-            if(eventFilterNodes != null && eventFilterNodes.size()>0){
-                simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
-            }
             events.add(simpleEvent);
         }
         return events;

@@ -56,6 +56,7 @@ public class TimedEventStatusEntity implements Serializable {
         this.statusTimestamp = statusTimestamp;
     }
 
+    @Lob
     public String getMessage() {
         return message;
     }

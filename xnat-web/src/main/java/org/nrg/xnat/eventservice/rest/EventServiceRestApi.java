@@ -55,14 +55,16 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         this.eventService = eventService;
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST)
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST, params = {"overpopulate-attributes"})
     @ApiOperation(value = "Create a Subscription", code = 201)
-    public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription)
+    public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription,
+                                                     final @RequestParam(value = "overpopulate-attributes", required = false, defaultValue = "false") Boolean overpopulateAttributes)
+
             throws NrgServiceRuntimeException, SubscriptionValidationException, JsonProcessingException {
         final UserI userI = XDAT.getUserDetails();
         Subscription toCreate = Subscription.create(subscription, userI.getLogin());
         eventService.throwExceptionIfNameExists(toCreate);
-        Subscription created = eventService.createSubscription(toCreate);
+        Subscription created = eventService.createSubscription(toCreate, overpopulateAttributes);
         if(created == null){
             return new ResponseEntity<>("Failed to create subscription.",HttpStatus.FAILED_DEPENDENCY);
         }
@@ -225,18 +227,18 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
-            final @RequestParam(value = "includeFilterMismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
+            final @RequestParam(value = "include-filter-mismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/delivered", method = GET)
+    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredProjectSubscriptions(
             final @PathVariable String project,
-            final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId,
-            final @RequestParam(value = "includeFilterMismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
+            final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
             throws Exception {
         return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch);
     }
@@ -253,8 +255,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/event", method = GET, params = {"event-id"})
     @ResponseBody
-    public SimpleEvent getEvent(final @RequestParam(value = "event-id", required = true) String eventId,
-                                      final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
+    public SimpleEvent getEvent(final @RequestParam(value = "event-id") String eventId,
+                                final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
         if(loadDetails != null) {
             return eventService.getEvent(eventId, loadDetails);
         }else{

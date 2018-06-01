@@ -63,6 +63,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.projectId = projectId;
     }
 
+    @Lob
     public String getActionInputs() {
         return actionInputs;
     }

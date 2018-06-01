@@ -293,14 +293,9 @@ public class UserGroup implements UserGroupI {
     public Map<String, List<PermissionCriteriaI>> getAllPermissions() {
         if (_permissionCriteriaByDataType.isEmpty()) {
             for (final ElementAccessManager manager : getAccessManagers().values()) {
-                final String element = manager.getElement();
                 for (final PermissionSetI permissions : manager.getPermissionSets()) {
                     if (permissions.isActive()) {
-                        final List<PermissionCriteriaI> criteria = permissions.getAllCriteria();
-                        _permissionCriteriaByDataType.putAll(element, criteria);
-                        for (final PermissionCriteriaI criterion : criteria) {
-                            _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(element, criterion.getField()), criterion);
-                        }
+                        addPermissionCriteria(permissions.getAllCriteria());
                     }
                 }
             }
@@ -322,6 +317,34 @@ public class UserGroup implements UserGroupI {
         }
 
         return _permissionCriteriaByDataTypeAndField.containsKey(compositeKey) ? ImmutableList.copyOf(_permissionCriteriaByDataTypeAndField.get(compositeKey)) : Collections.<PermissionCriteriaI>emptyList();
+    }
+
+    /**
+     * Adds the list of criteria to the group's permission sets.
+     *
+     * <b>Note:</b> The addition of the criteria here is completely transitive and is not persisted to the database. This can be used
+     * to populate a new instance of the group or to update a cached instance to reflect changes in permissions elsewhere.
+     *
+     * @param criteria The criteria to add to the group's permission sets.
+     */
+    public void addPermissionCriteria(final List<PermissionCriteriaI> criteria) {
+        for (final PermissionCriteriaI criterion : criteria) {
+            addPermissionCriteria(criterion);
+        }
+    }
+
+    /**
+     * Adds the criterion entry to the group's permission sets.
+     *
+     * <b>Note:</b> The addition of the criterion entry here is completely transitive and is not persisted to the database. This can
+     * be used to populate a new instance of the group or to update a cached instance to reflect changes in permissions elsewhere.
+     *
+     * @param criterion The criterion to add to the group's permission sets.
+     */
+    public void addPermissionCriteria(final PermissionCriteriaI criterion) {
+        final String elementName = criterion.getElementName();
+        _permissionCriteriaByDataType.put(elementName, criterion);
+        _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(elementName, criterion.getField()), criterion);
     }
 
     /**

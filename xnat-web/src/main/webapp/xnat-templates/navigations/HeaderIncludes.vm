@@ -254,7 +254,7 @@ $navigation.setTemplate("/BaseJS.vm")
 
 <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.${css}">
 ##<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar.js"></script>
-<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-${minjs}"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.${js}"></script>
 <script src="${SITE_ROOT}/scripts/ezCalendar.${js}"></script>
 
 

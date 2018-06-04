@@ -23,8 +23,15 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
             if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                 //noinspection deprecation
                 Long scriptId = c.getId();
-
-                mizer.anonymize(metadata, sessionData.getProject(), sessionData.getSubject(), sessionData.getFolderName(), c.getContents());
+                String proj = "";
+                String subj = "";
+                String folder = "";
+                if(sessionData!=null){
+                    proj = sessionData.getProject();
+                    subj = sessionData.getSubject();
+                    folder = sessionData.getFolderName();
+                }
+                mizer.anonymize(metadata, proj, subj, folder, c.getContents());
             } else {
                 log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", sessionData.getProject(), sessionData.getSubject(), sessionData.getName());
             }

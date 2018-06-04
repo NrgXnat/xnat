@@ -25,6 +25,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.scope = scope;
         this.projectIdsList = projectIdsList;
         this.priority = priority;
+        this.location = location;
         this.parameters = parameters;
         this.processorClass = processorClass;
     }
@@ -54,6 +55,14 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.priority = priority;
     }
 
+    public int getLocation() {
+        return location;
+    }
+
+    public void setLocation(int location) {
+        this.location = location;
+    }
+
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="parameterName")
     @Column(name="value")
@@ -76,7 +85,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
     private String scope;
 
     private List<String> projectIdsList;
-
+    private int location;
     private int priority;
     private Map<String, String> parameters;
     private String processorClass;

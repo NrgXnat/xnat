@@ -91,12 +91,41 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
         dicomInputStream.setHandler(new StopTagInputHandler(lastTag));
         dicom = dicomInputStream.readDicomObject();
 
-        try{
-        String script = DefaultAnonUtils.getService().getStudyScript(dicom.getString(Tag.StudyInstanceUID));
-        getMizer().anonymize(dicom, "", "", "", script);
+//        try{
+//        String script = DefaultAnonUtils.getService().getStudyScript(dicom.getString(Tag.StudyInstanceUID));
+//        getMizer().anonymize(dicom, "", "", "", script);
+//        } catch (Throwable e) {
+//            log.debug("Dicom anonymization failed: " + dicom, e);
+//            throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
+//        }
+
+        boolean continueProcessingData = true;
+        try {
+            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
+            Collection<ArchiveProcessor> processors = processorsMap.values();
+            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
+            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(0);
+            if(processorInstances!=null){
+                for(ArchiveProcessorInstance processorInstance: processorInstances) {
+                    Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
+                    ArchiveProcessor processor = processorsMap.get(processorClass);
+
+                    if (processor.accept(dicom, dicom, null, getMizer(), processorInstance.getParameters())) {
+                        if(!processor.process(dicom, dicom, null, getMizer(), processorInstance.getParameters())){
+                            continueProcessingData = false;
+                            break;
+                        }
+                    }
+
+                }
+            }
         } catch (Throwable e) {
-            log.debug("Dicom anonymization failed: " + dicom, e);
-            throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
+            //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.
+            //We may be okay just passing an empty list in this case, but since I wasn't sure, I didn't want to change how it works now where if there's a problem importing part of a zip, the whole import fails.
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        }
+        if(!continueProcessingData){
+            return new ArrayList<>();
         }
 
         log.trace("handling file with query parameters {}", getParameters());
@@ -239,12 +268,11 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             log.error("An error occurred trying to update the session update timestamp.", e);
         }
 
-        boolean continueProcessingData = true;
         try {
             Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
             Collection<ArchiveProcessor> processors = processorsMap.values();
             //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrder();
+            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(1);
             if(processorInstances!=null){
                 for(ArchiveProcessorInstance processorInstance: processorInstances) {
                     Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());

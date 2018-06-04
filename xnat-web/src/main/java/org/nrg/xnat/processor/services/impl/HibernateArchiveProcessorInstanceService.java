@@ -44,6 +44,12 @@ public class HibernateArchiveProcessorInstanceService extends AbstractHibernateE
 
     @Override
     @Transactional
+    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final int location){
+        return _dao.getEnabledSiteArchiveProcessorsInOrderForLocation(location);
+    }
+
+    @Override
+    @Transactional
     public ArchiveProcessorInstance findSiteProcessorById(final long processorId){
         return _dao.getSiteArchiveProcessorInstanceByProcessorId(processorId);
     }

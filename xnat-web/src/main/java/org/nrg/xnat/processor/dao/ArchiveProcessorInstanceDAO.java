@@ -54,6 +54,17 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
 
     @SuppressWarnings("unchecked")
     @Transactional
+    public List<ArchiveProcessorInstance> getEnabledSiteArchiveProcessorsInOrderForLocation(final int location) {
+        final Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("scope", ArchiveProcessorInstance.SITE_SCOPE));
+        criteria.add(Restrictions.eq("location", location));
+        criteria.add(Restrictions.eq("enabled", true));
+        criteria.addOrder(Order.asc("priority"));
+        return criteria.list();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Transactional
     public ArchiveProcessorInstance getSiteArchiveProcessorInstanceByProcessorId(final long processorId) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("id", processorId));

@@ -202,7 +202,7 @@ configurations {
 }
 
 dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnatDemo}"
+    mavenBom "org.nrg:parent:${vXnat}"
 }
 
 dependencies {

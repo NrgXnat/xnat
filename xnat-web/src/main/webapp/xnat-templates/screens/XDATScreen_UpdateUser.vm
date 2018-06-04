@@ -19,15 +19,58 @@
 <div class="$msgClass">$data.message</div><br>
 #end
 
-#if($expired)
+#if($expired || $missingSalt)
     <div class="alert">Your password has expired. Please create a new one.</div>
+    #parse("screens/XDATScreen_password.vm")
+
+#elseif($forgot)
+    #parse("screens/XNATScreen_password.vm")
+
+#else
+    <script src="$content.getURI('/scripts/xnat/app/userProfile.js')"></script>
+
+    <h2>Manage User Login and Profile</h2>
+    <div id="user-profile-manager" class="xnat-tab-container"></div>
+    <script>
+        // initialize required XNAT.data properties for usersGroups
+        var XNAT                = getObject(XNAT || {});
+        XNAT.data               = getObject(XNAT.data || {});
+        XNAT.data.siteConfig    = getObject(XNAT.data.siteConfig || {});
+        XNAT.data.siteConfig.passwordComplexity =
+                XNAT.data.siteConfig.passwordComplexity || '$siteConfig.passwordComplexity';
+        XNAT.data.siteConfig.passwordComplexityMessage =
+                XNAT.data.siteConfig.passwordComplexityMessage || '$siteConfig.passwordComplexityMessage';
+
+        // initialize userObj to pass to profile editing form
+        var userObj = {
+            username: '$!item.getProperty("login")',
+            firstName: '$!item.getProperty("firstname")',
+            lastName: '$!item.getProperty("lastname")',
+            email: '$!item.getProperty("email")'
+        }
+    </script>
+
+    <script src="$content.getURI("/scripts/xnat/admin/usersGroups.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/userProfile.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
+
+    <script>
+        XNAT.app.userProfile.init('#user-profile-manager');
+
+        XNAT.spawner.spawn({
+            userAccountForm: XNAT.usersGroups.userAccountForm(userObj)
+        }).render('#user-profile-container');
+
+        // add special handling for non-admin users who can't edit their own names, poor suckers
+        if (!$turbineUtils.isSiteAdmin($user)) {
+            $(document).find('input[name=firstName]').prop('disabled','disabled').prop('title','Only site admins can edit user profile names');
+            $(document).find('input[name=lastName]').prop('disabled','disabled').prop('title','Only site admins can edit user profile names');
+        }
+    </script>
+##    #parse("screens/XDATScreen_change_email.vm")
+##    #parse("screens/XDATScreen_password.vm")
+##    #parse("screens/XDATScreen_aliasTokens.vm")
 #end
 
-#if(!$user.isGuest())
-    #if (!$expired && !$forgot && !$missingSalt)
-        #parse("screens/XDATScreen_change_email.vm")
-    <br/><br/>
-    #end
-    #parse("screens/XDATScreen_password.vm")
-    #parse("screens/XDATScreen_aliasTokens.vm")
-#end
+
+

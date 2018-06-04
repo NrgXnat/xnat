@@ -11,7 +11,7 @@ $page.setVlinkColor($ui.vlink)
 <div id="alias-token-table-container">
 </div>
 
-<script type="text/javascript" src="$content.getURI("scripts/xnat/aliasTokens.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/xnat/app/aliasTokens.js")"></script>
 <script language="javascript">
     console.log('XDATScreen_aliasTokens.vm');
 

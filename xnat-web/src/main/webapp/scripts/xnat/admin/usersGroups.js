@@ -43,7 +43,9 @@ var XNAT = getObject(XNAT);
 
     var userAdminPage = (XNAT.page && XNAT.page.userAdminPage) || false;
 
-    usersGroups.showAdvanced = true;
+    // usersGroups.showAdvanced = true;
+    usersGroups.showAdvanced = userAdminPage;
+    usersGroups.adminControls = userAdminPage;
 
     // return a url for doing a rest call
     function setUrl(part1, part2, part3){
@@ -201,7 +203,6 @@ var XNAT = getObject(XNAT);
             userAccountForm: userAccountForm(data)
         }).render(container)
     }
-
 
     function saveUserData(form, opts){
         var $form = $$(form);
@@ -776,7 +777,9 @@ var XNAT = getObject(XNAT);
                 obj.contents = {
                     changePasswordLink: {
                         kind: 'html',
-                            content: '<a href="#!" class="change-password" style="margin-top: -2px" data-username="'+data.username+'"><button class="btn btn-xs">Change User Password</button></a>'
+                        content:
+                            '<a href="#!" class="change-password" style="display: inline-block; margin: -4px 0 4px;" data-username="'+data.username+'">' +
+                            '<button class="btn btn-sm">Change User Password</button></a>'
                     }
                 }
             }
@@ -862,35 +865,39 @@ var XNAT = getObject(XNAT);
                     label: 'Email',
                     validate: 'email required',
                     value: data.email || ''
-                },
-                verified: {
-                    kind: 'panel.input.switchbox',
+                }
+            }
+        };
+
+        // only show admin controls if this form is being shown from within the Admin Users UI
+        if (usersGroups.adminControls) {
+            form.contents.verified = {
+                kind: 'panel.input.switchbox',
                     label: 'Verified',
                     options: 'true|false',
                     value: userVerified,
                     // checked: !/false/i.test(userVerified)//,
                     element: {
-                        // disabled: !!_load,
-                        checked: !/false/i.test(userVerified)//,
-                        // title: username + ':verified'//,
-                        // on: { click: _load ? setVerified : diddly }
-                    }
-                },
-                enabled: {
-                    kind: 'panel.input.switchbox',
-                    label: 'Enabled',
-                    options: 'true|false',
-                    value: userEnabled,
-                    // checked: !/false/i.test(userEnabled)//,
-                    element: {
-                        //disabled: !!_load,
-                        checked: !/false/i.test(userEnabled)//,
-                        //title: username + ':enabled'//,
-                        //on: { click: _load ? setEnabled : diddly }
-                    }
+                    // disabled: !!_load,
+                    checked: !/false/i.test(userVerified)//,
+                    // title: username + ':verified'//,
+                    // on: { click: _load ? setVerified : diddly }
+                }
+            };
+            form.contents.enabled = {
+                kind: 'panel.input.switchbox',
+                label: 'Enabled',
+                options: 'true|false',
+                value: userEnabled,
+                // checked: !/false/i.test(userEnabled)//,
+                element: {
+                    //disabled: !!_load,
+                    checked: !/false/i.test(userEnabled)//,
+                    //title: username + ':enabled'//,
+                    //on: { click: _load ? setEnabled : diddly }
                 }
             }
-        };
+        }
 
         // add 'Advanced Settings' when editing existing user
         if (doEdit && usersGroups.showAdvanced) {
@@ -923,11 +930,25 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        // Add a submit button if this form is being displayed outside the Admin Users UI
+        if (doEdit && !usersGroups.adminControls) {
+            form.contents.submitButton = {
+                kind: 'panel.element',
+                contents: {
+                    submitUserFormButton: {
+                        kind: 'html',
+                        content: '<button class="btn primary" id="save-user-profile">Update Profile</button>'
+                    }
+                }
+            }
+        }
+
         usersGroups.showAdvanced = true;
 
         return form;
 
     }
+    usersGroups.userAccountForm = userAccountForm; 
 
     // open a separate dialog to edit user password
     $(document).on('click','.change-password',function(){
@@ -935,6 +956,16 @@ var XNAT = getObject(XNAT);
         usersGroups.changePasswordDialog({ username: username });
     });
 
+    // external user profile form validation and submission
+    $(document).on('click','#save-user-profile',function(){
+        var $form = $(this).parents('form'), updated;
+        if (XNAT.validate.form($form)){
+            var doSave = saveUserData($form);
+            doSave.done(function(){
+                updated = true;
+            });
+        }
+    });
 
     // open a dialog to edit user properties
     function editUser(e, onclose){

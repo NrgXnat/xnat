@@ -168,7 +168,7 @@ var XNAT = getObject(XNAT || {});
                                 label: 'Alias',
                                 apply: function(){
                                     return spawn(
-                                        'a.view-token',
+                                        'a.view-alias-token',
                                         {
                                             href: '#!',
                                             style: { 'font-weight': 'bold' }

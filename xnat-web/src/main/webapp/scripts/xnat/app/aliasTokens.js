@@ -226,11 +226,22 @@ var XNAT = getObject(XNAT || {});
         XNAT.xhr.getJSON({
             url: XNAT.url.rootUrl('/data/services/tokens/validate/'+_alias+'/'+_secret),
             success: function(data){
-                if (data.valid){
+                if (data && data.valid !== undef){
                     XNAT.ui.banner.top(2000,'Token valid for '+data.valid, 'success')
-                }
-                else {
-                    XNAT.ui.banner.top(2000,'Token is invalid or expired', 'fail')
+                } else {
+                    XNAT.ui.dialog.open({
+                        content: 'This token is invalid or has expired.',
+                        buttons: [
+                            {
+                                label: 'OK',
+                                isDefault: true,
+                                action: function(){
+                                    XNAT.ui.dialog.closeAll();
+                                }
+                            }
+                        ]
+                    });
+                    aliasTokens.renderAliasTokensTable();
                 }
             }
         });

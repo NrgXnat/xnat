@@ -24,51 +24,27 @@
     #parse("screens/XDATScreen_password.vm")
 
 #elseif($forgot)
-    #parse("screens/XNATScreen_password.vm")
+    #parse("screens/XDATScreen_password.vm")
 
 #else
     <script src="$content.getURI('/scripts/xnat/app/userProfile.js')"></script>
 
     <h2>Manage User Login and Profile</h2>
     <div id="user-profile-manager" class="xnat-tab-container"></div>
-    <script>
-        // initialize required XNAT.data properties for usersGroups
-        var XNAT                = getObject(XNAT || {});
-        XNAT.data               = getObject(XNAT.data || {});
-        XNAT.data.siteConfig    = getObject(XNAT.data.siteConfig || {});
-        XNAT.data.siteConfig.passwordComplexity =
-                XNAT.data.siteConfig.passwordComplexity || '$siteConfig.passwordComplexity';
-        XNAT.data.siteConfig.passwordComplexityMessage =
-                XNAT.data.siteConfig.passwordComplexityMessage || '$siteConfig.passwordComplexityMessage';
-
-        // initialize userObj to pass to profile editing form
-        var userObj = {
-            username: '$!item.getProperty("login")',
-            firstName: '$!item.getProperty("firstname")',
-            lastName: '$!item.getProperty("lastname")',
-            email: '$!item.getProperty("email")'
-        }
-    </script>
-
-    <script src="$content.getURI("/scripts/xnat/admin/usersGroups.js")"></script>
+    <div id="user-change-email" class="html-template">
+        #parse("screens/XDATScreen_change_email.vm")
+    </div>
+    <div id="user-change-password" class="html-template">
+        #parse("screens/XDATScreen_password.vm")
+    </div>
+    
     <script src="$content.getURI("/scripts/xnat/app/userProfile.js")"></script>
     <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
 
     <script>
         XNAT.app.userProfile.init('#user-profile-manager');
-
-        XNAT.spawner.spawn({
-            userAccountForm: XNAT.usersGroups.userAccountForm(userObj)
-        }).render('#user-profile-container');
-
-        // add special handling for non-admin users who can't edit their own names, poor suckers
-        if (!$turbineUtils.isSiteAdmin($user)) {
-            $(document).find('input[name=firstName]').prop('disabled','disabled').prop('title','Only site admins can edit user profile names');
-            $(document).find('input[name=lastName]').prop('disabled','disabled').prop('title','Only site admins can edit user profile names');
-        }
     </script>
-##    #parse("screens/XDATScreen_change_email.vm")
-##    #parse("screens/XDATScreen_password.vm")
+    <div class="clearfix clear"></div>
 ##    #parse("screens/XDATScreen_aliasTokens.vm")
 #end
 

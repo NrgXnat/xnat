@@ -71,8 +71,25 @@ var XNAT = getObject(XNAT || {});
             group: 'General',
             active: true,
             contents: {
-                userProfileContainer: {
-                    tag: 'div#user-profile-container'
+                userEmailPanel: {
+                    kind: 'panel',
+                    label: 'Email Management',
+                    footer: false,
+                    contents: {
+                        userEmailContainer: {
+                            tag: 'div#user-email-container'
+                        }
+                    }
+                },
+                userPasswordPanel: {
+                    kind: 'panel',
+                    label: 'Password Management',
+                    footer: false,
+                    contents: {
+                        userPasswordContainer: {
+                            tag: 'div#user-password-container'
+                        }
+                    }
                 }
             }
         };
@@ -114,6 +131,12 @@ var XNAT = getObject(XNAT || {});
 
         userProfile.tabSet = XNAT.spawner.spawn({ userProfileSettings: userProfileTabSet });
         userProfile.tabSet.render($container);
+
+        var emailForm = $('#user-change-email').detach();
+        emailForm.removeClass('html-template').appendTo($('#user-email-container'));
+
+        var passwordForm = $('#user-change-password').detach();
+        passwordForm.removeClass('html-template').appendTo($('#user-password-container'));
 
         // userProfile.showSubscriptionList();
 

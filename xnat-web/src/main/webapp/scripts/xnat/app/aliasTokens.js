@@ -62,7 +62,6 @@ var XNAT = getObject(XNAT || {});
                 },
                 {
                     label: 'Validate Token',
-                    className: 'validate-alias-token',
                     close: false,
                     action: function(){
                         XNAT.app.aliasTokens.validateToken(token.alias,token.secret);

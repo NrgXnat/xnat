@@ -39,7 +39,7 @@
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="USERNAME" value="${sessionScope.username}"/>
 
-    <c:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="request"/>
+    <c:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="session"/>
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta http-equiv="Pragma" content="no-cache">
@@ -69,7 +69,7 @@
         window.isGuest = realValue(${sessionScope.isGuest});
         window.username = realValue('${USERNAME}');
 
-        window.cacheLastModified = realValue(${requestScope.cacheLastModified});
+        window.cacheLastModified = realValue(${sessionScope.cacheLastModified});
 
         XNAT.theme = {};
         XNAT.theme.name = '${themeService.theme.name}';

@@ -89,14 +89,14 @@ public abstract class AutomationResource extends SecureResource {
         _path = request.getResourceRef().getRemainingPart();
     }
 
-    protected void validateProjectAccess(final String projectId) throws ResourceException {
+    protected void validateProjectAccess(final String projectId, final boolean requiresWrite) throws ResourceException {
         final UserI           user    = getUser();
         final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
         if (project == null) {
             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Can't find project with ID: " + getProjectId());
         }
         try {
-            if (!project.canEdit(user)) {
+            if ((requiresWrite && !project.canEdit(user)) || !project.canRead(user)) {
                 final String message = "User " + user.getLogin() + " attempted to access project " + getProjectId() + " with insufficient privileges.";
                 _log.warn(message);
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);

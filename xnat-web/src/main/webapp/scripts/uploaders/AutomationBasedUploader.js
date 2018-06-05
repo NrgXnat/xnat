@@ -163,6 +163,12 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 	}
 }
 
+XNAT.app.abu.hideScanLinks = function(){
+			$('.uploadLink[data-type*="ScanData"]').each(function(value){
+				$(this).hide();
+			});
+}
+
 XNAT.app.abu.showScanLinks = function(){
 			$('.uploadLink[data-type*="ScanData"]').each(function(value){
 				var type=$(this).attr('data-type');
@@ -277,12 +283,14 @@ XNAT.app.abu.getAutomationHandlers = function(){
 		});
 		sitewideHandlerAjax.fail( function( data, textStatus, jqXHR ) {
 			XNAT.app.abu.abuConfigs.hideLinks();	
+			XNAT.app.abu.hideScanLinks();
 			console.log("GetAutomationHandlers result - ", jqXHR); 
 		});
 
 	});
 	initializeBuildAjax.fail( function( data, textStatus, jqXHR ) {
 		XNAT.app.abu.abuConfigs.hideLinks();	
+		XNAT.app.abu.hideScanLinks();
 		console.log("GetAutomationHandlers result - ", jqXHR); 
 	});
 }

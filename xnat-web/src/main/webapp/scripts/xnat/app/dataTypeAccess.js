@@ -115,6 +115,40 @@ var XNAT = getObject(XNAT);
 
     var getFreshData = dataTypeAccess.needsUpdate || false;
 
+    // make sure there aren't duplicate data type elements
+    function collectDataTypes(datatypes){
+        var elements = [];
+        var elementNames = [];
+        forEach(datatypes, function(element){
+            // map to old names for compatibility
+            element.elementName =
+                element.element_name =
+                    element.elementName;
+            // only add unique elements
+            if (elementNames.indexOf(element.elementName) === -1) {
+                element.plural =
+                    element.plural ||
+                    element.singular ||
+                    element.properName ||
+                    element.elementName.split(':')[1] ||
+                    element.elementName;
+                element.isExperiment = element.experiment;
+                element.isSubjectAssessor = element.subjectAssessor;
+                element.isImageAssessor = element.imageAssessor;
+                element.isImageSession = element.imageSession;
+                element.isImageScan = element.imageScan;
+                // element.lbg = '#f0f0f0';
+                // element.dbg = '#505050';
+                elementNames.push(element.elementName);
+                elements.push(element);
+            }
+        });
+        return {
+            elements: elements,
+            elementNames: elementNames
+        }
+    }
+
     // force reloading of display elements
     dataTypeAccess.getElements = function(type, opts){
         // return existing function if it already exists
@@ -135,33 +169,8 @@ var XNAT = getObject(XNAT);
                 //     cacheLoadingMessage.open();
                 // },
                 success: function(datatypes){
-                    var elements = [];
-                    var elementNames = [];
-                    forEach(datatypes, function(element){
-                        // map to old names for compatibility
-                        element.elementName =
-                            element.element_name =
-                                element.elementName;
-                        // only add unique elements
-                        if (elementNames.indexOf(element.elementName) === -1) {
-                            element.plural =
-                                element.plural ||
-                                element.singular ||
-                                element.properName ||
-                                element.elementName.split(':')[1] ||
-                                element.elementName;
-                            element.isExperiment = element.experiment;
-                            element.isSubjectAssessor = element.subjectAssessor;
-                            element.isImageAssessor = element.imageAssessor;
-                            element.isImageSession = element.imageSession;
-                            element.isImageScan = element.imageScan;
-                            // element.lbg = '#f0f0f0';
-                            // element.dbg = '#505050';
-                            elementNames.push(element.elementName);
-                            elements.push(element);
-                        }
-                    });
-                    userData.setValue(accessTypeKey, sortObjects(elements, 'plural'));
+                    var collected = collectDataTypes(datatypes);
+                    userData.setValue(accessTypeKey, sortObjects(collected.elements, 'plural'));
                 },
                 failure: function(){
                     console.warn(arguments);
@@ -174,14 +183,19 @@ var XNAT = getObject(XNAT);
         return {
             ready: function(success, failure){
                 if (getFreshData) {
-                    getElementDisplays.done(success || diddly);
+                    getElementDisplays.done(function(datatypes){
+                        var collected = collectDataTypes(datatypes);
+                        (success || diddly).call(this, collected.elements);
+                    });
                     getElementDisplays.fail(failure || diddly);
                 }
                 else {
                     dataTypeAccess.reqCount++;
                     try {
                         if (isFunction(success)) {
-                            success(userData.getValue(accessTypeKey));
+                            var collected = collectDataTypes(userData.getValue(accessTypeKey));
+                            userData.setValue(accessTypeKey, collected.elements);
+                            success(collected.elements);
                         }
                     }
                     catch(e) {
@@ -208,7 +222,7 @@ var XNAT = getObject(XNAT);
                         10,
                         function(){
                             console.log('refresh: ' + getFreshData);
-                            return !getFreshData || dataTypeAccess.reqCount === dataTypeAccess.displays.length;
+                            return !getFreshData || dataTypeAccess.reqCount >= dataTypeAccess.displays.length;
                         },
                         function(){
                             console.log('ALL LOADED');

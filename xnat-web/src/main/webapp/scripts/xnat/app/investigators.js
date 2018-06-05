@@ -278,7 +278,7 @@ var XNAT = getObject(XNAT);
                 investigatorForm: {
                     kind: 'panel.form',
                     name: 'editInvestigator',
-                    load: id ? setupUrl(id) : '!?',
+                    load: id ? setupUrl(id) : '',
                     action: setupUrl(id),
                     method: id ? 'PUT' : 'POST',
                     contentType: 'json',

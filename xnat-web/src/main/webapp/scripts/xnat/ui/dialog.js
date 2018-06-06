@@ -445,9 +445,10 @@ window.xmodal = getObject(window.xmodal);
             ]);
 
             if (this.hasFooter) {
-                // insert an element to help with sizing with a footer
+               this.dialogBody$[0].style.paddingBottom = pxSuffix(this.footerHeight - 1);
+                // insert an element to help with sizing when there's a footer
                 this.dialog$.spawn('div.footer-pad', {
-                    style: { height: this.footerHeightPx }
+                    style: { height: '1px' }
                 }, NBSP).append(this.footer$)
             }
 

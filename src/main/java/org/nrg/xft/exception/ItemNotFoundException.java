@@ -11,28 +11,29 @@ package org.nrg.xft.exception;
 
 /**
  * @author Tim
- *
  */
 @SuppressWarnings("serial")
-public class ItemNotFoundException  extends Exception{
+public class ItemNotFoundException extends XftItemException {
 	public final String ELEMENT;
 	public final String ID;
 
 	public ItemNotFoundException(final String name) {
-		super("Item not found: '" + name + "'");
-		ELEMENT = name;
-		ID = name;
+		this("Item not found: '" + name + "'", name, name);
 	}
 
 	public ItemNotFoundException(final String xsiType, final String id) {
-		super("Item not found: '" + xsiType + "' with ID " + id);
-		ELEMENT = xsiType;
-		ID = id;
+		this("Item not found: '" + xsiType + "' with ID " + id, xsiType, id);
 	}
 	
 	@Override
 	public String toString() {
 		return ELEMENT + "' with ID " + ID;
+	}
+
+	private ItemNotFoundException(final String message, final String element, final String id) {
+		super(message);
+		ELEMENT = element;
+		ID = id;
 	}
 }
 

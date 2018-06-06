@@ -11,15 +11,12 @@
 package org.nrg.xft.exception;
 
 @SuppressWarnings("serial")
-public class XFTInitException extends Exception {
-	public XFTInitException(String s)
-	{
-		super(s);
-	}
-	
-	public XFTInitException()
-	{
-		this("XFT accessed before initialization.");
-	}
-}
+public class XFTInitException extends XftItemException {
+    public XFTInitException(final String message) {
+        super(message);
+    }
 
+    public XFTInitException() {
+        this("XFT accessed before initialization.");
+    }
+}

@@ -14,6 +14,7 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -26,10 +27,9 @@ import org.nrg.xft.security.UserI;
  * @author Tim
  *
  */
+@Slf4j
 public class EmailBundleAction extends BundleAction {
-
-	
-	public String getScreenTemplate(RunData data)
+    public String getScreenTemplate(RunData data)
 	{
 	    return "XDATScreen_email_stored_search.vm";
 	}
@@ -41,7 +41,7 @@ public class EmailBundleAction extends BundleAction {
 
     public void doFinalProcessing(RunData data, Context context) throws Exception
     {
-        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("send",data))!=null)
+        if (TurbineUtils.GetPassedParameter("send", data) != null)
         {
             EmailReportAction email = new EmailReportAction();
             data.getParameters().setString("txtMessage",getTxtMessage(data,context));
@@ -51,19 +51,20 @@ public class EmailBundleAction extends BundleAction {
         }
     }
     
-    public String getTxtMessage(RunData data, Context context)
+    public String getTxtMessage(RunData data, @SuppressWarnings("unused") Context context)
     {
-        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
+        if (TurbineUtils.GetPassedParameter("txtmessage", data) == null)
         {
             try {
-                UserI user = TurbineUtils.getUser(data);
+                UserI user = XDAT.getUserDetails();
+                assert user != null;
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 XdatStoredSearch xss = ds.getStoredSearch();
                 
-                StringBuffer sb = new StringBuffer();
+                final StringBuilder sb = new StringBuilder();
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
                 sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
-                sb.append(" Please follow <" +TurbineUtils.GetFullServerPath() + "/app/action/BundleAction");
+                sb.append(" Please follow <").append(TurbineUtils.GetFullServerPath()).append("/app/action/BundleAction");
                 sb.append("/bundle/").append(xss.getId());
                 
                 Hashtable hash =ds.getWebFormValues();
@@ -87,36 +88,37 @@ public class EmailBundleAction extends BundleAction {
                 sb.append(">this link to view the data.\n\n");
                 
                 sb.append("Message from sender:\n");
-                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
-                sb.append("\n\nThis email was sent by the <" +TurbineUtils.GetFullServerPath() + ">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <" + XDAT.getNotificationsPreferences().getHelpContactInfo() + ">CNDA administrator.");
+                sb.append(((String)TurbineUtils.GetPassedParameter("message",data)));
+                sb.append("\n\nThis email was sent by the <").append(TurbineUtils.GetFullServerPath()).append(">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
+                sb.append("  If you have questions or concerns, please contact the <").append(XDAT.getNotificationsPreferences().getHelpContactInfo()).append(">CNDA administrator.");
                 return sb.toString();
             } catch (Exception e) {
-                logger.error("",e);
+                log.error("An unexpected exception occurred.", e);
                 return "error";
             }
         }else{
-            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data));
+            return ((String)TurbineUtils.GetPassedParameter("txtmessage",data));
         }
 
     }
     
-    public String getHtmlMessage(RunData data, Context context)
+    public String getHtmlMessage(RunData data, @SuppressWarnings("unused") Context context)
     {
-        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
+        if (TurbineUtils.GetPassedParameter("htmlmessage", data) == null)
         {
             try {
-                UserI user = TurbineUtils.getUser(data);
+                UserI user = XDAT.getUserDetails();
+                assert user != null;
 
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 XdatStoredSearch xss = ds.getStoredSearch();
                 
-                StringBuffer sb = new StringBuffer();
+                final StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 sb.append("<body>");
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
                 sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
-                sb.append(" Please follow <A HREF=\"" +TurbineUtils.GetFullServerPath() + "/app/action/BundleAction");
+                sb.append(" Please follow <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("/app/action/BundleAction");
                 sb.append("/bundle/").append(xss.getId());
                 
                 Hashtable hash =ds.getWebFormValues();
@@ -140,20 +142,20 @@ public class EmailBundleAction extends BundleAction {
                 sb.append("\">this link</A> to view the data.<BR><BR>");
                 
                 sb.append("Message from sender:<BR>");
-                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
-                sb.append("<BR><BR>This email was sent by the <A HREF=\"" +TurbineUtils.GetFullServerPath() + "\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" +XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
+                sb.append(((String)TurbineUtils.GetPassedParameter("message",data)));
+                sb.append("<BR><BR>This email was sent by the <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
+                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:").append(XDAT.getNotificationsPreferences().getHelpContactInfo()).append("\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
                 sb.append("</body>");
                 sb.append("</html>");
                 
                 return sb.toString();
             } catch (Exception e) {
-                logger.error("",e);
+                log.error("An unexpected exception occurred.", e);
                 return "error";
             }
         }else{
-            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data));
+            return ((String)TurbineUtils.GetPassedParameter("htmlmessage",data));
         }
 
     }

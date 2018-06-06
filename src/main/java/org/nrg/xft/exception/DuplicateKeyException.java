@@ -10,25 +10,24 @@
 
 package org.nrg.xft.exception;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * @author Tim
  *
  */
 @SuppressWarnings("serial")
-public class DuplicateKeyException extends Exception{
-	public String FIELD = "";
-	public String ELEMENT = "";
-	public DuplicateKeyException(String element,String name)
-	{
-		super("Duplicate Field: '" + element + "'.'" + name + "'");
-		FIELD = name;
-		
-		ELEMENT = element;
+public class DuplicateKeyException extends XftItemException {
+	public final String FIELD;
+	public final String ELEMENT;
+
+	public DuplicateKeyException(final String name) {
+		this(name, "");
 	}
-	public DuplicateKeyException(String name)
-	{
-		super("Duplicate Field: '" + name + "'");
+
+	public DuplicateKeyException(final String element, final String name) {
+		super(StringUtils.isBlank(element) ? "Duplicate Field: '" + name + "'" : "Duplicate Field: '" + element + "'.'" + name + "'");
 		FIELD = name;
+		ELEMENT = StringUtils.defaultIfBlank(element, "");
 	}
 }
-

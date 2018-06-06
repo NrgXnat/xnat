@@ -2323,7 +2323,6 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 			fieldInfo[0] = t;
 			return fieldInfo;
 		} catch (FieldNotFoundException e) {
-			e.FIELD=s;
 			throw e;
 		}
 	}
@@ -2347,7 +2346,6 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 			Object [] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(fieldXMLPath);
 			return fieldInfo;
 		} catch (FieldNotFoundException e) {
-			e.FIELD=s;
 			throw e;
 		}
 	}
@@ -2394,7 +2392,6 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                     return null;
                 }
             } catch (FieldNotFoundException e) {
-                e.FIELD=path;
                 throw e;
             }
 	}

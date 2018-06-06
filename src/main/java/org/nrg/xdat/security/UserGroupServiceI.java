@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 
@@ -29,6 +30,15 @@ public interface UserGroupServiceI {
 	}
 
 	/**
+	 * Indicates whether a group with the specified ID exists.
+	 *
+	 * @param id The ID of the group to test.
+	 *
+	 * @return Returns true if the group exists, false otherwise.
+	 */
+	boolean exists(String id);
+
+	/**
 	 * Get a UserGroupI by the group ID.
 	 * @param id    The ID of the group to retrieve.
 	 * @return The group with the indicated ID.
@@ -45,6 +55,15 @@ public interface UserGroupServiceI {
 	Map<String, UserGroupI> getGroupsForUser(UserI user);
 
 	/**
+	 * Get the groups that are currently assigned to a user.
+	 *
+	 * @param username The user to retrieve groups for.
+	 *
+	 * @return The groups associated with the user.
+	 */
+	Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException;
+
+	/**
 	 * Searches for a group based on the combination of tag and display name.
 	 *
 	 * @param user The user to retrieve groups for.
@@ -55,11 +74,28 @@ public interface UserGroupServiceI {
 	UserGroupI getGroupForUserAndTag(final UserI user, final String tag);
 
 	/**
+	 * Searches for a group based on the combination of tag and display name.
+	 *
+	 * @param username The user to retrieve groups for.
+	 * @param tag      The tag on which to search.
+	 *
+	 * @return The group if found.
+	 */
+	UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException;
+
+	/**
 	 * Get the group IDs currently assigned to a user.
 	 * @param user    The user to retrieve groups for.
 	 * @return The group IDs associated with the user.
 	 */
 	List<String> getGroupIdsForUser(UserI user);
+
+	/**
+	 * Get the group IDs currently assigned to a user.
+	 * @param username The user to retrieve groups for.
+	 * @return The group IDs associated with the user.
+	 */
+	List<String> getGroupIdsForUser(String username) throws UserNotFoundException;
 
 	/**
 	 * Is this user currently assigned to the group with this ID?
@@ -69,6 +105,15 @@ public interface UserGroupServiceI {
 	 * @return Returns true if the user is a member of the group with the indicated ID, false otherwise.
 	 */
 	boolean isMember(UserI user, String groupId);
+
+	/**
+	 * Is this user currently assigned to the group with this ID?
+	 *
+	 * @param username The user to test.
+	 * @param groupId  The group ID to test for.
+	 * @return Returns true if the user is a member of the group with the indicated ID, false otherwise.
+	 */
+	boolean isMember(String username, String groupId) throws UserNotFoundException;
 
 	/**
 	 * return all UserGroups on this server.  (this may be an expensive operation on larger servers)  We might want to get rid of this.

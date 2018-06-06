@@ -10,20 +10,23 @@
 
 package org.nrg.xft.exception;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
-@SuppressWarnings("serial")
-public class ValidationException extends Exception{
-	public ValidationResults VALIDATION_RESULTS = null;
-	public ValidationException(ValidationResults vr)
-	{
-		super("XML Validation Failed.");
-		this.VALIDATION_RESULTS = vr;
+@Getter
+@Accessors(prefix = "_")
+public class ValidationException extends XftItemException {
+	public ValidationException(final ValidationResults validation) {
+		super(validation.toFullString());
+		_validation = validation;
 	}
-	
-	public String toString()
-	{
-	    return this.VALIDATION_RESULTS.toFullString();
+
+	public ValidationException(final String message, final ValidationResults validation) {
+		super(message);
+		_validation = validation;
 	}
+
+	private final ValidationResults _validation;
 }
 

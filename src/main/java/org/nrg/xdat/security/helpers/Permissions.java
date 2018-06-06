@@ -14,7 +14,7 @@ import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -467,7 +467,20 @@ public class Permissions {
      * @return Returns whether the user can read any of the given elementName/action combination
      */
     public static boolean canAny(UserI user, String elementName, String action) {
-        return getPermissionsService().canAny(user, elementName, action);
+        return canAny(user.getUsername(), elementName, action);
+    }
+
+    /**
+     * Can the user read any of the given elementName/action combination
+     *
+     * @param username    The user requesting access.
+     * @param elementName The name of the element being requested.
+     * @param action      The action being requested.
+     *
+     * @return Returns whether the user can read any of the given elementName/action combination
+     */
+    public static boolean canAny(final String username, final String elementName, final String action) {
+        return getPermissionsService().canAny(username, elementName, action);
     }
 
     /**
@@ -888,7 +901,7 @@ public class Permissions {
     }
 
     private static List<String> getAccessibleProjectsByQuery(final NamedParameterJdbcTemplate found, final UserI user, final String access) {
-        return found.queryForList(StrSubstitutor.replace(QUERY_GET_USER_PROJECTS_FOR_ACCESS, ImmutableMap.<String, Object>of("access", access)), new MapSqlParameterSource("username", user.getUsername()), String.class);
+        return found.queryForList(StringSubstitutor.replace(QUERY_GET_USER_PROJECTS_FOR_ACCESS, ImmutableMap.<String, Object>of("access", access)), new MapSqlParameterSource("username", user.getUsername()), String.class);
     }
 
     private static NamedParameterJdbcTemplate getTemplate(final NamedParameterJdbcTemplate template) {

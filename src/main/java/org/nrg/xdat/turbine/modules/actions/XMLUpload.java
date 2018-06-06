@@ -117,7 +117,7 @@ public class XMLUpload extends SecureAction {
             } catch (ValidationException e) {
                 logger.error("",e);
                 data.setScreenTemplate("Error.vm");
-                data.setMessage("XML Validation Exception.<BR>" + e.VALIDATION_RESULTS.toHTML());
+                data.setMessage("XML Validation Exception.<BR>" + e.getValidation().toHTML());
     		} catch (Exception e) {
     		    if (e instanceof SAXParseException)
 				{

@@ -11,10 +11,9 @@
 package org.nrg.xft.exception;
 
 @SuppressWarnings("serial")
-public class ElementNotFoundException extends Exception{
-	public String ELEMENT = "";
-	public ElementNotFoundException(String name)
-	{
+public class ElementNotFoundException extends XftItemException {
+	public final String ELEMENT;
+	public ElementNotFoundException(final String name) {
 		super("Element not found: '" + name + "'");
 		ELEMENT = name;
 	}

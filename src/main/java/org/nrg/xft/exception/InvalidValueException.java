@@ -7,17 +7,14 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.exception;
 
 /**
  * @author Tim
- *
  */
 @SuppressWarnings("serial")
-public class InvalidValueException extends Exception {
-    public InvalidValueException(String message)
-    {
+public class InvalidValueException extends XftItemException {
+    public InvalidValueException(final String message) {
         super(message);
     }
 }

@@ -19,6 +19,7 @@ import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
@@ -133,6 +134,17 @@ public class Groups {
      */
     public static Map<String, UserGroupI> getGroupsForUser(UserI user) {
         return getUserGroupService().getGroupsForUser(user);
+    }
+
+    /**
+     * Get the UserGroup that are currently assigned to a user.  Loads current groups from database.
+     *
+     * @param username The user on which to search.
+     *
+     * @return A map of groups to which the user is assigned.
+     */
+    public static Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException {
+        return getUserGroupService().getGroupsForUser(username);
     }
 
     /**

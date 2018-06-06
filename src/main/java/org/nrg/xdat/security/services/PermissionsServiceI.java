@@ -33,6 +33,8 @@ public interface PermissionsServiceI {
      */
     List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType);
 
+    List<PermissionCriteriaI> getPermissionsForUser(String username, String dataType);
+
     /**
      * Get current XDAT criteria objects for current permission settings.  The XDAT criteria are used within the search engine to build long ugly WHERE clauses which limit the users access.  We'll want to refactor this if it isn't rewritten.
      *
@@ -190,6 +192,16 @@ public interface PermissionsServiceI {
     boolean canAny(UserI user, String elementName, String action);
 
     /**
+     * Can the user read any of the given elementName/action combination
+     *
+     * @param username    The user for which to retrieve permissions.
+     * @param elementName The element name.
+     * @param action      The action.
+     * @return True if the user can read any of the element or action, false otherwise.
+     */
+    boolean canAny(final String username, String elementName, String action);
+
+    /**
      * Can the user do the specified action for the String/Object pair
      *
      * @param user    The user for which to retrieve permissions.
@@ -300,6 +312,8 @@ public interface PermissionsServiceI {
      */
     List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action);
 
+    List<Object> getAllowedValues(String username, String elementName, String xmlPath, String action);
+
     /**
      * Get the XMLPath/value combos that this user can do the specified action on for the given element
      *
@@ -309,6 +323,8 @@ public interface PermissionsServiceI {
      * @return The allowed values for the user on the combination of factors.
      */
     Map<String, Object> getAllowedValues(UserI user, String elementName, String action);
+
+    Map<String, Object> getAllowedValues(String username, String elementName, String action);
 
     /**
      * initialize or update the permissions of the 'effected' user based on thee parameters

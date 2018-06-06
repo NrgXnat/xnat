@@ -28,6 +28,7 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -64,9 +65,19 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         _eventService = eventService;
     }
 
+    @Autowired
+    public void setGroupsAndPermissionsCache(final GroupsAndPermissionsCache cache) {
+        _cache = cache;
+    }
+
     @Override
     public List<PermissionCriteriaI> getPermissionsForUser(final UserI user, final String dataType) {
         return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(dataType));
+    }
+
+    @Override
+    public List<PermissionCriteriaI> getPermissionsForUser(final String username, final String dataType) {
+        return ImmutableList.copyOf(_cache.getPermissionCriteria(username, dataType));
     }
 
     @Override
@@ -339,13 +350,27 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
+    public boolean canAny(final String username, final String elementName, final String action) {
+        if (isGuest(username) && !action.equalsIgnoreCase(SecurityManager.READ)) {
+            return false;
+        }
+        // consider caching, but this should not hit the database on every call anyways.
+        return !getAllowedValues(username, elementName, action).isEmpty();
+    }
+
+    @Override
     public List<Object> getAllowedValues(final UserI user, final String elementName, final String xmlPath, final String action) {
+        return getAllowedValues(user.getUsername(), elementName, xmlPath, action);
+    }
+
+    @Override
+    public List<Object> getAllowedValues(final String username, final String elementName, final String xmlPath, final String action) {
         final List allowedValues = new ArrayList();
 
         try {
             final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
             if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
-                final List<PermissionCriteriaI> permissions = getPermissionsForUser(user, rootXmlName);
+                final List<PermissionCriteriaI> permissions = getPermissionsForUser(username, rootXmlName);
                 for (final PermissionCriteriaI criteria : permissions) {
                     if (criteria.getAction(action) && !allowedValues.contains(criteria.getFieldValue())) {
                         //noinspection unchecked
@@ -359,7 +384,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
             Collections.sort(allowedValues);
         } catch (Exception e) {
-            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}', XML path '{}'", user.getUsername(), action, elementName, xmlPath, e);
+            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}', XML path '{}'", username, action, elementName, xmlPath, e);
         }
 
         //noinspection unchecked
@@ -368,30 +393,35 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public Map<String, Object> getAllowedValues(UserI user, String elementName, String action) {
+        return getAllowedValues(user.getUsername(), elementName, action);
+    }
+
+    @Override
+    public Map<String, Object> getAllowedValues(final String username, String elementName, String action) {
         final Map<String, Object> allowedValues = Maps.newHashMap();
 
         try {
             final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
             if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
-                final List<PermissionCriteriaI> permissions = getPermissionsForUser(user, rootXmlName);
+                final List<PermissionCriteriaI> permissions = getPermissionsForUser(username, rootXmlName);
                 if (log.isInfoEnabled()) {
                     if (!permissions.isEmpty()) {
-                        log.info("Found {} permissions for user {} to {} data type {}:\n    {}", permissions.size(), user.getUsername(), action, elementName, StringUtils.join(permissions, "\n    "));
+                        log.info("Found {} permissions for user {} to {} data type {}:\n    {}", permissions.size(), username, action, elementName, StringUtils.join(permissions, "\n    "));
                     } else {
-                        log.info("Found no permissions for user {} to {} data type {}", user.getUsername(), action, elementName);
+                        log.info("Found no permissions for user {} to {} data type {}", username, action, elementName);
                     }
                 }
                 for (final PermissionCriteriaI criteria : permissions) {
                     if (criteria.getAction(action)) {
-                        log.debug("User {} can {} data type {} according to criteria for {} {}", user.getUsername(), action, elementName, criteria.getField(), criteria.getFieldValue());
+                        log.debug("User {} can {} data type {} according to criteria for {} {}", username, action, elementName, criteria.getField(), criteria.getFieldValue());
                         allowedValues.put(criteria.getField(), criteria.getFieldValue());
                     } else if (log.isDebugEnabled()) {
-                        log.debug("User {} can not {} data type {} according to criteria for {} {}", user.getUsername(), action, elementName, criteria.getField(), criteria.getFieldValue());
+                        log.debug("User {} can not {} data type {} according to criteria for {} {}", username, action, elementName, criteria.getField(), criteria.getFieldValue());
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}'", user.getUsername(), action, elementName, e);
+            log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}'", username, action, elementName, e);
         }
 
         return ImmutableMap.copyOf(allowedValues);
@@ -704,6 +734,10 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
     }
 
+    private boolean isGuest(final String username) {
+        return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
+    }
+
     private static class PermissionsBean {
         PermissionsBean(final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
             _affected = affected;
@@ -766,7 +800,11 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     private static final String QUERY_OWNED_PROJECTS         = String.format(QUERY_USER_PROJECTS, "delete_element");
     private static final String QUERY_EDITABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "edit_element");
     private static final String QUERY_READABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "read_element");
+    private static final String GUEST_USERNAME               = "guest";
 
     private final NamedParameterJdbcTemplate _template;
     private final NrgEventService            _eventService;
+
+    private GroupsAndPermissionsCache _cache;
+    private UserI                     _guest;
 }

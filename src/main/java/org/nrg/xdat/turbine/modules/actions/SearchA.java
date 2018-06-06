@@ -9,13 +9,9 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.io.StringWriter;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.StringEscapeUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
@@ -37,17 +33,19 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
 
+import java.io.StringWriter;
+import java.util.*;
+import java.util.regex.Pattern;
+
 /**
  * @author Tim
  *
  */
+@Slf4j
 public abstract class SearchA extends SecureAction {
-    static Logger logger = Logger.getLogger(SearchA.class);
     private long startTime = Calendar.getInstance().getTimeInMillis();
 
     public abstract DisplaySearch setupSearch(RunData data, Context context) throws Exception;
-
-
 
     public void doPreliminaryProcessing(RunData data, Context context) throws Exception{
         preserveVariables(data,context);
@@ -110,7 +108,7 @@ public abstract class SearchA extends SecureAction {
 					StringWriter sw = new StringWriter();
 					xss.toXML(sw, false);
 
-					context.put("xss", StringEscapeUtils.escapeXml(sw.toString()));
+					context.put("xss", StringEscapeUtils.escapeXml10(sw.toString()));
 			}else{
 				DisplaySearch search = TurbineUtils.getSearch(data);
 				if (search != null && hasSuperSearchVariables(data))
@@ -131,14 +129,14 @@ public abstract class SearchA extends SecureAction {
 				StringWriter sw = new StringWriter();
 				xss.toXML(sw, false);
 				
-				context.put("xss", StringEscapeUtils.escapeXml(sw.toString()));
+				context.put("xss", StringEscapeUtils.escapeXml10(sw.toString()));
 			}
 
 			data.setScreenTemplate(getScreenTemplate(data));
 
 			doFinalProcessing(data,context);
 		} catch (SearchTimeoutException e) {
-            logger.error(e);
+            log.error("The requested search timed out.", e);
             data.setMessage(e.getMessage());
             data.setScreenTemplate("Index.vm");
         } catch (XFTInitException e) {

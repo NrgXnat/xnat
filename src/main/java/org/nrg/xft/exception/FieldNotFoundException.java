@@ -11,18 +11,15 @@
 package org.nrg.xft.exception;
 
 @SuppressWarnings("serial")
-public class FieldNotFoundException extends Exception{
-	public String FIELD = "";
-    public String MESSAGE = "";
-	public FieldNotFoundException(String name)
-	{
-        super("Field not found: '" + name + "'");
-        FIELD = name;
-        MESSAGE = "Field not found: '" + name + "'";
+public class FieldNotFoundException extends XftItemException {
+	public final String FIELD;
+    public final String MESSAGE;
+
+	public FieldNotFoundException(final String name) {
+        this(name, "Field not found: '" + name + "'");
 	}
 
-    public FieldNotFoundException(String name, String message)
-    {
+    public FieldNotFoundException(final String name, final String message) {
         super(message);
         FIELD = name;
         MESSAGE = message;

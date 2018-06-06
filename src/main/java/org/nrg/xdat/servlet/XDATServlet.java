@@ -14,10 +14,10 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.OrderedProperties;
-import org.nrg.framework.utilities.PropertiesLookup;
+import org.nrg.framework.utilities.OrderedPropertiesLookup;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
@@ -212,6 +212,7 @@ public class XDATServlet extends HttpServlet {
      * When updating the database, the function and views are always recreated.  The tables are only created if
      * necessary. The statements to create the tables are passed in via the addStatements method.
      */
+    @SuppressWarnings("UnstableApiUsage")
     public class DatabaseUpdater extends Thread {
         public static final String INIT_SQL_PATTERN = "classpath*:META-INF/xnat/**/init_*.sql";
 
@@ -336,8 +337,8 @@ public class XDATServlet extends HttpServlet {
          */
         private List<String> getInitScripts() {
             // Get the init prefs ordered properties from context and create a substitutor.
-            final OrderedProperties properties = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
-            final StrSubstitutor substitutor = new StrSubstitutor(new PropertiesLookup(properties), "${", "}", '\\');
+            final OrderedProperties properties  = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
+            final StringSubstitutor substitutor = new StringSubstitutor(new OrderedPropertiesLookup(properties), "${", "}", '\\');
 
             final List<String> statements = new ArrayList<>();
             try {
@@ -434,7 +435,7 @@ public class XDATServlet extends HttpServlet {
         }
 
         final String timestamp           = Long.toString(Calendar.getInstance().getTimeInMillis());
-        final Path   generatedSqlLogPath = Paths.get(StrSubstitutor.replace(properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString()), ImmutableMap.<String, Object>of("timestamp", timestamp)));
+        final Path   generatedSqlLogPath = Paths.get(StringSubstitutor.replace(properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString()), ImmutableMap.<String, Object>of("timestamp", timestamp)));
         logger.info("Found path specified for generated SQL log path: {}", generatedSqlLogPath);
         return generatedSqlLogPath;
     }

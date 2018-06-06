@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import lombok.Getter;
@@ -65,6 +64,11 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    public boolean exists(final String id) {
+        return _template.queryForObject(QUERY_CHECK_GROUP_EXISTS, new MapSqlParameterSource("groupId", id), Boolean.class);
+    }
+
+    @Override
     public UserGroupI getGroup(final String groupId) {
         final UserGroup group = (UserGroup) getCache().get(groupId);
         if (group != null) {
@@ -81,9 +85,14 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    public boolean isMember(final String username, final String groupId) throws UserNotFoundException {
+        return getGroupIdsForUser(username).contains(groupId);
+    }
+
+    @Override
     public Map<String, UserGroupI> getGroupsForUser(final UserI user) {
         try {
-            return getCache().getGroupsForUser(user.getUsername());
+            return getGroupsForUser(user.getUsername());
         } catch (UserNotFoundException ignored) {
             // We have the UserI object so we don't have to worry about user not found
             return Collections.emptyMap();
@@ -91,23 +100,38 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    public Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException {
+        return getCache().getGroupsForUser(username);
+    }
+
+    @Override
     public UserGroupI getGroupForUserAndTag(final UserI user, final String tag) {
         try {
-            return getCache().getGroupForUserAndTag(user.getUsername(), tag);
-        } catch (UserNotFoundException ignored) {
+            return getGroupForUserAndTag(user.getUsername(), tag);
+        } catch (UserNotFoundException e) {
             // We have the UserI object so we don't have to worry about user not found
             return null;
         }
     }
 
     @Override
+    public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
+        return getCache().getGroupForUserAndTag(username, tag);
+    }
+
+    @Override
     public List<String> getGroupIdsForUser(final UserI user) {
-        return Lists.transform(((XDATUser) user).getGroups_groupid(), new Function<XdatUserGroupid, String>() {
-            @Override
-            public String apply(final XdatUserGroupid userGroupid) {
-                return userGroupid.getGroupid();
-            }
-        });
+        try {
+            return getGroupIdsForUser(user.getUsername());
+        } catch (UserNotFoundException e) {
+            // We have the UserI object so we don't have to worry about user not found
+            return null;
+        }
+    }
+
+    @Override
+    public List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
+        return Lists.newArrayList(_cache.getGroupsForUser(username).keySet());
     }
 
     @Override
@@ -155,20 +179,18 @@ public class UserGroupManager implements UserGroupServiceI {
     @SuppressWarnings("Duplicates")
     @Override
     public UserGroupI createGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) {
-        XdatUsergroup       group;
-        PersistentWorkflowI wrk = null;
+        final XdatUsergroup group = new XdatUsergroup(authenticatedUser);
+        //optimized version for expediency
+        PersistentWorkflowI wrk = getWorkflow(value, authenticatedUser, group, "ADMIN", "Initialized permissions");
 
         try {
-            group = new XdatUsergroup(authenticatedUser);
             group.setId(id);
             group.setDisplayname(displayName);
             group.setTag(value);
 
-            if (_template.queryForObject(QUERY_CHECK_GROUP_EXISTS, new MapSqlParameterSource("groupId", id), Boolean.class)) {
+            if (exists(id)) {
                 throw new Exception("Group already exists");
             }
-            //optimized version for expediency
-            wrk = PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), "ADMIN", value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Initialized permissions"));
             assert wrk != null;
 
             SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, wrk.buildEvent());
@@ -208,16 +230,13 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) throws Exception {
+    public UserGroupI createOrUpdateGroup(final String id, final String displayName, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final List<ElementSecurity> elementSecurities, final String value, final UserI authenticatedUser) throws Exception {
         //hijacking the code her to manually create a group if it is brand new.  Should make project creation much quicker.
-        Long matches = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(ID) FROM xdat_usergroup WHERE ID='" + id + "'", "COUNT", authenticatedUser.getDBName(), null);
+        final Long matches = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(ID) FROM xdat_usergroup WHERE ID='" + id + "'", "COUNT", authenticatedUser.getDBName(), null);
         if (matches == 0) {
             //this means the group is new.  It doesn't need to be as thorough as an edit of an existing one would be.
-            return createGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, value, authenticatedUser);
+            return createGroup(id, displayName, create, read, delete, edit, activate, activateChanges, elementSecurities, value, authenticatedUser);
         }
-
-        PersistentWorkflowI wrk;
-        XdatUsergroup       group;
 
         //this means the group previously existed, and this is an update rather than an init.
         //the logic here will be way more intrusive (and expensive)
@@ -225,59 +244,53 @@ public class UserGroupManager implements UserGroupServiceI {
         final ArrayList<XdatUsergroup> groups   = XdatUsergroup.getXdatUsergroupsByField(XdatUsergroup.SCHEMA_ELEMENT_NAME + ".ID", id, authenticatedUser, true);
         boolean                        modified = false;
 
-        if (groups.size() == 0) {
+        if (groups.isEmpty()) {
             throw new Exception("Count didn't match query results");
-        } else {
-            group = groups.get(0);
-            wrk = PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), group.getXdatUsergroupId().toString(), value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Modified permissions"));
         }
 
-        long start = Calendar.getInstance().getTimeInMillis();
+        final XdatUsergroup       group    = groups.get(0);
+        final PersistentWorkflowI workflow = getWorkflow(value, authenticatedUser, group, group.getXdatUsergroupId().toString(), "Modified permissions");
+
+        if (workflow == null) {
+            return null;
+        }
+
+        final long start = Calendar.getInstance().getTimeInMillis();
         try {
             if (group.getDisplayname().equals("Owners")) {
-                assert wrk != null;
-                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, wrk.buildEvent());
+                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent());
             } else {
-                assert wrk != null;
-                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, Boolean.FALSE, read, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, activateChanges, authenticatedUser, false, wrk.buildEvent());
+                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, Boolean.FALSE, read, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, activateChanges, authenticatedUser, false, workflow.buildEvent());
             }
 
-            for (final ElementSecurity es : ess) {
-                if (setPermissions(group, es.getElementName(), es.getElementName() + "/project", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, wrk.buildEvent())) {
+            for (final ElementSecurity elementSecurity : elementSecurities) {
+                if (setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/project", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent())) {
                     modified = true;
                 }
 
-                if (setPermissions(group, es.getElementName(), es.getElementName() + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, authenticatedUser, false, wrk.buildEvent())) {
+                if (setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, authenticatedUser, false, workflow.buildEvent())) {
                     modified = true;
                 }
             }
         } catch (Exception e) {
-            if (wrk != null) {
-                PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-            }
+            PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
             log.error("", e);
         }
 
-
         try {
-            if (modified) {
-                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-                XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), UPDATE);
-
-                try {
-                    PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-
+            PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+            try {
+                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
+            } catch (Exception e) {
+                log.error("", e);
             }
+            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), modified ? UPDATE : CREATE);
         } catch (Exception e1) {
-            PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
+            PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
             log.error("", e1);
         }
 
-        log.debug("UPDATE GROUP " + id + "... " + (Calendar.getInstance().getTimeInMillis() - start) + " ms");
-
+        log.debug("Updated group {} in {} ms", id, Calendar.getInstance().getTimeInMillis() - start);
         return new UserGroup(group);
     }
 
@@ -477,6 +490,15 @@ public class UserGroupManager implements UserGroupServiceI {
         }
     }
 
+    private PersistentWorkflowI getWorkflow(final String value, final UserI authenticatedUser, final XdatUsergroup group, final String objectId, final String action) {
+        try {
+            return PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), objectId, value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, action));
+        } catch (PersistentWorkflowUtils.JustificationAbsent | PersistentWorkflowUtils.ActionNameAbsent | PersistentWorkflowUtils.IDAbsent exception) {
+            log.error("An error occurred trying to create a workflow object for the group '{}' and value '{}'");
+            return null;
+        }
+    }
+
     private List<String> getPermissionValues(XdatFieldMappingSet set) {
         List<String> values = Lists.newArrayList();
 
@@ -579,37 +601,35 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     private void initPermissions(UserGroupI group, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, List<ElementSecurity> ess, String value, UserI authenticatedUser) {
-        String templateName = "new_group_permissions.vm";
         try {
-            boolean velocityInit = false;
+            if (checkVelocityInit() && Velocity.resourceExists("/screens/" + NEW_GROUP_PERMS_TEMPLATE)) {
+                final VelocityContext context = new VelocityContext();
+                context.put("group", group);
+                context.put("create", (create) ? "1" : "0");
+                context.put("read", (read) ? "1" : "0");
+                context.put("delete", (delete) ? "1" : "0");
+                context.put("edit", (edit) ? "1" : "0");
+                context.put("activate", (activate) ? "1" : "0");
+                context.put("ess", ess);
+                context.put("value", value);
+                context.put("user", authenticatedUser);
 
-            try {
-                Velocity.resourceExists(templateName);
-                velocityInit = true;
-            } catch (Exception ignored) {
-            }
+                final StringWriter writer   = new StringWriter();
+                final Template     template = Velocity.getTemplate("/screens/" + NEW_GROUP_PERMS_TEMPLATE);
+                template.merge(context, writer);
 
-            if (velocityInit) {
-                boolean exists = Velocity.resourceExists("/screens/" + templateName);
-                if (exists) {
-                    VelocityContext context = new VelocityContext();
-                    context.put("group", group);
-                    context.put("create", (create) ? "1" : "0");
-                    context.put("read", (read) ? "1" : "0");
-                    context.put("delete", (delete) ? "1" : "0");
-                    context.put("edit", (edit) ? "1" : "0");
-                    context.put("activate", (activate) ? "1" : "0");
-                    context.put("ess", ess);
-                    context.put("value", value);
-                    context.put("user", authenticatedUser);
-                    StringWriter sw       = new StringWriter();
-                    Template     template = Velocity.getTemplate("/screens/" + templateName);
-                    template.merge(context, sw);
-
-                    PoolDBUtils.ExecuteBatch(XftStringUtils.DelimitedStringToArrayList(sw.toString(), ";"), null, authenticatedUser.getUsername());
-                }
+                PoolDBUtils.ExecuteBatch(XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";"), null, authenticatedUser.getUsername());
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    private static boolean checkVelocityInit() {
+        try {
+            Velocity.resourceExists(NEW_GROUP_PERMS_TEMPLATE);
+            return true;
+        } catch (Exception ignored) {
+            return false;
         }
     }
 
@@ -617,6 +637,8 @@ public class UserGroupManager implements UserGroupServiceI {
     private static final String ALL_GROUPS_QUERY         = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
     private static final String QUERY_GET_PRIMARY_KEY    = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
     private static final String CONFIRM_QUERY            = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+
+    private static final String NEW_GROUP_PERMS_TEMPLATE = "new_group_permissions.vm";
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;

@@ -79,6 +79,15 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     Map<String, Long> getReadableCounts(final UserI user);
 
     /**
+     * Get the searchable element displays for the indicated user.
+     *
+     * @param user   The user for which to retrieve action element displays.
+     *
+     * @return The searchable element displays for the indicated user.
+     */
+    List<ElementDisplay> getSearchableElementDisplays(final UserI user) throws Exception;
+
+    /**
      * Get the action element displays for the indicated user.
      *
      * @param user   The user for which to retrieve action element displays.
@@ -97,6 +106,16 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return The permission criteria for the indicated user.
      */
     List<PermissionCriteriaI> getPermissionCriteria(final UserI user, final String dataType);
+
+    /**
+     * Get the permission criteria for the indicated user.
+     *
+     * @param username The user for which to retrieve permission criteria.
+     * @param dataType The data type for which to retrieve permission criteria.
+     *
+     * @return The permission criteria for the indicated user.
+     */
+    List<PermissionCriteriaI> getPermissionCriteria(final String username, String dataType);
 
     /**
      * Gets the total count of instances of data types in the system.

@@ -12,8 +12,7 @@ package org.nrg.xft.exception;
 
 @SuppressWarnings("serial")
 public class InvalidReference extends XFTInitException {
-	public InvalidReference(String message)
-	{
+	public InvalidReference(final String message) {
 		super(message);
 	}
 }

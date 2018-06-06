@@ -15,35 +15,40 @@ package org.nrg.xft.exception;
  *
  */
 @SuppressWarnings("serial")
-public class MetaDataException extends Exception {
-
+public class MetaDataException extends XftItemException {
     /**
-     * 
+     * Creates a new metadata exception.
      */
     public MetaDataException() {
         super();
     }
 
     /**
-     * @param arg0
+     * Creates a new metadata exception.
+     *
+     * @param message The message to set for the exception.
      */
-    public MetaDataException(String arg0) {
-        super(arg0);
+    public MetaDataException(final String message) {
+        super(message);
     }
 
     /**
-     * @param arg0
+     * Creates a new metadata exception.
+     *
+     * @param cause The cause of the exception.
      */
-    public MetaDataException(Throwable arg0) {
-        super(arg0);
+    public MetaDataException(final Throwable cause) {
+        super(cause);
     }
 
     /**
-     * @param arg0
-     * @param arg1
+     * Creates a new metadata exception.
+     *
+     * @param message The message to set for the exception.
+     * @param cause   The cause of the exception.
      */
-    public MetaDataException(String arg0, Throwable arg1) {
-        super(arg0, arg1);
+    public MetaDataException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 
 }

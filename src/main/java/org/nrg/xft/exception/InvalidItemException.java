@@ -10,6 +10,7 @@
 
 package org.nrg.xft.exception;
 
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 
 /**
@@ -17,12 +18,10 @@ import org.nrg.xft.XFTItem;
  *
  */
 @SuppressWarnings("serial")
-public class InvalidItemException extends Exception {
-
-    public org.nrg.xft.ItemI item = null;
-    public InvalidItemException(org.nrg.xft.ItemI i) {
-    	super("Invalid Item: '" + ((XFTItem)i).toXML_String() + "'\n\n Needs appropriate security field(s).");
-    	item = i;	
+public class InvalidItemException extends XftItemException {
+    public final ItemI item;
+    public InvalidItemException(final ItemI item) {
+    	super("Invalid Item: '" + ((XFTItem)item).toXML_String() + "'\n\n Needs appropriate security field(s).");
+        this.item = item;
     }
-
 }

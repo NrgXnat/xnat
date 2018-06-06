@@ -53,7 +53,6 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
 
-import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.SecurityManager.*;
 
 /**
@@ -62,6 +61,7 @@ import static org.nrg.xdat.security.SecurityManager.*;
 @SuppressWarnings({"unchecked", "Duplicates"})
 @Slf4j
 public class XDATUser extends XdatUser implements UserI, Serializable {
+
     /**
      * DO NOT USE THIS.  IT is primarily for use in unit testings.  Use XDATUser(login).
      */
@@ -538,24 +538,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             }));
-            Collections.sort(elementDisplays, new Comparator<ElementDisplay>() {
-                @Override
-                public int compare(ElementDisplay elementDisplay1, ElementDisplay elementDisplay2) {
-                    int sequence1 = 1000;
-                    try {
-                        sequence1 = elementDisplay1.getElementSecurity().getSequence();
-                    } catch (Exception ignored) {
-                        // Just ignore it.
-                    }
-                    int sequence2 = 1000;
-                    try {
-                        sequence2 = elementDisplay2.getElementSecurity().getSequence();
-                    } catch (Exception ignored) {
-                        // Just ignore it.
-                    }
-                    return Integer.compare(sequence1, sequence2);
-                }
-            });
+            Collections.sort(elementDisplays, ElementDisplayComparator);
             return elementDisplays;
         } catch (ElementNotFoundException e) {
             log.error("Element '{}' not found", e.ELEMENT, e);
@@ -579,28 +562,21 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getSearchableElementDisplays(PluralDescriptionComparator);
     }
 
-    protected List<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
-        if (_searchableElementDisplays.isEmpty()) {
-            final Map<String, Long> counts = getReadableCounts();
-            try {
-                for (final ElementDisplay ed : getReadableElementDisplays()) {
-                    if (ElementSecurity.IsSearchable(ed.getElementName())) {
-                        if (counts.containsKey(ed.getElementName()) && (counts.get(ed.getElementName()) > 0)) {
-                            _searchableElementDisplays.add(ed);
-                        }
-                    }
-                }
-            } catch (ElementNotFoundException e) {
-                log.error("Element '{}' not found", e.ELEMENT, e);
-            } catch (XFTInitException e) {
-                log.error("There was an error initializing or accessing XFT", e);
-            } catch (Exception e) {
-                log.error("An unknown error occurred", e);
+    protected List<ElementDisplay> getSearchableElementDisplays(final Comparator comparator) {
+        try {
+            final List<ElementDisplay> searchables = getGroupsAndPermissionsCache().getSearchableElementDisplays(this);
+            if (!searchables.isEmpty()) {
+                Collections.sort(searchables, comparator);
             }
-            Collections.sort(_searchableElementDisplays, comp);
+            return searchables;
+        } catch (ElementNotFoundException e) {
+            log.error("Element '{}' not found", e.ELEMENT, e);
+        } catch (XFTInitException e) {
+            log.error("There was an error initializing or accessing XFT", e);
+        } catch (Exception e) {
+            log.error("An unknown error occurred", e);
         }
-
-        return _searchableElementDisplays;
+        return Collections.emptyList();
     }
 
     /**
@@ -672,8 +648,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected Date getPreviousLogin() throws SQLException, Exception {
-        String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + " AND login_date < (SELECT MAX(login_date) FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + ") ORDER BY login_date DESC LIMIT 1";
-        return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", this.getDBName(), this.getUsername());
+        final String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + getXdatUserId() + " AND login_date < (SELECT MAX(login_date) FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + ") ORDER BY login_date DESC LIMIT 1";
+        return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", null, getUsername());
     }
 
     protected void refreshGroup(final String id) {
@@ -1097,41 +1073,53 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _groupsAndPermissionsCache;
     }
 
-    private final static Comparator DescriptionComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
+    private final static Comparator DescriptionComparator = new Comparator<ElementDisplay>() {
+        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
             try {
-                String value1 = ((ElementDisplay) mr1).getSchemaElement().getSingularDescription();
-                String value2 = ((ElementDisplay) mr2).getSchemaElement().getSingularDescription();
-
-                return value1.compareToIgnoreCase(value2);
+                final String value1 = mr1.getSchemaElement().getSingularDescription();
+                final String value2 = mr2.getSchemaElement().getSingularDescription();
+                return StringUtils.compareIgnoreCase(value1, value2);
             } catch (Exception ex) {
                 throw new ClassCastException("Error Comparing Sequence");
             }
         }
     };
 
-    private final static Comparator PluralDescriptionComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
+    private final static Comparator PluralDescriptionComparator = new Comparator<ElementDisplay>() {
+        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
             try {
-                String value1 = ((ElementDisplay) mr1).getSchemaElement().getPluralDescription();
-                String value2 = ((ElementDisplay) mr2).getSchemaElement().getPluralDescription();
-
-                return value1.compareToIgnoreCase(value2);
+                final String value1 = mr1.getSchemaElement().getPluralDescription();
+                final String value2 = mr2.getSchemaElement().getPluralDescription();
+                return StringUtils.compareIgnoreCase(value1, value2);
             } catch (Exception ex) {
                 throw new ClassCastException("Error Comparing Sequence");
             }
         }
     };
 
-    private final static Comparator NameComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
+    private final static Comparator NameComparator = new Comparator<ElementDisplay>() {
+        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
             try {
-                String value1 = ((ElementDisplay) mr1).getElementName();
-                String value2 = ((ElementDisplay) mr2).getElementName();
-
-                return value1.compareToIgnoreCase(value2);
+                final String value1 = mr1.getElementName();
+                final String value2 = mr2.getElementName();
+                return StringUtils.compareIgnoreCase(value1, value2);
             } catch (Exception ex) {
                 throw new ClassCastException("Error Comparing Sequence");
+            }
+        }
+    };
+
+    private static final Comparator<ElementDisplay> ElementDisplayComparator = new Comparator<ElementDisplay>() {
+        @Override
+        public int compare(final ElementDisplay first, final ElementDisplay second) {
+            return Integer.compare(getSequence(first), getSequence(second));
+        }
+
+        private int getSequence(final ElementDisplay elementDisplay) {
+            try {
+                return elementDisplay.getElementSecurity().getSequence();
+            } catch (Exception ignored) {
+                return 1000;
             }
         }
     };
@@ -1144,7 +1132,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private final Set<String>                           _roleNames                 = new HashSet<>();
     private final List<XdatStoredSearch>                _storedSearches            = new ArrayList<>();
-    private final List<ElementDisplay>                  _searchableElementDisplays = new ArrayList<>();
     private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
     private final List<String>                          _editableProjects          = new ArrayList<>();
     private final Map<String, ArrayList<ItemI>>         _userSessionCache          = new HashMap<>();

@@ -9,22 +9,17 @@
 
 package org.nrg.xft;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.Writer;
-import java.sql.SQLException;
-import java.util.*;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.ecs.xhtml.title;
+import org.apache.commons.text.StringEscapeUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.sql.SQLException;
+import java.util.*;
 
 @SuppressWarnings({"unchecked", "unused"})
 public class XFTTable implements XFTTableI {
@@ -254,10 +249,8 @@ public class XFTTable implements XFTTableI {
             tableProperties = new Hashtable();
         }
         StringBuilder sb = new StringBuilder("<TABLE");
-        Enumeration enumer = tableProperties.keys();
-        while (enumer.hasMoreElements()) {
-            String key = (String) enumer.nextElement();
-            String value = (String) tableProperties.get(key);
+        for (final Object key : tableProperties.keySet()) {
+            final String value = (String) tableProperties.get(key);
             sb.append(" ").append(key).append("=\"").append(value).append("\"");
         }
 
@@ -314,10 +307,8 @@ public class XFTTable implements XFTTableI {
         }
         PrintStream pw = new PrintStream(out, true);
         pw.print("<TABLE");
-        Enumeration enumer = tableProperties.keys();
-        while (enumer.hasMoreElements()) {
-            String key = (String) enumer.nextElement();
-            String value = (String) tableProperties.get(key);
+        for (final Object key : tableProperties.keySet()) {
+            final Object value = tableProperties.get(key);
             pw.print(" ");
             pw.print(key);
             pw.print("=\"");
@@ -380,7 +371,7 @@ public class XFTTable implements XFTTableI {
      * Outputs table headers and contents into an HTML Table
      *
      * @param insertTDTags Indicates whether TD tags should be inserted.
-     * @return The HTML representatin of the table.
+     * @return The HTML representation of the table.
      */
     public String toHTML(boolean insertTDTags) {
         StringBuilder sb = new StringBuilder("<TABLE>");
@@ -508,11 +499,11 @@ public class XFTTable implements XFTTableI {
     public static String ValueParser(Object object, String regexToReplace, String replacement) {
         if (object != null) {
             if (object.getClass().getName().equalsIgnoreCase("[B")) {
-                byte[] b = (byte[]) object;
-                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                final byte[] b = (byte[]) object;
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
                     baos.write(b);
-                } catch (java.io.IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 return baos.toString().replaceAll(regexToReplace, replacement);
@@ -709,7 +700,7 @@ public class XFTTable implements XFTTableI {
     }
 
     public class TableRowComparator implements Comparator {
-        private int col = 0;
+        private int col;
         private boolean asc = true;
 
         public TableRowComparator(int sortColumn, String sortOrder) {
@@ -880,7 +871,7 @@ public class XFTTable implements XFTTableI {
         toJSON(writer, null);
     }
 
-    @SuppressWarnings("SuspiciousMethodCalls")
+    @SuppressWarnings({"SuspiciousMethodCalls", "RedundantThrows"})
     public void toJSON(Writer writer, Map<String, Map<String, String>> cp) throws IOException {
         org.json.JSONArray array = new org.json.JSONArray();
         ArrayList<ArrayList<String>> columnsWType = new ArrayList<>();

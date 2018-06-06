@@ -13,13 +13,14 @@
  *
  */
 package org.nrg.xdat.bean.base;
+
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-import org.apache.commons.lang3.StringEscapeUtils;
 
 @SuppressWarnings({"rawtypes"})
 public abstract class BaseElement{
@@ -289,7 +290,7 @@ public abstract class BaseElement{
     			}
     		}
 
-    		return StringEscapeUtils.escapeXml(input.toString());
+    		return StringEscapeUtils.escapeXml10(input.toString());
             }else if (type.equalsIgnoreCase("boolean"))
             {
                 if (o.toString().equalsIgnoreCase("true")|| o.toString().equalsIgnoreCase("1"))

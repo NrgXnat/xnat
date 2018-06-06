@@ -76,7 +76,7 @@ public class XMLUpload extends SecureAction {
             } catch (ValidationException e) {
                 log.error("", e);
                 data.setScreenTemplate("Error.vm");
-                data.setMessage("XML Validation Exception.<BR>" + e.VALIDATION_RESULTS.toHTML());
+                data.setMessage("XML Validation Exception.<BR>" + e.getValidation().toHTML());
             } catch (SAXParseException e) {
                 if (e.getLineNumber() == -1 && e.getColumnNumber() == -1) {
                     // This probably means they uploaded an empty file.

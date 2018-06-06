@@ -9,24 +9,18 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.generic.EscapeTool;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.UserChangeRequest;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserChangeRequestService;
-import org.nrg.xdat.services.impl.hibernate.HibernateUserChangeRequestService;
 import org.nrg.xdat.turbine.modules.actions.ModifyEmail;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -90,7 +84,6 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
                         final UserI user = XDAT.getUserDetails();
                         assert user != null;
-                        SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
 
                         existing.setEmail(newEmail);
 
@@ -106,7 +99,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             try {
                                 AdminUtils.sendUserHTMLEmail(ModifyEmail.EMAIL_ADDRESS_CHANGED, message, true, new String[]{oldEmail, newEmail});
                             } catch (MailException e) {
-                                logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + oldEmail + ", " + newEmail + ".\nSubject: \"" + ModifyEmail.EMAIL_ADDRESS_CHANGED + "\"\nMessage:\n" + message, e);
+                                log.error("An error occurred trying to send an email to the administrator and the following addresses: " + oldEmail + ", " + newEmail + ".\nSubject: \"" + ModifyEmail.EMAIL_ADDRESS_CHANGED + "\"\nMessage:\n" + message, e);
                             }
                             context.put("success", true);
                             context.put("message", "Email address changed.");
@@ -114,7 +107,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             AdminUtils.sendAdminEmail(user, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
                             data.getResponse().sendError(403);
                         } catch (Exception e) {
-                            logger.error("Error Storing User", e);
+                            log.error("Error Storing User", e);
                         }
 
                     }
@@ -215,7 +208,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     @Override
-    protected boolean isAuthorized(RunData arg0) throws Exception {
+    protected boolean isAuthorized(RunData data) {
         return false;
     }
 
@@ -241,7 +234,4 @@ public class XDATScreen_UpdateUser extends SecureScreen {
             data.setScreenTemplate("XDATScreen_UpdateUser.vm");
         }
     }
-
-    static org.apache.log4j.Logger logger = Logger.getLogger(XDATScreen_UpdateUser.class);
-
 }

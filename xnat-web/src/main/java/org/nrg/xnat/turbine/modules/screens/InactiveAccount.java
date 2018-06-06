@@ -9,8 +9,8 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;

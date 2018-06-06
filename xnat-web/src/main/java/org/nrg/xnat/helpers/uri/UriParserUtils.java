@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -159,7 +159,7 @@ public final class UriParserUtils {
     public static String getArchiveUriFromParameterTypes(final Map<String, String> parameters) {
         final String[] types  = parameters.keySet().toArray(new String[0]);
         final String   format = XSI_ARCHIVE_FORMATS.get(getTypeList(types));
-        return StrSubstitutor.replace(format, parameters);
+        return StringSubstitutor.replace(format, parameters);
     }
 
     /**

@@ -11,8 +11,8 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.xmlbeans.XmlException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.pipeline.xmlbeans.AllResolvedStepsDocument;

@@ -10,7 +10,7 @@
 package org.nrg.xnat.helpers.dicom;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.DicomObjectToStringParam;
@@ -49,18 +49,19 @@ public final class DicomHeaderDump {
         this.fields = ImmutableMap.copyOf(fields);
     }
     
+    @SuppressWarnings("unused")
     public DicomHeaderDump(final String file) {
         this(file, Collections.<Integer,Set<String>>emptyMap());
     }
 
     /**
      * Read the header of the DICOM file ignoring the pixel data.
-     * @param f 
-     * @return
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @param file The DICOM file to read.
+     * @return A DICOM object containing the file's headers.
+     * @throws IOException When an error occurs reading the file.
+     * @throws FileNotFoundException When the specified file isn't found.
      */
-    DicomObject getHeader(File f) throws IOException, FileNotFoundException {
+    DicomObject getHeader(File file) throws IOException, FileNotFoundException {
         final int stopTag;
         if (fields.isEmpty()) {
             stopTag = Tag.PixelData;
@@ -70,7 +71,7 @@ public final class DicomHeaderDump {
         final StopTagInputHandler stopHandler = new StopTagInputHandler(stopTag);
 
         IOException ioexception = null;
-        final DicomInputStream dis = new DicomInputStream(f);
+        final DicomInputStream dis = new DicomInputStream(file);
         try {
             dis.setHandler(stopHandler);
             return dis.readDicomObject();
@@ -112,7 +113,7 @@ public final class DicomHeaderDump {
         final String desc = escapeHTML(object.nameOf(element.tag()));
 
         final List<String> strings = new ArrayList<>(parentTag == null ? Arrays.asList(tag, "", vr, value, desc) : Arrays.asList(parentTag, tag, vr, value, desc));
-        return strings.toArray(new String[strings.size()]);
+        return strings.toArray(new String[0]);
     }
 
     public static String escapeHTML(final String value) {
@@ -120,10 +121,12 @@ public final class DicomHeaderDump {
     }
 
     /**
-     * Render the DICOM header to an XFTTable supporting one level of tag nesting. 
-     * @return
-     * @throws IOException
-     * @throws FileNotFoundException
+     * Render the DICOM header to an XFTTable supporting one level of tag nesting.
+     *
+     * @return The DICOM header values rendered into an {@link XFTTable} object.
+     *
+     * @throws IOException When an error occurs reading the file.
+     * @throws FileNotFoundException When the specified file isn't found.
      */
     public XFTTable render() throws IOException,FileNotFoundException {
         XFTTable t = new XFTTable();

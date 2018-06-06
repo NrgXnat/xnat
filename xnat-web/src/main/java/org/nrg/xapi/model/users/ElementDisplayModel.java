@@ -42,6 +42,11 @@ public class ElementDisplayModel {
         }
     }
 
+    @Override
+    public String toString() {
+        return getElementName();
+    }
+
     private final String              _elementName;
     private final String              _properName;
     private final String              _singular;

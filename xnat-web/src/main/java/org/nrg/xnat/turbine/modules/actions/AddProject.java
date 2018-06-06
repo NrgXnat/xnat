@@ -10,44 +10,41 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ScreenLoader;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
-import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.ValidationException;
+import org.nrg.xft.exception.XftItemLifecycleException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
-import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xnat.utils.WorkflowUtils;
 
 import java.util.Collection;
+
+import static org.nrg.xft.event.XftItemLifecyclePhase.Save;
 
 @SuppressWarnings("unused")
 @Slf4j
 public class AddProject extends SecureAction {
     @Override
-    public void doPerform(RunData data, Context context) {
+    public void doPerform(final RunData data, final Context context) {
         if (TurbineUtils.HasPassedParameter("tag", data)) {
             context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
         }
@@ -70,20 +67,13 @@ public class AddProject extends SecureAction {
         }
 
         try {
-            final ValidationResults validation = XFTValidator.Validate(submitted);
-            if (!validation.isValid()) {
-                context.put("vr", validation);
-                displayProjectEditError(data, submitted);
-                return;
-            }
-
             // Make sure there are no trailing or leading whitespace
             // in any of the project fields
             final XnatProjectdata project = new XnatProjectdata(submitted);
             project.trimProjectFields();
 
             final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(data, EventUtils.CATEGORY.PROJECT_ADMIN, EventUtils.getAddModifyAction("xnat:projectData", true)));
-            EventMetaI event = workflow.buildEvent();
+            final EventMetaI event = workflow.buildEvent();
 
             final String projectId = project.getId();
             if (StringUtils.isEmpty(projectId)) {
@@ -112,39 +102,15 @@ public class AddProject extends SecureAction {
                 return;
             }
 
-            try {
-                project.initNewProject(user, false, false, event);
-            } catch (Exception e2) {
-                displayProjectEditError(e2.getMessage(), data, submitted);
+            final XnatProjectdata postSave = saveProject(project, submitted, user, event, data, context);
+            if (postSave == null) {
+                // Just return: error display and handling is already done in method.
                 return;
             }
 
-            try {
-                SaveItemHelper.authorizedSave(project, user, false, false, event);
-            } catch (Exception e) {
-                log.error("Error Storing " + submitted.getXSIType(), e);
-                displayProjectEditError("Error Saving item.", data, submitted);
-                return;
-            }
-
-            final XFTItem working = ObjectUtils.defaultIfNull(project.getItem().getCurrentDBVersion(false), submitted);
-            final XnatProjectdata postSave = new XnatProjectdata(working);
-            postSave.getItem().setUser(user);
+            final ItemI working = postSave.getItem();
 
             try {
-                postSave.initGroups();
-
-                final String accessibility = StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("accessibility", data), "protected");
-                if (!accessibility.equals("private")) {
-                    Permissions.setDefaultAccessibility(postSave.getId(), accessibility, true, user, event);
-                }
-
-                Groups.reloadGroupForUser(user, postSave.getId() + "_" + BaseXnatProjectdata.OWNER_GROUP);
-
-                final XFTItem item = PopulateItem.Populate(data, "arc:project", true).getItem();
-                final ArcProject arcProject = new ArcProject(item);
-                postSave.initArcProject(arcProject, user, event);
-
                 WorkflowUtils.complete(workflow, event);
                 UserHelper.setUserHelper(data.getRequest(), user);
             } catch (Exception e) {
@@ -152,12 +118,11 @@ public class AddProject extends SecureAction {
                 throw e;
             }
 
-            data = TurbineUtils.SetSearchProperties(TurbineUtils.setDataItem(data, working), working);
-
-            final String destination = TurbineUtils.HasPassedParameter("destination", data)
-                                       ? (String) TurbineUtils.GetPassedParameter("destination", data, "AddStep2.vm")
+            final RunData completed = TurbineUtils.SetSearchProperties(TurbineUtils.setDataItem(data, working), working);
+            final String destination = TurbineUtils.HasPassedParameter("destination", completed)
+                                       ? (String) TurbineUtils.GetPassedParameter("destination", completed, "AddStep2.vm")
                                        : "XDATScreen_report_xnat_projectData.vm";
-            redirectToReportScreen(destination, postSave, data);
+            redirectToReportScreen(destination, postSave, completed);
         } catch (Exception e) {
             handleException(data, submitted, e, TurbineUtils.EDIT_ITEM);
         }
@@ -172,5 +137,26 @@ public class AddProject extends SecureAction {
             log.error("An error occurred trying to build the submitted XFT item", e);
             return null;
         }
+    }
+
+    private XnatProjectdata saveProject(final XnatProjectdata project, final XFTItem submitted, final UserI user, final EventMetaI event, final RunData data, final Context context) {
+        try {
+            return BaseXnatProjectdata.createProject(project, user, false, false, event, StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("accessibility", data), "protected"));
+        } catch (ValidationException e) {
+            final ValidationResults validation = e.getValidation();
+            if (!validation.isValid()) {
+                context.put("vr", validation);
+                displayProjectEditError(data, submitted);
+            }
+        } catch (XftItemLifecycleException e) {
+            if (e.getPhase() == Save) {
+                displayProjectEditError("Error Saving item.", data, submitted);
+            } else {
+                    displayProjectEditError(e.getMessage(), data, submitted);
+            }
+        } catch (Exception e) {
+            displayProjectEditError(e.getMessage(), data, submitted);
+        }
+        return null;
     }
 }

@@ -40,7 +40,7 @@ var XNAT = getObject(XNAT);
 
     menuInit(themeSelector, null, '230px');
 
-    function getThemeUrl(path, parameters) {
+    function setupThemeUrl(path, parameters) {
         // Empty string and / both mean no path below root.
         var isRootPath = path === '' || path === '/';
 
@@ -95,7 +95,7 @@ var XNAT = getObject(XNAT);
     }
 
     function getAvailableThemes(selected){
-        return XNAT.xhr.getJSON(getThemeUrl(), function(data){
+        return XNAT.xhr.getJSON(setupThemeUrl(), function(data){
             // themeSelector.empty();
             addThemeOptions(data, selected);
         });
@@ -105,20 +105,20 @@ var XNAT = getObject(XNAT);
     // returns object for active theme
     function getActiveTheme(callback){
         var role = 'current';
-        return XNAT.xhr.get(getThemeUrl(role), function(data){
+        return XNAT.xhr.getText(setupThemeUrl(role), function(name){
             // themeSelector.empty();
-            selectedTheme = data.name ? data.name : 'None';
+            selectedTheme = name ? name : 'None';
             currentTheme.text(selectedTheme);
             if (typeof callback === 'function') {
-                callback(data.name);
+                callback(name);
             }
         });
     }
     themeMgr.getActiveTheme = getActiveTheme;
 
     function populateThemesMenu(){
-        getActiveTheme().done(function(data){
-            getAvailableThemes(data.name)
+        getActiveTheme().done(function(name){
+            getAvailableThemes(name)
         });
     }
 
@@ -129,7 +129,7 @@ var XNAT = getObject(XNAT);
     // }
 
     function setTheme(name, callback, successText){
-        var URL = XNAT.url.csrfUrl(getThemeUrl(name));
+        var URL = setupThemeUrl('theme/' + name, csrf);
         // don't try to set 'None' or an empty theme name
         if (!name) {
             return false;
@@ -194,7 +194,7 @@ var XNAT = getObject(XNAT);
             okLabel: 'Delete Theme',
             okClose: false,
             okAction: function(dlg){
-                XNAT.xhr.delete(getThemeUrl(_themeName, csrf), function(data){
+                XNAT.xhr.delete(setupThemeUrl('theme/' + _themeName, csrf), function(data){
                     console.log(data);
                     // setTheme('none', populateThemesMenu);
                 }).always(function(){
@@ -209,7 +209,7 @@ var XNAT = getObject(XNAT);
     $('#remove-theme').on('click', removeTheme);
 
     /*** Theme Package Upload Functions ***/
-    themeUploadForm.action = getThemeUrl('/', csrf);
+    themeUploadForm.action = setupThemeUrl();
     // $(themeUploadForm).parent().parent().css('position', 'relative');
     // $(themeUploadForm).parent().parent().css('top', '-30px');
     themeUploadForm.onsubmit = function(event){
@@ -265,7 +265,7 @@ var XNAT = getObject(XNAT);
 
     // $('body').on('change', '#theme-selection', function(){
     //     var THEME = this.value;
-    //     var URL = XNAT.url.csrfUrl(getThemeUrl(THEME));
+    //     var URL = XNAT.url.csrfUrl(setupThemeUrl(THEME));
     //     XNAT.ui.dialog.confirm({
     //         content: 'Would you like to change the active theme to "' + THEME + '"?',
     //         okLabel: 'Set Theme',

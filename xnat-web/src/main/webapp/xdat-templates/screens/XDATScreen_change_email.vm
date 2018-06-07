@@ -46,7 +46,17 @@ $page.setVlinkColor($ui.vlink)
         });
     });
 
-
+    XNAT.xhr.getJSON({
+        url: XNAT.url.rootUrl('/xapi/users/$!item.getProperty("login")'),
+        success: function(data){
+            if (data.email !== "$!item.getProperty("email")"){
+                $('#display-current-email').html(data.email);
+            }
+        },
+        fail: function(e){
+            console.log("Couldn't verify user email via XAPI",e);
+        }
+    })
 </script>
 <div class="user_account_settings">
 	<form name="form1" id="update_email" class="noHide friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction("ModifyEmail")">
@@ -55,7 +65,7 @@ $page.setVlinkColor($ui.vlink)
 		<fieldset>
 			<p>
 				<label>Current Email</label>
-				<span>$!item.getProperty("email")</span>
+				<span id="display-current-email">$!item.getProperty("email")</span>
 			</p>
 
 #if($newEmail)

@@ -141,7 +141,7 @@ var XNAT = getObject(XNAT || {});
 
         console.log(isNew);
 
-        item = item || {};
+        item = getObject(item);
 
         var $container = spawn('div.dicom-scp-editor-container');
 
@@ -152,29 +152,44 @@ var XNAT = getObject(XNAT || {});
 
                 var spawneri = this;
 
-                var spawned$ = spawneri.get$();
-                var $form = spawned$.find('form[name="dicomScpEditor"]');
+                var $form = spawneri.get$().find('form[name="dicomScpEditor"]');
 
-                var identifiers = dicomScpManager.identifiers;
-                var identifier_ids = Object.keys(identifiers);
+                var identifiers = dicomScpManager.identifiers || {};
 
-                if (identifier_ids.length > 1) {
-                    var identifierSelect = $form.find('#scp-identifier');
-                    identifierSelect
-                        .prop('disabled', false)
-                        .removeClass('hidden')
-                        .parents('.panel-element').removeClass('hidden');
-                    identifier_ids.forEach(function(key, i){
-                        var option = '<option value="' + key + '"';
-                        option += (key === 'dicomObjectIdentifier') ? ' selected' : ''; // preselect the default identifier.
-                        option += '>' + identifiers[key] + '</option>';
-                        identifierSelect.append(option);
+                // collect <option> elements
+                var options = [];
+
+                forOwn(identifiers, function(key, val){
+                    var option = spawn('option', {
+                        value: key,
+                        html: val
                     });
+                    if (key === 'dicomObjectIdentifier') {
+                        option.setAttribute('selected', 'selected');
+                        option.selected = true;
+                    }
+                    options.push(option)
+                });
+
+                if (options.length > 1) {
+
+                    var identifierSelect = $form.find('#scp-identifier');
+
+                    // un-hide the menu
+                    identifierSelect.append(options)
+                                    .disabled(false)
+                                    .hidden(false);
+
+                    // un-hide the menu element container
+                    identifierSelect.closest('.panel-element')
+                                    .hidden(false)
+
                 }
 
-                if (item && isDefined(item.id)) {
+                if (isNew) { item.enabled = true }
+
+                if (isDefined(item.id)) {
                     // SET VALUES IN EDITOR DIALOG
-                    if (isNew) { item.enabled = true }
                     // $form.setValues(item);
                     $form.find('[name="id"]').val(item.id);
                     $form.find('[name="aeTitle"]').val(item.aeTitle);
@@ -200,38 +215,52 @@ var XNAT = getObject(XNAT || {});
 
                                 // the form panel is 'dicomScpEditor' in site-admin-elements.yaml
 
-                                var $form = obj.dialog$.find('form[name="dicomScpEditor"]');
-                                var $aeTitle = $form.find('[name="aeTitle"]');
-                                var $port = $form.find('[name="port"]');
+                                var $formPanel = obj.dialog$.find('form[name="dicomScpEditor"]');
+                                var $aeTitle = $formPanel.find('[name="aeTitle"]');
+                                var $port = $formPanel.find('[name="port"]');
 
                                 // set the value for 'customProcessing' on-the-fly
-                                var customProcessing$ = $form.find('[name="customProcessing"]');
+                                var customProcessing$ = $formPanel.find('[name="customProcessing"]');
                                 if (customProcessing$.length) {
                                     customProcessing$[0].value = customProcessing$[0].checked + '';
                                 }
 
                                 console.log(item.id);
 
-                                $form.submitJSON({
+                                if (isNew) {
+                                    // make sure new receivers are enabled by default
+                                    $formPanel.find('[name="enabled"]').val(true);
+                                }
+
+                                $formPanel.submitJSON({
                                     method: isNew ? 'POST' : 'PUT',
                                     url: isNew ? scpUrl() : scpUrl(item.id),
                                     validate: function(){
 
-                                        $form.find(':input').removeClass('invalid');
+                                        $formPanel.find(':input').removeClass('invalid');
 
                                         var errors = 0;
                                         var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                                        [$port, $aeTitle].forEach(function($el){
-                                            var el = $el[0];
-                                            if (!el.value) {
-                                                errors++;
-                                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                                $el.addClass('invalid');
-                                            }
-                                        });
+                                        var portVal = $port.val() * 1;
 
-                                        var newPort = $port.val();
+                                        // port must be less than 65535
+                                        if (portVal < 1 || portVal >= 65535) {
+                                            errors++;
+                                            errorMsg += '<li><b>Port</b> value must be between <b>1</b> and <b>65535</b></li>';
+                                        }
+                                        else {
+                                            [$port, $aeTitle].forEach(function($el){
+                                                var el = $el[0];
+                                                if (!el.value) {
+                                                    errors++;
+                                                    errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                                                    $el.addClass('invalid');
+                                                }
+                                            });
+                                        }
+
+                                        var newPort = portVal;
                                         console.log(newPort);
 
                                         var newTitle = $aeTitle.val();
@@ -254,7 +283,7 @@ var XNAT = getObject(XNAT || {});
                                         errorMsg += '</ul>';
 
                                         if (errors > 0) {
-                                            XNAT.dialog.message('Errors Found', errorMsg, { height: 300 });
+                                            XNAT.dialog.message('Errors Found', errorMsg);
                                         }
 
                                         return errors === 0;
@@ -367,12 +396,15 @@ var XNAT = getObject(XNAT || {});
         function deleteButton(item){
             return spawn('button.btn.sm.delete', {
                 onclick: function(){
-                    xmodal.confirm({
-                        height: 220,
+                    XNAT.dialog.confirm({
+                        // height: 220,
+                        title: 'Delete receiver?',
                         scroll: false,
-                        content: "" +
+                        content: '' +
                         "<p>Are you sure you'd like to delete the '<b>" + item.aeTitle + "</b>' DICOM Receiver?</p>" +
-                        "<p><b>This action cannot be undone.</b></p>",
+                        '<p><b><i class="fa fa-exclamation-circle"></i> This action cannot be undone.</b></p>' +
+                        "",
+                        okLabel: "Delete",
                         okAction: function(){
                             console.log('delete id ' + item.id);
                             XNAT.xhr.delete({

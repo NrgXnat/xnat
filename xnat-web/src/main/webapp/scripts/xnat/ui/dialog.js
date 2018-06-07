@@ -349,7 +349,10 @@ window.xmodal = getObject(window.xmodal);
 
             // body content (inner)
             this.content$ = $.spawn('div.inner.xnat-dialog-content', {
-                style: { margin: pxSuffix(firstDefined(this.padding, 20)) }
+                style: {
+                    margin: pxSuffix(firstDefined(this.padding, 20)),
+                    marginBottom: pxSuffix(firstDefined(this.padding, 20) + 10)
+                }
             }).append(this.content);
 
             // make sure we have a footerHeight to calculate bodyHeight

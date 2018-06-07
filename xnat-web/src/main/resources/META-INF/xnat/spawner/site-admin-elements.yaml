@@ -1272,7 +1272,7 @@ dicomScpEditor:
             name: port
             label: Port
             #description: Port for DICOM Receiver
-            validation: integer
+            validation: integer gte:1 lte:65535
         enabled:
             kind: input.hidden
             id: scp-enabled
@@ -1313,8 +1313,8 @@ dicomScpReceivers:
     label: Manage DICOM SCP Receivers
     footer: false
     contents:
-        message:
-            tag: div.message.bold
+        cautionMessage:
+            tag: div.warning.bold
             content: >
                 Caution: Changes to these settings take effect immediately.
                 Note that any changes, including defining a new receiver and

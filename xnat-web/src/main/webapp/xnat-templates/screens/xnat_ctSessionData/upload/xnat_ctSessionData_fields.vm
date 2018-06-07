@@ -1,7 +1,7 @@
 <!-- BEGIN /xnat-templates/screens/xnat_ctSessionData/upload/fields.vm -->
 
-<tr>
-	<th align="left">Scanner</th>
+<tr valign="top">
+    <th align="left"><p style="margin-top: 0.5em">Scanner Name</p></th>
 
 	#set($currentScanner=$item.getProperty("scanner"))
 	#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imageScanData scan ON isd.id=scan.image_session_id WHERE xme.element_name='${datatype}' AND scan.scanner='$currentScanner'"))

@@ -35,9 +35,9 @@ var XNAT = getObject(XNAT);
 
     console.log('investigators.js');
 
-    function setupUrl(part){
-        part = part ? '/' + part : '';
-        return XNAT.url.rootUrl(BASE_URL + part);
+    function setupUrl(part, cacheParam, csrf){
+        var URL = BASE_URL + (part ? '/' + part : '');
+        return XNAT.url.restUrl(URL, '', cacheParam, csrf);
     }
 
     investigators = getObject(XNAT.app.investigators || XNAT.xapi.investigators || {});
@@ -92,8 +92,8 @@ var XNAT = getObject(XNAT);
     Investigators.fn.getAll = function(opts){
         var self = this;
         this.isReady = false;
-        this.xhr = xhr.getJSON(extend({
-            url: setupUrl()
+        this.xhr = xhr.getFormatJSON(extend({
+            url: setupUrl('', true, false)
         }, opts || {})).done(function(data){
             self.isReady = true;
             self.data = data;
@@ -102,7 +102,7 @@ var XNAT = getObject(XNAT);
     };
 
     Investigators.fn.get = function(id){
-        this.getAll({ url: setupUrl(id) });
+        this.getAll({ url: setupUrl(id, true, false) });
         return this;
     };
 
@@ -215,7 +215,7 @@ var XNAT = getObject(XNAT);
             okClose: false,
             okAction: function(dlg){
                 XNAT.xhr['delete']({
-                    url: setupUrl(id),
+                    url: setupUrl(id, false, true),
                     success: function(){
                         XNAT.ui.banner.top(2000, 'Investigator deleted.', 'success');
                         dlg.close();
@@ -278,12 +278,13 @@ var XNAT = getObject(XNAT);
                 investigatorForm: {
                     kind: 'panel.form',
                     name: 'editInvestigator',
-                    load: id ? setupUrl(id) : '',
-                    action: setupUrl(id),
+                    load: id ? setupUrl(id, true, false) : '',
+                    action: setupUrl(id, false, true),
                     method: id ? 'PUT' : 'POST',
                     contentType: 'json',
                     header: false,
                     footer: false,
+                    element: { style: { border: 'none', marginBottom: 0 }},
                     contents: {
                         title: createInput('Title', 'title'),
                         first: createInput('First Name', 'firstname', 'name-safe required'),
@@ -304,27 +305,22 @@ var XNAT = getObject(XNAT);
                             tag: 'i.hidden',
                             content: '(no menu, no checkbox)'
                         }
-                        // ID: createInput('ID', 'ID'),
-                        // invId: {
-                        //     kind: 'panel.input.hidden',
-                        //     name: 'xnat_investigatorData_id',
-                        //     value: id || ''
-                        // }
                     }
                 }
             }
         }
 
+        // var invForm = XNAT.spawner.spawn(investigatorForm());
+
         var dialog =
-                xmodal.open({
+                XNAT.dialog.open({
                     title: (id ? 'Edit' : 'Create') + ' Investigator',
-                    content: '<div class="add-edit-investigator"></div>',
-                    // content: invForm.get(),
-                    beforeShow: function(obj){
-                        XNAT.spawner
-                            .spawn(investigatorForm())
-                            .render(obj.$modal.find('div.add-edit-investigator'));
-                    },
+                    content: XNAT.spawner.spawn(investigatorForm()).get(),
+                    // beforeShow: function(obj){
+                    //     XNAT.spawner
+                    //         .spawn(investigatorForm())
+                    //         .render(obj.$modal.find('div.add-edit-investigator'));
+                    // },
                     afterShow: function(obj){
                         if (self.menu) {
                             obj.$modal.find('input.set-primary').prop('checked', isPrimary);
@@ -388,8 +384,8 @@ var XNAT = getObject(XNAT);
                         //xhr.form(obj.$modal.find('form'))
                     },
                     width: 500,
-                    height: 500,
-                    padding: '0px',
+                    // height: 500,
+                    padding: 0,
                     scroll: false
                 });
 
@@ -405,8 +401,8 @@ var XNAT = getObject(XNAT);
         this.tableContainer = $$(container || '#investigators-list-container');
 
         function investigatorFieldValue(val){
-            var escVal = escapeHtml(val + '');
-            if (escVal) {
+            if (val) {
+                var escVal = escapeHtml(val + '');
                 return "<span class='truncate truncateCellNarrow' title='" + escVal + "'>" + escVal + "</span>";
             }
             else {
@@ -465,42 +461,42 @@ var XNAT = getObject(XNAT);
                     fullName: {
                         label: 'Name',
                         sort: true,
-                        call: function(){
+                        apply: function(){
                             return escapeHtml(this.lastname + ', ' + this.firstname)
                         }
                     },
                     // firstname: {
                     //     label: "First Name",
                     //     sort: true,
-                    //     call: investigatorFieldValue
+                    //     apply: investigatorFieldValue
                     // },
                     // lastname: {
                     //     label: "Last Name",
                     //     sort: true,
-                    //     call: investigatorFieldValue
+                    //     apply: investigatorFieldValue
                     // },
                     email: {
                         label: 'Email',
                         sort: true,
-                        call: investigatorFieldValue
+                        apply: investigatorFieldValue
                     },
                     institution: {
                         label: 'Institution',
                         sort: true,
-                        call: investigatorFieldValue
+                        apply: investigatorFieldValue
                     },
                     projects: {
                         label: 'PI',
-                        call: investigatorProjectList
+                        apply: investigatorProjectList
                     },
                     // investigatorProjects: {
                     //     label: '~!',
-                    //     call: investigatorProjectList
+                    //     apply: investigatorProjectList
                     // }
                     deleteInvestigator: {
                         label: 'Delete',
                         className: 'center',
-                        call: function(){
+                        apply: function(){
                             var ID = this.xnatInvestigatordataId;
                             var NAME = escapeHtml(this.firstname + ' ' + this.lastname);
                             return spawn('button.delete-investigator.btn2.btn-sm.center|type=button', {
@@ -580,7 +576,7 @@ var XNAT = getObject(XNAT);
     investigators.delete = function(id, opts){
         if (!id) return false;
         return xhr.delete(extend, {
-            url: setupUrl(id)
+            url: setupUrl(id, false, true)
         }, opts || {});
     };
 

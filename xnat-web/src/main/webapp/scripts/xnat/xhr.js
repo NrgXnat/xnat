@@ -370,9 +370,13 @@ var XNAT = getObject(XNAT||{}),
         'put' : { method: 'PUT' },
         'delete' : { method: 'DELETE' },
         'getJSON' : { method: 'GET', dataType: 'json', format: 'json' },
+        'getFormatJSON' : { method: 'GET', dataType: 'json', format: 'json' },
         'getHTML' : { method: 'GET', dataType: 'html', format: 'html' },
+        'getFormatHTML' : { method: 'GET', dataType: 'html', format: 'html' },
         'getXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
+        'getFormatXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
         'getText' : { method: 'GET', dataType: 'text', format: 'text' },
+        'getFormatText' : { method: 'GET', dataType: 'text', format: 'text' },
         'putJSON' : { method: 'PUT', contentType: 'application/json', processData: false },
         'postJSON' : { method: 'POST', contentType: 'application/json', processData: false },
         'putXML' : { method: 'PUT', contentType: 'text/xml', processData: false },
@@ -387,9 +391,13 @@ var XNAT = getObject(XNAT||{}),
     // XNAT.xhr.put()
     // XNAT.xhr.delete() || XNAT.xhr._delete() || XNAT.xhr.delete_()
     // XNAT.xhr.getJSON()
+    // XNAT.xhr.getFormatJSON()  // adds 'format=json' param
     // XNAT.xhr.getHTML()
+    // XNAT.xhr.getFormatHTML()  // adds 'format=html' param
     // XNAT.xhr.getXML()
+    // XNAT.xhr.getFormatXML()   // adds 'format=xml' param
     // XNAT.xhr.getText()
+    // XNAT.xhr.getFormatText()  // adds 'format=text' param
     // XNAT.xhr.putJSON()
     // XNAT.xhr.postJSON()
     // XNAT.xhr.putXML()

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.servlet;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.XDAT;
@@ -40,8 +41,6 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -57,9 +56,8 @@ import java.util.ArrayList;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("serial")
+@Slf4j
 public class ArchiveServlet extends HttpServlet {
-    private static final Logger logger = LoggerFactory.getLogger(ArchiveServlet.class);
-
     /* (non-Javadoc)
      * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
@@ -193,11 +191,11 @@ public class ArchiveServlet extends HttpServlet {
             sw.flush();
             sw.close();
         } catch (XFTInitException e) {
-            logger.error("An error occurred initializing XFT", e);
+            log.error("An error occurred initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("Did not find the requested element on the item", e);
+            log.error("Did not find the requested element on the item", e);
         } catch (Exception e) {
-            logger.error("An unknown exception occurred", e);
+            log.error("An unknown exception occurred", e);
         }
     }
 
@@ -355,8 +353,7 @@ public class ArchiveServlet extends HttpServlet {
                 }
             }
 
-            System.out.println("ENDING:" + path);
-
+            log.debug("ENDING: {}", path);
 
             //identify project
             if (project == null) {
@@ -423,16 +420,16 @@ public class ArchiveServlet extends HttpServlet {
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("An error occurred initializing XFT", e);
+            log.error("An error occurred initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("Did not find the requested element on the item", e);
+            log.error("Did not find the requested element on the item", e);
         } catch (Exception e) {
-            logger.error("An unknown exception occurred", e);
+            log.error("An unknown exception occurred", e);
         }
     }
 
     protected void doGetOrPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        System.out.println("PathInfo: " + req.getPathInfo());
+        log.debug("PathInfo: " + req.getPathInfo());
         String path = req.getPathInfo();
         if (path.startsWith("/")) {
             path = path.substring(1);
@@ -462,7 +459,7 @@ public class ArchiveServlet extends HttpServlet {
                     }
                 }
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
             }
         } else if (user != null) {
             getDataFile(user, path, res);

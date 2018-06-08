@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.helpers.uri.archive.impl;
 
-import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -18,52 +17,52 @@ import org.nrg.xnat.helpers.uri.URIManager.ArchiveItemURI;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ProjSubjURI extends ProjURI  implements ArchiveItemURI,SubjectURII{
-	private XnatSubjectdata subject=null;
-	
-	public ProjSubjURI(Map<String, Object> props, String uri) {
-		super(props, uri);
-	}
+@SuppressWarnings("Duplicates")
+public class ProjSubjURI extends ProjURI implements ArchiveItemURI, SubjectURII {
+    public ProjSubjURI(Map<String, Object> props, String uri) {
+        super(props, uri);
+    }
 
-	protected void populateSubject(){
-		super.populateProject();
-		
-		if(subject==null){
-			final XnatProjectdata proj=getProject();
-			
-			final String subID= (String)props.get(URIManager.SUBJECT_ID);
-			
-			if(proj!=null){
-				subject=XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subID,null, false);
-			}
-			
-			if(subject==null){
-				subject=XnatSubjectdata.getXnatSubjectdatasById(subID, null, false);
-				if(subject!=null && (proj!=null && !subject.hasProject(proj.getId()))){
-					subject=null;
-				}
-			}
-		}
-	}
-	
-	public XnatSubjectdata getSubject(){
-		this.populateSubject();
-		return subject;
-	}
+    @Override
+    public XnatSubjectdata getSubject() {
+        populateSubject();
+        return subject;
+    }
 
-	@Override
-	public ArchivableItem getSecurityItem() {
-		return getSubject();
-	}
+    @Override
+    public ArchivableItem getSecurityItem() {
+        return getSubject();
+    }
 
-	@Override
-	public List<XnatAbstractresourceI> getResources(boolean includeAll) {
-		List<XnatAbstractresourceI> res=Lists.newArrayList();
-		final XnatSubjectdata expt=getSubject();
-		res.addAll(expt.getResources_resource());
-		return res;
-	}
+    @Override
+    public List<XnatAbstractresourceI> getResources(final boolean includeAll) {
+        return new ArrayList<>(getSubject().getResources_resource());
+    }
+
+    protected void populateSubject() {
+        populateProject();
+
+        if (subject == null) {
+            final XnatProjectdata project = getProject();
+
+            final String subjectId = (String) props.get(URIManager.SUBJECT_ID);
+
+            if (project != null) {
+                subject = XnatSubjectdata.GetSubjectByProjectIdentifier(project.getId(), subjectId, null, false);
+            }
+
+            if (subject == null) {
+                subject = XnatSubjectdata.getXnatSubjectdatasById(subjectId, null, false);
+                if (subject != null && (project != null && !subject.hasProject(project.getId()))) {
+                    subject = null;
+                }
+            }
+        }
+    }
+
+    private XnatSubjectdata subject = null;
 }

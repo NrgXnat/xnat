@@ -11,7 +11,11 @@ package org.nrg.xnat.helpers.uri;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.archive.impl.*;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
@@ -153,16 +157,28 @@ public class URIManager {
     }
 
     public static class UserCacheURI extends DataURIA {
-
         public UserCacheURI(Map<String, Object> props, String uri) {
             super(props, uri);
         }
     }
 
     public static class ArchiveURI extends DataURIA {
-
         public ArchiveURI(Map<String, Object> props, String uri) {
             super(props, uri);
+        }
+
+        protected XnatImagescandata getScan(final XnatImagesessiondata session, final String scanId) {
+            if (session != null && StringUtils.isNotBlank(scanId)) {
+                final CriteriaCollection criteria = new CriteriaCollection("AND");
+                criteria.addClause("xnat:imageScanData/ID", scanId);
+                criteria.addClause("xnat:imageScanData/image_session_ID", session.getId());
+
+                final List<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(criteria, null, false);
+                if (!scans.isEmpty()) {
+                    return scans.get(0);
+                }
+            }
+            return null;
         }
     }
 
@@ -188,7 +204,7 @@ public class URIManager {
     final Multimap<TEMPLATE_TYPE, TemplateInfo> TEMPLATES = ArrayListMultimap.create();
 
     private void add(final TEMPLATE_TYPE type, final String template, final int MODE, final Class<? extends URIManager.DataURIA> clazz) {
-        TEMPLATES.put(type, new TemplateInfo(template, MODE, clazz));
+        TEMPLATES.put(type, new TemplateInfo<>(template, MODE, clazz));
     }
 
 }

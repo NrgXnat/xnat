@@ -21,39 +21,39 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 import java.util.List;
 import java.util.Map;
 
-public class SubjURI extends ArchiveURI implements ArchiveItemURI,SubjectURII {
-	private XnatSubjectdata subj=null;
-	
-	public SubjURI(Map<String, Object> props, String uri) {
-		super(props, uri);
-	}
+public class SubjURI extends ArchiveURI implements ArchiveItemURI, SubjectURII {
+    public SubjURI(Map<String, Object> props, String uri) {
+        super(props, uri);
+    }
 
-	protected void populate(){
-		if(subj==null){
-			
-			final String subjID= (String)props.get(URIManager.SUBJECT_ID);
-			
-			if(subj==null){
-				subj=XnatSubjectdata.getXnatSubjectdatasById(subjID, null, false);
-			}
-		}
-	}
-	
-	public XnatSubjectdata getSubject(){
-		this.populate();
-		return subj;
-	}
+    @Override
+    public ArchivableItem getSecurityItem() {
+        return getSubject();
+    }
 
-	@Override
-	public ArchivableItem getSecurityItem() {
-		return getSubject();
-	}
+    @Override
+    public List<XnatAbstractresourceI> getResources(boolean includeAll) {
+        List<XnatAbstractresourceI> res  = Lists.newArrayList();
+        final XnatSubjectdata       expt = getSubject();
+        res.addAll(expt.getResources_resource());
+        return res;
+    }
 
-	@Override
-	public List<XnatAbstractresourceI> getResources(boolean includeAll) {
-		List<XnatAbstractresourceI> res=Lists.newArrayList();
-		final XnatSubjectdata expt=getSubject();
-		res.addAll(expt.getResources_resource());
-		return res;
-	}
+    public XnatSubjectdata getSubject() {
+        populate();
+        return subj;
+    }
+
+    protected void populate() {
+        if (subj == null) {
+
+            final String subjID = (String) props.get(URIManager.SUBJECT_ID);
+
+            if (subj == null) {
+                subj = XnatSubjectdata.getXnatSubjectdatasById(subjID, null, false);
+            }
+        }
+    }
+
+    private XnatSubjectdata subj = null;
 }

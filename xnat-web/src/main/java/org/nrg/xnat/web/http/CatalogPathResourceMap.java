@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xdat.model.CatCatalogI;
-import org.nrg.xdat.model.CatEntryI;
-import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.model.*;
+import org.nrg.xdat.om.XnatImageresource;
+import org.nrg.xdat.om.XnatResource;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
@@ -167,28 +167,67 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
             log.info("{}: Got a DataURIA of type {}", _catalogId, raw.getClass());
 
             if (raw instanceof ResourceURII) {
-                final String resourceName = currentEntry.getName();
-                final String resourceUri = currentEntry.getUri();
-                final ResourceURII uri = (ResourceURII) raw;
-                final File catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) uri.getXnatResource());
-                final CatCatalogI catalog = CatalogUtils.getCatalog(catalogFile);
-                if (catalog == null) {
-                    log.warn("The catalog entry {} references the file {}, but that doesn't appear to be a valid catalog. The associated resource file path was {}.", currentEntry.getName(), catalogFile.getAbsolutePath(), uri.getResourceFilePath());
-                    return;
-                }
-                final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogFile.getParent()), new Function<File, Mapping<String, Resource>>() {
-                    @Nullable
-                    @Override
-                    public Mapping<String, Resource> apply(@Nullable final File file) {
-                        if (file == null) {
-                            return null;
-                        }
+                final String                resourceName = currentEntry.getName();
+                final String                resourceUri  = currentEntry.getUri();
+                final ResourceURII          uri          = (ResourceURII) raw;
+                final XnatAbstractresourceI resource = uri.getXnatResource();
 
-                        log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
-                        return new CatalogPathResourceMapping(resourceName, file);
+                // There are different kinds of resources that we might encounter, so that has to be accounted for here. These three types--XnatResourceCatalogI, XnatImageresourceI, and
+                // XnatResourceI--are by far the most common ones. If we run into a need for handling XnatDicomseriesI or XnatImageresourceseriesI, we can add that with sample data.
+                //
+                // On CNDA, the various resource types are:
+                //
+                // cnda=# SELECT
+                // cnda-#   element_name,
+                // cnda-#   count(r.xnat_abstractresource_id) AS resource_count
+                // cnda-# FROM xnat_abstractresource r
+                // cnda-#   LEFT JOIN xnat_resource xr on r.xnat_abstractresource_id = xr.xnat_abstractresource_id
+                // cnda-#   LEFT JOIN xdat_meta_element e on r.extension = e.xdat_meta_element_id
+                // cnda-# GROUP BY e.element_name
+                // cnda-# ORDER BY resource_count DESC;
+                //        element_name       | resource_count
+                // --------------------------+----------------
+                //  xnat:resourceCatalog     |        3132666
+                //  xnat:imageResource       |         243283
+                //  xnat:resource            |          90766
+                //  xnat:imageResourceSeries |          18355
+                //  xnat:dicomSeries         |             85
+                //  xnat:publicationResource |              1
+                //  (6 rows)
+                if (resource instanceof XnatResourcecatalogI) {
+                    final File        catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) resource);
+                    final CatCatalogI catalog     = CatalogUtils.getCatalog(catalogFile);
+                    if (catalog == null) {
+                        log.warn("The catalog entry {} references the file {}, but that doesn't appear to be a valid catalog. The associated resource file path was {}.", currentEntry.getName(), catalogFile.getAbsolutePath(), uri.getResourceFilePath());
+                        return;
                     }
-                });
-                _resources.addAll(entries);
+                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogFile.getParent()), new Function<File, Mapping<String, Resource>>() {
+                        @Nullable
+                        @Override
+                        public Mapping<String, Resource> apply(@Nullable final File file) {
+                            if (file == null) {
+                                return null;
+                            }
+
+                            log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
+                            return new CatalogPathResourceMapping(resourceName, file);
+                        }
+                    });
+                    _resources.addAll(entries);
+                } else if (resource instanceof XnatImageresourceI || resource instanceof XnatResourceI) {
+                    final XnatResource xnatResource = (resource instanceof XnatImageresourceI) ? ((XnatImageresource) resource).getResource() : (XnatResource) resource;
+                    if (xnatResource != null) {
+                        final String resourcePath = xnatResource.getUri();
+                        final File resourceFile = Paths.get(resourcePath).toFile();
+                        if (resourceFile.exists()) {
+                            _resources.add(new CatalogPathResourceMapping(resourceName, resourceFile));
+                        }
+                    }
+                } else if (resource instanceof XnatImageresourceseriesI || resource instanceof XnatDicomseriesI) {
+                    log.error("This implementation can not yet handle resources of type \"{}\". Ignoring resource \"{}\", ID \"{}\".", resource.getXSIType(), resource.getLabel(), resource.getXnatAbstractresourceId());
+                } else {
+                    log.error("This implementation doesn't recognize the resource type \"{}\" for resource \"{}\", ID \"{}\".", resource.getXSIType(), resource.getLabel(), resource.getXnatAbstractresourceId());
+                }
             } else {
                 log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId);
             }

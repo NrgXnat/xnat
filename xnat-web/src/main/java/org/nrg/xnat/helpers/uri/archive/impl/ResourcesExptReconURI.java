@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.helpers.uri.archive.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -23,76 +24,65 @@ import org.nrg.xnat.helpers.uri.archive.ResourceURIA;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
+import java.util.List;
 import java.util.Map;
 
-public class ResourcesExptReconURI extends ResourceURIA implements ArchiveItemURI,AssessedURII,ResourceURII,ReconURII{
-	private XnatReconstructedimagedata recon=null;
-	private XnatImagesessiondata session=null; 
-	
-	public ResourcesExptReconURI(Map<String, Object> props, String uri) {
-		super(props, uri);
-	}
+@SuppressWarnings("Duplicates")
+@Slf4j
+public class ResourcesExptReconURI extends ResourceURIA implements ArchiveItemURI, AssessedURII, ResourceURII, ReconURII {
+    public ResourcesExptReconURI(Map<String, Object> props, String uri) {
+        super(props, uri);
+    }
 
-	protected void populate() {
-		if(recon==null){
-			final String exptID= (String)props.get(URIManager.ASSESSED_ID);
-			
-			if(session==null){
-				session=(XnatImagesessiondata)XnatExperimentdata.getXnatExperimentdatasById(exptID, null, false);
-			}
-			
-			final String reconID= (String)props.get(URIManager.RECON_ID);
-			
-			if(recon==null&& reconID!=null){
-				recon=(XnatReconstructedimagedata)XnatReconstructedimagedata.getXnatReconstructedimagedatasById(reconID, null, false);
-			}
-		}
-	}
+    @Override
+    public XnatImagesessiondata getSession() {
+        populate();
+        return session;
+    }
 
-	public XnatImagesessiondata getSession(){
-		this.populate();
-		return this.session;
-	}
+    @Override
+    public XnatReconstructedimagedata getRecon() {
+        populate();
+        return reconstruction;
+    }
 
-	public XnatReconstructedimagedata getRecon(){
-		this.populate();
-		return this.recon;
-	}
+    @Override
+    public XnatProjectdata getProject() {
+        return this.getSession().getProjectData();
+    }
 
-	@Override
-	public ArchivableItem getSecurityItem() {
-		return getSession();
-	}
+    @Override
+    public XnatAbstractresourceI getXnatResource() {
+        final XnatReconstructedimagedata reconstruction = getRecon();
+        if (reconstruction == null) {
+            return null;
+        }
 
-	@Override
-	public XnatAbstractresourceI getXnatResource() {
-		if(this.getRecon()!=null){
-			String type=(String)this.props.get(URIManager.TYPE);
-			
-			if(type==null){
-				type="out";
-			}
-			
-			if(type.equals("out")){
-				for(XnatAbstractresourceI res:this.getRecon().getOut_file()){
-					if(StringUtils.equals(res.getLabel(), this.getResourceLabel())){
-						return res;
-					}
-				}
-			}else if(type.equals("in")){
-				for(XnatAbstractresourceI res:this.getRecon().getIn_file()){
-					if(StringUtils.equals(res.getLabel(), this.getResourceLabel())){
-						return res;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
+        final List<XnatAbstractresourceI> resources = getReconstructionResources(reconstruction, StringUtils.defaultIfBlank((String) props.get(URIManager.TYPE), "out"));
+        return getMatchingResource(resources);
+    }
 
-	@Override
-	public XnatProjectdata getProject() {
-		return this.getSession().getProjectData();
-	}
+    @Override
+    public ArchivableItem getSecurityItem() {
+        return getSession();
+    }
+
+    protected void populate() {
+        if (reconstruction == null) {
+            final String exptID = (String) props.get(URIManager.ASSESSED_ID);
+
+            if (session == null) {
+                session = (XnatImagesessiondata) XnatExperimentdata.getXnatExperimentdatasById(exptID, null, false);
+            }
+
+            final String reconID = (String) props.get(URIManager.RECON_ID);
+
+            if (reconstruction == null && reconID != null) {
+                reconstruction = XnatReconstructedimagedata.getXnatReconstructedimagedatasById(reconID, null, false);
+            }
+        }
+    }
+
+    private XnatReconstructedimagedata reconstruction = null;
+    private XnatImagesessiondata       session        = null;
 }

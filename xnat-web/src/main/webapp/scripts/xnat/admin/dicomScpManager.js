@@ -27,8 +27,9 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var dicomScpManager, undefined,
-        rootUrl = XNAT.url.rootUrl;
+    var dicomScpManager, undefined, undef,
+        rootUrl = XNAT.url.rootUrl,
+        restUrl = XNAT.url.restUrl;
 
     XNAT.admin =
         getObject(XNAT.admin || {});
@@ -64,9 +65,9 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function scpUrl(appended){
-        appended = isDefined(appended) ? '/' + appended : '';
-        return rootUrl('/xapi/dicomscp' + appended);
+    function scpUrl(appended, cacheParam){
+        appended = appended ? '/' + appended : '';
+        return restUrl('/xapi/dicomscp' + appended, '', cacheParam || false);
     }
 
     function formatAeTitleAndPort(aeTitle, port){
@@ -85,7 +86,7 @@ var XNAT = getObject(XNAT || {});
         dicomScpManager.usedAeTitlesAndPorts = [];
         dicomScpManager.ids = [];
         return XNAT.xhr.get({
-            url: scpUrl(),
+            url: scpUrl(null, true),
             dataType: 'json',
             success: function(data){
                 dicomScpManager.receivers = data;
@@ -102,7 +103,7 @@ var XNAT = getObject(XNAT || {});
     dicomScpManager.getIdentifiers = function(callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: rootUrl('/xapi/dicomscp/identifiers'),
+            url: restUrl('/xapi/dicomscp/identifiers'),
             dataType: 'json',
             success: callback,
             fail: function(e){ console.log(e.status, e.statusText);}
@@ -113,7 +114,7 @@ var XNAT = getObject(XNAT || {});
         if (!id) return null;
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: scpUrl(id),
+            url: scpUrl(id, true),
             dataType: 'json',
             success: callback
         });

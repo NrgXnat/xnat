@@ -1246,9 +1246,10 @@ dicomScpEditor:
     name: dicomScpEditor
     header: false
     footer: false
-    load: ''
-    action: /xapi/dicomscp
-    contentType: json
+    load: false
+    action: "#!"
+    method: null
+    #contentType: json
     element:
         style:
             border: none

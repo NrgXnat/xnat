@@ -511,11 +511,17 @@ var XNAT = getObject(XNAT || {});
             opts.processData = opts.processData || false;
         }
 
-        var dataObj = {
-            panel: toDashed(opts.name),
-            method: (opts.method || 'POST').toLowerCase(),
-            load: opts.load
-        };
+        var dataObj = {};
+
+        dataObj.panel = toDashed(opts.name);
+
+        if (!/null|false/i.test(opts.method)) {
+            dataObj.method = (opts.method || 'POST').toLowerCase();
+        }
+
+        if (!/null|false/i.test(opts.load)) {
+            dataObj.load = opts.load;
+        }
 
         if (opts.payload) {
             dataObj.payload = opts.payload;

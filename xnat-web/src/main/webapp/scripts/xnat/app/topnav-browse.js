@@ -213,10 +213,13 @@
                 return;
             }
 
-            var DATATYPES = [dataTypeItem({
+            var DATATYPES = [];
+
+            // use what's stored for 'Subjects' plural display
+            DATATYPES.push(dataTypeItem({
                 element_name: 'xnat:subjectData',
-                plural: 'Subjects'
-            })];
+                plural: lookupObjectValue(XNAT, 'app.displayNames.plural.subject')
+            }));
 
             var sortedTypes = sortObjects(elements, 'plural');
             forEach(sortedTypes, function(type){

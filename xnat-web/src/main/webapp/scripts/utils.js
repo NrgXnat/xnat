@@ -925,6 +925,7 @@ $(function(){
 // sort an array of objects ('objects')
 // by a specific property ('prop')
 function sortObjects( objects, prop ){
+    if (!Array.isArray(objects)) return [];
     return objects.sort( function ( _a, _b ) {
         var a = _a[prop].toUpperCase();
         var b = _b[prop].toUpperCase();

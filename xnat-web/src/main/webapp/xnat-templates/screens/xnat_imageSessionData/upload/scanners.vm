@@ -51,8 +51,8 @@
         <a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
     </div>
     <div>
-        Manufacturer: #if($!item.getStringProperty("${datatype}/scanner/manufacturer")) $item.getStringProperty("${datatype}/scanner/manufacturer") #else (undefined) #end <br>
-        Model: #if($item.getStringProperty("${datatype}/scanner/model")) $item.getStringProperty("${datatype}/scanner/model") #else (undefined) #end
+        Manufacturer: #if($!item.getStringProperty("${datatype}/scanner/manufacturer")) #escapeAll($item.getStringProperty("${datatype}/scanner/manufacturer")) #else (undefined) #end <br>
+        Model: #if($item.getStringProperty("${datatype}/scanner/model")) #escapeAll($item.getStringProperty("${datatype}/scanner/model")) #else (undefined) #end
     </div>
 
 #define ($scannerInfo)

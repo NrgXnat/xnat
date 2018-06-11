@@ -1497,7 +1497,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                    "  LEFT JOIN xdat_element_access xea ON g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
                                                                    "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
                                                                    "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE tag IN ('XNAT_01') OR (tag IS NULL AND field_value = '*') " +
+                                                                   "WHERE tag IN (:projectIds) OR (tag IS NULL AND field_value = '*') " +
                                                                    "ORDER BY login";
     private static final String QUERY_GET_PROJECTS_FOR_USER      = "SELECT DISTINCT " +
                                                                    "  g.tag AS project " +

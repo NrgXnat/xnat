@@ -12,6 +12,7 @@ package org.nrg.xnat.security.alias;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -29,6 +30,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @Slf4j
@@ -133,14 +136,63 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         return getName();
     }
 
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
+     */
+    @Deprecated
     @Override
     public int getOrder() {
-        return _order;
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+        return 0;
     }
 
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
+     */
+    @Deprecated
     @Override
-    public void setOrder(int order) {
-        _order = order;
+    public void setOrder(final int order) {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+    }
+
+    /**
+     * Auto-enabling is not supported for this provider. This implementation will always return false.
+     *
+     * @return This implementation will always return false.
+     */
+    @Override
+    public boolean isAutoEnabled() {
+        return false;
+    }
+
+    /**
+     * Auto-enabling is not supported for this provider. Attempting to change this property has no effect.
+     *
+     * @param autoEnabled The value set for this implementation is ignored.
+     */
+    @Override
+    public void setAutoEnabled(final boolean autoEnabled) {
+        log.info("This provider does not support auto-enabling.");
+    }
+
+    /**
+     * Auto-verification is not supported for this provider. This implementation will always return false.
+     *
+     * @return This implementation will always return false.
+     */
+    @Override
+    public boolean isAutoVerified() {
+        return false;
+    }
+
+    /**
+     * Auto-verification is not supported for this provider. Attempting to change this property has no effect.
+     *
+     * @param autoVerified The value set for this implementation is ignored.
+     */
+    @Override
+    public void setAutoVerified(final boolean autoVerified) {
+        throw new UnsupportedOperationException("This provider does not support auto-verification.");
     }
 
     @Override
@@ -225,5 +277,4 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
     private final AliasTokenService   _aliasTokenService;
     private final XdatUserAuthService _userAuthService;
-    private int _order = -1;
 }

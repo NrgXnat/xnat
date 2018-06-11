@@ -1,8 +1,8 @@
 package org.nrg.xnat.security.provider;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.NotNull;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,18 +12,35 @@ import java.util.Set;
 /**
  * Provides a convenient container for the attributes of an authentication provider.
  */
-public class ProviderAttributes implements Comparable<ProviderAttributes> {
-    public ProviderAttributes(final String providerId, final String authMethod, final String displayName, final Boolean visible, final Integer order, final Properties properties) {
+@Slf4j
+public class ProviderAttributes {
+    public static final String PROVIDER_NAME          = "name";
+    public static final String PROVIDER_ID            = "provider.id";
+    public static final String PROVIDER_AUTH_METHOD   = "auth.method";
+    public static final String PROVIDER_VISIBLE       = "visible";
+    public static final String PROVIDER_AUTO_ENABLED  = "auto.enabled";
+    public static final String PROVIDER_AUTO_VERIFIED = "auto.verified";
+
+    public ProviderAttributes(final String providerId, final String authMethod, final String displayName, final Boolean visible, final Boolean autoEnabled, final Boolean autoVerified, final Properties properties) {
         _providerId = providerId;
         _authMethod = authMethod;
         _displayName = displayName;
-        _visible = ObjectUtils.defaultIfNull(visible, true);
-        _order = ObjectUtils.defaultIfNull(order, -1);
+
+        setVisible(ObjectUtils.defaultIfNull(visible, true));
+        setAutoEnabled(ObjectUtils.defaultIfNull(autoEnabled, false));
+        setAutoVerified(ObjectUtils.defaultIfNull(autoVerified, false));
+
         _properties = properties;
     }
 
     public ProviderAttributes(final Properties properties) {
-        this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), Boolean.parseBoolean(properties.getProperty("visible", "true")), Integer.parseInt(properties.getProperty("order", "-1")), getScrubbedProperties(properties));
+        this(properties.getProperty(PROVIDER_ID),
+             properties.getProperty(PROVIDER_AUTH_METHOD),
+             properties.getProperty(PROVIDER_NAME),
+             Boolean.parseBoolean(properties.getProperty(PROVIDER_VISIBLE, "true")),
+             Boolean.parseBoolean(properties.getProperty(PROVIDER_AUTO_ENABLED, "false")),
+             Boolean.parseBoolean(properties.getProperty(PROVIDER_AUTO_VERIFIED, "false")),
+             getScrubbedProperties(properties));
     }
 
     /**
@@ -74,23 +91,48 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     }
 
     /**
-     * Indicates the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted.
-     *
-     * @return The order for this provider.
+     * {@inheritDoc}
      */
-    public int getOrder() {
-        return _order;
+    public boolean isAutoEnabled() {
+        return _autoEnabled;
     }
 
     /**
-     * Sets the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted.
-     *
-     * @param order The order to set for this provider.
+     * {@inheritDoc}
      */
-    public void setOrder(int order) {
-        _order = order;
+    public void setAutoEnabled(final boolean autoEnabled) {
+        _autoEnabled = autoEnabled;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isAutoVerified() {
+        return _autoVerified;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setAutoVerified(final boolean autoVerified) {
+        _autoVerified = autoVerified;
+    }
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
+     */
+    @Deprecated
+    public int getOrder() {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+        return 0;
+    }
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
+     */
+    @Deprecated
+    public void setOrder(@SuppressWarnings("unused") final int order) {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
     }
 
     public Properties getProperties() {
@@ -106,24 +148,12 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     }
 
     @Override
-    public int compareTo(@NotNull final ProviderAttributes that) {
-        final int     thisOrder     = getOrder();
-        final int     thatOrder     = that.getOrder();
-        final boolean isFirstBlank  = thisOrder == -1;
-        final boolean isSecondBlank = thatOrder == -1;
-        if (isFirstBlank || isSecondBlank) {
-            return isFirstBlank && isSecondBlank ? 0 : isFirstBlank ? -1 : 1;
-        }
-        return NumberUtils.compare(thisOrder, thatOrder);
-    }
-
-    @Override
     public String toString() {
         return "Provider " + _displayName + " (" + _authMethod + ": " + _providerId + ") " + _properties;
     }
 
     private static Properties getScrubbedProperties(final Properties properties) {
-        final Properties scrubbed = new Properties();
+        final Properties  scrubbed      = new Properties();
         final Set<String> propertyNames = properties.stringPropertyNames();
         propertyNames.removeAll(EXCLUDED_PROPERTIES);
         for (final String property : propertyNames) {
@@ -132,7 +162,7 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
         return scrubbed;
     }
 
-    private static final List<String> EXCLUDED_PROPERTIES = Arrays.asList("id", "name", "type", "visible", "order");
+    private static final List<String> EXCLUDED_PROPERTIES = Arrays.asList(PROVIDER_ID, PROVIDER_NAME, PROVIDER_AUTH_METHOD, PROVIDER_VISIBLE, PROVIDER_AUTO_ENABLED, PROVIDER_AUTO_VERIFIED, "order");
 
     private final String     _providerId;
     private final String     _authMethod;
@@ -140,7 +170,8 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     private final Properties _properties;
 
     private boolean _visible;
-    private int     _order;
+    private boolean _autoEnabled;
+    private boolean _autoVerified;
 }
 
 

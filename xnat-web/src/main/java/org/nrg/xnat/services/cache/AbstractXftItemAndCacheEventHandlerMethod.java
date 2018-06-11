@@ -146,6 +146,9 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     protected void cacheObject(final String cacheId, final Object object) {
+        if (object == null) {
+            log.warn("I was asked to cache an object with ID '{}' but the object was null.", cacheId);
+        }
         getCache().put(cacheId, object);
     }
 
@@ -155,17 +158,32 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
 
     @SuppressWarnings("unchecked")
     protected <T> List<T> getCachedList(final String cacheId) {
-        return Lists.newArrayList(getCache().get(cacheId, List.class));
+        final List<T> elements = getCachedObject(cacheId, List.class);
+        if (elements != null) {
+            return Lists.newArrayList(elements);
+        }
+        log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
     protected <T> Set<T> getCachedSet(final String cacheId) {
-        return Sets.newHashSet(getCache().get(cacheId, Set.class));
+        final Set<T> elements = getCachedObject(cacheId, Set.class);
+        if (elements != null) {
+            return Sets.newHashSet(elements);
+        }
+        log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
+        return null;
     }
 
-    protected <K, V> Map<K, V> getCachedMap(final String key) {
-        //noinspection unchecked
-        return Maps.<K, V>newHashMap(getCache().get(key, Map.class));
+    @SuppressWarnings("unchecked")
+    protected <K, V> Map<K, V> getCachedMap(final String cacheId) {
+        final Map<K, V> map = getCachedObject(cacheId, Map.class);
+        if (map != null) {
+            return Maps.newHashMap(map);
+        }
+        log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
+        return null;
     }
 
     private void registerCacheEventListener() {

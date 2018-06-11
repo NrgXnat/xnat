@@ -9,9 +9,12 @@
 
 package org.nrg.xnat.security.provider;
 
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
+
+import java.util.List;
 
 /**
  * Defines the interface for authentication providers within XNAT. This expands on the base authentication provider interface
@@ -70,23 +73,47 @@ public interface XnatAuthenticationProvider extends AuthenticationProvider {
     void setVisible(final boolean visible);
 
     /**
-     * Indicates the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted. Note that, if multiple
-     * provider configurations are defined for this instance, this method returns 0. You should call {@link
-     * XnatMulticonfigAuthenticationProvider#getOrder(String)} in that case.
+     * Indicates whether users who authenticate using this provider definition and then create a new XNAT account should
+     * be enabled immediately (in which case this property is true) or requires administrator review and manual enabling.
      *
-     * @return The order for this provider.
+     * @return Returns true if users should be enabled automatically, false otherwise.
      */
+    boolean isAutoEnabled();
+
+    /**
+     * Sets whether users who authenticate using this provider definition and then create a new XNAT account should
+     * be enabled immediately (in which case this property is true) or requires administrator review and manual enabling.
+     *
+     * @param autoEnabled Set to true if users should be enabled automatically, false otherwise.
+     */
+    void setAutoEnabled(final boolean autoEnabled);
+
+    /**
+     * Indicates whether users who authenticate using this provider definition and then create a new XNAT account should
+     * be verified immediately (in which case this property is true) or requires administrator review and manual verification.
+     *
+     * @return Returns true if users should be verified automatically, false otherwise.
+     */
+    boolean isAutoVerified();
+
+    /**
+     * Sets whether users who authenticate using this provider definition and then create a new XNAT account should
+     * be verified immediately (in which case this property is true) or requires administrator review and manual verification.
+     *
+     * @param autoVerified Set to true if users should be verified automatically, false otherwise.
+     */
+    void setAutoVerified(final boolean autoVerified);
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
+     */
+    @Deprecated
     int getOrder();
 
     /**
-     * Sets the order precedence associated with this provider. This is used to determine the order in which the providers
-     * show up in the login drop-down list and the order in which they are checked when a login is attempted. Note that, if multiple
-     * provider configurations are defined for this instance, this method has no effect. You should call {@link
-     * XnatMulticonfigAuthenticationProvider#setOrder(String, int)} in that case.
-     *
-     * @param order The order to set for this provider.
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
      */
+    @Deprecated
     void setOrder(int order);
 
     /**

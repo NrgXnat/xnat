@@ -9,9 +9,11 @@
 
 package org.nrg.xnat.security.provider;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.db.PoolDBUtils;
@@ -25,6 +27,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 
+import java.util.List;
+
+@Slf4j
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
     public XnatDatabaseAuthenticationProvider(final String displayName, final AliasTokenService aliasTokenService) {
         this(displayName, XdatUserAuthService.LOCALDB, aliasTokenService);
@@ -36,6 +41,30 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         _displayName = StringUtils.defaultIfBlank(displayName, "XNAT");
         _providerId = StringUtils.defaultIfBlank(providerId, XdatUserAuthService.LOCALDB);
         _aliasTokenService = aliasTokenService;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName() {
+        return _displayName;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getProviderId() {
+        return _providerId;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAuthMethod() {
+        return XdatUserAuthService.LOCALDB;
     }
 
     /**
@@ -52,6 +81,74 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     @Override
     public void setVisible(final boolean visible) {
         _visible = visible;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isAutoEnabled() {
+        return _autoEnabled;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAutoEnabled(final boolean autoEnabled) {
+        _autoEnabled = autoEnabled;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isAutoVerified() {
+        return _autoVerified;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAutoVerified(final boolean autoVerified) {
+        _autoVerified = autoVerified;
+    }
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
+     */
+    @Deprecated
+    @Override
+    public int getOrder() {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+        return 0;
+    }
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
+     */
+    @Deprecated
+    @Override
+    public void setOrder(final int order) {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+    }
+
+    @Override
+    public XnatAuthenticationToken createToken(final String username, final String password) {
+        return new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
+    }
+
+    @Override
+    public boolean supports(final Authentication authentication) {
+        if (!supports(authentication.getClass())) {
+            return false;
+        }
+
+        final Class<? extends UsernamePasswordAuthenticationToken> clazz = authentication.getClass().asSubclass(UsernamePasswordAuthenticationToken.class);
+        return clazz.equals(UsernamePasswordAuthenticationToken.class)
+               || XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(clazz)
+                  && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
     }
 
     /**
@@ -73,48 +170,6 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     }
 
     @Override
-    public String getName() {
-        return _displayName;
-    }
-
-    @Override
-    public String getProviderId() {
-        return _providerId;
-    }
-
-    @Override
-    public String getAuthMethod() {
-        return XdatUserAuthService.LOCALDB;
-    }
-
-    @Override
-    public int getOrder() {
-        return _order;
-    }
-
-    @Override
-    public void setOrder(int order) {
-        _order = order;
-    }
-
-    @Override
-    public XnatAuthenticationToken createToken(final String username, final String password) {
-        return new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
-    }
-
-    @Override
-    public boolean supports(final Authentication authentication) {
-        if (!supports(authentication.getClass())) {
-            return false;
-        }
-
-        final Class<? extends UsernamePasswordAuthenticationToken> clazz = authentication.getClass().asSubclass(UsernamePasswordAuthenticationToken.class);
-        return clazz.equals(UsernamePasswordAuthenticationToken.class)
-               || XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(clazz)
-                  && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
-    }
-
-    @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (!UserI.class.isAssignableFrom(userDetails.getClass())) {
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
@@ -133,7 +188,6 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         }
         super.additionalAuthenticationChecks(userDetails, authentication);
     }
-
 
     private class PreAuthenticationChecks implements UserDetailsChecker {
         public void check(UserDetails user) {
@@ -186,8 +240,9 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     private final String            _providerId;
     private final AliasTokenService _aliasTokenService;
 
-    private String _displayName;
+    private String  _displayName;
+    private boolean _autoEnabled;
+    private boolean _autoVerified;
 
     private boolean _visible = true;
-    private int     _order   = -1;
 }

@@ -182,6 +182,21 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
+    public XnatAuthenticationProvider getProvider(final String authMethod, final String providerId) {
+        // First check that we have the provider ID.
+        if (_xnatAuthenticationProviders.containsKey(providerId)) {
+            // Now get the provider...
+            final XnatAuthenticationProvider provider = _xnatAuthenticationProviders.get(providerId);
+            // And check that it also matches the auth method. If so...
+            if (StringUtils.equalsIgnoreCase(authMethod, provider.getAuthMethod())) {
+                // Return it.
+                return provider;
+            }
+        }
+        // If it wasn't both of those things, return null.
+        return null;
+    }
+
     public Map<String, XnatAuthenticationProvider> getVisibleEnabledProviders() {
         final Map<String, XnatAuthenticationProvider> visibleEnabledProviders = new LinkedHashMap<>();
         for (final String providerId : _preferences.getEnabledProviders()) {

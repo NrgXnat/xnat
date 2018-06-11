@@ -74,6 +74,7 @@ public class ProjectAccessRequest {
         initializeFromDataRow(table.nextRow());
     }
 
+    @SuppressWarnings("RedundantThrows")
     public ProjectAccessRequest(Object[] row) throws SQLException, DBPoolException {
         initializeFromDataRow(row);
     }
@@ -240,7 +241,7 @@ public class ProjectAccessRequest {
     /**
      * Save the project access request with the <b>user</b> as the request approver.
      * @param user    The user to specify as the request approver.
-     * @throws Exception
+     * @throws Exception When an unexpected error occurs.
      */
     public void save(UserI user) throws Exception{
         if (!CREATED_PAR_TABLE) {
@@ -303,7 +304,7 @@ public class ProjectAccessRequest {
      * @param reason       The reason for the operation.
      * @param comment      Any related comments.
      * @return A list of all of the project access requests associated with the original email and accepted or declined.
-     * @throws Exception
+     * @throws Exception When an unexpected error occurs.
      */
     public List<String> process(UserI user, boolean accept, EventUtils.TYPE eventType, String reason, String comment) throws Exception {
         return process(user, accept, eventType, reason, comment, true);
@@ -321,7 +322,7 @@ public class ProjectAccessRequest {
         return RequestPAR(String.format(PAR_BY_USER_AND_PROJ_ID, userId.toString(), projectId), user);
     }
 
-    public static ArrayList<ProjectAccessRequest> RequestPARsByUserEmail(String email, UserI user) {
+    public static List<ProjectAccessRequest> RequestPARsByUserEmail(String email, UserI user) {
         return RequestPARs(String.format(PAR_BY_EMAIL, email), user);
     }
 
@@ -335,8 +336,8 @@ public class ProjectAccessRequest {
         }
     }
 
-    public static ArrayList<ProjectAccessRequest> RequestPARs(String where, UserI user) {
-        ArrayList<ProjectAccessRequest> PARs = new ArrayList<ProjectAccessRequest>();
+    public static List<ProjectAccessRequest> RequestPARs(String where, UserI user) {
+        final List<ProjectAccessRequest> PARs = new ArrayList<>();
         try {
             String query = getPARQuery(where);
             XFTTable table = runInitQuery(query, user);
@@ -465,10 +466,7 @@ public class ProjectAccessRequest {
 	         invitee = StringUtils.remove(invitee, '\'');
             String guid = UUID.randomUUID().toString();
 
-            StringBuilder query = new StringBuilder("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('");
-            query.append(invitee).append("', '").append(guid).append("', '").append(project.getId()).append("', ").append(user.getID()).append(", '").append(context.get("access_level")).append("');");
-
-	         PoolDBUtils.ExecuteNonSelectQuery(query.toString(), user.getDBName(), user.getLogin());
+            PoolDBUtils.ExecuteNonSelectQuery("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('" + invitee + "', '" + guid + "', '" + project.getId() + "', " + user.getID() + ", '" + context.get("access_level") + "');", user.getDBName(), user.getLogin());
 
             request = RequestPAR("xs_par_table.email = '" + invitee + "' AND guid = '" + guid + "' AND proj_id = '" + project.getId() + "' AND approved IS NULL", user);
 	    } catch (SQLException exception) {
@@ -499,6 +497,7 @@ public class ProjectAccessRequest {
         }
     }
 
+    @SuppressWarnings({"unused", "RedundantThrows"})
     private ProjectAccessRequest() throws SQLException, DBPoolException {
         // Here for creation of objects from initialization functions.
     }
@@ -618,9 +617,9 @@ public class ProjectAccessRequest {
     }
 
     private List<String> processRelatedPARs(String parEmail, UserI user, boolean accept, EventUtils.TYPE eventType, String reason, String comment) {
-        List<String> processedProjects = new ArrayList<String>();
-        List<ProjectAccessRequest> parsForEmail = RequestPARsByUserEmail(parEmail, user);
-        for(ProjectAccessRequest par : parsForEmail) {
+        final List<String> processedProjects = new ArrayList<>();
+        final List<ProjectAccessRequest> parsForEmail = RequestPARsByUserEmail(parEmail, user);
+        for(final ProjectAccessRequest par : parsForEmail) {
             try {
                 processedProjects.addAll(par.process(user, accept, eventType, reason, comment, false));
             } catch (Exception exception) {

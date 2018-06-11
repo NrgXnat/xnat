@@ -18,6 +18,8 @@ import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.security.XnatProviderManager;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,6 +31,7 @@ public class RegisterExternalLogin extends XDATRegisterUser {
     public RegisterExternalLogin() {
         _service = XDAT.getContextService().getBean(XdatUserAuthService.class);
         _provider = XDAT.getContextService().getBean(XnatDatabaseAuthenticationProvider.class);
+        _manager = XDAT.getContextService().getBean(XnatProviderManager.class);
     }
 
     @Override
@@ -67,7 +70,17 @@ public class RegisterExternalLogin extends XDATRegisterUser {
                 return;
             }
         } else {
-            // If it's a new user, then run them through the standard registration workflow.
+            // If it's a new user, then run them through the standard registration workflow, but first
+            // add any provider-specific properties, mainly auto-enable and auto-verify.
+            final String authMethod   = data.getParameters().getString("authmethod");
+            final String providerId = data.getParameters().getString("authmethodid");
+            final XnatAuthenticationProvider provider = _manager.getProvider(authMethod, providerId);
+            if (provider != null) {
+                data.getParameters().add("authMethod", authMethod);
+                data.getParameters().add("providerId", providerId);
+                data.getParameters().add("providerAutoEnabled", Boolean.toString(provider.isAutoEnabled()));
+                data.getParameters().add("providerAutoVerified", Boolean.toString(provider.isAutoVerified()));
+            }
             super.doPerform(data, context);
         }
 
@@ -98,4 +111,5 @@ public class RegisterExternalLogin extends XDATRegisterUser {
 
     private final XdatUserAuthService                _service;
     private final XnatDatabaseAuthenticationProvider _provider;
+    private final XnatProviderManager                _manager;
 }

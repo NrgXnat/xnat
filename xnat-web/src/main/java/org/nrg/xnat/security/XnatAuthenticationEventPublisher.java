@@ -93,6 +93,10 @@ public final class XnatAuthenticationEventPublisher implements AuthenticationEve
         if (StringUtils.isBlank(username)) {
             throw new RuntimeException("An error occurred trying to get user from authentication: no principal or user name was found.");
         }
+        if (StringUtils.equalsAnyIgnoreCase(username, "guest", "anonymousUser")) {
+            log.debug("Someone's trying to retrieve an unauthenticated user account: {}", username);
+            return null;
+        }
 
         final String method;
         final String provider;

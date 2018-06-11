@@ -10,7 +10,6 @@ import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.xdat.services.XdatUserAuthService;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -24,38 +23,37 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.nrg.xdat.services.XdatUserAuthService.LOCALDB;
+import static org.nrg.xnat.security.provider.ProviderAttributes.*;
 
 @Component
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
     public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final MessageSource messageSource) {
-        final List<Properties> definitions = getProviderDefinitions(configPaths, messageSource);
-        for (final Properties definition : definitions) {
-            final String id   = definition.getProperty("id");
-            final String type = definition.getProperty("type");
+        final List<Properties>    definitions = getProviderDefinitions(configPaths, messageSource);
+        final Map<String, String> providerIds = new HashMap<>();
 
-            if (_definitionsById.containsKey(id)) {
-                throw new RuntimeException("There's already a provider definition of type '" + _definitionsById.get(id).getAuthMethod() + "' with the ID '" + id + "'. Provider IDs must be distinct even across different provider types.");
+        for (final Properties definition : definitions) {
+            final String providerId = definition.getProperty(PROVIDER_ID);
+
+            if (providerIds.containsKey(providerId)) {
+                throw new RuntimeException("There's already a provider definition for auth method '" + providerIds.get(providerId) + "' with the ID '" + providerId + "'. Provider IDs must be distinct even across different provider implementations.");
             }
+
+            final String authMethod = definition.getProperty(PROVIDER_AUTH_METHOD);
+
+            providerIds.put(providerId, authMethod);
 
             final Map<String, ProviderAttributes> typeDefinitions;
-            if (_definitionsByType.containsKey(type)) {
-                typeDefinitions = _definitionsByType.get(type);
+            if (_definitionsByType.containsKey(authMethod)) {
+                typeDefinitions = _definitionsByType.get(authMethod);
             } else {
                 typeDefinitions = new HashMap<>();
-                _definitionsByType.put(type, typeDefinitions);
+                _definitionsByType.put(authMethod, typeDefinitions);
             }
 
-            typeDefinitions.put(id, new ProviderAttributes(definition));
+            typeDefinitions.put(providerId, new ProviderAttributes(definition));
         }
-    }
-
-    public Map<String, ProviderAttributes> getProviderDefinitions() {
-        return _definitionsById;
-    }
-
-    public ProviderAttributes getProviderDefinition(final String id) {
-        return _definitionsById.get(id);
     }
 
     public Map<String, ProviderAttributes> getProviderDefinitionsByType(final String type) {
@@ -115,7 +113,7 @@ public class AuthenticationProviderConfigurationLocator {
                         provider.put(providerProperty.getKey().toString(), providerProperty.getValue().toString());
                     }
                     providers.add(provider);
-                    log.debug("Added provider (name:" + provider.get("name") + ", id:" + provider.get("id") + ", type:" + provider.get("type") + ").");
+                    log.debug("Added provider (name:" + provider.get(PROVIDER_NAME) + ", ID:" + provider.get(PROVIDER_ID) + ", auth method:" + provider.get(PROVIDER_AUTH_METHOD) + ").");
                 } catch (FileNotFoundException e) {
                     log.info("Tried to load properties from found properties file at {}, but got a FileNotFoundException", authFilePath);
                 } catch (IOException e) {
@@ -136,9 +134,9 @@ public class AuthenticationProviderConfigurationLocator {
 
         if (providers.isEmpty()) {
             final Properties provider = new Properties();
-            provider.put("name", messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault()));
-            provider.put("id", "db");
-            provider.put("type", XdatUserAuthService.LOCALDB);
+            provider.put(PROVIDER_NAME, messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault()));
+            provider.put(PROVIDER_ID, LOCALDB);
+            provider.put(PROVIDER_AUTH_METHOD, LOCALDB);
             providers.add(provider);
         }
 
@@ -146,6 +144,7 @@ public class AuthenticationProviderConfigurationLocator {
     }
 
     @SuppressWarnings("unused")
+    // TODO: Implement YAML definitions for providers.
     private static List<Properties> getDefinitions(final MessageSource messageSource, final String emptyName) {
         final List<Properties> providerImplementations = new ArrayList<>();
         try {
@@ -162,10 +161,10 @@ public class AuthenticationProviderConfigurationLocator {
                         }
 
                         final Properties properties = new Properties();
-                        properties.setProperty("name", getDefaultName(id, definition, messageSource, emptyName));
-                        properties.setProperty("type", id);
-                        properties.setProperty("visible", definition.hasNonNull(VISIBLE_BY_DEFAULT) ? definition.asText() : "false");
-                        properties.setProperty("implementation", definition.asText(IMPLEMENTATION));
+                        properties.setProperty(PROVIDER_NAME, getDefaultName(id, definition, messageSource, emptyName));
+                        properties.setProperty(PROVIDER_ID, id);
+                        properties.setProperty(PROVIDER_VISIBLE, definition.hasNonNull(VISIBLE_BY_DEFAULT) ? definition.asText() : "false");
+                        properties.setProperty(IMPLEMENTATION, definition.asText(IMPLEMENTATION));
                         providerImplementations.add(properties);
                     }
                 } catch (IOException e) {
@@ -222,5 +221,4 @@ public class AuthenticationProviderConfigurationLocator {
     private static final Pattern         PROPERTY_NAME_VALUE_PATTERN = Pattern.compile("^(?:provider\\.)?(?<providerId>[A-z0-9_-]+)\\.(?<property>.*)$");
 
     private final Map<String, Map<String, ProviderAttributes>> _definitionsByType = new HashMap<>();
-    private final Map<String, ProviderAttributes>              _definitionsById   = new HashMap<>();
 }

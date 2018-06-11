@@ -11,8 +11,8 @@ public class TestProviderConfigurations {
     public void testProviderAttributes() {
         final Properties source = new Properties();
         source.setProperty("name", "LDAP");
-        source.setProperty("id", "ldap1");
-        source.setProperty("type", "ldap");
+        source.setProperty("provider.id", "ldap1");
+        source.setProperty("auth.method", "ldap");
         source.setProperty("address", "ldap://ldap.xnat.org");
         source.setProperty("userdn", "cn=admin,dc=xnat,dc=org");
         source.setProperty("password", "admin");

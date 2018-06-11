@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
@@ -24,7 +26,6 @@ import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,16 +35,16 @@ import java.util.regex.Pattern;
 @Slf4j
 public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATRegisterUser {
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
-        Map<String, String> parameters = TurbineUtils.GetDataParameterHash(data);
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        final Map<String, String> parameters = TurbineUtils.GetDataParameterHash(data);
         if (parameters.containsKey("xdat:user.email")) {
-            final String                    email = parameters.get("xdat:user.email");
-            ArrayList<ProjectAccessRequest> pars  = ProjectAccessRequest.RequestPARsByUserEmail(email, null);
-            if (pars != null && pars.size() > 0) {
-                List<String> projectIds = new ArrayList<>();
-                for (ProjectAccessRequest par : pars) {
-                    projectIds.add(par.getProjectId());
+            final List<String> projectIds = Lists.transform(ProjectAccessRequest.RequestPARsByUserEmail(parameters.get("xdat:user.email"), null), new Function<ProjectAccessRequest, String>() {
+                @Override
+                public String apply(final ProjectAccessRequest par) {
+                    return par.getProjectId();
                 }
+            });
+            if (!projectIds.isEmpty()) {
                 context.put("pars", projectIds);
             }
         }
@@ -52,23 +53,22 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
 
     @Override
     public void directRequest(RunData data, Context context, UserI user) throws Exception {
-        String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
-        String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
+        final String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
+        final String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
 
         data.setScreenTemplate("Index.vm");
 
         String parID = (String) TurbineUtils.GetPassedParameter("par", data);
         String hash  = (String) TurbineUtils.GetPassedParameter("hash", data);
         if (StringUtils.isEmpty(parID)) {
-            if (data.getSession().getAttribute("par") != null) {
-                parID = (String) data.getSession().getAttribute("par");
+            parID = (String) data.getSession().getAttribute("par");
+            if (StringUtils.isNotBlank(parID)) {
                 hash = (String) data.getSession().getAttribute("hash");
                 data.getParameters().add("par", parID);
                 data.getParameters().add("hash", hash);
                 data.getSession().removeAttribute("par");
                 data.getSession().removeAttribute("hash");
             } else {
-
                 final SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(data.getRequest(), data.getResponse());
                 if (savedRequest != null) {
                     final String cachedRequest = savedRequest.getRedirectUrl();
@@ -85,7 +85,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             }
         }
 
-        if (parID != null) {
+        if (StringUtils.isNotBlank(parID)) {
             log.debug("Got registration request for PAR {} with verification hash {}", parID, hash);
             final AcceptProjectAccess action = new AcceptProjectAccess();
             context.put("user", user);

@@ -68,20 +68,23 @@ var XNAT = getObject(XNAT);
             part = arr.shift();
             obj = obj.hasOwnProperty(part) ? obj[part] : {};
         }
-        return obj;
+        // return undefined if object is empty (no stored value)
+        return isEmptyObject(obj) ? undef : obj;
     }
 
     function setDescendantProp(obj, desc, value) {
         var arr = desc.split('.');
-        var part;
+        var tmp, prop;
         while (arr.length > 1) {
-            part = arr.shift();
-            obj = obj[part] === undef ? {} : obj[part];
+            tmp = arr.shift();
+            if (obj[tmp] === undef) { obj[tmp] = {} }
+            obj = obj[tmp];
         }
+        prop = arr[0];
         // set [value] to '@DELETE' or '{DELETE}' to delete the item
         if (/^([@{]DELETE[}]*)$/i.test(value)) {
             try {
-                delete obj[arr[0]];
+                delete obj[prop];
             }
             catch (e) {
                 console.error(e);
@@ -89,7 +92,7 @@ var XNAT = getObject(XNAT);
             return null;
         }
         else {
-            return obj[arr[0]] = value;
+            return (obj[prop] = value);
         }
     }
 
@@ -149,6 +152,16 @@ var XNAT = getObject(XNAT);
 
 
     /**
+     * Get the whole 'data' object
+     * @returns {*}
+     */
+    BrowserStorage.fn.getData = function(){
+        this.getAll();
+        return !isEmpty(this.data) ? this.data : undef;
+    };
+
+
+    /**
      * Get the value of a specific property
      * @param {String} objPath - string representing path to object property
      * @returns {*}
@@ -177,7 +190,9 @@ var XNAT = getObject(XNAT);
             this.data[objPath] = newValue;
         }
         else {
-            setDescendantProp(this.getAll(), objPath, newValue);
+            // calling #getAll() sets the value of #data from the localStorage datastore
+            this.getAll();
+            setDescendantProp(this.data, objPath, newValue);
         }
         localStorage.setItem(this.dataStore, JSON.stringify(this.data));
         return this;

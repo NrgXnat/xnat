@@ -15,6 +15,7 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
+import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
@@ -81,8 +82,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
         		List<? extends UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
 
                 if (matches.size()==0 && matches2.size()==0) {
-                    final String operation = data.getParameters().getString("operation");
-	                final String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
+                    final ParameterParser parameters = data.getParameters();
+                    final String          operation  = parameters.getString("operation");
+	                final String          tempPass   = parameters.getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 
                     // If this is a register operation, we don't want to validate the password because there isn't one: we're just
                     // creating the XNAT account to correspond with the auth account.
@@ -100,12 +102,17 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
                         final boolean autoApprovePar = XDAT.getSiteConfigPreferences().getPar();
                         final boolean hasParData = hasPAR(data);
-                        final boolean enabled = autoApprovePar && hasParData || autoApproveRegistered && (hasParData || !XDAT.getSiteConfigPreferences().getEmailVerification());
-                        final boolean verified = !XDAT.getSiteConfigPreferences().getEmailVerification() || hasParData;
+                        final String authMethod = parameters.getString("authMethod");
+                        final String providerId = parameters.getString("providerId");
+                        final boolean isProviderAutoEnabled = parameters.getBoolean("providerAutoEnabled", false);
+                        final boolean isProviderAutoVerified = parameters.getBoolean("providerAutoVerified", false);
+                        final boolean enabled = autoApprovePar && hasParData || isProviderAutoEnabled || autoApproveRegistered && (hasParData || !XDAT.getSiteConfigPreferences().getEmailVerification());
+                        final boolean verified = isProviderAutoVerified || !XDAT.getSiteConfigPreferences().getEmailVerification() || hasParData;
 
                         // Approve them if:
                         //  -- we autoapprove par users and this user has a PAR
                         //  -- we autoapprove registered users and don't require email verification
+                        //  -- authenticating provider autoapproves or autoverifies users
                         found.setEnabled(enabled);
                         found.setVerified(verified);
 

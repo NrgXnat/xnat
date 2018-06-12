@@ -74,7 +74,7 @@ public class XFTValidator {
 
             log.debug("{} -> {} {}", xsiType, field.getName(), fieldId);
 
-            if (field.isReference())
+            if (field.isReference() && !(((XFTItem) item).instanceOf("xnat:projectData") && (StringUtils.startsWith(fieldId, "investigators_investigator_investigatordata"))))
 			{
 				if (field.isMultiple())
 				{
@@ -132,7 +132,7 @@ public class XFTValidator {
 
 		for (final Object object : item.getProps().keySet()) {
 			final String key = (String) object;
-			if (!checked.contains(key)) {
+			if (!checked.contains(key) && !StringUtils.startsWith(key,"investigators_investigator_investigatordata")) {
 				results.addResult(null, "Unknown field:" + xsiType + " -> " + key, EMPTY, element);
 			}
 		}

@@ -23,7 +23,6 @@ public class TestProviderConfigurations {
         assertThat(attributes.getName()).isEqualTo("LDAP");
         assertThat(attributes.getProviderId()).isEqualTo("ldap1");
         assertThat(attributes.getAuthMethod()).isEqualTo("ldap");
-        assertThat(attributes.getOrder()).isEqualTo(-1);
         assertThat(attributes.isVisible()).isTrue();
 
         final Properties properties = attributes.getProperties();

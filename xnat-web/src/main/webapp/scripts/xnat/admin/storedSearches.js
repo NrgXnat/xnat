@@ -121,7 +121,7 @@ var XNAT = getObject(XNAT);
                 callback.apply(this,arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve stored search XML');
+                console.error(e);
             }
         })
     };
@@ -155,6 +155,14 @@ var XNAT = getObject(XNAT);
             id: 'adminSSlist',
             data: searches,
             table: { },
+            before: {
+                filterCss: {
+                    tag: 'style|type=text/css',
+                    content: '\n' +
+                        'td[class^="break-word-"] { max-width: 150px; word-wrap: break-word; } \n' +
+                        'td.align-top { vertical-align: top } \n'
+                }
+            },
             trs: function(tr, data){
                 tr.id = "tr-" + data.id;
                 addDataAttrs(tr, { filter: '0', data: data.id })
@@ -164,6 +172,7 @@ var XNAT = getObject(XNAT);
                 id: {
                     label: 'ID',
                     filter: false,
+                    td: { className: 'break-word-id align-top' },
                     apply: function(){
                         return spawn('b', [ editLink(this.id, this.id) ])
                     }
@@ -171,6 +180,7 @@ var XNAT = getObject(XNAT);
                 brief_description: {
                     label: 'Label',
                     filter: true,
+                    td: { className: 'break-word-label align-top' },
                     apply: function(){
                         return escapeHtml(this['brief_description'])
                     }
@@ -178,18 +188,20 @@ var XNAT = getObject(XNAT);
                 description: {
                     label: 'Description',
                     filter: true,
+                    td: { className: 'break-word-desc align-top' },
                     apply: function(){
                         return escapeHtml(this['description'])
                     }
                 },
                 root_element_name: {
                     label: 'Root Data Type',
+                    td: { className: 'align-top' },
                     filter: true
                 },
                 USERS: {
                     label: 'Users',
                     filter: false,
-                    td: { className: 'right allowed-users' }
+                    td: { className: 'right allowed-users align-top' }
                 },
                 ACTIONS: {
                     label: 'Actions',

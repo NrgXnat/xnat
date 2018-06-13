@@ -504,8 +504,8 @@ $page.setVlinkColor($ui.vlink)
                                     #foreach($role in $allRoles)
                                         <tr>
                                             <td align="left">
-                                                <input type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
-                                                <label for="role_">$role.getName()</label>
+                                                <input class="access role" type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
+                                                <label for="role_$role.getKey()">$role.getName()</label>
                                                 : $!role.getDescription()
                                             </td>
                                         </tr>
@@ -544,13 +544,13 @@ $page.setVlinkColor($ui.vlink)
                                         <tr>
                                             <td align="left">
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="" checked/><label for="data_none">No</label>
+                                                    <input class="access group" type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="NULL" checked/><label for="data_none">No</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                    <input class="access group" type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                    <input class="access group" type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
                                                 </label>
                                             </td>
                                         </tr>
@@ -563,6 +563,9 @@ $page.setVlinkColor($ui.vlink)
 
                                 <button id="update-user-roles" type="button" class="btn1">Save</button>
 
+                                <script src="$content.getURI('/scripts/xnat/admin/usersAdvanced.js')"></script>
+
+                                #*
                                 <script>
                                     $('#update-user-roles').on('click', function(e){
 
@@ -608,6 +611,7 @@ $page.setVlinkColor($ui.vlink)
 
                                     })
                                 </script>
+                                *#
 
                             </td>
                         </tr>

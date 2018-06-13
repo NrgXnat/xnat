@@ -156,6 +156,18 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     UserGroupI get(final String groupId);
 
     /**
+     * Gets the projects for which the user has the indicated permission. Returns an empty list if the user doesn't
+     * exist on the system.
+     *
+     * @param username The name of the user.
+     * @param access   The required access level.
+     *
+     * @return The IDs of the projects for which the user has the indicated access level.
+     */
+    @Nonnull
+    List<String> getProjectsForUser(final String username, final String access);
+
+    /**
      * Gets the groups for the specified tag (usually maps directly to the project ID). Returns an empty list if the
      * tag doesn't exist on the system.
      *
@@ -188,16 +200,6 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return The group with the associated tag and user.
      */
     UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException;
-
-    /**
-     * Returns the timestamp indicating when the specified cache entry was last updated. If the entry was only
-     * inserted and not updated, the insert time is returned.
-     *
-     * @param cacheId The ID of the cache entry to check.
-     *
-     * @return The date and time of the latest update to the specified cache entry.
-     */
-    Date getCacheEntryLastUpdateTime(final String cacheId);
 
     /**
      * Returns the timestamp for the most recently updated group associated with the indicated user.

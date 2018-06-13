@@ -41,14 +41,15 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xft.event.XftItemEvent.builder;
@@ -60,8 +61,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
     @Autowired
-    public PermissionsServiceImpl(final NamedParameterJdbcTemplate template, final NrgEventService eventService) {
-        _template = template;
+    public PermissionsServiceImpl(final NrgEventService eventService) {
         _eventService = eventService;
     }
 
@@ -467,17 +467,17 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserReadableProjects(final UserI user) {
-        return _template.queryForList(QUERY_READABLE_PROJECTS, new MapSqlParameterSource("usernames", Arrays.asList("guest", user.getUsername())), String.class);
+        return _cache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
     }
 
     @Override
     public List<String> getUserEditableProjects(final UserI user) {
-        return _template.queryForList(QUERY_EDITABLE_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
+        return ((XDATUser) user).getAccessibleProjects();
     }
 
     @Override
     public List<String> getUserOwnedProjects(final UserI user) {
-        return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("usernames", Collections.singletonList(user.getUsername())), String.class);
+        return _cache.getProjectsForUser(user.getUsername(), SecurityManager.DELETE);
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -782,27 +782,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                "  xfm.field_value != '*' AND " +
                                                                "  xfm.read_element = 1 AND " +
                                                                "  u.login IN ('guest', '%s')";
-    private static final String QUERY_USER_PROJECTS          = "SELECT " +
-                                                               "  DISTINCT xfm.field_value AS project " +
-                                                               "FROM xdat_user u " +
-                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                               "WHERE " +
-                                                               "  xfm.comparison_type = 'equals' AND " +
-                                                               "  xfm.field_value != '*' AND " +
-                                                               "  xea.element_name = 'xnat:projectData' AND " +
-                                                               "  xfm.%s = 1 AND " +
-                                                               "  u.login IN (:usernames) " +
-                                                               "ORDER BY project";
-    private static final String QUERY_OWNED_PROJECTS         = String.format(QUERY_USER_PROJECTS, "delete_element");
-    private static final String QUERY_EDITABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "edit_element");
-    private static final String QUERY_READABLE_PROJECTS      = String.format(QUERY_USER_PROJECTS, "read_element");
     private static final String GUEST_USERNAME               = "guest";
 
-    private final NamedParameterJdbcTemplate _template;
     private final NrgEventService            _eventService;
 
     private GroupsAndPermissionsCache _cache;

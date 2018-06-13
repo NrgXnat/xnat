@@ -164,8 +164,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public synchronized void init() throws Exception {
-        getGroupsAndPermissionsCache().clearUserCache(getUsername());
-        _storedSearches.clear();
         clearLocalCache();
     }
 
@@ -780,7 +778,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public void clearLocalCache() {
         _userSessionCache.clear();
-        _editableProjects.clear();
         _isSiteAdmin = null;
     }
 
@@ -1014,34 +1011,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * Code copied here from
      *
      * @return All the projects where this user has edit permissions.
-     *
-     * @throws Exception When an error occurs.
      */
-    protected List<String> getAccessibleProjects() throws Exception {
-        final List<String> projects = Permissions.getAccessibleProjects(this);
-        if (projects != null) {
-            return projects;
-        }
-        if (_editableProjects.isEmpty()) {
-            for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
-                final String id = row.get(0);
-                if (_editableProjects.contains(id)) {
-                    continue;
-                }
-                try {
-                    if (canModify(id)) {
-                        _editableProjects.add(id);
-                    }
-                } catch (Exception e) {
-                    log.error("Exception caught testing prearchive access", e);
-                }
-            }
-            // if the user is an admin also add unassigned projects
-            if (Roles.isSiteAdmin(this)) {
-                _editableProjects.add(null);
-            }
-        }
-        return _editableProjects;
+    protected List<String> getAccessibleProjects() {
+        return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), SecurityManager.EDIT);
     }
 
     private boolean canModify(final String projectId) throws Exception {
@@ -1133,7 +1105,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private final Set<String>                           _roleNames                 = new HashSet<>();
     private final List<XdatStoredSearch>                _storedSearches            = new ArrayList<>();
     private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
-    private final List<String>                          _editableProjects          = new ArrayList<>();
     private final Map<String, ArrayList<ItemI>>         _userSessionCache          = new HashMap<>();
 
     private boolean   extended                   = false;

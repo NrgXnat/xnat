@@ -10,11 +10,13 @@
 package org.nrg.xdat.security.helpers;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -41,7 +43,6 @@ import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 
@@ -888,20 +889,7 @@ public class Permissions {
     }
 
     public static List<String> getAccessibleProjects(final UserI user) {
-        return getAccessibleProjects(null, user);
-    }
-
-    @Nullable
-    public static List<String> getAccessibleProjects(final NamedParameterJdbcTemplate template, final UserI user) {
-        final NamedParameterJdbcTemplate found = getTemplate(template);
-        if (found != null) {
-            return getAccessibleProjectsByQuery(found, user, "edit");
-        }
-        return null;
-    }
-
-    private static List<String> getAccessibleProjectsByQuery(final NamedParameterJdbcTemplate found, final UserI user, final String access) {
-        return found.queryForList(StringSubstitutor.replace(QUERY_GET_USER_PROJECTS_FOR_ACCESS, ImmutableMap.<String, Object>of("access", access)), new MapSqlParameterSource("username", user.getUsername()), String.class);
+        return getPermissionsService().getUserEditableProjects(user);
     }
 
     private static NamedParameterJdbcTemplate getTemplate(final NamedParameterJdbcTemplate template) {
@@ -1160,21 +1148,6 @@ public class Permissions {
                                                                        + "      AND xfm.delete_element = 0 "
                                                                        + "      AND xfm.comparison_type = 'equals' "
                                                                        + "      AND xfm.field_value = :projectId), -1)";
-    private static final String QUERY_GET_USER_PROJECTS_FOR_ACCESS   = "SELECT DISTINCT " +
-                                                                       "  xfm.field_value AS project " +
-                                                                       "FROM xdat_user u " +
-                                                                       "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                       "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                                       "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                                       "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                       "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                       "WHERE " +
-                                                                       "  xfm.field_value != '*' AND " +
-                                                                       "  xea.element_name = 'xnat:projectData' AND " +
-                                                                       "  xfm.field = 'xnat:projectData/ID' AND " +
-                                                                       "  xfm.${access}_element = 1 AND " +
-                                                                       "  u.login = :username " +
-                                                                       "ORDER BY project";
 
     private static final List<String> PROJECT_GROUPS      = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();

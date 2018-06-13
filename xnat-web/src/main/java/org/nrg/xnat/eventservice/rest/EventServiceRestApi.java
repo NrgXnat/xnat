@@ -55,10 +55,10 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         this.eventService = eventService;
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST, params = {"overpopulate-attributes"})
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST)
     @ApiOperation(value = "Create a Subscription", code = 201)
     public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription,
-                                                     final @RequestParam(value = "overpopulate-attributes", required = false, defaultValue = "false") Boolean overpopulateAttributes)
+                                                     final @RequestParam(value = "overpopulate-attributes", required = false) Boolean overpopulateAttributes)
 
             throws NrgServiceRuntimeException, SubscriptionValidationException, JsonProcessingException {
         final UserI userI = XDAT.getUserDetails();
@@ -227,7 +227,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
-            final @RequestParam(value = "include-filter-mismatch", required = false, defaultValue = "false") Boolean includeFilterMismatch)
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch);

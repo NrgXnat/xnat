@@ -650,8 +650,10 @@ var XNAT = getObject(XNAT || {});
                         isDefault: true,
                         close: true,
                         action: function(obj){
-                            var formData = JSON.stringify(obj.$modal.find('form'));
-                            var jsonFormData = JSON.parse(formData);
+                            // convert form inputs to a parseable JSON object
+                            var formData, jsonFormData = {};
+                            obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
+
                             if (eventServicePanel.subscriptionAttributes) {
                                 jsonFormData.attributes = (typeof eventServicePanel.subscriptionAttributes === 'object') ?
                                     eventServicePanel.subscriptionAttributes :

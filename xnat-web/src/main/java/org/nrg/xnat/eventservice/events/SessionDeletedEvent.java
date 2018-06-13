@@ -1,13 +1,11 @@
 package org.nrg.xnat.eventservice.events;
 
 
-import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
-@Service
-@XnatEventServiceEvent(name="SessionDeletedEvent")
+//@Service
+//@XnatEventServiceEvent(name="SessionDeletedEvent")
 public class SessionDeletedEvent extends CombinedEventServiceEvent<SessionDeletedEvent, XnatImagesessiondataI> {
 
 

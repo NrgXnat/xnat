@@ -7,6 +7,7 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatImageassessordata;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
@@ -23,6 +24,7 @@ import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,11 +141,11 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         else if(XnatImagescandataI.class.isAssignableFrom(object.getClass())) {
             String imageSessionId = ((XnatImagescandataI) object).getImageSessionId();
             if(imageSessionId != null) {
-                Session session = new Session(imageSessionId, user);
-                if (session != null) {
-                    String sessionUri = session.getUri();
-                    return new Scan((XnatImagescandataI) object, sessionUri, null);
-                }
+                XnatImagesessiondata xnatSession = XnatImagesessiondata.getXnatImagesessiondatasById(imageSessionId, user, false);
+                String sessionUri = UriParserUtils.getArchiveUri(xnatSession);
+                Scan scan = new Scan((XnatImagescandataI) object, sessionUri, null);
+                if(scan.getProjectId() == null) scan.setProjectId(xnatSession != null ? xnatSession.getProject() : null);
+                return scan;
 
             }
             log.error("User:" + (user != null ? user.getLogin() : "NULL") + " could not load Scan or parent Session:" + imageSessionId);

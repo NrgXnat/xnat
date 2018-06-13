@@ -1,28 +1,29 @@
-package org.nrg.xnat.eventservice.events;
+package org.nrg.xnat.eventservice.services;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
-@XnatEventServiceEvent(name="SubjectCreatedEvent")
-public class SubjectCreatedEvent extends CombinedEventServiceEvent<SubjectCreatedEvent, XnatSubjectdataI> {
+@XnatEventServiceEvent(name="SubjectUpdatedEvent")
+public class SubjectUpdatedEvent extends CombinedEventServiceEvent<SubjectUpdatedEvent, XnatSubjectdataI> {
 
-    public SubjectCreatedEvent(){};
+    public SubjectUpdatedEvent(){};
 
-    public SubjectCreatedEvent(XnatSubjectdataI payload, String eventUser) {
+    public SubjectUpdatedEvent(XnatSubjectdataI payload, String eventUser) {
         super(payload, eventUser);
     }
 
     @Override
     public String getDisplayName() {
-        return "Subject Created";
+        return "Subject Updated";
     }
 
     @Override
     public String getDescription() {
-        return "New subject created.";
+        return "Subject updated via editing or addition of resource folder.";
     }
 
     @Override
@@ -37,6 +38,6 @@ public class SubjectCreatedEvent extends CombinedEventServiceEvent<SubjectCreate
 
     @Override
     public EventServiceListener getInstance() {
-        return new SubjectCreatedEvent();
+        return new SubjectUpdatedEvent();
     }
 }

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.F
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.RESOLVING_ATTRIBUTES;
 
 @Service
+@EnableAsync
 public class ActionManagerImpl implements ActionManager {
 
     private static final Logger log = LoggerFactory.getLogger(EventService.class);

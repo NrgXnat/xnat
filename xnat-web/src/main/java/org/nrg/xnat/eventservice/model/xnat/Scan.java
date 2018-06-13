@@ -85,7 +85,7 @@ public class Scan extends XnatModelObject {
         this.seriesDescription = xnatImagescandataI.getSeriesDescription();
         this.startTime = xnatImagescandataI.getStarttime();
         this.uid = xnatImagescandataI.getUid();
-
+        this.sessionId = xnatImagescandataI.getImageSessionId();
         if (this.xnatImagescandataI instanceof XnatImagescandata) {
             this.directory = ((XnatImagescandata) xnatImagescandataI).deriveScanDir();
         }

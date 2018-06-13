@@ -23,6 +23,8 @@ import org.nrg.xnat.eventservice.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -33,6 +35,7 @@ import java.util.*;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
 
 @Service
+@EnableAsync
 public class EventServiceImpl implements EventService {
     private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
@@ -293,12 +296,14 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    @Async
     @Override
     public void triggerEvent(EventServiceEvent event) {
         // TODO: Extract project id from event payload
         triggerEvent(event, null);
     }
 
+    @Async
     @Override
     public void triggerEvent(EventServiceEvent event, String projectId) {
         // Manually build event label

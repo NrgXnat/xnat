@@ -3,6 +3,8 @@ package org.nrg.xnat.security.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -15,9 +17,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,44 +33,72 @@ import static org.nrg.xnat.security.provider.ProviderAttributes.*;
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
     public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final MessageSource messageSource) {
-        final List<Properties>    definitions = getProviderDefinitions(configPaths, messageSource);
-        final Map<String, String> providerIds = new HashMap<>();
+        final List<Properties> definitions = getProviderDefinitions(configPaths, messageSource);
 
+        log.info("Found {} provider definitions, preparing to collate them", definitions.size());
         for (final Properties definition : definitions) {
             final String providerId = definition.getProperty(PROVIDER_ID);
 
-            if (providerIds.containsKey(providerId)) {
-                throw new RuntimeException("There's already a provider definition for auth method '" + providerIds.get(providerId) + "' with the ID '" + providerId + "'. Provider IDs must be distinct even across different provider implementations.");
+            if (_definitionsById.containsKey(providerId)) {
+                throw new RuntimeException("There's already a provider definition for auth method '" + _definitionsById.get(providerId) + "' with the ID '" + providerId + "'. Provider IDs must be distinct even across different provider implementations.");
             }
 
             final String authMethod = definition.getProperty(PROVIDER_AUTH_METHOD);
+            log.debug("Found provider with ID '{}' and auto method '{}'", providerId, authMethod);
 
-            providerIds.put(providerId, authMethod);
-
-            final Map<String, ProviderAttributes> typeDefinitions;
-            if (_definitionsByType.containsKey(authMethod)) {
-                typeDefinitions = _definitionsByType.get(authMethod);
+            final Map<String, ProviderAttributes> authMethodDefinitions;
+            if (_definitionsByAuthMethod.containsKey(authMethod)) {
+                authMethodDefinitions = _definitionsByAuthMethod.get(authMethod);
             } else {
-                typeDefinitions = new HashMap<>();
-                _definitionsByType.put(authMethod, typeDefinitions);
+                authMethodDefinitions = new HashMap<>();
+                _definitionsByAuthMethod.put(authMethod, authMethodDefinitions);
             }
 
-            typeDefinitions.put(providerId, new ProviderAttributes(definition));
+            final ProviderAttributes attributes = new ProviderAttributes(definition);
+            authMethodDefinitions.put(providerId, attributes);
+            _definitionsById.put(providerId, attributes);
         }
     }
 
-    public Map<String, ProviderAttributes> getProviderDefinitionsByType(final String type) {
-        if (StringUtils.isBlank(type) || !_definitionsByType.containsKey(type)) {
-            return null;
+    /**
+     * Gets a map of all providers for the indicated authentication method stored by the provider IDs.
+     *
+     * @param authMethod The authentication method of the providers you want to retrieve.
+     *
+     * @return A map of all providers for the indicated authentication method. If no providers for that
+     *         method are defined, this returns an empty list.
+     */
+    @Nonnull
+    public Map<String, ProviderAttributes> getProviderDefinitionsByAuthMethod(final String authMethod) {
+        if (StringUtils.isBlank(authMethod) || !_definitionsByAuthMethod.containsKey(authMethod)) {
+            log.info("Request for providers of auth method '{}' can't be fulfilled, I don't got that.", authMethod);
+            return Collections.emptyMap();
         }
-        return _definitionsByType.get(type);
+        final Map<String, ProviderAttributes> providers = _definitionsByAuthMethod.get(authMethod);
+        if (log.isDebugEnabled()) {
+            log.debug("Request for providers of auth method '{}' found {} definitions: {}", authMethod, providers.size(), StringUtils.join(providers.keySet(), ", "));
+        }
+        return providers;
     }
 
-    public ProviderAttributes getProviderDefinitionByType(final String type, final String id) {
-        if (StringUtils.isBlank(type) || !_definitionsByType.containsKey(type) || StringUtils.isBlank(id) || !_definitionsByType.get(type).containsKey(id)) {
+    /**
+     * Gets the attributes for the provider with the specified ID. If no provider with that ID is defined
+     * on the system, this returns null.
+     *
+     * @param providerId The ID of the provider to be retrieved.
+     *
+     * @return The attributes for the provider with the specified ID, null if no provider with that ID is
+     *         defined on the system.
+     */
+    @SuppressWarnings("unused")
+    @Nullable
+    public ProviderAttributes getProviderDefinition(final String providerId) {
+        if (StringUtils.isBlank(providerId) || !_definitionsById.containsKey(providerId)) {
+            log.info("Request for provider with ID '{}' can't be fulfilled, I don't got that.", providerId);
             return null;
         }
-        return _definitionsByType.get(type).get(id);
+        log.debug("Request for provider with ID '{}' found a corresponding definition", providerId);
+        return _definitionsById.get(providerId);
     }
 
     /**
@@ -83,37 +114,44 @@ public class AuthenticationProviderConfigurationLocator {
         final List<Properties> providers = new ArrayList<>();
 
         // Populate map of properties for each provider
-        final ArrayList<String> authFilePaths = new ArrayList<>();
+        final Set<String> authFilePaths = new HashSet<>();
         //First see if there are any properties files in config/auth
         for (final Path currPath : configPaths) {
-            final Path authPath = Paths.get(currPath.toString(), "auth");
+            final Path authPath = currPath.resolve("auth");
 
-            log.debug("AuthPath is {}", authPath.toString());
+            log.debug("Searching auth path '{}' for provider definitions", authPath);
             final File directory = authPath.toFile();
             if (directory.exists() && directory.isDirectory()) {
                 final Collection<File> files = FileUtils.listFiles(directory, PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
-                for (final File file : files) {
-                    if (!authFilePaths.contains(file.toString())) {
-                        authFilePaths.add(file.toString());
+                log.debug("Found {} files under auth path '{}'", files.size(), authPath);
+                authFilePaths.addAll(Lists.transform(new ArrayList<>(files), new Function<File, String>() {
+                    @Nullable
+                    @Override
+                    public String apply(final File file) {
+                        final String path = file.toString();
+                        log.trace("Adding path '{}' to auth file paths", path);
+                        return path;
                     }
-                }
+                }));
             }
         }
         if (!authFilePaths.isEmpty()) {
             //If there were provider properties files in config/auth, use them to populate provider list
             for (final String authFilePath : authFilePaths) {
-                log.debug("Accessing properties from " + authFilePath);
+                log.debug("Accessing properties from auth file '{}'", authFilePath);
                 final Properties properties = new Properties();
                 try (final InputStream inputStream = new FileInputStream(authFilePath)) {
                     properties.load(inputStream);
-                    log.debug("Found " + properties.size() + " properties.");
+                    log.debug("Found {} properties in auth path '{}'", properties.size(), authFilePath);
                     final Properties provider = new Properties();
                     for (final Map.Entry<Object, Object> providerProperty : properties.entrySet()) {
-                        log.debug("Trying to add property " + providerProperty.getKey().toString() + " with value " + providerProperty.getValue().toString());
-                        provider.put(providerProperty.getKey().toString(), providerProperty.getValue().toString());
+                        final String key = providerProperty.getKey().toString();
+                        final String value   = providerProperty.getValue().toString();
+                        log.debug("Trying to add property '{}' with value '{}'",  key, value);
+                        provider.put(key, value);
                     }
                     providers.add(provider);
-                    log.debug("Added provider (name:" + provider.get(PROVIDER_NAME) + ", ID:" + provider.get(PROVIDER_ID) + ", auth method:" + provider.get(PROVIDER_AUTH_METHOD) + ").");
+                    log.debug("Added provider (name: {}, ID: {}, auth method: {}).", provider.get(PROVIDER_NAME), provider.get(PROVIDER_ID), provider.get(PROVIDER_AUTH_METHOD));
                 } catch (FileNotFoundException e) {
                     log.info("Tried to load properties from found properties file at {}, but got a FileNotFoundException", authFilePath);
                 } catch (IOException e) {
@@ -126,6 +164,7 @@ public class AuthenticationProviderConfigurationLocator {
         try {
             final List<Resource> resources = BasicXnatResourceLocator.getResources(PROVIDER_CLASSPATH);
             for (final Resource resource : resources) {
+                log.debug("Loading properties from resource '{}'", resource.toString());
                 providers.addAll(collate(PropertiesLoaderUtils.loadProperties(resource)));
             }
         } catch (IOException e) {
@@ -138,8 +177,10 @@ public class AuthenticationProviderConfigurationLocator {
             provider.put(PROVIDER_ID, LOCALDB);
             provider.put(PROVIDER_AUTH_METHOD, LOCALDB);
             providers.add(provider);
+            log.info("No provider definitions were found, so the default provider is being added: {}", provider.toString());
         }
 
+        log.debug("Returning {} located provider definitions", providers.size());
         return providers;
     }
 
@@ -220,5 +261,6 @@ public class AuthenticationProviderConfigurationLocator {
     private static final RegexFileFilter PROVIDER_FILENAME_FILTER    = new RegexFileFilter("^." + PROVIDER_FILENAME);
     private static final Pattern         PROPERTY_NAME_VALUE_PATTERN = Pattern.compile("^(?:provider\\.)?(?<providerId>[A-z0-9_-]+)\\.(?<property>.*)$");
 
-    private final Map<String, Map<String, ProviderAttributes>> _definitionsByType = new HashMap<>();
+    private final Map<String, Map<String, ProviderAttributes>> _definitionsByAuthMethod = new HashMap<>();
+    private final Map<String, ProviderAttributes>              _definitionsById         = new HashMap<>();
 }

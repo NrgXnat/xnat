@@ -30,12 +30,12 @@ var XNAT = getObject(XNAT);
 
         debugLog('addExperiment');
 
-        XNAT.app.dataTypeAccess.getElements['browseableCreateable'].ready(function(elements){
+        XNAT.app.dataTypeAccess.getElements['browseableCreateable'].ready(function(data){
 
             var exptListContainer = $$(container || '#expt-types');
             var exptListItems = [];
 
-            var sortedElements = sortObjects(elements, 'singular');
+            var sortedElements = sortObjects(data.elements, 'singular');
 
             forEach(sortedElements, function(element){
                 if (element.subjectAssessor) {

@@ -12,6 +12,9 @@ function LeftBarTreeView(_config){
 
 
  this.init=function(){
+
+ 	var THIS = this;
+
  	this.tree = new YAHOO.widget.TreeView(this.treeview_id,this.config);
  	this.tree.lTV=this;
     //turn dynamic loading on for entire tree:
@@ -157,46 +160,104 @@ function LeftBarTreeView(_config){
  	}
 
  	if(XNAT.app.showLeftBarBrowse){
-	 	if(window.available_elements!=undefined){
 
-             function sortByPlural(a,b)
-             {
-                 var aName = a.plural.toLowerCase();
-                 var bName = b.plural.toLowerCase();
-                 if (aName < bName){
-                     return -1;
-                 }else if (aName > bName){
-                     return  1;
-                 }else{
-                     return 0;
-                 }
-             }
-             window.available_elements.sort(sortByPlural);
-            //define data node
-		 	this.dataNode=new YAHOO.widget.TextNode({label:"Data",ID:"d"},root,this.open_array.contains("d"));
-		 	for(var esC=0;esC<window.available_elements.length;esC++){
-		 		var es=window.available_elements[esC];
-                if (es.element_name === "wrk:workflowData") {continue;} // do not include workflows
-		 		var cpNode=new YAHOO.widget.TextNode({label:es.plural,
-		 		ID:"d."+es.element_name,
-		 		URL:serverRoot +'/REST/search/saved/@' + es.element_name + ''},this.dataNode,false);
-	 			cpNode.isLeaf=true;
-	 			this.tree.searches.push(cpNode.data.ID);
-		 	}
-	 	}
+ 		XNAT.app.dataTypeAccess.getElements['browseable'].ready.call(THIS,
+
+			// success
+ 			function(data){
+
+ 				var sortedElements = data.sortedElements;
+
+ 				if (!data || !sortedElements || !sortedElements.length) {
+ 					// try {
+                      //   data = XNAT.storage.userData.getValue('accessDisplays.browseable');
+					// }
+					// catch (e) {
+ 					// 	console.warn(e);
+					// }
+					if (!sortedElements || !sortedElements.length) { return }
+				}
+
+ 				this.dataNode = new YAHOO.widget.TextNode({
+					label: 'Data',
+					ID: 'd'
+				}, root, this.open_array.contains('d'));
+
+ 				forEach(sortedElements, function(element){
+ 					var elementName = element.elementName || element.element_name;
+ 					if (elementName !== 'wrk:workflowData') {
+
+ 						var cpNode = new YAHOO.widget.TextNode({
+							label: element.plural,
+                            ID: 'd.' + elementName,
+                            URL: serverRoot + '/REST/search/saved/@' + elementName + ''
+						}, this.dataNode, false);
+
+                        cpNode.isLeaf = true;
+
+                        this.tree.searches.push(cpNode.data.ID);
+
+                    }
+				}, this);
+
+                try {
+                    this.tree.draw();
+                }
+                catch(e){
+                	console.warn(e);
+				}
+
+			}.bind(THIS),
+
+			// failure
+			function(){
+ 				console.error(arguments)
+			}.bind(THIS)
+
+		);
+
+	 	// if(window.available_elements!=undefined){
+         //
+          //    function sortByPlural(a,b)
+          //    {
+          //        var aName = a.plural.toLowerCase();
+          //        var bName = b.plural.toLowerCase();
+          //        if (aName < bName){
+          //            return -1;
+          //        }else if (aName > bName){
+          //            return  1;
+          //        }else{
+          //            return 0;
+          //        }
+          //    }
+          //    window.available_elements.sort(sortByPlural);
+          //   //define data node
+		 // 	this.dataNode=new YAHOO.widget.TextNode({label:"Data",ID:"d"},root,this.open_array.contains("d"));
+		 // 	for(var esC=0;esC<window.available_elements.length;esC++){
+		 // 		var es=window.available_elements[esC];
+          //       if (es.element_name === "wrk:workflowData") {continue;} // do not include workflows
+		 // 		var cpNode=new YAHOO.widget.TextNode({label:es.plural,
+		 // 		ID:"d."+es.element_name,
+		 // 		URL:serverRoot +'/REST/search/saved/@' + es.element_name + ''},this.dataNode,false);
+	 	// 		cpNode.isLeaf=true;
+	 	// 		this.tree.searches.push(cpNode.data.ID);
+		 // 	}
+	 	// }
  	}
-
- 	try{
- 		this.tree.draw();
- 	}catch(e){}
-
-
- }
+ 	else {
+        try {
+            this.tree.draw();
+        }
+        catch(e){
+            console.warn(e);
+        }
+    }
+ };
 
  this.resetDynamic=function(){
 	 this.tree.removeChildren(this.ssNode );
 	 this.ssNode.expand();
- }
+ };
 
  this.need_expansion=new Array();
  this.expand=function(_id){
@@ -210,7 +271,7 @@ function LeftBarTreeView(_config){
  			node.expand();
  		}
  	}
- }
+ };
 
 
  this.displayTab=function(tabReqObject){

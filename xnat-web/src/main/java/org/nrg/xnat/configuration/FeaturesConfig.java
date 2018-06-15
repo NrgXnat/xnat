@@ -15,6 +15,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import static org.nrg.xdat.security.services.FeatureRepositoryServiceI.DEFAULT_FEATURE_REPO_SERVICE;
 import static org.nrg.xdat.security.services.FeatureServiceI.DEFAULT_FEATURE_SERVICE;
@@ -40,10 +41,10 @@ public class FeaturesConfig {
     }
 
     @Bean
-    public RoleHolder roleService(final SiteConfigPreferences preferences) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public RoleHolder roleService(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate template) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         final String serviceImpl = StringUtils.defaultIfBlank(preferences.getRoleService(), DEFAULT_ROLE_SERVICE);
         log.debug("Creating role service with implementing class {}", serviceImpl);
-        return new RoleHolder(Class.forName(serviceImpl).asSubclass(RoleServiceI.class).newInstance());
+        return new RoleHolder(Class.forName(serviceImpl).asSubclass(RoleServiceI.class).newInstance(), template);
     }
 
     @Bean

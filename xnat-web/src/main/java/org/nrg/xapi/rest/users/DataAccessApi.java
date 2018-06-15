@@ -37,10 +37,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -66,6 +63,17 @@ public class DataAccessApi extends AbstractXapiRestController {
     public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final GroupsAndPermissionsCache cache) {
         super(userManagementService, roleHolder);
         _cache = cache;
+    }
+
+    @ApiOperation(value = "Gets the projects and roles associated with the current user.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of projects and roles for the current user."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "projects", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
+    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
+    @ResponseBody
+    public ResponseEntity<Collection<Map<String, String>>> getProjectRoles() {
+        return ResponseEntity.ok(getRoleHolder().getUserProjectRoles(getSessionUser()));
     }
 
     @ApiOperation(value = "Gets a list of the available element displays.",
@@ -110,6 +118,17 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok(getElementDisplayModels(getSessionUser(), display));
     }
 
+    @ApiOperation(value = "Gets the projects and roles associated with the specified user. This can only be called by users with administrative privileges.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of projects and roles for the specified user."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user's projects and roles."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "{username}/projects", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<Collection<Map<String, String>>> getUserProjectRoles(@ApiParam("The user to get the project roles for.") @PathVariable final String username) {
+        return ResponseEntity.ok(getRoleHolder().getUserProjectRoles(username));
+    }
+
     @ApiOperation(value = "Gets the last modified timestamp for the specified user. This can only be called by users with administrative privileges.",
                   notes = "This indicates the time of the latest update to elements relevant to the specified user. An update to these elements can mean that permissions for the specified user have changed and the various displays should be refreshed if cached on the client side.",
                   response = String.class, responseContainer = "List")
@@ -118,7 +137,6 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user's cache timestamp."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/displays/modified", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
-    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<Date> getLastModifiedForUser(@ApiParam("The user to get the last modified timestamp for.") @PathVariable final String username) {
         return ResponseEntity.ok(_cache.getUserLastUpdateTime(username));
@@ -131,7 +149,6 @@ public class DataAccessApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays for the specified user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/displays/{display}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
-    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<ElementDisplayModel>> getElementDisplaysForUser(@PathVariable final String username, @PathVariable final String display) throws DataFormatException, ServerException, NotFoundException {
         try {

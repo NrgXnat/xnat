@@ -42,6 +42,14 @@ import java.util.TimeZone;
 @SuppressWarnings("unused")
 @Slf4j
 public class XDATRegisterUser extends VelocitySecureAction {
+    public XDATRegisterUser() {
+        this("Register.vm");
+    }
+
+    protected XDATRegisterUser(final String pageForRetry) {
+        _pageForRetry = pageForRetry;
+    }
+
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
         //noinspection Duplicates
@@ -204,19 +212,21 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    protected void sendNewUserVerificationEmail(final RunData data, final Context context, final UserI found) throws Exception {
-        // If verification is on, the user must verify their email before the admin gets emailed.
-        AdminUtils.sendNewUserVerificationEmail(found);
-        context.put("emailTo", found.getEmail());
-        context.put("emailUsername", found.getLogin());
-        context.put("siteLogoPath", XDAT.getSiteLogoPath());
-        data.setRedirectURI(null);
-        data.setScreenTemplate("VerificationSent.vm");
-    }
+    public void directRequest(RunData data,Context context,UserI user) throws Exception{
+        String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+        String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
-    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) throws NrgServiceException {
-        UserRegistrationDataService service = XDAT.getContextService().getBean(UserRegistrationDataService.class);
-        service.cacheUserRegistrationData(newUser, phone, lab, comments);
+        data.setScreenTemplate("Index.vm");
+
+        if ((XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()) || ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && hasPAR(data))){
+            if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+                data.setAction(nextAction);
+                VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
+                action.doPerform(data, context);
+            }else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
+                data.setScreenTemplate(nextPage);
+            }
+        }
     }
 
     public boolean hasPAR(RunData data){
@@ -241,8 +251,27 @@ public class XDATRegisterUser extends VelocitySecureAction {
             log.error(message,e);
             data.setMessage(message);
         }finally{
-            data.setScreenTemplate("Register.vm");
+            data.setScreenTemplate(getPageForRetry());
         }
+    }
+
+    @Override
+    protected boolean isAuthorized(RunData data) {
+        return true;
+    }
+
+    protected String getPageForRetry() {
+        return _pageForRetry;
+    }
+
+    protected void sendNewUserVerificationEmail(final RunData data, final Context context, final UserI found) throws Exception {
+        // If verification is on, the user must verify their email before the admin gets emailed.
+        AdminUtils.sendNewUserVerificationEmail(found);
+        context.put("emailTo", found.getEmail());
+        context.put("emailUsername", found.getLogin());
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
+        data.setRedirectURI(null);
+        data.setScreenTemplate("VerificationSent.vm");
     }
 
     protected void preserveVariables(final RunData data, final Context context) {
@@ -259,25 +288,10 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    public void directRequest(RunData data,Context context,UserI user) throws Exception{
-		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-
-        data.setScreenTemplate("Index.vm");
-
-        if ((XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()) || ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && hasPAR(data))){
-         if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
-			data.setAction(nextAction);
-            VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
-            action.doPerform(data, context);
-		 }else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
-			data.setScreenTemplate(nextPage);
-		 }
-        }
+    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) throws NrgServiceException {
+        UserRegistrationDataService service = XDAT.getContextService().getBean(UserRegistrationDataService.class);
+        service.cacheUserRegistrationData(newUser, phone, lab, comments);
     }
 
-    @Override
-    protected boolean isAuthorized(RunData data) {
-        return true;
-    }
+    private final String _pageForRetry;
 }

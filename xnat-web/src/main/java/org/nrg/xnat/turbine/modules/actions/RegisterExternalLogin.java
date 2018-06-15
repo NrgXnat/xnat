@@ -32,6 +32,7 @@ import org.springframework.security.core.AuthenticationException;
 @Slf4j
 public class RegisterExternalLogin extends XDATRegisterUser {
     public RegisterExternalLogin() {
+        super("RegisterExternalLogin.vm");
         _service = XDAT.getContextService().getBean(XdatUserAuthService.class);
         _provider = XDAT.getContextService().getBean(XnatDatabaseAuthenticationProvider.class);
         _manager = XDAT.getContextService().getBean(XnatProviderManager.class);
@@ -82,6 +83,11 @@ public class RegisterExternalLogin extends XDATRegisterUser {
     @Override
     public void directRequest(final RunData data, final Context context, final UserI user) throws Exception {
         super.directRequest(data, context, user);
+    }
+
+    @Override
+    public void handleInvalid(final RunData data, final Context context, final String message) {
+        super.handleInvalid(data, context, StringUtils.startsWith(message, "Registration error") ? message : "Registration error: " + message);
     }
 
     private void validateXnatLogin(final String username, final String password) {

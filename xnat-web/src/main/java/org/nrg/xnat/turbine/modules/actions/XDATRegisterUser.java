@@ -34,6 +34,14 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 @Slf4j
 public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATRegisterUser {
+    public XDATRegisterUser() {
+        super();
+    }
+
+    protected XDATRegisterUser(final String pageForRetry) {
+        super(pageForRetry);
+    }
+
     @Override
     public void doPerform(final RunData data, final Context context) throws Exception {
         final Map<String, String> parameters = TurbineUtils.GetDataParameterHash(data);

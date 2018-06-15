@@ -54,6 +54,7 @@ import org.xml.sax.InputSource;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -113,10 +114,7 @@ public class TurbineUtils {
         if (sec != null) {
             try {
                 return sec.getIntegerProperty("xdat:security.xdat_security_id");
-            } catch (FieldNotFoundException e) {
-                logger.error("", e);
-                return null;
-            } catch (ElementNotFoundException e) {
+            } catch (FieldNotFoundException | ElementNotFoundException e) {
                 logger.error("", e);
                 return null;
             }
@@ -1405,6 +1403,19 @@ public class TurbineUtils {
 
     public String escapeJS(String o) {
         return (o == null) ? null : StringEscapeUtils.escapeEcmaScript(o);
+    }
+
+    public static void setBannerMessage(final RunData data, final String message) {
+        data.getSession().setAttribute("bannerMessage", message);
+    }
+
+    public String getBannerMessage(final RunData data) {
+        final HttpSession session = data.getSession();
+        try {
+            return StringUtils.replace(StringUtils.defaultIfBlank((String) session.getAttribute("bannerMessage"), ""), "'", "\\'");
+        } finally {
+            session.removeAttribute("bannerMessage");
+        }
     }
 
     public int getYear() {

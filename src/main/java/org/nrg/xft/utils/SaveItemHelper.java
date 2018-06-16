@@ -91,7 +91,7 @@ public class SaveItemHelper {
 	}
 
 	@EventServiceTrigger
-	protected void delete(ItemI i, UserI user,EventMetaI c) throws Exception{
+	public void delete(ItemI i, UserI user,EventMetaI c) throws Exception{
 		doDynamicActions(i,user,c,"preDelete",true);
 		DBAction.DeleteItem(i.getItem(), user, c, false);
 		doDynamicActions(i,user,c,"postDelete",false);

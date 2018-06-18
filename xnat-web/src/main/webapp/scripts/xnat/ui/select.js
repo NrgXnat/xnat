@@ -53,13 +53,13 @@ var XNAT = getObject(XNAT);
         }));
         el.appendChild(option);
     }
-    
+
     // generate JUST the options
     // opts is an array of option objects
     select.options = function(opts){
         return opts.map(function(opt){
-            return spawn('option', opt);    
-        });      
+            return spawn('option', opt);
+        });
     };
 
 
@@ -67,8 +67,8 @@ var XNAT = getObject(XNAT);
     select.addOptions = function(menu, options){
         $$(menu).append(select.options(options));
     };
-    
-    
+
+
     // ========================================
     // MAIN FUNCTION
     select.menu = function(config, multi){
@@ -104,12 +104,12 @@ var XNAT = getObject(XNAT);
 
         // DO NOT add default 'Select' option
         //addOption(menu, { html: 'Select' });
-        
+
         if (config.options){
             if (Array.isArray(config.options)) {
                 forEach(config.options, function(opt){
                     addOption(menu, opt, config.value);
-                })    
+                })
             }
             else {
                 forOwn(config.options, function(val, txt){
@@ -125,24 +125,24 @@ var XNAT = getObject(XNAT);
                 });
             }
         }
-        
+
         // force menu change event to select 'selected' option
         if (!multi && !config.multiple && !config.element.multiple) {
             $menu.changeVal(config.value);
         }
         // $menu.find('[value="' + config.value + '"]').prop('selected', true);
 
-        // if there's no label, wrap the 
+        // if there's no label, wrap the
         // <select> inside a <label> element
         if (!config.label) {
             //frag = XNAT.element().label(menu.get());
             frag = spawn('label', [menu]);
-        } 
+        }
         else {
             label = spawn('label', {
                 attr: { "for": config.id }
             }, config.label);
-            
+
             if (config.layout !== 'right') {
                 frag.appendChild(label);
             }
@@ -158,11 +158,15 @@ var XNAT = getObject(XNAT);
         return {
             target: menu,
             element: menu,
+            menu: menu,
             spawned: frag,
             get: function(){
                 return frag;
             },
-            render: function(container){
+            render: function(container, callback){
+                if (isFunction(callback)) {
+                    callback.call(menu, frag);
+                }
                 $$(container).append(frag);
                 return frag;
             }
@@ -170,8 +174,8 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
     select.single = select.menu;
-    
-    
+
+
     select.multiple = function(opts){
         opts = cloneObject(opts);
         opts.element = opts.element || {};
@@ -184,8 +188,8 @@ var XNAT = getObject(XNAT);
     //select.loadMenu = function(opts){
     //
     //};
-    
-    
+
+
     // this script has loaded
     select.loaded = true;
 

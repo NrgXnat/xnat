@@ -249,31 +249,37 @@ var XNAT = getObject(XNAT);
         config.type = type || config.type || 'text';
         config.data = getObject(config.data || {});
 
+        var isHidden = /hidden/i.test(config.kind);
+
         // addClassName(config, config.type);
 
         // add validation [data-*] attributes
         addValidation(config);
 
-        _label = spawn('label');
+        _label = isHidden ? spawn('label.hidden') : spawn('label');
         // _label.style.marginBottom = '10px';
 
-        if (!/switchbox/i.test(config.kind||'')) {
-            if (config.label) {
-                labelText = spawn('span.label-text', config.label);
-                delete config.label;
-        }
+        if (!isHidden) {
 
-            if (config.layout) {
-                _layout = config.layout;
-                _label.style.display = /block/i.test(_layout) ? 'block' : 'inline';
-                delete config.layout;
+            if (!/switchbox/i.test(config.kind||'')) {
+                if (config.label) {
+                    labelText = spawn('span.label-text', config.label);
+                    delete config.label;
+                }
+
+                if (config.layout) {
+                    _layout = config.layout;
+                    _label.style.display = /block/i.test(_layout) ? 'block' : 'inline';
+                    delete config.layout;
+                }
             }
-        }
 
-        if (config.description) {
-            descText = spawn('span.description.desc-text', config.description);
-            descText.style.paddingLeft = '6px';
-            delete config.description;
+            if (config.description) {
+                descText = spawn('span.description.desc-text', config.description);
+                descText.style.paddingLeft = '6px';
+                delete config.description;
+            }
+
         }
 
         // value should at least be an empty string
@@ -308,6 +314,11 @@ var XNAT = getObject(XNAT);
         // }
 
         function setInputValue(){
+            // set literal value for all-caps __VALUE__ or VALUE property
+            if (config.__VALUE__ !== undef || config.VALUE !== undef) {
+                _input.value = firstDefined(config.__VALUE__, config.VALUE);
+                return;
+            }
             if (config.value !== '' && config.value !== undef) {
                 XNAT.form.setValue(_input, config.value);
             }

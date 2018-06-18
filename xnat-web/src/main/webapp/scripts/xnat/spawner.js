@@ -415,9 +415,14 @@ var XNAT = getObject(XNAT);
 
         spawneri.children = frag.children;
 
-        spawneri.get = function(){
+        spawneri.get = function(callback){
+            // allow transform callback when calling .get()
+            if (isFunction(callback)) {
+                callback.call(spawneri, frag, $frag)
+            }
             return frag;
         };
+        spawneri.getSpawned = spawneri.get;
 
         spawneri.get$ = function(){
             return $frag;

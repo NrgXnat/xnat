@@ -80,7 +80,8 @@ var XNAT = getObject(XNAT);
         var inputType = input0.type;
         var inputName = input0.name || input0.title || input0.id;
         var inputValue = input$.val() || input$.attr('data-value');
-        var val = value || input$.attr('data-load') || '';
+        var loadValue = input$.attr('data-load') || value || null;
+        var val = value;
 
         // skip buttons (?)
         if (isButton(input0)) {
@@ -92,9 +93,18 @@ var XNAT = getObject(XNAT);
             val = value.join(', ');
             input$.addClass('array-list');
         }
-        else if (inputName && isPlainObject(value)) {
-            if (inputName in value) {
+        else if (isPlainObject(value)) {
+            if (inputName && value.hasOwnProperty(inputName)) {
                 val = value[inputName];
+            }
+            else if (value.hasOwnProperty('__VALUE__')) {
+                val = value.__VALUE__;
+            }
+            else if (value.hasOwnProperty('VALUE')) {
+                val = value.VALUE;
+            }
+            else if (value.hasOwnProperty('load')) {
+                loadValue = value.load;
             }
             else {
                 ////////// RETURN //////////
@@ -104,14 +114,14 @@ var XNAT = getObject(XNAT);
             }
         }
         else {
-            val = stringable(val) ? val+'' : JSON.stringify(val);
+            val = stringable(value) ? value+'' : JSON.stringify(value);
         }
 
 
         // recursively parse values?
-        if (XNAT.parse.parseable(val)) {
+        if (XNAT.parse.parseable(loadValue)) {
             // --- RECURSIVE PARSE RETURN --- //
-            XNAT.parse(val).done(function(result){
+            XNAT.parse(loadValue).done(function(result){
                 setValue(input$, result);
             });
             ////////// RETURN //////////
@@ -123,7 +133,7 @@ var XNAT = getObject(XNAT);
 
         // add value to [data-value] attribute
         // (except for password fields, radio buttons, and textarea elements)
-        if (!/textarea/i.test(inputTag) && !/password|radio/i.test(inputType)){
+        if (!/password|radio/i.test(inputType) && !/textarea/i.test(inputTag)){
             input$.dataAttr('value', valString);
         }
 
@@ -159,7 +169,7 @@ var XNAT = getObject(XNAT);
         }
         else {
             // lastly, if not an input element, try to set the innerHTML
-            if (input0.innerHTML) input0.innerHTML = val;
+            if (input0.hasOwnProperty('innerHTML')) input0.innerHTML = val;
         }
 
         return [inputName, val];

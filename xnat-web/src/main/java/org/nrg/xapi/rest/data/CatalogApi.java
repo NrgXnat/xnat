@@ -141,7 +141,44 @@ public class CatalogApi extends AbstractXapiRestController {
                                           ? ListUtils.union(resources.get("projectId"), resources.get("projectIds"))
                                           : (hasProjectId ? resources.get("projectId") : resources.get("projectIds"))));
         }
-        return new ResponseEntity<>(_service.buildCatalogForResources(user, resources), HttpStatus.OK);
+        return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, false).get("id"), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Creates a download catalog for the submitted sessions and other data objects.",
+            notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
+                    + "scan_type, scan_format, recon, assessors, and resources. The response for this method is json"
+                    + "with the ID for the catalog of resolved resources (which can be submitted to the "
+                    + "download/{catalog} function to retrieve the catalog or to the download/{catalog}/zip function"
+                    + "to retrieve the files in the catalog as a zip archive), as well as the total size of the files.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
+            @ApiResponse(code = 204, message = "No resources were specified."),
+            @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+            @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
+            @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
+            @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "downloadwithsize", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @ResponseBody
+    public ResponseEntity<Map<String,String>> createDownloadSessionsCatalogWithSize(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+        final UserI user = getSessionUser();
+
+        final boolean hasProjectId  = resources.containsKey("projectId");
+        final boolean hasProjectIds = resources.containsKey("projectIds");
+        if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {
+            throw new NoContentException("There were no resources or sessions specified in the request.");
+        }
+
+        if (log.isInfoEnabled()) {
+            // You don't normally need to check is isInfoEnabled(), but the Joiner and map testing is somewhat complex,
+            // so this removes that unnecessary operation when the logging level is higher than info.
+            log.info("User {} requested download catalog for {} resources in projects {}",
+                    user.getUsername(),
+                    resources.get("sessions"),
+                    Joiner.on(", ").join(hasProjectId && hasProjectIds
+                            ? ListUtils.union(resources.get("projectId"), resources.get("projectIds"))
+                            : (hasProjectId ? resources.get("projectId") : resources.get("projectIds"))));
+        }
+        return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, true), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Retrieves the download catalog for the submitted catalog ID.",

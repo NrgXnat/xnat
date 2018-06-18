@@ -184,7 +184,7 @@
 
 <h2>Imaging Data Download</h2>
 
-<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download">
+<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/downloadwithsize">
 
     #set($counter=0)
     #set($_ID="")

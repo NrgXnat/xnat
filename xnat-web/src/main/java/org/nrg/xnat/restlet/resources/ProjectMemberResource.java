@@ -242,7 +242,7 @@ public class ProjectMemberResource extends SecureResource {
 										context.put("siteLogoPath", XDAT.getSiteLogoPath());
 										context.put("process", "Transfer to the archive.");
 										context.put("system", TurbineUtils.GetSystemName());
-										context.put("access_level", "member");
+										context.put("access_level", group.getDisplayname());
 										context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
 										context.put("projectOM", proj);
 										org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + proj.getName());

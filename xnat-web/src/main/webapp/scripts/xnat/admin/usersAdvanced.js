@@ -410,10 +410,8 @@ var XNAT = getObject(XNAT);
         var userform$ = $$(form$ || '#userform');
         var accessInputs$ = userform$.find('input.access');
 
-        var username = userform$.find('[name="xdat:user.login"]').val();
-
         function roleUrl(part){
-            return XNAT.url.rootUrl('/xapi/users/' + username + part);
+            return XNAT.url.rootUrl('/xapi/users/' + editUser + part);
         }
 
         // collect request info

@@ -127,6 +127,7 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> unescapedScanFormats = unescapeList(scanFormats);
 
         Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
 
         final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(resolvedUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
@@ -150,10 +151,17 @@ public class DefaultCatalogService implements CatalogService {
                             sessionsByScanTypesAndFormats = (CatCatalogI)catalogObj;
                         }
                         if(withSize){
-                            Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                             try{
+                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
                             }
                             catch (Exception e){
                             }
@@ -171,10 +179,17 @@ public class DefaultCatalogService implements CatalogService {
                             resourcesCatalog = (CatCatalogI)catalogObj;
                         }
                         if(withSize){
-                            Object sizeObj = resourcesMap.get("size");
                             try{
+                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
                             }
                             catch (Exception e){
                             }
@@ -192,10 +207,17 @@ public class DefaultCatalogService implements CatalogService {
                             reconstructionsCatalog = (CatCatalogI)catalogObj;
                         }
                         if(withSize){
-                            Object sizeObj = reconstructionsMap.get("size");
                             try{
+                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
                             }
                             catch (Exception e){
                             }
@@ -213,10 +235,17 @@ public class DefaultCatalogService implements CatalogService {
                             assessorsCatalog = (CatCatalogI)catalogObj;
                         }
                         if(withSize){
-                            Object sizeObj = assessorsMap.get("size");
                             try{
+                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
                             }
                             catch (Exception e){
                             }
@@ -236,6 +265,7 @@ public class DefaultCatalogService implements CatalogService {
         Map<String,String> idAndSize = new HashMap<>();
         idAndSize.put("id", catalog.getId());
         idAndSize.put("size",totalSize+"");
+        idAndSize.put("resourcesOfUnknownSize",resourcesOfUnknownSize+"");
 
         return idAndSize;
     }
@@ -1143,6 +1173,7 @@ public class DefaultCatalogService implements CatalogService {
 
     private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, final boolean withSize) {
         Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         if (StringUtils.isBlank(session)) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
         }
@@ -1182,7 +1213,12 @@ public class DefaultCatalogService implements CatalogService {
                 entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
-                totalSize+=scanSize;
+                if(scanSize!=null){
+                    totalSize+=scanSize;
+                }
+                else{
+                    resourcesOfUnknownSize++;
+                }
             }
         } catch (UnsupportedEncodingException ignored) {
             //
@@ -1194,6 +1230,7 @@ public class DefaultCatalogService implements CatalogService {
             HashMap<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
             catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
             return catalogAndSize;
         }
     }
@@ -1203,6 +1240,7 @@ public class DefaultCatalogService implements CatalogService {
             return null;
         }
         Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(StringUtils.upperCase(type));
 
@@ -1225,7 +1263,12 @@ public class DefaultCatalogService implements CatalogService {
                 entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
                 log.debug("Created resource entry for project {} session {} resource {} of type {} with name {}: {}", project, session, resourceString, type, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
-                totalSize+=scanSize;
+                if(scanSize!=null) {
+                    totalSize += scanSize;
+                }
+                else{
+                    resourcesOfUnknownSize++;
+                }
             } catch (UnsupportedEncodingException ignored) {
                 //
             }
@@ -1237,6 +1280,7 @@ public class DefaultCatalogService implements CatalogService {
             HashMap<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
             catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
             return catalogAndSize;
         }
     }
@@ -1246,6 +1290,7 @@ public class DefaultCatalogService implements CatalogService {
             return null;
         }
         Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(StringUtils.upperCase("assessors"));
 
@@ -1269,7 +1314,12 @@ public class DefaultCatalogService implements CatalogService {
                         entry.setUri(StringSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
                         log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
                         catalog.addEntries_entry(entry);
-                        totalSize+=scanSize;
+                        if(scanSize!=null) {
+                            totalSize += scanSize;
+                        }
+                        else{
+                            resourcesOfUnknownSize++;
+                        }
                     }
                 } catch (Exception e) {
                     log.warn("An error occurred trying to get session assessors for a project.", e);
@@ -1285,6 +1335,7 @@ public class DefaultCatalogService implements CatalogService {
             HashMap<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
             catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
             return catalogAndSize;
         }
     }

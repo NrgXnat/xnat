@@ -17,7 +17,7 @@ $page.setBgColor($ui.bgcolor)
         <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
     #end
 
-    <div id="login_welcome">
+    <div id="login_welcome" class="login-box-container-flex">
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
@@ -35,7 +35,7 @@ $page.setBgColor($ui.bgcolor)
         #end
     </div>
 
-    <div id="register_box_container" style="background:transparent">
+    <div class="login-box-container-fixed">
         <h3><span>New User Registration</span></h3>
         <div class="clear"></div>
         #if($data.getMessage())

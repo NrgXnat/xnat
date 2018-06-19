@@ -1344,6 +1344,7 @@ body.xnat .chosen-container {
 .forgot-login .login-box-container-fixed {
     margin: 0 20px;
     background-color: #f0f0f0;
+    display: inline-block;
 }
 
 /*@media screen and (min-width: 1000px) {*/

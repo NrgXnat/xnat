@@ -180,14 +180,14 @@ public class DefaultCatalogService implements CatalogService {
                         }
                         if(withSize){
                             try{
-                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
+                                Object sizeObj = resourcesMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
                             }
                             catch (Exception e){
                             }
                             try{
-                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                Object unknownObj = resourcesMap.get("resourcesOfUnknownSize");
                                 long unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize+=unknownCount;
                             }
@@ -208,14 +208,14 @@ public class DefaultCatalogService implements CatalogService {
                         }
                         if(withSize){
                             try{
-                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
+                                Object sizeObj = reconstructionsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
                             }
                             catch (Exception e){
                             }
                             try{
-                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                Object unknownObj = reconstructionsMap.get("resourcesOfUnknownSize");
                                 long unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize+=unknownCount;
                             }
@@ -236,14 +236,14 @@ public class DefaultCatalogService implements CatalogService {
                         }
                         if(withSize){
                             try{
-                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
+                                Object sizeObj = assessorsMap.get("size");
                                 long objSize = Long.parseLong(sizeObj.toString());
                                 totalSize+=objSize;
                             }
                             catch (Exception e){
                             }
                             try{
-                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                Object unknownObj = assessorsMap.get("resourcesOfUnknownSize");
                                 long unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize+=unknownCount;
                             }

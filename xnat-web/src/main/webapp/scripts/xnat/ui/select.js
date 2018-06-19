@@ -74,7 +74,7 @@ var XNAT = getObject(XNAT);
     select.menu = function(config, multi){
 
         var frag = document.createDocumentFragment(),
-            $menu, menu, label;
+            menu, label;
 
         config = cloneObject(config);
 
@@ -99,8 +99,7 @@ var XNAT = getObject(XNAT);
             data: config.data
         }, config.element);
 
-        $menu = $.spawn('select', config.element);
-        menu = $menu[0];
+        menu = spawn('select', config.element);
 
         // DO NOT add default 'Select' option
         //addOption(menu, { html: 'Select' });
@@ -110,6 +109,42 @@ var XNAT = getObject(XNAT);
                 forEach(config.options, function(opt){
                     addOption(menu, opt, config.value);
                 })
+            }
+            else if (isFunction(config.options)) {
+                try {
+                    config.options.call(menu, config)
+                }
+                catch(e){
+                    console.warn(e);
+                }
+            }
+            else if (isString(config.options)) {
+                if (XNAT.parse.parseable(config.options)){
+                    XNAT.parse(config.options).done(function(data){
+                        if (Array.isArray(data)) {
+                            forEach(data, function(opt){
+                                if (config.optionMap) {
+                                    forOwn(config.optionMap, function(optKey, dataKey){
+                                        opt[optKey] = opt[dataKey]
+                                    })
+                                }
+                                addOption(menu, opt, config.value);
+                            });
+                            return;
+                        }
+                        try {
+                            forOwn(data, function(label, value){
+                                addOption(menu, {
+                                    label: label,
+                                    value: value
+                                }, config.value);
+                            })
+                        }
+                        catch(e){
+                            console.warn(e);
+                        }
+                    })
+                }
             }
             else {
                 forOwn(config.options, function(val, txt){
@@ -127,10 +162,15 @@ var XNAT = getObject(XNAT);
         }
 
         // force menu change event to select 'selected' option
-        if (!multi && !config.multiple && !config.element.multiple) {
-            $menu.changeVal(config.value);
+        if (config.value && !multi && !config.multiple && !config.element.multiple) {
+            // $(menu).changeVal(config.value);
+            (function(){
+                var option = menu.querySelector('[value="' + config.value + '"]');
+                if (option) {
+                    option.selected = true;
+                }
+            })();
         }
-        // $menu.find('[value="' + config.value + '"]').prop('selected', true);
 
         // if there's no label, wrap the
         // <select> inside a <label> element

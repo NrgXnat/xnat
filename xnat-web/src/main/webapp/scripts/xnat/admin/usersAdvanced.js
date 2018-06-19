@@ -41,30 +41,34 @@ var XNAT = getObject(XNAT);
 
     var editUser = usersAdvanced.user;
 
-
-    var listedProjects = {};
-    usersAdvanced.listedProjects = listedProjects;
+    usersAdvanced.listedProjects = {};
 
     // keep track of projects the user doesn't belong to yet
     usersAdvanced.availableProjects = {};
 
+    // save a map of ALL group names with id as the key
+    usersAdvanced.groupNamesMap = {};
 
-    // get project ID from the group_id
-    function extractProjectId(str){
-        return str.replace(/(_owner|_member|_collaborator)$/, '');
-    }
+    // save a map of arrays of project groups with project ID as the key
+    usersAdvanced.projectGroupsMap = {};
 
-    // get gorup/role label from group_id
-    function extractRoleLabel(group){
-        if (/_owner$/i.test(group)) {
-            return 'Owners'
-        }
-        if (/_member$/i.test(group)) {
-            return 'Members'
-        }
-        if (/_collaborator$/i.test(group)) {
-            return 'Collaborators'
-        }
+    usersAdvanced.groupsList = [];
+
+    // get all groups for specified project
+    function getProjectGroups(projId, success, failure){
+        return XNAT.xhr.getJSON({
+            url: XNAT.url.restUrl('/data/projects/' + projId + '/groups', ['format=json']),
+            success: function(json){
+                var jqXHR = this;
+                // pull the data from the ResultSet.Result
+                // for 'success' callback (argument)
+                var projGroups = json.ResultSet.Result;
+                if (isFunction(success)) {
+                    success.call(jqXHR, projGroups);
+                }
+            },
+            error: failure
+        })
     }
 
     // gets list of ALL projects on the system
@@ -87,14 +91,21 @@ var XNAT = getObject(XNAT);
         })
     }
 
+    function removeSiteRoles(projGroupsList){
+        return projGroupsList.filter(function(proj){
+            return !/^(ALL_DATA_ACCESS|ALL_DATA_ADMIN)$/.test(proj.group_id)
+        })
+    }
+
     // gets list of all projects then removes user projects
     function getAvailableProjects(callback){
         getAllProjects().done(function(allProjects){
             getUserProjects().done(function(userProjects){
                 var jqXHR = this;
+                var filteredProjects = removeSiteRoles(userProjects);
                 var availableProjects = [];
                 var availableProjectIds = [];
-                var userProjectIds = userProjects.map(function(userProj){
+                var userProjectIds = filteredProjects.map(function(userProj){
                     return userProj.ID
                 });
                 forEach(allProjects.ResultSet.Result, function(proj){
@@ -105,7 +116,11 @@ var XNAT = getObject(XNAT);
                 });
                 // update namespaced vars
                 usersAdvanced.availableProjects = availableProjects;
-                usersAdvanced.listedProjects = userProjects;
+                usersAdvanced.listedProjects = filteredProjects;
+                usersAdvanced.listedProjectsMap = {};
+                forEach(filteredProjects, function(proj){
+                    usersAdvanced.listedProjectsMap[proj.ID] = proj;
+                });
                 if (isFunction(callback)) {
                     callback.call(jqXHR, availableProjects, availableProjectIds)
                 }
@@ -118,70 +133,185 @@ var XNAT = getObject(XNAT);
 
 
     function linkToProject(project, text){
-        return spawn('a', {
+        return spawn('a.nowrap.truncate', {
             href: project.URI,
             target: '_blank',
             title: project.name
         }, escapeHtml(text))
     }
 
-    function addNewRole(user){
+    function setGroupInfo(data){
+        var group = cloneObject(data);
+        var groupId = group.ID = group.groupId = group.id;
+        var projectId = group.project_id = group.projectId = group.tag;
+        group.displayName = group.displayname;
+        usersAdvanced.groupsList.push(group);
+        usersAdvanced.groupNamesMap[groupId] = group;
+        usersAdvanced.projectGroupsMap[projectId] = [];
+        forOwn(usersAdvanced.groupNamesMap, function(id, obj){
+            usersAdvanced.projectGroupsMap[projectId].push(obj);
+        });
+        return group;
+    }
+
+    // if the group isn't in groupNamesMap, get the data, then do something
+    function getGroupInfo(projId, groupId, callback){
+        if (!projId) return;
+        getProjectGroups(projId,
+            function(projGroups){
+                forEach(projGroups, function(projGroup){
+                    setGroupInfo(projGroup);
+                });
+                // use [groupId] group for callback
+                if (isFunction(callback)) {
+                    callback.call(usersAdvanced.groupNamesMap, usersAdvanced.groupNamesMap[groupId], projGroups);
+                }
+            },
+            function(){
+                console.warn(arguments);
+            }
+        )
+    }
+
+
+    function setupGroupsMenu(menu, projId, groupId){
+        getGroupInfo(projId, groupId, function(group, projGroups){
+            menu.innerHTML = '<option value="">&nbsp;</option>'; // reset the menu
+            forEach(projGroups, function(group, i){
+                var option = spawn('option', {
+                    value: group.id,
+                    html: group.displayname
+                });
+                if (groupId === group.id) {
+                    option.selected = true;
+                }
+                menu.appendChild(option);
+            });
+            console.log('project groups ready');
+            // menuInit(menu, {}, 200);
+            menuUpdate(menu);
+            // $(menu).trigger('chosen:updated');
+            // menu$.trigger('chosen:open');
+        });
+    }
+
+
+    function setUserRole(user, groupId, projectId){
         getAvailableProjects(function(availableProj){
 
             var sortedProj = sortObjects(availableProj, 'secondary_ID');
 
-            var addRoleDialog = XNAT.dialog.open({
+            var projectIdMap = {};
+
+            forEach(sortedProj, function(proj, i){
+                projectIdMap[proj.ID] = proj;
+            });
+
+            var editGroupDialog = XNAT.dialog.open({
                 width: 500,
                 minHeight: 250,
                 padding: 30,
-                title: 'Add User to Project Group',
+                title: 'Set User Group',
                 content: (function(){
 
-                    var addRolePanel = XNAT.spawner.spawn({
-                        addRolePanel: {
-                            kind: 'panel',
-                            header: false,
-                            footer: false,
-                            border: false,
-                            padding: 0,
+                    var rolePanelConfig = {
+                        kind: 'panel',
+                        header: false,
+                        footer: false,
+                        border: false,
+                        padding: 0,
+                        contents: {
+                            // child elements defined below
+                        }
+                    };
+
+                    // is the 'Project' element going to be text or a <select> menu?
+                    if (projectId) {
+                        rolePanelConfig.contents.projectDisplay = {
+                            kind: 'panel.element',
+                            id: false,
+                            label: 'Project',
                             contents: {
-                                projectSelect: {
-                                    kind: 'panel.select.menu',
-                                    id: '',
-                                    name: 'project',
-                                    label: 'Select Project',
-                                    options: sortedProj.map(function(prj){
-                                        return {
-                                            label: prj.secondary_ID,
-                                            value: prj.ID
-                                        }
-                                    })
+                                projectName: {
+                                    tag: 'b',
+                                    content: escapeHtml(usersAdvanced.listedProjectsMap[projectId].secondary_ID)
                                 },
-                                roleSelect: {
-                                    kind: 'panel.select.menu',
-                                    id: '',
-                                    name: 'role',
-                                    label: 'Select Group',
-                                    options: [
-                                        { label: 'Owners', value: '_owner' },
-                                        { label: 'Members', value: '_member' },
-                                        { label: 'Collaborators', value: '_collaborator' }
-                                    ]
+                                projectId: {
+                                    kind: 'input.hidden',
+                                    name: 'project',
+                                    value: projectId
                                 }
                             }
                         }
+                    }
+                    else {
+                        rolePanelConfig.contents.projectSelect = {
+                            kind: 'panel.select.menu',
+                            id: false,
+                            name: 'project',
+                            label: 'Select Project',
+                            options: [{
+                                label: '&nbsp;',
+                                value: '',
+                                selected: true
+                            }].concat(sortedProj.map(function(prj){
+                                return {
+                                    label: escapeHtml(prj.secondary_ID),
+                                    value: prj.ID
+                                }
+                            }))
+                        };
+                    }
+
+                    // add the 'Groups' (roles) menu
+                    rolePanelConfig.contents.groupSelect = {
+                        kind: 'panel.select.menu',
+                        id: false,
+                        name: 'group',
+                        label: 'Select Group',
+                        options: [{
+                            label: '&nbsp;',
+                            value: '',
+                            selected: true
+                        }]
+                        // options added later
+                    };
+
+
+                    var rolePanel = XNAT.spawner.spawn({
+                        rolePanel: rolePanelConfig
                     });
 
-                    return addRolePanel.get();
+                    // var projMenu$ = $(addRolePanel.spawned).find('select[name="project"]');
+                    // var groupMenu$ = $(addRolePanel.spawned).find('select[name="group"]');
+
+                    // if there's a project id, populate the 'groups' menu immediately
+                    // if (projectId) {
+                    //     projMenu$.changeVal(projectId)
+                    // }
+
+                    return rolePanel.spawned;
 
                 })(),
-                beforeShow: function(){
+                beforeShow: function(dlgObj){
                     // all of this for the fancy menus...
                     this.dialog$.css({ overflow: 'visible' });
                     this.dialogBody$.css({ overflow: 'visible' });
                     this.content$.css({ overflow: 'visible' });
-                    menuInit(this.dialogBody$.find('select[name="project"]'), {}, 250);
-                    menuInit(this.dialogBody$.find('select[name="role"]'), {}, 200);
+                    var dlg$ = dlgObj.dialog$;
+                    var groupMenu$ = dlg$.find('select[name="group"]');
+                    menuInit(groupMenu$, {}, 200);
+                    // set the initial value for a selected group
+                    if (projectId && groupId) {
+                        setupGroupsMenu(groupMenu$[0], projectId, groupId);
+                    }
+                    var projMenu$ = dlg$.find('select[name="project"]');
+                    menuInit(projMenu$, {}, 250);
+                    // update role menu after selecting a project
+                    projMenu$.on('change', function(e){
+                        var projId = this.value;
+                        setupGroupsMenu(groupMenu$[0], projId);
+                    });
                 },
                 buttons: [
                     {
@@ -190,15 +320,23 @@ var XNAT = getObject(XNAT);
                         close: false,
                         action: function(dlgObj){
                             var dlg$ = dlgObj.dialog$;
-                            var projMenu = dlg$.find('select[name="project"]');
-                            var roleMenu = dlg$.find('select[name="role"]');
+                            var proj$ = dlg$.find('[name="project"]');
+                            var group$ = dlg$.find('[name="group"]');
+                            if (!proj$.val()) {
+                                XNAT.dialog.message(false, 'Please select a project.');
+                                return;
+                            }
+                            if (!group$.val()) {
+                                XNAT.dialog.message(false, 'Please select a group');
+                                return;
+                            }
                             XNAT.xhr.put({
-                                url: XNAT.url.rootUrl('/xapi/users/' + editUser + '/groups/' + projMenu.val() + roleMenu.val())
+                                url: XNAT.url.rootUrl('/xapi/users/' + editUser + '/groups/' + group$.val())
                             }).done(function doneFn(){
                                 // update the list after saving
                                 window.setTimeout(function(){
-                                    userGroupsTable();
-                                    addRoleDialog.close();
+                                    renderUserGroupsTable();
+                                    editGroupDialog.close();
                                 }, 100)
                             }).fail(function failFn(jqXHR, textStatus, errorThrown){
                                 XNAT.dialog.message('Error', 'An error occurred adding user role.<br><br>' + errorThrown)
@@ -214,54 +352,64 @@ var XNAT = getObject(XNAT);
         })
     }
 
-    function confirmChange(user, groupId){
-        var newRole = extractRoleLabel(groupId);
-        var projectId = extractProjectId(groupId);
-        var proj = listedProjects[projectId];
-        var confirmChangeDialog = XNAT.dialog.confirm({
-            // width: 500,
-            // padding: 30,
-            title: 'Change Role?',
-            content: 'Change role of <b>"' + user + '"</b> for project <b>"' + proj.secondary_ID + '"</b> to <b>"' + newRole.toLowerCase().slice(0, -1) + '"</b>?',
-            okLabel: 'Change',
-            okClose: false,
-            okAction: function(obj){
-                // do we need to delete old role first?
-                // XNAT.xhr['delete']({
-                //     url: '/xapi/users/' + user + '/groups/' + proj.group_id
-                // }).done(function(){})
-                XNAT.xhr.put({
-                    url: '/xapi/users/' + user + '/groups/' + groupId
-                }).done(function(){
-                    XNAT.ui.banner.top(2000, 'Role changed.', 'success');
-                    userGroupsTable();
-                }).fail(function(){
-                    XNAT.ui.banner.top(3000, 'An error occured when attempting to set the user role.', 'error');
-                }).always(function(){
-                    confirmChangeDialog.close();
-                })
-            }
+    function confirmChange(user, projId, groupId){
+        getGroupInfo(projId, groupId, function(group){
+            user = user || editUser;
+            var newRole = escapeHtml(group.displayname);
+            var projectId = escapeHtml(group.tag);
+            var proj = usersAdvanced.listedProjects[projectId];
+            var projLabel = escapeHtml(proj.secondary_ID);
+
+            var confirmation = '' +
+                'Move user ' + '<b>"' + user + '"</b>' +
+                ' to group ' + '<b>"' + newRole + '"</b>' +
+                ' in project ' + '<b>"' + projLabel + '"</b>' + '?';
+
+            var confirmChangeDialog = XNAT.dialog.confirm({
+                width: 500,
+                padding: 30,
+                title: 'Change Role?',
+                content: confirmation,
+                okLabel: 'Change',
+                okClose: false,
+                okAction: function(obj){
+                    // do we need to delete old role first?
+                    // XNAT.xhr['delete']({
+                    //     url: '/xapi/users/' + user + '/groups/' + proj.group_id
+                    // }).done(function(){})
+                    XNAT.xhr.put({
+                        url: XNAT.url.rootUrl('/xapi/users/' + user + '/groups/' + groupId)
+                    }).done(function(){
+                        XNAT.ui.banner.top(2000, 'Role changed.', 'success');
+                        // renderUserGroupsTable();
+                    }).fail(function(){
+                        XNAT.ui.banner.top(5000, 'An error occured when attempting to set the user role.', 'error');
+                    }).always(function(){
+                        confirmChangeDialog.close();
+                    })
+                }
+            })
         })
     }
 
-    function confirmRemove(user, groupId){
-        var projectId = extractProjectId(groupId);
-        var proj = listedProjects[projectId];
+
+    function confirmRemove(user, groupId, projLabel){
+        user = user || editUser;
         var confirmRemoveDialog = XNAT.dialog.confirm({
-            // width: 500,
-            // padding: 30,
-            title: 'Remove Role?',
-            content: 'Remove all access to project <b>"' + proj.secondary_ID + '"</b> for user <b>"' + user + '"</b>?',
+            width: 500,
+            padding: 30,
+            title: 'Remove Project Access?',
+            content: 'Remove all access to project <b>"' + escapeHtml(projLabel) + '"</b> for user <b>"' + escapeHtml(user) + '"</b>?',
             okLabel: 'Remove',
             okClose: false,
             okAction: function(obj){
                 XNAT.xhr['delete']({
-                    url: '/xapi/users/' + user + '/groups/' + proj.group_id
+                    url: XNAT.url.rootUrl('/xapi/users/' + user + '/groups/' + groupId)
                 }).done(function(){
                     XNAT.ui.banner.top(2000, 'Project access removed.', 'success');
-                    userGroupsTable();
+                    renderUserGroupsTable();
                 }).fail(function(){
-                    XNAT.ui.banner.top(3000, 'An error occured when attempting to remove project access.', 'error');
+                    XNAT.ui.banner.top(5000, 'An error occured when attempting to remove project access.', 'error');
                 }).always(function(){
                     confirmRemoveDialog.close();
                 })
@@ -271,13 +419,17 @@ var XNAT = getObject(XNAT);
 
 
     // renders the table for listing and assigning group membership
-    function userGroupsTable(container, username){
+    function renderUserGroupsTable(container, username){
 
         var tableContainer = usersAdvanced.tableContainer = $$(container || usersAdvanced.tableContainer);
 
-        getUserProjects().done(function(projects){
+        username = username || editUser;
 
-            if (!projects || !projects.length) {
+        getUserProjects().done(function(userProjects){
+
+            var filteredProjects = removeSiteRoles(userProjects || []);
+
+            if (!userProjects || !filteredProjects.length) {
                 tableContainer.empty().spawn(
                     // element
                     'div.message',
@@ -289,11 +441,11 @@ var XNAT = getObject(XNAT);
             }
 
             // save an object map for each project keyed off the ID
-            forEach(projects, function(project){
-                listedProjects[project.ID] = project;
+            forEach(filteredProjects, function(project){
+                usersAdvanced.listedProjects[project.ID] = project;
             });
 
-            var rolesTable = XNAT.table.dataTable(projects, {
+            var rolesTable = XNAT.table.dataTable(filteredProjects, {
                 table: {
                     classes: 'compact rows-only highlight',
                     id: 'user-project-roles'
@@ -307,12 +459,15 @@ var XNAT = getObject(XNAT);
                 //     '</div>'
                 // },
                 items: {
-                    // _ID: '~data-project-id',
-                    // _group_id: '~data-group-id',
+                    _ID: '~data-project-id',
+                    _group_id: '~data-group-id',
+                    _secondary_ID: '~data-project-label',
                     secondary_ID: {
                         label: 'Project Label',
                         sort: true,
                         filter: true,
+                        th: { style: { width: '35%' } },
+                        td: { style: { width: '35%' } },
                         apply: function(){
                             return linkToProject(this, this.secondary_ID)
                         }
@@ -321,47 +476,41 @@ var XNAT = getObject(XNAT);
                         label: 'Project ID',
                         sort: true,
                         filter: true,
+                        th: { style: { width: '30%' } },
+                        td: { style: { width: '30%' } },
                         apply: function(){
                             return linkToProject(this, this.ID)
                         }
                     },
                     role: {
                         label: 'Group',
-                        th: { style: { width: '160px' }},
-                        td: { style: { width: '160px' }},
+                        th: { style: { width: '25%' } },
+                        td: { style: { width: '25%' } },
                         apply: function(){
                             var project = this;
-                            var roleMenu = XNAT.ui.select.menu({
-                                element: {
-                                    classes: 'select-user-role',
-                                    // data: {
-                                    //     group: project.group_id,
-                                    //     project: project.ID
-                                    // },
-                                    title: 'Select: ' + editUser + ' | ' + project.role + ' | ' + project.ID
-                                },
-                                options: [
-                                    { label: 'Owners', value: project.ID + '_owner' },
-                                    { label: 'Members', value: project.ID + '_member' },
-                                    { label: 'Collaborators', value: project.ID + '_collaborator' }
-                                ],
-                                value: project.group_id
-                            });
-                            menuInit(roleMenu.element, null, 140);
-                            return spawn('div.center', [roleMenu.spawned])
+                            var editLink = spawn('a.edit-user-role', {
+                                href: '#!edit=' + project.group_id,
+                                title: 'Edit: ' + username + ' | ' + project.group_id + ' | ' + project.ID
+                            }, '' + project.role + '');
+
+                            return spawn('div.nowrap.truncate', [editLink])
                         }
                     },
-                    REMOVE: {
-                        label: 'Remove',
-                        th: { style: { width: '80px' }},
-                        td: { style: { width: '80px' }},
+                    MODIFY: {
+                        label: '&nbsp;',
+                        th: { style: { width: '10%' } },
+                        td: { style: { width: '10%' } },
                         apply: function(){
                             var project = this;
-                            var btn = spawn('a.remove-user-role.nolink.btn-hover', {
+                            var editBtn = spawn('a.edit-user-role.nolink.btn-hover', {
+                                href: '#!edit=' + project.group_id,
+                                title: 'Edit: ' + username + ' | ' + project.group_id + ' | ' + project.ID
+                            }, [['i.fa.fa-edit']]);
+                            var removeBtn = spawn('a.remove-user-role.nolink.btn-hover', {
                                 href: '#!remove=' + project.group_id,
-                                title: 'Remove: ' + editUser + ' | ' + project.role + ' | ' + project.ID
+                                title: 'Remove: ' + username + ' | ' + project.group_id + ' | ' + project.secondary_ID
                             }, '<b class="x">&times;</b>');
-                            return spawn('div.center', [btn]);
+                            return spawn('div.center.nowrap', [editBtn, '&nbsp;', removeBtn]);
                         }
                     }
                 }
@@ -380,28 +529,29 @@ var XNAT = getObject(XNAT);
 
         // event listeners for editing and deleting - remove and re-add
         // every time the table renders to prevent multiple listeners
-        tableContainer.off('change.select-role').on('change.select-role', '.select-user-role', function(e){
+        tableContainer.off('click.edit-role').on('click.edit-role', '.edit-user-role', function(e){
             e.preventDefault();
-            confirmChange(editUser, this.value);
+            var rowData = $(this).closest('tr').data();
+            setUserRole(editUser, rowData.groupId, rowData.projectId);
+            // confirmChange(editUser, rowData.groupId, this.value);
         });
 
         tableContainer.off('click.remove-role').on('click.remove-role', '.remove-user-role', function(e){
             e.preventDefault();
             console.log('deleting role');
-            console.log(this.title);
-            var groupId = this.getAttribute('href').split('#!remove=')[1];
-            confirmRemove(editUser, groupId);
+            var rowData = $(this).closest('tr').data();
+            confirmRemove(editUser, rowData.groupId, rowData.projLabel);
         });
 
     }
-    usersAdvanced.userGroupsTable = userGroupsTable;
+    usersAdvanced.renderUserGroupsTable = renderUserGroupsTable;
 
     // render the table when the script loads (or call it from the page?)
-    userGroupsTable();
+    renderUserGroupsTable();
 
 
     $(document).on('click', '#user-add-group', function userAddGroup(){
-        addNewRole()
+        setUserRole()
     });
 
 
@@ -456,9 +606,10 @@ var XNAT = getObject(XNAT);
             // after the last request returns...
             if (i === (requests.length)) {
                 window.setTimeout(function(){
-                    // ...submit the form
-                    userform$.submit();
-                }, 500);
+                    window.location.reload(true);
+                    // DON'T submit the form
+                    //     userform$.submit();
+                }, 100);
                 return;
             }
 

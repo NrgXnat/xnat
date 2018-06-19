@@ -1020,6 +1020,13 @@ a.link {
     text-decoration: underline !important;
 }
 
+a.ulink {
+    border-bottom: 1px solid #64bcf1;
+}
+a.ulink:hover {
+    border-bottom-color: #084fab;
+}
+
 /* force links to look like links by adding the 'link' class */
 a,
 a:link,

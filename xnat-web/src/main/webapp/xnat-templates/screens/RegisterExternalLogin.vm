@@ -11,93 +11,96 @@ $!template.setLayoutTemplate("Login.vm")
 
 <div class="clear" style="margin:2em 0;"></div>
 
-<div id="login_welcome">
-    <h2>Connect Your LDAP Account With An XNAT Account</h2>
-    #if($turbineUtils.GetPassedParameter("par",$data))
-        <div class="note">
-            <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
-        </div>
-    #end
-    <p>You've successfully logged in with your account <strong>${userInfo.username}</strong>, but this doesn't correspond with an existing $siteConfig.siteId user account. Please choose one of the options below to connect an $siteConfig.siteId account with your login. You will only have to do this once.</p>
-    <p><strong>Merge Your LDAP account With:</strong></p>
-    <p>
-        <button class="btn btn-sm show-registration primary" title="Register a new account and merge your LDAP account with it">A New $siteConfig.siteId Account</button>
-        <button class="btn btn-sm show-login" title="Log in to an existing account and merge your LDAP account with it">An Existing $siteConfig.siteId Account</button>
-    </p>
-</div>
+<div id="login_area">
 
-<div id="register_box_container">
-    <h3><span>Register A New Account</span></h3>
-    <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
-    <div class="clear" style="margin:2em 0;"></div>
-    <div id="register_box">
-        #if($message.startsWith("Registration error"))
-            <div class="warning" style="border-bottom: 0">
-                <strong>Note:</strong> $message
+    <div id="login_welcome" class="login-box-container-flex">
+        <h2>Connect Your LDAP Account With An XNAT Account</h2>
+        #if($turbineUtils.GetPassedParameter("par",$data))
+            <div class="note">
+                <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
             </div>
         #end
-
-        #set ($hidePassword = true)
-        #parse("/screens/register_box.vm")
+        <p>You've successfully logged in with your account <strong>${userInfo.username}</strong>, but this doesn't correspond with an existing $siteConfig.siteId user account. Please choose one of the options below to connect an $siteConfig.siteId account with your login. You will only have to do this once.</p>
+        <p><strong>Merge Your LDAP account With:</strong></p>
+        <p>
+            <button class="btn btn-sm show-registration primary" title="Register a new account and merge your LDAP account with it">A New $siteConfig.siteId Account</button>
+            <button class="btn btn-sm show-login" title="Log in to an existing account and merge your LDAP account with it">An Existing $siteConfig.siteId Account</button>
+        </p>
     </div>
-</div>
 
-<div id="login_box_container" class="hidden">
-    <h3><span>Login To An Existing Account</span></h3>
-    <p>If you already have an account on $siteConfig.siteId, enter your login credentials below and click <b>Submit</b>.</p>
-    <div class="clear" style="margin:2em 0;"></div>
+    <div id="register_box_container" class="login-box-container-fixed">
+        <h3><span>Register A New Account</span></h3>
+        <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
+        <div class="clear" style="margin:2em 0;"></div>
+        <div id="register_box">
+            #if($message.startsWith("Registration error"))
+                <div class="warning" style="border-bottom: 0">
+                    <strong>Note:</strong> $message
+                </div>
+            #end
 
-    <div id="login_box">
-        #if($message.startsWith("Authentication failed"))
-            <div class="message" style="border-bottom: 0">
-                <strong>Note:</strong> $message
-            </div>
-        #end
-        <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
-            <input type="hidden" name="operation" value="merge">
-            <input type="hidden" name="authUsername" value="$userInfo.username">
-            <input type="hidden" name="authMethod" value="$userInfo.authMethod">
-            <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
-            <input type="hidden" name="authEmail" value="$userInfo.email">
-            <input type="hidden" name="authLastName" value="$userInfo.lastName">
-            <input type="hidden" name="authFirstName" value="$userInfo.firstName">
-            <p>
-                <label for="username">User</label>
-                <input type="text"
-                       id="username"
-                       name="username"
-                       title="User"
-                       class="validate onblur"
-                       data-validate="not-empty"
-                       data-message="Username cannot be blank.">
-            </p>
-            <p>
-                <label for="password">Password</label>
-                <input type="password"
-                       name="password"
-                       autocomplete="off"
-                       title="Password"
-                       class="validate onblur"
-                       data-validate="not-empty"
-                       data-message="Password cannot be blank.">
-            </p>
+            #set ($hidePassword = true)
+            #parse("/screens/register_box.vm")
+        </div>
+    </div>
 
-            <p class="form-submit">
-                <span id="register_forgot">
-                    <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                </span>
-                <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-            </p>
+    <div id="login_box_container" class="hidden login-box-container-fixed">
+        <h3><span>Login To An Existing Account</span></h3>
+        <p>If you already have an account on $siteConfig.siteId, enter your login credentials below and click <b>Submit</b>.</p>
+        <div class="clear" style="margin:2em 0;"></div>
 
-            #if($turbineUtils.GetPassedParameter("par",$data))
-                #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
-                    #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
-                        #set ($parameter = $turbineUtils.GetPassedParameter($key, $data))
-                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!parameter)">
+        <div id="login_box">
+            #if($message.startsWith("Authentication failed"))
+                <div class="message" style="border-bottom: 0">
+                    <strong>Note:</strong> $message
+                </div>
+            #end
+            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
+                <input type="hidden" name="operation" value="merge">
+                <input type="hidden" name="authUsername" value="$userInfo.username">
+                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+                <input type="hidden" name="authEmail" value="$userInfo.email">
+                <input type="hidden" name="authLastName" value="$userInfo.lastName">
+                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+                <p>
+                    <label for="username">User</label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           title="User"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Username cannot be blank.">
+                </p>
+                <p>
+                    <label for="password">Password</label>
+                    <input type="password"
+                           name="password"
+                           autocomplete="off"
+                           title="Password"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Password cannot be blank.">
+                </p>
+
+                <p class="form-submit">
+                    <span id="register_forgot">
+                        <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                    </span>
+                    <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+                </p>
+
+                #if($turbineUtils.GetPassedParameter("par",$data))
+                    #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                        #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
+                            #set ($parameter = $turbineUtils.GetPassedParameter($key, $data))
+                            <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!parameter)">
+                        #end
                     #end
                 #end
-            #end
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 

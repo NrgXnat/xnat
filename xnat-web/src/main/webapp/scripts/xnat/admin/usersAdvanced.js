@@ -134,7 +134,7 @@ var XNAT = getObject(XNAT);
 
     function linkToProject(project, text){
         return spawn('a.nowrap.truncate', {
-            href: project.URI,
+            href: XNAT.url.rootUrl(project.URI),
             target: '_blank',
             title: project.name
         }, escapeHtml(text))
@@ -399,7 +399,7 @@ var XNAT = getObject(XNAT);
             width: 500,
             padding: 30,
             title: 'Remove Project Access?',
-            content: 'Remove all access to project <b>"' + escapeHtml(projLabel) + '"</b> for user <b>"' + escapeHtml(user) + '"</b>?',
+            content: 'Remove all access to project <b class="nowrap">"' + escapeHtml(projLabel) + '"</b> for user <b class="nowrap">"' + escapeHtml(user) + '"</b>?',
             okLabel: 'Remove',
             okClose: false,
             okAction: function(obj){
@@ -540,7 +540,7 @@ var XNAT = getObject(XNAT);
             e.preventDefault();
             console.log('deleting role');
             var rowData = $(this).closest('tr').data();
-            confirmRemove(editUser, rowData.groupId, rowData.projLabel);
+            confirmRemove(editUser, rowData.groupId, rowData.projectLabel);
         });
 
     }

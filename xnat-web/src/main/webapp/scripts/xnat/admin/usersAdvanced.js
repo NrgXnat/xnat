@@ -445,6 +445,15 @@ var XNAT = getObject(XNAT);
                 usersAdvanced.listedProjects[project.ID] = project;
             });
 
+            var btnCSS = spawn('style|type=text/css', [
+                '\n' +
+                'td.MODIFY a { width: 30px; height: 28px; margin: 0 2px; position: relative; font-size: 15px; } \n' +
+                'td.MODIFY a i { position: relative; } \n' +
+                'td.MODIFY a.edit-user-role i { top: 2px; } \n' +
+                'td.MODIFY a.remove-user-role i { top: 1px; color: #c00; } \n' +
+                ' '
+            ]);
+
             var rolesTable = XNAT.table.dataTable(filteredProjects, {
                 table: {
                     classes: 'compact rows-only highlight',
@@ -465,7 +474,7 @@ var XNAT = getObject(XNAT);
                     secondary_ID: {
                         label: 'Project Label',
                         sort: true,
-                        filter: true,
+                        filter: filteredProjects.length > 6,
                         th: { style: { width: '35%' } },
                         td: { style: { width: '35%' } },
                         apply: function(){
@@ -475,7 +484,7 @@ var XNAT = getObject(XNAT);
                     ID: {
                         label: 'Project ID',
                         sort: true,
-                        filter: true,
+                        filter: filteredProjects.length > 6,
                         th: { style: { width: '30%' } },
                         td: { style: { width: '30%' } },
                         apply: function(){
@@ -484,6 +493,7 @@ var XNAT = getObject(XNAT);
                     },
                     role: {
                         label: 'Group',
+                        sort: true,
                         th: { style: { width: '25%' } },
                         td: { style: { width: '25%' } },
                         apply: function(){
@@ -509,8 +519,8 @@ var XNAT = getObject(XNAT);
                             var removeBtn = spawn('a.remove-user-role.nolink.btn-hover', {
                                 href: '#!remove=' + project.group_id,
                                 title: 'Remove: ' + username + ' | ' + project.group_id + ' | ' + project.secondary_ID
-                            }, '<b class="x">&times;</b>');
-                            return spawn('div.center.nowrap', [editBtn, '&nbsp;', removeBtn]);
+                            }, [['i.fa.fa-times']]);
+                            return spawn('div.center.nowrap', [editBtn, removeBtn]);
                         }
                     }
                 }
@@ -523,7 +533,7 @@ var XNAT = getObject(XNAT);
 
             // rolesTable.render(tableContainer.empty());
             // choosing to manually 'append' the spawned elements
-            tableContainer.empty().append(rolesTable.spawned);
+            tableContainer.empty().append([btnCSS, rolesTable.spawned]);
 
         });
 

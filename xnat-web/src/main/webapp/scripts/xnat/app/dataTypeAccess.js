@@ -31,9 +31,13 @@ var XNAT = getObject(XNAT);
 
     dataTypeAccess.isReady = false;
 
-    dataTypeAccess.loadDataTypes =
-        window.loadDataTypes =
-            firstDefined(window.loadDataTypes, !/(Login\.vm|Register\.vm|VerifyEmail\.vm|XDATRegisterUser)/.test(window.location.href));
+    // Regex list of pages which should NOT load data types
+    dataTypeAccess.skipPages = /Login|Register|VerifyEmail|ForgotLogin|RegisterUser|UpdateUser|ModifyPassword/;
+
+    dataTypeAccess.loadDataTypes = window.loadDataTypes =
+        window.loadDataTypes ||
+        // (window.isLoginPage !== undef ?  !window.isLoginPage : false) ||  // login page test seems unreliable
+        !dataTypeAccess.skipPages.test(window.location.href);
 
     // save the url with the site context prepended using XNAT.url.rootUrl()
     dataTypeAccess.url = XNAT.url.rootUrl('/xapi/access/displays');
@@ -124,7 +128,7 @@ var XNAT = getObject(XNAT);
         // title: 'Please wait...',
         header: false,
         footer: false,
-        mask: true,
+        mask: false,
         padding: 0,
         top: '80px',
         content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>'

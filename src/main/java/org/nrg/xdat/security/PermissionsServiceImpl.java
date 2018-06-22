@@ -562,6 +562,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
 
         ((XDATUser) authenticatedUser).resetCriteria();
+        ((XDATUser) guest).resetCriteria();
         Users.getGuest(true);
 
         if (triggerEvent) {

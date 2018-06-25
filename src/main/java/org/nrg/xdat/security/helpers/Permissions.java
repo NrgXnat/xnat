@@ -27,7 +27,7 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserItemCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -96,18 +96,18 @@ public class Permissions {
     }
 
     /**
-     * Returns the {@link UserProjectCache user project cache}.
+     * Returns the {@link UserItemCache user project cache}.
      *
      * @return The user project cache.
      */
-    public static UserProjectCache getUserProjectCache() {
+    public static UserItemCache getUserProjectCache() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
         if (_cache == null) {
             // First find out if it exists in the application context.
             final ContextService contextService = XDAT.getContextService();
             if (contextService != null) {
                 try {
-                    return _cache = contextService.getBean(UserProjectCache.class);
+                    return _cache = contextService.getBean(UserItemCache.class);
                 } catch (NoSuchBeanDefinitionException ignored) {
                     log.warn("Unable to find an instance of the UserProjectCache class.");
                 }
@@ -1153,6 +1153,6 @@ public class Permissions {
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();
 
     private static PermissionsServiceI        _service;
-    private static UserProjectCache           _cache;
+    private static UserItemCache              _cache;
     private static NamedParameterJdbcTemplate _template;
 }

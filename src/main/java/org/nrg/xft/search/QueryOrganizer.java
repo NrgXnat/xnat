@@ -455,6 +455,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                 GenericWrapperElement se = GenericWrapperElement.GetElement(element);
                 if (rootElement.getFullXMLName().equalsIgnoreCase(se.getFullXMLName()))
                 {
+                    log.info("Found matching root and element names: {}", rootElement.getFullXMLName());
                     String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
                     assert layers != null;
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".") + 1);
@@ -478,9 +479,10 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String tableNameLC= tableName.toLowerCase();
                     String colNameLC= colName.toLowerCase();
 
-                    if (!selected.contains(tableNameLC + "_" + colNameLC))
+                    final String tableColumnReference = tableNameLC + "_" + colNameLC;
+                    if (!selected.contains(tableColumnReference))
                     {
-                        selected.add(tableNameLC + "_" + colNameLC);
+                        selected.add(tableColumnReference);
                         if (counter++==0)
                         {
                             sb.append(tableName).append(".").append(colName).append(" AS ").append(alias);
@@ -488,16 +490,19 @@ public class QueryOrganizer implements QueryOrganizerI{
                             sb.append(", ").append(tableName).append(".").append(colName).append(" AS ").append(alias);
                         }
 
-                        fieldAliases.put(lowerCase,alias);
-                        tableColumnAlias.put(tableNameLC + "_" + colNameLC,alias);
+                        fieldAliases.put(lowerCase, alias);
+                        tableColumnAlias.put(tableColumnReference, alias);
+                        log.info("Matching root and element: Stored table '{}' column '{}' and table-column reference '{}' as field alias '{}'", tableName, colName, tableColumnReference, alias);
                     }else{
-                        if (tableColumnAlias.get(tableNameLC + "_" + colNameLC) != null)
+                        if (tableColumnAlias.get(tableColumnReference) != null)
                         {
-                            alias = (String)tableColumnAlias.get(tableNameLC + "_" + colNameLC);
+                            log.info("Matching root and element: Found existing table-column reference '{}' for table '{}' column '{}', calculated alias is '{}', cached alias is '{}'", tableColumnReference, tableName, colName, alias, tableColumnAlias.get(tableColumnReference));
+                            alias = (String)tableColumnAlias.get(tableColumnReference);
                         }
                         fieldAliases.put(lowerCase,alias);
                     }
                 }else{
+                    log.info("Found non-matching root and element names: '{}' vs '{}'", rootElement.getFullXMLName(), se.getFullXMLName());
                     String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
                     assert layers != null;
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".") + 1);
@@ -521,9 +526,10 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String tableNameLC= tableName.toLowerCase();
                     String colNameLC= colName.toLowerCase();
 
-                    if (!selected.contains(tableNameLC + "_" + colNameLC))
+                    final String tableColumnReference = tableNameLC + "_" + colNameLC;
+                    if (!selected.contains(tableColumnReference))
                     {
-                        selected.add(tableNameLC + "_" + colNameLC);
+                        selected.add(tableColumnReference);
 	                    if (counter++==0)
 	                    {
 	                        sb.append(se.getSQLName()).append(".").append(tableName).append("_").append(colName).append(" AS ").append(alias);
@@ -532,11 +538,13 @@ public class QueryOrganizer implements QueryOrganizerI{
 	                    }
 
 	                    fieldAliases.put(lowerCase,alias);
-                        tableColumnAlias.put(tableNameLC + "_" + colNameLC,alias);
+                        tableColumnAlias.put(tableColumnReference, alias);
+                        log.info("Non-matching root and element: Stored table '{}' column '{}' and table-column reference '{}' as field alias '{}'", tableName, colName, tableColumnReference, alias);
                     }else{
-                        if (tableColumnAlias.get(tableNameLC + "_" + colNameLC) != null)
+                        if (tableColumnAlias.get(tableColumnReference) != null)
                         {
-                            alias = (String)tableColumnAlias.get(tableNameLC + "_" + colNameLC);
+                            log.info("Matching root and element: Found existing table-column reference '{}' for table '{}' column '{}', calculated alias is '{}', cached alias is '{}'", tableColumnReference, tableName, colName, alias, tableColumnAlias.get(tableColumnReference));
+                            alias = (String)tableColumnAlias.get(tableColumnReference);
                         }
                         fieldAliases.put(lowerCase,alias);
                     }

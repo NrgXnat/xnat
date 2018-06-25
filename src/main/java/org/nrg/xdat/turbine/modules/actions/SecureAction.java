@@ -11,6 +11,8 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.BrowserType;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -48,16 +50,15 @@ import java.util.Enumeration;
 public abstract class SecureAction extends VelocitySecureAction {
     private static final Logger logger = LoggerFactory.getLogger(SecureAction.class);
 
-    protected void preserveVariables(RunData data, Context context) {
+    protected void preserveVariables(final RunData data, final Context context) {
         if (data.getParameters().containsKey("project")) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getClass().getName() + ": maintaining project '" + TurbineUtils.GetPassedParameter("project", data) + "'");
-            }
-            context.put("project", TurbineUtils.escapeParam(((String) TurbineUtils.GetPassedParameter("project", data))));
+            final String project = (String) TurbineUtils.GetPassedParameter("project", data);
+            logger.debug("{}: maintaining project '{}'", getClass().getName(), project);
+            context.put("project", TurbineUtils.escapeParam(project));
         }
     }
 
-    protected void error(Throwable e, RunData data) {
+    protected void error(final Throwable e, final RunData data) {
         logger.error("", e);
         if (e instanceof InvalidPermissionException) {
             try {
@@ -72,55 +73,63 @@ public abstract class SecureAction extends VelocitySecureAction {
 
     final static String encoding = "ISO-8859-1";
 
-    public void redirectToReportScreen(String report, ItemI item, RunData data) {
-        data = TurbineUtils.SetSearchProperties(data, item);
+    public void redirectToReportScreen(final String report, final ItemI item, final RunData data) {
+        final RunData search = TurbineUtils.SetSearchProperties(data, item);
         try {
-            String path = TurbineUtils.GetRelativeServerPath(data) + "/app/template/" + URLEncoder.encode(report, encoding) + "/search_field/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_field", data)), encoding) + "/search_value/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_value", data)), encoding) + "/search_element/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_element", data)), encoding);
-            if (TurbineUtils.GetPassedParameter("popup", data) != null) {
-                path += "/popup/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("popup", data)), encoding);
+            final String popup   = (String) TurbineUtils.GetPassedParameter("popup", search);
+            final String project = (String) TurbineUtils.GetPassedParameter("project", search);
+            final String topTab  = (String) TurbineUtils.GetPassedParameter("topTab", search);
+            final String params  = (String) TurbineUtils.GetPassedParameter("params", search);
+
+            final StringBuilder path = new StringBuilder(TurbineUtils.GetRelativeServerPath(search) + "/app/template/" + URLEncoder.encode(report, encoding) + "/search_field/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_field", search)), encoding) + "/search_value/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_value", search)), encoding) + "/search_element/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_element", search)), encoding));
+            if (StringUtils.isNotBlank(popup)) {
+                path.append("/popup/").append(URLEncoder.encode(popup, encoding));
             }
-            if (TurbineUtils.GetPassedParameter("project", data) != null) {
-                path += "/project/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("project", data)), encoding);
+            if (StringUtils.isNotBlank(project)) {
+                path.append("/project/").append(URLEncoder.encode(project, encoding));
             }
-            if (TurbineUtils.GetPassedParameter("topTab", data) != null) {
-                path += "/topTab/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("topTab", data)), encoding);
+            if (StringUtils.isNotBlank(topTab)) {
+                path.append("/topTab/").append(URLEncoder.encode(topTab, encoding));
             }
-            if (TurbineUtils.GetPassedParameter("params", data) != null) {
-                path += URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("params", data)), encoding);
+            if (StringUtils.isNotBlank(params)) {
+                path.append(URLEncoder.encode(params, encoding));
             }
-            data.setRedirectURI(path);
+            search.setRedirectURI(path.toString());
         } catch (UnsupportedEncodingException e) {
-            logger.error("", e);
+            logger.error("An error occurred trying to redirect the user to the report screen {}", report, e);
         }
     }
 
     @SuppressWarnings("unused")
-    public void redirectToScreen(String report, RunData data) {
+    public void redirectToScreen(final String report, final RunData data) {
         try {
-            String path = TurbineUtils.GetRelativeServerPath(data) + "/app/template/" + URLEncoder.encode(report, encoding);
-            if (TurbineUtils.GetPassedParameter("popup", data) != null) {
-                path += "/popup/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("popup", data)), encoding);
+            final String popup = (String) TurbineUtils.GetPassedParameter("popup", data);
+            final String project = (String) TurbineUtils.GetPassedParameter("project", data);
+
+            final StringBuilder path = new StringBuilder(TurbineUtils.GetRelativeServerPath(data) + "/app/template/" + URLEncoder.encode(report, encoding));
+            if (StringUtils.isNotBlank(popup)) {
+                path.append("/popup/").append(URLEncoder.encode(popup, encoding));
             }
-            if (TurbineUtils.GetPassedParameter("project", data) != null) {
-                path += "/project/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("project", data)), encoding);
+            if (StringUtils.isNotBlank(project)) {
+                path.append("/project/").append(URLEncoder.encode(project, encoding));
             }
-            data.setRedirectURI(path);
+            data.setRedirectURI(path.toString());
         } catch (UnsupportedEncodingException e) {
-            logger.error("", e);
+            logger.error("An error occurred trying to redirect the user to the screen {}", report, e);
         }
     }
 
     @SuppressWarnings("unused")
-    public void redirectToReportScreen(ItemI item, RunData data) {
+    public void redirectToReportScreen(final ItemI item, final RunData data) {
         try {
-            SchemaElement se = SchemaElement.GetElement(item.getXSIType());
-            this.redirectToReportScreen(DisplayItemAction.GetReportScreen(se), item, data);
+            final SchemaElement schemaElement = SchemaElement.GetElement(item.getXSIType());
+            redirectToReportScreen(DisplayItemAction.GetReportScreen(schemaElement), item, data);
         } catch (XFTInitException | ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("An error occurred trying to redirect the user to the report screen", e);
         }
     }
 
-    public static String csrfTokenErrorMessage(HttpServletRequest request) {
+    public static String csrfTokenErrorMessage(final HttpServletRequest request) {
         final StringBuilder errorMessage = new StringBuilder();
         errorMessage.append(request.getMethod()).append(" on URL: ").append(request.getRequestURL()).append(" from ").append(AccessLogger.GetRequestIp(request)).append(" (").append(request.getRemotePort()).append(") user: ").append(request.getRemoteHost()).append("\n");
         errorMessage.append("Headers:\n");
@@ -141,7 +150,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     //just a wrapper for isCsrfTokenOk(request, token)
-    public static boolean isCsrfTokenOk(RunData runData) throws Exception {
+    public static boolean isCsrfTokenOk(final RunData runData) throws Exception {
         //occasionally, (really, only on "actions" that inherit off secure screen instead of secure action like report issue)
         //the HTTPServletRequest parameters magically get cleared. that's why this method is here.
         String clientToken = TurbineUtils.escapeParam(runData.getParameters().get("XNAT_CSRF"));
@@ -150,7 +159,7 @@ public abstract class SecureAction extends VelocitySecureAction {
 
     //just a wrapper for isCsrfTokenOk(request, token)
     @SuppressWarnings({"unused", "UnusedReturnValue"})
-    public static boolean isCsrfTokenOk(HttpServletRequest request, boolean strict) throws Exception {
+    public static boolean isCsrfTokenOk(final HttpServletRequest request, final boolean strict) throws Exception {
         return isCsrfTokenOk(request, request.getParameter("XNAT_CSRF"), strict);
     }
 
@@ -158,7 +167,6 @@ public abstract class SecureAction extends VelocitySecureAction {
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(final HttpServletRequest request, final String clientToken, final boolean strict) throws Exception {
-
         final boolean csrfEmailEnabled = XDAT.getSiteConfigPreferences().getCsrfEmailAlert();
 
         if (!XDAT.getSiteConfigPreferences().getEnableCsrfToken()) {
@@ -167,12 +175,14 @@ public abstract class SecureAction extends VelocitySecureAction {
 
         //let anyone using something other than a browser ignore the token.
         final String userAgent = request.getHeader("User-Agent");
-        if (!strict && userAgent == null) {
-            return true;
-        } else if (!strict) {
-            final Browser browser = Browser.parseUserAgentString(userAgent);
-            if ((!(browser.getBrowserType().equals(BrowserType.MOBILE_BROWSER) || browser.getBrowserType().equals(BrowserType.WEB_BROWSER))) || userAgent.toUpperCase().contains("JAVA")) {
+        if (!strict) {
+            if (StringUtils.isBlank(userAgent) || StringUtils.contains(userAgent, "XNATDesktopClient")) {
                 return true;
+            } else {
+                final Browser browser = Browser.parseUserAgentString(userAgent);
+                if ((!(browser.getBrowserType().equals(BrowserType.MOBILE_BROWSER) || browser.getBrowserType().equals(BrowserType.WEB_BROWSER))) || userAgent.toUpperCase().contains("JAVA")) {
+                    return true;
+                }
             }
         }
 
@@ -188,9 +198,8 @@ public abstract class SecureAction extends VelocitySecureAction {
         }
 
         final String method = request.getMethod();
-        if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
+        if (StringUtils.equalsAnyIgnoreCase(method, "POST", "PUT", "DELETE")) {
             //pull the token out of the parameter
-
             if (serverToken.equalsIgnoreCase(clientToken)) {
                 return true;
             } else {
@@ -200,14 +209,12 @@ public abstract class SecureAction extends VelocitySecureAction {
                 }
                 throw new Exception("INVALID CSRF (" + errorMessage + ")");
             }
-
         } else {
             return true;
         }
     }
     
-    protected boolean isAuthorized(RunData data) throws Exception {
-
+    protected boolean isAuthorized(final RunData data) throws Exception {
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             TurbineVelocity.getContext(data).put("logout", "true");
             data.getParameters().setString("logout", "true");
@@ -219,7 +226,7 @@ public abstract class SecureAction extends VelocitySecureAction {
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
             } else {
                 AccessLogger.LogActionAccess(data);
@@ -239,7 +246,7 @@ public abstract class SecureAction extends VelocitySecureAction {
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
             }
             return isAuthorized && isCsrfTokenOk(data);
@@ -250,7 +257,7 @@ public abstract class SecureAction extends VelocitySecureAction {
         return true;
     }
 
-    public static EventUtils.TYPE getEventType(RunData data) {
+    public static EventUtils.TYPE getEventType(final RunData data) {
         final String id = (String) TurbineUtils.GetPassedParameter(EventUtils.EVENT_TYPE, data);
         if (id != null) {
             return EventUtils.getType(id, EventUtils.TYPE.WEB_FORM);

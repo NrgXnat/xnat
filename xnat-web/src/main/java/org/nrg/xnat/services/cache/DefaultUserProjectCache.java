@@ -19,12 +19,13 @@ import net.sf.ehcache.Element;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.model.XnatProjectdataAliasI;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -32,16 +33,23 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -51,30 +59,31 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @SuppressWarnings("Duplicates")
 @Service
 @Slf4j
-public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache<XnatProjectdata> {
-    public static final String NOT_A_PROJECT = "NOT_A_PROJECT";
-    public static final String CACHE_NAME    = "UserProjectCacheManagerCache";
-
+public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache {
     @Autowired
-    public DefaultUserProjectCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final XnatUserProvider primaryAdminUserProvider) {
+    public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final XnatUserProvider primaryAdminUserProvider) {
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
-
+        _cache = cache;
         _template = template;
-        _adminUserProvider = primaryAdminUserProvider; 
+        _adminUserProvider = primaryAdminUserProvider;
     }
 
     @Override
     protected boolean handleEventImpl(final XftItemEventI event) {
         // TODO: Catch event where user is added to or removed from site admins.
         final String projectId = getProjectIdFromEvent(event);
-        log.info("Got an XFTItemEvent for project '{}'", projectId);
+        if (StringUtils.isBlank(projectId)) {
+            log.error("Handled an event that should have had a project ID, but it didn't: {}", event);
+            return false;
+        }
 
+        log.info("Got an XFTItemEvent for project '{}'", projectId);
         final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
 
         // If there was no cached project, maybe it was cached as a non-existent project and has been created?
-        if (projectCache == null) {
+        if (projectCache.getProject() == null) {
             log.info("No cache found for the project: {}", projectId);
             // Remove the canonical ID if present.
             if (_aliasMapping.containsKey(projectId)) {
@@ -252,6 +261,58 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return null;
     }
 
+    @Override
+    public List<XnatProjectdata> getAll(final UserI user) {
+        return getProjectsFromIds(user, _cache.getProjectsForUser(user.getUsername(), SecurityManager.READ));
+    }
+
+    @Override
+    public List<XnatProjectdata> getByField(final UserI user, final String field, final String value) {
+        try {
+            final String standardized = XftStringUtils.StandardizeXMLPath(field);
+            log.debug("User {} requested to retrieve project by field '{}' (standardized: '{}') with value '{}'", user.getUsername(), field, standardized, value);
+
+            final String rootElement = XftStringUtils.GetRootElementName(standardized);
+            if (!StringUtils.equalsIgnoreCase(XnatProjectdata.SCHEMA_ELEMENT_NAME, rootElement)) {
+                return Collections.emptyList();
+            }
+
+            final GenericWrapperField wrapper = GenericWrapperElement.GetFieldForXMLPath(standardized);
+            if (wrapper == null) {
+                throw new RuntimeException("No field named " + standardized);
+            }
+
+            final String column = wrapper.getSQLName();
+            final String query  = StringSubstitutor.replace(QUERY_PROJECTS_BY_FIELD, ImmutableMap.<String, Object>of("column", column));
+
+            log.trace("Executing query '{}' with value '{}'", query, value);
+            return getProjectsFromIds(user, _template.queryForList(query, new MapSqlParameterSource("value", value), String.class));
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+            log.error("Got an error trying to retrieve project by field '{}' (standardized: '{}') with value '{}' for user {}", field, value, user.getUsername());
+            return null;
+        }
+    }
+
+    /**
+     * Converts a list of strings into a list of projects with the corresponding IDs.
+     *
+     * @param user       The user retrieving the projects.
+     * @param projectIds The list of IDs of the projects to be retrieved.
+     *
+     * @return A list of project objects.
+     */
+    private List<XnatProjectdata> getProjectsFromIds(final UserI user, final List<String> projectIds) {
+        if (log.isDebugEnabled()) {
+            log.debug("User {} is converting a list of {} strings to projects: {}", user.getUsername(), projectIds.size(), StringUtils.join(projectIds));
+        }
+        return Lists.transform(projectIds, new Function<String, XnatProjectdata>() {
+            @Override
+            public XnatProjectdata apply(final String projectId) {
+                return get(user, projectId);
+            }
+        });
+    }
+
     private boolean hasAccess(final String userId, final String idOrAlias, final AccessLevel accessLevel) {
         if (isCachedNonexistentProject(idOrAlias)) {
             return false;
@@ -403,7 +464,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
             // And then return the project cache.
             final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
-            if (projectCache == null) {
+            if (projectCache.getProject() == null) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Found cached project ID " + projectId + " for ID or alias " + idOrAlias + ", which should only ever happen if the project is cached, but the project cache is null.");
             }
             return projectCache;
@@ -599,15 +660,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return _project;
         }
 
-        public boolean hasUser(final String userId) {
+        boolean hasUser(final String userId) {
             return _userCache.containsKey(userId);
         }
 
-        public Collection<AccessLevel> getUserAccessLevels(final String userId) {
+        Collection<AccessLevel> getUserAccessLevels(final String userId) {
             return _userCache.get(userId);
         }
 
-        public void addUser(final String userId, final List<AccessLevel> userProjectAccess) {
+        void addUser(final String userId, final List<AccessLevel> userProjectAccess) {
             _userCache.putAll(userId, userProjectAccess);
         }
 
@@ -625,18 +686,24 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES    = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
     private static final String                              QUERY_KEY_PROJECT_ID   = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL = "accessLevel";
+    private static final String                              NOT_A_PROJECT          = "NOT_A_PROJECT";
+    private static final String                              CACHE_NAME             = "UserProjectCacheManagerCache";
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-    private static final String QUERY_USERS_BY_GROUP = "SELECT DISTINCT login "
-                                                       + "FROM xdat_user "
-                                                       + "  RIGHT JOIN xdat_user_groupid xug ON xdat_user.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id "
-                                                       + "WHERE groupid = :projectId || :accessLevel";
+    private static final String QUERY_USERS_BY_GROUP    = "SELECT DISTINCT login " +
+                                                          "FROM xdat_user " +
+                                                          "  RIGHT JOIN xdat_user_groupid xug ON xdat_user.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
+                                                          "WHERE groupid = :projectId || :accessLevel";
+    private static final String QUERY_PROJECTS_BY_FIELD = "SELECT id " +
+                                                          "FROM xnat_projectdata " +
+                                                          "WHERE ${column} = :value";
 
     private final Set<String>         _siteAdmins       = new HashSet<>();
     private final Set<String>         _nonAdmins        = new HashSet<>();
     private final Set<String>         _nonexistentUsers = new HashSet<>();
     private final Map<String, String> _aliasMapping     = new HashMap<>();
 
+    private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;
     private final XnatUserProvider           _adminUserProvider;
 

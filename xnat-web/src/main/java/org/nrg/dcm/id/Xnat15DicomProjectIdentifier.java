@@ -16,7 +16,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
-import org.nrg.xdat.services.cache.UserProjectCache;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
+    @SuppressWarnings("WeakerAccess")
     protected Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
         super(userProjectCache);
     }
@@ -83,6 +84,7 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         }
     }
 
+    @SuppressWarnings("RegExpRedundantEscape")
     private static final Pattern CUSTOM_RULE_PATTERN = Pattern.compile("\\((\\p{XDigit}{4})\\,(\\p{XDigit}{4})\\):(.+?)(?::(\\d+))?");
 
     private static DicomDerivedString parseRule(final String rule) {

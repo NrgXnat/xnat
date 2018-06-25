@@ -30,7 +30,6 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -47,6 +46,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -79,6 +79,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public List<String> call() throws ClientException {
         final String name = _fileWriter.getName();
@@ -425,6 +426,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static <K, V> String getString(final Map<K, V> m, final K k, final V defaultValue) {
         final V v = m.get(k);
         if (null == v) {
@@ -543,10 +545,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private static final String  RENAME_PARAM            = "rename";
     private static final boolean canDecompress           = initializeCanDecompress();
 
-    private final UserProjectCache<XnatProjectdata> _cache;
-    private final FileWriterWrapperI                _fileWriter;
-    private final UserI                             _user;
-    private final Map<String, Object>               _parameters;
+    private final UserProjectCache    _cache;
+    private final FileWriterWrapperI  _fileWriter;
+    private final UserI               _user;
+    private final Map<String, Object> _parameters;
 
     private TransferSyntax     _transferSyntax;
     private DicomFilterService _filterService;

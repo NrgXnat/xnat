@@ -67,6 +67,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,6 +95,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
         _totalCounts = new HashMap<>();
         _missingElements = new HashMap<>();
+        _userChecks = new ConcurrentHashMap<>();
         if (_helper.tableExists("xnat_projectdata")) {
             updateTotalCounts();
         }
@@ -453,9 +455,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
-        final MapSqlParameterSource parameters = checkUser(username);
-        parameters.addValue("tag", tag);
-        final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, parameters, new ResultSetExtractor<String>() {
+        final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, checkUser(username).addValue("tag", tag), new ResultSetExtractor<String>() {
             @Override
             public String extractData(final ResultSet results) throws DataAccessException, SQLException {
                 return results.next() ? results.getString("id") : null;
@@ -547,14 +547,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
         }
 
-        try {
-            _guest = new XDATUser(GUEST_USERNAME);
-            updateGuestBrowseableElementDisplays();
-        } catch (UserNotFoundException ignored) {
-            // Guest is always available.
-        } catch (UserInitException e) {
-            log.error("An error occurred initializing the user guest", e);
-        }
+        getGuest();
+        updateGuestBrowseableElementDisplays();
+
         return new AsyncResult<>(_initialized = true);
     }
 
@@ -1323,15 +1318,22 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
-        final MapSqlParameterSource parameters = checkUser(username);
-        return _template.queryForList(QUERY_GET_GROUPS_FOR_USER, parameters, String.class);
+        final String cacheId = getCacheIdForUserGroups(username);
+        if (has(cacheId)) {
+            log.info("Found cached groups list for user '{}' with cache ID '{}'", username, cacheId);
+            return getCachedList(cacheId);
+        }
+
+        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
+        cacheObject(cacheId, groupIds);
+        return groupIds;
     }
 
     /**
      * Checks whether the users exists. If not, this throws the {@link UserNotFoundException}. Otherwise it returns
      * a parameter source containing the username that can be used in subsequent queries.
      *
-     * @param username The user to test
+     * @param username The user to test.
      *
      * @return A parameter source containing the username parameter.
      *
@@ -1339,13 +1341,31 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      */
     private MapSqlParameterSource checkUser(final String username) throws UserNotFoundException {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username);
-        if (!_template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class)) {
+        if (!_userChecks.containsKey(username)) {
+            _userChecks.put(username, _template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class));
+        }
+        if (!_userChecks.get(username)) {
             throw new UserNotFoundException(username);
         }
         return parameters;
     }
 
     private UserI getGuest() {
+        if (_guest == null) {
+            log.debug("No guest user initialized, trying to retrieve now.");
+            try {
+                final UserI guest = Users.getGuest();
+                if (guest instanceof XDATUser) {
+                    _guest = (XDATUser) guest;
+                } else {
+                    _guest = new XDATUser(guest.getUsername());
+                }
+            } catch (UserNotFoundException e) {
+                log.error("Got a user name not found exception for the guest user which is very strange.", e);
+            } catch (UserInitException e) {
+                log.error("Got a user init exception for the guest user which is very unfortunate.", e);
+            }
+        }
         return _guest;
     }
 
@@ -1432,6 +1452,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private static String getCacheIdForUserElementAccessManagers(final String username) {
         return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, ELEMENT_ACCESS_MANAGERS_PREFIX);
+    }
+
+    private static String getCacheIdForUserGroups(final String username) {
+        return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, GROUPS_ELEMENT_PREFIX);
     }
 
     private static String getCacheIdForUserProjectAccess(final String username, final String access) {
@@ -1585,8 +1609,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String       PROJECT_PREFIX                 = "project";
     private static final String       USER_ELEMENT_PREFIX            = "user";
     private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX = "eam";
-    @SuppressWarnings("unused")
-    private static final String       GROUP_ELEMENT_PREFIX           = "group";
+    private static final String       GROUPS_ELEMENT_PREFIX          = "groups";
     @SuppressWarnings("unused")
     private static final String       GUEST_ACTION_READ              = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
     private static final List<String> ALL_ACTIONS                    = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
@@ -1625,6 +1648,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private final DatabaseHelper             _helper;
     private final Map<String, Long>          _totalCounts;
     private final Map<String, Long>          _missingElements;
+    private final Map<String, Boolean>       _userChecks;
 
     private Listener _listener;
     private boolean  _initialized;

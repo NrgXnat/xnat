@@ -44,11 +44,11 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue"})
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue", "SqlResolve"})
 @Slf4j
 public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
-    public static final String COOKIE_SESSION_EXPIRATION_TIME = "SESSION_EXPIRATION_TIME";
-
     @Autowired
     public XnatExpiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
         super();
@@ -108,7 +108,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 final String header = request.getHeader("Authorization");
                 if (header != null && header.startsWith("Basic ")) {
                     //For users that authenticated using basic authentication, check whether their password is expired, and if so give them a 403 and a message that they need to change their password.
-                    final String[] atoms = new String(Base64.decode(header.substring(6).getBytes("UTF-8")), "UTF-8").split(":");
+                    final String[] atoms = new String(Base64.decode(header.substring(6).getBytes(UTF_8)), UTF_8).split(":");
                     if (atoms.length != 2) {
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "The authentication token is invalid. You must provide a username and password separated by the ':' character.");
                         return;
@@ -138,8 +138,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                     if (isPasswordExpirationDisabled()) {
                         chain.doFilter(request, response);
                     } else {
-                        final boolean isExpired = checkForExpiredPassword(username);
-                        session.setAttribute("expired", isExpired);
+                        final boolean isExpired = isPasswordExpired(session, username);
                         if (username != null && isExpired && !username.equals("guest")) {
                             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Your password has expired. Please try again after changing your password.");
                         } else {
@@ -179,10 +178,9 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                             // Shouldn't check for a localdb expired password if user is coming in through a non-localdb provider.
                             chain.doFilter(request, response);
                         } else if (isEnabled) {
-                            final boolean isExpired     = checkForExpiredPassword(user);
+                            final boolean isExpired     = isPasswordExpired(session, user);
                             final boolean requireSalted = _preferences.getRequireSaltedPasswords();
                             if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
-                                session.setAttribute("expired", true);
                                 response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                             } else {
                                 chain.doFilter(request, response);
@@ -267,12 +265,17 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         }
     }
 
-    private boolean checkForExpiredPassword(final UserI user) {
-        return checkForExpiredPassword(user.getUsername());
+    private boolean isPasswordExpired(final HttpSession session, final UserI user) {
+        return isPasswordExpired(session, user.getUsername());
     }
 
-    private boolean checkForExpiredPassword(final String username) {
+    private boolean isPasswordExpired(final HttpSession session, final String username) {
         if (isPasswordExpirationDisabled()) {
+            session.setAttribute("expired", false);
+            return false;
+        }
+        final Boolean expired = (Boolean) session.getAttribute("expired");
+        if (expired != null && !expired) {
             return false;
         }
         try {
@@ -287,7 +290,9 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 parameters.addValue("date", new SimpleDateFormat("MM/dd/yyyy").format(new Date(Long.parseLong(_expirationSetting))));
             }
 
-            return _jdbcTemplate.queryForObject(query, parameters, Boolean.class);
+            final Boolean queried = _jdbcTemplate.queryForObject(query, parameters, Boolean.class);
+            session.setAttribute("expired", queried);
+            return queried;
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
             log.error("An error occurred while checking whether the password has expired for user " + username, e);
         }
@@ -352,9 +357,10 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         }
     }
 
-    private static final String AUTH_DEFAULT      = "localdb";
-    private static final String QUERY_BY_INTERVAL = "SELECT now() - password_updated > :interval::INTERVAL AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
-    private static final String QUERY_BY_DATE     = "SELECT to_date(:date, 'MM/DD/YYYY') BETWEEN password_updated AND now() AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
+    private static final String COOKIE_SESSION_EXPIRATION_TIME = "SESSION_EXPIRATION_TIME";
+    private static final String AUTH_DEFAULT                   = "localdb";
+    private static final String QUERY_BY_INTERVAL              = "SELECT now() - password_updated > :interval::INTERVAL AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
+    private static final String QUERY_BY_DATE                  = "SELECT to_date(:date, 'MM/DD/YYYY') BETWEEN password_updated AND now() AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
 
     private String changePasswordPath        = "";
     private String changePasswordDestination = "";

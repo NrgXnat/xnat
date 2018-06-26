@@ -117,8 +117,12 @@ var XNAT = getObject(XNAT);
         // ...checks for a [src] attribute ending with a valid
         // image format extension (tolerates query string)
         if (siteLogo.length && !/([.](gif|jpg|jpeg|png|svg)[?]?.*)$/i.test(siteLogo[0].src)) {
-            XNAT.xhr.get('~/xapi/siteConfig/siteLogoPath', function(path){
-                siteLogo.attr('src', path);
+            XNAT.xhr.get({
+                url: XNAT.url.rootUrl('/xapi/siteConfig/siteLogoPath'),
+                dataType: 'text',
+                success: function(path){
+                    siteLogo.attr('src', XNAT.url.rootUrl(path));
+                }
             });
         }
 

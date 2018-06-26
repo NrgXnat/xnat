@@ -32,7 +32,7 @@ var XNAT = getObject(XNAT);
     dataTypeAccess.isReady = false;
 
     // Regex list of pages which should NOT load data types
-    dataTypeAccess.skipPages = /Login|Register|VerifyEmail|ForgotLogin|RegisterUser|UpdateUser|ModifyPassword/;
+    dataTypeAccess.skipPages = /Login|Register|VerifyEmail|ForgotLogin|RegisterUser|UpdateUser|ModifyPassword|Verification/;
 
     dataTypeAccess.loadDataTypes = window.loadDataTypes =
         window.loadDataTypes ||

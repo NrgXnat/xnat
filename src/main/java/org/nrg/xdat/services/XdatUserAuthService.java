@@ -25,6 +25,8 @@ public interface XdatUserAuthService extends BaseHibernateService<XdatUserAuth> 
 
     boolean hasUserByNameAndAuth(final String user, final String auth, final String id);
 
+    String getXdatUsernameByAuthNameAndProvider(final String user, final String auth, final String id);
+
     XdatUserAuth getUserByNameAndAuth(final String user, final String auth, final String id);
 
     XdatUserAuth getUserByXdatUsernameAndAuth(final String user, final String auth, final String id);

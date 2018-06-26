@@ -31,6 +31,15 @@ public class XdatUserAuthDAO extends AbstractHibernateDAO<XdatUserAuth> {
         return (boolean) query.uniqueResult();
     }
 
-    private static final String QUERY_HAS_USER_AND_AUTH        = "SELECT COUNT(*) > 0 FROM XdatUserAuth where enabled = true AND authUser = :authUser AND authMethod = :authMethod";
-    private static final String QUERY_HAS_USER_AND_AUTH_AND_ID = QUERY_HAS_USER_AND_AUTH + " AND authMethodId = :authMethodId";
+    public String getUsernameByNameAndAuth(final String user, final String authMethod, final String authMethodId) {
+        final Query query = getSession().createQuery(QUERY_GET_USERNAME_BY_USER_AND_AUTH_AND_ID);
+        query.setParameter("authUser", user);
+        query.setParameter("authMethod", authMethod);
+        query.setParameter("authMethodId", authMethodId);
+        return (String) query.uniqueResult();
+    }
+
+    private static final String QUERY_HAS_USER_AND_AUTH                    = "SELECT COUNT(*) > 0 FROM XdatUserAuth where enabled = true AND authUser = :authUser AND authMethod = :authMethod";
+    private static final String QUERY_HAS_USER_AND_AUTH_AND_ID             = QUERY_HAS_USER_AND_AUTH + " AND authMethodId = :authMethodId";
+    private static final String QUERY_GET_USERNAME_BY_USER_AND_AUTH_AND_ID = "SELECT xdatUsername FROM XdatUserAuth where enabled = true AND authUser = :authUser AND authMethod = :authMethod AND authMethodId = :authMethodId";
 }

@@ -87,42 +87,40 @@ public class AdminUtils {
 		final String lastName = user.getLastname();
 		final String email = user.getEmail();
 
-		boolean verificationRequired = XDAT.getSiteConfigPreferences().getEmailVerification();
-
-		//If auto approval is false, send a notification to the administrator for each user we just verified.
-		if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
+		// If user isn't enabled, send a notification to the administrator for each user we just verified.
+		if (!user.isEnabled()) {
 			// Send admin email
 			AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
-		} else if((!verificationRequired) || user.isVerified()) {
+		} else {
 			AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
 			AdminUtils.sendNewUserEmailMessage(username, email);
 		}
 	}
 
-	public static void sendNewUserVerificationEmail(UserI user) throws Exception {
+	public static void sendNewUserVerificationEmail(final UserI user) throws Exception {
 		// If the Item is null, don't continue.
 		if (user == null) {
 			throw new Exception("Unable to send verification email. Required User is null.");
 		}
-		sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin());
+		sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin(), user.isEnabled());
 	}
 
-	public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception {
+	public static void sendNewUserVerificationEmail(final String email, final String firstName, final String lastName, final String userName, final boolean isEnabled) throws Exception {
 		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 			if ((email == null || email.equals("")) || (firstName == null || firstName.equals("")) ||
 				(lastName == null || lastName.equals("")) || (userName == null || userName.equals(""))) {
 				throw new Exception("Unable to send verification email. One or more required fields is empty.");
 			}
 
-			AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
-			Context context = new VelocityContext();
-			String fullName = firstName + " " + lastName;
-			String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
-			String resendVerificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/ForgotLogin.vm";
+			final AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
+			final Context context = new VelocityContext();
+			final String fullName = firstName + " " + lastName;
+			final String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
+			final String resendVerificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/ForgotLogin.vm";
 			context.put("name", fullName);
 			context.put("verifyEmailLink", verificationUrl);
 			context.put("resendEmailLink", resendVerificationUrl);
-			context.put("autoEnable", XDAT.getSiteConfigPreferences().getUserRegistration());
+			context.put("isEnabled", isEnabled);
 			context.put("siteName", TurbineUtils.GetSystemName());
 
 			final String subject = TurbineUtils.GetSystemName() + " Email Verification";

@@ -48,7 +48,7 @@ public class TestXdatUserAuthService {
 
         _service.delete(created);
         final UserAuthI deleted = _service.retrieve(created.getId());
-        assertTrue(deleted == null);
+        assertNull(deleted);
 
         final boolean hasDeletedMike = _service.hasUserByNameAndAuth("mike", "ldap", "wustlkey");
         assertFalse(hasDeletedMike);

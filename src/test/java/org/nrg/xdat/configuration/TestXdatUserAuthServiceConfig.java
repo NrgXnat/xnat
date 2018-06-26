@@ -32,7 +32,7 @@ import reactor.bus.EventBus;
 import java.io.IOException;
 
 @Configuration
-@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsConfiguration.class, FrameworkConfig.class})
+@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsConfiguration.class, FrameworkConfig.class, MockUserConfig.class})
 public class TestXdatUserAuthServiceConfig {
     @Bean
     public XdatUserAuthService xdatUserAuthService() {

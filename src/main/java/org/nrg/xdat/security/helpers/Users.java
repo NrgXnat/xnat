@@ -127,6 +127,17 @@ public class Users {
     }
 
     /**
+     * Checks whether a user with the specified name exists. Returns true if so, false otherwise.
+     *
+     * @param username The user to test.
+     *
+     * @return Returns true if the user exists, false otherwise.
+     */
+    public static boolean exists(final String username) {
+        return getUserManagementService().exists(username);
+    }
+
+    /**
      * Return a User object for the referenced username.
      *
      * @return Returns the user object with the given username

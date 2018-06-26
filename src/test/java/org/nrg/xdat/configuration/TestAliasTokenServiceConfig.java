@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({TestXdatUserAuthServiceConfig.class, MockUserConfig.class})
+@Import(TestXdatUserAuthServiceConfig.class)
 public class TestAliasTokenServiceConfig {
     @Bean
     public AliasTokenDAO aliasTokenDAO() {

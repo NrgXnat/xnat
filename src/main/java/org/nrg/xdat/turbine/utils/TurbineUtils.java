@@ -940,9 +940,12 @@ public class TurbineUtils {
         return Boolean.valueOf(s);
     }
 
-    @SuppressWarnings("unused")
-    public String[] toList(String s) {
-        return s.split(",");
+    public List<String> toList(final String concatenated) {
+        return ToList(concatenated);
+    }
+
+    public static List<String> ToList(final String concatenated) {
+        return Arrays.asList(concatenated.split("\\s*,\\s*"));
     }
 
     public String formatDate(Date d, String pattern) {

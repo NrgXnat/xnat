@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -53,21 +54,23 @@ public class VerifyEmail extends VelocitySecureScreen {
             if (StringUtils.isNotBlank(userID)) {
                 final UserI user = Users.getUser(userID);
                 final List<? extends UserI> users = getAllUsersWithEmail(user.getEmail());
-                final List<UserI> verified = new ArrayList<>();
+                final List<UserI> verifiedUsers = new ArrayList<>();
 
                 final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
 
                 for (final UserI current : users) {
-                    if ((current.isVerified() == null || !current.isVerified()) || (!current.isEnabled() && disabledDueToInactivity(current))) {
+                    final boolean isVerified = BooleanUtils.toBooleanDefaultIfNull(current.isVerified(), false);
+                    final boolean isEnabled  = current.isEnabled();
+                    if (!isVerified || (!isEnabled && disabledDueToInactivity(current))) {
                         current.setVerified(true);
-                        verified.add(current);
+                        verifiedUsers.add(current);
 
                         // If auto-approval is true, the user is enabled
                         if (autoApproveRegistered) {
                             current.setEnabled(true);
                         }
 
-                        if (current.isEnabled()) {
+                        if (isEnabled) {
                             context.put("userEnabled","true");
                         }
 
@@ -85,13 +88,13 @@ public class VerifyEmail extends VelocitySecureScreen {
                 final String message;
                 try {
                     // If we verified any of the above users.
-                    if (verified.size() > 0) {
+                    if (verifiedUsers.size() > 0) {
                         // Build the user message
                         final StringBuilder buffer = new StringBuilder();
                         buffer.append(user.getEmail()).append(" has been verified for the following users: ");
-                        for (final UserI current : verified) {
+                        for (final UserI current : verifiedUsers) {
                             // Append a list of user names that we have verified.
-                            if (verified.get(verified.size() - 1) == current) {
+                            if (verifiedUsers.get(verifiedUsers.size() - 1) == current) {
                                 buffer.append(current.getUsername()); // Don't append comma if it's the last in the list.
                             } else {
                                 buffer.append(current.getUsername()).append(", ");
@@ -109,15 +112,15 @@ public class VerifyEmail extends VelocitySecureScreen {
                     } else {
                         message = "All users with email address " + user.getEmail() + " have been previously verified.";
                     }
-                    if (!autoApproveRegistered) {
-                        //data.setRedirectURI(null);
+
+                    if (!user.isEnabled() && !autoApproveRegistered) {
                         data.setMessage("Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.");
                         redirectToLogin(data);
                     } else {
                         // Set message to display to the user. You do not need a message informing you of the accounts that were verified if all you did was register and you did not click a verify email link.
-                        //data.setRedirectURI(null);
-                        data.setMessage(message);
-                        redirectToLogin(data);
+                        XDAT.loginUser(data, user, false);
+                        TurbineUtils.setBannerMessage(data, message);
+                        doRedirect(data,"Index.vm");
                     }
                 } catch (Exception exception) {
                     log.error("Error occurred sending admin email to enable newly verified accounts", exception);
@@ -140,7 +143,7 @@ public class VerifyEmail extends VelocitySecureScreen {
         return false;
     }
 
-    public void invalidInformation(final RunData data, final Context context, final String message) {
+    private void invalidInformation(final RunData data, final Context context, final String message) {
         try {
             String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
             String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);

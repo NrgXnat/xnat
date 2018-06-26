@@ -16,7 +16,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
@@ -78,14 +77,9 @@ public class ModifyPassword extends ModifyAction {
         final String updatedPassword = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 
         if (data.getSession().getAttribute("forgot") == null) {
-            if (StringUtils.isBlank(encodedPassword) && !Roles.isSiteAdmin(user)) {
-                redirect(false, "The user " + login + " is configured as a no-login user and can't have a password set. If you feel this is an error, please contact your site administrator.");
-                return;
-            }
-
             final boolean specifiedCurrentPassword = StringUtils.isNotBlank(currentPassword);
             final boolean hasCurrentPassword       = StringUtils.isNotBlank(user.getPassword());
-            if ((!specifiedCurrentPassword && hasCurrentPassword) || StringUtils.isBlank(updatedPassword) || !Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
+            if ((!specifiedCurrentPassword && hasCurrentPassword) || StringUtils.isBlank(updatedPassword) || (StringUtils.isNotBlank(encodedPassword) && !Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt()))) {
                 //User correctly entered their old password or they forgot their old password
                 final StringBuilder message = new StringBuilder("Your password was not updated: ");
                 if (!specifiedCurrentPassword || StringUtils.isBlank(updatedPassword)) {

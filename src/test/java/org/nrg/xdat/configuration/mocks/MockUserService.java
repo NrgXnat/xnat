@@ -14,9 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
@@ -37,12 +34,17 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
-    public UserI getUser(final String username) throws UserInitException, UserNotFoundException {
+    public boolean exists(final String username) {
+        return getUser(username) != null;
+    }
+
+    @Override
+    public UserI getUser(final String username) {
         return getDao().findByUniqueProperty("username", username);
     }
 
     @Override
-    public UserI getUser(final Integer userId) throws UserNotFoundException, UserInitException {
+    public UserI getUser(final Integer userId) {
         return getDao().findByUniqueProperty("id", userId);
     }
 
@@ -52,7 +54,7 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
-    public UserI getGuestUser() throws UserNotFoundException, UserInitException {
+    public UserI getGuestUser() {
         return getDao().findByUniqueProperty("username", "guest");
     }
 
@@ -72,7 +74,7 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
-    public UserI createUser(final Map<String, ?> properties) throws UserFieldMappingException, UserInitException {
+    public UserI createUser(final Map<String, ?> properties) {
         try {
             final MockUser user = new MockUser();
             BeanUtils.populate(user, properties);
@@ -88,12 +90,12 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
-    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) throws Exception {
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) {
         save(user, null, overrideSecurity, (EventDetails) null);
     }
 
     @Override
-    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventDetails event) throws Exception {
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventDetails event) {
         if (user.getID() == 0) {
             create((MockUser)  user);
         } else {
@@ -102,24 +104,24 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
-    public ValidationResultsI validate(final UserI user) throws Exception {
+    public ValidationResultsI validate(final UserI user) {
         return null;
     }
 
     @Override
-    public void enableUser(final UserI user, final UserI authenticatedUser, final EventDetails event) throws Exception {
+    public void enableUser(final UserI user, final UserI authenticatedUser, final EventDetails event) {
         user.setEnabled(true);
         update((MockUser) user);
     }
 
     @Override
-    public void disableUser(final UserI user, final UserI authenticatedUser, final EventDetails event) throws Exception {
+    public void disableUser(final UserI user, final UserI authenticatedUser, final EventDetails event) {
         user.setEnabled(false);
         update((MockUser) user);
     }
 
     @Override
-    public boolean authenticate(final UserI user, final Authenticator.Credentials credentials) throws Exception {
+    public boolean authenticate(final UserI user, final Authenticator.Credentials credentials) {
         return StringUtils.equals(user.getUsername(), credentials.getUsername()) && StringUtils.equals(user.getPassword(), credentials.getPassword());
     }
 }

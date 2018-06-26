@@ -32,7 +32,16 @@ public interface UserManagementServiceI {
 	 * @return The new user object.
 	 */
 	UserI createUser();
-	
+
+	/**
+	 * Checks whether a user with the specified name exists. Returns true if so, false otherwise.
+	 *
+	 * @param username The user to test.
+	 *
+	 * @return Returns true if the user exists, false otherwise.
+	 */
+	boolean exists(final String username);
+
 	/**
      * Return a User object for the referenced username.
 	 * @param username    The name of the user to retrieve.

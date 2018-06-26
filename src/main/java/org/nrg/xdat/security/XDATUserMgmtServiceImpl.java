@@ -37,6 +37,9 @@ import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -49,9 +52,19 @@ import java.util.Objects;
 @Service
 @Slf4j
 public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
+    @Autowired
+    public XDATUserMgmtServiceImpl(final NamedParameterJdbcTemplate template) {
+        _template = template;
+    }
+
     @Override
     public UserI createUser() {
         return new XDATUser();
+    }
+
+    @Override
+    public boolean exists(final String username) {
+        return _template.queryForObject(QUERY_CHECK_USER_EXISTS, new MapSqlParameterSource("username", username), Boolean.class);
     }
 
     @Override
@@ -285,6 +298,10 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     public boolean authenticate(UserI user, Credentials credentials) throws Exception {
         return ((XDATUser) user).login(credentials.password);
     }
+
+    private static final String QUERY_CHECK_USER_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+
+    private final NamedParameterJdbcTemplate _template;
 
     private UserI _guest;
     private String _guestName;

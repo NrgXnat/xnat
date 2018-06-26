@@ -19,6 +19,7 @@ import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
@@ -62,13 +63,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		}
 
 		try {
-			UserI found=Users.createUser(TurbineUtils.GetDataParameterHash(data));
+            final UserI found = Users.createUser(TurbineUtils.GetDataParameterHash(data));
 
-			if(found.getID()!=null){
+            if (found.getID() != null) {
                 //This shouldn't have a pk yet
                 handleInvalid(data, context, "Error registering user account");
                 return;
-			}
+            }
 
 			UserI existing=null;
 			try {
@@ -107,28 +108,34 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         // NEW USER
                         found.setPassword(tempPass);
 
-                        final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
-                        final boolean autoApprovePar = XDAT.getSiteConfigPreferences().getPar();
-                        final boolean hasParData = hasPAR(data);
-                        final String authMethod = parameters.getString("authMethod");
-                        final String providerId = parameters.getString("providerId");
-                        final boolean isProviderAutoEnabled = parameters.getBoolean("providerAutoEnabled", false);
+                        final SiteConfigPreferences preferences  = XDAT.getSiteConfigPreferences();
+
+                        final boolean hasParData             = hasPAR(data);
+                        final boolean autoApprovePar         = preferences.getPar();
+                        final boolean autoEnable             = preferences.getUserRegistration();
+                        final boolean autoVerify             = !preferences.getEmailVerification();
+                        final String  authMethod             = parameters.getString("authMethod");
+                        final String  providerId             = parameters.getString("providerId");
+                        final boolean isProviderAutoEnabled  = parameters.getBoolean("providerAutoEnabled", false);
                         final boolean isProviderAutoVerified = parameters.getBoolean("providerAutoVerified", false);
-                        final boolean enabled = autoApprovePar && hasParData || isProviderAutoEnabled || autoApproveRegistered && (hasParData || !XDAT.getSiteConfigPreferences().getEmailVerification());
-                        final boolean verified = isProviderAutoVerified || !XDAT.getSiteConfigPreferences().getEmailVerification() || hasParData;
 
                         // Approve them if:
+                        //  -- we autoapprove registered users
+                        //  -- authenticating provider autoapproves users
                         //  -- we autoapprove par users and this user has a PAR
-                        //  -- we autoapprove registered users and don't require email verification
-                        //  -- authenticating provider autoapproves or autoverifies users
+                        // Verify them if:
+                        //  -- we autoverify users (don't require email verification)
+                        //  -- authenticating provider autoverifies users
+                        //  -- this user has a PAR (includes email so address is already verified)
+                        final boolean enabled  = autoEnable || isProviderAutoEnabled || autoApprovePar && hasParData;
+                        final boolean verified = autoVerify || isProviderAutoVerified || hasParData;
+
                         found.setEnabled(enabled);
                         found.setVerified(verified);
 
-                        UserI currUser = XDAT.getUserDetails();
-                        UserI userToSave = found;
-                        if (currUser != null && !currUser.isGuest()) {
-                            userToSave = currUser;
-                        }
+                        final UserI currUser = XDAT.getUserDetails();
+                        final UserI userToSave = currUser != null && !currUser.isGuest() ? currUser : found;
+
                         Users.save(found, userToSave, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
 
                         final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";

@@ -1341,7 +1341,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      */
     private MapSqlParameterSource checkUser(final String username) throws UserNotFoundException {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username);
-        if (!_userChecks.containsKey(username)) {
+
+        // If the user isn't in the check map OR the user is in the check map but is set as not existing...
+        if (!_userChecks.containsKey(username) || !_userChecks.get(username)) {
+            // See if the user exists now. The non-existent user existing should be updated with the add user event,
+            // but we don't have a clearly defined handler for that yet.
             _userChecks.put(username, _template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class));
         }
         if (!_userChecks.get(username)) {

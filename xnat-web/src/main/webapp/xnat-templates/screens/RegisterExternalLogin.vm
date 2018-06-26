@@ -154,5 +154,7 @@ $!template.setLayoutTemplate("Login.vm")
     #if ($message.startsWith("Authentication failed"))
         // toggle login box if user attempted and failed to login and server returned an error message.
         showLoginBox();
+    #else
+        showRegisterBox();
     #end
 </script>

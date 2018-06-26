@@ -25,12 +25,12 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.model.XnatProjectdataAliasI;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
@@ -45,6 +45,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -61,13 +62,12 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @Slf4j
 public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache {
     @Autowired
-    public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final XnatUserProvider primaryAdminUserProvider) {
+    public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
         _cache = cache;
         _template = template;
-        _adminUserProvider = primaryAdminUserProvider;
     }
 
     @Override
@@ -182,7 +182,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         final String       userId       = user.getUsername();
-        final ProjectCache projectCache = getProjectCache(idOrAlias, user, userId);
+        final ProjectCache projectCache = getProjectCache(idOrAlias);
         return projectCache != null && projectCache.hasUser(userId);
     }
 
@@ -243,18 +243,25 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return null;
         }
 
-        final String userId = user.getUsername();
-
-        // Check that the project is readable by the user and, if so, return it.
-        if (canRead(userId, idOrAlias)) {
-            log.debug("Found a cached project for {} that is accessible for the user {}.", idOrAlias, userId);
-            final ProjectCache projectCache = getProjectCache(idOrAlias, user);
-            if (projectCache != null) {
-                log.debug("Found a cached project for ID or alias {} for user {}.", idOrAlias, userId);
-                return projectCache.getProject();
-            } else {
-                log.warn("A weird condition occurred in the user project cache: has({}, {}) returned true, no non-writable or nonexistent project was found, but getProjectCache({}, {}) returned null. This method will return null, but this isn't a case that should arise.", userId, idOrAlias, idOrAlias, userId);
+        final String userId;
+        if (user != null) {
+            userId = user.getUsername();
+            // Check that the project is readable by the user and, if not, return null.
+            if (!canRead(userId, idOrAlias)) {
+                log.info("User {} attempted to retrieve the project by ID or alias {}, but that project isn't accessible for the user. Returning null.", userId, idOrAlias);
+                return null;
             }
+        } else {
+            userId = "<none>";
+        }
+
+        log.debug("Found a cached project with ID or alias '{}' that is accessible by the user {}.", idOrAlias, userId);
+        final ProjectCache projectCache = getProjectCache(idOrAlias);
+        if (projectCache != null) {
+            log.debug("Found a cached project for ID or alias {} for user {}.", idOrAlias, userId);
+            return projectCache.getProject();
+        } else {
+            log.warn("A weird condition occurred in the user project cache: has({}, {}) returned true, no non-writable or nonexistent project was found, but getProjectCache({}) returned null. This method will return null, but this isn't a case that should arise.", userId, idOrAlias, idOrAlias);
         }
 
         // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
@@ -361,7 +368,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return false;
             }
 
-            final ProjectCache projectCache = getProjectCache(idOrAlias, user, userId);
+            final ProjectCache projectCache = getProjectCache(idOrAlias);
 
             // If the project cache is null, the project doesn't exist (same as isCachedNonexistentProject() but it wasn't cached previously).
             if (projectCache == null) {
@@ -420,39 +427,21 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * This is a simple wrapper around the {@link #getProjectCache(String, UserI, String)} method. It omits the user ID parameter and thus removes
-     * the throws clause for {@link UserNotFoundException}, since the user has already been found.
-     *
-     * @param idOrAlias The ID or alias of the project to retrieve.
-     * @param user      The user object for the user requesting the project.
-     *
-     * @return The project cache consisting of the project object and a map of users and their access level to the project.
-     */
-    @SuppressWarnings("unchecked")
-    private ProjectCache getProjectCache(final String idOrAlias, final UserI user) {
-        return getProjectCache(idOrAlias, user, null);
-    }
-
-    /**
      * Gets the cache for the project identified by the ID or alias parameter. If the project is cached as non-existent, this method returns null. Otherwise,
      * it checks the project cache and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache,
      * this method tries to find the project by ID or alias. If it's not found, it's then cached as non-existent and the method returns null as before. If it is
-     * found, the project is cached along with the access level for the specified user.
+     * found, the project is cached.
      *
      * @param idOrAlias The ID or alias of the project to retrieve.
-     * @param user      The user object for the user requesting the project.
-     * @param userId    The user ID for the user requesting the project. This is used to retrieve the user object if the user parameter is null.
      *
      * @return The project cache consisting of the project as the "left" or "key" value and a map of users and their access level to the project as the "right" or "value" value.
      */
     @SuppressWarnings("unchecked")
     @Nullable
-    private ProjectCache getProjectCache(final String idOrAlias, final UserI user, final String userId) {
-        assert user != null || StringUtils.isNotBlank(userId) : "You must provide either the user object or the ID for the user.";
-
+    private ProjectCache getProjectCache(final String idOrAlias) {
         // If we've already determined that the project doesn't exist, return null.
         if (isCachedNonexistentProject(idOrAlias)) {
-            log.debug("User {} requested project by ID or alias {}, but this is cached as a non-existent project.", getUserId(user, userId), idOrAlias);
+            log.debug("Project was requested by ID or alias {}, but this is cached as a non-existent project.", idOrAlias);
             return null;
         }
 
@@ -489,9 +478,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         log.info("Initializing project cache for ID or alias {}", idOrAlias);
 
         // Make sure we have a concrete user object then try to retrieve the project.
-        final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(idOrAlias, getAdminUser(), false);
-        // If that came back as null, cache this as non-existent and quit.
-        if (project == null) {
+        final XnatProjectdata project;
+        try {
+            final String projectId = _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, idOrAlias), String.class);
+            project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
+        } catch (EmptyResultDataAccessException e) {
             log.info("Didn't find a project with ID or alias {}, caching as non-existent", idOrAlias);
             cacheNonexistentProject(idOrAlias);
             return null;
@@ -517,10 +508,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         cacheProjectIdsAndAliases(projectId, project.getAliases_alias());
 
         return projectCache;
-    }
-
-    private UserI getAdminUser() {
-        return ObjectUtils.defaultIfNull(_adminUser, _adminUser = _adminUserProvider.get());
     }
 
     private void handleCacheRemoveEvent(final Ehcache cache, final Element element, final String event) {
@@ -677,17 +664,23 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         private final Multimap<String, AccessLevel> _userCache = ArrayListMultimap.create();
     }
 
-    private static final List<AccessLevel>                   DELETABLE_ACCESS       = Arrays.asList(Owner, Delete);
-    private static final List<AccessLevel>                   WRITABLE_ACCESS        = Arrays.asList(Member, Edit);
-    private static final List<AccessLevel>                   READABLE_ACCESS        = Arrays.asList(Collaborator, Read);
-    private static final Map<AccessLevel, List<AccessLevel>> ACCESS_LEVELS          = ImmutableMap.of(Delete, DELETABLE_ACCESS,
-                                                                                                      Edit, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS)),
-                                                                                                      Read, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS)));
-    private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES    = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
-    private static final String                              QUERY_KEY_PROJECT_ID   = "projectId";
-    private static final String                              QUERY_KEY_ACCESS_LEVEL = "accessLevel";
-    private static final String                              NOT_A_PROJECT          = "NOT_A_PROJECT";
-    private static final String                              CACHE_NAME             = "UserProjectCacheManagerCache";
+    private static final List<AccessLevel>                   DELETABLE_ACCESS                 = Arrays.asList(Owner, Delete);
+    private static final List<AccessLevel>                   WRITABLE_ACCESS                  = Arrays.asList(Member, Edit);
+    private static final List<AccessLevel>                   READABLE_ACCESS                  = Arrays.asList(Collaborator, Read);
+    private static final Map<AccessLevel, List<AccessLevel>> ACCESS_LEVELS                    = ImmutableMap.of(Delete, DELETABLE_ACCESS,
+                                                                                                                Edit, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS)),
+                                                                                                                Read, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS)));
+    private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
+    private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
+    private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";
+    private static final String                              NOT_A_PROJECT                    = "NOT_A_PROJECT";
+    private static final String                              CACHE_NAME                       = "UserProjectCacheManagerCache";
+    private static final String                              QUERY_GET_PROJECT_BY_ID_OR_ALIAS = "SELECT id " +
+                                                                                                "FROM xnat_projectdata " +
+                                                                                                "  LEFT JOIN xnat_projectdata_alias a on xnat_projectdata.id = a.aliases_alias_xnat_projectdata_id " +
+                                                                                                "WHERE " +
+                                                                                                "  id = :projectId OR " +
+                                                                                                "  a.alias = :projectId";
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
     private static final String QUERY_USERS_BY_GROUP    = "SELECT DISTINCT login " +
@@ -705,7 +698,4 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;
-    private final XnatUserProvider           _adminUserProvider;
-
-    private UserI _adminUser;
 }

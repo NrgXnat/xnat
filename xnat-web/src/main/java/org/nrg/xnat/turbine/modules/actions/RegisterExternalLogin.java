@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Users;
@@ -23,10 +24,14 @@ import org.nrg.xnat.security.XnatProviderManager;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
+import org.postgresql.util.PSQLException;
+import org.postgresql.util.ServerErrorMessage;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+
+import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -73,9 +78,11 @@ public class RegisterExternalLogin extends XDATRegisterUser {
                     data.getParameters().add("providerAutoEnabled", Boolean.toString(provider.isAutoEnabled()));
                     data.getParameters().add("providerAutoVerified", Boolean.toString(provider.isAutoVerified()));
                 }
+
+                createUserAuthRecord(data, operation);
                 super.doPerform(data, context);
             } catch (Exception e) {
-                retryAuthentication(data, context, "An error occurred trying to register your user account. Please try again or contact the system administrator if you need more help.");
+                handleInvalid(data, context, "An error occurred trying to register your user account. Please try again or contact the system administrator if you need more help.");
             }
         }
     }
@@ -127,8 +134,22 @@ public class RegisterExternalLogin extends XDATRegisterUser {
 
         final XdatUserAuth auth = new XdatUserAuth(authUsername, authMethod, authMethodId);
         auth.setXdatUsername((String) TurbineUtils.GetPassedParameter(StringUtils.equals("merge", operation) ? "username" : "xdat:user.login", data));
-        _service.create(auth);
+        try {
+            _service.create(auth);
+        } catch (ConstraintViolationException e) {
+            final Throwable cause = e.getCause();
+            if (cause instanceof PSQLException) {
+                final ServerErrorMessage message = ((PSQLException) cause).getServerErrorMessage();
+                if (message != null && PATTERN_DUPLICATE_KEY.matcher(message.toString()).matches() && StringUtils.isBlank(_service.getXdatUsernameByAuthNameAndProvider(authUsername, authMethod, authMethodId))) {
+                    log.info("Found duplicate user auth record for username '{}' and auth method '{}' ('{}'), but no corresponding XNAT user. Allowing account creation to proceed.", authUsername, authMethodId, authMethod);
+                    return;
+                }
+            }
+            throw e;
+        }
     }
+
+    private static final Pattern PATTERN_DUPLICATE_KEY = Pattern.compile("^.*duplicate key value violates unique constraint.*Key \\(auth_user, auth_method_id\\)=.*already exists\\.$", Pattern.DOTALL);
 
     private final XdatUserAuthService                _service;
     private final XnatDatabaseAuthenticationProvider _provider;

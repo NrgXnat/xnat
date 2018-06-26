@@ -9,6 +9,7 @@
 <!-- START BaseJS.vm -->
 
 #set ($buildTime = "$appInfo.buildDate.getTime()")
+#set ($buildTimeTrim = "${buildTime.substring(0, 10)}")
 #set ($lastAccessed = "${data.session.lastAccessedTime}")
 
 #set ($SITE_ROOT = $content.getURI(""))
@@ -16,8 +17,8 @@
 #set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
 #set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
 
-#set ($js = "js?t=${buildTime}")
-#set ($css = "css?t=${buildTime}")
+#set ($js = "js?t=${buildTimeTrim}")
+#set ($css = "css?t=${buildTimeTrim}")
 
 #if ($DEBUG)
     #set ($minjs = "${js}")

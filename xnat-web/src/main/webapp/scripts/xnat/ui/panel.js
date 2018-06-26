@@ -194,7 +194,7 @@ var XNAT = getObject(XNAT || {});
             opts.panel.style.border = 'none';
         }
 
-        opts.bodyContent = firstDefined(opts.bodyContent, opts.body, opts.contents, opts.content, []);
+        opts.bodyContent = firstDefined(opts.bodyContent, opts.body, []);
 
         var _target = spawn('div.panel-body', opts.element, [].concat(opts.bodyContent)),
 

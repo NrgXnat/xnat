@@ -33,6 +33,13 @@ import java.util.Map;
 
 @Slf4j
 public class Groups {
+    public final static String OWNER_GROUP        = "owner";
+    public final static String OWNER_NAME         = "Owners";
+    public final static String MEMBER_GROUP       = "member";
+    public final static String MEMBER_NAME        = "Members";
+    public final static String COLLABORATOR_GROUP = "collaborator";
+    public final static String COLLABORATOR_NAME  = "Collaborators";
+
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
      * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). Change
@@ -319,6 +326,51 @@ public class Groups {
     @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) throws Exception {
         return getUserGroupService().createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, value, authenticatedUser);
+    }
+
+    /**
+     * Convenience method to create an owner group for the specified project. Uses the project ID to create the group ID and sets the permissions and tag appropriately.
+     *
+     * @param projectId       The project for which the group should be created.
+     * @param securedElements The secured elements to set for the project.
+     * @param user            The user creating the project and groups.
+     *
+     * @return The newly created group.
+     *
+     * @throws Exception When an error occurs.
+     */
+    public static UserGroupI createOrUpdateProjectOwnerGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + OWNER_GROUP, OWNER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
+    }
+
+    /**
+     * Convenience method to create a member group for the specified project. Uses the project ID to create the group ID and sets the permissions and tag appropriately.
+     *
+     * @param projectId       The project for which the group should be created.
+     * @param securedElements The secured elements to set for the project.
+     * @param user            The user creating the project and groups.
+     *
+     * @return The newly created group.
+     *
+     * @throws Exception When an error occurs.
+     */
+    public static UserGroupI createOrUpdateProjectMemberGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
+    }
+
+    /**
+     * Convenience method to create a collaborator group for the specified project. Uses the project ID to create the group ID and sets the permissions and tag appropriately.
+     *
+     * @param projectId       The project for which the group should be created.
+     * @param securedElements The secured elements to set for the project.
+     * @param user            The user creating the project and groups.
+     *
+     * @return The newly created group.
+     *
+     * @throws Exception When an error occurs.
+     */
+    public static UserGroupI createOrUpdateProjectCollaboratorGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + COLLABORATOR_GROUP, COLLABORATOR_NAME, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }
 
     /**

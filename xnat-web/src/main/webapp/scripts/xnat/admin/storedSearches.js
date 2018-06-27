@@ -135,18 +135,58 @@ var XNAT = getObject(XNAT);
         // sort search list
         searches = searches.sort(function(a,b){ return a['id'].toLowerCase().localeCompare(b['id'].toLowerCase()) });
 
-        function editLink(id,content){
-            content = content || id; 
+        function parseUsers(userList){
+            // user list is returned as a string formatted as "{username,username}" or "{NULL}" if no users have been defined in the stored search.
+            // parse this list and return either an array or a FALSE state
+            if (userList.length < 2) return false;
+
+            userList = userList.substr(1,userList.length-2).split(",");
+            if (userList.length && userList[0] !== "NULL") {
+                return userList;
+            }
+            else {
+                return false;
+            }
+        }
+        function userCount(userList){
+            var users = parseUsers(userList), numToDisplay;
+            if (users) {
+                numToDisplay = users.length;
+            }
+            else {
+                numToDisplay = "0";
+            }
+
+            return spawn('!',[
+                // HACK: force numeric sorting by generating hidden values with leading zeros
+                spawn('i.hidden.sorting',zeroPad(numToDisplay,6,'0')),
+                spawn('span',numToDisplay)
+            ]);
+        }
+
+        function editLink(id, content){
+            content = content || id;
             return spawn('a',{
                 href: rootUrl('/app/action/DisplayItemAction/search_value/'+id+'/search_element/xdat:stored_search/search_field/xdat:stored_search.ID/popup/true'),
                 className: 'popup'
             }, content);
         }
-        function viewLink(id,content){
-            content = content || id;
+        function viewLink(id,userList){
+            var users = parseUsers(userList), buttonStyle = ".btn2.btn-sm.ss-view-button", buttonProp = {};
+            if (users && users.indexOf(window.username) >= 0) {
+                url = rootUrl('/app/template/Search.vm/node/ss.'+id);
+            }
+            else {
+                url = '#!';
+                buttonStyle += '.disabled';
+                buttonProp = {
+                    disabled: 'disabled',
+                    title: 'To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.'
+                };
+            }
             return spawn('a',{
-                href: rootUrl('/app/template/Search.vm/node/ss.'+id)
-            }, content);
+                href: url,
+            }, [ spawn('button'+buttonStyle,buttonProp,'View') ]);
         }
 
         return {
@@ -201,7 +241,10 @@ var XNAT = getObject(XNAT);
                 USERS: {
                     label: 'Users',
                     filter: false,
-                    td: { className: 'right allowed-users align-top' }
+                    td: { className: 'right allowed-users align-top' },
+                    apply: function(){
+                        return userCount(this['users'])
+                    }
                 },
                 ACTIONS: {
                     label: 'Actions',
@@ -210,7 +253,7 @@ var XNAT = getObject(XNAT);
                         return spawn('!', [
                             editLink(this.id, [ spawn('button.btn2.btn-sm','Edit') ]),
                             spacer(10),
-                            viewLink(this.id, [ spawn('button.btn2.btn-sm.ss-view-button','View') ])
+                            viewLink(this.id, this['users'])
                         ])
                     }
                 }
@@ -222,39 +265,6 @@ var XNAT = getObject(XNAT);
         event.preventDefault();
         XNAT.dialog.iframe(this.href, 'Edit Stored Search', 900, 600, { onClose: function(){ XNAT.admin.storedSearches.refresh() }});
     });
-
-    function parseSearch(xml){
-        var searchXml = (xml.documentElement) ? xml.documentElement : x2js.parseXmlString(xml);
-        return x2js.xml2json(searchXml);
-    }
-    function showUserCount(userObj){
-        var numToDisplay;
-
-        if (isArray(userObj)) {
-            numToDisplay = userObj.length.toString();
-        }
-        else {
-            numToDisplay = (userObj.login.toString().length > 0) ? '1' : '0';
-        }
-
-        return spawn('!',[
-            // HACK: force numeric sorting by generating hidden values with leading zeros
-            spawn('i.hidden.sorting',zeroPad(numToDisplay,6,'0')),
-            spawn('span',numToDisplay)
-        ]);
-    }
-    function userCheck(userObj){
-        if (isArray(userObj)) {
-            var allowed = false;
-            userObj.forEach(function(allowedUser){
-                if (window.username === allowedUser.login.toString()) allowed = true
-            });
-            return allowed;
-        }
-        else {
-            return window.username === userObj.login.toString();
-        }
-    }
     
     storedSearches.init = storedSearches.refresh = function(container){
         var _ssTable;
@@ -270,21 +280,6 @@ var XNAT = getObject(XNAT);
                 _ssTable.done(function(){
                     container.empty();
                     this.render(container);
-
-                    searches.forEach(function(search){
-                        storedSearches.getStoredSearch(search.id).done(function(searchData){
-                            var searchJson = parseSearch(searchData);
-
-                            $(document).find('tr#tr-'+search.id).find('.allowed-users').empty().html( showUserCount(searchJson['allowed_user']) );
-
-                            if (!userCheck(searchJson['allowed_user'])) {
-                                var linkToDisable = $(document).find('tr#tr-'+search.id).find('.ss-view-button')
-                                linkToDisable.parents('a').prop('href','#!');
-                                linkToDisable.prop('disabled','disabled')
-                                    .prop('title','To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.')
-                            }
-                        })
-                    })
                 });
 
             }

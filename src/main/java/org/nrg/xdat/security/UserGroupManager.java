@@ -514,6 +514,7 @@ public class UserGroupManager implements UserGroupServiceI {
             }
         }
         user.resetCriteria();
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE);
     }
 
     private void addUserToGroup(final UserGroupI userGroup, final UserI currentUser, final UserI user, final EventMetaI eventMeta) throws Exception {
@@ -547,6 +548,7 @@ public class UserGroupManager implements UserGroupServiceI {
             map.setGroupid(groupId);
             SaveItemHelper.authorizedSave(map, currentUser, false, false, eventMeta);
         }
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE);
     }
 
     private PersistentWorkflowI getWorkflow(final String value, final UserI authenticatedUser, final XdatUsergroup group, final String objectId, final String action) {

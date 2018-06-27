@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security;
 
+import org.nrg.xdat.om.XdatUsergroupI;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.EventMetaI;
@@ -137,6 +138,30 @@ public interface UserGroupServiceI {
 	 * @throws Exception When something goes wrong.
 	 */
 	void deleteGroupsByTag(String tag, UserI user, EventMetaI ci) throws Exception;
+
+	/**
+	 * Gets a list of all of the user IDs associated with the specified group.
+	 *
+	 * @param group The group to retrieve.
+	 * @return A list of all user IDs associated with the group.
+	 */
+	List<String> getUserIdsForGroup(XdatUsergroupI group) throws UserNotFoundException;
+
+	/**
+	 * Gets a list of all of the user IDs associated with the specified group.
+	 *
+	 * @param group The group to retrieve.
+	 * @return A list of all user IDs associated with the group.
+	 */
+	List<String> getUserIdsForGroup(UserGroupI group) throws UserNotFoundException;
+
+	/**
+	 * Gets a list of all of the user IDs associated with the specified group.
+	 *
+	 * @param groupId The ID of the group to retrieve.
+	 * @return A list of all user IDs associated with the group.
+	 */
+	List<String> getUserIdsForGroup(String groupId) throws UserNotFoundException;
 
 	/**
 	 * add this group for the specified user (locally).   This will not update the database.  It will add the user to this group in local memory.

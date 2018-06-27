@@ -97,6 +97,11 @@ public class UserGroup implements UserGroupI {
         return id;
     }
 
+    @Override
+    public Integer getPK() {
+        return pk;
+    }
+
     /**
      * Gets the {@link XdatUsergroup#getTag()} user group tag property}. This generally corresponds to the project with
      * which the group is associated.
@@ -116,6 +121,11 @@ public class UserGroup implements UserGroupI {
     @Override
     public String getDisplayname() {
         return displayName;
+    }
+
+    @Override
+    public List<String> getUsernames() {
+        return _usernames;
     }
 
     /**
@@ -171,11 +181,6 @@ public class UserGroup implements UserGroupI {
     }
 
     @Override
-    public Integer getPK() {
-        return pk;
-    }
-
-    @Override
     public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
         if (!_permissionCriteriaByDataType.containsKey(type)) {
             getAllPermissions();
@@ -190,6 +195,11 @@ public class UserGroup implements UserGroupI {
     }
 
     @Override
+    public void setPK(Integer pk) {
+        this.pk = pk;
+    }
+
+    @Override
     public void setTag(String tag) {
         this.tag = tag;
     }
@@ -197,11 +207,6 @@ public class UserGroup implements UserGroupI {
     @Override
     public void setDisplayname(String displayName) {
         this.displayName = displayName;
-    }
-
-    @Override
-    public void setPK(Integer pk) {
-        this.pk = pk;
     }
 
     @Override
@@ -235,6 +240,53 @@ public class UserGroup implements UserGroupI {
             return XdatUsergroup.getXdatUsergroupsById(id, Users.getAdminUser(), true);
         } else {
             return xdatGroup;
+        }
+    }
+
+    public void refresh(final NamedParameterJdbcTemplate template) {
+        initializeUsernames(template);
+        initializeAccessManagers(template);
+        initializeFeatures();
+    }
+
+    @SuppressWarnings("unused")
+    public void initializeUsernames(final ItemI item) {
+        throw new UnsupportedOperationException("Can't currently get the list of usernames from an ItemI");
+    }
+
+    public void initializeUsernames(final NamedParameterJdbcTemplate template) {
+        _usernames.clear();
+        _usernames.addAll(template.queryForList(QUERY_GET_USERS_FOR_GROUP, new MapSqlParameterSource("groupId", id), String.class));
+    }
+
+    public void initializeAccessManagers(final ItemI item) throws Exception {
+        _accessManagers.clear();
+        final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
+        if (childItems != null) {
+            for (final ItemI childItem : childItems) {
+                final ElementAccessManager elementAccessManager = new ElementAccessManager(childItem);
+                _accessManagers.put(elementAccessManager.getElement(), elementAccessManager);
+            }
+        }
+    }
+
+    public void initializeAccessManagers(final NamedParameterJdbcTemplate template) {
+        _accessManagers.clear();
+        _accessManagers.putAll(ElementAccessManager.initialize(template, QUERY_ELEMENT_ACCESS, new MapSqlParameterSource("xdatUsergroupId", pk)));
+    }
+
+    public void initializeFeatures() {
+        _features.clear();
+        _blocked.clear();
+        final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
+        if (features != null) {
+            for (final GroupFeature feature : features) {
+                if (feature.isBlocked()) {
+                    _blocked.add(feature.getFeature());
+                } else if (feature.isOnByDefault()) {
+                    _features.add(feature.getFeature());
+                }
+            }
         }
     }
 
@@ -301,6 +353,7 @@ public class UserGroup implements UserGroupI {
             }
         }
 
+        //noinspection UnstableApiUsage
         return Maps.transformValues(Multimaps.asMap(_permissionCriteriaByDataType), new Function<Collection<PermissionCriteriaI>, List<PermissionCriteriaI>>() {
             @Override
             public List<PermissionCriteriaI> apply(final Collection<PermissionCriteriaI> input) {
@@ -418,8 +471,10 @@ public class UserGroup implements UserGroupI {
         tag = item.getStringProperty("tag");
 
         if (template == null) {
+            initializeUsernames(item);
             initializeAccessManagers(item);
         } else {
+            initializeUsernames(template);
             initializeAccessManagers(template);
         }
 
@@ -435,38 +490,10 @@ public class UserGroup implements UserGroupI {
             displayName = (String) parameters.get("displayname");
             tag = (String) parameters.get("tag");
 
-            initializeAccessManagers(template);
-            initializeFeatures();
+            refresh(template);
         } catch (EmptyResultDataAccessException e) {
             log.info("Someone tried to retrieve a group with the ID {}, but that doesn't seem to exist.", id);
             throw new ItemNotFoundException(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
-        }
-    }
-
-    private void initializeAccessManagers(final NamedParameterJdbcTemplate template) {
-        _accessManagers.putAll(ElementAccessManager.initialize(template, QUERY_ELEMENT_ACCESS, new MapSqlParameterSource("xdatUsergroupId", pk)));
-    }
-
-    private void initializeAccessManagers(final ItemI item) throws Exception {
-        final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
-        if (childItems != null) {
-            for (final ItemI childItem : childItems) {
-                final ElementAccessManager elementAccessManager = new ElementAccessManager(childItem);
-                _accessManagers.put(elementAccessManager.getElement(), elementAccessManager);
-            }
-        }
-    }
-
-    private void initializeFeatures() {
-        final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
-        if (features != null) {
-            for (final GroupFeature feature : features) {
-                if (feature.isBlocked()) {
-                    _blocked.add(feature.getFeature());
-                } else if (feature.isOnByDefault()) {
-                    _features.add(feature.getFeature());
-                }
-            }
         }
     }
 
@@ -495,27 +522,33 @@ public class UserGroup implements UserGroupI {
         return type + "/" + field;
     }
 
-    private static final String QUERY_GROUP_ATTRIBUTES = "SELECT xdat_usergroup_id, displayname, tag FROM xdat_usergroup WHERE id = :id";
-    private static final String QUERY_ELEMENT_ACCESS   = "SELECT " +
-                                                         "  xea.element_name    AS element_name, " +
-                                                         "  xeamd.status        AS active_status, " +
-                                                         "  xfms.method         AS method, " +
-                                                         "  xfm.field           AS field, " +
-                                                         "  xfm.field_value     AS field_value, " +
-                                                         "  xfm.comparison_type AS comparison_type, " +
-                                                         "  xfm.read_element    AS read_element, " +
-                                                         "  xfm.edit_element    AS edit_element, " +
-                                                         "  xfm.create_element  AS create_element, " +
-                                                         "  xfm.delete_element  AS delete_element, " +
-                                                         "  xfm.active_element  AS active_element " +
-                                                         "FROM xdat_usergroup usergroup " +
-                                                         "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                         "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                         "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                         "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                         "WHERE " +
-                                                         "  usergroup.xdat_usergroup_id = :xdatUsergroupId " +
-                                                         "ORDER BY element_name, field";
+    private static final String QUERY_GROUP_ATTRIBUTES    = "SELECT xdat_usergroup_id, displayname, tag FROM xdat_usergroup WHERE id = :id";
+    private static final String QUERY_GET_USERS_FOR_GROUP = "SELECT DISTINCT " +
+                                                            "  login " +
+                                                            "FROM xdat_user u " +
+                                                            "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
+                                                            "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
+                                                            "WHERE usergroup.id = :groupId";
+    private static final String QUERY_ELEMENT_ACCESS      = "SELECT " +
+                                                            "  xea.element_name    AS element_name, " +
+                                                            "  xeamd.status        AS active_status, " +
+                                                            "  xfms.method         AS method, " +
+                                                            "  xfm.field           AS field, " +
+                                                            "  xfm.field_value     AS field_value, " +
+                                                            "  xfm.comparison_type AS comparison_type, " +
+                                                            "  xfm.read_element    AS read_element, " +
+                                                            "  xfm.edit_element    AS edit_element, " +
+                                                            "  xfm.create_element  AS create_element, " +
+                                                            "  xfm.delete_element  AS delete_element, " +
+                                                            "  xfm.active_element  AS active_element " +
+                                                            "FROM xdat_usergroup usergroup " +
+                                                            "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                            "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                            "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                            "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                            "WHERE " +
+                                                            "  usergroup.xdat_usergroup_id = :xdatUsergroupId " +
+                                                            "ORDER BY element_name, field";
 
     private String              id          = null;
     private Integer             pk          = null;
@@ -529,6 +562,7 @@ public class UserGroup implements UserGroupI {
     private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
     private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
     private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
+    private final List<String>                          _usernames                            = new ArrayList<>();
     private final List<String>                          _features                             = new ArrayList<>();
     private final List<String>                          _blocked                              = new ArrayList<>();
 }

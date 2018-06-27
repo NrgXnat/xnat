@@ -9,7 +9,11 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -33,6 +37,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
@@ -57,6 +62,7 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Accessors(prefix = "_")
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
+
     @Autowired
     public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         _cache = cache;
@@ -134,6 +140,30 @@ public class UserGroupManager implements UserGroupServiceI {
         return Lists.newArrayList(_cache.getGroupsForUser(username).keySet());
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<String> getUserIdsForGroup(final XdatUsergroupI group) {
+        return getUserIdsForGroup(group.getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<String> getUserIdsForGroup(final UserGroupI group) {
+        return getUserIdsForGroup(group.getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<String> getUserIdsForGroup(final String groupId) {
+        return _cache.getUserIdsForGroup(groupId);
+    }
+
     @Override
     public void updateUserForGroup(UserI user, String groupId, UserGroupI group) {
         try {
@@ -145,25 +175,36 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public void removeUserFromGroup(UserI user, UserI currentUser, String groupId, EventMetaI ci) throws Exception {
-        for (XdatUserGroupid map : ((XDATUser) user).getGroups_groupid()) {
-            if (StringUtils.equals(map.getGroupid(), groupId)) {
-                SaveItemHelper.authorizedDelete(map.getItem(), currentUser, ci);
-            }
+    public void removeUserFromGroup(final UserI user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) {
+        try {
+            removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(Groups.OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singletonList(user.getUsername())));
+        } catch (Exception e) {
+            log.error("Tried and failed to remove the user '{}' from group '{}': {}", user.getUsername(), groupId);
         }
-        ((XDATUser) user).resetCriteria();
     }
 
     @Override
-    public void removeUsersFromGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
-        for (final UserI user : users) {
-            for (final XdatUserGroupid map : ((XDATUser) user).getGroups_groupid()) {
-                if (StringUtils.equals(map.getGroupid(), groupId)) {
-                    SaveItemHelper.authorizedDelete(map.getItem(), currentUser, eventMeta);
+    public void removeUsersFromGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) {
+        final List<String> failed = new ArrayList<>();
+        final List<String> usernames = Lists.newArrayList(Iterables.filter(Lists.transform(users, new Function<UserI, String>() {
+            @Override
+            public String apply(final UserI user) {
+                final String username = user.getUsername();
+                try {
+                    removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
+                    return username;
+                } catch (Exception e) {
+                    log.error("An error occurred trying to remove the user '{}' from the group '{}'", username);
+                    failed.add(username);
+                    return null;
                 }
             }
-            ((XDATUser) user).resetCriteria();
+        }), Predicates.notNull()));
+        if (!failed.isEmpty()) {
+            log.error("Tried and failed to remove the following users from group '{}': {}", groupId, StringUtils.join(failed, ", "));
         }
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(Groups.OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, usernames));
     }
 
     @Override
@@ -195,7 +236,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
             SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, wrk.buildEvent());
 
-            final UserGroupI persisted = new UserGroup(_template.queryForObject(QUERY_GET_PRIMARY_KEY, new MapSqlParameterSource("groupId", id), Integer.class), id, displayName, value);
+            final UserGroupI persisted = new UserGroup(id, _template);
 
             initPermissions(persisted, create, read, delete, edit, activate, ess, value, authenticatedUser);
 
@@ -291,7 +332,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         log.debug("Updated group {} in {} ms", id, Calendar.getInstance().getTimeInMillis() - start);
-        return new UserGroup(group);
+        return new UserGroup(group, _template);
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -326,6 +367,7 @@ public class UserGroupManager implements UserGroupServiceI {
                 group.setId(resultSet.getString("id"));
                 group.setDisplayname(resultSet.getString("displayname"));
                 group.setTag(resultSet.getString("tag"));
+                group.refresh(_template);
                 return group;
             }
         });
@@ -348,19 +390,18 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             final PopulateItem populator = new PopulateItem(params, null, XdatUsergroup.SCHEMA_ELEMENT_NAME, true);
             final ItemI        found     = populator.getItem();
-            return new UserGroup(new XdatUsergroup(found));
+            return new UserGroup(new XdatUsergroup(found), _template);
         } catch (Exception e) {
             throw new GroupFieldMappingException(e);
         }
     }
 
     @Override
-    public void deleteGroup(UserGroupI group, UserI user, EventMetaI ci) {
-        //DELETE user.groupId
-        CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME + ".groupid", " = ", group.getId());
+    public void deleteGroup(final UserGroupI group, final UserI user, final EventMetaI ci) {
+        final CriteriaCollection criteria = new CriteriaCollection("AND");
+        criteria.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME + ".groupid", " = ", group.getId());
 
-        for (final XdatUserGroupid gId : XdatUserGroupid.getXdatUserGroupidsByField(col, user, false)) {
+        for (final XdatUserGroupid gId : XdatUserGroupid.getXdatUserGroupidsByField(criteria, user, false)) {
             try {
                 SaveItemHelper.authorizedDelete(gId.getItem(), user, ci);
             } catch (Throwable e) {
@@ -369,14 +410,13 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         try {
-            XdatUsergroup tmp = XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(group.getPK(), user, false);
+            final XdatUsergroup tmp = XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(group.getPK(), user, false);
             assert tmp != null;
             SaveItemHelper.authorizedDelete(tmp.getItem(), user, ci);
             XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), DELETE);
         } catch (Throwable e) {
             log.error("", e);
         }
-
 
         try {
             PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
@@ -455,6 +495,25 @@ public class UserGroupManager implements UserGroupServiceI {
                 }
             }
         }
+    }
+
+    /**
+     * Removes the group-to-user mapping. This does <i>not</i> trigger an {@link XftItemEvent}!
+     *
+     * @param user        The user to remove from the group.
+     * @param currentUser The user requesting the deletion operation.
+     * @param groupId     The ID of the group from which the user should be removed.
+     * @param eventMeta   The workflow event.
+     *
+     * @throws Exception When an error occurs.
+     */
+    private void removeUserFromGroup(final XDATUser user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) throws Exception {
+        for (final XdatUserGroupid map : user.getGroups_groupid()) {
+            if (StringUtils.equals(map.getGroupid(), groupId)) {
+                SaveItemHelper.authorizedDelete(map.getItem(), currentUser, eventMeta);
+            }
+        }
+        user.resetCriteria();
     }
 
     private void addUserToGroup(final UserGroupI userGroup, final UserI currentUser, final UserI user, final EventMetaI eventMeta) throws Exception {
@@ -633,12 +692,12 @@ public class UserGroupManager implements UserGroupServiceI {
         }
     }
 
-    private static final String QUERY_CHECK_GROUP_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_usergroup WHERE id = :groupId) AS exists";
-    private static final String ALL_GROUPS_QUERY         = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
-    private static final String QUERY_GET_PRIMARY_KEY    = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
-    private static final String CONFIRM_QUERY            = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+    private static final String QUERY_CHECK_GROUP_EXISTS  = "SELECT EXISTS(SELECT TRUE FROM xdat_usergroup WHERE id = :groupId) AS exists";
+    private static final String ALL_GROUPS_QUERY          = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
+    private static final String QUERY_GET_PRIMARY_KEY     = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
+    private static final String CONFIRM_QUERY             = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
 
-    private static final String NEW_GROUP_PERMS_TEMPLATE = "new_group_permissions.vm";
+    private static final String NEW_GROUP_PERMS_TEMPLATE  = "new_group_permissions.vm";
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;

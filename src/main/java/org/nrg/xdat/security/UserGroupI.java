@@ -29,6 +29,8 @@ public interface UserGroupI {
 
 	void setPK(Integer pk);
 
+	List<String> getUsernames();
+
 	List<List<Object>> getPermissionItems(String login) throws Exception;
 
 	List<PermissionCriteriaI> getPermissionsByDataType(final String type);

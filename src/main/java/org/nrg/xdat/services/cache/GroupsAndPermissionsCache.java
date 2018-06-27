@@ -202,6 +202,14 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException;
 
     /**
+     * Gets a list of all of the user IDs associated with the specified group.
+     *
+     * @param groupId The ID of the group to retrieve.
+     * @return A list of all user IDs associated with the group.
+     */
+    List<String> getUserIdsForGroup(String groupId);
+
+    /**
      * Returns the timestamp for the most recently updated group associated with the indicated user.
      *
      * @param user The user to test.

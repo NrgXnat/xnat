@@ -33,12 +33,16 @@ import java.util.Map;
 
 @Slf4j
 public class Groups {
-    public final static String OWNER_GROUP        = "owner";
-    public final static String OWNER_NAME         = "Owners";
-    public final static String MEMBER_GROUP       = "member";
-    public final static String MEMBER_NAME        = "Members";
-    public final static String COLLABORATOR_GROUP = "collaborator";
-    public final static String COLLABORATOR_NAME  = "Collaborators";
+    public final static String OWNER_GROUP            = "owner";
+    public final static String OWNER_NAME             = "Owners";
+    public final static String MEMBER_GROUP           = "member";
+    public final static String MEMBER_NAME            = "Members";
+    public final static String COLLABORATOR_GROUP     = "collaborator";
+    public final static String COLLABORATOR_NAME      = "Collaborators";
+    public static final String USERS                  = "users";
+    public static final String OPERATION              = "action";
+    public static final String OPERATION_ADD_USERS    = "addUsers";
+    public static final String OPERATION_REMOVE_USERS = "removeUsers";
 
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
@@ -75,8 +79,8 @@ public class Groups {
 
             //default to PermissionsServiceImpl implementation (unless a different default is configured)
             try {
-                final String className = XDAT.safeSiteConfigProperty("security.userGroupService.default", "org.nrg.xdat.security.UserGroupManager");
-                final Class<? extends UserGroupServiceI> aClass = Class.forName(className).asSubclass(UserGroupServiceI.class);
+                final String                             className = XDAT.safeSiteConfigProperty("security.userGroupService.default", "org.nrg.xdat.security.UserGroupManager");
+                final Class<? extends UserGroupServiceI> aClass    = Class.forName(className).asSubclass(UserGroupServiceI.class);
                 try {
                     final Constructor<? extends UserGroupServiceI> constructor = aClass.getConstructor(GroupsAndPermissionsCache.class);
                     return _singleton = constructor.newInstance(getGroupsAndPermissionsCache());
@@ -110,6 +114,7 @@ public class Groups {
      * Convenience method to determine whether the user is a system data administrator.
      *
      * @param user The user to test for system data administrator access.
+     *
      * @return Returns true if the user is a system data administrator, false otherwise.
      */
     public static boolean isDataAdmin(final UserI user) {
@@ -124,7 +129,7 @@ public class Groups {
     /**
      * Get a UserGroupI by the group ID.
      *
-     * @param groupId    The ID of the group to which the user should be added.
+     * @param groupId The ID of the group to which the user should be added.
      *
      * @return The group with the indicated ID.
      */
@@ -135,7 +140,7 @@ public class Groups {
     /**
      * Get the UserGroup that are currently assigned to a user.  Loads current groups from database.
      *
-     * @param user    The user on which to search.
+     * @param user The user on which to search.
      *
      * @return A map of groups to which the user is assigned.
      */
@@ -157,7 +162,8 @@ public class Groups {
     /**
      * Get the group IDs currently assigned to a user.  Only reviews local object, groups may not be saved yet.
      *
-     * @param user    The user on which to search.
+     * @param user The user on which to search.
+     *
      * @return A list of the IDs of the groups to which the user is assigned.
      */
     public static List<String> getGroupIdsForUser(UserI user) {
@@ -169,6 +175,7 @@ public class Groups {
      *
      * @param user    The user to test for group assignment.
      * @param groupId The group ID on which to search.
+     *
      * @return Returns true if the user is a member of the indicated group, false otherwise.
      */
     public static boolean isMember(UserI user, String groupId) {
@@ -177,14 +184,14 @@ public class Groups {
 
     /**
      * Add this group for the specified user (locally).   This will not update the database.  It will add the user to this group in local memory.
-     *
+     * <p>
      * Sometimes, a user group is associated with a user, before the user group is physically created in the database.  This method can be used to do that.
-     *
+     * <p>
      * To specifically add the user to the group permanently, use the AddUserToGroup method
      *
-     * @param user       The user on which to search.
-     * @param groupId    The group ID on which to search.
-     * @param group      The group to be updated.
+     * @param user    The user on which to search.
+     * @param groupId The group ID on which to search.
+     * @param group   The group to be updated.
      */
     public static void updateUserForGroup(UserI user, String groupId, UserGroupI group) {
         getUserGroupService().updateUserForGroup(user, groupId, group);
@@ -221,8 +228,8 @@ public class Groups {
     /**
      * Refresh the user group for this user (this updates any local copies of the group for this user).  This should be eliminated by a more clear caching mechanism.
      *
-     * @param user       The user to be refreshed.
-     * @param groupId    The group ID on which to search.
+     * @param user    The user to be refreshed.
+     * @param groupId The group ID on which to search.
      */
     public static void reloadGroupForUser(UserI user, String groupId) {
         getUserGroupService().reloadGroupForUser(user, groupId);
@@ -231,7 +238,7 @@ public class Groups {
     /**
      * Refresh all of the user groups for this user.
      *
-     * @param user    The user to be refreshed.
+     * @param user The user to be refreshed.
      */
     public static void reloadGroupsForUser(UserI user) {
         getUserGroupService().reloadGroupsForUser(user);
@@ -240,7 +247,7 @@ public class Groups {
     /**
      * Get groups that have the specified tag.
      *
-     * @param tag    The tag to search on.
+     * @param tag The tag to search on.
      *
      * @return A list of the groups with the indicated tag.
      *
@@ -376,10 +383,10 @@ public class Groups {
     /**
      * Add user to the group (includes potential modification to the database).
      *
-     * @param groupId              The ID of the group to which the user should be added.
-     * @param user                 The user to add to the group.
-     * @param authenticatedUser    The user adding the user to the group.
-     * @param ci                   The event metadata.
+     * @param groupId           The ID of the group to which the user should be added.
+     * @param user              The user to add to the group.
+     * @param authenticatedUser The user adding the user to the group.
+     * @param ci                The event metadata.
      *
      * @return The group with the newly added user.
      *
@@ -417,7 +424,7 @@ public class Groups {
 
     /**
      * The data type or classification identifier used to identify the group data type.
-     *
+     * <p>
      * This will be used in workflow events that are created to track modifications to user groups.
      *
      * @return The data type for user group objects.
@@ -429,9 +436,9 @@ public class Groups {
     /**
      * Delete the groups (and user-group mappings) associated with this tag.
      *
-     * @param tag     The tag to search on.
-     * @param user    The user performing the delete.
-     * @param ci      The event metadata.
+     * @param tag  The tag to search on.
+     * @param user The user performing the delete.
+     * @param ci   The event metadata.
      *
      * @throws Exception When an error occurs.
      */
@@ -442,9 +449,9 @@ public class Groups {
     /**
      * Delete the groups (and user-group mappings) associated with this tag.
      *
-     * @param group    The group to be deleted.
-     * @param user     The user performing the delete.
-     * @param ci       The event metadata.
+     * @param group The group to be deleted.
+     * @param user  The user performing the delete.
+     * @param ci    The event metadata.
      *
      * @throws Exception When an error occurs.
      */
@@ -457,13 +464,13 @@ public class Groups {
      * Return a freshly created group object populated with the passed parameters. Object may or may not already exist
      * in the database.
      *
-     * @param params    The parameters for group creation.
+     * @param params The parameters for group creation.
      *
      * @return The newly created group.
      *
      * @throws GroupFieldMappingException When an error occurs creating the group.
-     * @throws UserFieldMappingException When an error occurs adding a user to the group.
-     * @throws UserInitException When an error occurs with the user management system.
+     * @throws UserFieldMappingException  When an error occurs adding a user to the group.
+     * @throws UserInitException          When an error occurs with the user management system.
      */
     @SuppressWarnings("RedundantThrows")
     public static UserGroupI createGroup(Map<String, ?> params) throws UserFieldMappingException, UserInitException, GroupFieldMappingException {

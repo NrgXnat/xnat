@@ -465,6 +465,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     @Override
+    public List<String> getUserIdsForGroup(final String groupId) {
+        final UserGroupI group = get(groupId);
+        return group != null ? group.getUsernames() : Collections.<String>emptyList();
+    }
+
+    @Override
     public Date getUserLastUpdateTime(final UserI user) {
         return getUserLastUpdateTime(user.getUsername());
     }
@@ -787,6 +793,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             case XftItemEventI.DELETE:
                 projectIds.add((String) event.getProperties().get("target"));
+                handleGroupRelatedEvents(event);
                 updateTotalCounts();
                 break;
 
@@ -804,42 +811,67 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean handleGroupRelatedEvents(final XftItemEventI event) {
-        final String xsiType = event.getXsiType();
-        final String id      = event.getId();
-        final String action  = event.getAction();
+        final String      xsiType   = event.getXsiType();
+        final String      id        = event.getId();
+        final String      action    = event.getAction();
+        final Set<String> usernames = new HashSet<>();
 
         try {
+            final List<UserGroupI> groups = getGroups(xsiType, id);
             switch (action) {
                 case CREATE:
                     log.debug("New {} created with ID {}, caching new instance", xsiType, id);
-                    return !cacheGroups(getGroups(xsiType, id)).isEmpty();
+                    for (final UserGroupI group : groups) {
+                        usernames.addAll(group.getUsernames());
+                    }
+                    return !cacheGroups(groups).isEmpty();
 
                 case UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
-                    return !cacheGroups(getGroups(xsiType, id)).isEmpty();
+                    for (final UserGroupI group : groups) {
+                        usernames.addAll(group.getUsernames());
+                    }
+                    return !cacheGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
-                    log.debug("The {} {} was deleted, removing related instances from cache", xsiType, id);
-                    final Set<String> usernames = new HashSet<>();
-                    switch (xsiType) {
-                        case XnatProjectdata.SCHEMA_ELEMENT_NAME:
-                            final String projectCacheId = getCacheIdForProject(id);
-                            usernames.addAll(this.<String>getCachedSet(projectCacheId));
-                            getCache().evict(projectCacheId);
-                            break;
-
-                        case XdatUsergroup.SCHEMA_ELEMENT_NAME:
-                            // Not sure what to do for deleted group...
-                            break;
+                    if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, xsiType)) {
+                        final String cacheId = getCacheIdForTag(id);
+                        if (has(cacheId)) {
+                            // If it's cached, we can just return the list.
+                            final List<String> groupIds = getTagGroups(cacheId);
+                            log.info("Found {} groups cached for deleted project {}", groupIds.size(), id);
+                            for (final String groupId : groupIds) {
+                                final UserGroupI group = get(groupId);
+                                if (group != null) {
+                                    usernames.addAll(group.getUsernames());
+                                }
+                                getCache().evict(groupId);
+                            }
+                        }
+                    } else {
+                        final UserGroupI group = get(id);
+                        if (group != null) {
+                            usernames.addAll(group.getUsernames());
+                        }
+                        getCache().evict(id);
+                        return true;
                     }
-                    updateUserReadableCounts(usernames);
-                    return true;
+                    break;
 
                 default:
                     log.warn("I was informed that the '{}' action happened to the {} object with ID '{}'. I don't know what to do with this action.", action, xsiType, id);
             }
         } catch (ItemNotFoundException e) {
             log.warn("While handling action {}, I couldn't find a group for type {} ID {}.", action, xsiType, id);
+        } finally {
+            for (final String username : usernames) {
+                try {
+                    updateUserGroupIds(username);
+                    updateUserReadableCounts(username);
+                } catch (UserNotFoundException e) {
+                    log.warn("While handling action {} for type {} ID {}, I couldn't find a user with username {}.", action, xsiType, id, username);
+                }
+            }
         }
         return false;
     }
@@ -1140,6 +1172,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableList.copyOf(elementDisplays.get(action));
     }
 
+    private List<String> updateUserGroupIds(final String username) throws UserNotFoundException {
+        final String       cacheId  = getCacheIdForUserGroups(username);
+        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
+        cacheObject(cacheId, groupIds);
+        return groupIds;
+    }
+
     private void updateUserReadableCounts(final Collection<String> usernames) {
         for (final String username : usernames) {
             updateUserReadableCounts(username);
@@ -1324,9 +1363,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return getCachedList(cacheId);
         }
 
-        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
-        cacheObject(cacheId, groupIds);
-        return groupIds;
+        return updateUserGroupIds(username);
     }
 
     /**

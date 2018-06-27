@@ -544,7 +544,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 final String elementName = securedElement.getElementName();
                 if (securedElement.hasField(elementName + "/project") && securedElement.hasField(elementName + "/sharing/share/project")) {
                     setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", tag, false, true, false, false, true, true, ci);
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, true, false, false, false, true, ci);
                 }
             }
         } else {

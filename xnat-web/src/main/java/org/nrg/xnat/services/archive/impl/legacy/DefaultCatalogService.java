@@ -37,16 +37,15 @@ import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ValidationException;
@@ -68,7 +67,6 @@ import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -80,8 +78,6 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xft.event.EventUtils.*;
@@ -562,10 +558,11 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             try (final FileInputStream parserInput = new FileInputStream(temporary)) {
-                final SAXReader reader = new SAXReader(user);
-                final XFTItem   item   = reader.parse(parserInput);
+                final SAXReader reader   = new SAXReader(user);
+                final XFTItem   item     = reader.parse(parserInput);
+                final boolean   isCreate = item.getPK() == null;
 
-                log.info("Loaded XML item: {}", item.getProperName());
+                log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
 
                 final ValidationResults validation = XFTValidator.Validate(item);
 
@@ -618,27 +615,15 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     final String xsiType = item.getXSIType();
-                    log.debug("Item '{}' of type {} successfully stored", xsiType, item.getIDValue());
+                    final String idValue = item.getIDValue();
+                    log.debug("Item '{}' of type {} successfully stored", xsiType, idValue);
 
                     if (item.instanceOf("xnat:projectData")) {
                         final XnatProjectdata project   = new XnatProjectdata(item);
                         final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
-
-                        SaveItemHelper.authorizedSave(item, user, false, false, eventMeta);
-
-                        final XnatProjectdata postSave = new XnatProjectdata(item);
-                        postSave.getItem().setUser(user);
-                        postSave.initGroups();
-
-                        final PopulateItem populator = PopulateItem.Populate(parameters, user, "arc:project", true);
-                        final XFTItem      populated = populator.getItem();
-                        populated.setProperty("arc:project.current_arc", "arc001");
-
-                        final ArcProject arcProject = new ArcProject(populated);
-                        postSave.initArcProject(arcProject, user, eventMeta);
-
-                        Groups.reloadGroupsForUser(user);
-                        Users.clearCache(user);
+                        XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
+                    } else {
+                        XDAT.triggerXftItemEvent(xsiType, idValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
                     }
 
                     final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);

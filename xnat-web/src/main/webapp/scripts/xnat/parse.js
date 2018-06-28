@@ -363,8 +363,8 @@ var XNAT = getObject(XNAT);
             obj.request = XNAT.xhr.get({
                 // dataType: obj.dataType,
                 url: obj.url,
-                success: function(data){
-                    if (!obj.url || obj.url === XNAT.url.rootUrl()) {
+                success: function(data, status, xhrObj){
+                    if (!data || /no.*content/i.test(status) || xhrObj.status === 204 || !obj.url || obj.url === XNAT.url.rootUrl()) {
                         return;
                     }
                     XNAT.data[obj.cacheUrl] = data;
@@ -379,7 +379,10 @@ var XNAT = getObject(XNAT);
             obj.done = obj.success = function(callback){
                 // wait until the request is done to
                 // fire the success method(s)
-                obj.request.done(function(VAL){
+                obj.request.done(function(VAL, status, xhrObj){
+                    if (!VAL || /no.*content/i.test(status) || xhrObj.status === 204 || !obj.url || obj.url === XNAT.url.rootUrl()) {
+                        return;
+                    }
                     obj.result = obj.path ? obj.lookupValue(VAL, obj.path) : VAL;
                     obj.status = 'success';
                     doneCallback.call(obj, callback);

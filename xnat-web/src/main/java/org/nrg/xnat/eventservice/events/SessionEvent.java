@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.events;
 
+
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
@@ -8,28 +9,31 @@ import org.springframework.stereotype.Service;
 import java.util.EnumSet;
 
 @Service
-@XnatEventServiceEvent(name="TestCombinedEvent")
-public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEvent, XnatImagesessiondataI>  {
-    final String displayName = "Test Combined Event";
-    final String description ="Combined Event tested.";
+@XnatEventServiceEvent(name="SessionEvent")
+public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatImagesessiondataI> {
 
     public enum Status {CREATED, UPDATED, DELETED};
 
-    public TestCombinedEvent(){};
+    public SessionEvent(){};
 
-    public TestCombinedEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
+    public SessionEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId);
     }
 
-    @Override
-    public String getDisplayName() { return displayName; }
 
     @Override
-    public String getDescription() { return description; }
+    public String getDisplayName() {
+        return "Session Status Change";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Session created, updated, or deleted.";
+    }
 
     @Override
     public String getPayloadXnatType() {
-        return "xnat:scan";
+        return "xnat:imageSessionData";
     }
 
     @Override
@@ -42,7 +46,6 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
 
     @Override
     public EventServiceListener getInstance() {
-        return new TestCombinedEvent();
+        return new SessionEvent();
     }
-
 }

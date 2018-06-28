@@ -1,23 +1,24 @@
 package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
-import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 import java.util.EnumSet;
 
 @Service
-@XnatEventServiceEvent(name="TestCombinedEvent")
-public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEvent, XnatImagesessiondataI>  {
-    final String displayName = "Test Combined Event";
-    final String description ="Combined Event tested.";
+@XnatEventServiceEvent(name="ProjectEvent")
+public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatProjectdataI>  {
 
-    public enum Status {CREATED, UPDATED, DELETED};
+    public enum Status {CREATED, DELETED};
 
-    public TestCombinedEvent(){};
+    final String displayName = "Project Status Change";
+    final String description = "Project created or deleted.";
 
-    public TestCombinedEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
+    public ProjectEvent(){};
+
+    public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId);
     }
 
@@ -29,7 +30,7 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
 
     @Override
     public String getPayloadXnatType() {
-        return "xnat:scan";
+        return "xnat:projectData";
     }
 
     @Override
@@ -38,11 +39,11 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
     }
 
     @Override
-    public EnumSet getStatiStates() { return EnumSet.allOf(Status.class); }
+    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
 
     @Override
     public EventServiceListener getInstance() {
-        return new TestCombinedEvent();
+        return new ProjectEvent();
     }
 
 }

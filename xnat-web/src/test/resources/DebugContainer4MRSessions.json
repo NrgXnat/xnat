@@ -1,10 +1,10 @@
 {
   "name": "Debug Container Action for MR Session Archive",
   "active": true,
-   "projects": ["ABC123"],
-  "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",
-  "action-key": "org.nrg.containers.services.CommandActionProvider:7",
+  "action-key": "org.nrg.containers.services.CommandActionProvider:3",
   "event-filter": {
+    "event-type": "org.nrg.xnat.eventservice.events.SessionEvent",
+    "status": "CREATED",
     "name": "Project ABC123 MR Sessions",
     "project-ids": [
       "ABC123"

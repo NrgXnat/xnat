@@ -6,24 +6,28 @@ import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+
 @Service
-@XnatEventServiceEvent(name="SubjectUpdatedEvent")
-public class SubjectUpdatedEvent extends CombinedEventServiceEvent<SubjectUpdatedEvent, XnatSubjectdataI> {
+@XnatEventServiceEvent(name="SubjectEvent")
+public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSubjectdataI> {
 
-    public SubjectUpdatedEvent(){};
+    public enum Status {CREATED, UPDATED, DELETED};
 
-    public SubjectUpdatedEvent(XnatSubjectdataI payload, String eventUser) {
-        super(payload, eventUser);
+    public SubjectEvent(){};
+
+    public SubjectEvent(final XnatSubjectdataI payload, final String eventUser, final Status status, final String projectId) {
+        super(payload, eventUser, status, projectId);
     }
 
     @Override
     public String getDisplayName() {
-        return "Subject Updated";
+        return "Subject Status Change";
     }
 
     @Override
     public String getDescription() {
-        return "Subject updated via editing or addition of resource folder.";
+        return "Subject created, updated, or deleted.";
     }
 
     @Override
@@ -37,7 +41,12 @@ public class SubjectUpdatedEvent extends CombinedEventServiceEvent<SubjectUpdate
     }
 
     @Override
+    public EnumSet getStatiStates() {
+        return EnumSet.allOf(Status.class);
+    }
+
+    @Override
     public EventServiceListener getInstance() {
-        return new SubjectUpdatedEvent();
+        return new SubjectEvent();
     }
 }

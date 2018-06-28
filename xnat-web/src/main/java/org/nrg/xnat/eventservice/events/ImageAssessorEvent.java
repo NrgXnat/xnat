@@ -5,20 +5,23 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+
 @Service
-@XnatEventServiceEvent(name="ImageAssessorSaveEvent")
-public class ImageAssessorSaveEvent extends CombinedEventServiceEvent<SessionUpdateEvent, XnatImageassessordataI> {
+@XnatEventServiceEvent(name="ImageAssessorEvent")
+public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, XnatImageassessordataI> {
 
-    public ImageAssessorSaveEvent(){};
+    public enum Status {CREATED};
 
-    public ImageAssessorSaveEvent(XnatImageassessordataI payload, String eventUser) {
-        super(payload, eventUser);
+    public ImageAssessorEvent(){};
+
+    public ImageAssessorEvent(final XnatImageassessordataI payload, final String eventUser, final Status status, final String projectId) {
+        super(payload, eventUser, status, projectId);
     }
-
 
     @Override
     public String getDisplayName() {
-        return "Image Assessor Saved";
+        return "Image Assessor Status Change";
     }
 
     @Override
@@ -37,7 +40,10 @@ public class ImageAssessorSaveEvent extends CombinedEventServiceEvent<SessionUpd
     }
 
     @Override
+    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
+
+    @Override
     public EventServiceListener getInstance() {
-        return new ImageAssessorSaveEvent();
+        return new ImageAssessorEvent();
     }
 }

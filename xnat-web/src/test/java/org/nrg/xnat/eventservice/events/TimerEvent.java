@@ -1,14 +1,15 @@
 package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
+import org.nrg.xnat.eventservice.services.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.EnumSet;
 
 @Service
 @EnableScheduling
@@ -17,13 +18,15 @@ public class TimerEvent extends CombinedEventServiceEvent<TimerEvent, Date>{
     final String displayName = "Timer Event";
     final String description = "Triggers every five seconds";
 
+    public enum Status {PER_MINUTE, PER_HOUR, PER_DAY};
+
     @Autowired
-    NrgEventService es;
+    EventService eventService;
 
     public TimerEvent(){ };
 
-    public TimerEvent(final Date payload, final String eventUser) {
-        super(payload, eventUser);
+    public TimerEvent(final Date payload, final String eventUser, final Status status, final String projectId) {
+        super(payload, eventUser, status, projectId);
     }
 
     @Override
@@ -46,10 +49,27 @@ public class TimerEvent extends CombinedEventServiceEvent<TimerEvent, Date>{
         return false;
     }
 
-    @Scheduled(cron = "*/5 * * * * *")
-    public void everyFiveSeconds()
+    @Override
+    public EnumSet getStatiStates() {
+        return EnumSet.allOf(Status.class);
+    }
+
+    @Scheduled(cron = "*/60 * * * * *")
+    public void everyMinute()
     {
-        es.triggerEvent("EveryFiveSeconds", new TimerEvent(new Date(), null));
+        eventService.triggerEvent(new TimerEvent(new Date(), null, Status.PER_MINUTE, null));
+    }
+
+    @Scheduled(cron = "*/3600 * * * * *")
+    public void everyHour()
+    {
+        eventService.triggerEvent(new TimerEvent(new Date(), null, Status.PER_HOUR, null));
+    }
+
+    @Scheduled(cron = "*/86400 * * * * *")
+    public void everyDay()
+    {
+        eventService.triggerEvent(new TimerEvent(new Date(), null, Status.PER_DAY, null));
     }
 
     @Override

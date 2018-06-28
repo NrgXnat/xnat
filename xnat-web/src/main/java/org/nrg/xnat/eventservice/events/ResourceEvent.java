@@ -5,16 +5,21 @@ import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+
 @Service
-@XnatEventServiceEvent(name="ResourceSavedEvent")
-public class ResourceSavedEvent extends CombinedEventServiceEvent<ResourceSavedEvent, XnatResourcecatalogI>  {
-    final String displayName = "Resource Saved";
+@XnatEventServiceEvent(name="ResourceEvent")
+public class ResourceEvent extends CombinedEventServiceEvent<ResourceEvent, XnatResourcecatalogI>  {
+
+    public enum Status {CREATED};
+
+    final String displayName = "Resource Status Change";
     final String description ="New resource catalog saved to session.";
 
-    public ResourceSavedEvent(){};
+    public ResourceEvent(){};
 
-    public ResourceSavedEvent(final XnatResourcecatalogI payload, final String eventUser) {
-        super(payload, eventUser);
+    public ResourceEvent(final XnatResourcecatalogI payload, final String eventUser, final Status status, final String projectId) {
+        super(payload, eventUser, status, projectId);
     }
 
     @Override
@@ -33,10 +38,12 @@ public class ResourceSavedEvent extends CombinedEventServiceEvent<ResourceSavedE
         return true;
     }
 
+    @Override
+    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
 
     @Override
     public EventServiceListener getInstance() {
-        return new ResourceSavedEvent();
+        return new ResourceEvent();
     }
 
 }

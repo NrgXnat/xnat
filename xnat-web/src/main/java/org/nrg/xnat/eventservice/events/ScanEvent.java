@@ -4,29 +4,30 @@ package org.nrg.xnat.eventservice.events;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+
 @Service
-@XnatEventServiceEvent(name="ScanArchiveEvent")
-public class ScanArchiveEvent extends CombinedEventServiceEvent<ScanArchiveEvent, XnatImagescandataI>  {
-    private static final Logger log = LoggerFactory.getLogger(ScanArchiveEvent.class);
+@XnatEventServiceEvent(name="ScanEvent")
+public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagescandataI>  {
 
-    public ScanArchiveEvent(){};
+    public enum Status {CREATED};
 
-    public ScanArchiveEvent(final XnatImagescandataI payload, final String eventUser) {
-        super(payload, eventUser);
+    public ScanEvent(){};
+
+    public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId) {
+        super(payload, eventUser, status, projectId);
     }
 
     @Override
     public String getDisplayName() {
-        return "Scan Archived";
+        return "Scan Status Change";
     }
 
     @Override
     public String getDescription() {
-        return "Scan Archive Event";
+        return "New scan saved";
     }
 
     @Override
@@ -40,7 +41,10 @@ public class ScanArchiveEvent extends CombinedEventServiceEvent<ScanArchiveEvent
     }
 
     @Override
+    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
+
+    @Override
     public EventServiceListener getInstance() {
-        return new ScanArchiveEvent();
+        return new ScanEvent();
     }
 }

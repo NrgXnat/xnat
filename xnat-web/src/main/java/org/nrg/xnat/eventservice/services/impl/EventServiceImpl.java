@@ -17,9 +17,23 @@ import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.ActionProvider;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventSignature;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.Listener;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.services.ActionManager;
+import org.nrg.xnat.eventservice.services.EventPropertyService;
+import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +44,20 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZATION_FAULT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_DISABLED_HALT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_TRIGGERED;
 
 @Service
 @EnableAsync
@@ -48,6 +73,7 @@ public class EventServiceImpl implements EventService {
     private UserManagementServiceI userManagementService;
     private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
+    private Configuration jaywayConf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
 
     @Autowired
     public EventServiceImpl(ContextService contextService,
@@ -80,7 +106,7 @@ public class EventServiceImpl implements EventService {
         if(overpopulateAttributes != null && overpopulateAttributes == true){
             Map<String, String> attributes = new HashMap<>(subscription.attributes());
             try {
-                SimpleEvent event = getEvent(subscription.eventId(), true);
+                SimpleEvent event = getEvent(subscription.eventFilter().eventType(), true);
                 event.eventProperties().forEach(node -> attributes.put(node.name(), node.replacementKey()));
                 subscription = subscription.toBuilder().attributes(attributes).build();
                 log.debug("Overpopulating subscription attributes with: " + event.eventProperties().toString());
@@ -94,7 +120,12 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException {
-        return subscriptionService.update(subscription);
+        Subscription updated = subscriptionService.update(subscription);
+        if(updated != null){
+            log.debug("Reactivating updated subscription: " + subscription.id());
+            updated = subscriptionService.activate(updated);
+        }
+        return updated;
     }
 
     @Override
@@ -244,7 +275,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public SimpleEvent getEvent(@Nonnull final String eventId, Boolean loadDetails) throws Exception {
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
-            if(eventId.contentEquals(e.getId())){
+            if(eventId.contentEquals(e.getType())){
                 SimpleEvent simpleEvent = toPojo(e);
                 if(loadDetails){
                     Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
@@ -299,18 +330,26 @@ public class EventServiceImpl implements EventService {
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event) {
+        String projectId = event.getProjectId();
         // TODO: Extract project id from event payload
-        triggerEvent(event, null);
+        triggerEvent(event, projectId);
     }
 
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event, String projectId) {
-        // Manually build event label
-        EventFilter filter = EventFilter.builder().build();
-        String regexKey = filter.toRegexKey(event.getClass().getName(), projectId);
-        eventBus.notify(regexKey, Event.wrap(event));
-        log.debug("Fired EventService Event for Label: " + regexKey);
+        try {
+            EventSignature eventSignature = EventSignature.builder()
+                    .eventType(event.getType())
+                    .projectId(projectId)
+                    .status(event.getCurrentStatus() != null ?  event.getCurrentStatus().name() : null)
+                    .build();
+            String eventKey = mapper.writeValueAsString(eventSignature);
+            eventBus.notify(eventKey, Event.wrap(event));
+            log.debug("Fired EventService Event for Label: " + eventKey);
+        } catch (Throwable e) {
+            log.error("Exception Triggering Event", e.getMessage());
+        }
     }
 
 
@@ -330,7 +369,7 @@ public class EventServiceImpl implements EventService {
                             esEvent,
                             listener,
                             subscription.actAsEventUser() ? esEvent.getUser() : subscription.subscriptionOwner(),
-                            subscription.projectId() == null ? "" : subscription.projectId(),
+                            esEvent.getProjectId() == null ? "" : esEvent.getProjectId(),
                             subscription.attributes() == null ? "" : subscription.attributes().toString());
                     try {
                         subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_TRIGGERED, new Date(), "Subscription Service process started.");
@@ -364,13 +403,12 @@ public class EventServiceImpl implements EventService {
                         if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {
                             // ** Attempt to filter event if serialization was successful ** //
                             if(Strings.isNullOrEmpty(jsonObject)){
-                                log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getId());
+                                log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getType());
                                 subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
                                 return;
                             } else {
                                 String jsonFilter = subscription.eventFilter().jsonPathFilter();
-                                Configuration conf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
-                                List<String> filterResult = JsonPath.using(conf).parse(jsonObject).read(jsonFilter);
+                                List<String> filterResult = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
                                 String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
                                 if (filterResult.isEmpty()) {
                                     log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
@@ -440,7 +478,7 @@ public class EventServiceImpl implements EventService {
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
         return SimpleEvent.builder()
-                .id(event.getId() == null ? "" : event.getId())
+                .id(event.getType() == null ? "" : event.getType())
                 .listenerService(
                         event instanceof EventServiceListener
                         ? ((EventServiceListener) event).getClass().getName()

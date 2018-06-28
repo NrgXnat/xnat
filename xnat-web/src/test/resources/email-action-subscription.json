@@ -1,8 +1,11 @@
 {
     "name": "Send Email Test",
     "active": true,
-    "event-id": "org.nrg.xnat.eventservice.events.ProjectCreatedEvent",
     "action-key": "org.nrg.xnat.eventservice.actions.EventServiceEmailAction:org.nrg.xnat.eventservice.actions.EventServiceEmailAction",
+    "event-filter": {
+        "event-type": "org.nrg.xnat.eventservice.events.ProjectEvent",
+        "status": "CREATED"
+    },
     "attributes": {
         "subject": "Test Email",
         "to": "xnattester",

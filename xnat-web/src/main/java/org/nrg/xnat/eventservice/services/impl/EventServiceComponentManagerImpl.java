@@ -76,7 +76,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
     @Override
     public org.nrg.xnat.eventservice.events.EventServiceEvent getEvent(@Nonnull String eventId) {
         for(EventServiceEvent event : getInstalledEvents()) {
-            if(event != null && eventId.matches(event.getId())) {
+            if(event != null && eventId.matches(event.getType())) {
                 return event;
             }
         }
@@ -89,7 +89,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
     @Override
     public EventServiceListener getListener(String name) {
         for(EventServiceListener el: installedListeners){
-            if(el.getId().contains(name)) {
+            if(el.getType().contains(name)) {
                 return el;
             }
         }

@@ -1,17 +1,15 @@
 
 {
-  "action-key": "4:org.nrg.containers.services.CommandActionProvider",
+  "name": "RunSessionDebug",
+  "action-key": "org.nrg.containers.services.CommandActionProvider:4",
   "active": true,
-   "project-id": "ABC123",
     "attributes": {"command":"echo \"Test Complete\" > ~/TestComplete.txt",
                  "output-file":"~/OutputFile.txt"},
   "event-filter": {
     "name": "FilterByProjectAndModality",
-
+    "event-type": "org.nrg.xnat.eventservice.events.SessionEvent",
+    "status": "CREATED",
     "json-path-filter": "$[?(@.modality == \"MR\")]"
   },
-  "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",
-  "name": "RunSessionDebug",
-  "act-as-event-user": false,
-  "registration-key": "string"
+  "act-as-event-user": false
 }

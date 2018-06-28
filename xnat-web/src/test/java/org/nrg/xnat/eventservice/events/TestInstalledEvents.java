@@ -69,7 +69,7 @@ public class TestInstalledEvents {
         assert(events != null && events.size() == eventPropertyFileCount);
 
         for(EventServiceEvent event : events){
-            assertThat("Null or empty event ID in " + event.getClass().getName(), event.getId(), not(IsEmptyString.isEmptyOrNullString()));
+            assertThat("Null or empty event ID in " + event.getClass().getName(), event.getType(), not(IsEmptyString.isEmptyOrNullString()));
             assertThat("Null or empty event Display Name in " + event.getClass().getName(), event.getDisplayName(), not(IsEmptyString.isEmptyOrNullString()));
             assertThat("Null IsPayloadXsiType in " + event.getClass().getName(), event.isPayloadXsiType(), not(nullValue()));
             if(event.isPayloadXsiType()) {

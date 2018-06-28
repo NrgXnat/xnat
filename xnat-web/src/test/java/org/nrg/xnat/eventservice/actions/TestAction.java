@@ -61,7 +61,7 @@ public class TestAction extends SingleActionProvider {
             detectedEvents.add(event);
             actionUser = user.getLogin();
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_COMPLETE, new Date(), "TestAction Launched.");
-            log.debug("Test Action Firing for: " + event.getId());
+            log.debug("Test Action Firing for: " + event.getType());
 
         }
         synchronized (this) {

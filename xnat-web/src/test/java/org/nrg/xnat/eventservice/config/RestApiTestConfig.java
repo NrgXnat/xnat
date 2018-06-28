@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import java.util.List;
@@ -22,14 +23,17 @@ import java.util.List;
 public class RestApiTestConfig extends WebMvcConfigurerAdapter {
 
     @Bean
-    public RoleHolder mockRoleHolder(final RoleServiceI roleServiceI) {
-        return new RoleHolder(roleServiceI);
+    public RoleHolder mockRoleHolder(final RoleServiceI roleServiceI, final NamedParameterJdbcTemplate template) {
+        return new RoleHolder(roleServiceI, template);
     }
 
     @Bean
     public RoleServiceI mockRoleService() {
         return Mockito.mock(RoleServiceI.class);
     }
+
+    @Bean
+    public NamedParameterJdbcTemplate template() { return Mockito.mock(NamedParameterJdbcTemplate.class);}
 
     @Bean
     public UserManagementServiceI mockUserManagementServiceI() {

@@ -61,22 +61,28 @@ public class EventServiceRestApiTest {
 
     private String siteSubscription =
         "{\n" +
-            "\"name\": \"Site Test\",\n" +
-            "\"project-id\": \"\",\n" +
-            "\"active\": true,\n" +
-            "\"event-id\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
-            "\"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
-            "\"act-as-event-user\": true\n" +
-        "},"
+                "  \"name\": \"Site Test\",\n" +
+                "  \"active\": true,\n" +
+                "  \"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
+                "  \"event-filter\": {\n" +
+                "    \"event-type\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
+                "  },\n" +
+                "  \"act-as-event-user\": true\n" +
+        "}"
             ;
 
     private String projectSubscription =
         "{\n" +
-            "\"name\": \"Project Test\",\n" +
-            "\"project-id\": \"SampleProject\",\n" +
-            "\"active\": true,\n" +
-            "\"event-id\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
-            "\"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
+                "  \"name\": \"Site Test\",\n" +
+                "  \"active\": true,\n" +
+                "  \"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
+                "  \"event-filter\": {\n" +
+                "    \"event-type\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
+                "    \"project-ids\": [\n" +
+                "      \"SampleProject\"\n" +
+                "    ],\n" +
+                "  },\n" +
+                "  \"act-as-event-user\": true\n" +
         "}"
             ;
 

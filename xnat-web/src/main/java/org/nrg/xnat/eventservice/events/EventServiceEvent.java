@@ -3,12 +3,13 @@ package org.nrg.xnat.eventservice.events;
 import org.nrg.framework.event.EventI;
 
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.UUID;
 
 public interface EventServiceEvent<ObjectT> extends EventI {
 
     // Get descriptive unique identifier for event
-    String getId();
+    String getType();
 
     String getDisplayName();
     String getDescription();
@@ -26,4 +27,10 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     Date getEventTimestamp();
      // Get the event object UUID (generated at instantiation)
     UUID getEventUUID();
+    //Get the possible status states, e.g. created, updated, deleted
+    EnumSet getStatiStates();
+    //Get the status of the current triggered event
+    Enum getCurrentStatus();
+    //Get the projectId of the current triggered event (returns null if no Project association)
+    String getProjectId();
 }

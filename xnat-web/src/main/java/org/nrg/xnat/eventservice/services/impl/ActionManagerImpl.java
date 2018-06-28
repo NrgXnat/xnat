@@ -203,7 +203,7 @@ public class ActionManagerImpl implements ActionManager {
                 log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.name() + ".");
             }
         }catch (Exception e){
-            log.error("Failed to create workflow entry for " + esEvent.getId() + "\n" + e.getMessage());
+            log.error("Failed to create workflow entry for " + esEvent.getType() + "\n" + e.getMessage());
         }
         return null;
     }

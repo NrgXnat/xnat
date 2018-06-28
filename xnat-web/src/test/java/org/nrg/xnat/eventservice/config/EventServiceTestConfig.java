@@ -168,12 +168,12 @@ public class EventServiceTestConfig {
 
     //** Combined Events/Listener **//
     @Bean
-    public ProjectCreatedEvent projectCreatedEvent() {return new ProjectCreatedEvent();}
+    public ProjectEvent projectCreatedEvent() {return new ProjectEvent();}
     @Bean
-    public SubjectCreatedEvent subjectCreatedEvent() {return new SubjectCreatedEvent();}
+    public SubjectEvent subjectCreatedEvent() {return new SubjectEvent();}
     @Bean
-    public ScanArchiveEvent scanArchiveEvent() {return new ScanArchiveEvent();}
+    public ScanEvent scanArchiveEvent() {return new ScanEvent();}
     @Bean
-    public SessionArchiveEvent sessionArchiveEvent() {return new SessionArchiveEvent();}
+    public SessionEvent sessionArchiveEvent() {return new SessionEvent();}
 
 }

@@ -18,13 +18,11 @@ import java.util.Map;
 public abstract class ProjectSubscriptionCreator {
 
     @Nullable @JsonProperty("name") public abstract String name();
-    @JsonProperty("project-id") public abstract String projectId();
     @Nullable @JsonProperty("active") public abstract Boolean active();
-    @JsonProperty("event-id") public abstract String eventId();
     @Nullable @JsonIgnore public abstract String customListenerId();
     @JsonProperty("action-key") public abstract String actionKey();
     @Nullable @JsonProperty("attributes") public abstract Map<String, String> attributes();
-    @Nullable @JsonProperty("event-filter") public abstract EventFilter eventFilter();
+    @JsonProperty("event-filter") public abstract ProjectEventFilterCreator eventFilter();
 
     public static Builder builder() {
         return new AutoValue_ProjectSubscriptionCreator.Builder();
@@ -34,19 +32,15 @@ public abstract class ProjectSubscriptionCreator {
 
     @JsonCreator
     public static ProjectSubscriptionCreator create(@Nullable @JsonProperty("name") final String name,
-                                                    @JsonProperty("project-id")  String projectId,
                                                     @JsonProperty("active") final Boolean active,
-                                                    @Nonnull @JsonProperty("event-id") final String eventId,
                                                     @Nullable @JsonProperty("custom-listener-id") final String customListenerId,
                                                     @Nonnull @JsonProperty("action-key") final String actionKey,
                                                     @JsonProperty("attributes") final Map<String, String> attributes,
-                                                    @JsonProperty("event-filter") final EventFilter eventFilter) {
+                                                    @JsonProperty("event-filter") final ProjectEventFilterCreator eventFilter) {
 
         return builder()
                 .name(name)
-                .projectId(projectId)
                 .active(active)
-                .eventId(eventId)
                 .customListenerId(customListenerId)
                 .actionKey(actionKey)
                 .attributes(attributes==null ? Collections.<String, String>emptyMap() : attributes)
@@ -60,19 +54,15 @@ public abstract class ProjectSubscriptionCreator {
 
         public abstract Builder name(String name);
 
-        public abstract Builder projectId(String projectId);
-
         public abstract Builder attributes(Map<String, String> attributes);
 
         public abstract Builder active(Boolean active);
-
-        public abstract Builder eventId(String eventId);
 
         public abstract Builder customListenerId(String customListenerId);
 
         public abstract Builder actionKey(String actionKey);
 
-        public abstract Builder eventFilter(EventFilter eventFilter);
+        public abstract Builder eventFilter(ProjectEventFilterCreator eventFilter);
 
         public abstract ProjectSubscriptionCreator build();
     }

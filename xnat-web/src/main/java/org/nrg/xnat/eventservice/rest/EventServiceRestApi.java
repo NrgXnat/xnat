@@ -2,9 +2,9 @@ package org.nrg.xnat.eventservice.rest;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Strings;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -16,7 +16,14 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.exceptions.UnauthorizedException;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.ProjectSubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,15 +31,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
 import static org.nrg.xdat.security.helpers.AccessLevel.Owner;
-import static org.springframework.web.bind.annotation.RequestMethod.*;
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @Api(description = "API for the XNAT Event Service")
 @XapiRestController
@@ -77,8 +93,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                                             final @PathVariable String project)
             throws NrgServiceRuntimeException, SubscriptionValidationException, JsonProcessingException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkProjectSubscriptionCreateAccess(subscription ,project,userI);
-        Subscription toCreate = Subscription.createOnProject(subscription, userI.getLogin(), project);
+        Subscription toCreate = Subscription.createOnProject(subscription, userI.getLogin());
+        checkProjectSubscriptionAccess(toCreate ,project,userI);
         eventService.throwExceptionIfNameExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
         if(created == null){
@@ -87,17 +103,17 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(created.name() + ":" + Long.toString(created.id()), HttpStatus.CREATED);
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter/{event-id}"}, method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON, params = {"event-id"})
     @ApiOperation(value = "Get a subscription filter for a given Event ID")
     @ResponseBody
-    public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @PathVariable(name="event-id") String eventId) {
+    public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @RequestParam(name="event-id") String eventId) {
         return eventService.getEventFilterNodes(eventId);
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties/{event-id}"}, method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties"}, method = GET, produces = JSON, params = {"event-id"})
     @ApiOperation(value = "Get a event properties for a given Event ID")
     @ResponseBody
-    public List<EventPropertyNode> retrieveEventProperties(final @PathVariable(name="event-id") String eventId) {
+    public List<EventPropertyNode> retrieveEventProperties(final @RequestParam(value = "event-id") String eventId) {
         return eventService.getEventPropertyNodes(eventId);
     }
 
@@ -128,7 +144,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                                    final @PathVariable String project)
             throws NrgServiceRuntimeException, SubscriptionValidationException, NotFoundException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkProjectSubscriptionModifyAccess(subscription, project, userI);
+        checkProjectSubscriptionAccess(subscription, project, userI);
         final Subscription toUpdate =
                 subscription.id() != null && subscription.id() == id
                         ? subscription
@@ -151,7 +167,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                                      final @PathVariable String project)
             throws NrgServiceRuntimeException, NotFoundException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkProjectSubscriptionModifyAccess(id, project, userI);
+        checkProjectSubscriptionAccess(id, project, userI);
         eventService.activateSubscription(id);
         return ResponseEntity.ok().build();
     }
@@ -170,7 +186,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                                      final @PathVariable String project)
             throws NrgServiceRuntimeException, NotFoundException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkProjectSubscriptionModifyAccess(id, project, userI);
+        checkProjectSubscriptionAccess(id, project, userI);
         eventService.deactivateSubscription(id);
         return ResponseEntity.ok().build();
     }
@@ -201,7 +217,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @ResponseBody
     public Subscription retrieveSubscription(final @PathVariable long id,
                                              final @PathVariable String project) throws NotFoundException, UnauthorizedException {
-        checkProjectSubscriptionModifyAccess(id, project, XDAT.getUserDetails());
+        checkProjectSubscriptionAccess(id, project, XDAT.getUserDetails());
         return eventService.getSubscription(id);
     }
 
@@ -217,7 +233,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> delete(final @PathVariable long id,
                                        final @PathVariable String project) throws Exception {
 
-        checkProjectSubscriptionModifyAccess(id, project, XDAT.getUserDetails());
+        checkProjectSubscriptionAccess(id, project, XDAT.getUserDetails());
         eventService.deleteSubscription(id);
         return ResponseEntity.noContent().build();
     }
@@ -340,20 +356,15 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getActionByKey(actionkey, user);
     }
 
-    private void checkProjectSubscriptionCreateAccess(ProjectSubscriptionCreator subscription, String project, UserI userI) throws UnauthorizedException {
-        if(!Strings.isNullOrEmpty(subscription.projectId()) && project != subscription.projectId()){
-            throw new UnauthorizedException(userI.getLogin() + " not authorized to create subscriptions for project: " + subscription.projectId());
-        }
+
+    private void checkProjectSubscriptionAccess(Long subscriptionId, String project, UserI userI) throws UnauthorizedException, NotFoundException {
+        checkProjectSubscriptionAccess(eventService.getSubscription(subscriptionId), project, userI);
     }
 
-    private void checkProjectSubscriptionModifyAccess(Long subscriptionId, String project, UserI userI) throws UnauthorizedException, NotFoundException {
-        checkProjectSubscriptionModifyAccess(eventService.getSubscription(subscriptionId), project, userI);
-    }
-
-    private void checkProjectSubscriptionModifyAccess(Subscription subscription, String project, UserI userI) throws UnauthorizedException {
-        if(Strings.isNullOrEmpty(subscription.projectId()) || project != subscription.projectId()){
-            throw new UnauthorizedException(userI.getLogin() + " not authorized to modify subscriptions for project: "
-                    + (Strings.isNullOrEmpty(subscription.projectId()) ? "Site" : subscription.projectId()));
+    private void checkProjectSubscriptionAccess(Subscription subscription, String project, UserI userI) throws UnauthorizedException {
+        if(subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty() || Arrays.asList(project) != subscription.eventFilter().projectIds()){
+            throw new UnauthorizedException(userI.getLogin() + " not authorized to modify subscriptions for project(s): "
+                    + ((subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty()) ? "Site" : StringUtils.join(subscription.eventFilter().projectIds(),',')));
         }
     }
 

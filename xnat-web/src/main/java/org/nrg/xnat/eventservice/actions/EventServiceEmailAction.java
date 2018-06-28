@@ -169,13 +169,13 @@ public class EventServiceEmailAction extends SingleActionProvider {
                 .splitToList(inputValues.get(BCC_KEY) != null ? inputValues.get(BCC_KEY) : "");
 
 
-        if(!areRecipientsAllowed(toUsersList, subscription.projectId(), user)){
+        if(!areRecipientsAllowed(toUsersList, event.getProjectId(), user)){
             failWithMessage(deliveryId, "TO: Recipients are not allowed for User: " + user.getLogin());
             return;
-        }else if(!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, subscription.projectId(), user)){
+        }else if(!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, event.getProjectId(), user)){
             failWithMessage(deliveryId, "CC: Recipients are not allowed for User: " + user.getLogin());
             return;
-        }else if(!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, subscription.projectId(), user)){
+        }else if(!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, event.getProjectId(), user)){
             failWithMessage(deliveryId, "BCC: Recipients are not allowed for User: " + user.getLogin());
             return;
         }

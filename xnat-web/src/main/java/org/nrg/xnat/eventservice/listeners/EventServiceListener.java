@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 public interface EventServiceListener<T> extends Consumer<Event<T>> {
-    String getId();
+    String getType();
     String getEventType();
     EventServiceListener getInstance();
     UUID getInstanceId();

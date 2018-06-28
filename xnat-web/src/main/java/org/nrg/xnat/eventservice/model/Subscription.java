@@ -8,6 +8,8 @@ import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Null;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -16,15 +18,13 @@ import java.util.Map;
 public abstract class Subscription {
 
     @Nullable @JsonProperty("id") public abstract Long id();
-    @JsonProperty("name") public abstract String name();
-    @Nullable @JsonProperty("project-id") public abstract String projectId();
+    @Nullable @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @Nullable @JsonProperty("registration-key") public abstract  String listenerRegistrationKey();
-    @JsonProperty("event-id") public abstract String eventId();
     @JsonIgnore @Nullable public abstract String customListenerId();
     @JsonProperty("action-key") public abstract String actionKey();
     @Nullable @JsonProperty("attributes") public abstract Map<String, String> attributes();
-    @Nullable @JsonProperty("event-filter") public abstract EventFilter eventFilter();
+    @JsonProperty("event-filter") public abstract EventFilter eventFilter();
     @Nullable @JsonProperty("act-as-event-user") public abstract Boolean actAsEventUser();
     @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
@@ -48,23 +48,19 @@ public abstract class Subscription {
     @JsonCreator
     public static Subscription create(@JsonProperty("id") final Long id,
                                       @Nullable @JsonProperty("name") final String name,
-                                      @Nullable @JsonProperty("project-id") final String projectId,
                                       @JsonProperty("active") final Boolean active,
                                       @JsonProperty("registration-key") final String listenerRegistrationKey,
-                                      @JsonProperty("event-id") final String eventId,
                                       @Nullable @JsonProperty("custom-listener-id") String customListenerId,
                                       @JsonProperty("action-key") final String actionKey,
-                                      @JsonProperty("attributes") final Map<String, String> attributes,
+                                      @Nullable @JsonProperty("attributes") final Map<String, String> attributes,
                                       @JsonProperty("event-filter") final EventFilter eventFilter,
-                                      @JsonProperty("act-as-eventId-user") final Boolean actAsEventUser,
+                                      @JsonProperty("act-as-event-user") final Boolean actAsEventUser,
                                       @JsonProperty("subscription-owner") final String subscriptionOwner) {
         return builder()
                 .id(id)
                 .name(name)
-                .projectId(projectId)
                 .active(active)
                 .listenerRegistrationKey(listenerRegistrationKey)
-                .eventId(eventId)
                 .customListenerId(customListenerId)
                 .actionKey(actionKey)
                 .attributes(attributes)
@@ -76,45 +72,45 @@ public abstract class Subscription {
 
     @Deprecated
     public static Subscription create(final SubscriptionCreator creator) {
+        EventFilter filter = EventFilter.create(creator.eventFilter());
         return builder()
                 .name(creator.name())
-                .projectId(creator.projectId())
                 .active(creator.active())
-                .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
                 .actionKey(creator.actionKey())
                 .attributes(creator.attributes())
-                .eventFilter(creator.eventFilter())
+                .eventFilter(filter)
                 .actAsEventUser(creator.actAsEventUser())
                 .build();
     }
 
     public static Subscription create(final SubscriptionCreator creator, final String subscriptionOwner) {
+        // Support projectIds, eventType, and status in either subscription creator or filter
+        EventFilter filter = EventFilter.create(creator.eventFilter());
         return builder()
                 .name(creator.name())
-                .projectId(creator.projectId())
                 .active(creator.active())
-                .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
                 .actionKey(creator.actionKey())
                 .attributes(creator.attributes())
-                .eventFilter(creator.eventFilter())
+                .eventFilter(filter)
                 .actAsEventUser(creator.actAsEventUser())
                 .subscriptionOwner(subscriptionOwner)
                 .build();
+
     }
 
 
-    public static Subscription createOnProject(final ProjectSubscriptionCreator creator, final String subscriptionOwner, final String project) {
+    public static Subscription createOnProject(final ProjectSubscriptionCreator creator, final String subscriptionOwner) {
+        // Support projectIds, eventType, and status in either subscription creator or filter
+        EventFilter filter = EventFilter.create(creator.eventFilter());
         return builder()
                 .name(creator.name())
-                .projectId(project)
                 .active(creator.active())
-                .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
                 .actionKey(creator.actionKey())
                 .attributes(creator.attributes())
-                .eventFilter(creator.eventFilter())
+                .eventFilter(filter)
                 .actAsEventUser(false)
                 .subscriptionOwner(subscriptionOwner)
                 .build();
@@ -126,13 +122,9 @@ public abstract class Subscription {
 
         public abstract Builder name(String name);
 
-        public abstract Builder projectId(String projectId);
-
         public abstract Builder listenerRegistrationKey(String listenerRegistrationKey);
 
         public abstract Builder active(Boolean active);
-
-        public abstract Builder eventId(String eventId);
 
         public abstract Builder customListenerId(String listenerId);
 

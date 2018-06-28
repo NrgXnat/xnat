@@ -21,7 +21,7 @@ public class TestListener implements EventServiceListener<EventServiceEvent> {
     private static final Logger log = LoggerFactory.getLogger(TestListener.class);
 
     @Override
-    public String getId() { return this.getClass().getCanonicalName(); }
+    public String getType() { return this.getClass().getCanonicalName(); }
 
     @Override
     public String getEventType() {

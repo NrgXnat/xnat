@@ -12,9 +12,9 @@ public class EventSubscriptionEntityDao extends AbstractHibernateDAO<Subscriptio
 
     public SubscriptionEntity findByName(final String name) throws Exception {
         try {
-            return findByUniqueProperty("name", name);
-        } catch (RuntimeException e) {
-            throw new Exception("More than one result with name " + name + ".");
+                return findByUniqueProperty("name", name);
+        } catch (Throwable e) {
+            throw new Exception("Exception trying to generate alternative to " + name + "." + "\n" + e.getMessage());
         }
     }
 

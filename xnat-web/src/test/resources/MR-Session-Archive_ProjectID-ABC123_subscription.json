@@ -1,16 +1,13 @@
-
 {
-  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
   "active": true,
-  "attributes": {},
+  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
   "event-filter": {
-    "name": "string",
+    "event-type": "org.nrg.xnat.eventservice.events.SessionEvent",
     "project-ids": [
       "ABC123"
     ],
+    "status": "CREATED",
     "json-path-filter": "$[?(@.modality == \"MR\")]"
   },
-  "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",
-  "name": "string",
-  "registration-key": "string"
+  "act-as-event-user": true
 }

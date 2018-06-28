@@ -243,10 +243,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public XnatProjectdata get(final UserI user, final String idOrAlias) {
-        if (isCachedNonexistentProject(idOrAlias)) {
-            return null;
-        }
-
         final String userId;
         if (user != null) {
             userId = user.getUsername();
@@ -364,15 +360,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private boolean hasAccess(final String userId, final String idOrAlias, final AccessLevel accessLevel) {
-        if (isCachedNonexistentProject(idOrAlias)) {
-            return false;
-        }
-
-        // If they've tried to access a non-existent user more than once, we can just return false here.
-        if (_nonexistentUsers.contains(userId)) {
-            return false;
-        }
-
         // If the user is not in the user lists, try to retrieve and cache it.
         final XDATUser user;
         final boolean  isSiteAdmin;
@@ -390,12 +377,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                     isSiteAdmin = false;
                 }
             } catch (UserNotFoundException e) {
-                // User doesn't exist, so cache that and we can just return false if asked again later.
-                _nonexistentUsers.add(userId);
+                // User doesn't exist, so return false
+                log.error("Got a request to test '{}' access to project with ID or alias '{}' for user {}, but that user doesn't exist.", accessLevel, idOrAlias, userId);
                 return false;
             } catch (UserInitException e) {
                 // Something bad happened so note it and move on.
-                log.error("Something bad happened trying to retrieve the user " + userId, e);
+                log.error("Something bad happened trying to retrieve the user {}", userId, e);
                 return false;
             }
         } else {
@@ -407,7 +394,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         try {
             // Check for existing cache for the current project.
             final String projectId = getCanonicalProjectId(idOrAlias, user, userId);
-            if (StringUtils.equals(NOT_A_PROJECT, projectId)) {
+            if (StringUtils.isBlank(projectId)) {
                 return false;
             }
 
@@ -440,10 +427,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Returns the canonical ID for the submitted ID or alias. If the specified ID or alias can't be found, this method returns the value {@link #NOT_A_PROJECT}.
-     * If the ID or alias is already cached, this method just returns the canonical project ID corresponding to the submitted ID or alias. If it's not already
-     * cached, the project is retrieved, the project ID and its aliases are cached in the alias mapping table, and the project object is inserted into the cache
-     * under its canonical project ID. This allows the project to be retrieved once on initial reference then just pulled from the cache later.
+     * Returns the canonical ID for the submitted ID or alias. If the specified ID or alias can't be found, this method returns null. If the ID or alias is already
+     * cached, this method just returns the canonical project ID corresponding to the submitted ID or alias. If it's not already cached, the project is retrieved,
+     * the project ID and its aliases are cached in the alias mapping table, and the project object is inserted into the cache under its canonical project ID. This
+     * allows the project to be retrieved once on initial reference then just pulled from the cache later.
      *
      * @param idOrAlias The ID or alias to test.
      * @param user      The user object for the user requesting the project.
@@ -464,9 +451,14 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         initializeProjectCache(idOrAlias);
 
         // Return the mapped value for the ID or alias, which should now be initialized (even if it's initialized to "not a project")
-        final String projectId = _aliasMapping.get(idOrAlias);
-        log.debug("After initialization, found cached project ID {} for the ID or alias {}", projectId, idOrAlias);
-        return projectId;
+        if (_aliasMapping.containsKey(idOrAlias)) {
+            final String projectId = _aliasMapping.get(idOrAlias);
+            log.debug("After initialization, found canonical project ID {} for the ID or alias {}", projectId, idOrAlias);
+            return projectId;
+        } else {
+            log.debug("After initialization, no project was found that matches the ID or alias {}", idOrAlias);
+            return null;
+        }
     }
 
     /**
@@ -482,12 +474,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @SuppressWarnings("unchecked")
     @Nullable
     private ProjectCache getProjectCache(final String idOrAlias) {
-        // If we've already determined that the project doesn't exist, return null.
-        if (isCachedNonexistentProject(idOrAlias)) {
-            log.debug("Project was requested by ID or alias {}, but this is cached as a non-existent project.", idOrAlias);
-            return null;
-        }
-
         // If we've already mapped and cached the project...
         if (_aliasMapping.containsKey(idOrAlias)) {
             // Resolve the ID or alias to the mapped project ID.
@@ -507,11 +493,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     @Nullable
     private synchronized ProjectCache initializeProjectCache(final String idOrAlias) {
-        if (isCachedNonexistentProject(idOrAlias)) {
-            log.info("Found non-existent project for ID or alias {}, this was probably initialized by another thread.", idOrAlias);
-            return null;
-        }
-
         if (_aliasMapping.containsKey(idOrAlias)) {
             final String projectId = _aliasMapping.get(idOrAlias);
             log.info("Found project ID {} for ID or alias {}, this was probably initialized by another thread.", projectId, idOrAlias);
@@ -527,7 +508,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
         } catch (EmptyResultDataAccessException e) {
             log.info("Didn't find a project with ID or alias {}, caching as non-existent", idOrAlias);
-            cacheNonexistentProject(idOrAlias);
             return null;
         } catch (IncorrectResultSizeDataAccessException e) {
             log.warn("Got an incorrect result size for project ID or alias '{}', should have been {} item(s), found {} instead. Query: {}", idOrAlias, e.getExpectedSize(), e.getActualSize(), QUERY_GET_PROJECT_BY_ID_OR_ALIAS);
@@ -578,14 +558,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 }
             })));
         }
-    }
-
-    private boolean isCachedNonexistentProject(final String idOrAlias) {
-        return _aliasMapping.containsKey(idOrAlias) && StringUtils.equals(NOT_A_PROJECT, _aliasMapping.get(idOrAlias));
-    }
-
-    private void cacheNonexistentProject(final String idOrAlias) {
-        _aliasMapping.put(idOrAlias, NOT_A_PROJECT);
     }
 
     private void removeProjectIdMappings(final XnatProjectdata project) {
@@ -719,7 +691,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
     private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";
-    private static final String                              NOT_A_PROJECT                    = "NOT_A_PROJECT";
     private static final String                              CACHE_NAME                       = "UserProjectCacheManagerCache";
     private static final String                              QUERY_GET_PROJECT_BY_ID_OR_ALIAS = "SELECT DISTINCT id " +
                                                                                                 "FROM xnat_projectdata " +
@@ -739,7 +710,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     private final Set<String>         _siteAdmins       = new HashSet<>();
     private final Set<String>         _nonAdmins        = new HashSet<>();
-    private final Set<String>         _nonexistentUsers = new HashSet<>();
     private final Map<String, String> _aliasMapping     = new HashMap<>();
 
     private final GroupsAndPermissionsCache  _cache;

@@ -259,7 +259,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         final ProjectCache projectCache = getProjectCache(idOrAlias);
         if (projectCache != null) {
             log.debug("Found a cached project for ID or alias {} for user {}.", idOrAlias, userId);
-            return projectCache.getProject();
+            final XnatProjectdata project = projectCache.getProject();
+            project.setUser(user);
+            return project;
         } else {
             log.warn("A weird condition occurred in the user project cache: has({}, {}) returned true, no non-writable or nonexistent project was found, but getProjectCache({}) returned null. This method will return null, but this isn't a case that should arise.", userId, idOrAlias, idOrAlias);
         }

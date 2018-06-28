@@ -495,10 +495,9 @@ public class DefaultCatalogService implements CatalogService {
             }
             return catalog;
         } catch (Exception e) {
-            log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parent.getItem().getIDValue());
-            return null;
+            log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parent.getItem().getIDValue(), e);
+            throw e;
         }
-
     }
 
     /**

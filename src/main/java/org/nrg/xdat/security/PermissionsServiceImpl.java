@@ -489,12 +489,21 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             final String                    username = user.getUsername();
             if (criteria.size() == 0) {
                 if (!user.isGuest()) {
-                    log.error("{}: No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
-                              new Exception().getStackTrace()[0].toString(),
-                              username,
-                              action,
-                              rootXmlName,
-                              values.toString());
+                    if (log.isDebugEnabled()) {
+                        // If debug is enabled, add exception to the logging to provide stack-trace info.
+                        log.debug("No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
+                                  username,
+                                  action,
+                                  rootXmlName,
+                                  values.toString(),
+                                  new Exception());
+                    } else {
+                        log.error("No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
+                                  username,
+                                  action,
+                                  rootXmlName,
+                                  values.toString());
+                    }
                 }
                 return false;
             }
@@ -785,7 +794,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                "  u.login IN ('guest', '%s')";
     private static final String GUEST_USERNAME               = "guest";
 
-    private final NrgEventService            _eventService;
+    private final NrgEventService _eventService;
 
     private GroupsAndPermissionsCache _cache;
     private UserI                     _guest;

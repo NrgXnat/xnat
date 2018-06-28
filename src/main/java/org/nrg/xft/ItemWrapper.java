@@ -538,6 +538,17 @@ public abstract class ItemWrapper implements ItemI {
     }
 
     /**
+     * Sets the {@link UserI user} that owns this object.
+     *
+     * <b>Note:</b> this is primarily for permissions workarounds and shouldn't be used to actually set the owner of the item.
+     *
+     * @param user The owning {@link UserI user}.
+     */
+    public void setUser(final UserI user) {
+        getItem().setUser(user);
+    }
+
+    /**
      * Gets the name of the database that contains this object.
      *
      * @return The name of the database that contains this object.

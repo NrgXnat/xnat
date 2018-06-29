@@ -582,7 +582,7 @@ var XNAT = getObject(XNAT);
         // check every second to see if our timeout time has been reached
         timeout.check = function(){
 
-            debugLog('timeout.check()');
+            // debugLog('timeout.check()');
 
             timeout.getValues();
 
@@ -672,25 +672,27 @@ var XNAT = getObject(XNAT);
             }
         };
 
+    })();
+
+    // don't start the timer until the page is finished loading
+    $(window).on('load', function(){
         // only run the timer if *not* a guest user (if an authenticated user)
         if ((!!XNAT.cookie.get('guest')) && (XNAT.cookie.get('guest') === 'false')) {
             timeout.init();
         }
+    });
 
-        $(window).on('beforeunload', function(){
-            // var lastPageEnc = encodePageInfo(USERNAME, LOC_HREF).encoded;
-            // // cookie.SESSION_LAST_USER.set(lastUserEnc);
-            // // check for 'resume=false' query string to prevent loading certain pages
-            // if (getQueryStringValue('resume').toString() !== 'false') {
-            //     cookie.SESSION_LAST_PAGE.set(lastPageEnc);
-            // }
-            // else {
-            //     cookie.SESSION_LAST_PAGE.set('');
-            // }
-        });
-
-    })();
-
+    $(window).on('beforeunload', function(){
+        // var lastPageEnc = encodePageInfo(USERNAME, LOC_HREF).encoded;
+        // // cookie.SESSION_LAST_USER.set(lastUserEnc);
+        // // check for 'resume=false' query string to prevent loading certain pages
+        // if (getQueryStringValue('resume').toString() !== 'false') {
+        //     cookie.SESSION_LAST_PAGE.set(lastPageEnc);
+        // }
+        // else {
+        //     cookie.SESSION_LAST_PAGE.set('');
+        // }
+    });
 
     // attach event handler to elements with 'renew-session' class
     $(document).on('click', '.renew-session', function(e){

@@ -29,7 +29,7 @@ import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xdat.services.cache.UserProjectCache;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.restlet.data.Status;
 import org.slf4j.LoggerFactory;
 
@@ -319,7 +319,7 @@ public abstract class AbstractDicomImportOperation extends StatusProducer implem
     protected static final String  RENAME_PARAM            = "rename";
     protected static final boolean canDecompress           = initializeCanDecompress();
 
-    private final UserProjectCache<XnatProjectdata>      _cache;
+    private final UserProjectCache                       _cache;
     private final FileWriterWrapperI                     _fileWriter;
     private final UserI                                  _user;
     private final Map<String, Object>                    _parameters;

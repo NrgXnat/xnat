@@ -1242,13 +1242,13 @@ public class DefaultCatalogService implements CatalogService {
                 final CatEntryBean entry      = new CatEntryBean();
                 final String resourceString   = resourceMap.get("resource").toString();
                 final String       resourceId = URLEncoder.encode(resourceString, "UTF-8");
-                final Long         scanSize   = (Long) resourceMap.get("size");
+                final Long         resourceSize   = (Long) resourceMap.get("size");
                 entry.setName(getPath(options, project, subject, label, "resources", resourceId));
                 entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
                 log.debug("Created resource entry for project {} session {} resource {} of type {} with name {}: {}", project, session, resourceString, type, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
-                if(scanSize!=null) {
-                    totalSize += scanSize;
+                if(resourceSize!=null) {
+                    totalSize += resourceSize;
                 }
                 else{
                     resourcesOfUnknownSize++;
@@ -1431,7 +1431,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  ${scanTypesClause} AND " +
                                                                          "  ${scanFormatsClause} " +
                                                                          "ORDER BY scan_id";
-    private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource " +
+    private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource, " +
+                                                                         "  res.file_size AS size " +
                                                                          "FROM xnat_abstractresource res " +
                                                                          "  LEFT JOIN xnat_experimentdata_resource exptRes " +
                                                                          "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +

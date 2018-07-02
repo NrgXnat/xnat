@@ -335,7 +335,7 @@ var XNAT = getObject(XNAT);
                     }
                     msg.push('<br><br>');
                     if(UNKNOWN_SIZE_COUNT>0) {
-                        msg.push('The download id is <b>' + ID + '</b>. Of the resources you are trying to download, <b>' + UNKNOWN_SIZE_COUNT + '</b> have unknown size. The total size of the rest of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
+                        msg.push('The download id is <b>' + ID + '</b>. Of the resources you are trying to download, <b>' + UNKNOWN_SIZE_COUNT + '</b> '+((UNKNOWN_SIZE_COUNT==1)? 'has':'have')+' unknown size. The total size of the rest of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
                     }
                     else {
                         msg.push('The download id is <b>' + ID + '</b>. The total size of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');

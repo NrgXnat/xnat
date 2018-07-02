@@ -1,8 +1,8 @@
 package org.nrg.xnat.services.cache;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static lombok.AccessLevel.PROTECTED;
+import static lombok.AccessLevel.PRIVATE;
 
 /**
  * Provides both {@link AbstractXftItemEventHandlerMethod} implementation and the default implementations for <b>CacheEventListener</b> methods
  * from the <b>CacheEventListenerAdapter</b> class.
  */
-@Getter(PROTECTED)
+@Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractXftItemAndCacheEventHandlerMethod extends AbstractXftItemEventHandlerMethod implements CacheEventListener {
@@ -94,7 +94,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementRemoved(final Ehcache cache, final Element element) throws CacheException {
-        log.debug("Element with key '{}' removed from cache '{}'", element.getObjectKey(), cache.getName());
+        log.debug("XNAT-5730: Element with key '{}' removed from cache '{}'", element.getObjectKey(), cache.getName());
         _cacheEventListener.notifyElementRemoved(cache, element);
     }
 
@@ -103,7 +103,18 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementPut(final Ehcache cache, final Element element) throws CacheException {
-        log.debug("Element with key '{}' put into cache '{}'", element.getObjectKey(), cache.getName());
+        final Object objectKey = element.getObjectKey();
+        final Object objectValue = element.getObjectValue();
+        log.debug("XNAT-5730: Element with key '{}' added to cache '{}' with a value of '{}' (type: {})", objectKey, cache.getName(), ObjectUtils.defaultIfNull(objectValue, "").toString(), objectValue == null ? "<null>" : objectValue.getClass().getName());
+        if (objectKey instanceof String && StringUtils.equals("user:admin:groups", (String) objectKey)) {
+            final Object value;
+            if (objectValue instanceof List) {
+                value = StringUtils.join((List) objectValue, ", ");
+            } else {
+                value = objectValue.toString();
+            }
+            log.debug("XNAT-5730: Cache entry '{}' added to cache with value: {}", objectKey, value);
+        }
         _cacheEventListener.notifyElementPut(cache, element);
     }
 
@@ -112,7 +123,18 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementUpdated(final Ehcache cache, final Element element) throws CacheException {
-        log.debug("Element with key '{}' updated in cache '{}'", element.getObjectKey(), cache.getName());
+        final Object objectKey = element.getObjectKey();
+        final Object objectValue = element.getObjectValue();
+        log.debug("XNAT-5730: Element with key '{}' updated in cache '{}' with a value of '{}' (type: {})", objectKey, cache.getName(), ObjectUtils.defaultIfNull(objectValue, "").toString(), objectValue == null ? "<null>" : objectValue.getClass().getName());
+        if (objectKey instanceof String && StringUtils.equals("user:admin:groups", (String) objectKey)) {
+            final Object value;
+            if (objectValue instanceof List) {
+                value = StringUtils.join((List) objectValue, ", ");
+            } else {
+                value = objectValue.toString();
+            }
+            log.debug("XNAT-5730: Cache entry '{}' updated in cache with value: {}", objectKey, value);
+        }
         _cacheEventListener.notifyElementUpdated(cache, element);
     }
 
@@ -121,7 +143,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementExpired(final Ehcache cache, final Element element) {
-        log.debug("Element with key '{}' expired in cache '{}'", element.getObjectKey(), cache.getName());
+        log.debug("XNAT-5730: Element with key '{}' expired in cache '{}'", element.getObjectKey(), cache.getName());
         _cacheEventListener.notifyElementExpired(cache, element);
     }
 
@@ -130,7 +152,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementEvicted(final Ehcache cache, final Element element) {
-        log.debug("Element with key '{}' evicted from cache '{}'", element.getObjectKey(), cache.getName());
+        log.debug("XNAT-5730: Element with key '{}' evicted from cache '{}'", element.getObjectKey(), cache.getName());
         _cacheEventListener.notifyElementEvicted(cache, element);
     }
 
@@ -139,7 +161,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyRemoveAll(final Ehcache cache) {
-        log.debug("All elements removed from cache '{}'", cache.getName());
+        log.debug("XNAT-5730: All elements removed from cache '{}'", cache.getName());
         _cacheEventListener.notifyRemoveAll(cache);
     }
 
@@ -209,14 +231,25 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     protected <T> T getCachedObject(final String cacheId, final Class<? extends T> type) {
-        return getCache().get(cacheId, type);
+        try {
+            final T t = getCache().get(cacheId, type);
+            if (StringUtils.equals("user:admin:groups", cacheId) && List.class.isAssignableFrom(type)) {
+                final List list = (List) t;
+                log.info("Found cached list for cache ID '{}': {}", cacheId, StringUtils.join(list, ", "));
+            }
+            return t;
+        } catch (IllegalStateException e) {
+            log.error("Got an IllegalStateException trying to retrieve cache ID '{}' as an object of type {}", cacheId, type.getName(), e);
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")
     protected <T> List<T> getCachedList(final String cacheId) {
         final List<T> elements = getCachedObject(cacheId, List.class);
         if (elements != null) {
-            return Lists.newArrayList(elements);
+            log.info("Found cached list for cache ID '{}': {}", cacheId, StringUtils.join(elements, ", "));
+            return ImmutableList.copyOf(elements);
         }
         log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
         return null;
@@ -226,7 +259,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     protected <T> Set<T> getCachedSet(final String cacheId) {
         final Set<T> elements = getCachedObject(cacheId, Set.class);
         if (elements != null) {
-            return Sets.newHashSet(elements);
+            return ImmutableSet.copyOf(elements);
         }
         log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
         return null;
@@ -236,14 +269,43 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     protected <K, V> Map<K, V> getCachedMap(final String cacheId) {
         final Map<K, V> map = getCachedObject(cacheId, Map.class);
         if (map != null) {
-            return Maps.newHashMap(map);
+            return ImmutableMap.copyOf(map);
         }
         log.warn("Got a request for cache entry '{}', but when I retrieved the entry it was null.", cacheId);
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    protected <K, V> Map<K, V> buildImmutableMap(final Map<K, V>... maps) {
+        final ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+        for (final Map<K, V> map : maps) {
+            builder.putAll(map);
+        }
+        return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> List<T> buildImmutableList(final List<T>... lists) {
+        final ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (final List list : lists) {
+            builder.addAll(list);
+        }
+        return builder.build();
+    }
+
+    protected void evict(final List<String> cacheIds) {
+        for (final String cacheId : cacheIds) {
+            evict(cacheId);
+        }
+    }
+
+    protected void evict(final String cacheId) {
+        log.debug("Evicting cache entry '{}'", cacheId);
+        getCache().evict(cacheId);
+    }
+
     private void registerCacheEventListener() {
-        final Object nativeCache = _cache.getNativeCache();
+        final Object nativeCache = getCache().getNativeCache();
         if (nativeCache instanceof net.sf.ehcache.Cache) {
             ((net.sf.ehcache.Cache) nativeCache).getCacheEventNotificationService().registerListener(this);
             log.debug("Registered user project cache as net.sf.ehcache.Cache listener");

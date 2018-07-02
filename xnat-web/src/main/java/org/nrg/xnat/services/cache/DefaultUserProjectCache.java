@@ -84,7 +84,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         log.info("Got an XFTItemEvent for project '{}'", projectId);
-        final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
+        final ProjectCache projectCache = getCachedProjectCache(projectId);
 
         // If there was no cached project, maybe it was cached as a non-existent project and has been created?
         if (projectCache.getProject() == null) {
@@ -109,7 +109,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
-            getCache().evict(projectId);
+            evict(projectId);
         }
 
         initializeProjectCache(projectId);
@@ -483,7 +483,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             log.debug("Found project ID {} for the ID or alias {}, returning project cache for that ID.", projectId, idOrAlias);
 
             // And then return the project cache.
-            final ProjectCache projectCache = getCache().get(projectId, ProjectCache.class);
+            final ProjectCache projectCache = getCachedProjectCache(projectId);
             if (projectCache.getProject() == null) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Found cached project ID " + projectId + " for ID or alias " + idOrAlias + ", which should only ever happen if the project is cached, but the project cache is null.");
             }
@@ -498,15 +498,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         if (_aliasMapping.containsKey(idOrAlias)) {
             final String projectId = _aliasMapping.get(idOrAlias);
             log.info("Found project ID {} for ID or alias {}, this was probably initialized by another thread.", projectId, idOrAlias);
-            return getCache().get(projectId, ProjectCache.class);
+            return getCachedProjectCache(projectId);
         }
 
-        log.info("Initializing project cache for ID or alias {}", idOrAlias);
+        final String projectId = _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, idOrAlias), String.class);
+        log.info("Locking and initializing project cache for ID or alias {}, which mapped to project ID {}", idOrAlias, projectId);
 
         // Make sure we have a concrete user object then try to retrieve the project.
         final XnatProjectdata project;
         try {
-            final String projectId = _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, idOrAlias), String.class);
             project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
         } catch (EmptyResultDataAccessException e) {
             log.info("Didn't find a project with ID or alias {}, caching as non-existent", idOrAlias);
@@ -520,7 +520,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         final ProjectCache projectCache = new ProjectCache(project);
 
         // This caches all of the users from the standard user groups and their permissions ahead of time in the most efficient way possible.
-        final String projectId = project.getId();
         for (final String accessLevel: USER_GROUP_SUFFIXES.keySet()) {
             final List<AccessLevel> accessLevelPermissions = USER_GROUP_SUFFIXES.get(accessLevel);
             for (final String userIdByAccess: _template.queryForList(QUERY_USERS_BY_GROUP, getProjectAccessParameterSource(projectId, accessLevel), String.class)) {
@@ -536,6 +535,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         cacheProjectIdsAndAliases(projectId, project.getAliases_alias());
 
         return projectCache;
+    }
+
+    private ProjectCache getCachedProjectCache(final String cacheId) {
+        return getCachedObject(cacheId, ProjectCache.class);
     }
 
     private void handleCacheRemoveEvent(final Ehcache cache, final Element element, final String event) {

@@ -71,12 +71,10 @@ public class ProjectMemberResource extends SecureResource {
             throw new NotFoundException(projectId + ": " + groupId);
         }
 
-        final Method  method = request.getMethod();
-        final boolean isPut  = method.equals(Method.PUT);
-        if ((isPut || method.equals(Method.DELETE) && project == null)) {
-            throw isPut ? new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "You must specify a project and group for this call.") : new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a project and users to be deleted from the group for this call.");
+        final Method method = request.getMethod();
+        if ((method.equals(Method.PUT) || method.equals(Method.DELETE)) && project == null) {
+            throw method.equals(Method.PUT) ? new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "You must specify a project and group for this call.") : new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a project and users to be deleted from the group for this call.");
         }
-
 
         final String       userIdParameter = (String) getParameter(request, "USER_ID");
         final List<String> userIds         = userIdParameter.contains(",") ? Arrays.asList(userIdParameter.split("\\s+,\\s+")) : Collections.singletonList(userIdParameter);

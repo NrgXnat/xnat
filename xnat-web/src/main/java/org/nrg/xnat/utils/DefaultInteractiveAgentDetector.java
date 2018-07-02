@@ -9,10 +9,9 @@
 
 package org.nrg.xnat.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @Component
+@Slf4j
 public class DefaultInteractiveAgentDetector implements InteractiveAgentDetector {
     /**
      * Sets the data paths, i.e. those paths which require a user-agent interactivity test to determine whether the user
@@ -32,18 +32,14 @@ public class DefaultInteractiveAgentDetector implements InteractiveAgentDetector
      * @param preferences A list of strings in Ant-style patterns indicating data paths.
      */
     public DefaultInteractiveAgentDetector(final SiteConfigPreferences preferences) {
-        for (final String interactiveAgent : preferences.getInteractiveAgentIds()) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding interactive agent specifier: " + interactiveAgent);
-            }
+        for (final String interactiveAgent: preferences.getInteractiveAgentIds()) {
+            log.debug("Adding interactive agent specifier: {}", interactiveAgent);
             final Pattern pattern = Pattern.compile(interactiveAgent);
             _interactiveAgentIds.add(pattern);
         }
 
-        for (final String dataPath : preferences.getDataPaths()) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding data path: " + dataPath);
-            }
+        for (final String dataPath: preferences.getDataPaths()) {
+            log.debug("Adding data path: {}", dataPath);
             _dataPaths.add(new AntPathRequestMatcher(dataPath));
         }
     }
@@ -55,42 +51,32 @@ public class DefaultInteractiveAgentDetector implements InteractiveAgentDetector
         }
 
         final String userAgent = getUserAgent(request);
+        log.debug("Testing user agent as interactive: {}", userAgent);
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Testing user agent as interactive: " + userAgent);
+        if (StringUtils.isBlank(userAgent) || StringUtils.contains(userAgent, "XNATDesktopClient")) {
+            return false;
         }
-        if (!StringUtils.isBlank(userAgent)) {
-            for (final Pattern interactiveAgent : _interactiveAgentIds) {
-                if (interactiveAgent.matcher(userAgent).matches()) {
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("User agent " + userAgent + " is interactive, matched simple regex pattern: " + interactiveAgent);
-                    }
-                    return true;
-                }
+
+        for (final Pattern interactiveAgent: _interactiveAgentIds) {
+            if (interactiveAgent.matcher(userAgent).matches()) {
+                log.debug("User agent {} is interactive, matched simple regex pattern: {}", userAgent, interactiveAgent);
+                return true;
             }
         }
-        if (_log.isDebugEnabled()) {
-            _log.debug("User agent " + userAgent + " is not interactive, failed to match any patterns");
-        }
+        log.debug("User agent {} is not interactive, failed to match any patterns", userAgent);
         return false;
     }
 
     @Override
     public boolean isDataPath(final HttpServletRequest request) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Testing URI as data path: " + request.getContextPath());
-        }
-        for (final RequestMatcher dataPath : _dataPaths) {
+        log.debug("Testing URI as data path: {}", request.getContextPath());
+        for (final RequestMatcher dataPath: _dataPaths) {
             if (dataPath.matches(request)) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("URI " + request.getContextPath() + "is a data path.");
-                }
+                log.debug("URI {} is a data path.", request.getContextPath());
                 return true;
             }
         }
-        if (_log.isDebugEnabled()) {
-            _log.debug("URI " + request.getContextPath() + "is not a data path.");
-        }
+        log.debug("URI {} is not a data path.", request.getContextPath());
         return false;
     }
 
@@ -99,8 +85,6 @@ public class DefaultInteractiveAgentDetector implements InteractiveAgentDetector
     }
 
     private static final String UA_HEADER = "User-Agent";
-
-    private static final Logger _log = LoggerFactory.getLogger(DefaultInteractiveAgentDetector.class);
 
     private final List<Pattern>        _interactiveAgentIds = new ArrayList<>();
     private final List<RequestMatcher> _dataPaths           = new ArrayList<>();

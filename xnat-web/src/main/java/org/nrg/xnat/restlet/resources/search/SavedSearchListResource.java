@@ -59,7 +59,7 @@ public class SavedSearchListResource extends SecureResource {
             } else {
                 userToGetListFor = executingUser;
             }
-            String query         = "SELECT DISTINCT xss.* FROM xdat_stored_search xss LEFT JOIN xdat_stored_search_allowed_user xssau ON xss.id=xssau.xdat_stored_search_id LEFT JOIN xdat_stored_search_groupid xssag ON xss.id=xssag.allowed_groups_groupid_xdat_sto_id";
+            String query         = "SELECT DISTINCT xssouter.*, array_agg(xssauouter.login) AS users FROM ( SELECT DISTINCT xss.id FROM xdat_stored_search xss LEFT JOIN xdat_stored_search_allowed_user xssau ON xss.id = xssau.xdat_stored_search_id LEFT JOIN xdat_stored_search_groupid xssag ON xss.id = xssag.allowed_groups_groupid_xdat_sto_id";
             if(!userIsAdmin || StringUtils.isBlank(getAllBundles) || !StringUtils.equalsIgnoreCase(getAllBundles,"true")){
                 query+=" LEFT JOIN xdat_user_groupid ON xssag.groupid=xdat_user_groupid.groupid WHERE (xss.secure=0 OR xssau.login='" + userToGetListFor.getLogin() + "' OR groups_groupid_xdat_user_xdat_user_id=" + userToGetListFor.getID() + ")";
                 String includeTagged = getQueryVariable("includeTag");
@@ -78,7 +78,7 @@ public class SavedSearchListResource extends SecureResource {
                     query += " AND xss.tag IS NULL";
                 }
             }
-
+            query+=") AS ids LEFT JOIN xdat_stored_search xssouter ON xssouter.id = ids.id LEFT JOIN xdat_stored_search_allowed_user xssauouter ON xssouter.id = xssauouter.xdat_stored_search_id GROUP BY xssouter.id";
             table = XFTTable.Execute(query, executingUser.getDBName(), executingUser.getLogin());
         } catch (SQLException | DBPoolException | UserNotFoundException | UserInitException e) {
             logger.error("", e);

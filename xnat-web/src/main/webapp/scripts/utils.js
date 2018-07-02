@@ -1132,6 +1132,7 @@ function menuInit(select, opts, width){
             placeholder_text_multiple: 'Select...',
             search_contains: true
         };
+    if (!$select.length) return;
     if (width) { defaults.width = (width + 'px').replace(/(px)*$/,'px') }
     $select.each(function(){
         var $this = $(this),
@@ -1153,8 +1154,9 @@ function menuInit(select, opts, width){
 }
 
 function menuUpdate(select){
-    if (!select) return false;
-    return $$(select||'select.xnat-menu').trigger('chosen:updated');
+    var $select = $$(select||'select.xnat-menu');
+    if (!$select.length) return;
+    return $select.trigger('chosen:updated');
 }
 
 

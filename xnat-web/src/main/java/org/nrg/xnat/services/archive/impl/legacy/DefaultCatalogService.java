@@ -37,16 +37,15 @@ import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ValidationException;
@@ -68,7 +67,6 @@ import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -80,8 +78,6 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xft.event.EventUtils.*;
@@ -101,7 +97,7 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
-    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
+    public Map<String,String>  buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap, final boolean withSize) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
         final UserI          resolvedUser;
         try {
@@ -126,6 +122,9 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> unescapedScanTypes   = unescapeList(scanTypes);
         final List<String> unescapedScanFormats = unescapeList(scanFormats);
 
+        Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
+
         final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(resolvedUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
         for (final String project : projects.keySet()) {
@@ -140,22 +139,114 @@ public class DefaultCatalogService implements CatalogService {
                     sessionCatalog.setId(sessionId);
                     sessionCatalog.setDescription("Project: " + project + ", subject: " + subject + ", label: " + label);
 
-                    final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options);
+                    CatCatalogI sessionsByScanTypesAndFormats = null;
+                    final Map<String, Object> sessionsByScanTypesAndFormatsMap= getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options, withSize);
+                    if(sessionsByScanTypesAndFormatsMap!=null){
+                        Object catalogObj = sessionsByScanTypesAndFormatsMap.get("catalog");
+                        if(catalogObj!=null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())){
+                            sessionsByScanTypesAndFormats = (CatCatalogI)catalogObj;
+                        }
+                        if(withSize){
+                            try{
+                                Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
+                                long objSize = Long.parseLong(sizeObj.toString());
+                                totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
+                            }
+                            catch (Exception e){
+                            }
+                        }
+                    }
                     if (sessionsByScanTypesAndFormats != null) {
                         addSafeEntrySet(sessionCatalog, sessionsByScanTypesAndFormats);
                     }
 
-                    final CatCatalogI resourcesCatalog = getRelatedData(project, subject, label, sessionId, resources, "resources", options);
+                    CatCatalogI resourcesCatalog = null;
+                    final Map<String, Object> resourcesMap= getRelatedData(project, subject, label, sessionId, resources, "resources", options, withSize);
+                    if(resourcesMap!=null){
+                        Object catalogObj = resourcesMap.get("catalog");
+                        if(catalogObj!=null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())){
+                            resourcesCatalog = (CatCatalogI)catalogObj;
+                        }
+                        if(withSize){
+                            try{
+                                Object sizeObj = resourcesMap.get("size");
+                                long objSize = Long.parseLong(sizeObj.toString());
+                                totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = resourcesMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
+                            }
+                            catch (Exception e){
+                            }
+                        }
+                    }
                     if (resourcesCatalog != null) {
                         addSafeEntrySet(sessionCatalog, resourcesCatalog);
                     }
 
-                    final CatCatalogI reconstructionsCatalog = getRelatedData(project, subject, subject, sessionId, reconstructions, "reconstructions", options);
+                    CatCatalogI reconstructionsCatalog = null;
+                    final Map<String, Object> reconstructionsMap= getRelatedData(project, subject, subject, sessionId, reconstructions, "reconstructions", options, withSize);
+                    if(reconstructionsMap!=null){
+                        Object catalogObj = reconstructionsMap.get("catalog");
+                        if(catalogObj!=null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())){
+                            reconstructionsCatalog = (CatCatalogI)catalogObj;
+                        }
+                        if(withSize){
+                            try{
+                                Object sizeObj = reconstructionsMap.get("size");
+                                long objSize = Long.parseLong(sizeObj.toString());
+                                totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = reconstructionsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
+                            }
+                            catch (Exception e){
+                            }
+                        }
+                    }
                     if (reconstructionsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
                     }
 
-                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, resolvedUser);
+                    CatCatalogI assessorsCatalog = null;
+                    final Map<String, Object> assessorsMap= getSessionAssessors(project, subject, sessionId, assessors, options, resolvedUser, withSize);
+                    if(assessorsMap!=null){
+                        Object catalogObj = assessorsMap.get("catalog");
+                        if(catalogObj!=null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())){
+                            assessorsCatalog = (CatCatalogI)catalogObj;
+                        }
+                        if(withSize){
+                            try{
+                                Object sizeObj = assessorsMap.get("size");
+                                long objSize = Long.parseLong(sizeObj.toString());
+                                totalSize+=objSize;
+                            }
+                            catch (Exception e){
+                            }
+                            try{
+                                Object unknownObj = assessorsMap.get("resourcesOfUnknownSize");
+                                long unknownCount = Long.parseLong(unknownObj.toString());
+                                resourcesOfUnknownSize+=unknownCount;
+                            }
+                            catch (Exception e){
+                            }
+                        }
+                    }
                     if (assessorsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, assessorsCatalog);
                     }
@@ -167,7 +258,12 @@ public class DefaultCatalogService implements CatalogService {
 
         storeToCache(resolvedUser, catalog);
 
-        return catalog.getId();
+        Map<String,String> idAndSize = new HashMap<>();
+        idAndSize.put("id", catalog.getId());
+        idAndSize.put("size",totalSize+"");
+        idAndSize.put("resourcesOfUnknownSize",resourcesOfUnknownSize+"");
+
+        return idAndSize;
     }
 
     @Override
@@ -399,10 +495,9 @@ public class DefaultCatalogService implements CatalogService {
             }
             return catalog;
         } catch (Exception e) {
-            log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parent.getItem().getIDValue());
-            return null;
+            log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parent.getItem().getIDValue(), e);
+            throw e;
         }
-
     }
 
     /**
@@ -462,10 +557,11 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             try (final FileInputStream parserInput = new FileInputStream(temporary)) {
-                final SAXReader reader = new SAXReader(user);
-                final XFTItem   item   = reader.parse(parserInput);
+                final SAXReader reader   = new SAXReader(user);
+                final XFTItem   item     = reader.parse(parserInput);
+                final boolean   isCreate = item.getPK() == null;
 
-                log.info("Loaded XML item: {}", item.getProperName());
+                log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
 
                 final ValidationResults validation = XFTValidator.Validate(item);
 
@@ -518,27 +614,15 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     final String xsiType = item.getXSIType();
-                    log.debug("Item '{}' of type {} successfully stored", xsiType, item.getIDValue());
+                    final String idValue = item.getIDValue();
+                    log.debug("Item '{}' of type {} successfully stored", xsiType, idValue);
 
                     if (item.instanceOf("xnat:projectData")) {
                         final XnatProjectdata project   = new XnatProjectdata(item);
                         final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
-
-                        SaveItemHelper.authorizedSave(item, user, false, false, eventMeta);
-
-                        final XnatProjectdata postSave = new XnatProjectdata(item);
-                        postSave.getItem().setUser(user);
-                        postSave.initGroups();
-
-                        final PopulateItem populator = PopulateItem.Populate(parameters, user, "arc:project", true);
-                        final XFTItem      populated = populator.getItem();
-                        populated.setProperty("arc:project.current_arc", "arc001");
-
-                        final ArcProject arcProject = new ArcProject(populated);
-                        postSave.initArcProject(arcProject, user, eventMeta);
-
-                        Groups.reloadGroupsForUser(user);
-                        Users.clearCache(user);
+                        XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
+                    } else {
+                        XDAT.triggerXftItemEvent(xsiType, idValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
                     }
 
                     final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
@@ -1071,7 +1155,9 @@ public class DefaultCatalogService implements CatalogService {
         return sessionMap;
     }
 
-    private CatCatalogI getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
+    private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, final boolean withSize) {
+        Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         if (StringUtils.isBlank(session)) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
         }
@@ -1105,24 +1191,40 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry    = new CatEntryBean();
                 final String       scanId   = (String) scan.get("scan_id");
+                final Long         scanSize = (Long) scan.get("size");
                 final String       resource = URLEncoder.encode(StringUtils.defaultIfBlank((String) scan.get("resource"), "NULL"), "UTF-8");
                 entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
                 entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
+                if(scanSize!=null){
+                    totalSize+=scanSize;
+                }
+                else{
+                    resourcesOfUnknownSize++;
+                }
             }
         } catch (UnsupportedEncodingException ignored) {
             //
         }
-
-        return catalog.getEntries_entry().isEmpty() ? null : catalog;
+        if(catalog.getEntries_entry().isEmpty()){
+            return null;
+        }
+        else{
+            HashMap<String, Object> catalogAndSize = new HashMap<>();
+            catalogAndSize.put("catalog", catalog);
+            catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            return catalogAndSize;
+        }
     }
 
-    private CatCatalogI getRelatedData(final String project, final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options) {
+    private Map<String, Object> getRelatedData(final String project, final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options, final boolean withSize) {
         if (resources == null || resources.isEmpty()) {
             return null;
         }
-
+        Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(StringUtils.upperCase(type));
 
@@ -1130,34 +1232,49 @@ public class DefaultCatalogService implements CatalogService {
         final MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("sessionId", session);
         parameters.addValue("resourceIds", resources);
-        final List<String> existing = _parameterized.query(QUERY_SESSION_RESOURCES, parameters, new RowMapper<String>() {
-            @Override
-            public String mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
-                return resultSet.getString("resource");
-            }
-        });
-
-        try {
-            for (final String resource : existing) {
-                final CatEntryBean entry      = new CatEntryBean();
-                final String       resourceId = URLEncoder.encode(resource, "UTF-8");
-                entry.setName(getPath(options, project, subject, label, "resources", resourceId));
-                entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
-                log.debug("Created resource entry for project {} session {} resource {} of type {} with name {}: {}", project, session, resource, type, entry.getName(), entry.getUri());
-                catalog.addEntries_entry(entry);
-            }
-        } catch (UnsupportedEncodingException ignored) {
-            //
-        }
-
-        return catalog.getEntries_entry().isEmpty() ? null : catalog;
-    }
-
-    private CatCatalogI getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options, final UserI user) {
-        if (assessorTypes == null || assessorTypes.isEmpty()) {
+        final List<Map<String, Object>> existing = _parameterized.queryForList(QUERY_SESSION_RESOURCES, parameters);
+        if (existing.isEmpty()) {
             return null;
         }
 
+        for (final Map<String, Object> resourceMap : existing) {
+            try {
+                final CatEntryBean entry      = new CatEntryBean();
+                final String resourceString   = resourceMap.get("resource").toString();
+                final String       resourceId = URLEncoder.encode(resourceString, "UTF-8");
+                final Long         resourceSize   = (Long) resourceMap.get("size");
+                entry.setName(getPath(options, project, subject, label, "resources", resourceId));
+                entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
+                log.debug("Created resource entry for project {} session {} resource {} of type {} with name {}: {}", project, session, resourceString, type, entry.getName(), entry.getUri());
+                catalog.addEntries_entry(entry);
+                if(resourceSize!=null) {
+                    totalSize += resourceSize;
+                }
+                else{
+                    resourcesOfUnknownSize++;
+                }
+            } catch (UnsupportedEncodingException ignored) {
+                //
+            }
+        }
+        if(catalog.getEntries_entry().isEmpty()){
+            return null;
+        }
+        else{
+            HashMap<String, Object> catalogAndSize = new HashMap<>();
+            catalogAndSize.put("catalog", catalog);
+            catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            return catalogAndSize;
+        }
+    }
+
+    private Map<String, Object> getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options, final UserI user, final boolean withSize) {
+        if (assessorTypes == null || assessorTypes.isEmpty()) {
+            return null;
+        }
+        Long totalSize = 0L;
+        Long resourcesOfUnknownSize = 0L;
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(StringUtils.upperCase("assessors"));
 
@@ -1170,16 +1287,23 @@ public class DefaultCatalogService implements CatalogService {
         try {
             for (final Map<String, Object> resource : resources) {
                 final CatEntryBean entry         = new CatEntryBean();
-                final String       resourceLabel = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
+                final String       resourceLabel = URLEncoder.encode(ObjectUtils.defaultIfNull(resource.get("resource_label"), resource.get("resource_id")).toString(), "UTF-8");
                 final String       assessorLabel = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
                 final String       sessionLabel  = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
                 final String       proj          = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
+                final Long         scanSize      = (Long) resource.get("size");
                 try {
                     if (Permissions.canReadProject(user, proj) && Permissions.canRead(user, resource.get("xsi").toString() + "/project", proj)) {
                         entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
                         entry.setUri(StringSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
                         log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
                         catalog.addEntries_entry(entry);
+                        if(scanSize!=null) {
+                            totalSize += scanSize;
+                        }
+                        else{
+                            resourcesOfUnknownSize++;
+                        }
                     }
                 } catch (Exception e) {
                     log.warn("An error occurred trying to get session assessors for a project.", e);
@@ -1188,8 +1312,16 @@ public class DefaultCatalogService implements CatalogService {
         } catch (UnsupportedEncodingException ignored) {
             //
         }
-
-        return catalog.getEntries_entry().isEmpty() ? null : catalog;
+        if(catalog.getEntries_entry().isEmpty()){
+            return null;
+        }
+        else{
+            HashMap<String, Object> catalogAndSize = new HashMap<>();
+            catalogAndSize.put("catalog", catalog);
+            catalogAndSize.put("size", totalSize);
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            return catalogAndSize;
+        }
     }
 
     private String getPath(final DownloadArchiveOptions options, final String project, final String subject, final String element, final String... elements) {
@@ -1290,7 +1422,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT    = "SELECT " +
                                                                          "  scan.id   AS scan_id, " +
-                                                                         "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource " +
+                                                                         "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
+                                                                         "  res.file_size AS size " +
                                                                          "FROM xnat_imagescandata scan " +
                                                                          "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
                                                                          "WHERE " +
@@ -1298,13 +1431,13 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  ${scanTypesClause} AND " +
                                                                          "  ${scanFormatsClause} " +
                                                                          "ORDER BY scan_id";
-    private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource " +
-                                                                         "FROM xnat_abstractresource res  " +
-                                                                         "  LEFT JOIN xnat_experimentdata_resource exptRes ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
+    private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource, " +
+                                                                         "  res.file_size AS size " +
+                                                                         "FROM xnat_abstractresource res " +
+                                                                         "  LEFT JOIN xnat_experimentdata_resource exptRes " +
+                                                                         "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
                                                                          "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
-                                                                         "WHERE " +
-                                                                         "  expt.ID = :sessionId AND " +
-                                                                         "  ${scanFormatsClause}";
+                                                                         "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
     private static final String QUERY_SESSION_ASSESSORS                = "SELECT " +
                                                                          "  abstract.xnat_abstractresource_id AS resource_id, " +
                                                                          "  abstract.label AS resource_label, " +
@@ -1313,7 +1446,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  session.id AS session_id, " +
                                                                          "  session.label AS session_label, " +
                                                                          "  assessor.project AS project, " +
-                                                                         "  xme.element_name AS xsi " +
+                                                                         "  xme.element_name AS xsi, " +
+                                                                         "  abstract.file_size AS size " +
                                                                          "FROM xnat_abstractresource abstract " +
                                                                          "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
                                                                          "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +

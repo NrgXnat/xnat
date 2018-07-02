@@ -243,7 +243,13 @@ var XNAT = getObject(XNAT);
 
                     // pass 'content' (not contentS) property to add
                     // stuff directly to spawned element
-                    prop.content = prop.content || prop.children || '';
+                    prop.content = prop.content || prop.children || prop.element.content || '';
+
+                    prop.tag = prop.tag || prop.element.tag || 'span';
+
+                    // prevent duplicate elements
+                    delete prop.element.tag;
+                    delete prop.element.content;
 
                     try {
                         // if setting up Spawner elements in JS, allow a
@@ -252,7 +258,7 @@ var XNAT = getObject(XNAT);
                             spawnedElement = prop.element;
                         }
                         else {
-                            spawnedElement = spawn(prop.tag || prop.element.tag || 'span', prop.element, prop.content);
+                            spawnedElement = spawn(prop.tag, prop.element, [].concat(prop.content));
                         }
 
                         // convert relative URIs for href, src, and action attributes
@@ -349,7 +355,7 @@ var XNAT = getObject(XNAT);
                         $spawnedElement = $(spawnedElement.target || spawnedElement.inner);
                     }
                     else {
-                        $spawnedElement = $(spawnedElement.element || spawnedElement.get());
+                        $spawnedElement = isFunction(spawnedElement.get) ? $(spawnedElement.get()) : $(spawnedElement.element);
                     }
 
                     // if a string, number, or boolean is passed as 'contents'
@@ -415,9 +421,14 @@ var XNAT = getObject(XNAT);
 
         spawneri.children = frag.children;
 
-        spawneri.get = function(){
+        spawneri.get = function(callback){
+            // allow transform callback when calling .get()
+            if (isFunction(callback)) {
+                callback.call(spawneri, frag, $frag)
+            }
             return frag;
         };
+        spawneri.getSpawned = spawneri.get;
 
         spawneri.get$ = function(){
             return $frag;

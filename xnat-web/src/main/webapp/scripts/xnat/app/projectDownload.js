@@ -250,6 +250,7 @@ var XNAT = getObject(XNAT);
                                });
         }
     );
+    function formatBytes(a,b){if(0==a)return"0 Bytes";var c=1024,d=b||2,e=["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"],f=Math.floor(Math.log(a)/Math.log(c));return parseFloat((a/Math.pow(c,f)).toFixed(d))+" "+e[f]}
 
     // future high-speed selector syntax with lightweight event handling
     // XNAT.dom('#/download-form').on('submit', function(e){
@@ -316,9 +317,11 @@ var XNAT = getObject(XNAT);
                     preparingDownload.fadeOut(100, function(){
                         this.destroy();
                     });
-
-                    var ID = data.responseText;
-                    var URL = XNAT.url.rootUrl($form.attr('action') + '/' + ID + '/' + (getZip ? 'zip' : 'xml'));
+                    var downJSON = JSON.parse(data.responseText);
+                    var ID = downJSON.id;
+                    var SIZE = downJSON.size;
+                    var UNKNOWN_SIZE_COUNT = downJSON.resourcesOfUnknownSize;
+                    var URL = XNAT.url.rootUrl('/xapi/archive/download/' + ID + '/' + (getZip ? 'zip' : 'xml'));
                     if (getZip) {
                         msg.push('' +
                             'Click "Download" to start the zip download. ' +
@@ -331,8 +334,12 @@ var XNAT = getObject(XNAT);
                         msg.push('Click "Download" to download the catalog XML.');
                     }
                     msg.push('<br><br>');
-                    msg.push('The download id is <b>' + ID + '</b>.');
-
+                    if(UNKNOWN_SIZE_COUNT>0) {
+                        msg.push('The download id is <b>' + ID + '</b>. Of the resources you are trying to download, <b>' + UNKNOWN_SIZE_COUNT + '</b> '+((UNKNOWN_SIZE_COUNT==1)? 'has':'have')+' unknown size. The total size of the rest of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
+                    }
+                    else {
+                        msg.push('The download id is <b>' + ID + '</b>. The total size of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
+                    }
                     XNAT.ui.dialog.confirm({
                         title: false,
                         content: msg.join(' '),

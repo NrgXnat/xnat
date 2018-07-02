@@ -10,13 +10,11 @@
 package org.nrg.xnat.restlet.resources;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 import org.apache.velocity.VelocityContext;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityValues;
@@ -38,18 +36,18 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
 import com.google.common.collect.Lists;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 public class ExperimentListResource  extends QueryOrganizerResource {
     
     public ExperimentListResource(org.restlet.Context context, Request request, Response response) {
         super(context, request, response);
-            this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
-            this.getVariants().add(new Variant(MediaType.TEXT_HTML));
-            this.getVariants().add(new Variant(MediaType.TEXT_XML));
-        
-            this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.EXPERIMENT_DATA,true));
-        
-        }
+        this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
+        this.getVariants().add(new Variant(MediaType.TEXT_HTML));
+        this.getVariants().add(new Variant(MediaType.TEXT_XML));
+
+        this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.EXPERIMENT_DATA,true));
+    }
     
     
     
@@ -211,7 +209,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             if(Groups.isMember(user, "ALL_DATA_ACCESS") || Groups.isMember(user, "ALL_DATA_ADMIN")){
             	 builder.append("SELECT DISTINCT ON (isd.ID) isd.ID, label, project FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.ID=expt.ID");
             }else{
-            	builder.append("SELECT DISTINCT ON (ID) ID, label, project FROM (").append(Permissions.getUserPermissionsSQL(user)).append(") perms INNER JOIN (SELECT isd.id, element_name || '/project' as field, expt.project, expt.label FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id UNION SELECT expt.id,xme.element_name || '/sharing/share/project', shr.project, shr.label  FROM xnat_experimentData_share shr LEFT JOIN xnat_experimentData expt ON expt.id=shr.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id) expts ON perms.field=expts.field AND perms.field_value=expts.project");
+            	builder.append("SELECT DISTINCT ON (ID) ID, label, project FROM (").append(Permissions.getUserPermissionsSQL(user)).append(") perms INNER JOIN (SELECT isd.id, element_name || '/project' as field, expt.project, expt.label FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id UNION SELECT expt.id,xme.element_name || '/sharing/share/project', shr.project, shr.label  FROM xnat_experimentData_share shr LEFT JOIN xnat_experimentData expt ON expt.id=shr.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id) expts ON left(perms.field, strpos(perms.field, '/') - 1)=left(expts.field, strpos(expts.field, '/') - 1) AND perms.field_value=expts.project");
             }
             builder.append(") perm ON expt.id=perm.id ");
 
@@ -282,8 +280,15 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 
                                 SecurityValues values = new SecurityValues();
                                 values.put(element_name + "/project",project);
+                                ArrayList<String> sessionIdList = new ArrayList<>();
+                                try{
+                                    sessionIdList.add(row[0].toString());
+                                }
+                                catch(Exception e){
 
-                                if (Permissions.canRead(user,secureElement,values)) {
+                                }
+                                //if (Permissions.canRead(user,secureElement,values)) {
+                                if(Permissions.verifyAccessToSessions((NamedParameterJdbcTemplate)XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class), user, sessionIdList).keySet().size()>0) {
                                     checked.put(element_name+project, Boolean.TRUE);
                                 }else{
                                     checked.put(element_name+project, Boolean.FALSE);

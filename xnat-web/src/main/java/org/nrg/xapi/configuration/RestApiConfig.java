@@ -14,11 +14,13 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -34,7 +36,8 @@ import java.util.Locale;
 
 @Configuration
 @EnableSwagger2
-@ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.spawner.configuration"}, includeFilters = @Filter(ControllerAdvice.class))
+@ComponentScan(value = "org.nrg.xapi.rest", includeFilters = @Filter(ControllerAdvice.class))
+@Import(SpawnerConfig.class)
 @Slf4j
 public class RestApiConfig {
     @Bean

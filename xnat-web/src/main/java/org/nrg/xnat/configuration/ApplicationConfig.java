@@ -39,6 +39,7 @@ import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.apache.commons.configuration.ConfigurationException;
 
@@ -114,9 +115,9 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public UserManagementServiceI userManagementService() {
+    public UserManagementServiceI userManagementService(final NamedParameterJdbcTemplate template) {
         // TODO: This should be made to use a preference setting.
-        return new XDATUserMgmtServiceImpl();
+        return new XDATUserMgmtServiceImpl(template);
     }
 
     // MIGRATION: I'm not even sure this is used, but we need to do away with it in favor of prefs.

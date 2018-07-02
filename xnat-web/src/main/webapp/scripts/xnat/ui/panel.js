@@ -189,12 +189,14 @@ var XNAT = getObject(XNAT || {});
             opts.element.style.padding = pxSuffix(opts.padding);
         }
 
-        if (opts.borderless) {
+        if (opts.borderless || opts.border === false) {
             opts.element.style.border = 'none';
             opts.panel.style.border = 'none';
         }
 
-        var _target = spawn('div.panel-body', opts.element, [].concat(opts.body||[])),
+        opts.bodyContent = firstDefined(opts.bodyContent, opts.body, []);
+
+        var _target = spawn('div.panel-body', opts.element, [].concat(opts.bodyContent)),
 
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 

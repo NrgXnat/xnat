@@ -98,11 +98,10 @@
         window.available_elements = [];
         window.browseableElements = {};
 
-        if (!window.isLoginPage && !/(Login\.vm|Register\.vm|VerifyEmail\.vm|XDATRegisterUser)/.test(window.location.href)) {
+        if (!window.isLoginPage && window.loadDataTypes) {
             console.log('getBrowseableElements');
-            XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(elements){
-                var sortedElements = sortObjects(elements, 'plural');
-                forEach(sortedElements, function(element){
+            XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
+                forEach(data.sortedElements, function(element){
                     window.available_elements.push(element);
                     window.browseableElements[element.element_name] = element;
                 });

@@ -264,7 +264,6 @@ public class ProjectResource extends ItemResource {
                             }
 
                             if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
-                                project.preSave();
                                 BaseXnatProjectdata.createProject(project, user, allowDataDeletion, true, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
                             } else {
                                 getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");

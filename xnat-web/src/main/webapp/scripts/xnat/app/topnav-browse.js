@@ -140,7 +140,7 @@
 
     // populate project list
     xnatJSON({
-        url: restUrl('/data/projects', ['accessible=true']),
+        url: restUrl('/data/projects', ['format=json', 'accessible=true']),
         success: function(data){
             displayProjectList($browseProjects, data.ResultSet.Result)
         },
@@ -151,7 +151,7 @@
 
     // look for my projects. If found, show that dropdown list.
     xnatJSON({
-        url: restUrl('/data/projects', ['accessible=true', 'users=true']),
+        url: restUrl('/data/projects', ['format=json', 'accessible=true', 'users=true']),
         success: function(data){
             displayProjectList($myProjects, data.ResultSet.Result);
         },
@@ -162,7 +162,7 @@
 
     // look for favorite projects. If found, show that dropdown list.
     xnatJSON({
-        url: restUrl('/data/projects', ['favorite=true']),
+        url: restUrl('/data/projects', ['format=json', 'favorite=true']),
         success: function(data){
             var FAVORITES = data.ResultSet.Result.map(function(item){
                 var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
@@ -206,9 +206,12 @@
     // populate data list
     XNAT.app.dataTypeAccess.getElements['browseable'].ready(
         // success
-        function(elements){
+        function(data){
 
-            if (!elements || !elements.length) {
+            var sortedElements = data.sortedElements;
+            var elementMap = data.elementMap;
+
+            if (!data || !sortedElements || !sortedElements.length) {
                 $browseData.parent('li').addClass('disabled');
                 return;
             }
@@ -216,13 +219,17 @@
             var DATATYPES = [];
 
             // use what's stored for 'Subjects' plural display
-            DATATYPES.push(dataTypeItem({
-                element_name: 'xnat:subjectData',
-                plural: lookupObjectValue(XNAT, 'app.displayNames.plural.subject')
-            }));
+            if (elementMap && elementMap['xnat:subjectData']) {
+                DATATYPES.push(dataTypeItem(elementMap['xnat:subjectData']));
+            }
+            else {
+                DATATYPES.push(dataTypeItem({
+                    element_name: 'xnat:subjectData',
+                    plural: lookupObjectValue(XNAT, 'app.displayNames.plural.subject')
+                }));
+            }
 
-            var sortedTypes = sortObjects(elements, 'plural');
-            forEach(sortedTypes, function(type){
+            forEach(sortedElements, function(type){
                 if (type.plural === undef) return;
                 if (/workflowData|subjectData/i.test(type.element_name)) return;
                 DATATYPES.push(dataTypeItem(type));
@@ -257,7 +264,7 @@
 
     // populate stored search list
     xnatJSON({
-        url: restUrl('/data/search/saved',['format=json']),
+        url: restUrl('/data/search/saved', ['format=json']),
         success: function(data){
             if (data.ResultSet.Result.length){
                 data.ResultSet.Result.sort(compareSearches);

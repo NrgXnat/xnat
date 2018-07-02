@@ -85,9 +85,9 @@
 
         var exptTypeMenu = jq('#exptType');
 
-        XNAT.app.dataTypeAccess.getElements('searchableByPluralDesc').ready(function(elements){
+        XNAT.app.dataTypeAccess.getElements['searchableByPluralDesc'].ready(function(elements){
 
-            var sortedElements = sortObjects(elements, 'plural');
+            var sortedElements = elements.sortedElements;
 
             var exptTypes = [];
 

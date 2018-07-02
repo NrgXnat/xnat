@@ -26,8 +26,9 @@
 #end
 
 <form name="form2" id="register_form" class="friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction($formAction)">
+    #set ($exclusions = $turbineUtils.toList("action, authemail, authfirstname, authlastname, authmethod, authmethodid, authusername, comments, exception, operation, password, phone, template, username"))
     #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
-        #if ($key!="action" && $key!="template" &&$key!="password" &&$key!="phone" &&$key!="comments" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
+        #if (!$exclusions.contains($key.toLowerCase()) && !$key.startsWith("xdat:user"))
             <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
         #end
     #end

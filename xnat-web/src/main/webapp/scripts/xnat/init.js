@@ -112,6 +112,20 @@ var XNAT = getObject(XNAT);
         //     chkbox0.value = proxy0.value
         // });
 
+        var siteLogo = $('#header_logo').find('> img');
+        // make sure the image in the #header_logo is loaded...
+        // ...checks for a [src] attribute ending with a valid
+        // image format extension (tolerates query string)
+        if (siteLogo.length && !/([.](gif|jpg|jpeg|png|svg)[?]?.*)$/i.test(siteLogo[0].src)) {
+            XNAT.xhr.get({
+                url: XNAT.url.rootUrl('/xapi/siteConfig/siteLogoPath'),
+                dataType: 'text',
+                success: function(path){
+                    siteLogo.attr('src', XNAT.url.rootUrl(path));
+                }
+            });
+        }
+
         // add version to title attribute of XNAT logos
         if (window.top.loggedIn !== undef && window.top.loggedIn === true) {
 

@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.nrg.action.ServerException;
@@ -29,8 +31,6 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 
 @SuppressWarnings("WeakerAccess")
+@Slf4j
 public abstract class AutomationResource extends SecureResource {
 
     static final         String  SITE_SCOPE      = Scope.encode(Scope.Site, "");
@@ -98,7 +99,7 @@ public abstract class AutomationResource extends SecureResource {
         try {
             if ((requiresWrite && !project.canEdit(user)) || !project.canRead(user)) {
                 final String message = "User " + user.getLogin() + " attempted to access project " + getProjectId() + " with insufficient privileges.";
-                _log.warn(message);
+                log.warn(message);
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
             }
         } catch(Exception e){
@@ -146,9 +147,9 @@ public abstract class AutomationResource extends SecureResource {
             WorkflowUtils.save(workflow, workflow.buildEvent());
         } catch (PersistentWorkflowUtils.ActionNameAbsent | PersistentWorkflowUtils.IDAbsent | PersistentWorkflowUtils.JustificationAbsent exception) {
             // This is not really going to happen because we're providing all the attributes required, but we still have to handle it.
-            _log.warn("An error occurred trying to save a workflow when working with event", exception);
+            log.warn("An error occurred trying to save a workflow when working with event", exception);
         } catch (Exception exception) {
-            _log.error("An error occurred trying to save a workflow when working with event", exception);
+            log.error("An error occurred trying to save a workflow when working with event", exception);
         }
     }
 
@@ -215,8 +216,10 @@ public abstract class AutomationResource extends SecureResource {
                 if (resolved != null) {
                     ids.put(KEY_PROJECTDATAINFO, resolved.toString());
                     ids.put(KEY_PROJECTID, entityId);
-                }
-                else {
+                } else {
+                    if (!NumberUtils.isParsable(entityId)) {
+                        throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "The specified entity ID " + entityId + " does not match an existing project ID, but is also not a parseable number, so is not project data ID.");
+                    }
                     try {
                         XFTTable table = XFTTable.Execute("SELECT id FROM xnat_projectdata WHERE projectdata_info = " + entityId, getUser().getDBName(), userName);
                         if (table.size() != 1) {
@@ -235,16 +238,13 @@ public abstract class AutomationResource extends SecureResource {
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(AutomationResource.class);
-    private static final String ENTITY_ID = "ENTITY_ID";
-    private static final String PROJECT_ID = "PROJECT_ID";
+    private static final String ENTITY_ID           = "ENTITY_ID";
+    private static final String PROJECT_ID          = "PROJECT_ID";
     private static final String KEY_PROJECTDATAINFO = "projectDataInfo";
+    private static final String KEY_PROJECTID       = "projectId";
 
-    private static final String KEY_PROJECTID = "projectId";
-    private Scope _scope;
-    private boolean _hasProjectId;
-
-    private String _projectId;
-
-    private final String _path;
+    private final String  _path;
+    private       Scope   _scope;
+    private       boolean _hasProjectId;
+    private       String  _projectId;
 }

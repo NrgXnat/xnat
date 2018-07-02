@@ -67,6 +67,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,6 +95,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
         _totalCounts = new HashMap<>();
         _missingElements = new HashMap<>();
+        _userChecks = new ConcurrentHashMap<>();
         if (_helper.tableExists("xnat_projectdata")) {
             updateTotalCounts();
         }
@@ -375,18 +377,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     /**
-     * Indicates whether the specified project ID or alias is already cached.
-     *
-     * @param cacheId The ID or alias of the project to check.
-     *
-     * @return Returns true if the ID or alias is mapped to a project cache entry, false otherwise.
-     */
-    @Override
-    public boolean has(final String cacheId) {
-        return getCache().get(cacheId) != null;
-    }
-
-    /**
      * Gets the specified project if the user has any access to it. Returns null otherwise.
      *
      * @param groupId The ID or alias of the project to retrieve.
@@ -408,6 +398,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return cacheGroup(groupId);
+    }
+
+    @Nonnull
+    @Override
+    public List<String> getProjectsForUser(final String username, final String access) {
+        log.info("Getting projects with {} access for user {}", access, username);
+        final String cacheId = getCacheIdForUserProjectAccess(username, access);
+
+        if (has(cacheId)) {
+            log.debug("Found a cache entry for user '{}' '{}' access with ID: {}", username, access, cacheId);
+            return getCachedList(cacheId);
+        }
+        return updateUserProjectAccess(username, access, cacheId);
     }
 
     /**
@@ -452,9 +455,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
-        final MapSqlParameterSource parameters = checkUser(username);
-        parameters.addValue("tag", tag);
-        final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, parameters, new ResultSetExtractor<String>() {
+        final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, checkUser(username).addValue("tag", tag), new ResultSetExtractor<String>() {
             @Override
             public String extractData(final ResultSet results) throws DataAccessException, SQLException {
                 return results.next() ? results.getString("id") : null;
@@ -463,15 +464,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return StringUtils.isNotBlank(groupId) ? get(groupId) : null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Date getCacheEntryLastUpdateTime(final String cacheId) {
-        if (!has(cacheId)) {
-            return null;
-        }
-        return new Date(getLatestOfCreationAndUpdateTime(cacheId));
+    public List<String> getUserIdsForGroup(final String groupId) {
+        final UserGroupI group = get(groupId);
+        return group != null ? group.getUsernames() : Collections.<String>emptyList();
     }
 
     @Override
@@ -490,18 +486,18 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             if (log.isDebugEnabled()) {
                 log.debug("Found {} cache entries related to user {}: {}", cacheIds.size(), username, StringUtils.join(cacheIds, ", "));
             }
-            final Date lastUpdateTime = new Date(Collections.max(Lists.transform(cacheIds, new Function<String, Long>() {
+            final long lastUpdateTime = Collections.max(Lists.transform(cacheIds, new Function<String, Long>() {
                 @Override
                 public Long apply(@Nullable final String cacheId) {
                     final Date lastUpdateTime = getCacheEntryLastUpdateTime(cacheId);
-                    log.trace("User {} cache entry '{}' last updated: {}", username, cacheId, lastUpdateTime);
+                    log.trace("User {} cache entry '{}' last updated: {}", username, cacheId, lastUpdateTime == null ? "null" : lastUpdateTime.getTime());
                     return lastUpdateTime == null ? 0L : lastUpdateTime.getTime();
                 }
-            })));
-            log.debug("Found cache last update time for user {}: {}", username, lastUpdateTime);
-            return lastUpdateTime;
+            }));
+            log.debug("Found latest cache entry last updated time for user {}: {}", username, lastUpdateTime);
+            return new Date(lastUpdateTime);
         } catch (UserNotFoundException ignored) {
-            log.warn("Someone requested the cache last update time for user {} but that user wasn't found", username);
+            log.warn("Someone requested the cache entry last updated time for user {} but that user wasn't found", username);
             return new Date();
         }
     }
@@ -557,14 +553,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
         }
 
-        try {
-            _guest = new XDATUser(GUEST_USERNAME);
-            updateGuestBrowseableElementDisplays();
-        } catch (UserNotFoundException ignored) {
-            // Guest is always available.
-        } catch (UserInitException e) {
-            log.error("An error occurred initializing the user guest", e);
-        }
+        getGuest();
+        updateGuestBrowseableElementDisplays();
+
         return new AsyncResult<>(_initialized = true);
     }
 
@@ -661,6 +652,26 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 // This is always some type of experiment.
                 return handleExperimentEvents(event);
         }
+    }
+
+    private synchronized List<String> updateUserProjectAccess(final String username, final String access, final String cacheId) {
+        final String query;
+        switch (access) {
+            case SecurityManager.READ:
+                query = QUERY_READABLE_PROJECTS;
+                break;
+            case SecurityManager.EDIT:
+                query = QUERY_EDITABLE_PROJECTS;
+                break;
+            case SecurityManager.DELETE:
+                query = QUERY_OWNED_PROJECTS;
+                break;
+            default:
+                throw new RuntimeException("Unknown access level '" + access + "'. Must be one of " + SecurityManager.READ + ", " + SecurityManager.EDIT + ", or " + SecurityManager.DELETE + ".");
+        }
+        final List<String> projectIds = _template.queryForList(query, new MapSqlParameterSource("usernames", Arrays.asList("guest", username)), String.class);
+        cacheObject(cacheId, projectIds);
+        return projectIds;
     }
 
     private synchronized List<String> initializeTag(final String tag) {
@@ -782,6 +793,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             case XftItemEventI.DELETE:
                 projectIds.add((String) event.getProperties().get("target"));
+                handleGroupRelatedEvents(event);
                 updateTotalCounts();
                 break;
 
@@ -799,42 +811,67 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean handleGroupRelatedEvents(final XftItemEventI event) {
-        final String xsiType = event.getXsiType();
-        final String id      = event.getId();
-        final String action  = event.getAction();
+        final String      xsiType   = event.getXsiType();
+        final String      id        = event.getId();
+        final String      action    = event.getAction();
+        final Set<String> usernames = new HashSet<>();
 
         try {
+            final List<UserGroupI> groups = getGroups(xsiType, id);
             switch (action) {
                 case CREATE:
                     log.debug("New {} created with ID {}, caching new instance", xsiType, id);
-                    return !cacheGroups(getGroups(xsiType, id)).isEmpty();
+                    for (final UserGroupI group : groups) {
+                        usernames.addAll(group.getUsernames());
+                    }
+                    return !cacheGroups(groups).isEmpty();
 
                 case UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
-                    return !cacheGroups(getGroups(xsiType, id)).isEmpty();
+                    for (final UserGroupI group : groups) {
+                        usernames.addAll(group.getUsernames());
+                    }
+                    return !cacheGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
-                    log.debug("The {} {} was deleted, removing related instances from cache", xsiType, id);
-                    final Set<String> usernames = new HashSet<>();
-                    switch (xsiType) {
-                        case XnatProjectdata.SCHEMA_ELEMENT_NAME:
-                            final String projectCacheId = getCacheIdForProject(id);
-                            usernames.addAll(this.<String>getCachedSet(projectCacheId));
-                            getCache().evict(projectCacheId);
-                            break;
-
-                        case XdatUsergroup.SCHEMA_ELEMENT_NAME:
-                            // Not sure what to do for deleted group...
-                            break;
+                    if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, xsiType)) {
+                        final String cacheId = getCacheIdForTag(id);
+                        if (has(cacheId)) {
+                            // If it's cached, we can just return the list.
+                            final List<String> groupIds = getTagGroups(cacheId);
+                            log.info("Found {} groups cached for deleted project {}", groupIds.size(), id);
+                            for (final String groupId : groupIds) {
+                                final UserGroupI group = get(groupId);
+                                if (group != null) {
+                                    usernames.addAll(group.getUsernames());
+                                }
+                                getCache().evict(groupId);
+                            }
+                        }
+                    } else {
+                        final UserGroupI group = get(id);
+                        if (group != null) {
+                            usernames.addAll(group.getUsernames());
+                        }
+                        getCache().evict(id);
+                        return true;
                     }
-                    updateUserReadableCounts(usernames);
-                    return true;
+                    break;
 
                 default:
                     log.warn("I was informed that the '{}' action happened to the {} object with ID '{}'. I don't know what to do with this action.", action, xsiType, id);
             }
         } catch (ItemNotFoundException e) {
             log.warn("While handling action {}, I couldn't find a group for type {} ID {}.", action, xsiType, id);
+        } finally {
+            for (final String username : usernames) {
+                try {
+                    updateUserGroupIds(username);
+                    updateUserReadableCounts(username);
+                } catch (UserNotFoundException e) {
+                    log.warn("While handling action {} for type {} ID {}, I couldn't find a user with username {}.", action, xsiType, id, username);
+                }
+            }
         }
         return false;
     }
@@ -1068,7 +1105,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private List<ElementDisplay> updateActionElementDisplays(final String username, final String action) {
         final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
         try {
-            final List<ElementSecurity>            securities      = ElementSecurity.GetSecureElements();
+            final List<ElementSecurity> securities = ElementSecurity.GetSecureElements();
             if (log.isDebugEnabled()) {
                 log.debug("Evaluating {} element security objects: {}", securities.size(), StringUtils.join(Lists.transform(securities, FUNCTION_ELEMENT_SECURITY_TO_STRING), ", "));
             }
@@ -1133,6 +1170,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return ImmutableList.copyOf(elementDisplays.get(action));
+    }
+
+    private List<String> updateUserGroupIds(final String username) throws UserNotFoundException {
+        final String       cacheId  = getCacheIdForUserGroups(username);
+        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
+        cacheObject(cacheId, groupIds);
+        return groupIds;
     }
 
     private void updateUserReadableCounts(final Collection<String> usernames) {
@@ -1313,15 +1357,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
-        final MapSqlParameterSource parameters = checkUser(username);
-        return _template.queryForList(QUERY_GET_GROUPS_FOR_USER, parameters, String.class);
+        final String cacheId = getCacheIdForUserGroups(username);
+        if (has(cacheId)) {
+            log.info("Found cached groups list for user '{}' with cache ID '{}'", username, cacheId);
+            return getCachedList(cacheId);
+        }
+
+        return updateUserGroupIds(username);
     }
 
     /**
      * Checks whether the users exists. If not, this throws the {@link UserNotFoundException}. Otherwise it returns
      * a parameter source containing the username that can be used in subsequent queries.
      *
-     * @param username The user to test
+     * @param username The user to test.
      *
      * @return A parameter source containing the username parameter.
      *
@@ -1329,13 +1378,35 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      */
     private MapSqlParameterSource checkUser(final String username) throws UserNotFoundException {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username);
-        if (!_template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class)) {
+
+        // If the user isn't in the check map OR the user is in the check map but is set as not existing...
+        if (!_userChecks.containsKey(username) || !_userChecks.get(username)) {
+            // See if the user exists now. The non-existent user existing should be updated with the add user event,
+            // but we don't have a clearly defined handler for that yet.
+            _userChecks.put(username, _template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class));
+        }
+        if (!_userChecks.get(username)) {
             throw new UserNotFoundException(username);
         }
         return parameters;
     }
 
     private UserI getGuest() {
+        if (_guest == null) {
+            log.debug("No guest user initialized, trying to retrieve now.");
+            try {
+                final UserI guest = Users.getGuest();
+                if (guest instanceof XDATUser) {
+                    _guest = (XDATUser) guest;
+                } else {
+                    _guest = new XDATUser(guest.getUsername());
+                }
+            } catch (UserNotFoundException e) {
+                log.error("Got a user name not found exception for the guest user which is very strange.", e);
+            } catch (UserInitException e) {
+                log.error("Got a user init exception for the guest user which is very unfortunate.", e);
+            }
+        }
         return _guest;
     }
 
@@ -1424,6 +1495,14 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, ELEMENT_ACCESS_MANAGERS_PREFIX);
     }
 
+    private static String getCacheIdForUserGroups(final String username) {
+        return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, GROUPS_ELEMENT_PREFIX);
+    }
+
+    private static String getCacheIdForUserProjectAccess(final String username, final String access) {
+        return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, XnatProjectdata.SCHEMA_ELEMENT_NAME, access);
+    }
+
     private static String getCacheIdForUserElements(final String username, final String elementType) {
         return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, elementType);
     }
@@ -1464,29 +1543,29 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                    "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
                                                                    "WHERE xu.login = :username AND tag = :tag " +
                                                                    "ORDER BY groupid";
-    private static final String QUERY_GET_GROUPS_FOR_DATATYPE = "SELECT DISTINCT usergroup.id AS group_name " +
+    private static final String QUERY_GET_GROUPS_FOR_DATATYPE    = "SELECT DISTINCT usergroup.id AS group_name " +
                                                                    "FROM xdat_usergroup usergroup " +
                                                                    "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
                                                                    "WHERE " +
                                                                    "  xea.element_name = :dataType " +
                                                                    "ORDER BY group_name";
-    private static final String QUERY_ALL_GROUPS              = "SELECT id FROM xdat_usergroup";
-    private static final String QUERY_ALL_TAGS                = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
-    private static final String QUERY_GET_GROUPS_FOR_TAG      = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
+    private static final String QUERY_ALL_GROUPS                 = "SELECT id FROM xdat_usergroup";
+    private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
+    private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
     @SuppressWarnings("unused")
-    private static final String QUERY_GET_ALL_GROUPS_FOR_TAG  = "SELECT DISTINCT " +
-                                                                "  login, " +
-                                                                "  groupid " +
-                                                                "FROM xdat_user u " +
-                                                                "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
-                                                                "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
-                                                                "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
-                                                                "  GROUP BY login, groupid " +
-                                                                "ORDER BY login";
+    private static final String QUERY_GET_ALL_GROUPS_FOR_TAG     = "SELECT DISTINCT " +
+                                                                   "  login, " +
+                                                                   "  groupid " +
+                                                                   "FROM xdat_user u " +
+                                                                   "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
+                                                                   "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
+                                                                   "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                   "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                   "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
+                                                                   "  GROUP BY login, groupid " +
+                                                                   "ORDER BY login";
     private static final String QUERY_CHECK_USER_EXISTS          = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
     private static final String QUERY_GET_EXPERIMENT_PROJECT     = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
     private static final String QUERY_GET_SUBJECT_PROJECT        = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
@@ -1546,6 +1625,24 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                    "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
                                                                    "WHERE " +
                                                                    "  u.login = :username";
+    private static final String QUERY_USER_PROJECTS              = "SELECT " +
+                                                                   "  DISTINCT xfm.field_value AS project " +
+                                                                   "FROM xdat_user u " +
+                                                                   "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                                   "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                                   "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                   "WHERE " +
+                                                                   "  xfm.field_value != '*' AND " +
+                                                                   "  xea.element_name = 'xnat:projectData' AND " +
+                                                                   "  xfm.%s = 1 AND " +
+                                                                   "  u.login IN (:usernames) " +
+                                                                   "ORDER BY project";
+    private static final String QUERY_OWNED_PROJECTS             = String.format(QUERY_USER_PROJECTS, "delete_element");
+    private static final String QUERY_EDITABLE_PROJECTS          = String.format(QUERY_USER_PROJECTS, "edit_element");
+    private static final String QUERY_READABLE_PROJECTS          = String.format(QUERY_USER_PROJECTS, "read_element");
+
 
     private static final String       GUEST_USERNAME                 = "guest";
     private static final String       ACTION_PREFIX                  = "action";
@@ -1553,8 +1650,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String       PROJECT_PREFIX                 = "project";
     private static final String       USER_ELEMENT_PREFIX            = "user";
     private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX = "eam";
-    @SuppressWarnings("unused")
-    private static final String       GROUP_ELEMENT_PREFIX           = "group";
+    private static final String       GROUPS_ELEMENT_PREFIX          = "groups";
     @SuppressWarnings("unused")
     private static final String       GUEST_ACTION_READ              = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
     private static final List<String> ALL_ACTIONS                    = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
@@ -1593,6 +1689,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private final DatabaseHelper             _helper;
     private final Map<String, Long>          _totalCounts;
     private final Map<String, Long>          _missingElements;
+    private final Map<String, Boolean>       _userChecks;
 
     private Listener _listener;
     private boolean  _initialized;

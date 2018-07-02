@@ -142,6 +142,7 @@ configurations {
         exclude group: "avalon-logkit"
         exclude group: "berkeleydb"
         exclude group: "com.github.jai-imageio"
+        exclude group: "com.google.code.findbugs", module: "annotations"
         exclude group: "com.metaparadigm"
         exclude group: "com.sun.jdmk", module: "jmxtools"
         exclude group: "com.sun.jmx", module: "jmxri"
@@ -344,6 +345,8 @@ dependencies {
     implementation "javax.servlet:jstl"
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
+
+    compileOnly "com.google.code.findbugs:jsr305"
 
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"

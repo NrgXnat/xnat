@@ -62,11 +62,12 @@ public interface CatalogService {
      *
      * @param user       The user requesting the resources.
      * @param resources  The resources to be included in the catalog.
+     * @param withSize   Whether to include the total size of the files that will be included
      * @return The ID of the newly created catalog containing the requested resources.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
+    Map<String,String> buildCatalogForResources(final UserI user, final Map<String, List<String>> resources, final boolean withSize) throws InsufficientPrivilegesException;
 
     /**
      * Retrieves the catalog with the submitted ID.

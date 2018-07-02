@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -27,6 +28,8 @@ public class UserSession extends SecureResource {
 
         // copy the user from the request into the session
         getHttpSession().setAttribute("userHelper", UserHelper.getUserHelperService(getUser()));
+
+        _includeXnatCsrfToken = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(getQueryVariable("CSRF")), false);
     }
 
     @Override
@@ -55,6 +58,8 @@ public class UserSession extends SecureResource {
     }
 
     private Representation sessionIdRepresentation() {
-        return new StringRepresentation(getHttpSession().getId(), MediaType.TEXT_PLAIN);
+        return new StringRepresentation(getHttpSession().getId() + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : ""), MediaType.TEXT_PLAIN);
     }
+
+    private final boolean _includeXnatCsrfToken;
 }

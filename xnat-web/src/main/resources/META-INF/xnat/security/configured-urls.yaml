@@ -44,6 +44,8 @@ openUrls:
   - /style/
   - /themes/
   - /xapi/siteConfig/buildInfo
+  - /xapi/siteConfig/siteLogoPath
+  - /xapi/siteConfig/siteUrl
   - /xapi/siteConfig/siteWideAlert
 
 adminUrls:

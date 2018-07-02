@@ -1,6 +1,8 @@
 package org.nrg.xnat.services.cache;
 
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +53,35 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     abstract public String getCacheName();
+
+    /**
+     * Indicates whether the specified project ID or alias is already cached.
+     *
+     * @param cacheId The ID or alias of the project to check.
+     *
+     * @return Returns true if the ID or alias is mapped to a project cache entry, false otherwise.
+     */
+    public boolean has(final String cacheId) {
+        return getCache().get(cacheId) != null;
+    }
+
+    /**
+     * Returns the timestamp indicating when the specified cache entry was last updated. If the entry was only
+     * inserted and not updated, the insert time is returned.
+     *
+     * @param cacheId The ID of the cache entry to check.
+     *
+     * @return The date and time of the latest update to the specified cache entry.
+     */
+    public Date getCacheEntryLastUpdateTime(final String cacheId) {
+        if (!has(cacheId)) {
+            log.trace("Trying to check the last update time for cache entry '{}', but that is not in the cache.", cacheId);
+            return null;
+        }
+        final long lastUpdateTime = getLatestOfCreationAndUpdateTime(cacheId);
+        log.trace("Checked last update time for cache entry '{}' and found: {}", cacheId, lastUpdateTime);
+        return new Date(lastUpdateTime);
+    }
 
     /**
      * {@inheritDoc}
@@ -146,9 +178,33 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     protected void cacheObject(final String cacheId, final Object object) {
+        cacheObject(cacheId, object, false);
+    }
+
+    // Nowhere is yet using force update, but I think it will be used eventually. The suppress annotation is just to eliminate IntelliJ nag.
+    @SuppressWarnings("SameParameterValue")
+    protected void cacheObject(final String cacheId, final Object object, boolean forceUpdate) {
         if (object == null) {
             log.warn("I was asked to cache an object with ID '{}' but the object was null.", cacheId);
         }
+        log.trace("Request to cache entry '{}', evaluating", cacheId);
+        final boolean hasCacheId = has(cacheId);
+        if (!forceUpdate && hasCacheId) {
+            log.trace("Cache entry '{}' exists and force update not specified, evaluating for change", cacheId);
+            final Object existing = getCachedObject(cacheId, Object.class);
+            if (object == null && existing == null) {
+                log.trace("Both existing and updated cached objects for entry '{}' are null, returning without updating", cacheId);
+                return;
+            }
+            if (object != null && object.equals(existing)) {
+                log.trace("Existing and updated cached objects for entry '{}' are identical, returning without updating", cacheId);
+                return;
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Cache entry '{}' already exists but differs from updated cache item:\n\nExisting:\n{}\nUpdated:\n{}", cacheId, existing, object);
+            }
+        }
+        log.debug("Storing cache entry '{}' with object of type: {}", cacheId, object == null ? "null" : object.getClass().getName());
         getCache().put(cacheId, object);
     }
 

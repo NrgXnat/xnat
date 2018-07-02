@@ -350,8 +350,8 @@ window.xmodal = getObject(window.xmodal);
             // body content (inner)
             this.content$ = $.spawn('div.inner.xnat-dialog-content', {
                 style: {
-                    margin: pxSuffix(firstDefined(this.padding, 20)),
-                    marginBottom: pxSuffix(firstDefined(this.padding, 20) + 10)
+                    margin: pxSuffix(firstDefined(this.padding, 20))//,
+                    //marginBottom: pxSuffix(firstDefined(this.padding, 20) + 10)
                 }
             }).append(this.content);
 

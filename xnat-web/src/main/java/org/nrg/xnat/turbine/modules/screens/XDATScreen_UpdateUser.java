@@ -129,9 +129,9 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("item", user);
                 }
 
-                if (StringUtils.isBlank(user.getPassword())) {
-                    context.put("noCurrentPassword", true);
-                } else if (XDAT.getSiteConfigPreferences().getRequireSaltedPasswords() && StringUtils.isBlank(user.getSalt())){
+                final boolean noCurrentPassword = StringUtils.isBlank(user.getPassword());
+                context.put("noCurrentPassword", noCurrentPassword);
+                if (!noCurrentPassword && XDAT.getSiteConfigPreferences().getRequireSaltedPasswords() && StringUtils.isBlank(user.getSalt())){
                     context.put("missingSalt", true);
                 }
 

@@ -30,7 +30,7 @@ public class ProviderAttributes {
         setAutoEnabled(ObjectUtils.defaultIfNull(autoEnabled, false));
         setAutoVerified(ObjectUtils.defaultIfNull(autoVerified, false));
 
-        _properties = properties;
+        _properties = ObjectUtils.defaultIfNull(properties, new Properties());
     }
 
     public ProviderAttributes(final Properties properties) {

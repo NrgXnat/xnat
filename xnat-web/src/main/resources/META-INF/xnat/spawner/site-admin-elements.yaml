@@ -909,11 +909,10 @@ pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
 
 pluginOpenUrlsConfig:
-    kind: panel
-    name: pluginOpenUrlsConfig
-    header: false
-    footer: false
+    tag: div
     contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
         pluginOpenUrlsScript:
             tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 
@@ -1380,69 +1379,6 @@ investigators:
             content: >
                 XNAT.app.investigators.dataTable('#investigators-list-container')
 
-investigatorsOld:
-    kind: panel
-    name: investigators
-    label: List of Investigators
-    contents:
-        investigatorsContainer:
-            tag: div#investigators-list-container
-        newInvestigatorButton:
-            tag: button#create-new-investigator.btn1|style=margin-top:15px
-            content: Create New Investigator
-        investigatorsjs:
-            tag: script|src=/scripts/xnat/app/investigators.js
-        investigatorsTable:
-            kind: table.dataTable
-            id: xnat-investigators-list
-            load: /xapi/investigators
-            messages:
-                noData: >
-                    There are no investigators defined in this system. Click the button below to create one.
-                error: >
-                    An error occurred retrieving investigator information.
-            sortable: firstname, lastname, email, institution
-            before:
-                script:
-                    tag: script
-                    content: >
-                        XNAT.admin = getObject(XNAT.admin);
-                        XNAT.admin.investigatorTable = XNAT.app.investigators.init().dataTable();
-                        XNAT.admin.investigatorFieldValue = function(val){
-                            return val || '<div class="center">-</div>'
-                        };
-                        XNAT.admin.investigatorProjectList = function(projects){
-                            return projects && projects.map ? projects.map(function(proj){
-                                return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
-                            }).join(', ') : '-';
-                        };
-            items:
-                xnatInvestigatordataId:
-                    label: <div class="hidden"></div>
-                    className: center
-                    content: <a href="#!" class="view-investigator link" data-id="__VALUE__">View</a>
-#                title:
-#                    label: Title
-#                    call: function(val){ return val || '-' }
-                firstname:
-                    label: First Name
-                    call: XNAT.admin.investigatorFieldValue
-                lastname:
-                    label: Last Name
-                    call: XNAT.admin.investigatorFieldValue
-                email:
-                    label: Email
-                    call: XNAT.admin.investigatorFieldValue
-                institution:
-                    label: Institution
-                    call: XNAT.admin.investigatorFieldValue
-                primaryProjects:
-                    label: Project PI
-                    call: XNAT.admin.investigatorProjectList
-                investigatorProjects:
-                    label: ~!
-                    call: XNAT.admin.investigatorProjectList
-
 setScanTypeMapping:
     kind: panel.form
     label: Scan Type Mapping
@@ -1464,36 +1400,24 @@ developmentUtilities:
         spawner:
             kind: panel.element
             label: Spawner
-#            description: Manage spawner elements.
             contents:
                 link:
-                    tag: a.link
-                    element:
-                        href: ~/page/admin/spawner/
-                        target: _blank
-                        html: Manage Spawner Elements
+                    tag: a.link|target=_blank|href=/page/#/admin/spawner/
+                    content: Manage Spawner Elements
         swagger:
             kind: panel.element
             label: Swagger
-#            description: View the Swagger page.
             contents:
                 link:
-                    tag: a.link
-                    element:
-                        href: ~/xapi/swagger-ui.html
-                        target: _blank
-                        html: View the Swagger page
+                    tag: a.link|target=_blank|href=/xapi/swagger-ui.html
+                    content: View the Swagger page
         monitoring:
             kind: panel.element
             label: Monitoring
-#            description: View the Swagger page.
             contents:
                 link:
-                    tag: a.link
-                    element:
-                        href: ~/monitoring
-                        target: _blank
-                        html: View the JavaMelody application monitoring page
+                    tag: a.link|target=_blank|href=/monitoring
+                    content: View the JavaMelody application monitoring page
 
 
 #################################################
@@ -1689,7 +1613,7 @@ dataStorage:
         ${prearchivePath}
         ${ftpPath}
         ${buildPath}
-        ${bipelinePath}
+        ${pipelinePath}
         ${cachePath}
 #        ${zipExtensions}
 #        ${checksums}

@@ -1,5 +1,5 @@
 <p>Hello,<br>
-    You have been granted access to the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() with $access_level permissions.
+    You have been granted access to the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() as a member of the $access_level group.
 
     To proceed to $server and begin working with this $displayManager.getSingularDisplayNameForProject().toLowerCase(), please click the following link: <a href="$server/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/$projectOM.getId()">$server/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/$projectOM.getId()</a>
 </p>

@@ -1076,6 +1076,7 @@ var XNAT = getObject(XNAT);
                         }
                         // make sure there's data before rendering the table
                         if (isEmpty(json)) {
+                            console.log('(no data)');
                             showMessage().noData(opts.messages ? opts.messages.noData || opts.messages.empty : '')
                         }
                         else {
@@ -1123,6 +1124,7 @@ var XNAT = getObject(XNAT);
             table: newTable.table,
             element: tableWrapper,
             spawned: tableWrapper,
+            wrapper: tableWrapper,
             get: function(){
                 normalizeTableCells.call(tableWrapper);
                 return tableWrapper;

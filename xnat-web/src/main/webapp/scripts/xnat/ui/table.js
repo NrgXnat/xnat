@@ -759,7 +759,7 @@ var XNAT = getObject(XNAT);
 
                 props.forEach(function(name){
 
-                    var tdElement = opts.items && opts.items[name] ? cloneObject(opts.items[name].th) || {} : {},
+                    var filterCell = opts.items && opts.items[name] ? cloneObject(opts.items[name].th) || {} : {},
                         $filterInput = '',
                         tdContent = [];
 
@@ -769,7 +769,8 @@ var XNAT = getObject(XNAT);
                     }
 
                     if (filterColumns.indexOf(name) > -1){
-                        tdElement.className = 'filter ' + name;
+                        addClassName(filterCell, 'filter ' + name);
+                        // filterCell.className = 'filter ' + name;
 
                         if (typeof customFilters[name] === 'function'){
                             tdContent.push(customFilters[name].call(newTable, newTable.table));
@@ -817,7 +818,7 @@ var XNAT = getObject(XNAT);
                         }
                     }
 
-                    newTable.td(tdElement, tdContent);
+                    newTable.td(filterCell, tdContent);
 
                 });
             }
@@ -858,11 +859,11 @@ var XNAT = getObject(XNAT);
                     var itemVal = item[_name];
                     var cellObj = {};
                     var cellContent = '';
-                    var tdElement = {
-                        className: _name,
+                    var tdConfig = {
                         html: ''
                         // html: itemVal
                     };
+                    addClassName(tdConfig, _name);
                     var dataAttrs = {};
                     var _tr = newTable.last.tr;
                     var applyFn = null;
@@ -893,7 +894,7 @@ var XNAT = getObject(XNAT);
                         }
                         else {
                             if (cellObj.td || cellObj.element) {
-                                extend(true, tdElement, cellObj.td || cellObj.element);
+                                extend(true, tdConfig, cellObj.td || cellObj.element);
                             }
                             if (cellObj.value) {
                                 if (isFunction(cellObj.value)) {
@@ -906,9 +907,28 @@ var XNAT = getObject(XNAT);
                                     itemVal = cellObj.value;
                                 }
                             }
-                            if (cellObj.className) {
-                                addClassName(tdElement, cellObj.className);
-                            }
+
+                            // add classes defined for the cell
+                            cellObj.classes = [].concat(
+                                cellObj.classes || [],
+                                cellObj.addClass || [],
+                                cellObj.className || []
+                            );
+                            addClassName(tdConfig, cellObj.classes);
+
+                            cellObj.td = getObject(cellObj.td);
+                            // add classes defined in a td property
+                            cellObj.classes = cellObj.classes.concat(
+                                cellObj.td.classes || [],
+                                cellObj.td.addClass || [],
+                                cellObj.td.className || []
+                            );
+                            addClassName(tdConfig, cellObj.classes);
+
+                            delete cellObj.td.classes;
+                            delete cellObj.td.addClass;
+                            delete cellObj.td.className;
+
                             // transform cell data before rendering
                             if (cellObj['apply'] || cellObj['call']) {
                                 applyFn = cellObj['call'] || cellObj['apply'];
@@ -955,7 +975,7 @@ var XNAT = getObject(XNAT);
 
                     // addDataAttrs(_tr, dataAttrs);
 
-                    newTable.td(tdElement);
+                    newTable.td(tdConfig);
 
                     // var $td = newTable.last$('td').empty().append(cellContent);
 

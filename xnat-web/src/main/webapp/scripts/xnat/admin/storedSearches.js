@@ -62,9 +62,8 @@ var XNAT = getObject(XNAT);
     }
 
     var rootUrl = XNAT.url.rootUrl;
+    var restUrl = XNAT.url.restUrl;
     var csrfUrl = XNAT.url.csrfUrl;
-
-    var x2js = new X2JS();
 
     /* ====================== *
      * Site Admin UI Controls *
@@ -80,7 +79,7 @@ var XNAT = getObject(XNAT);
         getObject(XNAT.admin.storedSearches || {});
 
     function getStoredSearchListUrl(){
-        return rootUrl('/data/search/saved?all=true&format=json');
+        return restUrl('/data/search/saved', ['all=true', 'format=json']);
     }
     function getStoredSearchUrl(id){
         if (!id) {
@@ -117,8 +116,8 @@ var XNAT = getObject(XNAT);
         return XNAT.xhr.get({
             url: getStoredSearchUrl(id),
             success: function(data){
+                callback.apply(this, arguments);
                 return data;
-                callback.apply(this,arguments);
             },
             fail: function(e){
                 console.error(e);
@@ -173,14 +172,14 @@ var XNAT = getObject(XNAT);
         }
         function viewLink(id,userList){
             var users = parseUsers(userList), buttonStyle = ".btn2.btn-sm.ss-view-button", buttonProp = {};
+            var url = '#!';
             if (users && users.indexOf(window.username) >= 0) {
                 url = rootUrl('/app/template/Search.vm/node/ss.'+id);
             }
             else {
-                url = '#!';
                 buttonStyle += '.disabled';
                 buttonProp = {
-                    disabled: 'disabled',
+                    disabled: true,
                     title: 'To view this stored search, you will need to grant yourself access in the "Allowed User" definition of the search.'
                 };
             }
@@ -199,7 +198,7 @@ var XNAT = getObject(XNAT);
                 filterCss: {
                     tag: 'style|type=text/css',
                     content: '\n' +
-                        'td[class^="break-word-"] { max-width: 150px; word-wrap: break-word; } \n' +
+                        'td[class*="break-word-"] { max-width: 150px; word-wrap: break-word; } \n' +
                         'td.align-top { vertical-align: top } \n'
                 }
             },
@@ -212,15 +211,21 @@ var XNAT = getObject(XNAT);
                 id: {
                     label: 'ID',
                     filter: false,
-                    td: { className: 'break-word-id align-top' },
+                    // td: { className: 'break-word-id align-top' },
+                    // ^^ DON'T USE 'className' property in 'td'
+                    // unless you want to COMPLETELY override
+                    // the class of a <td> element (not recommended)
+                    // ...any other option below seems to work
+                    td: { classes: 'break-word-id align-top' },
                     apply: function(){
-                        return spawn('b', [ editLink(this.id, this.id) ])
+                        return spawn('b', [editLink(this.id, this.id)])
                     }
                 },
                 brief_description: {
                     label: 'Label',
                     filter: true,
-                    td: { className: 'break-word-label align-top' },
+                    // use 'classes' in 'td'
+                    td: { classes: 'break-word-label align-top' },
                     apply: function(){
                         return escapeHtml(this['brief_description'])
                     }
@@ -228,30 +233,34 @@ var XNAT = getObject(XNAT);
                 description: {
                     label: 'Description',
                     filter: true,
-                    td: { className: 'break-word-desc align-top' },
+                    // use 'addClass' in 'td'
+                    td: { addClass: 'break-word-desc align-top' },
                     apply: function(){
                         return escapeHtml(this['description'])
                     }
                 },
                 root_element_name: {
                     label: 'Root Data Type',
-                    td: { className: 'align-top' },
+                    // use 'className' in the item config
+                    className: 'align-top',
                     filter: true
                 },
                 USERS: {
                     label: 'Users',
                     filter: false,
-                    td: { className: 'right allowed-users align-top' },
+                    // use 'classes' in the item config
+                    classes: 'right allowed-users align-top',
                     apply: function(){
                         return userCount(this['users'])
                     }
                 },
                 ACTIONS: {
                     label: 'Actions',
-                    td: { className: 'center nowrap' },
+                    // use 'addClass' in the item config
+                    addClass: 'center nowrap',
                     apply: function(){
                         return spawn('!', [
-                            editLink(this.id, [ spawn('button.btn2.btn-sm','Edit') ]),
+                            editLink(this.id, [spawn('button.btn2.btn-sm', 'Edit')]),
                             spacer(10),
                             viewLink(this.id, this['users'])
                         ])
@@ -265,7 +274,7 @@ var XNAT = getObject(XNAT);
         event.preventDefault();
         XNAT.dialog.iframe(this.href, 'Edit Stored Search', 900, 600, { onClose: function(){ XNAT.admin.storedSearches.refresh() }});
     });
-    
+
     storedSearches.init = storedSearches.refresh = function(container){
         var _ssTable;
         container = $(container || '#stored-searches-container');

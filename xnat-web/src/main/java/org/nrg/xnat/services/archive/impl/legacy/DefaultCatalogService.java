@@ -1287,7 +1287,7 @@ public class DefaultCatalogService implements CatalogService {
         try {
             for (final Map<String, Object> resource : resources) {
                 final CatEntryBean entry         = new CatEntryBean();
-                final String       resourceLabel = URLEncoder.encode(ObjectUtils.defaultIfNull(resource.get("resource_label"), resource.get("resource_id")).toString(), "UTF-8");
+                final String       resourceLabel = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
                 final String       assessorLabel = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
                 final String       sessionLabel  = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
                 final String       proj          = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
@@ -1440,7 +1440,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
     private static final String QUERY_SESSION_ASSESSORS                = "SELECT " +
                                                                          "  abstract.xnat_abstractresource_id AS resource_id, " +
-                                                                         "  abstract.label AS resource_label, " +
+                                                                         "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
                                                                          "  assessor.id AS assessor_id, " +
                                                                          "  assessor.label AS assessor_label, " +
                                                                          "  session.id AS session_id, " +

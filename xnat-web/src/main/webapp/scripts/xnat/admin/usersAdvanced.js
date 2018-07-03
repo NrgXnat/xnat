@@ -560,7 +560,7 @@ var XNAT = getObject(XNAT);
     renderUserGroupsTable();
 
 
-    $(document).on('click', '#user-add-group', function userAddGroup(){
+    $(document).off('click.set-role').on('click.set-role', '#user-add-group', function userAddGroup(){
         setUserRole()
     });
 

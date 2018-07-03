@@ -34,8 +34,9 @@ $!template.setLayoutTemplate("Login.vm")
         <div class="clear" style="margin:2em 0;"></div>
         <div id="register_box">
             #if($message.startsWith("Registration error"))
-                <div class="warning" style="border-bottom: 0">
-                    <strong>Note:</strong> $message
+                <div class="warning" style="padding:15px;border-bottom:0">
+                    <strong>Note:</strong>
+                    <p style="margin:5px 3px 0;">$message</p>
                 </div>
             #end
 

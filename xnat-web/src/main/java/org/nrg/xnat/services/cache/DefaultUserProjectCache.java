@@ -62,7 +62,7 @@ import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 
 @SuppressWarnings("Duplicates")
-@Service
+@Service("userProjectCache")
 @Slf4j
 public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache {
     @Autowired

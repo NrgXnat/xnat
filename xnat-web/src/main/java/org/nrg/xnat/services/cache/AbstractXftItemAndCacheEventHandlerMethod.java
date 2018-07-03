@@ -1,8 +1,10 @@
 package org.nrg.xnat.services.cache;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +21,8 @@ import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.annotation.Nullable;
+import java.util.*;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -103,7 +103,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementPut(final Ehcache cache, final Element element) throws CacheException {
-        final Object objectKey = element.getObjectKey();
+        final Object objectKey   = element.getObjectKey();
         final Object objectValue = element.getObjectValue();
         log.debug("XNAT-5730: Element with key '{}' added to cache '{}' with a value of '{}' (type: {})", objectKey, cache.getName(), ObjectUtils.defaultIfNull(objectValue, "").toString(), objectValue == null ? "<null>" : objectValue.getClass().getName());
         if (objectKey instanceof String && StringUtils.equals("user:admin:groups", (String) objectKey)) {
@@ -123,7 +123,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
      */
     @Override
     public void notifyElementUpdated(final Ehcache cache, final Element element) throws CacheException {
-        final Object objectKey = element.getObjectKey();
+        final Object objectKey   = element.getObjectKey();
         final Object objectValue = element.getObjectValue();
         log.debug("XNAT-5730: Element with key '{}' updated in cache '{}' with a value of '{}' (type: {})", objectKey, cache.getName(), ObjectUtils.defaultIfNull(objectValue, "").toString(), objectValue == null ? "<null>" : objectValue.getClass().getName());
         if (objectKey instanceof String && StringUtils.equals("user:admin:groups", (String) objectKey)) {
@@ -277,17 +277,27 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
 
     @SuppressWarnings("unchecked")
     protected <K, V> Map<K, V> buildImmutableMap(final Map<K, V>... maps) {
+        // The keys set keeps track of keys that have already been added
+        // so that we don't add them again.
+        final Set<K> keys = new HashSet<>();
+
         final ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
         for (final Map<K, V> map : maps) {
-            builder.putAll(map);
+            builder.putAll(Maps.filterKeys(map, new Predicate<K>() {
+                @Override
+                public boolean apply(@Nullable final K entry) {
+                    return !keys.contains(entry);
+                }
+            }));
+            keys.addAll(map.keySet());
         }
         return builder.build();
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> List<T> buildImmutableList(final List<T>... lists) {
-        final ImmutableList.Builder<T> builder = ImmutableList.builder();
-        for (final List list : lists) {
+    protected <T> Set<T> buildImmutableSet(final Collection<T>... collections) {
+        final ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+        for (final Collection<T> list : collections) {
             builder.addAll(list);
         }
         return builder.build();

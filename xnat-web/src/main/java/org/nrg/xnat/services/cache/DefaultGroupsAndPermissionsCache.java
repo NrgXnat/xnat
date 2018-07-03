@@ -476,7 +476,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     public Date getUserLastUpdateTime(final String username) {
         try {
             @SuppressWarnings("unchecked")
-            final List<String> cacheIds = buildImmutableList(getGroupIdsForUser(username), getCacheIdsForUsername(username));
+            final List<String> cacheIds = new ArrayList<>(buildImmutableSet(getGroupIdsForUser(username), getCacheIdsForUsername(username)));
             if (cacheIds.isEmpty()) {
                 return new Date();
             }

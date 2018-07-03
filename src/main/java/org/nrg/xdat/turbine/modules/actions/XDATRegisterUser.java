@@ -291,7 +291,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
     protected void storeParameterIfAvailable(final RunData data, final Context context, final String key, final String value) {
         if (TurbineUtils.HasPassedParameter(value, data)) {
-            context.put(key, value);
+            context.put(key, data.getParameters().getString(value));
         }
     }
 

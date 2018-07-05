@@ -43,6 +43,7 @@ import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
@@ -919,19 +920,20 @@ public class Permissions {
         }
     }
 
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
+    public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
         return verifyAccessToSessions(template, user, new HashSet<>(sessionIds), null);
     }
 
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
+    public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
         return verifyAccessToSessions(template, user, sessionIds, null);
     }
 
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+    public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
         return verifyAccessToSessions(template, user, new HashSet<>(sessionIds), scopedProjectId);
     }
 
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+    @Nonnull
+    public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
         final List<Map<String, Object>> locatedTypes        = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessionIds));
         final Set<String>               sessionsUserCanRead = new HashSet<>();
         for (final Map<String, Object> session : locatedTypes) {
@@ -959,7 +961,7 @@ public class Permissions {
         }
 
         // Get all projects, primary and shared, that contain the specified session IDs.
-        final Multimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionsUserCanRead);
+        final ArrayListMultimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionsUserCanRead);
 
         // If they specified a project ID...
         final Set<String> projectIds = projectSessionMap.keySet();
@@ -1015,7 +1017,7 @@ public class Permissions {
         return projectSessionMap;
     }
 
-    public static Multimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final Set<String> sessions) {
+    public static ArrayListMultimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final Set<String> sessions) {
         final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
         if (sessions.isEmpty()) {
             return projectSessionMap;

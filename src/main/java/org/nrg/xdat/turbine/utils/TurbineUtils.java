@@ -948,6 +948,14 @@ public class TurbineUtils {
         return Arrays.asList(concatenated.split("\\s*,\\s*"));
     }
 
+    public boolean isNonEmptyCollection(final Collection<?> collection) {
+        return collection != null && !collection.isEmpty();
+    }
+
+    public static boolean IsNonEmptyCollection(final Collection<?> collection) {
+        return GetInstance().isNonEmptyCollection(collection);
+    }
+
     public String formatDate(Date d, String pattern) {
         final SimpleDateFormat formatter = new SimpleDateFormat(pattern);
         return formatter.format(d);

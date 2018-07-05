@@ -14,9 +14,9 @@
 #* @vtlvariable name="resource" type="java.util.List" *#
 #* @vtlvariable name="recons" type="java.util.List" *#
 #* @vtlvariable name="assessors" type="java.util.List" *#
-#set($showResources = $resources && $resources.size() > 0)
-#set($showRecons = $recons && $recons.size() > 0)
-#set($showAssessors = $assessors && $assessors.size() > 0)
+#set($showResources = $turbineUtils.isNonEmptyCollection($resources))
+#set($showRecons = $turbineUtils.isNonEmptyCollection($recons))
+#set($showAssessors = $turbineUtils.isNonEmptyCollection($assessors))
 #set($SESSION_DISPLAY_NAME_PLURAL = $displayManager.getPluralDisplayNameForImageSession())
 #set($SITE_ROOT = $content.getURI(""))
 
@@ -380,37 +380,12 @@
                 #if($showRecons)
                     <h4>Reconstructions</h4>
                     <section class="reconstructions list">
-                        <p class="hidden none"><i>(none)</i></p>
-                        <!-- list reconstructions -->
+                        <div class="warning" style="left:-12px;margin-top:5px;">
+                            XNAT reconstructions were found in this project, but this type of assessor is no longer supported and the current download process can not package them. If you need access
+                            to these particular assessors, try using the <b>Manage Files</b> feature on those experiments and downloading files there. You can also contact your system administrator
+                            for alternative means of accessing the data.
+                        </div>
                     </section>
-                    ## gather reconstructions
-                    #set($counter = 0)
-                    #foreach($scan in $recons)
-                        #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
-                        #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
-                        <script>
-                                #if($!scan.get(0))
-                                XNAT.app.projectDownload.items.reconstructions.list.push('$_ID');
-                                XNAT.app.projectDownload.items.reconstructions.data.push({
-                                    counter: +'$counter',
-                                    value: '$_ID',
-                                    name: '$_ID',
-                                    label: '$_ID',
-                                    count: +'$_COUNT'
-                                });
-                                #else
-                                XNAT.app.projectDownload.items.reconstructions.list.push('Unassigned');
-                                XNAT.app.projectDownload.items.reconstructions.data.push({
-                                    counter: +'$counter',
-                                    value: 'null',
-                                    name: 'Unassigned',
-                                    label: 'Unassigned',
-                                    count: +'$_COUNT'
-                                });
-                                #end
-                        </script>
-                        #set($counter = $counter + 1)
-                    #end
                 #end
 
 

@@ -1599,8 +1599,8 @@ public abstract class SecureResource extends Resource {
             final EventMetaI          c          = wrk.buildEvent();
 
             try {
-                final boolean                         removeFiles = isQueryVariableTrue("removeFiles");
-                final XnatProjectdata                 project     = (newProject != null) ? newProject : proj;
+                final boolean                      removeFiles = isQueryVariableTrue("removeFiles");
+                final XnatProjectdata              project     = (newProject != null) ? newProject : proj;
                 final Class<? extends BaseElement> itemType    = item.getClass();
 
                 final String message;
@@ -1619,7 +1619,7 @@ public abstract class SecureResource extends Resource {
                     WorkflowUtils.fail(wrk, c);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                 } else {
-                    XDAT.triggerXftItemEvent(item, DELETE);
+                    XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
                     WorkflowUtils.complete(wrk, c);
                 }
             } catch (Exception e) {

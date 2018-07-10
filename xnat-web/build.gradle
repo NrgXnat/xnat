@@ -528,6 +528,7 @@ task swagger(type: SwaggerTask, dependsOn: classes) {
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadoc")
+    classpath = configurations.compileClasspath
     options.docletpath = configurations.javadocCoverage.files.asType(List)
     options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
 }

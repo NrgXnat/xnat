@@ -71,7 +71,6 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.*;
@@ -168,7 +167,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             final List<String> projects = getUserProjects(username);
             for (final String project : projects) {
                 final String      projectCacheId = getCacheIdForProject(project);
-                final Set<String> projectUsers   = has(projectCacheId) ? new HashSet<String>(super.<String>getCachedSet(projectCacheId)) : new HashSet<String>();
+                final Set<String> projectUsers   = has(projectCacheId) ? new HashSet<>(super.<String>getCachedSet(projectCacheId)) : new HashSet<String>();
                 projectUsers.add(username);
                 cacheObject(projectCacheId, projectUsers);
             }

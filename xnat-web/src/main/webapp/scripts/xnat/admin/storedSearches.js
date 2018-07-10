@@ -211,12 +211,7 @@ var XNAT = getObject(XNAT);
                 id: {
                     label: 'ID',
                     filter: false,
-                    // td: { className: 'break-word-id align-top' },
-                    // ^^ DON'T USE 'className' property in 'td'
-                    // unless you want to COMPLETELY override
-                    // the class of a <td> element (not recommended)
-                    // ...any other option below seems to work
-                    td: { classes: 'break-word-id align-top' },
+                    td: { className: 'id break-word-id align-top' },
                     apply: function(){
                         return spawn('b', [editLink(this.id, this.id)])
                     }
@@ -224,8 +219,7 @@ var XNAT = getObject(XNAT);
                 brief_description: {
                     label: 'Label',
                     filter: true,
-                    // use 'classes' in 'td'
-                    td: { classes: 'break-word-label align-top' },
+                    td: { className: 'brief_description break-word-label align-top' },
                     apply: function(){
                         return escapeHtml(this['brief_description'])
                     }
@@ -233,31 +227,27 @@ var XNAT = getObject(XNAT);
                 description: {
                     label: 'Description',
                     filter: true,
-                    // use 'addClass' in 'td'
-                    td: { addClass: 'break-word-desc align-top' },
+                    td: { className: 'description break-word-desc align-top' },
                     apply: function(){
                         return escapeHtml(this['description'])
                     }
                 },
                 root_element_name: {
                     label: 'Root Data Type',
-                    // use 'className' in the item config
-                    className: 'align-top',
+                    className: 'root_element_name align-top',
                     filter: true
                 },
                 USERS: {
                     label: 'Users',
                     filter: false,
-                    // use 'classes' in the item config
-                    classes: 'right allowed-users align-top',
+                    className: 'USERS right allowed-users align-top',
                     apply: function(){
                         return userCount(this['users'])
                     }
                 },
                 ACTIONS: {
                     label: 'Actions',
-                    // use 'addClass' in the item config
-                    addClass: 'center nowrap',
+                    className: 'ACTIONS center nowrap',
                     apply: function(){
                         return spawn('!', [
                             editLink(this.id, [spawn('button.btn2.btn-sm', 'Edit')]),

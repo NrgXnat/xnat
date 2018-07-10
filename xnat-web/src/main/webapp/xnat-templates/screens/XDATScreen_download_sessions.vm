@@ -448,18 +448,25 @@
                 <h4>Options</h4>
                 <section>
                     <dl>
-                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="direct" checked></dt>
-                        <dd><label for="direct-download"><b>Option 1: Direct download</b></label></dd>
+                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="client" checked></dt>
+                        <dd><label for="direct-download"><b>Option 1: Download via Desktop Client</b></label></dd>
                         <dd>
-                            A download request will be initiated by the browser to retrieve the selected session data as a single compressed zip file.
-                            <div class="warning" style="left:-12px;margin-top:5px;">
-                                Interruption of a large zip download may result in corrupted or incomplete data.
+                            An XML download manifest will be sent to the XNAT Desktop Client, which works behind the scenes to download your files.
+                            <div class="info" style="margin-top: 6px;">
+                                Download the XNAT Desktop Client here: <a href="https://download.xnat.org/desktop-client" target="_blank" style="font-weight: bold">download.xnat.org</a>.
                             </div>
                         </dd>
                     </dl>
                     <dl>
+                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="zip"></dt>
+                        <dd><label for="direct-download"><b>Option 2: ZIP download</b></label></dd>
+                        <dd>
+                            Your selected session data will be downloaded as a single compressed zip file.
+                        </dd>
+                    </dl>
+                    <dl>
                         <dt><input type="radio" id="catalog-download" name="download_type" class="download-type ignore" value="catalog"></dt>
-                        <dd><label for="catalog-download"><b>Option 2: Catalog XML</b></label></dd>
+                        <dd><label for="catalog-download"><b>Option 3: Catalog XML</b></label></dd>
                         <dd>
                             Download an xml representation of the files. This xml can then be used by
                             specific applications to download the data at the user's command.

@@ -267,7 +267,7 @@ var XNAT = getObject(XNAT);
             e.stopImmediatePropagation();
             var $form = $(this).removeClass('invalid');
             var type = $form.find('.download-type:checked').val();
-            var getZip = (type === 'direct');
+            var getZip = (type === 'zip');
             var msg = [];
             var preparingDownload = XNAT.dialog.open({
                 width: 400,
@@ -322,35 +322,85 @@ var XNAT = getObject(XNAT);
                     var SIZE = downJSON.size;
                     var UNKNOWN_SIZE_COUNT = downJSON.resourcesOfUnknownSize;
                     var URL = XNAT.url.rootUrl('/xapi/archive/download/' + ID + '/' + (getZip ? 'zip' : 'xml'));
+                    var buttons = [];
                     if (getZip) {
                         msg.push('' +
-                            'Click "Download" to start the zip download. ' +
-                            'After the download begins, you may navigate ' +
-                            'away from this page &ndash; the download will ' +
-                            'continue in the background.' +
-                            '');
+                            'Click "Download ZIP" to start a zip download. ' +
+                            'After the download begins, you may navigate away from this page &ndash; the download will continue in the background.<br><br>');
+                        buttons.push(
+                            {
+                                label: 'Download ZIP',
+                                isDefault: true,
+                                close: true,
+                                action: function(){
+                                    // tickle the server every minute to keep the session alive
+                                    window.setInterval(XNAT.app.timer.touch, 60*1000);
+                                    window.open(URL)
+                                }
+                            }
+                        )
+                    }
+                    else if (type === 'client') {
+                        msg.push('Click "Download Via App" to open the XNAT Desktop Client and begin downloading your files to a specified location on your local system.');
+                        msg.push('The download will happen behind the scenes, and you will not need to stay logged into XNAT in your browser.<br><br>');
+                        msg.push('<div class="warning">The XNAT Desktop Client must be installed to handle the "xnat:" download protocol.</div><br>');
+                        buttons.push(
+                            {
+                                label: 'Download Via App',
+                                isDefault: true,
+                                close: false,
+                                action: function(obj){
+                                    // get an alias token and send the user to the download protocol
+                                    XNAT.xhr.get({
+                                        url: XNAT.url.rootUrl('/data/services/tokens/issue'),
+                                        fail: function(e){
+                                            console.log(e);
+                                            XNAT.ui.dialog.message({
+                                                title: 'Unexpected error',
+                                                content: 'Could not issue user token for download application.'
+                                            });
+                                        },
+                                        success: function(data){
+                                            var token = JSON.parse(data);
+                                            var url = XNAT.url.xnatUrl('/download/'+ID+'.xml?a='+token.alias+'&s='+token.secret);
+                                            window.location.assign(url);
+                                            XNAT.ui.dialog.closeAll();
+                                        }
+                                    })
+                                }
+                            }
+                        )
                     }
                     else {
-                        msg.push('Click "Download" to download the catalog XML.');
+                        msg.push('Click "Download XML" to download the catalog XML.<br><br>');
+                        buttons.push(
+                            {
+                                label: 'Download XML',
+                                isDefault: true,
+                                close: true,
+                                action: function(){
+                                    window.open(URL)
+                                }
+                            }
+                        )
                     }
-                    msg.push('<br><br>');
                     if(UNKNOWN_SIZE_COUNT>0) {
                         msg.push('The download id is <b>' + ID + '</b>. Of the resources you are trying to download, <b>' + UNKNOWN_SIZE_COUNT + '</b> '+((UNKNOWN_SIZE_COUNT==1)? 'has':'have')+' unknown size. The total size of the rest of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
                     }
                     else {
                         msg.push('The download id is <b>' + ID + '</b>. The total size of the files to be downloaded (before compression) is <b>' + formatBytes(SIZE) + '</b>.');
                     }
-                    XNAT.ui.dialog.confirm({
+
+                    buttons.push({
+                        label: 'Cancel',
+                        close: true
+                    });
+
+                    XNAT.ui.dialog.open({
                         title: false,
                         content: msg.join(' '),
                         width: 450,
-                        okLabel: 'Download',
-                        okAction: function(){
-                            // tickle the server every minute to keep the session alive
-                            window.setInterval(XNAT.app.timer.touch, 60*1000);
-                            window.open(URL)
-                        },
-                        cancelLabel: 'Cancel'
+                        buttons: buttons
                     });
                 }
             });

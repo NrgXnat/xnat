@@ -47,7 +47,7 @@
     div.download-column .inner {
         /*min-height: 500px;*/
         /*max-height: 700px;*/
-        height: 620px;
+        height: 670px;
         padding: 5px;
         overflow-y: scroll;
         overflow-x: visible;
@@ -56,7 +56,7 @@
     }
 
     div.download-column.last .inner {
-        height: auto;
+        /*height: auto;*/
         overflow: auto;
     }
 

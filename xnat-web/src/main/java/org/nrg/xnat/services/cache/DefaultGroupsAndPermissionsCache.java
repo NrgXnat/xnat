@@ -29,6 +29,7 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -156,8 +157,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (has(cacheId)) {
             // Here we can just return the value directly as a map, because we know
             // there's something cached and that what's cached is not a string.
-            @SuppressWarnings("unchecked")
-            final Map<String, ElementDisplay> browseables = buildImmutableMap(super.<String, ElementDisplay>getCachedMap(cacheId), getGuestBrowseableElementDisplays());
+            @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(super.<String, ElementDisplay>getCachedMap(cacheId), getGuestBrowseableElementDisplays());
             log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
             return browseables;
         }
@@ -173,8 +173,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
         }
 
-        @SuppressWarnings("unchecked")
-        final Map<String, ElementDisplay> browseables = buildImmutableMap(updateBrowseableElementDisplays(user, cacheId), getGuestBrowseableElementDisplays());
+        @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(updateBrowseableElementDisplays(user, cacheId), getGuestBrowseableElementDisplays());
         log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
         return browseables;
     }
@@ -474,8 +473,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public Date getUserLastUpdateTime(final String username) {
         try {
-            @SuppressWarnings("unchecked")
-            final List<String> cacheIds = new ArrayList<>(buildImmutableSet(getGroupIdsForUser(username), getCacheIdsForUsername(username)));
+            @SuppressWarnings("unchecked") final List<String> cacheIds = new ArrayList<>(buildImmutableSet(getGroupIdsForUser(username), getCacheIdsForUsername(username)));
             if (cacheIds.isEmpty()) {
                 return new Date();
             }
@@ -807,10 +805,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean handleGroupRelatedEvents(final XftItemEventI event) {
-        final String      xsiType   = event.getXsiType();
-        final String      id        = event.getId();
-        final String      action    = event.getAction();
-        final Set<String> usernames = new HashSet<>();
+        final String         xsiType    = event.getXsiType();
+        final String         id         = event.getId();
+        final String         action     = event.getAction();
+        final Map<String, ?> properties = event.getProperties();
+        final Set<String>    usernames  = new HashSet<>();
 
         try {
             final List<UserGroupI> groups = getGroups(xsiType, id);
@@ -826,6 +825,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
+                    }
+                    // Check if the update was removing users. If so, get the usernames from the event properties, as they're not longer in the group.
+                    if (properties.containsKey(Groups.OPERATION) && StringUtils.equals((String) properties.get(Groups.OPERATION), Groups.OPERATION_REMOVE_USERS)) {
+                        //noinspection unchecked
+                        usernames.addAll((Collection<? extends String>) properties.get(Groups.USERS));
                     }
                     return !cacheGroups(groups).isEmpty();
 

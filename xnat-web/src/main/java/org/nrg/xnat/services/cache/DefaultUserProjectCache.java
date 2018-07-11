@@ -10,7 +10,6 @@
 package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
@@ -20,9 +19,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xdat.model.XnatProjectdataAliasI;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
@@ -49,17 +45,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 
 import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("Duplicates")
 @Service("userProjectCache")
@@ -72,6 +73,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
         _cache = cache;
         _template = template;
+        _template.query(QUERY_GET_IDS_AND_ALIASES, new RowCallbackHandler() {
+            @Override
+            public void processRow(final ResultSet resultSet) throws SQLException {
+                final String projectId = resultSet.getString("project_id");
+                final String idOrAlias = resultSet.getString("id_or_alias");
+                _aliasMapping.put(idOrAlias, projectId);
+                _projectsAndAliases.put(projectId, idOrAlias);
+            }
+        });
     }
 
     @Override
@@ -83,36 +93,34 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return false;
         }
 
-        log.info("Got an XFTItemEvent for project '{}'", projectId);
+        final String  action   = event.getAction();
+        final boolean isDelete = StringUtils.equals(DELETE, action);
+        if (StringUtils.equals(CREATE, action)) {
+            _aliasMapping.put(projectId, projectId);
+            log.debug("Created new project, cached ID {}", projectId);
+        } else if (isDelete) {
+            _aliasMapping.remove(projectId);
+            final List<String> aliases = _projectsAndAliases.removeAll(projectId);
+            for (final String alias : aliases) {
+                _aliasMapping.remove(alias);
+            }
+            log.debug("The project {} was deleted, so skipping cache reinitialization. Removed ID and any aliases from cache: {}", projectId, aliases);
+        }
+
+        log.info("Got an XFTItemEvent for project '{}' with action '{}'", projectId, action);
         final ProjectCache projectCache = getCachedProjectCache(projectId);
 
         // If there was no cached project, maybe it was cached as a non-existent project and has been created?
-        if (projectCache.getProject() == null) {
-            log.info("No cache found for the project: {}", projectId);
-            // Remove the canonical ID if present.
-            if (_aliasMapping.containsKey(projectId)) {
-                log.debug("Removed the cached alias mapping found for the project: {}", projectId);
-                _aliasMapping.remove(projectId);
-            }
-            // This would be really weird, where the project isn't in the cache but it's mapped, but OK.
-            if (_aliasMapping.containsValue(projectId)) {
-                final List<String> aliases = new ArrayList<>();
-                for (final Map.Entry<String, String> entry: _aliasMapping.entrySet()) {
-                    if (StringUtils.equals(projectId, entry.getValue())) {
-                        aliases.add(entry.getKey());
-                    }
-                }
-                log.warn("Strange situation found where the project {} had no project cache but still had {} alias mappings: {}", projectId, aliases.size(), Joiner.on(", ").join(aliases));
-                for (final String alias: aliases) {
-                    _aliasMapping.remove(alias);
-                }
-            }
+        if (projectCache == null || projectCache.getProject() == null) {
+            log.info("No cache found for the project '{}', nothing much to be done.", projectId);
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
             evict(projectId);
         }
 
-        initializeProjectCache(projectId);
+        if (!isDelete) {
+            initializeProjectCache(projectId);
+        }
 
         return true;
     }
@@ -122,6 +130,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public void notifyElementRemoved(final Ehcache cache, final Element element) throws CacheException {
+        log.debug("Cache {} had element '{}' with type '{}' removed", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
         handleCacheRemoveEvent(cache, element, "removed");
     }
 
@@ -130,6 +139,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public void notifyElementExpired(final Ehcache cache, final Element element) {
+        log.debug("Cache {} had element '{}' with type '{}' expired", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
         handleCacheRemoveEvent(cache, element, "expired");
     }
 
@@ -138,6 +148,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public void notifyElementEvicted(final Ehcache cache, final Element element) {
+        log.debug("Cache {} had element '{}' with type '{}' evicted", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
         handleCacheRemoveEvent(cache, element, "evicted");
     }
 
@@ -146,6 +157,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public void notifyRemoveAll(final Ehcache cache) {
+        log.debug("Cache {} had all elements removed", cache.getName());
         if (isProjectCacheEvent(cache)) {
             _aliasMapping.clear();
         }
@@ -160,18 +172,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Indicates whether the specified project ID or alias is already cached.
-     *
-     * @param idOrAlias The ID or alias of the project to check.
-     *
-     * @return Returns true if the ID or alias is mapped to a project cache entry, false otherwise.
-     */
-    @Override
-    public boolean has(final String idOrAlias) {
-        return _aliasMapping.containsKey(idOrAlias);
-    }
-
-    /**
      * Indicates whether permissions for the specified user in the specified project ID or alias is already cached.
      *
      * @param user      The user object for the user requesting the project.
@@ -181,7 +181,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public boolean has(final UserI user, final String idOrAlias) {
-        if (!has(idOrAlias)) {
+        // If it's not in the alias map, we don't know about it.
+        if (!_aliasMapping.containsKey(idOrAlias)) {
             return false;
         }
 
@@ -291,8 +292,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 throw new RuntimeException("No field named " + standardized);
             }
 
-            final String column = wrapper.getSQLName();
-            final String query  = StringSubstitutor.replace(QUERY_PROJECTS_BY_FIELD, ImmutableMap.<String, Object>of("column", column));
+            final String column      = wrapper.getSQLName();
+            final String query       = StringSubstitutor.replace(QUERY_PROJECTS_BY_FIELD, ImmutableMap.<String, Object>of("column", column));
             final Object mappedValue = convertStringToMappedTypeObject(wrapper, value);
 
             log.debug("Executing query '{}' with value '{}'", query, mappedValue);
@@ -464,6 +465,17 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
+     * Gets all aliases for the project with the specified ID.
+     *
+     * @param projectId The ID of the project to be queried.
+     *
+     * @return A list of aliases (if any) for the specified project.
+     */
+    private List<String> getProjectAliases(final String projectId) {
+        return _template.queryForList(QUERY_GET_PROJECT_ALIASES, new MapSqlParameterSource("projectId", projectId), String.class);
+    }
+
+    /**
      * Gets the cache for the project identified by the ID or alias parameter. If the project is cached as non-existent, this method returns null. Otherwise,
      * it checks the project cache and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache,
      * this method tries to find the project by ID or alias. If it's not found, it's then cached as non-existent and the method returns null as before. If it is
@@ -484,10 +496,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
             // And then return the project cache.
             final ProjectCache projectCache = getCachedProjectCache(projectId);
-            if (projectCache.getProject() == null) {
-                throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Found cached project ID " + projectId + " for ID or alias " + idOrAlias + ", which should only ever happen if the project is cached, but the project cache is null.");
+            if (projectCache != null && projectCache.getProject() != null) {
+                return projectCache;
             }
-            return projectCache;
+            log.info("Found cached project ID '{}' for ID or alias '{}', but there's no project cache entry or the project cache is null. Initializing the cache entry in response.", projectId, idOrAlias);
         }
 
         return initializeProjectCache(idOrAlias);
@@ -495,16 +507,19 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     @Nullable
     private synchronized ProjectCache initializeProjectCache(final String idOrAlias) {
-        if (_aliasMapping.containsKey(idOrAlias)) {
-            final String projectId = _aliasMapping.get(idOrAlias);
-            log.info("Found project ID {} for ID or alias {}, this was probably initialized by another thread.", projectId, idOrAlias);
+        if (!_aliasMapping.containsKey(idOrAlias)) {
+            log.warn("Request received to initialize cache for ID or alias '{}', but that doesn't exist in the alias map. Returning null.");
+            return null;
+        }
+
+        // Get the project ID from the alias.
+        final String projectId = _aliasMapping.get(idOrAlias);
+        if (has(projectId)) {
+            log.info("Found project ID {} for ID or alias {} and it has a project cache entry, this was probably initialized by another thread.", projectId, idOrAlias);
             return getCachedProjectCache(projectId);
         }
 
-        final String projectId = _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, idOrAlias), String.class);
         log.info("Locking and initializing project cache for ID or alias {}, which mapped to project ID {}", idOrAlias, projectId);
-
-        // Make sure we have a concrete user object then try to retrieve the project.
         final XnatProjectdata project;
         try {
             project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
@@ -520,9 +535,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         final ProjectCache projectCache = new ProjectCache(project);
 
         // This caches all of the users from the standard user groups and their permissions ahead of time in the most efficient way possible.
-        for (final String accessLevel: USER_GROUP_SUFFIXES.keySet()) {
+        for (final String accessLevel : USER_GROUP_SUFFIXES.keySet()) {
             final List<AccessLevel> accessLevelPermissions = USER_GROUP_SUFFIXES.get(accessLevel);
-            for (final String userIdByAccess: _template.queryForList(QUERY_USERS_BY_GROUP, getProjectAccessParameterSource(projectId, accessLevel), String.class)) {
+            for (final String userIdByAccess : _template.queryForList(QUERY_USERS_BY_GROUP, getProjectAccessParameterSource(projectId, accessLevel), String.class)) {
                 log.debug("Caching user {} for access level {} on project {}", userIdByAccess, accessLevel, projectId);
                 projectCache.addUser(userIdByAccess, accessLevelPermissions);
             }
@@ -532,7 +547,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         cacheObject(projectId, projectCache);
 
         // Hooray, we found the project, so let's cache the ID and all the aliases.
-        cacheProjectIdsAndAliases(projectId, project.getAliases_alias());
+        cacheProjectIdsAndAliases(projectId);
 
         return projectCache;
     }
@@ -542,40 +557,21 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private void handleCacheRemoveEvent(final Ehcache cache, final Element element, final String event) {
-        if (isProjectCacheEvent(cache, element)) {
-            final XnatProjectdata project = getProjectCacheEventInstance(element);
-            log.debug("Got a {} event for the project {}, removing the corresponding ID and alias mappings", event, project.getId());
-            removeProjectIdMappings(project);
-        }
+        log.debug("Handling cache remove event in cache {} with element {} and event {}", cache.getName(), element.getObjectKey(), event);
     }
 
-    private void cacheProjectIdsAndAliases(final String projectId, final List<XnatProjectdataAliasI> aliases) {
+    private void cacheProjectIdsAndAliases(final String projectId) {
         _aliasMapping.put(projectId, projectId);
-        for (final XnatProjectdataAliasI alias: aliases) {
-            _aliasMapping.put(alias.getAlias(), projectId);
+        final List<String> aliases = getProjectAliases(projectId);
+        for (final String alias : aliases) {
+            _aliasMapping.put(alias, projectId);
         }
-        // Test for debug here because the list transform in the debug logging statement is non-trivial.
-        if (log.isDebugEnabled()) {
-            log.debug("Just cached ID and aliases for project {}: {}", projectId, Joiner.on(", ").join(Lists.transform(aliases, new Function<XnatProjectdataAliasI, String>() {
-                @Override
-                public String apply(final XnatProjectdataAliasI alias) {
-                    return alias.getAlias();
-                }
-            })));
+        if (_projectsAndAliases.containsKey(projectId)) {
+            _projectsAndAliases.removeAll(projectId);
         }
-    }
-
-    private void removeProjectIdMappings(final XnatProjectdata project) {
-        final String projectId = project.getId();
-        _aliasMapping.remove(projectId);
-        log.debug("Removed mapping for project ID {}", projectId);
-
-        final List<XnatProjectdataAliasI> aliases = project.getAliases_alias();
-        for (final XnatProjectdataAliasI alias: aliases) {
-            final String aliasId = alias.getAlias();
-            _aliasMapping.remove(aliasId);
-            log.debug("Removed alias {} mapping for project ID {}", aliasId, projectId);
-        }
+        _projectsAndAliases.put(projectId, projectId);
+        _projectsAndAliases.putAll(projectId, aliases);
+        log.debug("Just cached ID and aliases for project {}: {}", projectId, aliases);
     }
 
     /**
@@ -599,6 +595,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return user.getUsername();
     }
 
+    @SuppressWarnings("unused")
     private static XnatProjectdata getProjectCacheEventInstance(final Element element) {
         return ((ProjectCache) element.getObjectValue()).getProject();
     }
@@ -607,6 +604,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
+    @SuppressWarnings("unused")
     private static boolean isProjectCacheEvent(final Ehcache cache, final Element element) {
         return isProjectCacheEvent(cache) && (element == null || element.getObjectValue() instanceof ProjectCache);
     }
@@ -705,17 +703,33 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                                                                                                 "  a.alias = :projectId";
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-    private static final String QUERY_USERS_BY_GROUP    = "SELECT DISTINCT login " +
-                                                          "FROM xdat_user " +
-                                                          "  RIGHT JOIN xdat_user_groupid xug ON xdat_user.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
-                                                          "WHERE groupid = :projectId || :accessLevel";
-    private static final String QUERY_PROJECTS_BY_FIELD = "SELECT id " +
-                                                          "FROM xnat_projectdata " +
-                                                          "WHERE ${column} = :value";
+    private static final String QUERY_USERS_BY_GROUP      = "SELECT DISTINCT login " +
+                                                            "FROM xdat_user " +
+                                                            "  RIGHT JOIN xdat_user_groupid xug ON xdat_user.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
+                                                            "WHERE groupid = :projectId || :accessLevel";
+    private static final String QUERY_PROJECTS_BY_FIELD   = "SELECT id " +
+                                                            "FROM xnat_projectdata " +
+                                                            "WHERE ${column} = :value";
+    private static final String QUERY_GET_PROJECT_ALIASES = "SELECT " +
+                                                            "  alias " +
+                                                            "FROM xnat_projectdata_alias alias " +
+                                                            "WHERE aliases_alias_xnat_projectdata_id = :projectId";
+    private static final String QUERY_GET_IDS_AND_ALIASES = "SELECT " +
+                                                            "  aliases_alias_xnat_projectdata_id AS project_id, " +
+                                                            "  alias AS id_or_alias " +
+                                                            "FROM xnat_projectdata_alias alias " +
+                                                            "LEFT JOIN xnat_projectdata project on alias.aliases_alias_xnat_projectdata_id = project.id " +
+                                                            "UNION " +
+                                                            "SELECT " +
+                                                            "  id AS project_id, " +
+                                                            "  id AS id_or_alias " +
+                                                            "FROM xnat_projectdata project " +
+                                                            "ORDER BY project_id, id_or_alias";
 
-    private final Set<String>         _siteAdmins       = new HashSet<>();
-    private final Set<String>         _nonAdmins        = new HashSet<>();
-    private final Map<String, String> _aliasMapping     = new HashMap<>();
+    private final Set<String>                       _siteAdmins         = new HashSet<>();
+    private final Set<String>                       _nonAdmins          = new HashSet<>();
+    private final Map<String, String>               _aliasMapping       = new HashMap<>();
+    private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;

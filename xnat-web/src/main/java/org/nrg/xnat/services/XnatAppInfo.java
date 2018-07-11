@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -89,22 +90,23 @@ public class XnatAppInfo {
         }
 
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
+            final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
             if (input != null) {
                 final Manifest   manifest   = new Manifest(input);
                 final Attributes attributes = manifest.getMainAttributes();
                 final String     rawVersion = attributes.getValue(MANIFEST_VERSION);
 
-                _properties.setProperty(PROPERTY_VERSION, rawVersion);
-                _properties.setProperty(PROPERTY_BUILD_NUMBER, attributes.getValue(MANIFEST_BUILD_NUMBER));
-                _properties.setProperty(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
-                _properties.setProperty(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
-                _properties.setProperty(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
+                builder.put(PROPERTY_VERSION, rawVersion);
+                builder.put(PROPERTY_BUILD_NUMBER, attributes.getValue(MANIFEST_BUILD_NUMBER));
+                builder.put(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
+                builder.put(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
+                builder.put(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
 
                 for (final Object key : attributes.keySet()) {
                     final String name = key.toString();
                     if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name) && !MANIFEST_ATTRIBUTE_EXCLUSIONS.contains(name)) {
                         final String propertyKey = MANIFEST_PROPERTY_MAPPING.containsKey(name) ? MANIFEST_PROPERTY_MAPPING.get(name) : name;
-                        _properties.setProperty(propertyKey, attributes.getValue(name));
+                        builder.put(propertyKey, attributes.getValue(name));
                     }
                 }
                 final Map<String, Attributes> entries = manifest.getEntries();
@@ -118,8 +120,10 @@ public class XnatAppInfo {
                     }
                 }
 
-                _buildDate = parseDate(_properties.getProperty(PROPERTY_BUILD_DATE));
-                _properties.setProperty(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+                _buildDate = parseDate(attributes.getValue(MANIFEST_BUILD_DATE));
+                builder.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+
+                _properties = builder.build();
 
                 if (rawVersion.matches(NON_RELEASE_VERSION_REGEX)) {
                     _versionDisplay = rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")";
@@ -130,21 +134,22 @@ public class XnatAppInfo {
                 log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");
                 _versionDisplay = "Unknown";
                 _buildDate = new Date();
-                _properties.setProperty(PROPERTY_BUILD_NUMBER, "Unknown");
-                _properties.setProperty(PROPERTY_BUILD_DATE, FORMATTER.format(_buildDate));
-                _properties.setProperty(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
-                _properties.setProperty(PROPERTY_VERSION, "Unknown");
-                _properties.setProperty(PROPERTY_SHA, "Unknown");
-                _properties.setProperty(PROPERTY_DIRTY, "Unknown");
+                builder.put(PROPERTY_BUILD_NUMBER, "Unknown");
+                builder.put(PROPERTY_BUILD_DATE, FORMATTER.format(_buildDate));
+                builder.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+                builder.put(PROPERTY_VERSION, "Unknown");
+                builder.put(PROPERTY_SHA, "Unknown");
+                builder.put(PROPERTY_DIRTY, "Unknown");
+                _properties = builder.build();
             }
-            if (log.isDebugEnabled()) {
-                log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
-                          _properties.getProperty(PROPERTY_VERSION),
-                          _properties.getProperty(PROPERTY_BUILD_NUMBER),
-                          _properties.getProperty(PROPERTY_BUILD_DATE),
-                          _properties.getProperty(PROPERTY_SHA),
-                          _properties.getProperty(PROPERTY_DIRTY));
-            }
+
+            log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}\n * Dirty flag: {}",
+                      getVersion(),
+                      getBuildNumber(),
+                      getBuildDate(),
+                      getCommitHashFull(),
+                      isDirty());
+
             if (!isInitialized()) {
                 try {
                     final int count = _template.queryForObject("select count(*) from arc_archivespecification", Integer.class);
@@ -199,6 +204,7 @@ public class XnatAppInfo {
         }
     }
 
+    @SuppressWarnings("unused")
     public void updateOpenUrlList() {
         /*
          * NOTE:  Currently there is no reason to call this method.  The open URL list is not checked for every REST call,
@@ -231,6 +237,7 @@ public class XnatAppInfo {
      *
      * @return A map containing the found preferences.
      */
+    @SuppressWarnings("unused")
     public Map<String, String> getFoundPreferences() {
         return new HashMap<>(_foundPreferences);
     }
@@ -298,8 +305,8 @@ public class XnatAppInfo {
      *
      * @return The primary system properties.
      */
-    public Properties getSystemProperties() {
-        return (Properties) _properties.clone();
+    public Map<String, String> getSystemProperties() {
+        return _properties;
     }
 
     /**
@@ -309,6 +316,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
+    @SuppressWarnings("unused")
     public String getConfiguredProperty(final String property) {
         return getConfiguredProperty(property, (String) null);
     }
@@ -334,6 +342,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
+    @SuppressWarnings("unused")
     public <T> T getConfiguredProperty(final String property, final Class<T> type) {
         return getConfiguredProperty(property, type, null);
     }
@@ -352,8 +361,9 @@ public class XnatAppInfo {
         return _environment.getProperty(property, type, defaultValue);
     }
 
+    @SuppressWarnings("unused")
     public Set<String> getSystemPropertyNames() {
-        return _properties.stringPropertyNames();
+        return _properties.keySet();
     }
 
     /**
@@ -376,7 +386,7 @@ public class XnatAppInfo {
      * @return The value of the specified property.
      */
     public String getSystemProperty(final String property, final String defaultValue) {
-        return _properties.getProperty(property, defaultValue);
+        return ObjectUtils.defaultIfNull(_properties.get(property), defaultValue);
     }
 
     /**
@@ -394,7 +404,7 @@ public class XnatAppInfo {
      * @return The build number of the application.
      */
     public String getBuildNumber() {
-        return _properties.getProperty(PROPERTY_BUILD_NUMBER);
+        return _properties.get(PROPERTY_BUILD_NUMBER);
     }
 
     /**
@@ -412,17 +422,17 @@ public class XnatAppInfo {
      * @return The commit hash from which the application was built.
      */
     public String getCommitHash() {
-        return _properties.getProperty(PROPERTY_SHA);
+        return _properties.get(PROPERTY_SHA);
     }
 
     /**
-     * Indicates whether the applicated was built from "dirty" code, i.e. where there were changes in the repository that had not yet been committed
-     * to the repository.
+     * Indicates whether the application was built from "dirty" code, i.e. where there were changes in the repository that had
+     * not yet been committed to the repository.
      *
      * @return Returns true if there were any changes to the code that hadn't yet been committed at build time, false otherwise.
      */
     public boolean isDirty() {
-        return BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(_properties.getProperty(PROPERTY_DIRTY)), false);
+        return BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(_properties.get(PROPERTY_DIRTY)), false);
     }
 
     /**
@@ -431,7 +441,7 @@ public class XnatAppInfo {
      * @return The full commit hash from which the application was built.
      */
     public String getCommitHashFull() {
-        return _properties.getProperty(PROPERTY_SHA_FULL);
+        return _properties.get(PROPERTY_SHA_FULL);
     }
 
     /**
@@ -440,7 +450,7 @@ public class XnatAppInfo {
      * @return The commit number of the application.
      */
     public String getCommit() {
-        return _properties.getProperty(PROPERTY_COMMIT);
+        return _properties.get(PROPERTY_COMMIT);
     }
 
     /**
@@ -449,7 +459,7 @@ public class XnatAppInfo {
      * @return The commit number of the application.
      */
     public String getBranch() {
-        return _properties.getProperty(PROPERTY_BRANCH);
+        return _properties.get(PROPERTY_BRANCH);
     }
 
     /**
@@ -576,6 +586,7 @@ public class XnatAppInfo {
         return checkUrls(request, _initUrls);
     }
 
+    @SuppressWarnings("unused")
     public boolean isOpenUrlRequest(final HttpServletRequest request) {
         return checkUrls(request, _openUrls);
     }
@@ -751,8 +762,8 @@ public class XnatAppInfo {
     private final List<String>                     _adminUrls        = new ArrayList<>();
     private final Map<String, String>              _foundPreferences = new HashMap<>();
     private final Date                             _startTime        = new Date();
-    private final Properties                       _properties       = new Properties();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
+    private final Map<String, String>              _properties;
     private final String                           _versionDisplay;
     private final Date                             _buildDate;
 }

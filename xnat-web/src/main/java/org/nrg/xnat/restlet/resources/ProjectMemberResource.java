@@ -60,19 +60,22 @@ public class ProjectMemberResource extends SecureResource {
 
         final UserI user = getUser();
 
-        displayHiddenUsers = Boolean.parseBoolean((String) getParameter(request, "DISPLAY_HIDDEN_USERS"));
-        projectId = getUrlEncodedParameter(request, "PROJECT_ID");
-        project = StringUtils.isNotBlank(projectId) ? XnatProjectdata.getProjectByIDorAlias(projectId, user, false) : null;
-        groupId = getUrlEncodedParameter(request, "GROUP_ID");
-        group = findGroup();
+        _displayHiddenUsers = Boolean.parseBoolean((String) getParameter(request, "DISPLAY_HIDDEN_USERS"));
+        _projectId = getUrlEncodedParameter(request, "PROJECT_ID");
+        _project = StringUtils.isNotBlank(_projectId) ? XnatProjectdata.getProjectByIDorAlias(_projectId, user, false) : null;
 
-        if (group == null) {
+        final String groupId = getUrlEncodedParameter(request, "GROUP_ID");
+        _group = findGroup(_projectId, groupId);
+
+        if (_group == null) {
             log.error("Couldn't find a group for the group ID '{}'", groupId);
-            throw new NotFoundException(projectId + ": " + groupId);
+            throw new NotFoundException(_projectId + ": " + groupId);
         }
 
+        _groupId = _group.getId();
+
         final Method method = request.getMethod();
-        if ((method.equals(Method.PUT) || method.equals(Method.DELETE)) && project == null) {
+        if ((method.equals(Method.PUT) || method.equals(Method.DELETE)) && _project == null) {
             throw method.equals(Method.PUT) ? new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "You must specify a project and group for this call.") : new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a project and users to be deleted from the group for this call.");
         }
 
@@ -82,14 +85,14 @@ public class ProjectMemberResource extends SecureResource {
             try {
                 final List<? extends UserI> groupMembers = findGroupMember(userId);
                 if (groupMembers == null) {
-                    unknown.add(userId);
+                    _unknown.add(userId);
                 } else {
-                    users.addAll(groupMembers);
+                    _users.addAll(groupMembers);
                 }
             } catch (UserNotFoundException e) {
-                unknown.add(userId);
+                _unknown.add(userId);
             } catch (Exception e) {
-                log.error("An error occurred trying to retrieve group information for project ID '{}', group ID '{}' and user ID(s) '{}'", projectId, groupId, userIdParameter, e);
+                log.error("An error occurred trying to retrieve group information for project ID '{}', group ID '{}' and user ID(s) '{}'", _projectId, _groupId, userIdParameter, e);
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
             }
         }
@@ -104,17 +107,17 @@ public class ProjectMemberResource extends SecureResource {
     public void handleDelete() {
         final UserI user = getUser();
         try {
-            final PersistentWorkflowI workflow  = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, projectId, newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.REMOVE_USERS_FROM_PROJECT));
+            final PersistentWorkflowI workflow  = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, XdatUsergroup.SCHEMA_ELEMENT_NAME, _groupId, _projectId, newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.REMOVE_USERS_FROM_PROJECT));
             final EventMetaI          eventMeta = workflow.buildEvent();
-            if (Permissions.canDelete(user, project)) {
-                Groups.removeUsersFromGroup(groupId, user, users, eventMeta);
+            if (Permissions.canDelete(user, _project)) {
+                Groups.removeUsersFromGroup(_groupId, user, _users, eventMeta);
                 WorkflowUtils.complete(workflow, eventMeta);
             } else {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
                 WorkflowUtils.fail(workflow, eventMeta);
             }
         } catch (Exception e) {
-            log.error("An error occurred deleting the group {}", groupId, e);
+            log.error("An error occurred deleting the group {}", _groupId, e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
         }
         returnDefaultRepresentation();
@@ -125,24 +128,24 @@ public class ProjectMemberResource extends SecureResource {
         final HttpServletRequest request = ServletCall.getRequest(getRequest());
         try {
             final UserI user = getUser();
-            if (Permissions.canDelete(user, project)) {
-                if (unknown.size() > 0) {
+            if (Permissions.canDelete(user, _project)) {
+                if (_unknown.size() > 0) {
                     //NEW USER
                     try {
-                        for (String uID : unknown) {
+                        for (String uID : _unknown) {
                             VelocityContext context = new VelocityContext();
                             context.put("user", user);
                             context.put("server", TurbineUtils.GetFullServerPath(request));
                             context.put("siteLogoPath", XDAT.getSiteLogoPath());
                             context.put("process", "Transfer to the archive.");
                             context.put("system", TurbineUtils.GetSystemName());
-                            context.put("access_level", groupId);
+                            context.put("access_level", _groupId);
                             context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                            context.put("projectOM", project);
+                            context.put("projectOM", _project);
                             //SEND email to user
-                            final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
+                            final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, _project.getId(), _project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
                             try {
-                                ProjectAccessRequest.InviteUser(context, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".");
+                                ProjectAccessRequest.InviteUser(context, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + _project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".");
                                 WorkflowUtils.complete(wrk, wrk.buildEvent());
                             } catch (Exception e) {
                                 WorkflowUtils.fail(wrk, wrk.buildEvent());
@@ -154,18 +157,18 @@ public class ProjectMemberResource extends SecureResource {
                     }
                 }
 
-                if (users.size() > 0) {
+                if (_users.size() > 0) {
                     //CURRENT USER
                     final boolean sendmail = isQueryVariableTrue("sendemail");
 
-                    for (final UserI newUser : users) {
-                        if (newUser != null && newUser.getID().equals(Users.getGuest().getID())) {
+                    for (final UserI newUser : _users) {
+                        if (newUser.getID().equals(Users.getGuest().getID())) {
                             getResponse().setStatus(Status.CLIENT_ERROR_PRECONDITION_FAILED);
                         } else {
-                            final PersistentWorkflowI workflow  = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, Users.getUserDataType(), newUser.getID().toString(), project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USER_TO_PROJECT));
+                            final PersistentWorkflowI workflow  = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, Users.getUserDataType(), newUser.getID().toString(), _project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USER_TO_PROJECT));
                             final EventMetaI          eventMeta = workflow.buildEvent();
 
-                            project.addGroupMember(group.getId(), newUser, user, WorkflowUtils.setStep(workflow, "Add " + newUser.getLogin()));
+                            _project.addGroupMember(_groupId, newUser, user, WorkflowUtils.setStep(workflow, "Add " + newUser.getLogin()));
                             WorkflowUtils.complete(workflow, eventMeta);
 
                             if (sendmail) {
@@ -176,10 +179,10 @@ public class ProjectMemberResource extends SecureResource {
                                     context.put("siteLogoPath", XDAT.getSiteLogoPath());
                                     context.put("process", "Transfer to the archive.");
                                     context.put("system", TurbineUtils.GetSystemName());
-                                    context.put("access_level", group.getDisplayname());
+                                    context.put("access_level", _group.getDisplayname());
                                     context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                                    context.put("projectOM", project);
-                                    ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
+                                    context.put("projectOM", _project);
+                                    ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + _project.getName());
                                 } catch (Throwable e) {
                                     log.error("", e);
                                 }
@@ -206,10 +209,10 @@ public class ProjectMemberResource extends SecureResource {
     @Override
     public Representation represent(Variant variant) {
         XFTTable table = null;
-        if (project != null) {
+        if (_project != null) {
             try {
-                StringBuilder query = new StringBuilder("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(project.getId()).append("' ");
-                if (!displayHiddenUsers) {
+                StringBuilder query = new StringBuilder("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(_project.getId()).append("' ");
+                if (!_displayHiddenUsers) {
                     query.append(" and enabled = 1 ");
                 }
                 query.append(" ORDER BY g.id DESC;");
@@ -232,7 +235,10 @@ public class ProjectMemberResource extends SecureResource {
         return representTable(table, mt, params);
     }
 
-    private UserGroupI findGroup() {
+    private UserGroupI findGroup(final String projectId, final String groupId) {
+        if (StringUtils.isBlank(groupId)) {
+            return null;
+        }
         final UserGroupI groupById = Groups.getGroup(groupId);
         if (groupById != null) {
             return groupById;
@@ -281,11 +287,11 @@ public class ProjectMemberResource extends SecureResource {
         return null;
     }
 
-    private final String          projectId;
-    private final XnatProjectdata project;
-    private final String          groupId;
-    private final UserGroupI      group;
-    private final boolean         displayHiddenUsers;
-    private final List<UserI>     users   = new ArrayList<>();
-    private final List<String>    unknown = new ArrayList<>();
+    private final String          _projectId;
+    private final XnatProjectdata _project;
+    private final String          _groupId;
+    private final UserGroupI      _group;
+    private final boolean         _displayHiddenUsers;
+    private final List<UserI>     _users   = new ArrayList<>();
+    private final List<String>    _unknown = new ArrayList<>();
 }

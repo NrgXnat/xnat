@@ -296,11 +296,13 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 	@Override
 	public Representation represent(Variant variant) {
 		final UserI user = getUser();
-		XFTTable table = null;
-		if(assessed!=null){
-			Representation rep=super.represent(variant);
-			if(rep!=null)return rep;
-			
+		if (assessed != null) {
+			final Representation representation = super.represent(variant);
+			if (representation != null) {
+				return representation;
+			}
+
+			XFTTable table = null;
 			try {
 				String rootElementName=this.getRootElementName();
 				QueryOrganizer qo = new QueryOrganizer(rootElementName,user,ViewManager.ALL);
@@ -323,30 +325,32 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 					}
 					where.addClause(projects);
 				}
-				
-				
+
 				qo.setWhere(where);
-				
-				String query=qo.buildQuery();
-				
-				table=XFTTable.Execute(query, user.getDBName(), userName);
-				
-				if(table.size()>0){
-					table=formatHeaders(table,qo,rootElementName+"/ID","/data/experiments/");
+				final String query=qo.buildQuery();
+				table = XFTTable.Execute(query, user.getDBName(), userName);
+
+				if (table.size() > 0) {
+					table = formatHeaders(table, qo, rootElementName + "/ID", "/data/experiments/");
 					
 					final Integer labelI=table.getColumnIndex("label");
 					final Integer idI=table.getColumnIndex(rootElementName+"/ID");
 					if(labelI!=null && idI!=null){
-						final XFTTable t= XFTTable.Execute("SELECT sharing_share_xnat_experimentda_id as id,label FROM xnat_experimentData_share WHERE project='"+ proj.getId() + "'", user.getDBName(), user.getUsername());
-						final Hashtable lbls=t.toHashtable("id", "label");
-						for(Object[] row:table.rows()){
-							final String id=(String)row[idI];
-							if(lbls.containsKey(id)){
-								final String lbl=(String)lbls.get(id);
-								if(null!=lbl && !lbl.equals("")){
-									row[labelI]=lbl;
+						final String    projectId  = proj != null ? proj.getId() : assessed.getProject();
+						if (StringUtils.isNotBlank(projectId)) {
+							final XFTTable  shared    = XFTTable.Execute("SELECT sharing_share_xnat_experimentda_id as id,label FROM xnat_experimentData_share WHERE project='" + projectId + "'", user.getDBName(), user.getUsername());
+							final Hashtable labels = shared.toHashtable("id", "label");
+							for(Object[] row:table.rows()){
+								final String id=(String)row[idI];
+								if(labels.containsKey(id)){
+									final String lbl=(String)labels.get(id);
+									if(null!=lbl && !lbl.equals("")){
+										row[labelI]=lbl;
+									}
 								}
 							}
+						} else {
+							logger.warn("Didn't query for shared assessors because no project was specified explicitly nor found on the experiment " + assessed.getId());
 						}
 					}
 				}
@@ -354,7 +358,7 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 				logger.error("", e);
 			}
 
-			Hashtable<String, Object> params = new Hashtable<>();
+			final Hashtable<String, Object> params = new Hashtable<>();
 			if (table != null) {
 				params.put("totalRecords", table.size());
 			}

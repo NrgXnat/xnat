@@ -12,6 +12,8 @@ package org.nrg.xnat.services.investigators;
 import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xdat.model.XnatInvestigatordataI;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -33,11 +35,19 @@ public class InvestigatorService {
     }
 
     public Investigator getInvestigator(final int xnatInvestigatordataId) {
-        return _template.queryForObject(INVESTIGATOR_QUERY + BY_ID_WHERE, new Object[]{xnatInvestigatordataId}, ROW_MAPPER);
+        try {
+            return _template.queryForObject(INVESTIGATOR_QUERY + BY_ID_WHERE, new Object[]{xnatInvestigatordataId}, ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public Investigator getInvestigator(final String firstname, final String lastname) {
-        return _template.queryForObject(INVESTIGATOR_QUERY + BY_FIRST_LAST_WHERE, new Object[]{firstname, lastname}, ROW_MAPPER);
+        try {
+            return _template.queryForObject(INVESTIGATOR_QUERY + BY_FIRST_LAST_WHERE, new Object[]{firstname, lastname}, ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public List<Investigator> getInvestigators() {

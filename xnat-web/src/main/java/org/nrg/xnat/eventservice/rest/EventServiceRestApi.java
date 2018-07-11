@@ -103,17 +103,17 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(created.name() + ":" + Long.toString(created.id()), HttpStatus.CREATED);
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON, params = {"event-id"})
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON, params = {"event-type"})
     @ApiOperation(value = "Get a subscription filter for a given Event ID")
     @ResponseBody
-    public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @RequestParam(name="event-id") String eventId) {
+    public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @RequestParam(name="event-type") String eventId) {
         return eventService.getEventFilterNodes(eventId);
     }
 
-    @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties"}, method = GET, produces = JSON, params = {"event-id"})
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties"}, method = GET, produces = JSON, params = {"event-type"})
     @ApiOperation(value = "Get a event properties for a given Event ID")
     @ResponseBody
-    public List<EventPropertyNode> retrieveEventProperties(final @RequestParam(value = "event-id") String eventId) {
+    public List<EventPropertyNode> retrieveEventProperties(final @RequestParam(value = "event-type") String eventId) {
         return eventService.getEventPropertyNodes(eventId);
     }
 
@@ -269,9 +269,9 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         }
     }
 
-    @XapiRequestMapping(restrictTo = Authenticated, value = "/events/event", method = GET, params = {"event-id"})
+    @XapiRequestMapping(restrictTo = Authenticated, value = "/events/event", method = GET, params = {"event-type"})
     @ResponseBody
-    public SimpleEvent getEvent(final @RequestParam(value = "event-id") String eventId,
+    public SimpleEvent getEvent(final @RequestParam(value = "event-type") String eventId,
                                 final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
         if(loadDetails != null) {
             return eventService.getEvent(eventId, loadDetails);
@@ -290,7 +290,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     //}
 
 
-    @XapiRequestMapping(restrictTo = Admin, value = "/events/actions", method = GET, params = {"!event-id"})
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/actions", method = GET, params = {"!event-type"})
     @ResponseBody
     public List<Action> getActions(final @RequestParam(value = "project", required = false) String projectId,
                                       final @RequestParam(value = "xnattype", required = false) String xnatType)
@@ -302,7 +302,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             return eventService.getActions(xnatType, user);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/actions", method = GET, params = {"!event-id"})
+    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/actions", method = GET, params = {"!event-type"})
     @ResponseBody
     public List<Action> getProjectActions(
             final @PathVariable String project,
@@ -322,7 +322,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/actionsbyevent", method = GET, params = {"!xnattype"})
     @ApiOperation(value="Get actions that can act on a particular Event type")
-    public List<Action> getActionsByEvent(final @RequestParam(value = "event-id", required = true) String eventId,
+    public List<Action> getActionsByEvent(final @RequestParam(value = "event-type", required = true) String eventId,
                                           final @RequestParam(value = "project", required = false) String projectId)
             throws NrgServiceRuntimeException {
         final UserI user = XDAT.getUserDetails();
@@ -331,7 +331,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/actionsbyevent", method = GET, params = {"!xnattype"})
     @ApiOperation(value="Get actions that can act on a particular Event type")
-    public List<Action> getProjectActionsByEvent(final @RequestParam(value = "event-id", required = true) String eventId,
+    public List<Action> getProjectActionsByEvent(final @RequestParam(value = "event-type", required = true) String eventId,
                                           final @PathVariable String project)
             throws NrgServiceRuntimeException {
         final UserI user = XDAT.getUserDetails();

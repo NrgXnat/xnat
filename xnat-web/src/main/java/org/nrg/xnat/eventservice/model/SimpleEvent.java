@@ -12,7 +12,8 @@ import java.util.Map;
 @AutoValue
 public abstract class SimpleEvent {
 
-    @JsonProperty("id") public abstract String id();
+    @JsonProperty("type") public abstract String id();
+    @JsonProperty("statuses") public abstract List<String> statuses();
     @JsonIgnore
     @JsonProperty("listener") public abstract String listenerService();
     @JsonProperty("display-name") public abstract String displayName();
@@ -26,6 +27,7 @@ public abstract class SimpleEvent {
 
 
     public static SimpleEvent create(@JsonProperty("id") String id,
+                                     @JsonProperty("statuses") List<String> statuses,
                                      @JsonProperty("listener") String listenerService,
                                      @JsonProperty("display-name") String displayName,
                                      @JsonProperty("description") String description,
@@ -34,6 +36,7 @@ public abstract class SimpleEvent {
                                      @JsonProperty("is-xsi-type") boolean isXsiType) {
         return builder()
                 .id(id)
+                .statuses(statuses)
                 .listenerService(listenerService)
                 .displayName(displayName)
                 .description(description)
@@ -52,6 +55,8 @@ public abstract class SimpleEvent {
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder id(String id);
+
+        public abstract Builder statuses(List<String> statuses);
 
         public abstract Builder listenerService(String listenerService);
 

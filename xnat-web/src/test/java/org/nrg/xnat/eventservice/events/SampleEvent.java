@@ -3,9 +3,11 @@ package org.nrg.xnat.eventservice.events;
 import com.google.common.reflect.TypeToken;
 import org.nrg.framework.event.XnatEventServiceEvent;
 
+import java.util.Arrays;
 import java.util.Date;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name = "SomethingHappenedEvent")
 public class SampleEvent implements EventServiceEvent {
@@ -76,7 +78,7 @@ public class SampleEvent implements EventServiceEvent {
     }
 
     @Override
-    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Override
     public Enum getCurrentStatus() {

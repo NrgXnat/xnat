@@ -66,9 +66,9 @@ public class SubscriptionDeliveryEntityServiceImpl
         if(subscriptionDeliveryEntity != null) {
             subscriptionDeliveryEntity.addTimedEventStatus(status, statusTimestamp, message);
             update(subscriptionDeliveryEntity);
-            log.debug("Updated SubscriptionDeliveryEntity: {} to update with status: {}", deliveryId, status.toString());
+            log.debug("Updated SubscriptionDeliveryEntity: {} with status: {}", deliveryId, status.toString());
         } else{
-            log.error("Could not find SubscriptionDeliveryEntity: {} to update with status: {}", deliveryId, status.toString());
+            log.error("Could not find SubscriptionDeliveryEntity: {} with status: {}", deliveryId, status.toString());
         }
     }
 

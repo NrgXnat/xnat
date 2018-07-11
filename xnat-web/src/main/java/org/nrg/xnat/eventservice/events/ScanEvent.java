@@ -6,7 +6,9 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @XnatEventServiceEvent(name="ScanEvent")
@@ -41,7 +43,7 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
     }
 
     @Override
-    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Override
     public EventServiceListener getInstance() {

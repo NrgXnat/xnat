@@ -478,17 +478,18 @@ public class EventServiceImpl implements EventService {
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
         return SimpleEvent.builder()
-                .id(event.getType() == null ? "" : event.getType())
-                .listenerService(
-                        event instanceof EventServiceListener
-                        ? ((EventServiceListener) event).getClass().getName()
-                        : "")
-                .displayName(event.getDisplayName() == null ? "" : event.getDisplayName())
-                .description(event.getDescription() == null ? "" : event.getDescription())
-                .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
-                .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
-                .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
-                .build();
+                    .id(event.getType() == null ? "" : event.getType())
+                    .statuses(event.getStatiStates())
+                    .listenerService(
+                            event instanceof EventServiceListener
+                            ? ((EventServiceListener) event).getClass().getName()
+                            : "")
+                      .displayName(event.getDisplayName() == null ? "" : event.getDisplayName())
+                      .description(event.getDescription() == null ? "" : event.getDescription())
+                      .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
+                      .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
+                      .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
+                      .build();
     }
 
     private ActionProvider toPojo(@Nonnull EventServiceActionProvider actionProvider) {

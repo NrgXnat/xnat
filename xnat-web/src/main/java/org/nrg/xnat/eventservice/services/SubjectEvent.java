@@ -6,7 +6,9 @@ import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @XnatEventServiceEvent(name="SubjectEvent")
@@ -41,9 +43,7 @@ public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSu
     }
 
     @Override
-    public EnumSet getStatiStates() {
-        return EnumSet.allOf(Status.class);
-    }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Override
     public EventServiceListener getInstance() {

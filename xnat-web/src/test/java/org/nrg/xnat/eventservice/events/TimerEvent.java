@@ -1,15 +1,17 @@
 package org.nrg.xnat.eventservice.events;
 
+import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.services.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Date;
-import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @EnableScheduling
@@ -50,9 +52,7 @@ public class TimerEvent extends CombinedEventServiceEvent<TimerEvent, Date>{
     }
 
     @Override
-    public EnumSet getStatiStates() {
-        return EnumSet.allOf(Status.class);
-    }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Scheduled(cron = "*/60 * * * * *")
     public void everyMinute()

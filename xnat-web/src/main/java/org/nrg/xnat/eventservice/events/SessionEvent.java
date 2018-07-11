@@ -6,7 +6,9 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @XnatEventServiceEvent(name="SessionEvent")
@@ -42,7 +44,7 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
     }
 
     @Override
-    public EnumSet getStatiStates() { return EnumSet.allOf(Status.class); }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Override
     public EventServiceListener getInstance() {

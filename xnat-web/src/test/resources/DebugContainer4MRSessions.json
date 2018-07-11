@@ -1,7 +1,7 @@
 {
   "name": "Debug Container Action for MR Session Archive",
   "active": true,
-  "action-key": "org.nrg.containers.services.CommandActionProvider:3",
+  "action-key": "org.nrg.containers.services.CommandActionProvider:4",
   "event-filter": {
     "event-type": "org.nrg.xnat.eventservice.events.SessionEvent",
     "status": "CREATED",

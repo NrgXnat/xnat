@@ -5,7 +5,9 @@ import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @XnatEventServiceEvent(name="ProjectEvent")
@@ -39,7 +41,7 @@ public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatPr
     }
 
     @Override
-    public EnumSet getStatiStates() { return EnumSet.allOf(SessionEvent.Status.class); }
+    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
     @Override
     public EventServiceListener getInstance() {

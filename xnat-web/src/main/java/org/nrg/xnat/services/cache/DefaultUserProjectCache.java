@@ -59,6 +59,7 @@ import java.util.regex.Matcher;
 
 import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
+import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 
@@ -351,9 +352,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      * @return A list of project objects.
      */
     private List<XnatProjectdata> getProjectsFromIds(final UserI user, final List<String> projectIds) {
-        if (log.isDebugEnabled()) {
-            log.debug("User {} is converting a list of {} strings to projects: {}", user.getUsername(), projectIds.size(), StringUtils.join(projectIds));
-        }
+        log.debug("User {} is converting a list of {} strings to projects: {}", user.getUsername(), projectIds.size(), projectIds);
         return Lists.transform(projectIds, new Function<String, XnatProjectdata>() {
             @Override
             public XnatProjectdata apply(final String projectId) {
@@ -401,7 +400,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return false;
             }
 
-            final ProjectCache projectCache = getProjectCache(idOrAlias);
+            final ProjectCache projectCache = getProjectCache(projectId);
 
             // If the project cache is null, the project doesn't exist (same as isCachedNonexistentProject() but it wasn't cached previously).
             if (projectCache == null) {
@@ -420,11 +419,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
             return CollectionUtils.containsAny(projectCache.getUserAccessLevels(userId), ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
-            log.error("Something bad happened trying to retrieve the user " + userId, e);
+            log.error("Something bad happened trying to retrieve the user {}", userId, e);
         } catch (UserNotFoundException e) {
-            log.error("A user not found exception occurred searching for the user " + userId + ". This really shouldn't happen as I checked for the user's existence earlier.", e);
+            log.error("A user not found exception occurred searching for the user {}. This really shouldn't happen as I checked for the user's existence earlier.", userId, e);
         } catch (Exception e) {
-            log.error("An error occurred trying to test whether the user " + userId + " can read the project specified by ID or alias " + idOrAlias, e);
+            log.error("An error occurred trying to test whether the user {} can read the project specified by ID or alias {}", userId, idOrAlias, e);
         }
         return false;
     }
@@ -615,21 +614,29 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             levels.add(Delete);
         } else if (Permissions.canEditProject(user, projectId)) {
             levels.add(Edit);
-        } else {
-            try {
-                if (Permissions.canReadProject(user, projectId) || Permissions.isProjectPublic(projectId)) {
-                    levels.add(Read);
-                }
-            } catch (Exception e) {
-                log.error("An error occurred trying to check read permissions for the user " + user.getUsername() + " on the project " + projectId, e);
-            }
+        } else if (Permissions.canReadProject(user, projectId)) {
+            levels.add(Read);
         }
-        if (Permissions.isProjectOwner(user, projectId)) {
-            levels.add(Owner);
-        } else if (Permissions.isProjectMember(user, projectId)) {
-            levels.add(Member);
-        } else if (Permissions.isProjectCollaborator(user, projectId)) {
-            levels.add(Collaborator);
+        // If no levels have been added, the user CAN'T be an owner, member, or collaborator, as there
+        // would be at least one level already added, so just return the list without checking that.
+        if (levels.isEmpty()) {
+            return levels;
+        }
+        final String access = Permissions.getUserProjectAccess(user, projectId);
+        if (StringUtils.isNotBlank(access)) {
+            switch (access) {
+                case OWNER_GROUP:
+                    levels.add(Owner);
+                    break;
+                case MEMBER_GROUP:
+                    levels.add(Member);
+                    break;
+                case COLLABORATOR_GROUP:
+                    levels.add(Collaborator);
+                    break;
+                default:
+                    log.warn("Unknown access group for user {} and project {}: {}", user.getUsername(), projectId);
+            }
         }
         return levels;
     }

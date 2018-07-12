@@ -777,15 +777,15 @@ public class Permissions {
         }
     }
 
-    public static boolean canReadProject(final UserI user, final String projectId) throws Exception {
+    public static boolean canReadProject(final UserI user, final String projectId) {
         return canReadProject(null, user, projectId);
     }
 
-    public static boolean canReadProject(final JdbcTemplate template, final UserI user, final String projectId) throws Exception {
+    public static boolean canReadProject(final JdbcTemplate template, final UserI user, final String projectId) {
         if (template != null && user.isGuest()) {
-            return getAllPublicProjects(template).addAll(getAllProtectedProjects(template));
+            return getAllPublicProjects(template).contains(projectId) || getAllProtectedProjects(template).contains(projectId);
         }
-        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+        return Roles.isSiteAdmin(user) || !isProjectPrivate(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
     }
 
     public static List<String> getAllProtectedProjects(final JdbcTemplate template) {

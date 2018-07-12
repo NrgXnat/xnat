@@ -19,6 +19,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
@@ -29,7 +30,9 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
@@ -38,6 +41,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
@@ -45,9 +49,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -55,6 +62,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 
 import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
@@ -66,7 +75,7 @@ import static org.nrg.xft.event.XftItemEventI.DELETE;
 @SuppressWarnings("Duplicates")
 @Service("userProjectCache")
 @Slf4j
-public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache {
+public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache, Initializing {
     @Autowired
     public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         super(cacheManager,
@@ -74,6 +83,27 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
         _cache = cache;
         _template = template;
+        _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+    }
+
+    @Override
+    public boolean canInitialize() {
+        try {
+            final boolean doesProjectTableExists              = _helper.tableExists("xnat_projectdata");
+            final boolean doesAliasTableExists                = _helper.tableExists("xnat_projectdata_alias");
+            final boolean isXftManagerComplete                = XFTManager.isComplete();
+            final boolean isDatabasePopulateOrUpdateCompleted = XDATServlet.isDatabasePopulateOrUpdateCompleted();
+            log.info("Project table {}, Project alias table {}, XFTManager initialization completed {}, database populate or updated completed {}", doesProjectTableExists, doesAliasTableExists, isXftManagerComplete, isDatabasePopulateOrUpdateCompleted);
+            return doesProjectTableExists && doesAliasTableExists && isXftManagerComplete && isDatabasePopulateOrUpdateCompleted;
+        } catch (SQLException e) {
+            log.info("Got an SQL exception checking for xdat_usergroup table", e);
+            return false;
+        }
+    }
+
+    @Async
+    @Override
+    public Future<Boolean> initialize() {
         _template.query(QUERY_GET_IDS_AND_ALIASES, new RowCallbackHandler() {
             @Override
             public void processRow(final ResultSet resultSet) throws SQLException {
@@ -83,6 +113,18 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 _projectsAndAliases.put(projectId, idOrAlias);
             }
         });
+        _initialized.set(true);
+        return new AsyncResult<>(true);
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return _initialized.get();
+    }
+
+    @Override
+    public Map<String, String> getInitializationStatus() {
+        return ImmutableMap.of("count", Integer.toString(_aliasMapping.size()));
     }
 
     @Override
@@ -737,7 +779,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final Set<String>                       _nonAdmins          = new HashSet<>();
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();
+    private final AtomicBoolean                     _initialized        = new AtomicBoolean(false);
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;
+    private final DatabaseHelper             _helper;
 }

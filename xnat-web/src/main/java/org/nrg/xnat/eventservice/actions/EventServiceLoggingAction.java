@@ -20,8 +20,8 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
-    private String displayName = "Sample Action";
-    private String description = "Sample action for EventService Event logs event.";
+    private String displayName = "Logging Action";
+    private String description = "Simple action for EventService Event that logs event detection.";
     private Map<String, ActionAttributeConfiguration> attributes;
     private Boolean enabled = true;
 

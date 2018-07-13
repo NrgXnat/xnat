@@ -1,0 +1,11 @@
+
+{
+  "name": "WorkflowStatusChange",
+  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+  "active": true,
+  "event-filter": {
+    "name": "FilterByWorkflowStatusAndLabel",
+    "event-type": "org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent"
+  },
+  "act-as-event-user": false
+}

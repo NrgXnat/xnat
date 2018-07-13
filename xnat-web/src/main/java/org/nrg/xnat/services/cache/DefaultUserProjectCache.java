@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
@@ -34,6 +35,7 @@ import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -80,6 +82,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.builder().xsiType(XnatInvestigatordata.SCHEMA_ELEMENT_NAME).action(XftItemEvent.DELETE).build(),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
         _cache = cache;
         _template = template;
@@ -125,47 +128,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @Override
     public Map<String, String> getInitializationStatus() {
         return ImmutableMap.of("count", Integer.toString(_aliasMapping.size()));
-    }
-
-    @Override
-    protected boolean handleEventImpl(final XftItemEventI event) {
-        // TODO: Catch event where user is added to or removed from site admins.
-        final String projectId = getProjectIdFromEvent(event);
-        if (StringUtils.isBlank(projectId)) {
-            log.error("Handled an event that should have had a project ID, but it didn't: {}", event);
-            return false;
-        }
-
-        final String  action   = event.getAction();
-        final boolean isDelete = StringUtils.equals(DELETE, action);
-        if (StringUtils.equals(CREATE, action)) {
-            _aliasMapping.put(projectId, projectId);
-            log.debug("Created new project, cached ID {}", projectId);
-        } else if (isDelete) {
-            _aliasMapping.remove(projectId);
-            final List<String> aliases = _projectsAndAliases.removeAll(projectId);
-            for (final String alias : aliases) {
-                _aliasMapping.remove(alias);
-            }
-            log.debug("The project {} was deleted, so skipping cache reinitialization. Removed ID and any aliases from cache: {}", projectId, aliases);
-        }
-
-        log.info("Got an XFTItemEvent for project '{}' with action '{}'", projectId, action);
-        final ProjectCache projectCache = getCachedProjectCache(projectId);
-
-        // If there was no cached project, maybe it was cached as a non-existent project and has been created?
-        if (projectCache == null || projectCache.getProject() == null) {
-            log.info("No cache found for the project '{}', nothing much to be done.", projectId);
-        } else {
-            log.info("Found project cache for project {}, evicting the project cache.", projectId);
-            evict(projectId);
-        }
-
-        if (!isDelete) {
-            initializeProjectCache(projectId);
-        }
-
-        return true;
     }
 
     /**
@@ -344,6 +306,93 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             log.error("Got an error trying to retrieve project by field '{}' (standardized: '{}') with value '{}' for user {}", field, value, user.getUsername());
             return null;
+        }
+    }
+
+    @Override
+    protected boolean handleEventImpl(final XftItemEventI event) {
+        final String xsiType = event.getXsiType();
+        switch (xsiType) {
+            case XnatProjectdata.SCHEMA_ELEMENT_NAME:
+                return handleProjectEvent(event);
+
+            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
+                return handleGroupEvent(event);
+
+            case XnatInvestigatordata.SCHEMA_ELEMENT_NAME:
+                return handleInvestigatorEvent(event);
+
+            default:
+                return false;
+        }
+    }
+
+    private boolean handleProjectEvent(final XftItemEventI event) {
+        // TODO: Catch event where user is added to or removed from site admins.
+        final String projectId = getProjectIdFromEvent(event);
+        if (StringUtils.isBlank(projectId)) {
+            log.error("Handled an event that should have had a project ID, but it didn't: {}", event);
+            return false;
+        }
+
+        final String  action          = event.getAction();
+        final boolean isProjectDelete = StringUtils.equals(DELETE, action);
+
+        if (StringUtils.equals(CREATE, action)) {
+            _aliasMapping.put(projectId, projectId);
+            log.debug("Created new project, cached ID {}", projectId);
+        } else if (isProjectDelete) {
+            _aliasMapping.remove(projectId);
+            final List<String> aliases = _projectsAndAliases.removeAll(projectId);
+            for (final String alias : aliases) {
+                _aliasMapping.remove(alias);
+            }
+            log.debug("The project {} was deleted, so skipping cache reinitialization. Removed ID and any aliases from cache: {}", projectId, aliases);
+        }
+
+        log.info("Got an XFTItemEvent for project '{}' with action '{}', refreshing now", projectId, action);
+        if (isProjectDelete) {
+            evictProjectCache(projectId);
+        } else {
+            refreshProjectCache(projectId);
+        }
+
+        return true;
+    }
+
+    private boolean handleGroupEvent(final XftItemEventI event) {
+        final String projectId = getProjectIdFromEvent(event);
+        if (StringUtils.isBlank(projectId)) {
+            return false;
+        }
+        refreshProjectCache(projectId);
+        return true;
+    }
+
+    private boolean handleInvestigatorEvent(final XftItemEventI event) {
+        //noinspection unchecked
+        final Set<String> projectIds = new HashSet<>((Collection<? extends String>) event.getProperties().get("projects"));
+        if (projectIds.isEmpty()) {
+            return false;
+        }
+        for (final String projectId : projectIds) {
+            refreshProjectCache(projectId);
+        }
+        return true;
+    }
+
+    private void refreshProjectCache(final String projectId) {
+        evictProjectCache(projectId);
+        initializeProjectCache(projectId);
+    }
+
+    private void evictProjectCache(final String projectId) {
+        final ProjectCache projectCache = getCachedProjectCache(projectId);
+        if (projectCache == null || projectCache.getProject() == null) {
+            log.info("No cache found for the project '{}', nothing much to be done.", projectId);
+        } else {
+            log.info("Found project cache for project {}, evicting the project cache.", projectId);
+            evict(projectId);
         }
     }
 
@@ -688,24 +737,27 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private static String getProjectIdFromEvent(final XftItemEventI event) {
-        final String id = event.getId();
-        if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, event.getXsiType())) {
-            log.info("Got an XFTItemEvent for a project, returning the event ID: {}", id);
-            return id;
-        }
-        if (StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType())) {
-            final Matcher matcher = PROJECT_GROUP.matcher(id);
-            if (!matcher.matches()) {
-                log.warn("Got an XFTItemEvent for a user group that matches a project ID, but not one I'm interested in (it isn't a project group): {}. This shouldn't happen because it shouldn't even match the criteria for event handling for this method.", id);
-                // Return null here: this isn't a bad thing, we just don't do anything with it.
-                return null;
-            }
+        final String id      = event.getId();
+        final String xsiType = event.getXsiType();
+        switch (xsiType) {
+            case XnatProjectdata.SCHEMA_ELEMENT_NAME:
+                log.info("Got an XFTItemEvent for a project, returning the event ID: {}", id);
+                return id;
 
-            final String projectId = matcher.group("project");
-            log.info("Got an XFTItemEvent for the group {}, extracted the project ID {}", id, projectId);
-            return projectId;
+            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
+                final Matcher matcher = PROJECT_GROUP.matcher(id);
+                if (!matcher.matches()) {
+                    log.warn("Got an XFTItemEvent for a user group that matches a project ID, but not one I'm interested in (it isn't a project group): {}. This shouldn't happen because it shouldn't even match the criteria for event handling for this method.", id);
+                    // Return null here: this isn't a bad thing, we just don't do anything with it.
+                    return null;
+                }
+                final String projectId = matcher.group("project");
+                log.info("Got an XFTItemEvent for the group {}, extracted the project ID {}", id, projectId);
+                return projectId;
+
+            default:
+                return null;
         }
-        return null;
     }
 
     private static class ProjectCache {

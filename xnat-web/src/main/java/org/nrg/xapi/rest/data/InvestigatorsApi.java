@@ -13,33 +13,38 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
-import org.nrg.xnat.services.investigators.InvestigatorService;
-import org.nrg.xdat.om.XnatInvestigatordata;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xnat.services.investigators.InvestigatorService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Api(description = "XNAT Data Investigators API")
 @XapiRestController
 @RequestMapping(value = "/investigators")
+@Slf4j
 public class InvestigatorsApi extends AbstractXapiRestController {
     @Autowired
     public InvestigatorsApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final InvestigatorService service) {
@@ -50,24 +55,24 @@ public class InvestigatorsApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of investigators.", notes = "The investigators function returns a list of all investigators configured in the XNAT system.", response = Investigator.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently configured investigators."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET)
     @ResponseBody
     public ResponseEntity<List<Investigator>> getInvestigators() {
-        return new ResponseEntity<>(_service.getInvestigators(), HttpStatus.OK);
+        return ResponseEntity.ok(_service.getInvestigators());
     }
 
     @ApiOperation(value = "Gets the requested investigator.", notes = "Returns the investigator with the specified ID.", response = Investigator.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the requested investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{investigatorId}", produces = APPLICATION_JSON_VALUE, method = GET)
     @ResponseBody
-    public ResponseEntity<Investigator> getInvestigator(@PathVariable("investigatorId") final int investigatorId) {
+    public ResponseEntity<Investigator> getInvestigator(@PathVariable("investigatorId") final int investigatorId) throws NotFoundException {
         final Investigator investigator = _service.getInvestigator(investigatorId);
         if (investigator == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(NOT_FOUND);
         }
-        return new ResponseEntity<>(investigator, HttpStatus.OK);
+        return ResponseEntity.ok(investigator);
     }
 
     @ApiOperation(value = "Creates a new investigator from the submitted attributes.", notes = "Returns the newly created investigator with the submitted attributes.", response = Investigator.class)
@@ -75,27 +80,24 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to create the submitted investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST)
     @ResponseBody
-    public ResponseEntity<Investigator> createInvestigator(@RequestBody final Investigator investigator) throws Exception {
+    public ResponseEntity<Investigator> createInvestigator(@RequestBody final Investigator investigator) throws ResourceAlreadyExistsException {
         if (StringUtils.isBlank(investigator.getFirstname()) || StringUtils.isBlank(investigator.getLastname())) {
-            _log.error("User {} tried to create investigator without a first or last name.", getSessionUser().getUsername());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.error("User {} tried to create investigator without a first or last name.", getSessionUser().getUsername());
+            return new ResponseEntity<>(BAD_REQUEST);
         }
         final UserI user = getSessionUser();
-        final XFTItem item = XFTItem.NewItem(XnatInvestigatordata.SCHEMA_ELEMENT_NAME, user);
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".title", investigator.getTitle());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".firstname", investigator.getFirstname());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".lastname", investigator.getLastname());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".department", investigator.getDepartment());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".institution", investigator.getInstitution());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".email", investigator.getEmail());
-        item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".phone", investigator.getPhone());
-        if (!SaveItemHelper.authorizedSave(item, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.CREATE_INVESTTGATOR))) {
-            _log.error("Failed to create a new investigator for user {}. Check the logs for possible errors or exceptions.", user.getUsername());
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        final Investigator created;
+        try {
+            created = _service.createInvestigator(investigator, user);
+        } catch (XftItemException e) {
+            return new ResponseEntity<>(INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(_service.getInvestigator(investigator.getFirstname(), investigator.getLastname()), HttpStatus.OK);
+        if (created == null) {
+            return new ResponseEntity<>(CONFLICT);
+        }
+        return ResponseEntity.ok(created);
     }
 
     @ApiOperation(value = "Updates the requested investigator from the submitted attributes.", notes = "Returns the updated investigator.", response = Investigator.class)
@@ -104,56 +106,20 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to edit the requested investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "{investigatorId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{investigatorId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = PUT)
     @ResponseBody
-    public ResponseEntity<Investigator> updateInvestigator(@PathVariable("investigatorId") final int investigatorId, @RequestBody final Investigator investigator) throws Exception {
+    public ResponseEntity<Investigator> updateInvestigator(@PathVariable("investigatorId") final int investigatorId, @RequestBody final Investigator investigator) throws NotFoundException, InitializationException, XftItemException {
         final UserI user = getSessionUser();
-
-        final XnatInvestigatordata existing = XnatInvestigatordata.getXnatInvestigatordatasByXnatInvestigatordataId(investigatorId, user, false);
-        if (existing == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        boolean isDirty = false;
-        // Only update fields that are actually included in the submitted data and differ from the original source.
-        if (StringUtils.isNotBlank(investigator.getTitle()) && !StringUtils.equals(investigator.getTitle(), existing.getTitle())) {
-            existing.setTitle(investigator.getTitle());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getFirstname()) && !StringUtils.equals(investigator.getFirstname(), existing.getFirstname())) {
-            existing.setFirstname(investigator.getFirstname());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getLastname()) && !StringUtils.equals(investigator.getLastname(), existing.getLastname())) {
-            existing.setLastname(investigator.getLastname());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getDepartment()) && !StringUtils.equals(investigator.getDepartment(), existing.getDepartment())) {
-            existing.setDepartment(investigator.getDepartment());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getInstitution()) && !StringUtils.equals(investigator.getInstitution(), existing.getInstitution())) {
-            existing.setInstitution(investigator.getInstitution());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getEmail()) && !StringUtils.equals(investigator.getEmail(), existing.getEmail())) {
-            existing.setEmail(investigator.getEmail());
-            isDirty = true;
-        }
-        if (StringUtils.isNotBlank(investigator.getPhone()) && !StringUtils.equals(investigator.getPhone(), existing.getPhone())) {
-            existing.setPhone(investigator.getPhone());
-            isDirty = true;
-        }
-
-        if (isDirty) {
-            if (!SaveItemHelper.authorizedSave(existing, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.MODIFY_INVESTTGATOR))) {
-                _log.error("Failed to save the investigator with ID {}. Check the logs for possible errors or exceptions.");
-                return new ResponseEntity<>(HttpStatus.CONFLICT);
+        try {
+            final Investigator updated = _service.updateInvestigator(investigatorId, investigator, user);
+            if (updated != null) {
+                return ResponseEntity.ok(updated);
             }
-            return new ResponseEntity<>(_service.getInvestigator(investigatorId), HttpStatus.OK);
+            return new ResponseEntity<>(NOT_MODIFIED);
+        } catch (XftItemException e) {
+            log.error("An unknown error occurred trying to update the investigator {}: {}", investigatorId, investigator, e);
+            throw e;
         }
-
-        return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
     }
 
     @ApiOperation(value = "Deletes the requested investigator.", notes = "Returns true if the requested investigator was successfully deleted. Returns false otherwise.", response = Boolean.class)
@@ -161,22 +127,18 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user doesn't have permission to delete investigators."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{investigatorId}", produces = APPLICATION_JSON_VALUE, method = DELETE)
     @ResponseBody
-    public ResponseEntity<Boolean> deleteInvestigator(@PathVariable("investigatorId") final int investigatorId) throws Exception {
+    public ResponseEntity<Boolean> deleteInvestigator(@PathVariable("investigatorId") final int investigatorId) throws NotFoundException, InsufficientPrivilegesException, XftItemException {
         final UserI user = getSessionUser();
-        if (!Roles.isSiteAdmin(user)) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        try {
+            _service.deleteInvestigator(investigatorId, user);
+            return ResponseEntity.ok(true);
+        } catch (XftItemException e) {
+            log.error("An unknown error occurred trying to delete the investigator {}", investigatorId, e);
+            throw e;
         }
-        final XnatInvestigatordata investigator = XnatInvestigatordata.getXnatInvestigatordatasByXnatInvestigatordataId(investigatorId, user, false);
-        if (investigator == null) {
-            return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
-        }
-        SaveItemHelper.authorizedDelete(investigator.getItem(), user, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.REMOVE_INVESTTGATOR));
-        return new ResponseEntity<>(true, HttpStatus.OK);
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(InvestigatorsApi.class);
 
     private final InvestigatorService _service;
 }

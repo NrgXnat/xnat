@@ -16,7 +16,6 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
@@ -288,7 +287,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).and()
             .csrf().disable()
-            .anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
+            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY);
 
         http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
 

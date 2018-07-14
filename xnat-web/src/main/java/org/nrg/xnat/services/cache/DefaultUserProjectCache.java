@@ -10,6 +10,8 @@
 package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
@@ -25,10 +27,11 @@ import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.Initializing;
@@ -83,7 +86,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XnatInvestigatordata.SCHEMA_ELEMENT_NAME).action(XftItemEvent.DELETE).build(),
-              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP).build());
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(Predicates.or(XftItemEventCriteria.IS_PROJECT_GROUP, new Predicate<XftItemEventI>() {
+                  @Override
+                  public boolean apply(final XftItemEventI event) {
+                      return StringUtils.equalsAny(event.getId(), Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP);
+                  }
+              })).build());
         _cache = cache;
         _template = template;
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
@@ -361,6 +369,22 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private boolean handleGroupEvent(final XftItemEventI event) {
+        final String eventId = event.getId();
+        if (StringUtils.equalsAny(eventId, Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP)) {
+            final UserGroupI group = getGroup(eventId);
+            switch (group.getId()) {
+                case Groups.ALL_DATA_ACCESS_GROUP:
+                    _dataAdmins.clear();
+                    _dataAdmins.addAll(group.getUsernames());
+                    break;
+
+                case Groups.ALL_DATA_ADMIN_GROUP:
+                    _siteAdmins.clear();
+                    _siteAdmins.addAll(group.getUsernames());
+                    break;
+            }
+            return true;
+        }
         final String projectId = getProjectIdFromEvent(event);
         if (StringUtils.isBlank(projectId)) {
             return false;
@@ -456,18 +480,25 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         // If the user is not in the user lists, try to retrieve and cache it.
         final XDATUser user;
         final boolean  isSiteAdmin;
-        if (!_nonAdmins.contains(userId) && !_siteAdmins.contains(userId)) {
+        final boolean  isDataAdmin;
+        if (!_nonAdmins.contains(userId) && !_dataAdmins.contains(userId) && !_siteAdmins.contains(userId)) {
             try {
                 // Get the user...
                 user = new XDATUser(userId);
                 // If the user is an admin, add the user ID to the admin list and return true.
-                if (Roles.isSiteAdmin(user)) {
+                if (user.isSiteAdmin()) {
                     _siteAdmins.add(userId);
                     isSiteAdmin = true;
+                    isDataAdmin = false;
+                } else if (user.isDataAdmin()) {
+                    _dataAdmins.add(userId);
+                    isSiteAdmin = false;
+                    isDataAdmin = true;
                 } else {
                     // Not an admin but let's track that we've retrieved the user by adding it to the non-admin list.
                     _nonAdmins.add(userId);
                     isSiteAdmin = false;
+                    isDataAdmin = false;
                 }
             } catch (UserNotFoundException e) {
                 // User doesn't exist, so return false
@@ -482,6 +513,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             // Set the user to null. It will only get initialized later in the initProjectCache() method if required.
             user = null;
             isSiteAdmin = _siteAdmins.contains(userId);
+            isDataAdmin = _dataAdmins.contains(userId);
         }
 
         try {
@@ -499,7 +531,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
 
             // We don't care about checking the user against the project if it's a site admin: they have access to everything.
-            if (isSiteAdmin) {
+            if (isSiteAdmin || isDataAdmin) {
                 return true;
             }
 
@@ -828,6 +860,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                                                             "ORDER BY project_id, id_or_alias";
 
     private final Set<String>                       _siteAdmins         = new HashSet<>();
+    private final Set<String>                       _dataAdmins         = new HashSet<>();
     private final Set<String>                       _nonAdmins          = new HashSet<>();
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();

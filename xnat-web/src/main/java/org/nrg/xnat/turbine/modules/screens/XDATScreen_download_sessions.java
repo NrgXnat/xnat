@@ -22,7 +22,6 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -133,11 +132,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
 
-                final boolean isSiteOrDataAdmin   = Roles.isSiteAdmin(user) || Groups.isDataAdmin(user);
-                final String  assessorsQueryToUse = isSiteOrDataAdmin ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
+                final boolean hasAllDataAccess    = Groups.hasAllDataAccess(user);
+                final String  assessorsQueryToUse = hasAllDataAccess ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
                 context.put("assessors", Lists.transform(_parameterized.query(assessorsQueryToUse, new HashMap<String, Object>() {{
                     put("sessionIds", sessionsUserCanAccess);
-                    if (!isSiteOrDataAdmin) {
+                    if (!hasAllDataAccess) {
                         put("userId", user.getID());
                     }
                 }}, new RowMapper<List<String>>() {

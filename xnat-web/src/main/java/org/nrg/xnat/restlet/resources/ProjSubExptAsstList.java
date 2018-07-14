@@ -10,6 +10,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.table;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
@@ -316,7 +317,7 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 					where.addClause(cc);
 					
 
-                if (Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                if (Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
 					CriteriaCollection projects=new CriteriaCollection("OR");
 					List<Object> ps=Permissions.getAllowedValues(user,"xnat:subjectData", "xnat:subjectData/project", org.nrg.xdat.security.SecurityManager.READ);
 					for(Object p:ps){					

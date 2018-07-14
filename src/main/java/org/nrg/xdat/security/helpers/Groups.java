@@ -33,6 +33,8 @@ import java.util.Map;
 
 @Slf4j
 public class Groups {
+    public final static String ALL_DATA_ADMIN_GROUP   = "ALL_DATA_ADMIN";
+    public final static String ALL_DATA_ACCESS_GROUP  = "ALL_DATA_ACCESS";
     public final static String OWNER_GROUP            = "owner";
     public final static String OWNER_NAME             = "Owners";
     public final static String MEMBER_GROUP           = "member";
@@ -117,13 +119,17 @@ public class Groups {
      *
      * @return Returns true if the user is a system data administrator, false otherwise.
      */
+    public static boolean isSiteAdmin(final UserI user) {
+        return Groups.isMember(user, ALL_DATA_ADMIN_GROUP);
+    }
+
     public static boolean isDataAdmin(final UserI user) {
-        return Groups.isMember(user, "ALL_DATA_ADMIN");
+        return Groups.isMember(user, ALL_DATA_ACCESS_GROUP);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean hasAllDataAccess(final UserI user) {
-        return isDataAdmin(user) || Groups.isMember(user, "ALL_DATA_ACCESS");
+        return isSiteAdmin(user) || isDataAdmin(user);
     }
 
     /**

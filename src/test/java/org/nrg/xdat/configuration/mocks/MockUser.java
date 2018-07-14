@@ -9,37 +9,39 @@
 
 package org.nrg.xdat.configuration.mocks;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.security.UserI;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
 @Entity
 public class MockUser extends AbstractHibernateEntity implements UserI {
-    private String             _username;
-    private String             _firstname;
-    private String             _lastname;
-    private String             _email;
-    private Collection<String> _authorities = new ArrayList<>();
-    private String             _password;
-    private Boolean            _verified;
-    private Boolean            _encrypt;
-    private String             _salt;
-    private UserAuthI          _authorization;
-    private boolean            _accountNonExpired;
-    private boolean            _active;
-    private boolean            _accountNonLocked;
-    private boolean            _credentialsNonExpired;
+    private String       _username;
+    private String       _firstname;
+    private String       _lastname;
+    private String       _email;
+    private String       _password;
+    private Boolean      _verified;
+    private Boolean      _encrypt;
+    private String       _salt;
+    private UserAuthI    _authorization;
+    private boolean      _accountNonExpired;
+    private boolean      _active;
+    private boolean      _accountNonLocked;
+    private boolean      _credentialsNonExpired;
+    private List<String> _authorities = new ArrayList<>();
 
     @Transient
     @Override
@@ -139,27 +141,32 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
 
     @Transient
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        final List<GrantedAuthority> authorities = new ArrayList<>();
-        for (final String authority : _authorities) {
-            authorities.add(new SimpleGrantedAuthority(authority));
-        }
-        return authorities;
+    public List<? extends GrantedAuthority> getAuthorities() {
+        return Lists.transform(getPlainAuthorities(), new Function<String, GrantedAuthority>() {
+            @Nullable
+            @Override
+            public GrantedAuthority apply(final String authority) {
+                return Users.getGrantedAuthority(authority);
+            }
+        });
     }
 
-    public void setAuthorities(final Collection<? extends GrantedAuthority> authorities) {
-        _authorities.clear();
-        for (final GrantedAuthority authority : authorities) {
-            _authorities.add(authority.getAuthority());
-        }
+    public void setAuthorities(final List<? extends GrantedAuthority> authorities) {
+        setPlainAuthorities(Lists.transform(authorities, new Function<GrantedAuthority, String>() {
+            @Nullable
+            @Override
+            public String apply(final GrantedAuthority authority) {
+                return authority.getAuthority();
+            }
+        }));
     }
 
     @ElementCollection(targetClass = String.class)
-    public Collection<? extends String> getPlainAuthorities() {
+    public List<? extends String> getPlainAuthorities() {
         return _authorities;
     }
 
-    public void setPlainAuthorities(final Collection<? extends String> authorities) {
+    public void setPlainAuthorities(final List<? extends String> authorities) {
         _authorities.clear();
         _authorities.addAll(authorities);
     }
@@ -215,11 +222,11 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
     }
 
     @Override
-    public boolean isActive() throws MetaDataException {
+    public boolean isActive() {
         return _active;
     }
 
-    public void setActive(final boolean active) throws MetaDataException {
+    public void setActive(final boolean active) {
         _active = active;
     }
 

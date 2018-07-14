@@ -73,7 +73,6 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.jms.Destination;
@@ -84,7 +83,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static org.nrg.xft.security.UserI.AUTHORITIES_ANONYMOUS;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ANONYMOUS;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITY_ADMIN;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITY_USER;
 
 /**
  * @author Tim
@@ -238,7 +239,7 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	public static Authentication setGuestUserDetails() throws UserNotFoundException, UserInitException {
-		return new AnonymousAuthenticationToken(UserI.ANONYMOUS_AUTH_PROVIDER_KEY, Users.getGuest(), AUTHORITIES_ANONYMOUS);
+		return new AnonymousAuthenticationToken(Users.ANONYMOUS_AUTH_PROVIDER_KEY, Users.getGuest(), AUTHORITIES_ANONYMOUS);
 	}
 
 	public static Authentication setUserDetails(UserI user) throws UserNotFoundException, UserInitException {
@@ -248,9 +249,9 @@ public class XDAT implements Initializable, Configurable{
 
 		final Collection<GrantedAuthority> authorities = new ArrayList<>();
 		if (Roles.isSiteAdmin(user)) {
-			authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+			authorities.add(AUTHORITY_ADMIN);
 		}
-		authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		authorities.add(AUTHORITY_ADMIN);
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		return authentication;
@@ -901,9 +902,9 @@ public class XDAT implements Initializable, Configurable{
 		SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
 
 		final Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-		grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		grantedAuthorities.add(AUTHORITY_USER);
 		if (Roles.isSiteAdmin(user)) {
-			grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+			grantedAuthorities.add(AUTHORITY_ADMIN);
 		}
 
 		final Object username = found.getProperty("login");

@@ -27,7 +27,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -228,8 +227,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     private List<GrantedAuthority> loadUserAuthorities(String username) {
         return _jdbcTemplate.query("SELECT login AS username, 'ROLE_USER' AS authority FROM xdat_user WHERE login = ?", new String[]{username}, new RowMapper<GrantedAuthority>() {
             public GrantedAuthority mapRow(final ResultSet results, final int rowNum) throws SQLException {
-                final String                 roleName  = results.getString(2);
-                final SimpleGrantedAuthority authority = new SimpleGrantedAuthority(roleName);
+                final String           roleName  = results.getString(2);
+                final GrantedAuthority authority = Users.getGrantedAuthority(roleName);
 
                 log.debug("Found authority: {} for role name: {}", authority.getAuthority(), roleName);
                 return authority;

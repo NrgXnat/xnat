@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security.helpers;
 
+import com.google.common.base.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,8 +41,11 @@ import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -51,6 +55,24 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class Users {
+    public static final String                  ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
+    public static final String                  ROLE_ANONYMOUS              = "ROLE_ANONYMOUS";
+    public static final String                  ROLE_ADMIN                  = "ROLE_ADMIN";
+    public static final String                  ROLE_USER                   = "ROLE_USER";
+    public static final SimpleGrantedAuthority  AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority(ROLE_ANONYMOUS);
+    public static final SimpleGrantedAuthority  AUTHORITY_ADMIN             = new SimpleGrantedAuthority(ROLE_ADMIN);
+    public static final SimpleGrantedAuthority  AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
+    public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
+    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = Collections.<GrantedAuthority>singletonList(AUTHORITY_ADMIN);
+    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
+    public static final Function<UserI, String> USERI_TO_USERNAME           = new Function<UserI, String>() {
+        @Nullable
+        @Override
+        public String apply(final UserI user) {
+            return user.getUsername();
+        }
+    };
+
     /**
      * Returns the currently configured user management service.  You can customize the implementation returned by
      * adding a new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured
@@ -103,6 +125,17 @@ public class Users {
             }
         }
         return singleton;
+    }
+
+    public static GrantedAuthority getGrantedAuthority(final String role) {
+        if (!_authorities.containsKey(role)) {
+            _authorities.put(role, new SimpleGrantedAuthority(role));
+        }
+        return _authorities.get(role);
+    }
+
+    public static Set<String> getKnownGrantedAuthorities() {
+        return _authorities.keySet();
     }
 
     /**
@@ -575,9 +608,9 @@ public class Users {
         return _users;
     }
 
-    private static final ShaPasswordEncoder   _encoder             = new ShaPasswordEncoder(256);
-    private static final Map<Integer, String> _users               = new ConcurrentHashMap<>();
-    private static final String               DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
-
-    private static UserManagementServiceI singleton = null;
+    private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);
+    private static final Map<Integer, String>          _users               = new ConcurrentHashMap<>();
+    private static final Map<String, GrantedAuthority> _authorities         = new HashMap<>();
+    private static final String                        DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
+    private static       UserManagementServiceI        singleton            = null;
 }

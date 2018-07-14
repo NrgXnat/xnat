@@ -46,7 +46,6 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
@@ -54,6 +53,8 @@ import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xdat.security.SecurityManager.*;
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 
 /**
  * @author Tim
@@ -145,7 +146,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             throw new EnabledException(getUsername());
         }
 
-        if ((!isActive()) && (!checkRole("Administrator"))) {
+        if ((!isActive()) && (!checkRole(Users.ROLE_ADMIN))) {
             throw new ActivationException(getUsername());
         }
 
@@ -265,7 +266,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
      */
     public boolean isGuest() {
-        return getAuthorities().contains(AUTHORITY_ANONYMOUS);
+        return getAuthorities().contains(Users.AUTHORITY_ANONYMOUS);
     }
 
     /**
@@ -659,12 +660,26 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public boolean isSiteAdmin() {
         if (_isSiteAdmin == null) {
             try {
-                _isSiteAdmin = checkRole("Administrator");
+                // TODO: I'm not sure how this "Administrator" role might get populated, but the ALL_DATA_ADMIN_GROUP is canonical.
+                final boolean isAdministratorRole = checkRole("Administrator");
+                final boolean isAllDataAdmin = getGroups().keySet().contains(ALL_DATA_ADMIN_GROUP);
+                _isSiteAdmin = isAdministratorRole || isAllDataAdmin;
             } catch (Exception e) {
                 return false;
             }
         }
         return _isSiteAdmin;
+    }
+
+    public boolean isDataAdmin() {
+        if (_isDataAdmin == null) {
+            try {
+                _isDataAdmin = getGroups().keySet().contains(ALL_DATA_ACCESS_GROUP);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return _isDataAdmin;
     }
 
     private UserGroupI getGroup(String id) {
@@ -867,18 +882,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         if (_authorities.size() == 0) {
             final String username = getUsername();
             if (StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username)) {
-                _authorities.add(AUTHORITY_ANONYMOUS);
+                _authorities.addAll(Users.AUTHORITIES_ANONYMOUS);
             } else {
                 if (isSiteAdmin()) {
-                    _authorities.add(AUTHORITY_ADMIN);
+                    _authorities.addAll(Users.AUTHORITIES_ADMIN);
                 }
-                _authorities.add(AUTHORITY_USER);
+                _authorities.addAll(Users.AUTHORITIES_USER);
             }
             final List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {
                 for (String group : groups) {
-                    if (group != null) {
-                        _authorities.add(new SimpleGrantedAuthority(group));
+                    if (StringUtils.isNotBlank(group) && !StringUtils.equalsAny(group, Users.ROLE_ADMIN, Users.ROLE_USER, Users.ROLE_ANONYMOUS)) {
+                        _authorities.add(Users.getGrantedAuthority(group));
                     }
                 }
             }
@@ -1098,10 +1113,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private static final long serialVersionUID = -8144623503683531831L;
 
-    private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
-    private static final SimpleGrantedAuthority AUTHORITY_ADMIN     = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority AUTHORITY_USER      = new SimpleGrantedAuthority("ROLE_USER");
-
     private final Set<String>                           _roleNames                 = new HashSet<>();
     private final List<XdatStoredSearch>                _storedSearches            = new ArrayList<>();
     private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
@@ -1114,4 +1125,5 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private GroupsAndPermissionsCache _groupsAndPermissionsCache = null;
     private Boolean                   _isSiteAdmin               = null;
+    private Boolean                   _isDataAdmin               = null;
 }

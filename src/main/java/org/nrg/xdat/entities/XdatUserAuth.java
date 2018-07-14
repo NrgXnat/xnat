@@ -15,10 +15,11 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.persistence.*;
 import java.util.*;
+
+import static org.nrg.xdat.security.helpers.Users.AUTHORITY_USER;
 
 @SuppressWarnings("deprecation")
 @Auditable
@@ -290,7 +291,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	@Transient
 	public Collection<GrantedAuthority> getAuthorities() {
 		Set<GrantedAuthority> list = new HashSet<>();
-        list.add(new SimpleGrantedAuthority("ROLE_USER"));
+        list.add(AUTHORITY_USER);
         return list;
 	}
 

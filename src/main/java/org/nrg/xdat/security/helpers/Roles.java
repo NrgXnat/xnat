@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.Collection;
 
+@SuppressWarnings("ConstantConditions")
 @Slf4j
 public class Roles {
     private static RoleRepositoryHolder getRoleRepositoryService() {

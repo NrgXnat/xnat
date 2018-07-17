@@ -23,7 +23,7 @@
                     <TD NOWRAP><B>Add variable(s) to:</B></TD>
                     <TD>
                         <SELECT ID="protocols_sel">
-                            <OPTION VALUE="">(SELECT)</OPTION>
+                            <OPTION VALUE="">Select...</OPTION>
                         </SELECT>
                     </TD>
                 </TR>
@@ -53,6 +53,10 @@
                     var div_bodys = document.getElementById('div_bodys');
                     var protocols_sel = document.getElementById('protocols_sel');
                     var complete_pg_btn = document.getElementById('complete_page');
+
+                    // reset container elements
+                    div_bodys.innerHTML = '';
+                    protocols_sel.innerHTML = '<option value="">Select...</option>';
 
                     var createdProtocols = [];
 

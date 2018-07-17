@@ -20,9 +20,10 @@ import net.sf.ehcache.Element;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.nrg.xapi.authorization.*;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatInvestigatordata;
@@ -71,15 +72,11 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
 
 import static org.nrg.xdat.entities.UserRole.ROLE_ADMINISTRATOR;
-import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLE;
-import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLE;
-import static org.nrg.xdat.security.helpers.Roles.ROLE;
+import static org.nrg.xdat.security.helpers.Roles.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 @SuppressWarnings("Duplicates")
@@ -345,8 +342,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private boolean handleProjectEvent(final XftItemEventI event) {
-        // TODO: Catch event where user is added to or removed from site admins.
-        final String projectId = getProjectIdFromEvent(event);
+        final String projectId = event.getId();
         if (StringUtils.isBlank(projectId)) {
             log.error("Handled an event that should have had a project ID, but it didn't: {}", event);
             return false;
@@ -394,15 +390,51 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
             return true;
         }
-        final String projectId = getProjectIdFromEvent(event);
+        final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(eventId);
+        if (idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
+            log.info("Got a non-project-related group event, which I'm not supposed to handle: ", event);
+            return false;
+        }
+        final String      projectId = idAndAccess.getLeft();
+        final AccessLevel access    = AccessLevel.getAccessLevel(idAndAccess.getRight());
         if (StringUtils.isBlank(projectId)) {
             return false;
         }
-        // This happens when groups are created for projects: the groups are created
-        // before the project, so don't try to refresh the cache before the project's
-        // actually in.
-        if (_aliasMapping.containsKey(projectId)) {
+
+        // When groups are created for projects, the groups are created *before* the project. We need to check whether the
+        // project is already cached so we don't try to refresh the cache before the project's actually in.
+        if (!_aliasMapping.containsKey(projectId)) {
+            return true;
+        }
+
+        final Map<String, ?> properties = event.getProperties();
+        final String         operation  = (String) properties.get(OPERATION);
+
+        // In this case, we don't know what happened or at least don't know how to deal with it, so just update the whole thing.
+        if (properties.isEmpty() || !StringUtils.equalsAny(operation, OPERATION_ADD_USERS, OPERATION_REMOVE_USERS)) {
             refreshProjectCache(projectId);
+            return true;
+        }
+
+        //noinspection unchecked
+        final Collection<String> users        = (Collection<String>) properties.get(Groups.USERS);
+        final ProjectCache       projectCache = getProjectCache(projectId);
+        if (StringUtils.equals(operation, OPERATION_ADD_USERS)) {
+            if (projectCache == null) {
+                log.debug("Users had access level {} added for project {}, but that project's not in the cache: {}", access, projectId, users);
+                return true;
+            }
+            for (final String username : users) {
+                projectCache.addUser(username, access);
+            }
+        } else {
+            if (projectCache == null) {
+                log.debug("Users had access level {} revoked for project {}, but that project's not in the cache: {}", access, projectId, users);
+                return true;
+            }
+            for (final String username : users) {
+                projectCache.removeUser(username, access);
+            }
         }
         return true;
     }
@@ -814,30 +846,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, projectId).addValue(QUERY_KEY_ACCESS_LEVEL, accessLevel);
     }
 
-    private static String getProjectIdFromEvent(final XftItemEventI event) {
-        final String id      = event.getId();
-        final String xsiType = event.getXsiType();
-        switch (xsiType) {
-            case XnatProjectdata.SCHEMA_ELEMENT_NAME:
-                log.info("Got an XFTItemEvent for a project, returning the event ID: {}", id);
-                return id;
-
-            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
-                final Matcher matcher = PROJECT_GROUP.matcher(id);
-                if (!matcher.matches()) {
-                    log.warn("Got an XFTItemEvent for a user group that matches a project ID, but not one I'm interested in (it isn't a project group): {}. This shouldn't happen because it shouldn't even match the criteria for event handling for this method.", id);
-                    // Return null here: this isn't a bad thing, we just don't do anything with it.
-                    return null;
-                }
-                final String projectId = matcher.group("project");
-                log.info("Got an XFTItemEvent for the group {}, extracted the project ID {}", id, projectId);
-                return projectId;
-
-            default:
-                return null;
-        }
-    }
-
     private static class ProjectCache {
         ProjectCache(final XnatProjectdata project) {
             _project = project;
@@ -845,6 +853,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
         public XnatProjectdata getProject() {
             return _project;
+        }
+
+        public void removeUser(final String username, final AccessLevel access) {
+            _userCache.remove(username, access);
+        }
+
+        @SuppressWarnings("unused")
+        public void removeUser(final String username) {
+            _userCache.removeAll(username);
         }
 
         boolean hasUser(final String userId) {
@@ -857,6 +874,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
         void addUser(final String userId, final List<AccessLevel> userProjectAccess) {
             _userCache.putAll(userId, userProjectAccess);
+        }
+
+        void addUser(final String userId, final AccessLevel userProjectAccess) {
+            _userCache.put(userId, userProjectAccess);
         }
 
         private final XnatProjectdata _project;

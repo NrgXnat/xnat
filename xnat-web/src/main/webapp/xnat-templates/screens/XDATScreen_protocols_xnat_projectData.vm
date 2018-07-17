@@ -54,38 +54,48 @@
                     var protocols_sel = document.getElementById('protocols_sel');
                     var complete_pg_btn = document.getElementById('complete_page');
 
-                    var createdProtocols = new Array();
+                    var createdProtocols = [];
 
-                    var omId = "${om.getId()}";
+                    var omId = '${om.getId()}';
+
+                    function addProtocolElements(protocolName, protocolId, dataType){
+                        if (createdProtocols.indexOf(dataType) === -1) {
+
+                            // add menu item
+                            protocols_sel.add(new Option(protocolName, protocolId));
+
+                            // add UI elements
+                            var bDIV = document.createElement("DIV");
+                            bDIV.className = "mainContainerSubBody";
+                            bDIV.style.display = "none";
+
+                            div_bodys.appendChild(bDIV);
+
+                            protocols.push(new ProtocolManager(protocolId, null, bDIV, { project: omId, dataType: dataType }));
+
+                            createdProtocols.push(dataType);
+                        }
+                    }
 
                     #foreach($protocol in $om.getStudyprotocol())
 
-                        if (jsdebug) {
-                            console.log("protocol.getDataType: $protocol.getDataType()");
-                        }
+                        #set ($protocolId = "$protocol.getId()")
+                        #set ($protocolName = "$protocol.getName()")
+                        #set ($protocolDataType = "$protocol.getDataType()")
 
-                        protocols_sel.options[$velocityCount] = new Option("$protocol.getName()", "$protocol.getId()");
-                        createdProtocols.push("$protocol.getDataType()");
+                        ## console.log("protocolId: $protocolId");
+                        ## console.log("protocolName: $protocolName");
+                        ## console.log("protocolDataType: $protocolDataType");
 
-                        var bDIV = document.createElement("DIV");
-                        bDIV.style.display = "none";
-                        bDIV.className = "mainContainerSubBody";
-                        div_bodys.appendChild(bDIV);
-
-                        protocols.push(new ProtocolManager("$protocol.getId()", null, bDIV, { project: omId, dataType: "$protocol.getDataType()" }));
+                        addProtocolElements('$protocolName', '$protocolId', '$protocolDataType');
 
                     #end
 
                     forEach(data.sortedElements, function(element){
                         var elementName = element.elementName;
-                        if (!createdProtocols.contains(elementName)) {
+                        if (createdProtocols.indexOf(elementName) === -1) {
                             if (elementName === 'xnat:projectData' || elementName === 'xnat:subjectData' || element.isExperiment) {
-                                protocols_sel.options[protocols_sel.options.length] = new Option(element.plural, omId + '_' + elementName);
-                                var bDIV = document.createElement('div');
-                                bDIV.style.display = 'none';
-                                bDIV.className = 'mainContainerSubBody';
-                                div_bodys.appendChild(bDIV);
-                                protocols.push(new ProtocolManager(omId + '_' + elementName, null, bDIV, { dataType: elementName, project: omId }));
+                                addProtocolElements(element.plural, omId + '_' + elementName, elementName);
                             }
                         }
                     });

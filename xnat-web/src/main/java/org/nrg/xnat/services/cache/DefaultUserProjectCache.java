@@ -22,6 +22,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.xapi.authorization.*;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -71,11 +73,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 
+import static org.nrg.xdat.entities.UserRole.ROLE_ADMINISTRATOR;
 import static org.nrg.xdat.om.XdatUsergroup.PROJECT_GROUP;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xft.event.XftItemEventI.CREATE;
-import static org.nrg.xft.event.XftItemEventI.DELETE;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.ROLE;
+import static org.nrg.xft.event.XftItemEventI.*;
 
 @SuppressWarnings("Duplicates")
 @Service("userProjectCache")
@@ -91,7 +96,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                   public boolean apply(final XftItemEventI event) {
                       return StringUtils.equalsAny(event.getId(), Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP);
                   }
-              })).build());
+              })).build(),
+              XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
         _cache = cache;
         _template = template;
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
@@ -327,6 +333,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             case XdatUsergroup.SCHEMA_ELEMENT_NAME:
                 return handleGroupEvent(event);
 
+            case XdatUser.SCHEMA_ELEMENT_NAME:
+                return handleUserEvent(event);
+
             case XnatInvestigatordata.SCHEMA_ELEMENT_NAME:
                 return handleInvestigatorEvent(event);
 
@@ -373,14 +382,14 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         if (StringUtils.equalsAny(eventId, Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP)) {
             final UserGroupI group = getGroup(eventId);
             switch (group.getId()) {
-                case Groups.ALL_DATA_ACCESS_GROUP:
+                case Groups.ALL_DATA_ADMIN_GROUP:
                     _dataAdmins.clear();
                     _dataAdmins.addAll(group.getUsernames());
                     break;
 
-                case Groups.ALL_DATA_ADMIN_GROUP:
-                    _siteAdmins.clear();
-                    _siteAdmins.addAll(group.getUsernames());
+                case Groups.ALL_DATA_ACCESS_GROUP:
+                    _dataAccess.clear();
+                    _dataAccess.addAll(group.getUsernames());
                     break;
             }
             return true;
@@ -389,8 +398,35 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         if (StringUtils.isBlank(projectId)) {
             return false;
         }
-        refreshProjectCache(projectId);
+        // This happens when groups are created for projects: the groups are created
+        // before the project, so don't try to refresh the cache before the project's
+        // actually in.
+        if (_aliasMapping.containsKey(projectId)) {
+            refreshProjectCache(projectId);
+        }
         return true;
+    }
+
+    private boolean handleUserEvent(final XftItemEventI event) {
+        final String         username   = event.getId();
+        final Map<String, ?> properties = event.getProperties();
+        final String         operation  = (String) properties.get(OPERATION);
+        final String         role       = (String) properties.get(ROLE);
+
+        switch (operation) {
+            case OPERATION_ADD_ROLE:
+                if (StringUtils.equals(ROLE_ADMINISTRATOR, role)) {
+                    _siteAdmins.add(username);
+                }
+                break;
+
+            case OPERATION_DELETE_ROLE:
+                if (StringUtils.equals(ROLE_ADMINISTRATOR, role)) {
+                    _siteAdmins.remove(username);
+                }
+                break;
+        }
+        return false;
     }
 
     private boolean handleInvestigatorEvent(final XftItemEventI event) {
@@ -481,7 +517,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         final XDATUser user;
         final boolean  isSiteAdmin;
         final boolean  isDataAdmin;
-        if (!_nonAdmins.contains(userId) && !_dataAdmins.contains(userId) && !_siteAdmins.contains(userId)) {
+        final boolean  isDataAccess;
+        if (!_nonAdmins.contains(userId) && !_dataAdmins.contains(userId) && !_dataAdmins.contains(userId) && !_siteAdmins.contains(userId)) {
             try {
                 // Get the user...
                 user = new XDATUser(userId);
@@ -490,15 +527,23 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                     _siteAdmins.add(userId);
                     isSiteAdmin = true;
                     isDataAdmin = false;
+                    isDataAccess = false;
                 } else if (user.isDataAdmin()) {
                     _dataAdmins.add(userId);
                     isSiteAdmin = false;
                     isDataAdmin = true;
+                    isDataAccess = false;
+                } else if (user.isDataAccess()) {
+                    _dataAccess.add(userId);
+                    isSiteAdmin = false;
+                    isDataAdmin = false;
+                    isDataAccess = true;
                 } else {
                     // Not an admin but let's track that we've retrieved the user by adding it to the non-admin list.
                     _nonAdmins.add(userId);
                     isSiteAdmin = false;
                     isDataAdmin = false;
+                    isDataAccess = false;
                 }
             } catch (UserNotFoundException e) {
                 // User doesn't exist, so return false
@@ -514,6 +559,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             user = null;
             isSiteAdmin = _siteAdmins.contains(userId);
             isDataAdmin = _dataAdmins.contains(userId);
+            isDataAccess = _dataAccess.contains(userId);
         }
 
         try {
@@ -531,7 +577,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
 
             // We don't care about checking the user against the project if it's a site admin: they have access to everything.
-            if (isSiteAdmin || isDataAdmin) {
+            if (isSiteAdmin || isDataAdmin || isDataAccess) {
                 return true;
             }
 
@@ -630,7 +676,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @Nullable
     private synchronized ProjectCache initializeProjectCache(final String idOrAlias) {
         if (!_aliasMapping.containsKey(idOrAlias)) {
-            log.warn("Request received to initialize cache for ID or alias '{}', but that doesn't exist in the alias map. Returning null.");
+            log.warn("Request received to initialize cache for ID or alias '{}', but that doesn't exist in the alias map. Returning null.", idOrAlias);
             return null;
         }
 
@@ -818,9 +864,17 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         private final Multimap<String, AccessLevel> _userCache = ArrayListMultimap.create();
     }
 
-    private static final List<AccessLevel>                   DELETABLE_ACCESS                 = Arrays.asList(Owner, Delete);
-    private static final List<AccessLevel>                   WRITABLE_ACCESS                  = Arrays.asList(Member, Edit);
-    private static final List<AccessLevel>                   READABLE_ACCESS                  = Arrays.asList(Collaborator, Read);
+    private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = new Predicate<XftItemEventI>() {
+        @Override
+        public boolean apply(final XftItemEventI event) {
+            final Map<String, ?> properties = event.getProperties();
+            return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);
+        }
+    };
+
+    private static final List<AccessLevel>                   DELETABLE_ACCESS                 = Arrays.asList(Owner, Delete, Admin);
+    private static final List<AccessLevel>                   WRITABLE_ACCESS                  = Arrays.asList(Member, Edit, Admin, DataAdmin);
+    private static final List<AccessLevel>                   READABLE_ACCESS                  = Arrays.asList(Collaborator, Read, Admin, DataAdmin, DataAccess);
     private static final Map<AccessLevel, List<AccessLevel>> ACCESS_LEVELS                    = ImmutableMap.of(Delete, DELETABLE_ACCESS,
                                                                                                                 Edit, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS)),
                                                                                                                 Read, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS)));
@@ -861,6 +915,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     private final Set<String>                       _siteAdmins         = new HashSet<>();
     private final Set<String>                       _dataAdmins         = new HashSet<>();
+    private final Set<String>                       _dataAccess         = new HashSet<>();
     private final Set<String>                       _nonAdmins          = new HashSet<>();
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();

@@ -240,8 +240,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
 
                 final boolean hasAllDataAccess = Groups.hasAllDataAccess(user);
-
-                if (!hasAllDataAccess) {
+                if (!hasAllDataAccess && StringUtils.isNotBlank(dataAccess)) {
                     CriteriaCollection cc = new CriteriaCollection("OR");
                     DisplayCriteria dc = new DisplayCriteria();
                     switch (dataAccess) {

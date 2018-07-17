@@ -827,7 +827,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                         usernames.addAll(group.getUsernames());
                     }
                     // Check if the update was removing users. If so, get the usernames from the event properties, as they're not longer in the group.
-                    if (properties.containsKey(Groups.OPERATION) && StringUtils.equals((String) properties.get(Groups.OPERATION), Groups.OPERATION_REMOVE_USERS)) {
+                    if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), Groups.OPERATION_REMOVE_USERS)) {
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(Groups.USERS));
                     }

@@ -45,6 +45,9 @@
 
                 XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
 
+                    window.available_elements = data.sortedElements;
+                    window.browseableElements = data.elementMap;
+
                     var protocols = new Array();
 
                     var div_bodys = document.getElementById('div_bodys');

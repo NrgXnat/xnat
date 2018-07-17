@@ -26,6 +26,34 @@ import java.util.Collection;
 @SuppressWarnings("ConstantConditions")
 @Slf4j
 public class Roles {
+    public static final String ROLE                  = "role";
+    public static final String OPERATION_ADD_ROLE    = "addRole";
+    public static final String OPERATION_DELETE_ROLE = "deleteRole";
+
+    public static Collection<RoleDefinitionI> getRoles() {
+        return getRoleRepositoryService().getRoles();
+    }
+
+    public static boolean checkRole(UserI user, String role) {
+        return getRoleService().checkRole(user, role);
+    }
+
+    public static void deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception {
+        getRoleService().deleteRole(authenticatedUser, user, role);
+    }
+
+    public static void addRole(UserI authenticatedUser, UserI user, String role) throws Exception {
+        getRoleService().addRole(authenticatedUser, user, role);
+    }
+
+    public static boolean isSiteAdmin(UserI user) {
+        return getRoleService().isSiteAdmin(user);
+    }
+
+    public static Collection<String> getRoles(UserI user) {
+        return getRoleService().getRoles(user);
+    }
+
     private static RoleRepositoryHolder getRoleRepositoryService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
 
@@ -50,10 +78,6 @@ public class Roles {
         return null;
     }
 
-    public static Collection<RoleDefinitionI> getRoles() {
-        return getRoleRepositoryService().getRoles();
-    }
-
     private static RoleHolder getRoleService() {
         // First find out if it exists in the application context.
         final ContextService contextService = XDAT.getContextService();
@@ -68,33 +92,13 @@ public class Roles {
         //we can swap in other ones later by setting a default
         //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
         try {
-            final String className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
-            final NamedParameterJdbcTemplate template = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
+            final String                     className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
+            final NamedParameterJdbcTemplate template  = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
             return new RoleHolder((RoleServiceI) Class.forName(className).newInstance(), template);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             log.error("An error occurred trying to instantiate the configured role service.", e);
         }
 
         return null;
-    }
-
-    public static boolean checkRole(UserI user, String role) {
-        return getRoleService().checkRole(user, role);
-    }
-
-    public static void deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        getRoleService().deleteRole(authenticatedUser, user, role);
-    }
-
-    public static void addRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        getRoleService().addRole(authenticatedUser, user, role);
-    }
-
-    public static boolean isSiteAdmin(UserI user) {
-        return getRoleService().isSiteAdmin(user);
-    }
-
-    public static Collection<String> getRoles(UserI user) {
-        return getRoleService().getRoles(user);
     }
 }

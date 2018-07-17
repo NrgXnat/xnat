@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
@@ -36,6 +37,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.*;
@@ -44,17 +46,21 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.ROLE;
+import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 /**
  * @author Tim
@@ -392,34 +398,63 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * the role from the old XFT structure and the new Hibernate structure.
      *
      * @param authenticatedUser The user requesting the role deletion.
-     * @param dRole             The role to be deleted.
+     * @param role             The role to be deleted.
      *
      * @throws Exception When an error occurs.
      */
-    public void deleteRole(UserI authenticatedUser, String dRole) throws Exception {
+    public void deleteRole(final UserI authenticatedUser, final String role) throws Exception {
         if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
             throw new Exception("Invalid permissions for user modification.");
         }
-
-        for (ItemI role : (List<ItemI>) this.getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
-            if (StringUtils.equals(role.getStringProperty("role_name"), dRole)) {
-                PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
-                EventMetaI          ci  = wrk.buildEvent();
-                SaveItemHelper.unauthorizedRemoveChild(this.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), authenticatedUser, ci);
-                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-            }
+        if (deleteXftRole(authenticatedUser, role) || deleteUserRole(authenticatedUser, role)) {
+            XDAT.triggerXftItemEvent(this, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_DELETE_ROLE, ROLE, role));
         }
+    }
 
-        List<UserRole> roles = XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
-        if (roles != null) {
-            for (final UserRole ur : roles) {
-                if (StringUtils.equals(ur.getRole(), dRole)) {
-                    XDAT.getContextService().getBean(UserRoleService.class).delete(ur);
-                    PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
-                    PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+    private boolean deleteUserRole(final UserI authenticatedUser, final String role) throws Exception {
+        final UserRole userRole = getUserRoleService().findUserRole(getUsername(), role);
+        if (userRole == null) {
+            return false;
+        }
+        getUserRoleService().delete(userRole);
+        final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + role + " role"));
+        PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+        return true;
+    }
+
+    private boolean deleteXftRole(final UserI authenticatedUser, final String role) throws Exception {
+        final List<Exception> exceptions = new ArrayList<>();
+        final List<ItemI> assignedRoles = Lists.newArrayList(Iterables.filter((List<ItemI>) getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), new Predicate<ItemI>() {
+            @Override
+            public boolean apply(@Nullable final ItemI assignedRole) {
+                try {
+                    return assignedRole != null && StringUtils.equals(assignedRole.getStringProperty("role_name"), role);
+                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+                    log.error("An error occurred trying to access an assigned role for user {}", getUsername(), e);
+                    exceptions.add(e);
+                    return false;
                 }
             }
+        }));
+        if (!exceptions.isEmpty()) {
+            log.error("{} errors occurred trying to access the assigned roles XFT property for user {}. See the logs before this for more information.", exceptions.size(), getUsername());
         }
+        if (assignedRoles.isEmpty()) {
+            log.info("User {} requested to delete role {} from user {}, but I couldn't find that in the XFT roles. This is probably fine.", authenticatedUser.getUsername(), role, getUsername());
+            return false;
+        }
+        if (assignedRoles.size() == 1) {
+            log.info("User {} requested to delete role {} from user {}, found one and only one instance of that role. Deleting.", authenticatedUser.getUsername(), role, getUsername());
+        } else {
+            log.info("User {} requested to delete role {} from user {}, found {} instances of that role (that's weird). Deleting all of them.", authenticatedUser.getUsername(), role, getUsername(), assignedRoles.size());
+        }
+        for (final ItemI assignedRole : assignedRoles) {
+            final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + role + " role"));
+            final EventMetaI          event    = workflow.buildEvent();
+            SaveItemHelper.unauthorizedRemoveChild(getItem(), "xdat:user/assigned_roles/assigned_role", assignedRole.getItem(), authenticatedUser, event);
+            PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+        }
+        return true;
     }
 
     /**
@@ -427,61 +462,72 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * to the old XFT structure and the new Hibernate structure.
      *
      * @param authenticatedUser The user requesting the role addition.
-     * @param dRole             The role to be added.
+     * @param role             The role to be added.
      *
      * @throws Exception When an error occurs.
      */
-    public void addRole(UserI authenticatedUser, String dRole) throws Exception {
-        if (StringUtils.isNotBlank(dRole)) {
-            if (XDAT.getContextService().getBean(UserRoleService.class).findUserRole(this.getLogin(), dRole) == null) {
-                if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
-                    throw new Exception("Invalid permissions for user modification.");
-                }
-
-                XDAT.getContextService().getBean(UserRoleService.class).addRoleToUser(this.getLogin(), dRole);
-
-                PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + dRole + " role"));
-                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-            }
+    public void addRole(final UserI authenticatedUser, final String role) throws Exception {
+        if (StringUtils.isBlank(role)) {
+            log.info("{} requested to add a blank role to user {}, can't do that.", authenticatedUser.getUsername(), getUsername());
+            return;
         }
+        if (getUserRoleService().isUserRole(getUsername(), role)) {
+            log.info("{} requested to add role {} to user {}, but that user already has that role.", authenticatedUser.getUsername(), role, getUsername());
+            return;
+        }
+        if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
+            log.info("{} requested to add role {} to user {}, but is not an administrator and can't manage user roles.", authenticatedUser.getUsername(), role, getUsername());
+            throw new InvalidPermissionException("Invalid permissions for user modification.");
+        }
+
+        getUserRoleService().addRoleToUser(getUsername(), role);
+        final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + role + " role"));
+        PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+        XDAT.triggerXftItemEvent(this, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_ADD_ROLE, ROLE, role));
     }
 
     private Set<String> loadRoleNames() {
-        final Set<String> r = Sets.newHashSet();
+        final Set<String> roles = Sets.newHashSet();
 
+        //load from the old role store
         try {
-            //load from the old role store
-            for (ItemI sub : (List<ItemI>) this.getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
-                r.add(sub.getStringProperty("role_name"));
-            }
+            roles.addAll(Lists.transform((List<ItemI>) getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), new Function<ItemI, String>() {
+                @Override
+                public String apply(final ItemI assignedRole) {
+                    try {
+                        return assignedRole.getStringProperty("role_name");
+                    } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+                        return "";
+                    }
+                }
+            }));
         } catch (Throwable e) {
-            log.info("Error loading roles from old role store. Will use role service instead.");
+            roles.add("");
+        }
+        if (roles.contains("")) {
+            log.info("Error(s) occurred loading roles from old role store. Will use role service instead.");
         }
 
         try {
             //load from the new role store
             //TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
-            try {
-                final UserRoleService roleService = XDAT.getContextService().getBean(UserRoleService.class);
-                if (roleService != null) {
-                    List<UserRole> roles = roleService.findRolesForUser(this.getLogin());
-                    if (roles != null) {
-                        for (final UserRole ur : roles) {
-                            r.add(ur.getRole());
-                        }
+            final UserRoleService roleService = getUserRoleService();
+            if (roleService != null) {
+                final List<UserRole> userRoles = roleService.findRolesForUser(this.getLogin());
+                if (userRoles != null) {
+                    for (final UserRole userRole : userRoles) {
+                        roles.add(userRole.getRole());
                     }
-                    rolesNotUpdatedFromService = false;
-                } else {
-                    log.error("skipping user role service review... service is null");
                 }
-            } catch (NoSuchBeanDefinitionException e) {
-                log.warn("Unable to update roles for user " + getUsername() + " due to not finding the user role service. Will mark as incomplete.");
+                rolesNotUpdatedFromService = false;
+            } else {
+                log.error("Skipping user role service review... service is null");
             }
         } catch (Throwable e) {
             log.error("An unknown error occurred", e);
         }
 
-        return r;
+        return roles;
     }
 
     /**
@@ -509,7 +555,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
-    public boolean checkRole(String role) throws Exception {
+    public boolean checkRole(final String role) throws Exception {
         return getRoleNames().contains(role);
     }
 
@@ -660,10 +706,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public boolean isSiteAdmin() {
         if (_isSiteAdmin == null) {
             try {
-                // TODO: I'm not sure how this "Administrator" role might get populated, but the ALL_DATA_ADMIN_GROUP is canonical.
-                final boolean isAdministratorRole = checkRole("Administrator");
-                final boolean isAllDataAdmin = getGroups().keySet().contains(ALL_DATA_ADMIN_GROUP);
-                _isSiteAdmin = isAdministratorRole || isAllDataAdmin;
+                return checkRole(UserRole.ROLE_ADMINISTRATOR);
             } catch (Exception e) {
                 return false;
             }
@@ -672,14 +715,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean isDataAdmin() {
-        if (_isDataAdmin == null) {
-            try {
-                _isDataAdmin = getGroups().keySet().contains(ALL_DATA_ACCESS_GROUP);
-            } catch (Exception e) {
-                return false;
-            }
-        }
-        return _isDataAdmin;
+        return getGroups().keySet().contains(ALL_DATA_ADMIN_GROUP);
+    }
+
+    public boolean isDataAccess() {
+        return getGroups().keySet().contains(ALL_DATA_ACCESS_GROUP);
     }
 
     private UserGroupI getGroup(String id) {
@@ -887,6 +927,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 if (isSiteAdmin()) {
                     _authorities.addAll(Users.AUTHORITIES_ADMIN);
                 }
+                if (isDataAdmin()) {
+                    _authorities.add(Users.AUTHORITY_DATA_ADMIN);
+                }
+                if (isDataAccess()) {
+                    _authorities.add(Users.AUTHORITY_DATA_ACCESS);
+                }
                 _authorities.addAll(Users.AUTHORITIES_USER);
             }
             final List<String> groups = Groups.getGroupIdsForUser(this);
@@ -1060,6 +1106,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _groupsAndPermissionsCache;
     }
 
+    private UserRoleService getUserRoleService() {
+        if (_userRoleService == null) {
+            _userRoleService = XDAT.getContextService().getBean(UserRoleService.class);
+        }
+        return _userRoleService;
+    }
+
     private final static Comparator DescriptionComparator = new Comparator<ElementDisplay>() {
         public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
             try {
@@ -1118,12 +1171,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
     private final Map<String, ArrayList<ItemI>>         _userSessionCache          = new HashMap<>();
 
-    private boolean   extended                   = false;
-    private boolean   rolesNotUpdatedFromService = true;
-    private long      startTime                  = Calendar.getInstance().getTimeInMillis();
-    private UserAuthI _authorization             = null;
-
+    private boolean                   extended                   = false;
+    private boolean                   rolesNotUpdatedFromService = true;
+    private long                      startTime                  = Calendar.getInstance().getTimeInMillis();
+    private UserAuthI                 _authorization             = null;
     private GroupsAndPermissionsCache _groupsAndPermissionsCache = null;
+    private UserRoleService           _userRoleService           = null;
     private Boolean                   _isSiteAdmin               = null;
-    private Boolean                   _isDataAdmin               = null;
 }

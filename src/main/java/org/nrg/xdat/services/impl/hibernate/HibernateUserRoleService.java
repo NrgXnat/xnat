@@ -18,10 +18,13 @@
  */
 package org.nrg.xdat.services.impl.hibernate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.UserRoleDAO;
 import org.nrg.xdat.entities.UserRole;
@@ -32,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole, UserRoleDAO> implements UserRoleService {
-    
     /**
      * Finds all roles for the specified user
      * @param username    The username from the XdatUser table.
@@ -40,7 +42,7 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
      */
     @Override
     @Transactional
-    public List<UserRole> findRolesForUser(String username){
+    public List<UserRole> findRolesForUser(final String username){
     	return getDao().findByUser(username);
     }
     /**
@@ -50,7 +52,7 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
      */
     @Override
     @Transactional
-    public List<UserRole> findUsersForRole(String role){
+    public List<UserRole> findUsersForRole(final String role){
     	return getDao().findByRole(role);
     }
 
@@ -61,10 +63,14 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
      */
     @Override
     @Transactional
-    public UserRole findUserRole(String username,String role){
+    public UserRole findUserRole(final String username, final String role){
     	return getDao().findByUserRole(username, role);
     }
 
+    @Override
+    public boolean isUserRole(final String username, final String role) {
+        return false;
+    }
 
     @Override
     @Transactional
@@ -78,7 +84,6 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
         }
         return token;
     }
-    
 
     @Override
     @Transactional
@@ -93,5 +98,6 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
     }
 
     private static final Log _log = LogFactory.getLog(HibernateUserRoleService.class);
+
 
 }

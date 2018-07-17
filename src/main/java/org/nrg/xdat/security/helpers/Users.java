@@ -53,14 +53,21 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
+
 @Slf4j
 public class Users {
     public static final String                  ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
     public static final String                  ROLE_ANONYMOUS              = "ROLE_ANONYMOUS";
     public static final String                  ROLE_ADMIN                  = "ROLE_ADMIN";
+    public static final String                  ROLE_DATA_ADMIN             = "ROLE_" + ALL_DATA_ADMIN_GROUP;
+    public static final String                  ROLE_DATA_ACCESS            = "ROLE_" + ALL_DATA_ACCESS_GROUP;
     public static final String                  ROLE_USER                   = "ROLE_USER";
     public static final SimpleGrantedAuthority  AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority(ROLE_ANONYMOUS);
     public static final SimpleGrantedAuthority  AUTHORITY_ADMIN             = new SimpleGrantedAuthority(ROLE_ADMIN);
+    public static final SimpleGrantedAuthority  AUTHORITY_DATA_ADMIN        = new SimpleGrantedAuthority(ROLE_DATA_ADMIN);
+    public static final SimpleGrantedAuthority  AUTHORITY_DATA_ACCESS       = new SimpleGrantedAuthority(ROLE_DATA_ACCESS);
     public static final SimpleGrantedAuthority  AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
     public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
     public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = Collections.<GrantedAuthority>singletonList(AUTHORITY_ADMIN);

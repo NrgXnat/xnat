@@ -10,7 +10,6 @@
 package org.nrg.xdat.services;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,12 +37,12 @@ public class TestAliasTokenService {
     private static final Map<String, ?> USER  = createUser("user", "Normal", "User", "user@xnat.org", "user", true);
     private static final Map<String, ?> GUEST = createUser("guest", "Guest", "User", "info@xnat.org", "guest", true);
 
-    private static Map<String, ?> createUser(final String username, final String firstname, final String lastname, final String email, final String password, final boolean isGuest) {
+    private static Map<String, ?> createUser(final String username, final String firstName, final String lastName, final String email, final String password, final boolean isGuest) {
         return new HashMap<String, Object>() {{
             put("username", username);
             put("guest", isGuest);
-            put("firstname", firstname);
-            put("lastname", lastname);
+            put("firstname", firstName);
+            put("lastname", lastName);
             put("email", email);
             put("dBName", null);
             put("password", password);
@@ -101,24 +100,24 @@ public class TestAliasTokenService {
 
     @Test(expected = ConstraintViolationException.class)
     public void testDuplicateConstraint() {
-            final AliasToken token1 = _service.newEntity();
-            token1.setXdatUserId("user");
-            _service.create(token1);
+        final AliasToken token1 = _service.newEntity();
+        token1.setXdatUserId("user");
+        _service.create(token1);
 
-            final AliasToken token2 = _service.newEntity();
-            token2.setXdatUserId("user");
-            token2.setAlias(token1.getAlias());
-            token2.setSecret(token1.getSecret());
-            _service.create(token2);
+        final AliasToken token2 = _service.newEntity();
+        token2.setXdatUserId("user");
+        token2.setAlias(token1.getAlias());
+        token2.setSecret(token1.getSecret());
+        _service.create(token2);
     }
 
-    @Test(expected = PropertyValueException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testXdatUserIdNotNullConstraint() {
         final AliasToken token = _service.newEntity();
         _service.create(token);
     }
 
-    @Test(expected = PropertyValueException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testAliasNotNullConstraint() {
         final AliasToken token = _service.newEntity();
         token.setXdatUserId("admin");
@@ -126,7 +125,7 @@ public class TestAliasTokenService {
         _service.create(token);
     }
 
-    @Test(expected = PropertyValueException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testSecretNotNullConstraint() {
         final AliasToken token = _service.newEntity();
         token.setXdatUserId("admin");

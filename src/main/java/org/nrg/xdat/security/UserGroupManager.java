@@ -18,10 +18,13 @@ import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.meta;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
@@ -53,6 +56,7 @@ import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static lombok.AccessLevel.PRIVATE;
 import static org.nrg.xft.event.XftItemEventI.*;
@@ -178,7 +182,7 @@ public class UserGroupManager implements UserGroupServiceI {
     public void removeUserFromGroup(final UserI user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) {
         try {
             removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
-            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(Groups.OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singletonList(user.getUsername())));
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singletonList(user.getUsername())));
         } catch (Exception e) {
             log.error("Tried and failed to remove the user '{}' from group '{}': {}", user.getUsername(), groupId);
         }
@@ -204,7 +208,7 @@ public class UserGroupManager implements UserGroupServiceI {
         if (!failed.isEmpty()) {
             log.error("Tried and failed to remove the following users from group '{}': {}", groupId, StringUtils.join(failed, ", "));
         }
-        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(Groups.OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, usernames));
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, CollectionUtils.subtract(usernames, failed)));
     }
 
     @Override
@@ -219,37 +223,49 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public UserGroupI createGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) {
+    public UserGroupI createGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser) {
+        return createGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, tag, authenticatedUser, Collections.<UserI>emptyList());
+    }
+
+    @Override
+    public UserGroupI createGroup(final String groupId, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, final List<UserI> users) {
         final XdatUsergroup group = new XdatUsergroup(authenticatedUser);
+
         //optimized version for expediency
-        PersistentWorkflowI wrk = getWorkflow(value, authenticatedUser, group, "ADMIN", "Initialized permissions");
+        final PersistentWorkflowI workflow = getWorkflow(tag, authenticatedUser, group, "ADMIN", "Initialized permissions");
+        assert workflow != null;
+        final EventMetaI event = workflow.buildEvent();
 
         try {
-            group.setId(id);
-            group.setDisplayname(displayName);
-            group.setTag(value);
-
-            if (exists(id)) {
-                throw new Exception("Group already exists");
+            if (exists(groupId)) {
+                throw new ResourceAlreadyExistsException(XdatUsergroup.SCHEMA_ELEMENT_NAME, "Group " + groupId + " already exists");
             }
-            assert wrk != null;
 
-            SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, wrk.buildEvent());
+            group.setId(groupId);
+            group.setDisplayname(displayName);
+            group.setTag(tag);
 
-            final UserGroupI persisted = new UserGroup(id, _template);
+            SaveItemHelper.authorizedSave(group, authenticatedUser, false, false, event);
 
-            initPermissions(persisted, create, read, delete, edit, activate, ess, value, authenticatedUser);
-
-            wrk.setId(persisted.getPK().toString());
-
-            PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-
+            final UserGroupI persisted = new UserGroup(groupId, _template);
+            initPermissions(persisted, create, read, delete, edit, activate, ess, tag, authenticatedUser);
             ElementSecurity.updateElementAccessAndFieldMapMetaData();
 
-            // Don't trigger an event for project groups: those should be handled as part of the project create event.
-            if (!XdatUsergroup.PROJECT_GROUP.matcher(id).matches()) {
-                XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), id, CREATE);
+            if (users != null) {
+                for (final UserI user : users) {
+                    if (!getGroupsForUser(user).containsKey(groupId)) {
+                        addUserToGroup(persisted, user, authenticatedUser, event, false);
+                    }
+                }
             }
+            if (users != null) {
+                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, users));
+            } else {
+                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE);
+            }
+
+            workflow.setId(persisted.getPK().toString());
+            PersistentWorkflowUtils.complete(workflow, event);
 
             try {
                 PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
@@ -257,13 +273,11 @@ public class UserGroupManager implements UserGroupServiceI {
                 log.error("", e);
             }
 
-            return Groups.getGroup(id);
+            return Groups.getGroup(groupId);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("An error occurred while creating the group " + groupId, e);
             try {
-                if (wrk != null) {
-                    PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-                }
+                PersistentWorkflowUtils.fail(workflow, event);
             } catch (Exception ignored) {
             }
             return null;
@@ -272,25 +286,29 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public UserGroupI createOrUpdateGroup(final String id, final String displayName, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final List<ElementSecurity> elementSecurities, final String value, final UserI authenticatedUser) throws Exception {
+        return createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, elementSecurities, value, authenticatedUser, Collections.<UserI>emptyList());
+    }
+
+    @Override
+    public UserGroupI createOrUpdateGroup(final String id, final String displayName, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final List<ElementSecurity> elementSecurities, final String tag, final UserI authenticatedUser, final List<UserI> users) throws Exception {
         //hijacking the code her to manually create a group if it is brand new.  Should make project creation much quicker.
         final Long matches = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(ID) FROM xdat_usergroup WHERE ID='" + id + "'", "COUNT", authenticatedUser.getDBName(), null);
         if (matches == 0) {
             //this means the group is new.  It doesn't need to be as thorough as an edit of an existing one would be.
-            return createGroup(id, displayName, create, read, delete, edit, activate, activateChanges, elementSecurities, value, authenticatedUser);
+            return createGroup(id, displayName, create, read, delete, edit, activate, activateChanges, elementSecurities, tag, authenticatedUser, users);
         }
 
         //this means the group previously existed, and this is an update rather than an init.
         //the logic here will be way more intrusive (and expensive)
         //it will end up checking every individual permission setting (using very inefficient code)
         final ArrayList<XdatUsergroup> groups   = XdatUsergroup.getXdatUsergroupsByField(XdatUsergroup.SCHEMA_ELEMENT_NAME + ".ID", id, authenticatedUser, true);
-        boolean                        modified = false;
 
         if (groups.isEmpty()) {
             throw new Exception("Count didn't match query results");
         }
 
         final XdatUsergroup       group    = groups.get(0);
-        final PersistentWorkflowI workflow = getWorkflow(value, authenticatedUser, group, group.getXdatUsergroupId().toString(), "Modified permissions");
+        final PersistentWorkflowI workflow = getWorkflow(tag, authenticatedUser, group, group.getXdatUsergroupId().toString(), "Modified permissions");
 
         if (workflow == null) {
             return null;
@@ -299,19 +317,14 @@ public class UserGroupManager implements UserGroupServiceI {
         final long start = Calendar.getInstance().getTimeInMillis();
         try {
             if (group.getDisplayname().equals("Owners")) {
-                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent());
+                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", tag, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent());
             } else {
-                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", value, Boolean.FALSE, read, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, activateChanges, authenticatedUser, false, workflow.buildEvent());
+                setPermissions(group, "xnat:projectData", "xnat:projectData/ID", tag, false, read, false, false, false, activateChanges, authenticatedUser, false, workflow.buildEvent());
             }
 
             for (final ElementSecurity elementSecurity : elementSecurities) {
-                if (setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/project", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent())) {
-                    modified = true;
-                }
-
-                if (setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, authenticatedUser, false, workflow.buildEvent())) {
-                    modified = true;
-                }
+                setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/project", tag, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, workflow.buildEvent());
+                setPermissions(group, elementSecurity.getElementName(), elementSecurity.getElementName() + "/sharing/share/project", tag, false, true, false, false, true, true, authenticatedUser, false, workflow.buildEvent());
             }
         } catch (Exception e) {
             PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
@@ -325,7 +338,7 @@ public class UserGroupManager implements UserGroupServiceI {
             } catch (Exception e) {
                 log.error("", e);
             }
-            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), modified ? UPDATE : CREATE);
+            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), UPDATE);
         } catch (Exception e1) {
             PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
             log.error("", e1);
@@ -344,7 +357,7 @@ public class UserGroupManager implements UserGroupServiceI {
     @Override
     public UserGroupI addUserToGroup(final String groupId, final UserI newUser, final UserI currentUser, final EventMetaI ci) throws Exception {
         final UserGroupI userGroup = Groups.getGroup(groupId);
-        addUserToGroup(userGroup, currentUser, newUser, ci);
+        addUserToGroup(userGroup, currentUser, newUser, ci, true);
         return userGroup;
     }
 
@@ -352,7 +365,7 @@ public class UserGroupManager implements UserGroupServiceI {
     public UserGroupI addUsersToGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
         final UserGroupI userGroup = Groups.getGroup(groupId);
         for (final UserI user : users) {
-            addUserToGroup(userGroup, currentUser, user, eventMeta);
+            addUserToGroup(userGroup, currentUser, user, eventMeta, true);
         }
         return userGroup;
     }
@@ -514,30 +527,31 @@ public class UserGroupManager implements UserGroupServiceI {
             }
         }
         user.resetCriteria();
-        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE);
     }
 
-    private void addUserToGroup(final UserGroupI userGroup, final UserI currentUser, final UserI user, final EventMetaI eventMeta) throws Exception {
-        final String groupId = userGroup.getId();
-        if (userGroup.getTag() != null) {
+    private void addUserToGroup(final UserGroupI userGroup, final UserI currentUser, final UserI user, final EventMetaI eventMeta, final boolean triggerEvent) throws Exception {
+        final String       groupId          = userGroup.getId();
+        final String       groupTag         = userGroup.getTag();
+        final List<String> groupIdsToRemove = new ArrayList<>();
+
+        if (StringUtils.isNotBlank(groupTag)) {
             //remove from existing groups
-            final List<String> groupIdsToRemove = new ArrayList<>();
-            for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
-                if (entry.getValue().getTag() != null && entry.getValue().getTag().equals(userGroup.getTag())) {
-                    final String userGroupId = entry.getValue().getId();
-                    if (userGroupId.equals(groupId)) {
+            for (final UserGroupI existing : Groups.getGroupsForUser(user).values()) {
+                final String existingId = existing.getId();
+                if (StringUtils.equals(existing.getTag(), groupTag)) {
+                    if (StringUtils.equals(existingId, groupId)) {
                         return;
                     }
-
-                    //find mapping object to delete
-                    if (Groups.isMember(user, userGroupId)) {
-                        groupIdsToRemove.add(userGroupId);
+                    if (Groups.isMember(user, existingId)) {
+                        groupIdsToRemove.add(existingId);
                     }
                 }
             }
-            if (groupIdsToRemove.size() > 0) {
+
+            //find mapping object to delete
+            if (!groupIdsToRemove.isEmpty()) {
                 for (final String removedGroupId : groupIdsToRemove) {
-                    Groups.removeUserFromGroup(user, currentUser, removedGroupId, eventMeta);
+                    removeUserFromGroup((XDATUser) user, currentUser, removedGroupId, eventMeta);
                 }
             }
         }
@@ -548,7 +562,16 @@ public class UserGroupManager implements UserGroupServiceI {
             map.setGroupid(groupId);
             SaveItemHelper.authorizedSave(map, currentUser, false, false, eventMeta);
         }
-        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE);
+
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put(OPERATION, Groups.OPERATION_ADD_USERS);
+        properties.put(Groups.USERS, user.getUsername());
+        if (!groupIdsToRemove.isEmpty()) {
+            properties.put(Groups.REMOVED, groupIdsToRemove);
+        }
+        if (triggerEvent) {
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, properties);
+        }
     }
 
     private PersistentWorkflowI getWorkflow(final String value, final UserI authenticatedUser, final XdatUsergroup group, final String objectId, final String action) {

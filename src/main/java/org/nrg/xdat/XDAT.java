@@ -12,6 +12,7 @@ package org.nrg.xdat;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
@@ -82,6 +83,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ANONYMOUS;
 import static org.nrg.xdat.security.helpers.Users.AUTHORITY_ADMIN;
@@ -558,8 +560,8 @@ public class XDAT implements Initializable, Configurable{
 		triggerEvent(XftItemEvent.builder().item(item).action(action).build());
 	}
 
-	public static void triggerXftItemEvent(final BaseElement element, final String action) {
-		triggerEvent(XftItemEvent.builder().element(element).action(action).build());
+	public static void triggerXftItemEvent(final BaseElement baseElement, final String action) {
+		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).build());
 	}
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
@@ -570,8 +572,8 @@ public class XDAT implements Initializable, Configurable{
 		triggerEvent(XftItemEvent.builder().item(item).action(action).properties(properties).build());
 	}
 
-	public static void triggerXftItemEvent(final BaseElement element, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().element(element).action(action).properties(properties).build());
+	public static void triggerXftItemEvent(final BaseElement baseElement, final String action, final Map<String, ?> properties) {
+		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).properties(properties).build());
 	}
 
     public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
@@ -942,7 +944,7 @@ public class XDAT implements Initializable, Configurable{
         String username = user.getUsername();
         String reason = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
         return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
-}
+	}
 
     public static List<String> getLocalhostIPs() {
         List<String> localhostIPs = new ArrayList<>();
@@ -967,6 +969,31 @@ public class XDAT implements Initializable, Configurable{
             return localhostIPs;
     }
 
-    private static final String IP_LOCALHOST_V4 = "127.0.0.1";
+	private static void logShortStackTrace(final String message, final int depth) {
+		logShortStackTrace(message, null, depth);
+	}
+
+	private static void logShortStackTrace(final String message, final Map<String, ?> properties, final int depth) {
+		final StringBuilder           buffer     = new StringBuilder(message).append("\n");
+		if (properties != null) {
+			buffer.append("Properties: ").append(properties.toString()).append("\n");
+		}
+		final AtomicInteger start = new AtomicInteger(0);
+        final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (final StackTraceElement element : stackTrace) {
+            if (StringUtils.equals(element.getMethodName(), "logShortStackTrace")) {
+                start.incrementAndGet();
+                continue;
+            }
+            start.incrementAndGet();
+            break;
+        }
+        for (final StackTraceElement element : ArrayUtils.subarray(stackTrace, start.get(), start.getAndAdd(depth))) {
+			buffer.append("    at ").append(element.getClassName()).append(".").append(element.getMethodName()).append("():").append(element.getLineNumber()).append("\n");
+		}
+		logger.error(buffer.toString());
+	}
+
+	private static final String IP_LOCALHOST_V4 = "127.0.0.1";
     private static final String IP_LOCALHOST_V6 = "0:0:0:0:0:0:0:1";
 }

@@ -14,11 +14,17 @@ import java.util.Collection;
 import org.nrg.xft.security.UserI;
 
 public interface RoleServiceI {
-	String DEFAULT_ROLE_SERVICE = "org.nrg.xdat.security.services.impl.RoleServiceImpl";
+    String DEFAULT_ROLE_SERVICE = "org.nrg.xdat.security.services.impl.RoleServiceImpl";
 
-	boolean checkRole(UserI user, String role);
-	void addRole(UserI authenticatedUser, UserI user, String role) throws Exception;
-	void deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception;
-	boolean isSiteAdmin(UserI user);
-	Collection<String> getRoles(UserI user);
+    boolean checkRole(final UserI user, final String role);
+
+    void addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
+
+    void deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
+
+    Collection<String> getRoles(UserI user);
+
+    boolean isSiteAdmin(final UserI user);
+
+    boolean isNonExpiring(final UserI user);
 }

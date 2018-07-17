@@ -26,7 +26,7 @@ import java.util.Map;
  * Added to allow different implementations of User Group activities
  */
 public interface UserGroupServiceI {
-    class InvalidValueException extends Exception {
+	class InvalidValueException extends Exception {
 
 	}
 
@@ -231,7 +231,26 @@ public interface UserGroupServiceI {
 	 */
 	UserGroupI createGroup(final String id, final String displayName, Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges,List<ElementSecurity> ess, String tag, UserI authenticatedUser);
 
-	/**
+    /**
+     * Create user group using the defined permissions.
+     *
+     * @param id : String ID to use for the group ID
+     * @param displayName          The display name for the user group.
+     * @param create : true if members should be able to create the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param read : true if members should be able to read the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param delete : true if members should be able to delete the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param edit : true if members should be able to edit the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activate : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activateChanges : Should the permissions be activated upon creation (or wait for approval later)
+     * @param ess : List of data types that this group should have permissions for
+     * @param tag : Tag for permissions to key of off (typically the project ID)
+     * @param authenticatedUser    The user performing the operation.
+     * @param users                The users to be added to the group on creation.
+     * @return The newly created group.
+     */
+    UserGroupI createGroup(String id, String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, List<UserI> users);
+
+    /**
 	 * create or update a group using the defined permissions.  If the group doesn't exist, a new one will be created.  If it does, the permissions will be updated according to the passed parameters
 	 *
 	 * @param id : String ID to use for the group ID
@@ -249,6 +268,27 @@ public interface UserGroupServiceI {
 	 * @throws Exception When something goes wrong.
 	 */
 	UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges,List<ElementSecurity> ess, String tag, UserI authenticatedUser) throws Exception;
+
+	/**
+	 * create or update a group using the defined permissions.  If the group doesn't exist, a new one will be created.  If it does, the permissions will be updated according to the passed parameters
+	 *
+	 * @param id : String ID to use for the group ID
+	 * @param displayName          The display name for the user group.
+	 * @param create : true if members should be able to create the data types in the List&lt;ElementSecurity&gt; ess, else false
+	 * @param read : true if members should be able to read the data types in the List&lt;ElementSecurity&gt; ess, else false
+	 * @param delete : true if members should be able to delete the data types in the List&lt;ElementSecurity&gt; ess, else false
+	 * @param edit : true if members should be able to edit the data types in the List&lt;ElementSecurity&gt; ess, else false
+	 * @param activate : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
+	 * @param activateChanges : Should the permissions be activated upon creation (or wait for approval later)
+	 * @param ess : List of data types that this group should have permissions for
+	 * @param tag : Tag for permissions to key of off (typically the project ID)
+	 * @param authenticatedUser    The user performing the operation.
+	 * @param users Users to add to the group on initialization.
+	 *
+	 * @return The created or updated group.
+	 * @throws Exception When something goes wrong.
+	 */
+	UserGroupI createOrUpdateGroup(String id, String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, List<UserI> users) throws Exception;
 
 	/**
 	 * Add user to the group (includes potential modification to the database).

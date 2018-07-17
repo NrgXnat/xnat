@@ -52,6 +52,11 @@ public interface XftItemEventI extends EventI {
     }};
 
     /**
+     * Used to specify a specific action in the {@link #getProperties() event properties}.
+     */
+    String OPERATION = "action";
+
+    /**
      * Indicates whether this event affected only a single item or more than one.
      *
      * @return Returns true if the event represents more than one item, false otherwise.

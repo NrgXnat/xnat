@@ -61,4 +61,12 @@ public interface UserRoleService extends BaseHibernateService<UserRole> {
      * @return The matched user role
      */
     UserRole findUserRole(String username, String role);
+
+    /**
+     * Checks whether the user is associated with the indicated role.
+     * @param username The name of the user to check.
+     * @param role     The role to check.
+     * @return Returns true if the user has the indicated role, false otherwise.
+     */
+    boolean isUserRole(final String username, final String role);
 }

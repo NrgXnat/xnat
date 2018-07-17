@@ -251,7 +251,7 @@ public class UserGroup implements UserGroupI {
 
     @SuppressWarnings("unused")
     public void initializeUsernames(final ItemI item) {
-        throw new UnsupportedOperationException("Can't currently get the list of usernames from an ItemI");
+        log.warn("Can't currently get the list of usernames from an ItemI");
     }
 
     public void initializeUsernames(final NamedParameterJdbcTemplate template) {
@@ -453,7 +453,7 @@ public class UserGroup implements UserGroupI {
     }
 
     private synchronized void init(final XdatUsergroup group) throws Exception {
-        init(group, null);
+        init(group, XDAT.getContextService().getBeanSafely(NamedParameterJdbcTemplate.class));
     }
 
     private synchronized void init(final XdatUsergroup group, final NamedParameterJdbcTemplate template) throws Exception {

@@ -43,6 +43,7 @@ import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 @Accessors(prefix = "_")
 @Slf4j
 public class XftItemEvent implements XftItemEventI {
+
     public static Builder builder() {
         return new Builder();
     }

@@ -28,6 +28,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +43,9 @@ public class Groups {
     public final static String COLLABORATOR_GROUP     = "collaborator";
     public final static String COLLABORATOR_NAME      = "Collaborators";
     public static final String USERS                  = "users";
-    public static final String OPERATION              = "action";
     public static final String OPERATION_ADD_USERS    = "addUsers";
     public static final String OPERATION_REMOVE_USERS = "removeUsers";
+    public static final String REMOVED                = "removedGroups";
 
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
@@ -120,16 +121,19 @@ public class Groups {
      * @return Returns true if the user is a system data administrator, false otherwise.
      */
     public static boolean isSiteAdmin(final UserI user) {
-        return Groups.isMember(user, ALL_DATA_ADMIN_GROUP);
+        return Roles.isSiteAdmin(user);
     }
 
     public static boolean isDataAdmin(final UserI user) {
+        return Groups.isMember(user, ALL_DATA_ADMIN_GROUP);
+    }
+
+    public static boolean isDataAccess(final UserI user) {
         return Groups.isMember(user, ALL_DATA_ACCESS_GROUP);
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean hasAllDataAccess(final UserI user) {
-        return isSiteAdmin(user) || isDataAdmin(user);
+        return isSiteAdmin(user) || isDataAdmin(user) || isDataAccess(user);
     }
 
     /**
@@ -332,13 +336,36 @@ public class Groups {
      * @param activate          : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
      * @param activateChanges   : Should the permissions be activated upon creation (or wait for approval later)
      * @param ess               : List of data types that this group should have permissions for
+     * @param tag               Tag for permissions to key of off (typically the project ID)
      * @param authenticatedUser The user creating the group.
      *
      * @return The new or updated group.
      */
     @SuppressWarnings("unused")
-    public static UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) throws Exception {
-        return getUserGroupService().createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, value, authenticatedUser);
+    public static UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser) throws Exception {
+        return getUserGroupService().createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, tag, authenticatedUser);
+    }
+
+    /**
+     * Create user group using the defined permissions.
+     *
+     * @param id                : String ID to use for the group ID
+     * @param displayName       The display name for the group.
+     * @param create            : true if members should be able to create the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param read              : true if members should be able to read the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param delete            : true if members should be able to delete the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param edit              : true if members should be able to edit the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activate          : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activateChanges   : Should the permissions be activated upon creation (or wait for approval later)
+     * @param ess               : List of data types that this group should have permissions for
+     * @param tag               Tag for permissions to key of off (typically the project ID)
+     * @param authenticatedUser The user creating the group.
+     * @param users             Users to add to the group on creation.
+     * @return The new or updated group.
+     */
+    @SuppressWarnings("unused")
+    public static UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, final List<UserI> users) throws Exception {
+        return getUserGroupService().createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, tag, authenticatedUser, users);
     }
 
     /**
@@ -352,8 +379,9 @@ public class Groups {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectOwnerGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
-        return getUserGroupService().createOrUpdateGroup(projectId + "_" + OWNER_GROUP, OWNER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + OWNER_GROUP, OWNER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user, Collections.singletonList(user));
     }
 
     /**
@@ -367,6 +395,7 @@ public class Groups {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectMemberGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
         return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }
@@ -382,6 +411,7 @@ public class Groups {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectCollaboratorGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
         return getUserGroupService().createOrUpdateGroup(projectId + "_" + COLLABORATOR_GROUP, COLLABORATOR_NAME, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }

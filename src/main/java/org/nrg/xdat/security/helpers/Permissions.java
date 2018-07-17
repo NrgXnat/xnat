@@ -27,7 +27,6 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.services.cache.UserItemCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -47,6 +46,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
+@SuppressWarnings("RedundantThrows")
 @Slf4j
 public class Permissions {
     /**
@@ -94,27 +94,6 @@ public class Permissions {
             }
         }
         return _service;
-    }
-
-    /**
-     * Returns the {@link UserItemCache user project cache}.
-     *
-     * @return The user project cache.
-     */
-    public static UserItemCache getUserProjectCache() {
-        // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
-        if (_cache == null) {
-            // First find out if it exists in the application context.
-            final ContextService contextService = XDAT.getContextService();
-            if (contextService != null) {
-                try {
-                    return _cache = contextService.getBean(UserItemCache.class);
-                } catch (NoSuchBeanDefinitionException ignored) {
-                    log.warn("Unable to find an instance of the UserProjectCache class.");
-                }
-            }
-        }
-        return _cache;
     }
 
     /**
@@ -777,17 +756,6 @@ public class Permissions {
         }
     }
 
-    public static boolean canReadProject(final UserI user, final String projectId) {
-        return canReadProject(null, user, projectId);
-    }
-
-    public static boolean canReadProject(final JdbcTemplate template, final UserI user, final String projectId) {
-        if (template != null && user.isGuest()) {
-            return getAllPublicProjects(template).contains(projectId) || getAllProtectedProjects(template).contains(projectId);
-        }
-        return Roles.isSiteAdmin(user) || !isProjectPrivate(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
-    }
-
     public static List<String> getAllProtectedProjects(final JdbcTemplate template) {
         return template.queryForList(QUERY_GET_PROTECTED_PROJECTS, String.class);
     }
@@ -804,8 +772,19 @@ public class Permissions {
         return template.queryForList(QUERY_GET_PUBLIC_PROJECTS, EmptySqlParameterSource.INSTANCE, String.class);
     }
 
+    public static boolean canReadProject(final UserI user, final String projectId) {
+        return canReadProject(null, user, projectId);
+    }
+
+    public static boolean canReadProject(final JdbcTemplate template, final UserI user, final String projectId) {
+        if (template != null && user.isGuest()) {
+            return getAllPublicProjects(template).contains(projectId) || getAllProtectedProjects(template).contains(projectId);
+        }
+        return Roles.isSiteAdmin(user) || Groups.isDataAdmin(user) || Groups.isDataAccess(user) || !isProjectPrivate(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+    }
+
     public static boolean canEditProject(final UserI user, final String projectId) {
-        if (Roles.isSiteAdmin(user)) {
+        if (Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)) {
             return true;
         }
         final String access = getUserProjectAccess(user, projectId);
@@ -1155,6 +1134,5 @@ public class Permissions {
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();
 
     private static PermissionsServiceI        _service;
-    private static UserItemCache              _cache;
     private static NamedParameterJdbcTemplate _template;
 }

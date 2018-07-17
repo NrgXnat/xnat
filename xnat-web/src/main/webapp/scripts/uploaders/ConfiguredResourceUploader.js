@@ -70,7 +70,7 @@ XNAT.app.crConfigs={
 	getAllConfigsByType:function(type, props){
 		var tmpConfigs=this.getConfigsByType(type);
 		
-		var typeInfo=window.available_elements.getByName(type);
+		var typeInfo=window.available_elements_getByName(type);
 		if(typeInfo!=undefined){
 			if(typeInfo.isSubjectAssessor){
 				tmpConfigs=tmpConfigs.concat(this.getConfigsByType("xnat:subjectAssessorData"));

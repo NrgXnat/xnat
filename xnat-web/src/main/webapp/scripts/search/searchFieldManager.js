@@ -121,7 +121,7 @@ function SearchFieldManager(div_id){
 			
 			if(this.tabView){
 				var tempTab=new YAHOO.widget.Tab({
-			  	    label:window.available_elements.getByName(element_name).singular + '&nbsp;<span style="height:12px;width:1px;">&nbsp;</span>',
+			  	    label:window.available_elements_getByName(element_name).singular + '&nbsp;<span style="height:12px;width:1px;">&nbsp;</span>',
 			  	    content:'<div id="'+element_name + '_fields_dt">Preparing Results</div>',
 			  	    active:true});			  	 
 			    this.tabView.addTab(tempTab);

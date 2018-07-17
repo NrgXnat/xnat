@@ -101,7 +101,9 @@
         if (!window.isLoginPage && window.loadDataTypes) {
             console.log('getBrowseableElements');
             XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
+                var getByName = window.available_elements.getByName;
                 window.available_elements = data.sortedElements;
+                window.available_elements.getByName = getByName;
                 window.browseableElements = data.elementMap;
             });
         }

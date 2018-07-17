@@ -22,7 +22,7 @@
 				  #end
 
                 #foreach ($assessor in $subject.getMinimalLoadAssessors())
-                   var _t=window.available_elements.getByName("$assessor.getXSIType()");
+                   var _t=window.available_elements_getByName("$assessor.getXSIType()");
                    if(_t==null){
                    	   _t={singular:"$!assessor.getItem().getProperName()",plural:"$!assessor.getItem().getProperName()",			element_name:"$assessor.getXSIType()",actions:{},"lbg":"","dbg":""}
                    }
@@ -37,6 +37,6 @@
 
                    if(expt!=null)_a.push(expt);
                    expt=null;
-					 _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getIdentifier($project) ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements.getByName("$om.getXSIType()").singular,date:"",primary_label:"$!om.getIdentifier($project)","hasProject":"true"});
+					 _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getIdentifier($project) ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements_getByName("$om.getXSIType()").singular,date:"",primary_label:"$!om.getIdentifier($project)","hasProject":"true"});
 
 				</script>

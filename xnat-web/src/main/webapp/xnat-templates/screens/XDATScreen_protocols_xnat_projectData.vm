@@ -35,20 +35,21 @@
                     </TD>
                 </TR>
             </TABLE>
-
-
+            <TABLE width="100%">
+                <TR>
+                    <TD align="center"><button id="complete_page" type="button">Done</button></TD>
+                </TR>
+            </TABLE>
             <SCRIPT type="text/javascript">
 
 
                 XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
 
-                    window.available_elements = data.sortedElements;
-                    window.browseableElements = data.elementMap;
-
                     var protocols = new Array();
 
-                    var div_bodys = document.getElementById("div_bodys");
-                    var protocols_sel = document.getElementById("protocols_sel");
+                    var div_bodys = document.getElementById('div_bodys');
+                    var protocols_sel = document.getElementById('protocols_sel');
+                    var complete_pg_btn = document.getElementById('complete_page');
 
                     var createdProtocols = new Array();
 
@@ -84,7 +85,7 @@
                                 protocols.push(new ProtocolManager(omId + '_' + elementName, null, bDIV, { dataType: elementName, project: omId }));
                             }
                         }
-                    })
+                    });
 
                     //protocols[0].show();
 
@@ -135,7 +136,11 @@
                     }
                     // window.selectProtocol = selectProtocol;
 
-                    // add single event handler here, rather than as an inline 'onchange' attribute
+                    // add event handlers here, rather than as an inline attributes
+                    complete_pg_btn.onclick = function(e){
+                        completePage(this);
+                    }
+
                     protocols_sel.onchange = function(e){
                         selectProtocol(this);
                     }
@@ -144,11 +149,6 @@
 
 
             </SCRIPT>
-            <TABLE width="100%">
-                <TR>
-                    <TD align="center"><INPUT type="button" value="Done" ONCLICK="completePage();"/></TD>
-                </TR>
-            </TABLE>
         </TD>
     </TR>
 </TABLE>

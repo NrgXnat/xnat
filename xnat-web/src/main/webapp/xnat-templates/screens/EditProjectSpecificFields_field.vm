@@ -1,3 +1,4 @@
+<!-- BEGIN /xnat-templates/screens/EditProjectSpecificFields_field.vm -->
 <tr>
     <th class="formLabel" nowrap>
         <label for="$!f.getXmlpath()" #if($f.getRequired()==1 || $f.getRequired()) class="formLabelRequired" #end>$!f.getName()</label>#if($f.getRequired()==1 || $f.getRequired()) <span class="noteRequired">*</span> #end
@@ -81,3 +82,4 @@
         #end
     </td>
 </tr>
+<!-- END /xnat-templates/screens/EditProjectSpecificFields_field.vm -->

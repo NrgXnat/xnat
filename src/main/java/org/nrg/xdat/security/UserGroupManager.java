@@ -182,7 +182,7 @@ public class UserGroupManager implements UserGroupServiceI {
     public void removeUserFromGroup(final UserI user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) {
         try {
             removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
-            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singletonList(user.getUsername())));
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singleton(user.getUsername())));
         } catch (Exception e) {
             log.error("Tried and failed to remove the user '{}' from group '{}': {}", user.getUsername(), groupId);
         }
@@ -208,7 +208,7 @@ public class UserGroupManager implements UserGroupServiceI {
         if (!failed.isEmpty()) {
             log.error("Tried and failed to remove the following users from group '{}': {}", groupId, StringUtils.join(failed, ", "));
         }
-        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, CollectionUtils.subtract(usernames, failed)));
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, new HashSet<>(CollectionUtils.subtract(usernames, failed))));
     }
 
     @Override
@@ -251,15 +251,17 @@ public class UserGroupManager implements UserGroupServiceI {
             initPermissions(persisted, create, read, delete, edit, activate, ess, tag, authenticatedUser);
             ElementSecurity.updateElementAccessAndFieldMapMetaData();
 
+            final Set<String> added = new HashSet<>();
             if (users != null) {
                 for (final UserI user : users) {
                     if (!getGroupsForUser(user).containsKey(groupId)) {
                         addUserToGroup(persisted, user, authenticatedUser, event, false);
+                        added.add(user.getUsername());
                     }
                 }
             }
             if (users != null) {
-                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, users));
+                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, added));
             } else {
                 XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE);
             }
@@ -565,7 +567,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
         final Map<String, Object> properties = new HashMap<>();
         properties.put(OPERATION, Groups.OPERATION_ADD_USERS);
-        properties.put(Groups.USERS, user.getUsername());
+        properties.put(Groups.USERS, Collections.singleton(user.getUsername()));
         if (!groupIdsToRemove.isEmpty()) {
             properties.put(Groups.REMOVED, groupIdsToRemove);
         }

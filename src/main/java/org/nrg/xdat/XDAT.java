@@ -43,6 +43,7 @@ import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -893,8 +894,8 @@ public class XDAT implements Initializable, Configurable{
 		final ItemI found = populator.getItem();
 		final String tempPass = data.getParameters().getString("xdat:user.primary_password");
 
-		final HttpSession session = data.getSession();
-		session.setAttribute("forcePasswordChange", forcePasswordChange);
+		UserHelper.setUserHelper(data.getRequest(), user);
+		data.getSession().setAttribute("forcePasswordChange", forcePasswordChange);
 
 		final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
 		item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());

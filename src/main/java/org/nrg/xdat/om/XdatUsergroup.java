@@ -22,9 +22,8 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("serial")
 public class XdatUsergroup extends BaseXdatUsergroup {
-    public static final Pattern PROJECT_GROUP = Pattern.compile("(?<project>.*)_(owner|member|collaborator)?");
 
-    public XdatUsergroup(ItemI item)
+	public XdatUsergroup(ItemI item)
 	{
 		super(item);
 	}

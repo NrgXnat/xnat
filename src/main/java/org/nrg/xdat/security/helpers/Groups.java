@@ -10,6 +10,8 @@
 package org.nrg.xdat.security.helpers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -31,6 +33,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 public class Groups {
@@ -39,13 +43,14 @@ public class Groups {
     public final static String OWNER_GROUP            = "owner";
     public final static String OWNER_NAME             = "Owners";
     public final static String MEMBER_GROUP           = "member";
-    public final static String MEMBER_NAME            = "Members";
-    public final static String COLLABORATOR_GROUP     = "collaborator";
-    public final static String COLLABORATOR_NAME      = "Collaborators";
-    public static final String USERS                  = "users";
-    public static final String OPERATION_ADD_USERS    = "addUsers";
-    public static final String OPERATION_REMOVE_USERS = "removeUsers";
-    public static final String REMOVED                = "removedGroups";
+    public final static String  MEMBER_NAME            = "Members";
+    public final static String  COLLABORATOR_GROUP     = "collaborator";
+    public final static String  COLLABORATOR_NAME      = "Collaborators";
+    public static final String  USERS                  = "users";
+    public static final String  OPERATION_ADD_USERS    = "addUsers";
+    public static final String  OPERATION_REMOVE_USERS = "removeUsers";
+    public static final String  REMOVED                = "removedGroups";
+    public static final Pattern REGEX_PROJECT_GROUP    = Pattern.compile("(?<project>.*)_(?<access>owner|member|collaborator)");
 
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
@@ -111,6 +116,37 @@ public class Groups {
             }
         }
         return _cache;
+    }
+
+    /**
+     * Uses the {@link #REGEX_PROJECT_GROUP} regular expression to determine if the submitted group ID is a project-related
+     * group in the form <b><i>PROJECT_ID</i>_<i>access</i></b>, where <i>access</i> is one of <b>owner</b>, <b>member</b>,
+     * or <b>collaborator</b>.
+     *
+     * You can get the project ID and access level for the group ID by calling {@link #getProjectIdAndAccessFromGroupId(String)}.
+     *
+     * @param groupId The group ID to evaluate.
+     * @return Returns true if the ID matches a project group, false otherwise.
+     */
+    public static boolean isProjectGroup(final String groupId) {
+        return REGEX_PROJECT_GROUP.matcher(groupId).matches();
+    }
+
+    /**
+     * Extracts the project ID and access level from a {@link #isProjectGroup(String) project-related group ID}. The
+     * left value of the returned pair contains the project ID while the right value contains the access level. If
+     * the submitted group ID is blank or doesn't match the project-related group format, this returns a null pair.
+     *
+     * @param groupId The group ID from which the project ID and access level should be extracted.
+     *
+     * @return A pair containing the project ID in the left value and access level in the right.
+     */
+    public static Pair<String, String> getProjectIdAndAccessFromGroupId(final String groupId) {
+        final Matcher matcher = REGEX_PROJECT_GROUP.matcher(groupId);
+        if (matcher.find()) {
+            return ImmutablePair.nullPair();
+        }
+        return ImmutablePair.of(matcher.group("project"), matcher.group("access"));
     }
 
     /**

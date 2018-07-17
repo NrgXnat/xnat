@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
@@ -87,7 +88,7 @@ public class XftItemEventCriteria {
             return event != null &&
                    StringUtils.isNotBlank(event.getId()) &&
                    StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType()) &&
-                   XdatUsergroup.PROJECT_GROUP.matcher(event.getId()).matches();
+                   Groups.isProjectGroup(event.getId());
         }
     };
 

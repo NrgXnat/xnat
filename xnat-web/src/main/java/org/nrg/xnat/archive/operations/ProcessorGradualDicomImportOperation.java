@@ -110,8 +110,8 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
                     Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
                     ArchiveProcessor processor = processorsMap.get(processorClass);
 
-                    if (processor.accept(dicom, dicom, null, getMizer(), processorInstance.getParameters())) {
-                        if(!processor.process(dicom, dicom, null, getMizer(), processorInstance.getParameters())){
+                    if (processor.accept(dicom, dicom, null, getMizer(), processorInstance, getParameters())) {
+                        if(!processor.process(dicom, dicom, null, getMizer(), processorInstance, getParameters())){
                             continueProcessingData = false;
                             break;
                         }
@@ -278,8 +278,8 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
                     Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
                     ArchiveProcessor processor = processorsMap.get(processorClass);
 
-                    if (processor.accept(dicom, dicom, session, getMizer(), processorInstance.getParameters())) {
-                        if(!processor.process(dicom, dicom, session, getMizer(), processorInstance.getParameters())){
+                    if (processor.accept(dicom, dicom, session, getMizer(), processorInstance, getParameters())) {
+                        if(!processor.process(dicom, dicom, session, getMizer(), processorInstance, getParameters())){
                             continueProcessingData = false;
                             break;
                         }

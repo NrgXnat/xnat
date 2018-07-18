@@ -3,6 +3,8 @@ package org.nrg.xnat.entities;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
@@ -21,13 +23,23 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     }
 
-    public ArchiveProcessorInstance(String scope, List<String> projectIdsList, int order, Map<String, String> parameters, String processorClass) {
+    public ArchiveProcessorInstance(String label, String scope, List<String> scpWhitelist, List<String> scpBlacklist, int order, Map<String, String> parameters, String processorClass) {
+        this.label = label;
         this.scope = scope;
-        this.projectIdsList = projectIdsList;
+        this.scpWhitelist = scpWhitelist;
+        this.scpBlacklist = scpBlacklist;
         this.priority = priority;
         this.location = location;
         this.parameters = parameters;
         this.processorClass = processorClass;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public String getScope() {
@@ -36,15 +48,6 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     public void setScope(String scope) {
         this.scope = scope;
-    }
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    public List<String> getProjectIdsList() {
-        return projectIdsList;
-    }
-
-    public void setProjectIdsList(List<String> projectIdsList) {
-        this.projectIdsList = projectIdsList;
     }
 
     public int getPriority() {
@@ -82,9 +85,32 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.processorClass = processorClass;
     }
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(value = FetchMode.SUBSELECT)
+    public List<String> getScpWhitelist() {
+        return scpWhitelist;
+    }
+
+    public void setScpWhitelist(List<String> scpWhitelist) {
+        this.scpWhitelist = scpWhitelist;
+    }
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(value = FetchMode.SUBSELECT)
+    public List<String> getScpBlacklist() {
+        return scpBlacklist;
+    }
+
+    public void setScpBlacklist(List<String> scpBlacklist) {
+        this.scpBlacklist = scpBlacklist;
+    }
+
+    private String label;
+
     private String scope;
 
-    private List<String> projectIdsList;
+    private List<String> scpWhitelist;
+    private List<String> scpBlacklist;
     private int location;
     private int priority;
     private Map<String, String> parameters;

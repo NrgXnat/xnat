@@ -79,12 +79,20 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
 
         boolean isDirty = false;
         // Only update fields that are actually included in the submitted data and differ from the original source.
+        if (StringUtils.isNotBlank(processor.getLabel()) && !StringUtils.equals(processor.getLabel(), existingProcessor.getLabel())) {
+            existingProcessor.setLabel(processor.getLabel());
+            isDirty = true;
+        }
         if (StringUtils.isNotBlank(processor.getScope()) && !StringUtils.equals(processor.getScope(), existingProcessor.getScope())) {
             existingProcessor.setScope(processor.getScope());
             isDirty = true;
         }
-        if (processor.getProjectIdsList()!=null && !processor.getProjectIdsList().equals(existingProcessor.getProjectIdsList())) {
-            existingProcessor.setProjectIdsList(processor.getProjectIdsList());
+        if (processor.getScpWhitelist()!=null && !processor.getScpWhitelist().equals(existingProcessor.getScpWhitelist())) {
+            existingProcessor.setScpWhitelist(processor.getScpWhitelist());
+            isDirty = true;
+        }
+        if (processor.getScpBlacklist()!=null && !processor.getScpBlacklist().equals(existingProcessor.getScpBlacklist())) {
+            existingProcessor.setScpBlacklist(processor.getScpBlacklist());
             isDirty = true;
         }
         if (processor.getPriority()!=existingProcessor.getPriority()) {

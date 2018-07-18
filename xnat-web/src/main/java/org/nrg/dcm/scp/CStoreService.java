@@ -229,7 +229,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
             try {
                 boolean useDefaultImporter = true;
                 try {
-                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET());
+                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
                     useDefaultImporter = !instance.getCustomProcessing();
                 }
                 catch(Throwable t){
@@ -251,7 +251,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                     importer.call();
                 }
                 else{
-                    final ImmutableMap<String, Object> parameters = ImmutableMap.of(ProcessorGradualDicomImporter.SENDER_ID_PARAM, identifySender(as), ProcessorGradualDicomImporter.TSUID_PARAM, tsuid, ProcessorGradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET());
+                    final ImmutableMap<String, Object> parameters = ImmutableMap.of(ProcessorGradualDicomImporter.SENDER_ID_PARAM, identifySender(as), ProcessorGradualDicomImporter.TSUID_PARAM, tsuid, ProcessorGradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET(), ProcessorGradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET(), ProcessorGradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnector().getPort());
                     importer.doImport(this, userProvider.get(), fw, parameters, identifier, namer);
                 }
 

@@ -33,9 +33,11 @@ import java.util.Map;
 @Service
 @ImporterHandler(handler = ProcessorImporterHandlerA.GRADUAL_DICOM_IMPORTER)
 public class ProcessorGradualDicomImporter extends ProcessorImporterHandlerA {
-    public static final String SENDER_AE_TITLE_PARAM = "Sender-AE-Title";
-    public static final String SENDER_ID_PARAM       = "Sender-ID";
-    public static final String TSUID_PARAM           = "Transfer-Syntax-UID";
+    public static final String SENDER_AE_TITLE_PARAM   = "Sender-AE-Title";
+    public static final String RECEIVER_AE_TITLE_PARAM = "Receiver-AE-Title";
+    public static final String RECEIVER_PORT_PARAM     = "Receiver-Port";
+    public static final String SENDER_ID_PARAM         = "Sender-ID";
+    public static final String TSUID_PARAM             = "Transfer-Syntax-UID";
 
 //    @Autowired
 //    public ProcessorGradualDicomImporter(final List<ArchiveProcessor> processors, final DicomFilterService filterService, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer, final MizerService mizer) {

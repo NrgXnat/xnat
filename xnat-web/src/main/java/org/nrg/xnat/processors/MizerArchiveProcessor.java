@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
+import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.restlet.data.Status;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class MizerArchiveProcessor extends AbstractArchiveProcessor {
 
     @Override
-    public boolean process(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, Map<String, String> parameters) throws ServerException{
+    public boolean process(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         try {
             Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
             if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
@@ -43,7 +44,7 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
     }
 
     @Override
-    public boolean accept(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, Map<String, String> parameters) throws ServerException{
+    public boolean accept(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         try {
             // check to see of this session came in through an application that may have performed anonymization
             // prior to transfer, e.g. the XNAT Upload Assistant.
@@ -52,7 +53,7 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
                 return false;
             }
             else if (DefaultAnonUtils.getService().isSiteWideScriptEnabled()){
-                return true;
+                return processorConfiguredForDataComingInToThisScpReceiver(instance, aeParameters);
             }
             else {
                 return false;

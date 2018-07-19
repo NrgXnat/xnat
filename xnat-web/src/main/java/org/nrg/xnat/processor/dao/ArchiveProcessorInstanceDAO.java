@@ -10,8 +10,10 @@
 package org.nrg.xnat.processor.dao;
 
 import org.hibernate.Criteria;
+import org.hibernate.criterion.Disjunction;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.sql.JoinType;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.springframework.stereotype.Repository;
@@ -39,6 +41,28 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("scope", ArchiveProcessorInstance.SITE_SCOPE));
         criteria.add(Restrictions.eq("enabled", true));
+        return criteria.list();
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Transactional
+    public List<ArchiveProcessorInstance> getEnabledSiteArchiveProcessorsForAe(String aeAndPort) {
+        final Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("scope", ArchiveProcessorInstance.SITE_SCOPE));
+        criteria.add(Restrictions.eq("enabled", true));
+        criteria.createAlias("scpWhitelist", "scpWhitelist", JoinType.LEFT_OUTER_JOIN);
+        criteria.createAlias("scpBlacklist", "scpBlacklist", JoinType.LEFT_OUTER_JOIN);
+
+        Disjunction whitelistEmptyOrHasAe = Restrictions.disjunction();
+        whitelistEmptyOrHasAe.add(Restrictions.isEmpty("scpWhitelist"));
+        whitelistEmptyOrHasAe.add(Restrictions.eq("scpWhitelist.elements", aeAndPort));
+
+        Disjunction blacklistEmptyOrDoesNotHaveAe = Restrictions.disjunction();
+        blacklistEmptyOrDoesNotHaveAe.add(Restrictions.isEmpty("scpBlacklist"));
+        blacklistEmptyOrDoesNotHaveAe.add(Restrictions.ne("scpBlacklist.elements", aeAndPort));
+
+        criteria.add(Restrictions.and(whitelistEmptyOrHasAe, blacklistEmptyOrDoesNotHaveAe));
         return criteria.list();
     }
 

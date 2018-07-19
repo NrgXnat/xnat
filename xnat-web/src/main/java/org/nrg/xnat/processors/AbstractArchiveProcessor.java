@@ -9,6 +9,7 @@ import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
     @Override
@@ -50,8 +51,8 @@ public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
         if(aeTitle!=null && port!=null){
             aeAndPort = aeTitle.toString()+':'+port.toString();
         }
-        List<String> scpWhitelist = instance.getScpWhitelist();
-        List<String> scpBlacklist = instance.getScpBlacklist();
+        Set<String> scpWhitelist = instance.getScpWhitelist();
+        Set<String> scpBlacklist = instance.getScpBlacklist();
         if(scpWhitelist.isEmpty()||scpWhitelist.contains(aeAndPort)){
             if(scpBlacklist.isEmpty()||!scpBlacklist.contains(aeAndPort)){
                 //This SCP receiver is set up to use this processor.

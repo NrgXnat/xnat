@@ -164,6 +164,15 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_service.getAllEnabledSiteProcessors(), HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Get list of enabled site processors for specified SCP receiver.", notes = "The enabled site processors function returns a list of all enabled site processors configured in the XNAT system for this receiver. Receiver should be specified like aeTitle:port.", response = ArchiveProcessorInstance.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently enabled site processors for this receiver."),
+            @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "site/enabled/receiver/{aeAndPort}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<List<ArchiveProcessorInstance>> getAllEnabledSiteProcessorsForAe(@PathVariable("aeAndPort") final String aeAndPort) {
+        return new ResponseEntity<>(_service.getAllEnabledSiteProcessorsForAe(aeAndPort), HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Get the requested site processor by ID.", notes = "Returns the requested site processor.", response = ArchiveProcessorInstance.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the requested site processor."),
             @ApiResponse(code = 404, message = "The requested site processor wasn't found."),

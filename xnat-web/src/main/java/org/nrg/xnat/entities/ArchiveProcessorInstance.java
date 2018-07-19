@@ -8,8 +8,8 @@ import org.hibernate.annotations.FetchMode;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by mike on 2/26/18.
@@ -23,7 +23,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     }
 
-    public ArchiveProcessorInstance(String label, String scope, List<String> scpWhitelist, List<String> scpBlacklist, int order, Map<String, String> parameters, String processorClass) {
+    public ArchiveProcessorInstance(String label, String scope, Set<String> scpWhitelist, Set<String> scpBlacklist, int order, Map<String, String> parameters, String processorClass) {
         this.label = label;
         this.scope = scope;
         this.scpWhitelist = scpWhitelist;
@@ -87,21 +87,21 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(value = FetchMode.SUBSELECT)
-    public List<String> getScpWhitelist() {
+    public Set<String> getScpWhitelist() {
         return scpWhitelist;
     }
 
-    public void setScpWhitelist(List<String> scpWhitelist) {
+    public void setScpWhitelist(Set<String> scpWhitelist) {
         this.scpWhitelist = scpWhitelist;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(value = FetchMode.SUBSELECT)
-    public List<String> getScpBlacklist() {
+    public Set<String> getScpBlacklist() {
         return scpBlacklist;
     }
 
-    public void setScpBlacklist(List<String> scpBlacklist) {
+    public void setScpBlacklist(Set<String> scpBlacklist) {
         this.scpBlacklist = scpBlacklist;
     }
 
@@ -109,8 +109,8 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     private String scope;
 
-    private List<String> scpWhitelist;
-    private List<String> scpBlacklist;
+    private Set<String> scpWhitelist;
+    private Set<String> scpBlacklist;
     private int location;
     private int priority;
     private Map<String, String> parameters;

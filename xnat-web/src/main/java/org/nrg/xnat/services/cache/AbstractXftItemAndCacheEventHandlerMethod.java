@@ -275,6 +275,14 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         return null;
     }
 
+    /**
+     * As the name implies, this clears the contents of the cache.
+     */
+    protected void clearCache() {
+        log.info("Clearing the contents of the {} cache.", getCacheName());
+        getCache().clear();
+    }
+
     @SuppressWarnings("unchecked")
     protected <K, V> Map<K, V> buildImmutableMap(final Map<K, V>... maps) {
         // The keys set keeps track of keys that have already been added

@@ -1,3 +1,7 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
 <DIV><a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")'>$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!om.getDisplayName()</a>&nbsp;&nbsp;>&nbsp;&nbsp;Protocols</DIV><BR>
 <TABLE>
     <TR>
@@ -41,8 +45,6 @@
                 </TR>
             </TABLE>
             <SCRIPT type="text/javascript">
-
-
                 XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
 
                     window.available_elements = data.sortedElements;
@@ -104,8 +106,6 @@
                         }
                     });
 
-                    //protocols[0].show();
-
                     function completePage(){
                         if (DEBUG2) writeConsole("completePage()<br>");
                         var stopped = false;
@@ -161,10 +161,7 @@
                     protocols_sel.onchange = function(e){
                         selectProtocol(this);
                     }
-
                 });
-
-
             </SCRIPT>
         </TD>
     </TR>

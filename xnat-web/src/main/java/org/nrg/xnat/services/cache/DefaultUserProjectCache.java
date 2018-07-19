@@ -24,10 +24,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xdat.om.XnatInvestigatordata;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.UserGroupI;
@@ -87,6 +84,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XnatInvestigatordata.SCHEMA_ELEMENT_NAME).action(XftItemEvent.DELETE).build(),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(Predicates.or(XftItemEventCriteria.IS_PROJECT_GROUP, new Predicate<XftItemEventI>() {
                   @Override
@@ -281,10 +279,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return project;
         } else {
             log.info("Call to has({}, {}), which returned true, but getProjectCache({}) returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", userId, idOrAlias, idOrAlias);
+            // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
+            return null;
         }
-
-        // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
-        return null;
     }
 
     @Override
@@ -335,6 +332,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
             case XnatInvestigatordata.SCHEMA_ELEMENT_NAME:
                 return handleInvestigatorEvent(event);
+
+            case XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME:
+                return handleDataTypeProtocolEvent(event);
 
             default:
                 return false;
@@ -470,6 +470,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         for (final String projectId : projectIds) {
             refreshProjectCache(projectId);
         }
+        return true;
+    }
+
+    private boolean handleDataTypeProtocolEvent(final XftItemEventI event) {
+        log.info("Got the {} event for the data-type protocol {}. This should only happen when changes to the protocol affected field definition groups that are non-project specific. Clearing the cache because all projects need to be updated.", event.getAction(), event.getId());
+        clearCache();
         return true;
     }
 
@@ -676,6 +682,28 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
+     * Gets the project ID from the ID or alias submitted.
+     *
+     * @param idOrAlias Can be the project ID or an alias.
+     *
+     * @return The project ID, null if it can't be found.
+     */
+    private String getProjectIdFromIdOrAlias(final String idOrAlias) {
+        if (_aliasMapping.containsKey(idOrAlias)) {
+            return _aliasMapping.get(idOrAlias);
+        }
+
+        try {
+            return _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource("idOrAlias", idOrAlias), String.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        } catch (IncorrectResultSizeDataAccessException e) {
+            log.error("Somehow came back with more than one result searching for the project ID or alias {}: should have gotten {} result and ended up with {}", idOrAlias, e.getExpectedSize(), e.getActualSize());
+            return null;
+        }
+    }
+
+    /**
      * Gets the cache for the project identified by the ID or alias parameter. If the project is cached as non-existent, this method returns null. Otherwise,
      * it checks the project cache and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache,
      * this method tries to find the project by ID or alias. If it's not found, it's then cached as non-existent and the method returns null as before. If it is
@@ -707,29 +735,31 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     @Nullable
     private synchronized ProjectCache initializeProjectCache(final String idOrAlias) {
-        if (!_aliasMapping.containsKey(idOrAlias)) {
-            log.warn("Request received to initialize cache for ID or alias '{}', but that doesn't exist in the alias map. Returning null.", idOrAlias);
+        // Get the project ID from the alias map. If there's not an entry presume that it's the ID.
+        final String projectId = getProjectIdFromIdOrAlias(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.error("There is no project that has an ID or alias of: {}", idOrAlias);
             return null;
         }
 
-        // Get the project ID from the alias.
-        final String projectId = _aliasMapping.get(idOrAlias);
         if (has(projectId)) {
             log.info("Found project ID {} for ID or alias {} and it has a project cache entry, this was probably initialized by another thread.", projectId, idOrAlias);
             return getCachedProjectCache(projectId);
         }
 
         log.info("Locking and initializing project cache for ID or alias {}, which mapped to project ID {}", idOrAlias, projectId);
-        final XnatProjectdata project;
-        try {
-            project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
-        } catch (EmptyResultDataAccessException e) {
-            log.info("Didn't find a project with ID or alias {}, caching as non-existent", idOrAlias);
-            return null;
-        } catch (IncorrectResultSizeDataAccessException e) {
-            log.warn("Got an incorrect result size for project ID or alias '{}', should have been {} item(s), found {} instead. Query: {}", idOrAlias, e.getExpectedSize(), e.getActualSize(), QUERY_GET_PROJECT_BY_ID_OR_ALIAS);
+        final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
+        if (project == null) {
+            if (StringUtils.equals(idOrAlias, projectId)) {
+                log.error("Could not find a project for the ID {}", projectId);
+            } else {
+                log.error("Could not find a project for the ID {} or alias {}", projectId, idOrAlias);
+            }
             return null;
         }
+
+        // Hooray, we found the project, so let's cache the ID and all the aliases.
+        cacheProjectIdsAndAliases(projectId);
 
         // Create the project cache and user list.
         final ProjectCache projectCache = new ProjectCache(project);
@@ -745,9 +775,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
         log.debug("Caching project cache for {}", projectId);
         cacheObject(projectId, projectCache);
-
-        // Hooray, we found the project, so let's cache the ID and all the aliases.
-        cacheProjectIdsAndAliases(projectId);
 
         return projectCache;
     }
@@ -907,8 +934,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                                                                                                 "FROM xnat_projectdata " +
                                                                                                 "  LEFT JOIN xnat_projectdata_alias a on xnat_projectdata.id = a.aliases_alias_xnat_projectdata_id " +
                                                                                                 "WHERE " +
-                                                                                                "  id = :projectId OR " +
-                                                                                                "  a.alias = :projectId";
+                                                                                                "  id = :idOrAlias OR " +
+                                                                                                "  a.alias = :idOrAlias";
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
     private static final String QUERY_USERS_BY_GROUP      = "SELECT DISTINCT login " +

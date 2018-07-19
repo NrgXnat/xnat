@@ -9,8 +9,13 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.model.XnatFielddefinitiongroupI;
 import org.nrg.xdat.om.XnatAbstractprotocol;
 import org.nrg.xdat.om.XnatDatatypeprotocol;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -27,216 +32,230 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
+import org.restlet.data.*;
 import org.restlet.resource.Representation;
+import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXParseException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ProtocolResource extends ItemResource {
-	XnatProjectdata proj=null;
+    public ProtocolResource(Context context, Request request, Response response) throws ResourceException {
+        super(context, request, response);
+        getVariants().add(new Variant(MediaType.TEXT_XML));
 
-	XnatDatatypeprotocol protocol = null;
-	String protID=null;
-	
-	XnatDatatypeprotocol existing =null;
-	
-	public ProtocolResource(Context context, Request request, Response response) {
-		super(context, request, response);
+        final String projectId = (String) getParameter(request, "PROJECT_ID");
+        if (StringUtils.isBlank(projectId)) {
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify an ID for the protocol's project.");
+        }
 
-		final UserI user = getUser();
+        final UserI user = getUser();
+        _project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
+        if (_project == null) {
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a project with the ID " + projectId);
+        }
 
-		final String pID = (String) getParameter(request,"PROJECT_ID");
-		if (pID != null) {
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
-		}
+        try {
+            if (request.getMethod() != Method.GET && !Permissions.canEdit(user, _project)) {
+                throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient edit privileges for this project.");
+            }
+        } catch (Exception e) {
+            throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to determine the user's permissions for project " + _project.getId());
+        }
 
-		protID = (String) getParameter(request,"PROTOCOL_ID");
+        _protocolId = (String) getParameter(request, "PROTOCOL_ID");
+        _dataType = getQueryVariable("dataType");
 
-		if (proj != null)
-			existing = (XnatDatatypeprotocol) XnatAbstractprotocol
-					.getXnatAbstractprotocolsById(protID, user, true);
+        if (StringUtils.isAllBlank(_protocolId, _dataType)) {
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "You specify either an existing data protocol ID or the data type for the protocol to be retrieved.");
+        }
 
-		this.getVariants().add(new Variant(MediaType.TEXT_XML));
-	}
-	
-	@Override
-	public boolean allowPut() {
-		return true;
-	}
+        final XnatDatatypeprotocol protocolById = (XnatDatatypeprotocol) XnatAbstractprotocol.getXnatAbstractprotocolsById(_protocolId, user, true);
+        if (protocolById != null) {
+            _protocol = protocolById;
+        } else {
+            _protocol = getXnatDatatypeprotocol(user, _dataType);
+        }
+    }
 
-	@Override
-	public void handlePut() {
-		try {
-			final UserI user = getUser();
-			XFTItem template=null;
-			if (existing!=null){
-				template=existing.getItem().getCurrentDBVersion();
-			}
-			
-			XFTItem item=this.loadItem("xnat:datatypeProtocol",true,template);
-			
-			if(item.instanceOf("xnat:datatypeProtocol")){
-				protocol = new XnatDatatypeprotocol(item);
-					
-					if(this.proj==null && protocol.getProject()!=null){
-						proj = XnatProjectdata.getXnatProjectdatasById(protocol.getProject(), user, false);
-					}
+    @Override
+    public boolean allowPut() {
+        return true;
+    }
 
-					if(this.proj!=null){
-						if(protocol.getProject()==null || protocol.getProject().equals("")){
-							protocol.setProperty("xnat_projectdata_id", proj.getId());
-						}
-					}else{
-						this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted subject record must include the project attribute.");
-						return;
-					}
-					
-					if(existing==null){
-						if(!Permissions.canEdit(user,proj)){
-							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient edit privileges for this project.");
-							return;
-						}
-						//IS NEW
-						if(protocol.getId()==null || protocol.getId().equals("")){
-							protocol.setId(protocol.getDataType());
-						}
-					}else{							
-						if(!Permissions.canEdit(user,proj)){
-							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient edit privileges for this project.");
-							return;
-						}
-						if(protocol.getId()==null || protocol.getId().equals("")){
-							protocol.setId(existing.getId());
-						}
-					}
-					
-					if(this.getQueryVariable("gender")!=null){
-						protocol.setProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender",this.getQueryVariable("gender"));
-					}
-											
-					PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, proj.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Modified event data-type protocol."));
-				    try {
-						if (SaveItemHelper.authorizedSave(protocol, user, false, true, wrk.buildEvent())) {
-							XDAT.triggerXftItemEvent(proj, XftItemEvent.UPDATE);
-							PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-							MaterializedView.deleteByUser(user);
-						}
-						
-						this.returnXML(protocol.getItem());
-					} catch (Exception e) {
-						PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
-						throw e;
-					}
-				}
-		} catch (SAXParseException e) {
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,e.getMessage());
-			logger.error("",e);
-		} catch (ActionException e) {
-			this.getResponse().setStatus(e.getStatus(),e.getMessage());
-			return;
-		} catch (Exception e) {
-			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
-			logger.error("",e);
-		}
-	}
+    @Override
+    public void handlePut() {
+        try {
+            final UserI user = getUser();
 
-	@Override
-	public boolean allowDelete() {
-		return true;
-	}
+            final XFTItem existing  = _protocol != null ? _protocol.getItem().getCurrentDBVersion() : null;
+            final XFTItem submitted = loadItem(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME, true, existing);
 
-	@Override
-	public void handleDelete(){
-		if(existing!=null){
-			protocol=existing;
-		}
+            if (!submitted.instanceOf(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME)) {
+                getResponse().setStatus(Status.CLIENT_ERROR_NOT_ACCEPTABLE, "The submitted object is not the appropriate data type: should be " + XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME + " but is actually " + submitted.getXSIType());
+                return;
+            }
 
-		final UserI user = getUser();
+            final Map<String, Boolean> existingFieldDefinitionGroups = getFieldDefinitionGroups(_protocol);
 
-		try {
-		
-			if(!Permissions.canEdit(user,proj)){
-				this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"User account doesn't have permission to delete this subject.");
-				return;
-			}
-		
-			if(protocol!=null){
-				if (protocol!=null){				        
-					PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, proj.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Deleted event data-type protocol."));
-				    try {
-						SaveItemHelper.authorizedDelete(protocol.getItem().getCurrentDBVersion(), user,wrk.buildEvent());
-						PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
-					} catch (Exception e1) {
-						PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
-						throw e1;
-					}
-			    }
-				Users.clearCache(user);
-				MaterializedView.deleteByUser(user);
-			}
-		} catch (Exception e) {
-			logger.error("",e);
-			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
-		}
-	}
+            final XnatDatatypeprotocol protocol = new XnatDatatypeprotocol(submitted);
+            if (StringUtils.isBlank(protocol.getProject())) {
+                protocol.setProperty("xnat_projectdata_id", _project.getId());
+            }
+            if (StringUtils.isBlank(protocol.getId())) {
+                protocol.setId(_protocol == null ? protocol.getDataType() : _protocol.getId());
+            }
+            final String gender = getQueryVariable("gender");
+            if (StringUtils.isNotBlank(gender)) {
+                protocol.setProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender", gender);
+            }
 
-	@Override
-	public Representation represent(Variant variant) {
-		MediaType mt = overrideVariant(variant);
-		final UserI user = getUser();
+            final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, _project.getItem(), newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Modified event data-type protocol."));
+            try {
+                if (SaveItemHelper.authorizedSave(protocol, user, false, true, workflow.buildEvent())) {
+                    final MapDifference<String, Boolean> changes = Maps.difference(existingFieldDefinitionGroups, getFieldDefinitionGroups(protocol));
 
-		if(protocol!=null){
-			return this.representItem(protocol.getItem(),mt);
-		}else{
-			if(this.getQueryVariable("dataType")!=null && proj!=null){
-				String dataType=this.getQueryVariable("dataType");
-				XnatDatatypeprotocol temp = (XnatDatatypeprotocol)proj.getProtocolByDataType(dataType);
-				
-				try {
-					ElementSecurity ess = ElementSecurity.GetElementSecurity(dataType);
-					
-					if(temp==null && ess!=null){
-						GenericWrapperElement e=GenericWrapperElement.GetElement(dataType);
-						temp=new XnatDatatypeprotocol(user);
-						temp.setProperty("xnat_projectdata_id", proj.getId());
-						temp.setDataType(e.getXSIType());
-						
-						temp.setId(proj.getId() + "_" + e.getSQLName());
-					    if (temp.getProperty("name")==null){
-					    	temp.setProperty("name",ess.getPluralDescription());
-					    }
-					    
-					    if(temp.getXSIType().equals("xnat:datatypeProtocol")){
-					    	temp.setProperty("xnat:datatypeProtocol/definitions/definition[ID=default]/data-type", temp.getProperty("data-type"));
-					    	temp.setProperty("xnat:datatypeProtocol/definitions/definition[ID=default]/project-specific", "false");
-					    }
-					    PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, proj.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Modified event data-type protocol."));
-					    try {
-							SaveItemHelper.authorizedSave(temp,user, false, false,wrk.buildEvent());
-							PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
-						} catch (Exception e1) {
-							PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
-							throw e1;
-						}
-					}
-				} catch (Exception e) {
-					logger.error("", e);
-				}
-				
-				if(temp==null){
-					this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified protocol.");
-					return null;
-				}else{
-					return this.representItem(temp.getItem(),mt);
-				}
-			}else{
-				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified protocol.");
-				return null;
-			}
-		}
+                    // We only need to trigger an event if something changed in how the field definitions relate to projects, so check that first.
+                    if (!changes.areEqual()) {
+                        // If a group changed from project specific to non-project specific or vice versa OR any new groups were added that are
+                        // non-project specific, then we need to update all projects to get the change.
+                        if (!changes.entriesDiffering().isEmpty() || changes.entriesOnlyOnRight().containsValue(Boolean.FALSE)) {
+                            XDAT.triggerXftItemEvent(protocol, _protocol == null ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
+                        } else {
+                            // If the added groups were all project specific, we just need to update that project.
+                            XDAT.triggerXftItemEvent(_project, XftItemEvent.UPDATE);
+                        }
+                    }
+                    PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+                    MaterializedView.deleteByUser(user);
+                }
+                returnXML(protocol.getItem());
+            } catch (Exception e) {
+                PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
+                throw e;
+            }
+        } catch (SAXParseException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+            logger.error("An error was detected in format for the protocol definition", e);
+        } catch (ActionException e) {
+            getResponse().setStatus(e.getStatus(), e.getMessage());
+        } catch (Exception e) {
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+            logger.error("An unknown error occurred trying to store the protocol", e);
+        }
+    }
 
-	}
+    @Override
+    public boolean allowDelete() {
+        return true;
+    }
+
+    @Override
+    public void handleDelete() {
+        if (_protocol == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+            return;
+        }
+
+        final UserI user = getUser();
+
+        try {
+            final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, _project.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Deleted event data-type protocol."));
+            try {
+                final Map<String, Boolean> groups = getFieldDefinitionGroups(_protocol);
+                if (groups.containsValue(Boolean.FALSE)) {
+                    XDAT.triggerXftItemEvent(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME, _protocolId, XftItemEvent.DELETE);
+                } else {
+                    XDAT.triggerXftItemEvent(_project, XftItemEvent.UPDATE);
+                }
+                SaveItemHelper.authorizedDelete(_protocol.getItem().getCurrentDBVersion(), user, workflow.buildEvent());
+                PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+            } catch (Exception e) {
+                PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
+                throw e;
+            }
+            Users.clearCache(user);
+            MaterializedView.deleteByUser(user);
+        } catch (Exception e) {
+            logger.error("", e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+        }
+    }
+
+    @Override
+    public Representation represent(Variant variant) {
+        final MediaType mediaType = overrideVariant(variant);
+        final UserI     user      = getUser();
+
+        final XnatDatatypeprotocol protocol = ObjectUtils.defaultIfNull(_protocol, getXnatDatatypeprotocol(user, _dataType));
+        if (protocol != null) {
+            return representItem(protocol.getItem(), mediaType);
+        }
+        getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified protocol by data type or protocol ID");
+        return null;
+    }
+
+    private XnatDatatypeprotocol getXnatDatatypeprotocol(final UserI user, final String dataType) {
+        final XnatDatatypeprotocol existing = (XnatDatatypeprotocol) _project.getProtocolByDataType(dataType);
+        if (existing != null) {
+            return existing;
+        }
+
+        try {
+            final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(dataType);
+            if (elementSecurity == null) {
+                return null;
+            }
+            final GenericWrapperElement element  = GenericWrapperElement.GetElement(dataType);
+            final XnatDatatypeprotocol  protocol = new XnatDatatypeprotocol(user);
+            protocol.setProperty("xnat_projectdata_id", _project.getId());
+            protocol.setDataType(element.getXSIType());
+            protocol.setId(_project.getId() + "_" + element.getSQLName());
+            if (StringUtils.isBlank((String) protocol.getProperty("name"))) {
+                protocol.setProperty("name", elementSecurity.getPluralDescription());
+            }
+            if (StringUtils.equals(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME, protocol.getXSIType())) {
+                protocol.setProperty("xnat:datatypeProtocol/definitions/definition[ID=default]/data-type", protocol.getProperty("data-type"));
+                protocol.setProperty("xnat:datatypeProtocol/definitions/definition[ID=default]/project-specific", "false");
+            }
+
+            final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, _project.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Modified event data-type protocol."));
+            try {
+                final Map<String, Boolean> groups = getFieldDefinitionGroups(protocol);
+                if (!groups.isEmpty()) {
+                    if (groups.containsValue(Boolean.FALSE)) {
+                        XDAT.triggerXftItemEvent(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME, _protocolId, XftItemEvent.DELETE);
+                    } else {
+                        XDAT.triggerXftItemEvent(_project, XftItemEvent.UPDATE);
+                    }
+                }
+                SaveItemHelper.authorizedSave(protocol, user, false, false, workflow.buildEvent());
+                PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
+                return protocol;
+            } catch (Exception e) {
+                PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
+                throw e;
+            }
+        } catch (Exception e) {
+            logger.error("An error occurred trying to create a new data-type protocol", e);
+        }
+        return null;
+    }
+
+    private Map<String, Boolean> getFieldDefinitionGroups(final XnatDatatypeprotocol protocol) {
+        final Map<String, Boolean> currentFieldDefinitionGroups = new HashMap<>();
+        if (_protocol != null) {
+            for (final XnatFielddefinitiongroupI fieldDefinitionGroup : protocol.getDefinitions_definition()) {
+                currentFieldDefinitionGroups.put(fieldDefinitionGroup.getId(), fieldDefinitionGroup.getProjectSpecific());
+            }
+        }
+        return currentFieldDefinitionGroups;
+    }
+
+    private final XnatProjectdata      _project;
+    private final XnatDatatypeprotocol _protocol;
+    private final String               _protocolId;
+    private final String               _dataType;
 }

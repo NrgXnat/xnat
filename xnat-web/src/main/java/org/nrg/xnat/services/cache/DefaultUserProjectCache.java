@@ -280,7 +280,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             project.setUser(user);
             return project;
         } else {
-            log.warn("A weird condition occurred in the user project cache: has({}, {}) returned true, no non-writable or nonexistent project was found, but getProjectCache({}) returned null. This method will return null, but this isn't a case that should arise.", userId, idOrAlias, idOrAlias);
+            log.info("Call to has({}, {}), which returned true, but getProjectCache({}) returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", userId, idOrAlias, idOrAlias);
         }
 
         // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.

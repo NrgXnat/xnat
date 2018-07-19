@@ -10,6 +10,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.nrg.action.ActionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatAbstractprotocol;
 import org.nrg.xdat.om.XnatDatatypeprotocol;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -19,6 +20,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -117,8 +119,9 @@ public class ProtocolResource extends ItemResource {
 											
 					PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, proj.getItem(), this.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Modified event data-type protocol."));
 				    try {
-						if(SaveItemHelper.authorizedSave(protocol,user,false,true,wrk.buildEvent())){
-							PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
+						if (SaveItemHelper.authorizedSave(protocol, user, false, true, wrk.buildEvent())) {
+							XDAT.triggerXftItemEvent(proj, XftItemEvent.UPDATE);
+							PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
 							MaterializedView.deleteByUser(user);
 						}
 						

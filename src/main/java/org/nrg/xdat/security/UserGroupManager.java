@@ -20,7 +20,6 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.meta;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -56,7 +55,6 @@ import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static lombok.AccessLevel.PRIVATE;
 import static org.nrg.xft.event.XftItemEventI.*;
@@ -213,7 +211,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public void reloadGroupForUser(final UserI user, final String groupId) {
-        ((XDATUser) user).refreshGroup(groupId);
+        ((XDATUser) user).refreshGroups();
     }
 
     @Override

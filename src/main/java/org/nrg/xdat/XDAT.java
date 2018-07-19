@@ -78,7 +78,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.jms.Destination;
-import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
@@ -86,9 +85,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ANONYMOUS;
-import static org.nrg.xdat.security.helpers.Users.AUTHORITY_ADMIN;
-import static org.nrg.xdat.security.helpers.Users.AUTHORITY_USER;
+import static org.nrg.xdat.security.helpers.Users.*;
 
 /**
  * @author Tim
@@ -974,6 +971,7 @@ public class XDAT implements Initializable, Configurable{
 		logShortStackTrace(message, null, depth);
 	}
 
+	@SuppressWarnings("SameParameterValue")
 	private static void logShortStackTrace(final String message, final Map<String, ?> properties, final int depth) {
 		final StringBuilder           buffer     = new StringBuilder(message).append("\n");
 		if (properties != null) {

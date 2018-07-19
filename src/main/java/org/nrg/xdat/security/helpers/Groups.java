@@ -38,11 +38,11 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Groups {
-    public final static String ALL_DATA_ADMIN_GROUP   = "ALL_DATA_ADMIN";
-    public final static String ALL_DATA_ACCESS_GROUP  = "ALL_DATA_ACCESS";
-    public final static String OWNER_GROUP            = "owner";
-    public final static String OWNER_NAME             = "Owners";
-    public final static String MEMBER_GROUP           = "member";
+    public final static String  ALL_DATA_ADMIN_GROUP   = "ALL_DATA_ADMIN";
+    public final static String  ALL_DATA_ACCESS_GROUP  = "ALL_DATA_ACCESS";
+    public final static String  OWNER_GROUP            = "owner";
+    public final static String  OWNER_NAME             = "Owners";
+    public final static String  MEMBER_GROUP           = "member";
     public final static String  MEMBER_NAME            = "Members";
     public final static String  COLLABORATOR_GROUP     = "collaborator";
     public final static String  COLLABORATOR_NAME      = "Collaborators";
@@ -126,6 +126,7 @@ public class Groups {
      * You can get the project ID and access level for the group ID by calling {@link #getProjectIdAndAccessFromGroupId(String)}.
      *
      * @param groupId The group ID to evaluate.
+     *
      * @return Returns true if the ID matches a project group, false otherwise.
      */
     public static boolean isProjectGroup(final String groupId) {
@@ -397,6 +398,7 @@ public class Groups {
      * @param tag               Tag for permissions to key of off (typically the project ID)
      * @param authenticatedUser The user creating the group.
      * @param users             Users to add to the group on creation.
+     *
      * @return The new or updated group.
      */
     @SuppressWarnings("unused")

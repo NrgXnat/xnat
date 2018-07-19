@@ -52,20 +52,17 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
-import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLE;
-import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLE;
-import static org.nrg.xdat.security.helpers.Roles.ROLE;
+import static org.nrg.xdat.security.helpers.Roles.*;
 import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 /**
  * @author Tim
  */
-@SuppressWarnings({"unchecked", "Duplicates"})
+@SuppressWarnings({"unchecked", "Duplicates", "DuplicateThrows", "RedundantThrows"})
 @Slf4j
 public class XDATUser extends XdatUser implements UserI, Serializable {
 
@@ -324,6 +321,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     protected List<ElementDisplay> getEditableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getGroupsAndPermissionsCache().getActionElementDisplays(this, EDIT);
     }
@@ -335,6 +333,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     protected List<ElementDisplay> getReadableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getGroupsAndPermissionsCache().getActionElementDisplays(this, READ);
     }
@@ -364,6 +363,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     protected List<ElementDisplay> getUnSecuredElements() throws XFTInitException, ElementNotFoundException, Exception {
         final List<ElementDisplay> al = new ArrayList<>();
 
@@ -552,10 +552,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @param role The role to check.
      *
      * @return <b>true</b> if the user has the indicated role, <b>false</b> otherwise.
-     *
-     * @throws Exception When an error occurs.
      */
-    public boolean checkRole(final String role) throws Exception {
+    public boolean checkRole(final String role) {
         return getRoleNames().contains(role);
     }
 
@@ -697,21 +695,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", null, getUsername());
     }
 
-    protected void refreshGroup(final String id) {
+    protected void refreshGroups() {
         // getGroups() returns immutable list, so just call this to make sure groups field is initialized, then
         // reference that. This is OK to do internally.
         getGroups();
     }
 
     public boolean isSiteAdmin() {
-        if (_isSiteAdmin == null) {
-            try {
-                return checkRole(UserRole.ROLE_ADMINISTRATOR);
-            } catch (Exception e) {
-                return false;
-            }
-        }
-        return _isSiteAdmin;
+        return checkRole(UserRole.ROLE_ADMINISTRATOR);
     }
 
     public boolean isDataAdmin() {
@@ -781,13 +772,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return results;
     }
 
+    @SuppressWarnings("deprecation")
     protected XFTTable getQueryResults(String query) throws SQLException, DBPoolException {
-        return XFTTable.Execute(query, this.getDBName(), this.getLogin());
+        return XFTTable.Execute(query, getDBName(), this.getLogin());
     }
 
+    @SuppressWarnings("deprecation")
     protected ArrayList<List> getQueryResultsAsArrayList(String query) throws SQLException, DBPoolException {
-        XFTTable t = XFTTable.Execute(query, this.getDBName(), this.getLogin());
-        return t.toArrayListOfLists();
+        return XFTTable.Execute(query, getDBName(), this.getLogin()).toArrayListOfLists();
     }
 
     protected ArrayList<ItemI> getCachedItems(String elementName, String security_permission, boolean preLoad) {
@@ -833,7 +825,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public void clearLocalCache() {
         _userSessionCache.clear();
-        _isSiteAdmin = null;
     }
 
     protected Map<String, Long> getReadableCounts() {
@@ -984,6 +975,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         getGroupsAndPermissionsCache().clearUserCache(getUsername());
     }
 
+    @SuppressWarnings("unused")
     public Collection<String> getFeaturesForUserByTag(String tag) {
         return Features.getFeaturesForGroup(getGroupByTag(tag));
     }
@@ -1059,12 +1051,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @return <b>true</b> if the feature has any tags, <b>false</b> otherwise.
      */
+    @SuppressWarnings("unused")
     public boolean checkFeatureForAnyTag(String feature) {
         return !Features.isBanned(feature) && (checkFeatureBySiteRoles(feature) || Features.checkFeatureForAnyTag(this, feature));
 
     }
 
-    protected boolean hasAccessTo(final String projectId) throws Exception {
+    protected boolean hasAccessTo(final String projectId) {
         return Roles.isSiteAdmin(this) || getAccessibleProjects().contains(projectId);
     }
 
@@ -1077,6 +1070,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), SecurityManager.EDIT);
     }
 
+    @SuppressWarnings("unused")
     private boolean canModify(final String projectId) throws Exception {
         if (Roles.isSiteAdmin(this)) {
             return true;
@@ -1177,5 +1171,4 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private UserAuthI                 _authorization             = null;
     private GroupsAndPermissionsCache _groupsAndPermissionsCache = null;
     private UserRoleService           _userRoleService           = null;
-    private Boolean                   _isSiteAdmin               = null;
 }

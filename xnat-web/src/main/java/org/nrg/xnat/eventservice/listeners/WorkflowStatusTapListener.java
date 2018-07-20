@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.listeners;
 
+import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -36,17 +37,19 @@ public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusE
     @Override
     public void accept(Event<WorkflowStatusEvent> event) {
         WorkflowStatusEvent wfsEvent = event.getData();
-        try {
-            final String project = wfsEvent.getExternalId();
-            final UserI user = Users.getUser(wfsEvent.getUserId());
-            log.debug("Firing EventService Event (WorkflowStatusChangeEvent) in response to WorkflowStatusEvent: " + wfsEvent.toString());
-            eventService.triggerEvent(new WorkflowStatusChangeEvent(wfsEvent, user.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, project));
-        } catch (UserNotFoundException e) {
-            log.warn("The specified user was not found: {}", wfsEvent.getUserId());
-        } catch (UserInitException e) {
-            log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
-        } catch (Throwable e){
-            log.error("Exception thrown when trying to catch/trigger WorkFlowStatus event for Event Service.", e.getMessage());
+        if (wfsEvent.getWorkflow() instanceof WrkWorkflowdata) {
+            try {
+                final String project = wfsEvent.getExternalId();
+                final UserI user = Users.getUser(wfsEvent.getUserId());
+                log.debug("Firing EventService Event (WorkflowStatusChangeEvent) in response to WorkflowStatusEvent: " + wfsEvent.toString());
+                eventService.triggerEvent(new WorkflowStatusChangeEvent(wfsEvent, user.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, project));
+            } catch (UserNotFoundException e) {
+                log.warn("The specified user was not found: {}", wfsEvent.getUserId());
+            } catch (UserInitException e) {
+                log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
+            } catch (Throwable e) {
+                log.error("Exception thrown when trying to catch/trigger WorkFlowStatus event for Event Service.", e.getMessage());
+            }
         }
     }
 }

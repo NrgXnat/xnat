@@ -30,7 +30,7 @@
 
                         <div id="tabs-loading" class="message waiting">Loading...</div>
 
-                            <%--
+                            <%--&lt;%&ndash;--%>
                             <div class="xnat-nav-tabs side pull-left">
                                 <!-- ================== -->
                                 <!-- Admin tab flippers -->
@@ -41,7 +41,7 @@
                                 <!-- Admin tab panes    -->
                                 <!-- ================== -->
                             </div>
-                            --%>
+                            <%--&ndash;%&gt;--%>
 
                     </div>
 
@@ -96,13 +96,28 @@
 
                 <script>
                     (function(){
-                        var siteSettingsTabs = { kind: 'tabs' };
+                        var siteSettingsTabs = {};
                         // alias for brevity
                         var tabConfigs = XNAT.app.pluginSettings.siteTabConfigs;
                         if (tabConfigs.length) {
                             // show the 'Plugin Settings' item in the 'Administer' menu
                             $('#view-plugin-settings').show().hidden(false);
                             forEach(tabConfigs, function(tabConfig){
+                                // resolve top-level 'contains'/'contents' properties
+                                if (tabConfig.hasOwnProperty('contains')) {
+                                    tabConfig.contents = tabConfig[tabConfig.contains];
+                                    delete tabConfig[tabConfig.contains];
+                                    delete tabConfig.contains;
+                                }
+                                // resolve 'meta.tabGroups'/'tabGroups'/'groups' properties
+                                if (tabConfig.meta && tabConfig.meta.tabGroups) {
+                                    tabConfig.groups = tabConfig.meta.tabGroups;
+                                    delete tabConfig.meta.tabGroups;
+                                }
+                                else if (tabConfig.tabGroups) {
+                                    tabConfig.groups = tabConfig.tabGroups;
+                                    delete tabConfig.tabGroups;
+                                }
                                 // merge all configs into a single config object
                                 extend(true, siteSettingsTabs, tabConfig);
                             });

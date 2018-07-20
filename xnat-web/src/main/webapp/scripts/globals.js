@@ -273,6 +273,19 @@ function isEmptyObject( obj ){
 function getObject( obj ){
     return (isPlainObject(obj) || isFunction(obj)) ? obj : {};
 }
+function firstObject(obj1, obj2, etc){
+    var i = 0;
+    var argLen = arguments.length;
+    var obj;
+    while (i < argLen) {
+        obj = arguments[i];
+        if (isPlainObject(obj) || isFunction(obj)){
+            return obj;
+        }
+        (i += 1);
+    }
+    return {};
+}
 function isArray( arr ){
     if ( Array.isArray ) {
         return Array.isArray(arr);
@@ -636,6 +649,25 @@ function forEach(arr, fn, context){
         }
     }
     return out;
+}
+
+// halt execution if fn() returns explicit false
+function forEachCheck(arr, fn, context){
+    var i = -1, len, fnResult;
+    var results = [];
+    if (!arr || !arr.length) { return [] }
+    len = arr.length;
+    fn = (fn && isFunction(fn)) ? fn : null;
+    while (++i < len) {
+        if (fn) {
+            fnResult = fn.call(context || arr[i], arr[i], i);
+            results.push(fnResult);
+            if (fnResult === false) {
+                break;
+            }
+        }
+    }
+    return results;
 }
 
 function forIn(obj, fn, context){

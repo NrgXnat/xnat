@@ -25,7 +25,6 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
-import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 public final class DicomEdit extends SecureResource {
-
     /**
      * This declares the tool name to be used when storing anonymization data in the configuration service.
      */
@@ -121,7 +119,7 @@ public final class DicomEdit extends SecureResource {
         _studyId = (String) request.getAttributes().get(DicomEdit.STUDY_ID);
 
         _projectId = (String) request.getAttributes().get(DicomEdit.PROJECT_ID);
-        this.project = XnatProjectdata.getXnatProjectdatasById(_projectId, null, false);
+        _project = XnatProjectdata.getXnatProjectdatasById(_projectId, getUser(), false);
 
         this.scope = this.determineResourceScope(request);
         this.rType = this.determineResourceType(request);
@@ -133,14 +131,14 @@ public final class DicomEdit extends SecureResource {
     }
 
     @Override
-    public Representation represent(final Variant variant) throws ResourceException {
+    public Representation represent(final Variant variant) {
         final MediaType mt = overrideVariant(variant);
         final boolean all = this.getQueryVariable("all") != null;
         XFTTable table = null;
         final UserI     user = getUser();
         try {
             table =
-                    new ScriptOp<>(this.project,
+                    new ScriptOp<>(this._project,
                             this.getResponse(),
                             this.scope,
                             this.rType,
@@ -221,7 +219,7 @@ public final class DicomEdit extends SecureResource {
     @Override
     public void handlePut() {
         try {
-            new ScriptOp<>(this.project,
+            new ScriptOp<>(this._project,
                     this.getResponse(),
                     this.scope,
                     this.rType,
@@ -240,8 +238,8 @@ public final class DicomEdit extends SecureResource {
                                                                                             script);
                                         } else if (scope == ResourceScope.PROJECT) {
                                             _service.setProjectScript(user.getLogin(),
-                                                                                           script,
-                                                                                    project.getId());
+                                                                      script,
+                                                                      _project.getId());
                                         }
                                     } else {
                                         // something went wrong, but the error response status should have
@@ -263,9 +261,9 @@ public final class DicomEdit extends SecureResource {
                                                 }
                                             } else if (scope == ResourceScope.PROJECT){ // project -specific
                                                 if (activate) {
-                                                    _service.enableProjectSpecific(user.getLogin(), project.getId());
+                                                    _service.enableProjectSpecific(user.getLogin(), _project.getId());
                                                 } else {
-                                                    _service.disableProjectSpecific(user.getLogin(), project.getId());
+                                                    _service.disableProjectSpecific(user.getLogin(), _project.getId());
                                                 }
                                             }
                                         } else {
@@ -490,8 +488,8 @@ public final class DicomEdit extends SecureResource {
     /**
      * Project for this operation.
      */
-    private final String _projectId;
-    private final XnatProjectdata project;
+    private final String          _projectId;
+    private final XnatProjectdata _project;
 
     /**
      * Data types

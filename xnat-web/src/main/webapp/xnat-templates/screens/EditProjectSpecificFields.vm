@@ -1,3 +1,4 @@
+<!-- BEGIN /xnat-templates/screens/EditProjectSpecificFields.vm -->
 #set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
 #if($groups.size()>0)
 	<h3 style="margin: 2em 0 0.5em;">Custom Variable Sets</h3>
@@ -17,7 +18,7 @@
 			<br>
 		#end
 	#end
-  
+
   <script>
     $(document).ready(function(){
       $('#eventSubmit_doInsert').click(function(e){
@@ -45,5 +46,6 @@
       });
     });
   </script>
-  
+
 #end
+<!-- END /xnat-templates/screens/EditProjectSpecificFields.vm -->

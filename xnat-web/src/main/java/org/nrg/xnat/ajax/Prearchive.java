@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -58,7 +59,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.xml.sax.SAXException;
 
-
+@Slf4j
 public final class Prearchive {
 	private static final String XML_SUFFIX = ".xml";
 
@@ -96,7 +97,7 @@ public final class Prearchive {
 
 	// Any IDs matching those listed here are not included when we look for
 	// alternate IDs.
-	private static Set<String> ignoreIDs = new HashSet<String>();
+	private static Set<String> ignoreIDs = new HashSet<>();
 	static {
 		ignoreIDs.add("");
 		ignoreIDs.add("null");
@@ -104,18 +105,14 @@ public final class Prearchive {
 
 	public enum PrearcStatus {
 		RECEIVING, BUILDING, READY, ARCHIVING, ERROR
-	};
-
+	}
 
 	public static final String COMMON = "Unassigned";
 
-	private static final String ROLE_SITE_ADMIN = "Administrator";
-
-	private final Logger log = Logger.getLogger(Prearchive.class);
 	private final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
 	private final SimpleDateFormat XS_DATETIME_FORMAT = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ss");
 
-	private final Map<String,Map<String,Boolean>> createAllowedTypes = new HashMap<String,Map<String,Boolean>>();
+	private final Map<String,Map<String,Boolean>> createAllowedTypes = new HashMap<>();
 
 	public Prearchive() {
 		createAllowedTypes.put(COMMON, null);
@@ -174,7 +171,7 @@ public final class Prearchive {
 		final Element root = document.addElement("Prearchives");
 
 		// Determine which prearchives user should see
-		final Map<String,File> prearcs = new LinkedHashMap<String,File>();
+		final Map<String,File> prearcs = new LinkedHashMap<>();
 		final List<List> projects = UserHelper.getUserHelperService(user).getQueryResults("xnat:projectData/ID", "xnat:projectData");
 		for (final List<String> row : projects) {
 			final String id = row.get(0);
@@ -542,11 +539,11 @@ public final class Prearchive {
 			l.error(message, cause);
 		}
 
-		void sendErrorLogInfo(final Logger l, final HttpServletResponse r) {
+		void sendErrorLogInfo(final HttpServletResponse r) {
 			try {
 				r.sendError(code, message);
 			} catch (IOException ignore) {}
-			l.info(message, cause);
+			log.info(message, cause);
 		}
 	}
 
@@ -630,8 +627,7 @@ public final class Prearchive {
 		try {
 			removeSession(user, response, name, prearc, (String)req.getParameter("path"));
 		} catch (PrearcOpException e) {
-			e.sendErrorLogInfo(log, response);
-			return;
+			e.sendErrorLogInfo(response);
 		}
 	}
 

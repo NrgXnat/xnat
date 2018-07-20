@@ -32,7 +32,7 @@ public class EditableProjects implements FilteredResourceHandlerI {
     public Representation handle(SecureResource resource, Variant variant) throws Exception {
         final StringBuilder builder = new StringBuilder();
         final UserI         user    = resource.getUser();
-        if (Groups.isMember(user, "ALL_DATA_ADMIN")) {
+        if (Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
             builder.append("SELECT proj.ID, proj.name, proj.description,proj.secondary_id FROM xnat_projectData proj;");
         } else {
             builder.append(String.format("SELECT DISTINCT proj.ID, proj.name, proj.description,proj.secondary_id FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND create_element=1 AND field_value!='*' AND field_value!='' and field !='' JOIN xnat_projectData proj ON field_value=proj.ID WHERE map.groups_groupid_xdat_user_xdat_user_id=%s", user.getID()));

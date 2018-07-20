@@ -40,7 +40,7 @@ buildscript {
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:1.11"
+        classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
@@ -69,6 +69,10 @@ apply plugin: "war"
 
 repositories {
     mavenLocal()
+    maven {
+        url "https://www.dcm4che.org/maven2/"
+        name "dcm4che Maven Repository"
+    }
     maven {
         url "http://maven.imagej.net/content/groups/public"
         name "ImageJ Maven Repository"
@@ -127,11 +131,6 @@ if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
     war.baseName = "xnat-web"
-}
-
-lombok {
-    version = "1.16.20"
-    sha256 = ""
 }
 
 configurations {
@@ -378,6 +377,11 @@ dependencies {
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
 
+lombok {
+    version = dependencyManagement.importedProperties["lombok.version"]
+    sha256 = ""
+}
+
 tomcatRun.contextPath = "/"
 tomcatRunWar.contextPath = "/"
 
@@ -528,6 +532,7 @@ task swagger(type: SwaggerTask, dependsOn: classes) {
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadoc")
+    classpath = configurations.compileClasspath
     options.docletpath = configurations.javadocCoverage.files.asType(List)
     options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
 }

@@ -917,8 +917,12 @@ var XNAT = getObject(XNAT);
                                 }
                                 else if (stringable(applyFn)) {
                                     applyFn = (applyFn+'').trim();
+                                    // strings that start with 'function' will be assumed to be a function
+                                    if (/^[(]?function/.test(applyFn)) {
+                                        itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                    }
                                     // wrap eval() expression in {( expr )} or (( expr ))
-                                    if (XNAT.parse.REGEX.evalTest.test(applyFn)) {
+                                    else if (XNAT.parse.REGEX.evalTest.test(applyFn)) {
                                         applyFn = applyFn.replace(XNAT.parse.REGEX.evalTrim, '');
                                         itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
@@ -1072,7 +1076,7 @@ var XNAT = getObject(XNAT);
                         }
                         else {
                             // handle data returned in ResultSet.Result array
-                            DATA = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                            DATA = (json && json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
                         }
                         // make sure there's data before rendering the table
                         if (isEmpty(json)) {

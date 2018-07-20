@@ -33,7 +33,7 @@ public class ProjectPermissionsFilter implements FilteredResourceHandlerI {
         final StringBuilder   builder      = new StringBuilder();
         final UserI           user         = resource.getUser();
 
-        if (Groups.isMember(user, "ALL_DATA_ADMIN")) {
+        if (Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
             builder.append(String.format("SELECT DISTINCT element_name FROM xdat_element_access xea JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id WHERE create_element=1 AND field_value='%1$s' and field !=''", projResource.getProjectId()));
         } else {
             builder.append(String.format("SELECT DISTINCT element_name FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id WHERE map.groups_groupid_xdat_user_xdat_user_id=%1$s  AND create_element=1 AND field_value='%2$s' and field !=''", user.getID(), projResource.getProjectId()));

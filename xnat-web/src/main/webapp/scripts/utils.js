@@ -176,12 +176,9 @@ function cleanupClasses(el){
     return el.className;
 }
 
-
 function hasClassName(el, className){
-    if (useClassList && el.classList) {
-        return el.classList.contains(className);
-    }
-    return (el.className||'').split(/\s+/).indexOf(className.trim()) > -1;
+    var elClasses = (el.className||'').split(/\s+/); // existing classes
+    return elClasses.indexOf(className.trim()) > -1;
 }
 
 
@@ -219,33 +216,23 @@ function hasAllClasses(el, classes){
     return matches === len;
 }
 
-
 // add new element class without destroying existing class
-function addClassName(el, newClasses){
-    var hasClassList = useClassList && el.classList;
-    var elClasses    = (el.className||'').split(/\s+/);
-    // make sure 'newClasses' is an array
-    newClasses = [].concat(newClasses||[]).join(' ').split(/\s+/);
+function addClassName(el, newClass){
+    var classes = (el.className||'').split(/\s+/); // existing classes
+    var newClasses = [].concat(newClass||[]).join(' ').split(/\s+/);
+    // don't add duplicate classes
     newClasses.forEach(function(cls){
         if (!cls) return;
-        if (hasClassList) {
-            el.classList.add(cls);
-        }
-        else {
-            // don't add duplicate classes
-            if (!hasClassName(el, cls)){
-                elClasses.push(cls);
-            }
+        if (!hasClassName(el, cls)) {
+            classes.push(cls);
         }
     });
-    // create new className string
-    var className = elClasses.join(' ').trim();
-    if (!hasClassList){
-        // set the new className and return the string
-        el.className = className;
+    classes = classes.join(' ').trim();
+    // set the className and return the string
+    if (classes) {
+        el.className = classes;
     }
-    return className;
-
+    return classes;
 }
 
 

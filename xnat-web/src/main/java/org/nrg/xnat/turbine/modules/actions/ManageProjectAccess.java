@@ -42,7 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.nrg.xft.security.UserI.USERI_TO_USERNAME;
+import static org.nrg.xdat.security.helpers.Users.USERI_TO_USERNAME;
 
 @SuppressWarnings("unused")
 @Slf4j

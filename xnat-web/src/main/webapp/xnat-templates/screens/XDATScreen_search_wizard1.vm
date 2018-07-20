@@ -84,6 +84,7 @@
     (function(){
 
         var exptTypeMenu = jq('#exptType');
+        var exptTypesContainer = jq('#addl-data-types-container');
 
         XNAT.app.dataTypeAccess.getElements['searchableByPluralDesc'].ready(function(elements){
 
@@ -97,6 +98,9 @@
                 cellpadding: 3,
                 style: { borderCollapse: 'collapse' }
             });
+
+            // add tbody
+            addlTypesTable.tbody();
 
             forEach(sortedElements, function(element, i){
 
@@ -160,13 +164,13 @@
             });
 
             // render the menu
-            exptTypeMenu.append(exptTypes);
+            exptTypeMenu.empty().append(exptTypes);
 
             // initialize the 'Chosen' plugin
             menuInit(exptTypeMenu, { width: '200px', placeholder_text_single: 'Select', disable_search_threshold: 7 } );
 
             // render the 'addl-data-types' table
-            addlTypesTable.render('#addl-data-types-container');
+            addlTypesTable.render(exptTypesContainer.empty());
 
         });
 

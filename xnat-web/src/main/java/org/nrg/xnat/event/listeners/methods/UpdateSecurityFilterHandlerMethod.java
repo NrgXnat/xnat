@@ -9,8 +9,10 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xapi.rest.aspects.XapiRequestMappingAspect;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.XnatLogoutSuccessHandler;
@@ -34,6 +36,9 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+
+import static org.nrg.xdat.security.helpers.Users.ROLE_ADMIN;
+import static org.nrg.xdat.security.helpers.Users.ROLE_USER;
 
 /**
  * Handles changes to the {@link SiteConfigPreferences site configuration preferences} that affect the primary security filter. This
@@ -168,12 +173,13 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
         }
     }
 
-    private static final String PERMIT_ALL         = "permitAll";
-    private static final String DEFAULT_PATTERN    = "/**";
-    private static final String ADMIN_EXPRESSION   = "hasRole('ROLE_ADMIN')";
-    private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
-    private static final String SECURITY_CHANNEL   = "securityChannel";
-    private static final String REQUIRE_LOGIN      = "requireLogin";
+    private static final String PERMIT_ALL          = "permitAll";
+    private static final String DEFAULT_PATTERN     = "/**";
+    private static final String SECURITY_EXPRESSION = "hasRole('${ROLE}')";
+    private static final String ADMIN_EXPRESSION    = StringSubstitutor.replace(SECURITY_EXPRESSION, ImmutableMap.of("ROLE", ROLE_ADMIN));
+    private static final String DEFAULT_EXPRESSION  = StringSubstitutor.replace(SECURITY_EXPRESSION, ImmutableMap.of("ROLE", ROLE_USER));
+    private static final String SECURITY_CHANNEL    = "securityChannel";
+    private static final String REQUIRE_LOGIN       = "requireLogin";
 
     private final XnatLogoutSuccessHandler _logoutSuccessHandler;
     private final List<String>             _openUrls;

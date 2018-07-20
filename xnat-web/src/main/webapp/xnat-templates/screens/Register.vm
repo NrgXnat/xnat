@@ -39,8 +39,9 @@ $page.setBgColor($ui.bgcolor)
         <h3><span>New User Registration</span></h3>
         <div class="clear"></div>
         #if($data.getMessage())
-            <div class="warning" style="border-bottom: 0">
-                <p><strong>Note: </strong><br />$data.getMessage()</p>
+            <div class="warning" style="padding:15px;border-bottom:0">
+                <strong>Note: </strong>
+                <p style="margin:5px 3px 0;">$data.getMessage()</p>
             </div>
         #end
         <div id="register_box">

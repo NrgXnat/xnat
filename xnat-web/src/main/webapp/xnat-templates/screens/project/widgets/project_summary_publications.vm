@@ -1,3 +1,4 @@
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
 Publications:&nbsp;
 #if($project.getPublications_publication().size() > 0)
     #set($primarys = $project.getPublicationsByType("PRIMARY"))

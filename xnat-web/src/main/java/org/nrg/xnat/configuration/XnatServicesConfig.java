@@ -26,7 +26,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 @Configuration
 @ComponentScan({"org.nrg.xnat.services.archive.impl",
                 "org.nrg.xnat.services.cache",
-                "org.nrg.xnat.services.investigators",
+                "org.nrg.xnat.services.investigators.impl.xft",
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation"})
 public class XnatServicesConfig {

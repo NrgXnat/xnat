@@ -9,7 +9,6 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.base.Joiner;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -36,7 +35,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
@@ -98,6 +100,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (value instanceof List) {
                     _preferences.setListValue(name, (List) value);
                 } else if (value instanceof Map) {
+                    //noinspection unchecked
                     _preferences.setMapValue(name, (Map) value);
                 } else if (value.getClass().isArray()) {
                     _preferences.setArrayValue(name, (Object[]) value);
@@ -127,9 +130,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
     @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public ResponseEntity<Map<String, Object>> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
-        }
+        log.debug("User {} requested the site configuration preferences {}", getSessionUser().getUsername(), StringUtils.join(preferences, ", "));
 
         final Map<String, Object> values = new HashMap<>();
         for (final String preference : preferences) {
@@ -152,9 +153,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         final Object value = _preferences.get(property);
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
-        }
+        log.debug("User {} requested the value for the site configuration property {}, got value: {}", getSessionUser().getUsername(), property, value);
         return new ResponseEntity<>(value, HttpStatus.OK);
     }
 
@@ -187,11 +186,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "buildInfo", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<Properties> getBuildInfo() {
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the application build information.");
-        }
-
+    public ResponseEntity<Map<String, String>> getBuildInfo() {
+        log.debug("User {} requested the application build information.", getSessionUser().getUsername());
         return new ResponseEntity<>(_appInfo.getSystemProperties(), HttpStatus.OK);
     }
 
@@ -201,10 +197,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "buildInfo/attributes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Map<String, String>>> getBuildAttributeInfo() {
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the extended application build attributes.");
-        }
-
+            log.debug("User {} requested the extended application build attributes.", getSessionUser().getUsername());
         return new ResponseEntity<>(_appInfo.getSystemAttributes(), HttpStatus.OK);
     }
 
@@ -224,10 +217,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "uptime", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, String>> getSystemUptime() {
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the system uptime map.");
-        }
-
+        log.debug("User {} requested the system uptime map.", getSessionUser().getUsername());
         return new ResponseEntity<>(_appInfo.getUptime(), HttpStatus.OK);
     }
 
@@ -237,10 +227,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "uptime/display", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<String> getFormattedSystemUptime() {
-        if (log.isDebugEnabled()) {
-            log.debug("User " + getSessionUser().getUsername() + " requested the formatted system uptime.");
-        }
-
+        log.debug("User {} requested the formatted system uptime.", getSessionUser().getUsername());
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 

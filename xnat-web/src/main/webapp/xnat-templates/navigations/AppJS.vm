@@ -101,17 +101,19 @@
         if (!window.isLoginPage && window.loadDataTypes) {
             console.log('getBrowseableElements');
             XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
-                forEach(data.sortedElements, function(element){
-                    window.available_elements.push(element);
-                    window.browseableElements[element.element_name] = element;
-                });
+                var getByName = window.available_elements.getByName;
+                window.available_elements = data.sortedElements;
+                window.available_elements.getByName = getByName;
+                window.browseableElements = data.elementMap;
             });
         }
 
-        window.available_elements.getByName = function (name) {
+        window.available_elements_getByName = function (name) {
             // return empty object if not found
             return window.browseableElements[name] || {}
         };
+
+        window.available_elements.getByName = window.available_elements_getByName;
 
     </script>
 

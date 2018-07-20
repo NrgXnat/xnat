@@ -72,7 +72,6 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.*;
@@ -85,7 +84,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate) throws SQLException {
         super(cacheManager,
-              XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.builder().xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME).actions(CREATE, UPDATE, DELETE).build(),
               XftItemEventCriteria.builder().xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME).xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME).actions(CREATE, XftItemEventI.DELETE, SHARE).build(),
               XftItemEventCriteria.getXsiTypeCriteria(XdatUsergroup.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XdatElementSecurity.SCHEMA_ELEMENT_NAME));
@@ -158,8 +157,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (has(cacheId)) {
             // Here we can just return the value directly as a map, because we know
             // there's something cached and that what's cached is not a string.
-            final Map<String, ElementDisplay> browseables = getCachedMap(cacheId);
-            browseables.putAll(getGuestBrowseableElementDisplays());
+            @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(super.<String, ElementDisplay>getCachedMap(cacheId), getGuestBrowseableElementDisplays());
             log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
             return browseables;
         }
@@ -169,18 +167,14 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             final List<String> projects = getUserProjects(username);
             for (final String project : projects) {
                 final String      projectCacheId = getCacheIdForProject(project);
-                final Set<String> projectUsers;
-                if (!has(projectCacheId)) {
-                    projectUsers = new HashSet<>();
-                } else {
-                    projectUsers = getCachedSet(projectCacheId);
-                }
+                final Set<String> projectUsers   = has(projectCacheId) ? new HashSet<>(super.<String>getCachedSet(projectCacheId)) : new HashSet<String>();
                 projectUsers.add(username);
                 cacheObject(projectCacheId, projectUsers);
             }
         }
-        final Map<String, ElementDisplay> browseables = updateBrowseableElementDisplays(user, cacheId);
-        browseables.putAll(getGuestBrowseableElementDisplays());
+
+        @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(updateBrowseableElementDisplays(user, cacheId), getGuestBrowseableElementDisplays());
+        log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
         return browseables;
     }
 
@@ -305,7 +299,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 }
             }
 
-            final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(username);
+            final Map<String, UserGroupI> userGroups = getGroupsForUser(username);
             if (log.isDebugEnabled()) {
                 log.debug("Found {} user groups for the user {}", userGroups.size(), username, userGroups.isEmpty() ? "" : ": " + Joiner.on(", ").join(userGroups.keySet()));
             }
@@ -360,7 +354,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             updateTotalCounts();
         }
 
-        return _totalCounts;
+        return ImmutableMap.copyOf(_totalCounts);
     }
 
     /**
@@ -370,10 +364,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      */
     @Override
     public void clearUserCache(final String username) {
-        for (final String cacheId : getCacheIdsForUserElements(username)) {
-            log.debug("Clearing cache ID '{}'", cacheId);
-            getCache().evict(cacheId);
+        final List<String> cacheIds = getCacheIdsForUserElements(username);
+        if (log.isDebugEnabled()) {
+            log.debug("Clearing caches for user '{}': {}", username, StringUtils.join(cacheIds, ", "));
         }
+        evict(cacheIds);
     }
 
     /**
@@ -450,7 +445,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 groups.put(groupId, group);
             }
         }
-        return groups;
+        return ImmutableMap.copyOf(groups);
     }
 
     @Override
@@ -467,7 +462,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public List<String> getUserIdsForGroup(final String groupId) {
         final UserGroupI group = get(groupId);
-        return group != null ? group.getUsernames() : Collections.<String>emptyList();
+        return group != null ? ImmutableList.copyOf(group.getUsernames()) : Collections.<String>emptyList();
     }
 
     @Override
@@ -478,8 +473,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public Date getUserLastUpdateTime(final String username) {
         try {
-            final List<String> cacheIds = getGroupIdsForUser(username);
-            cacheIds.addAll(getCacheIdsForUsername(username));
+            @SuppressWarnings("unchecked") final List<String> cacheIds = new ArrayList<>(buildImmutableSet(getGroupIdsForUser(username), getCacheIdsForUsername(username)));
             if (cacheIds.isEmpty()) {
                 return new Date();
             }
@@ -671,7 +665,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
         final List<String> projectIds = _template.queryForList(query, new MapSqlParameterSource("usernames", Arrays.asList("guest", username)), String.class);
         cacheObject(cacheId, projectIds);
-        return projectIds;
+        return ImmutableList.copyOf(projectIds);
     }
 
     private synchronized List<String> initializeTag(final String tag) {
@@ -758,7 +752,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     updateGuestBrowseableElementDisplays();
                     updateUserReadableCounts(this.<String>getCachedSet(cacheId));
                     updateTotalCounts();
-                    getCache().evict(cacheId);
+                    evict(cacheId);
                     break;
 
                 default:
@@ -811,10 +805,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean handleGroupRelatedEvents(final XftItemEventI event) {
-        final String      xsiType   = event.getXsiType();
-        final String      id        = event.getId();
-        final String      action    = event.getAction();
-        final Set<String> usernames = new HashSet<>();
+        final String         xsiType    = event.getXsiType();
+        final String         id         = event.getId();
+        final String         action     = event.getAction();
+        final Map<String, ?> properties = event.getProperties();
+        final Set<String>    usernames  = new HashSet<>();
 
         try {
             final List<UserGroupI> groups = getGroups(xsiType, id);
@@ -831,6 +826,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
                     }
+                    // Check if the update was removing users. If so, get the usernames from the event properties, as they're not longer in the group.
+                    if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), Groups.OPERATION_REMOVE_USERS)) {
+                        //noinspection unchecked
+                        usernames.addAll((Collection<? extends String>) properties.get(Groups.USERS));
+                    }
                     return !cacheGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
@@ -845,7 +845,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 if (group != null) {
                                     usernames.addAll(group.getUsernames());
                                 }
-                                getCache().evict(groupId);
+                                evict(groupId);
                             }
                         }
                     } else {
@@ -853,7 +853,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                         if (group != null) {
                             usernames.addAll(group.getUsernames());
                         }
-                        getCache().evict(id);
+                        evict(id);
                         return true;
                     }
                     break;
@@ -889,7 +889,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.debug("Evicting all action and user element cache IDs");
         for (final String cacheId : Iterables.concat(getCacheIdsForActions(), getCacheIdsForUserElements())) {
             log.trace("Evicting cache entry with ID '{}'", cacheId);
-            getCache().evict(cacheId);
+            evict(cacheId);
         }
 
         final List<String> groupIds = getGroupIdsForDataType(dataType);
@@ -1099,7 +1099,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private List<ElementDisplay> updateActionElementDisplays(final UserI user, final String action) {
-        return updateActionElementDisplays(user.getUsername(), action);
+        return ImmutableList.copyOf(updateActionElementDisplays(user.getUsername(), action));
     }
 
     private List<ElementDisplay> updateActionElementDisplays(final String username, final String action) {
@@ -1176,7 +1176,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final String       cacheId  = getCacheIdForUserGroups(username);
         final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
         cacheObject(cacheId, groupIds);
-        return groupIds;
+        return ImmutableList.copyOf(groupIds);
     }
 
     private void updateUserReadableCounts(final Collection<String> usernames) {
@@ -1208,7 +1208,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private Map<String, Long> updateReadableCounts(final UserI user) {
-        return updateReadableCounts(user, getCacheIdForUserElements(user.getUsername(), READABLE));
+        return ImmutableMap.copyOf(updateReadableCounts(user, getCacheIdForUserElements(user.getUsername(), READABLE)));
     }
 
     private Map<String, Long> updateReadableCounts(final UserI user, final String cacheId) {
@@ -1225,7 +1225,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     log.debug("Caching the following readable element counts for user {} with cache ID {}: {}", username, cacheId, getDisplayForReadableCounts(readableCounts));
                 }
                 cacheObject(cacheId, readableCounts);
-                return readableCounts;
+                return ImmutableMap.copyOf(readableCounts);
             } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
                 //not a member of anything
                 log.info("USER: {} doesn't have access to any project data.", username);
@@ -1246,14 +1246,14 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (has(GUEST_CACHE_ID)) {
             return getCachedMap(GUEST_CACHE_ID);
         }
-        return updateGuestBrowseableElementDisplays();
+        return ImmutableMap.copyOf(updateGuestBrowseableElementDisplays());
     }
 
     private Map<String, ElementDisplay> updateGuestBrowseableElementDisplays() {
         log.debug("Updating guest browseable element displays, clearing local cache, updating element access managers, and updating browseable element displays");
         _guest.clearLocalCache();
         updateGuestElementAccessManagers();
-        return updateBrowseableElementDisplays(_guest, GUEST_CACHE_ID);
+        return ImmutableMap.copyOf(updateBrowseableElementDisplays(_guest, GUEST_CACHE_ID));
     }
 
     private Map<String, Long> getUserReadableCount(final UserI user, final String dataType, final String dataTypeIdField) throws Exception {
@@ -1359,8 +1359,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
         final String cacheId = getCacheIdForUserGroups(username);
         if (has(cacheId)) {
-            log.info("Found cached groups list for user '{}' with cache ID '{}'", username, cacheId);
-            return getCachedList(cacheId);
+            final List<String> cachedList = getCachedList(cacheId);
+            log.info("Found cached groups list for user '{}' with cache ID '{}': {}", username, cacheId, StringUtils.join(cachedList, ", "));
+            return cachedList;
         }
 
         return updateUserGroupIds(username);
@@ -1419,7 +1420,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return new ArrayList<>();
         }
 
-        return newArrayList(Iterables.filter(Iterables.transform(Iterables.filter(groupIds, String.class), new Function<String, UserGroupI>() {
+        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(Iterables.filter(groupIds, String.class), new Function<String, UserGroupI>() {
             @Nullable
             @Override
             public UserGroupI apply(@Nullable final String groupId) {

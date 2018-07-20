@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.utils;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -26,6 +27,7 @@ import org.nrg.xft.db.ItemAccessHistory;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -42,6 +44,7 @@ import java.util.regex.Pattern;
 
 import static org.nrg.xdat.om.base.BaseXnatProjectdata.getProjectByIDorAlias;
 import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.*;
+import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 public class ProjectAccessRequest {
     public static boolean CREATED_PAR_TABLE = false;
@@ -82,6 +85,7 @@ public class ProjectAccessRequest {
     /**
      * @return the _userString
      */
+    @SuppressWarnings("unused")
     public String getUserString() {
         return _userString;
     }
@@ -94,6 +98,7 @@ public class ProjectAccessRequest {
     /**
      * @return The user ID for the request approver
      */
+    @SuppressWarnings("unused")
     public Integer getApproverUserId() {
         return _approverUserId;
     }
@@ -516,27 +521,25 @@ public class ProjectAccessRequest {
 
 		if (accept) {
 
-			XnatProjectdata project = getXnatProjectdatasById(_projectId, null, false);
-
-			PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(null, user, SCHEMA_ELEMENT_NAME, _projectId, _projectId, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, eventType, EventUtils.ADD_USER_TO_PROJECT, reason, comment));
-			EventMetaI eventInfo = workflow.buildEvent();
+            final XnatProjectdata     project   = getXnatProjectdatasById(_projectId, null, false);
+            final PersistentWorkflowI workflow  = WorkflowUtils.getOrCreateWorkflowData(null, user, SCHEMA_ELEMENT_NAME, _projectId, _projectId, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, eventType, EventUtils.ADD_USER_TO_PROJECT, reason, comment));
+            final EventMetaI          eventInfo = workflow.buildEvent();
 
 			try {
-				for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
-					if (StringUtils.equals(entry.getValue().getTag(),_projectId)) {
-						if(!UserHelper.getUserHelperService(user).isOwner(_projectId)){
-							Groups.removeUserFromGroup(user, user, entry.getValue().getId(), eventInfo);
-						}
-					}
-				}
+                for (final UserGroupI group : Groups.getGroupsForUser(user).values()) {
+                    if (StringUtils.equals(group.getTag(), _projectId) && !UserHelper.getUserHelperService(user).isOwner(_projectId)) {
+                        Groups.removeUserFromGroup(user, user, group.getId(), eventInfo);
+                    }
+                }
 
 				if (!_level.startsWith(project.getId())) {
 					_level = project.getId() + "_" + _level;
 				}
 
-				UserGroupI grp=Groups.addUserToGroup(_level, user, user, eventInfo);
-				Groups.updateUserForGroup(user, grp.getId(),grp);
+				final UserGroupI group = Groups.addUserToGroup(_level, user, user, eventInfo);
+                Groups.updateUserForGroup(user, group.getId(), group);
 
+                XDAT.triggerXftItemEvent(project, XftItemEventI.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, Collections.singleton(user.getUsername())));
 				WorkflowUtils.complete(workflow, eventInfo);
 
 				try {

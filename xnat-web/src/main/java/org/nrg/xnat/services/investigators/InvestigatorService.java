@@ -1,59 +1,88 @@
-/*
- * web: org.nrg.xnat.services.investigators.InvestigatorService
- * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- */
-
 package org.nrg.xnat.services.investigators;
 
+import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.investigators.Investigator;
-import org.nrg.xdat.model.XnatInvestigatordataI;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Service;
+import org.nrg.xft.exception.XftItemException;
+import org.nrg.xft.security.UserI;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Manages operations with {@link Investigator investigator proxy objects}. This is not a full-on Hibernate service,
- * since the "entities" managed are not Hibernate entities but instead are composite objects that represent XFT {@link
- * XnatInvestigatordataI} objects as well as metadata aggregated from other tables.
+ * Manages {@link Investigator investigator instances} in XNAT.
  */
-@Service
-public class InvestigatorService {
-    @Autowired
-    public InvestigatorService(final JdbcTemplate template) {
-        _template = template;
-    }
+public interface InvestigatorService {
+    /**
+     * Creates an investigator in the system from the submitted instance.
+     *
+     * @param investigator The investigator to be created.
+     * @param user         The user creating the investigator.
+     *
+     * @return The newly created investigator.
+     *
+     * @throws XftItemException When an error occurs trying to create the investigator.
+     * @throws ResourceAlreadyExistsException If an investigator with the same attributes already exists.
+     */
+    Investigator createInvestigator(Investigator investigator, UserI user) throws XftItemException, ResourceAlreadyExistsException;
 
-    public Investigator getInvestigator(final int xnatInvestigatordataId) {
-        return _template.queryForObject(INVESTIGATOR_QUERY + BY_ID_WHERE, new Object[]{xnatInvestigatordataId}, ROW_MAPPER);
-    }
+    /**
+     * Gets the investigator with the submitted ID.
+     *
+     * @param investigatorId The ID of the investigator to retrieve.
+     *
+     * @return The requested investigator.
+     *
+     * @throws NotFoundException If no investigator with the indicated ID exists on the system.
+     */
+    Investigator getInvestigator(int investigatorId) throws NotFoundException;
 
-    public Investigator getInvestigator(final String firstname, final String lastname) {
-        return _template.queryForObject(INVESTIGATOR_QUERY + BY_FIRST_LAST_WHERE, new Object[]{firstname, lastname}, ROW_MAPPER);
-    }
+    /**
+     * Gets the investigator with the submitted first and last names.
+     *
+     * @param firstName The first name of the investigator to retrieve.
+     * @param lastName  The last name of the investigator to retrieve.
+     *
+     * @return The requested investigator.
+     *
+     * @throws NotFoundException If no investigator with the indicated first and last names exists on the system.
+     */
+    Investigator getInvestigator(String firstName, String lastName) throws NotFoundException;
 
-    public List<Investigator> getInvestigators() {
-        return _template.query(INVESTIGATOR_QUERY + ORDER_BY_NAME, ROW_MAPPER);
-    }
+    /**
+     * Gets a list of all of the investigators on the system.
+     *
+     * @return A list of all of the currently configured investigators on the system.
+     */
+    List<Investigator> getInvestigators();
 
-    private static final String INVESTIGATOR_QUERY  = "SELECT investigator.xnat_investigatordata_id AS xnat_investigatordata_id, investigator.id AS id, investigator.title AS title, investigator.firstname AS firstname, investigator.lastname AS lastname, investigator.institution AS institution, investigator.department AS department, investigator.email AS email, investigator.phone AS phone, (SELECT array(SELECT project.id FROM xnat_projectdata project WHERE project.pi_xnat_investigatordata_id = investigator.xnat_investigatordata_id)) AS primary_inv, (SELECT array(SELECT project_inv.xnat_projectdata_id FROM xnat_projectdata_investigator project_inv WHERE project_inv.xnat_investigatordata_xnat_investigatordata_id = investigator.xnat_investigatordata_id)) AS inv FROM xnat_investigatordata investigator";
-    private static final String BY_ID_WHERE         = " WHERE investigator.xnat_investigatordata_id = ?";
-    private static final String BY_FIRST_LAST_WHERE = " WHERE investigator.firstname = ? AND investigator.lastname = ?";
-    private static final String ORDER_BY_NAME = " ORDER BY investigator.lastname, investigator.firstname";
+    /**
+     * Updates the investigator with the submitted ID using the data in the investigator object. Note that any fields that contain nulls are not considered. This means you can change just the
+     * first name of the investigator by setting a value for that property then leaving (or setting) the other fields to null. If the investigator is not modified (i.e. there are no changes in the
+     * properties associated with the investigator), this method returns null. Otherwise, it returns the updated investigator object.
+     *
+     * @param investigatorId The ID of the investigator to update.
+     * @param investigator   The investigator object with the properties to be set.
+     * @param user           The user requesting the changes to the investigator.
+     *
+     * @return The updated investigator object if modified, null otherwise.
+     *
+     * @throws NotFoundException       When an investigator with the indicated ID can't be found.
+     * @throws InitializationException When the updated investigator failed to save without throwing an exception.
+     * @throws XftItemException        When an error occurs trying to update the investigator.
+     */
+    Investigator updateInvestigator(int investigatorId, Investigator investigator, UserI user) throws NotFoundException, InitializationException, XftItemException;
 
-    private static final RowMapper<Investigator> ROW_MAPPER = new RowMapper<Investigator>() {
-        @Override
-        public Investigator mapRow(final ResultSet resultSet, final int i) throws SQLException {
-            return new Investigator(resultSet);
-        }
-    };
-    private final JdbcTemplate _template;
+    /**
+     * Deletes the investigator with the submitted ID.
+     *
+     * @param investigatorId The ID of the investigator to delete.
+     * @param user           The user requesting the changes to the investigator.
+     *
+     * @throws InsufficientPrivilegesException If the user isn't an administrator.
+     * @throws NotFoundException               When an investigator with the indicated ID can't be found.
+     * @throws XftItemException                When an error occurs trying to update the investigator.
+     */
+    void deleteInvestigator(int investigatorId, UserI user) throws InsufficientPrivilegesException, NotFoundException, XftItemException;
 }

@@ -52,8 +52,8 @@ public class SavedSearchListResource extends SecureResource {
         String    getAllBundles = getQueryVariable("all");
         UserI     userToGetListFor;
         try {
-            UserI executingUser = getUser();
-            boolean userIsAdmin = Groups.isDataAdmin(executingUser);
+            final UserI executingUser = getUser();
+            boolean userIsAdmin = Groups.isSiteAdmin(executingUser);
             if (userIsAdmin && !StringUtils.isBlank(usernameToGetListFor)) {
                 userToGetListFor = new XDATUser(usernameToGetListFor);
             } else {

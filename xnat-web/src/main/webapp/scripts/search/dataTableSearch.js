@@ -726,7 +726,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                         onclick: { fn: this.search.spreadsheetClick, scope: this.search }
                     });
 
-                    var spec = window.available_elements.getByName(this.en);
+                    var spec = window.available_elements_getByName(this.en);
                     if (spec != null || this.en === "wrk:workflowData") {
                         submenuitems.push({
                             text: 'Email',

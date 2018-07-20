@@ -42,30 +42,30 @@
         <input type="hidden" name="authFirstName" value="$userInfo.firstName">
     #end
     <p>
-        <label for="xdat:user.login" class="formLabelRequired">Username</label>
+        <label for="xdat:user.login" class="formLabelRequired">Username <b>*</b></label>
         <input type="text" class="required alphaNumSP" id="xdat:user.login" name="xdat:user.login" value="$!username">
     </p>
     #if(!$hidePassword)
         <p>
-            <label for="xdat:user.primary_password" class="formLabelRequired">Password</label>
+            <label for="xdat:user.primary_password" class="formLabelRequired">Password <b>*</b></label>
             <input type="password" id="xdat:user.primary_password" name="xdat:user.primary_password" autocomplete="off">
         </p>
         <p>
-            <label for="xdat:user.password_check" class="formLabelRequired">Re-enter password</label>
+            <label for="xdat:user.password_check" class="formLabelRequired">Re-enter password <b>*</b></label>
             <input type="password" id="xdat:user.password_check" name="xdat:user.primary_password" autocomplete="off">
         </p>
     #end
     <hr/>
     <p>
-        <label for="xdat:user.firstname" class="formLabelRequired">First Name</label>
+        <label for="xdat:user.firstname" class="formLabelRequired">First Name <b>*</b></label>
         <input type="text" class="required alphaSP" id="xdat:user.firstname" name="xdat:user.firstname" value="$!firstName">
     </p>
     <p>
-        <label for="xdat:user.lastname" class="formLabelRequired">Last Name</label>
+        <label for="xdat:user.lastname" class="formLabelRequired">Last Name <b>*</b></label>
         <input type="text" class="required alphaSP" id="xdat:user.lastname" name="xdat:user.lastname" value="$!lastName">
     </p>
     <p>
-        <label for="xdat:user.email" class="formLabelRequired">Email</label>
+        <label for="xdat:user.email" class="formLabelRequired">Email <b>*</b></label>
         <input type="text" class="required" id="xdat:user.email" name="xdat:user.email" value="$!email">
     </p>
     <p>
@@ -92,7 +92,7 @@
 
 <script>
     $(function () {
-        $(".formLabelRequired").append(" <b>*</b>");
+        $('[id="xdat:user.login"]').focus().select();
         $("input").on("focusout", function () {
             $(this).closest('p').find('.errorMsg').remove();
         });

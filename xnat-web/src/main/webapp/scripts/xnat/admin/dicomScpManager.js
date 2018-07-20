@@ -161,9 +161,11 @@ var XNAT = getObject(XNAT || {});
                 var options = [];
 
                 forOwn(identifiers, function(key, val){
+                    var label = key;
+                    label += (key === 'dicomObjectIdentifier') ? ' (Default)' : '';
                     var option = spawn('option', {
                         value: key,
-                        html: val
+                        html: label
                     });
                     if (key === 'dicomObjectIdentifier') {
                         option.setAttribute('selected', 'selected');
@@ -424,7 +426,9 @@ var XNAT = getObject(XNAT || {});
 
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
-                var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
+                // var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
+                var identifierLabel = item.identifier || 'dicomObjectIdentifier';
+                identifierLabel += (identifierLabel === 'dicomObjectIdentifier') ? ' (Default)' : '';
                 scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port } })
                         .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
                         .td([['div.mono.center', item.port]]).addClass('port')

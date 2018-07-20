@@ -9,15 +9,12 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
@@ -42,6 +39,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xnat.utils.WorkflowUtils;
+
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 public class ModifySubjectAssessorData extends ModifyItem {
     static Logger logger = Logger.getLogger(ModifySubjectAssessorData.class);
@@ -73,11 +77,12 @@ public class ModifySubjectAssessorData extends ModifyItem {
                 logger.error("",e1);
             }
 
-            XFTItem dbVersion = found.getCurrentDBVersion();
-            if(dbVersion==null){
+            final XFTItem dbVersion = found.getCurrentDBVersion();
+            final boolean isCreate  = dbVersion == null;
+            if (isCreate) {
             	if(StringUtils.isNotEmpty(found.getStringProperty("project")) && StringUtils.isNotEmpty(found.getStringProperty("label"))){
             		//check for match by label
-                	XnatExperimentdata expt=XnatExperimentdata.GetExptByProjectIdentifier(found.getStringProperty("project"), found.getStringProperty("label"), TurbineUtils.getUser(data), false);
+                	XnatExperimentdata expt=XnatExperimentdata.GetExptByProjectIdentifier(found.getStringProperty("project"), found.getStringProperty("label"), XDAT.getUserDetails(), false);
                 	if(expt!=null){
                         logger.error("Duplicate experiment with label "+ found.getStringProperty("label"));
                         data.setMessage("Please use a unique session ID.  "+ found.getStringProperty("label") +" is already in use.");
@@ -87,9 +92,9 @@ public class ModifySubjectAssessorData extends ModifyItem {
             }
             
             PersistentWorkflowI wrk=null;
-            if(dbVersion!=null){
+            if (!isCreate) {
                 try {
-                    dynamicCompare(TurbineUtils.getUser(data), dbVersion, found);
+                    dynamicCompare(XDAT.getUserDetails(), dbVersion, found);
                 }
                 catch (CompareException e) {
                     data.setMessage(e.getMessage());
@@ -97,25 +102,23 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     return;
                 }
 
-            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(found.getXSIType(), dbVersion==null)));
+            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, XDAT.getUserDetails(), found,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(found.getXSIType(), dbVersion==null)));
     	    	EventMetaI c=wrk.buildEvent();
                 boolean removedReference = false;
-                Object[] keysArray = data.getParameters().getKeys();
                 try {
-    				for (int i=0;i<keysArray.length;i++)
-    				{
-    				    String key = (String)keysArray[i];
+    				for (final Object keyValue : data.getParameters().getKeys()) {
+    				    final String key = (String) keyValue;
     				    if (key.toLowerCase().startsWith("remove_"))
     				    {
     				        int index = key.indexOf("=");
     				        String field = key.substring(index+1);
                         Object value = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(key,data);
     				        logger.debug("FOUND REMOVE: " + field + " " + value);
-    				        ItemCollection items =ItemSearch.GetItems(field,value,TurbineUtils.getUser(data),false);
+    				        ItemCollection items =ItemSearch.GetItems(field,value,XDAT.getUserDetails(),false);
     				        if (items.size() > 0)
     				        {
     				            ItemI toRemove = items.getFirst();
-                            SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
+                            SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),XDAT.getUserDetails(),c);
     				            found.removeItem(toRemove);
     				            removedReference = true;
     				        }else{
@@ -138,14 +141,12 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     WorkflowUtils.complete(wrk, c);
                     return;
                 }
-            }else{
+            } else {
             	found.setProperty("ID", XnatExperimentdata.CreateNewID());
-            	
-            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(found.getXSIType(), dbVersion==null)));
+            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, XDAT.getUserDetails(), found,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(found.getXSIType(), dbVersion==null)));
             }
             
             XnatSubjectassessordata sa = (XnatSubjectassessordata)BaseElement.GetGeneratedItem(found);
-            
             
             if (sa.getProject()!=null){
                 data.getParameters().setString("project", sa.getProject());
@@ -157,7 +158,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
             if (vr.isValid())
             {
                 try {
-                    if(!Permissions.canEdit(TurbineUtils.getUser(data), sa)){
+                    if(!Permissions.canEdit(XDAT.getUserDetails(), sa)){
                     	error(new InvalidPermissionException("Unable to modify experient "+ sa.getId()),data);
                     	return;
                     }
@@ -172,7 +173,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     }
                 	
                     try {
-                    	dynamicPreSave(TurbineUtils.getUser(data),sa,TurbineUtils.GetDataParameterHash(data), wrk);
+                    	dynamicPreSave(XDAT.getUserDetails(),sa,TurbineUtils.GetDataParameterHash(data), wrk);
                     } catch (CriticalException e) {
                         throw e;
                     } catch (RuntimeException e) {
@@ -183,16 +184,17 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     wrk.setLaunchTime(Calendar.getInstance().getTime());
                     
                     try {
-                    SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,allowDataDeletion(),c);
+                        SaveItemHelper.authorizedSave(found,XDAT.getUserDetails(),false,allowDataDeletion(),c);
 					} catch (Exception e1) {
 						WorkflowUtils.fail(wrk, c);
 						throw e1;
 					}
                     
                     WorkflowUtils.complete(wrk, c);
-                    
-            		try {
-            			MaterializedView.deleteByUser(TurbineUtils.getUser(data));
+                    XDAT.triggerXftItemEvent(found, isCreate ? CREATE : UPDATE);
+
+                    try {
+            			MaterializedView.deleteByUser(XDAT.getUserDetails());
             		} catch (DBPoolException e) {
                         logger.error("",e);
             		}
@@ -201,13 +203,12 @@ public class ModifySubjectAssessorData extends ModifyItem {
 
 					postProcessing(found, data, context);
 					
-					dynamicPostSave(TurbineUtils.getUser(data),sa,TurbineUtils.GetDataParameterHash(data), wrk);
+					dynamicPostSave(XDAT.getUserDetails(),sa,TurbineUtils.GetDataParameterHash(data), wrk);
 
-                    SchemaElement se = SchemaElement.GetElement(found.getXSIType());
                     if (TurbineUtils.HasPassedParameter("destination", data)){
                         super.redirectToReportScreen((String)TurbineUtils.GetPassedParameter("destination", data), found, data);
                     }else{
-                        redirectToReportScreen(DisplayItemAction.GetReportScreen(se), found, data);
+                        redirectToReportScreen(DisplayItemAction.GetReportScreen(SchemaElement.GetElement(found.getXSIType())), found, data);
                     }
                 } catch (Exception e) {
                     handleException(data,(XFTItem)found,e);
@@ -226,7 +227,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
     }
 
     public interface CompareAction {
-        public void execute(UserI user, XFTItem from, XFTItem to) throws Exception ;
+        void execute(UserI user, XFTItem from, XFTItem to) throws Exception;
     }
 
     private void dynamicCompare(UserI user, XFTItem from, XFTItem to) throws Exception{
@@ -249,7 +250,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
     }
 
 	public interface PreSaveAction {
-		public void execute(UserI user, XnatSubjectassessordata src, Map<String,String> params,PersistentWorkflowI wrk) throws Exception;
+		void execute(UserI user, XnatSubjectassessordata src, Map<String, String> params, PersistentWorkflowI wrk) throws Exception;
 	}
 	
 	private void dynamicPreSave(UserI user, XnatSubjectassessordata src, Map<String,String> params,PersistentWorkflowI wrk) throws Exception{
@@ -266,7 +267,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
 	}
 
 	public interface PostSaveAction {
-		public void execute(UserI user, XnatSubjectassessordata src, Map<String,String> params,PersistentWorkflowI wrk) throws Exception;
+		void execute(UserI user, XnatSubjectassessordata src, Map<String, String> params, PersistentWorkflowI wrk) throws Exception;
 	}
 	
 	private void dynamicPostSave(UserI user, XnatSubjectassessordata src, Map<String,String> params,PersistentWorkflowI wrk) throws Exception{
@@ -281,45 +282,30 @@ public class ModifySubjectAssessorData extends ModifyItem {
 			 }
 		 }
 	}
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.actions.ModifyItem#preProcess(org.nrg.xft.XFTItem, org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
-     */
-    @Override
-    public void preProcess(XFTItem item, RunData data, Context context) {
-        super.preProcess(item, data, context);
-    }
 
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.actions.ModifyItem#handleException(org.apache.turbine.util.RunData, org.nrg.xft.XFTItem, java.lang.Throwable)
      */
     @Override
-    public void handleException(RunData data, XFTItem first, Throwable error) {
-
+    public void handleException(final RunData data, final XFTItem first, final Throwable error) {
         try {
-            if (first!=null){
-                String part_id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("part_id",data));
-                if (part_id==null){
-                    if (first.getStringProperty("subject_ID")!=null){
-                        part_id = first.getStringProperty("subject_ID");
-                    }
+            if (first != null) {
+                final String partId = StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("part_id", data), first.getStringProperty("subject_ID"));
+                if (StringUtils.isNotBlank(partId)) {
+                    final ItemI part = ItemSearch.GetItems("xnat:subjectData.ID", partId, XDAT.getUserDetails(), false).getFirst();
+                    TurbineUtils.SetParticipantItem(part, data);
                 }
-                if (part_id!=null){
-                    ItemI part = ItemSearch.GetItems("xnat:subjectData.ID",part_id,TurbineUtils.getUser(data),false).getFirst();
-                    TurbineUtils.SetParticipantItem(part,data);
-                }
-                TurbineUtils.SetEditItem(first,data);
-            }
-            if (error!=null)
-                data.setMessage(error.getMessage());
-            if (first!=null)
+                TurbineUtils.SetEditItem(first, data);
                 data.setScreenTemplate("XDATScreen_edit_" + first.getGenericSchemaElement().getFormattedName() + ".vm");
-            else
+            } else {
                 data.setScreenTemplate("Index.vm");
+            }
+            if (error != null) {
+                data.setMessage(error.getMessage());
+            }
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
             super.handleException(data, first, e);
         }
     }
-    
-    
 }

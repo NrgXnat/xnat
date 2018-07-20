@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.table;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatStoredSearch;
@@ -233,12 +234,17 @@ public class ProjectListResource extends QueryOrganizerResource {
                 CriteriaCollection allCC = new CriteriaCollection("AND");
                 CriteriaCollection orCC = new CriteriaCollection("OR");
 
-                String dataAccess = resource.getQueryVariable(DATA_ACCESSIBILITY);
-                if (dataAccess != null) {
-                    if (dataAccess.equalsIgnoreCase(DATA_WRITABLE)) {
-                        if (!Groups.hasAllDataAccess(user)) {
-                            CriteriaCollection cc = new CriteriaCollection("OR");
-                            DisplayCriteria dc = new DisplayCriteria();
+                final String dataAccess = resource.getQueryVariable(DATA_ACCESSIBILITY);
+                if (StringUtils.isNotBlank(dataAccess) && !StringUtils.equalsAnyIgnoreCase(dataAccess, DATA_WRITABLE, DATA_READABLE)) {
+                    throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "The value specified for the " + DATA_ACCESSIBILITY + " parameter is invalid: " + dataAccess + ". Must be one of " + DATA_READABLE + " or " + DATA_WRITABLE + ".");
+                }
+
+                final boolean hasAllDataAccess = Groups.hasAllDataAccess(user);
+                if (!hasAllDataAccess && StringUtils.isNotBlank(dataAccess)) {
+                    CriteriaCollection cc = new CriteriaCollection("OR");
+                    DisplayCriteria dc = new DisplayCriteria();
+                    switch (dataAccess) {
+                        case DATA_WRITABLE:
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_MEMBERS");
                             dc.setComparisonType(" LIKE ");
                             dc.setValue("% " + user.getLogin() + " %", false);
@@ -251,11 +257,8 @@ public class ProjectListResource extends QueryOrganizerResource {
                             cc.add(dc);
 
                             allCC.addCriteria(cc);
-                        }
-                    } else if (dataAccess.equalsIgnoreCase(DATA_READABLE)) {
-                        if (!Groups.hasAllDataAccess(user)) {
-                            CriteriaCollection cc = new CriteriaCollection("OR");
-                            DisplayCriteria dc = new DisplayCriteria();
+                            break;
+                        case DATA_READABLE:
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
                             dc.setComparisonType(" LIKE ");
                             dc.setValue("% " + user.getLogin() + " %", false);
@@ -267,15 +270,13 @@ public class ProjectListResource extends QueryOrganizerResource {
                             cc.add(dc);
 
                             allCC.addCriteria(cc);
-                        }
-                    } else {
-                        throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "The value specified for the " + DATA_ACCESSIBILITY + " parameter is invalid: " + dataAccess + ". Must be one of " + DATA_READABLE + " or " + DATA_WRITABLE + ".");
+                            break;
                     }
                 }
 
-                String access = resource.getQueryVariable(ACCESSIBLE);
-                if (access != null) {
-                    if (!Groups.isMember(user, "ALL_DATA_ACCESS") && !Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                final String access = resource.getQueryVariable(ACCESSIBLE);
+                if (StringUtils.isNotBlank(access)) {
+                    if (!hasAllDataAccess) {
                         CriteriaCollection cc = new CriteriaCollection("OR");
                         DisplayCriteria dc = new DisplayCriteria();
                         dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
@@ -313,22 +314,20 @@ public class ProjectListResource extends QueryOrganizerResource {
                         allCC.addCriteria(cc2);
                     }
                 }
-                String users = resource.getQueryVariable("users");
-                if (users != null) {
-                    if (users.equalsIgnoreCase("true")) {
-                        CriteriaCollection cc = new CriteriaCollection("OR");
-                        DisplayCriteria dc = new DisplayCriteria();
-                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
-                        dc.setComparisonType(" LIKE ");
-                        dc.setValue("% " + user.getLogin() + " %", false);
-                        cc.add(dc);
 
-                        orCC.addCriteria(cc);
-                    }
+                final String users = resource.getQueryVariable("users");
+                if (StringUtils.equalsIgnoreCase(users, "true")) {
+                    CriteriaCollection cc = new CriteriaCollection("OR");
+                    DisplayCriteria dc = new DisplayCriteria();
+                    dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
+                    dc.setComparisonType(" LIKE ");
+                    dc.setValue("% " + user.getLogin() + " %", false);
+                    cc.add(dc);
+                    orCC.addCriteria(cc);
                 }
 
-                String owner = resource.getQueryVariable(AccessLevel.Owner.code());
-                if (owner != null) {
+                final String owner = resource.getQueryVariable(AccessLevel.Owner.code());
+                if (StringUtils.isNotBlank(owner)) {
                     if (owner.equalsIgnoreCase("true")) {
                         CriteriaCollection cc = new CriteriaCollection("OR");
                         DisplayCriteria dc = new DisplayCriteria();
@@ -351,7 +350,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
                 if (resource.getQueryVariable("admin") != null) {
                     if (resource.isQueryVariableTrue("admin")) {
-                        if (Roles.isSiteAdmin(user)) {
+                        if (hasAllDataAccess) {
                             CriteriaCollection cc = new CriteriaCollection("OR");
                             DisplayCriteria dc = new DisplayCriteria();
                             dc.setSearchFieldByDisplayField("xnat:projectData", "ID");
@@ -560,7 +559,7 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                 projResource.populateQuery(qo);
 
-                if (!Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                if (!Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
                     String restriction = SecurityManager.READ;
 
                     if (resource.containsQueryVariable("restrict")){

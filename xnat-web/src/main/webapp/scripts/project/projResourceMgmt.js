@@ -322,7 +322,7 @@ XNAT.app.pResources={
 		if(this.configs!=undefined && this.configs.length>0){
 			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-directory</dd><dd class='colM col6'>Overwrite?</dd><dd class='colS col7'>Options</dd></dl></dl>	";
 			jq.each(this.configs,function(i1,v1){
-				var elementName=window.available_elements.getByName(v1.type);
+				var elementName=window.available_elements_getByName(v1.type);
 				if(elementName!=undefined && elementName.singular!=undefined){
 					elementName=elementName.singular;
 				}else{

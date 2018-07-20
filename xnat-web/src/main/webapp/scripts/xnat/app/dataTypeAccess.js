@@ -82,26 +82,34 @@ var XNAT = getObject(XNAT);
         dataTypeAccess.needsUpdate = true;
     }
     //
-    var modifiedValuesList = (userData.getValue('accessDisplaysModifiedList') || []).slice(0, 8).concat(modifiedValue);
 
     // always save the 'modified' value in the browser's localStorage
     userData.setValue('accessDisplaysModified', modifiedValue);
-    userData.setValue('accessDisplaysModifiedList', modifiedValuesList);
 
-    // retrieve existing history if available in the browser's local storage
-    tmp.oldmod = userData.getValue('accessDisplaysModifiedHistory') || {};
+    // save a list of timestamps with page urls for cache updates
+    if (window.jsdebug) {
 
-    tmp.newmod = {};
-    // get only the last 8 'old' values
-    Object.keys(tmp.oldmod).sort().reverse().slice(0, 8).forEach(function(key, i){
-        tmp.newmod[key] = tmp.oldmod[key];
-    });
-    // add this one
-    tmp.newmod[modifiedValue + ''] = (new Date(Date.now())).toLocaleString() + ' - ' + window.location.pathname || window.location.href;
+        var modifiedValuesList = (userData.getValue('accessDisplaysModifiedList') || []).slice(0, 8).concat(modifiedValue);
+        userData.setValue('accessDisplaysModifiedList', modifiedValuesList);
 
-    userData.setValue('accessDisplaysModifiedHistory', tmp.newmod);
-
-    tmp = {};
+        // retrieve existing history if available in the browser's local storage
+        tmp.oldmod = userData.getValue('accessDisplaysModifiedHistory') || {};
+        tmp.newmod = {};
+        // get only the last 8 'old' values
+        Object.keys(tmp.oldmod).sort().reverse().slice(0, 8).forEach(function(key, i){
+            tmp.newmod[key] = tmp.oldmod[key];
+        });
+        // add this one
+        tmp.newmod[modifiedValue + ''] = (new Date(Date.now())).toLocaleString() + ' >> ' + XNAT.sub64.dlxEnc(window.location.pathname || window.location.href).encoded;
+        userData.setValue('accessDisplaysModifiedHistory', tmp.newmod);
+        tmp = {};
+    }
+    else {
+        // userData.remove([
+        //     'accessDisplaysModifiedList',
+        //     'accessDisplaysModifiedHistory'
+        // ]);
+    }
 
     // force an update by adding ?updateAccess=true to the URL query string
     dataTypeAccess.needsUpdate = /true|all/i.test(getQueryStringValue('updateAccess')) || dataTypeAccess.needsUpdate;
@@ -175,6 +183,9 @@ var XNAT = getObject(XNAT);
                 elements.push(element);
             }
         });
+        elements.getByName = function(name){
+            return elementMap[name];
+        };
         return {
             elements: elements,
             sortedElements: sortObjects(elements, 'plural'),
@@ -183,8 +194,9 @@ var XNAT = getObject(XNAT);
         }
     }
 
-    function updateDataTypeCache(data, paths){
-        var collected = collectDataTypes(data);
+    function updateDataTypeCache(collected, paths){
+        delete collected.elements.getByName;
+        delete collected.sortedElements.getByName;
         forEach([].concat(paths), function(pathInfo, i){
             var storageKey = pathInfo[0];
             var dataKey = pathInfo[1];
@@ -224,7 +236,8 @@ var XNAT = getObject(XNAT);
                 //     cacheLoadingMessage.open();
                 // },
                 success: function(datatypes){
-                    updateDataTypeCache(datatypes, [
+                    var collected = collectDataTypes(datatypes);
+                    updateDataTypeCache(collected, [
                         [accessDisplaysKey, 'sortedElements'],
                         [accessDisplaysMapKey, 'elementMap']
                     ]);
@@ -272,7 +285,8 @@ var XNAT = getObject(XNAT);
                     if (getFreshData) {
                         if (isFunction(doneFn)) {
                             getElementDisplays.done(function(datatypes){
-                                var collected = updateDataTypeCache(datatypes, [
+                                var collected = collectDataTypes(datatypes);
+                                updateDataTypeCache(collected, [
                                     [accessDisplaysKey, 'sortedElements'],
                                     [accessDisplaysMapKey, 'elementMap']
                                 ]);

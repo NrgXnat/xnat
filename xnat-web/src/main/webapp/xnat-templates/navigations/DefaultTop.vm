@@ -229,10 +229,6 @@
         mainNav.find('li ul, li li ul').closest('li').addClass('more');
         mainNav.find('li li ul').addClass('subnav');
 
-        mainNav.on('click.nolink', 'a[href^="#"]', function(e){
-            e.preventDefault();
-        });
-
         mainNav.on('click.topnav', '> li', function(e){
             e.stopPropagation();
 
@@ -263,10 +259,17 @@
 
         });
 
-        mainNav.on('click', 'a', function(e){
+        mainNav.on('click.nolink', 'a[href^="#"]', function(e){
+            e.preventDefault();
+        });
+
+        mainNav.on('click', 'a:not([href^="#"])', function(e){
+            e.stopPropagation();
             var href = $(this).attr('href');
             if (href.indexOf('#') !== 0) {
-                mainNavClose.call(this, e)
+                window.setTimeout(function(){
+                    mainNavClose.call(this, e)
+                }, 100);
             }
         });
         mainNavBackdrop.on('click', mainNavClose);

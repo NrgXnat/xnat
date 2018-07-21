@@ -9,11 +9,6 @@
 
 package org.nrg.xnat.helpers.resource.direct;
 
-import java.io.File;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -30,8 +25,10 @@ import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.utils.CatalogUtils;
 
+import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.*;
+
 /**
  * @author timo
  */
@@ -95,11 +92,9 @@ public abstract class ResourceModifierA implements Serializable {
         return getProject().getRootArchivePath();
     }
 
-    public List<String> addFile(final List<? extends FileWriterWrapperI> fws, final Object resourceIdentifier, final String type, final String filepath, final XnatResourceInfo info, final boolean extract) throws Exception {
-        List<String> duplicates = new ArrayList<String>();
-
-        if (fws == null || fws.size() == 0) {
-            return duplicates;
+    public List<String> addFile(final List<? extends FileWriterWrapperI> writers, final Object resourceIdentifier, final String type, final String filepath, final XnatResourceInfo info, final boolean extract) throws Exception {
+        if (writers == null || writers.size() == 0) {
+            return Collections.emptyList();
         }
 
         XnatAbstractresource abst = (XnatAbstractresource) getResourceByIdentifier(resourceIdentifier, type);
@@ -108,7 +103,7 @@ public abstract class ResourceModifierA implements Serializable {
         if (abst == null) {
             isNew = true;
             //new resource
-            abst = new XnatResourcecatalog((UserI) user);
+            abst = new XnatResourcecatalog(user);
 
             if (resourceIdentifier != null) {
                 abst.setLabel(resourceIdentifier.toString());
@@ -117,26 +112,24 @@ public abstract class ResourceModifierA implements Serializable {
             abst.setFileSize(0);
 
             createCatalog((XnatResourcecatalog) abst, info);
-
         } else {
             if (!(abst instanceof XnatResourcecatalog)) {
                 throw new Exception("Conflict:Non-catalog resource already exits.");
             }
         }
 
-        duplicates.addAll(CatalogUtils.storeCatalogEntry(fws, filepath, (XnatResourcecatalog) abst, getProject(), extract, info, overwrite, ci));
-
-        CatalogUtils.populateStats(abst, null);
-
-        if (isNew) {
-            addResource((XnatResourcecatalog) abst, type, user);
-        } else {
-            if ((!(ci instanceof UpdateMeta)) || ((UpdateMeta) ci).getUpdate()) {
-                SaveItemHelper.authorizedSave(abst, user, false, false, ci);
+        try {
+            return new ArrayList<>(CatalogUtils.storeCatalogEntry(writers, filepath, (XnatResourcecatalog) abst, getProject(), extract, info, overwrite, ci));
+        } finally {
+            CatalogUtils.populateStats(abst, null);
+            if (isNew) {
+                addResource((XnatResourcecatalog) abst, type, user);
+            } else {
+                if ((!(ci instanceof UpdateMeta)) || ((UpdateMeta) ci).getUpdate()) {
+                    SaveItemHelper.authorizedSave(abst, user, false, false, ci);
+                }
             }
         }
-
-        return duplicates;
     }
 
     public XnatAbstractresourceI getResourceByIdentifier(final Object resourceIdentifier, final String type) {

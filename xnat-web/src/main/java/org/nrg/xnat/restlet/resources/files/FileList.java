@@ -9,13 +9,16 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.table;
 import org.json.JSONObject;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
@@ -27,11 +30,13 @@ import org.nrg.xdat.bean.CatEntryMetafieldBean;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -39,6 +44,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.file.StoredFile;
+import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA.UpdateMeta;
 import org.nrg.xnat.restlet.files.utils.RestFileUtils;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
@@ -57,14 +63,13 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -74,16 +79,16 @@ import java.util.zip.ZipFile;
 /**
  * @author timo
  */
+@Slf4j
 public class FileList extends XNATCatalogTemplate {
-    private static final Logger logger = LoggerFactory.getLogger(FileList.class);
-    private String filepath = null;
-    private String reference = null;
-    private final boolean acceptNotFound;
-    private boolean delete;
-    private boolean async;
-    private String[] notifyList = new String[0];
-    private XnatAbstractresource resource = null;
-    private final boolean listContents = isQueryVariableTrueHelper(this.getQueryVariable("listContents"));
+    private String               filePath     = null;
+    private String               reference;
+    private final boolean        acceptNotFound;
+    private boolean              delete;
+    private boolean              async;
+    private String[]             notifyList;
+    private XnatAbstractresource resource     = null;
+    private final boolean        listContents = isQueryVariableTrueHelper(this.getQueryVariable("listContents"));
 
     public FileList(Context context, Request request, Response response) {
         super(context, request, response, isQueryVariableTrue("all", request));
@@ -126,17 +131,17 @@ public class FileList extends XNATCatalogTemplate {
 
                             XnatImageassessordata assessorObject = null;
                             try {
-                                Matcher m = Pattern.compile("\\/[aA][sS][sS][eE][sS][sS][oO][rR][sS]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
-                                if (m != null && m.find()) {
-                                    String assessorId = m.group(1);
+                                final Matcher matcher = Pattern.compile("\\/[aA][sS][sS][eE][sS][sS][oO][rR][sS]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
+                                if (matcher.find()) {
+                                    String assessorId = matcher.group(1);
                                     if (StringUtils.isNotBlank(assessorId)) {
-                                        assessorObject = (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(assessorId, AdminUtils.getAdminUser(), false);
+                                        assessorObject = (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(assessorId, Users.getAdminUser(), false);
 
                                         if (assessorObject == null) {
-                                            Matcher m2 = Pattern.compile("\\/[aA][rR][cC][hH][iI][vV][eE]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
-                                            if (m2 != null && m2.find()) {
+                                            final Matcher m2 = Pattern.compile("\\/[aA][rR][cC][hH][iI][vV][eE]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
+                                            if (m2.find()) {
                                                 String projectString = m2.group(1);
-                                                assessorObject = (XnatImageassessordata) XnatExperimentdata.GetExptByProjectIdentifier(projectString, assessorId, AdminUtils.getAdminUser(), false);
+                                                assessorObject = (XnatImageassessordata) XnatExperimentdata.GetExptByProjectIdentifier(projectString, assessorId, Users.getAdminUser(), false);
                                             }
                                         }
 
@@ -160,13 +165,13 @@ public class FileList extends XNATCatalogTemplate {
                 resource = resources.get(0);
             }
 
-            filepath = getRequest().getResourceRef().getRemainingPart();
-            if (filepath != null && filepath.contains("?")) {
-                filepath = filepath.substring(0, filepath.indexOf("?"));
+            filePath = getRequest().getResourceRef().getRemainingPart();
+            if (filePath != null && filePath.contains("?")) {
+                filePath = filePath.substring(0, filePath.indexOf("?"));
             }
 
-            if (filepath != null && filepath.startsWith("/")) {
-                filepath = filepath.substring(1);
+            if (filePath != null && filePath.startsWith("/")) {
+                filePath = filePath.substring(1);
             }
 
             getVariants().add(new Variant(MediaType.APPLICATION_JSON));
@@ -196,7 +201,7 @@ public class FileList extends XNATCatalogTemplate {
 
     /**
      * ****************************************
-     * if(filepath>"")then returns File
+     * if(filePath>"")then returns File
      * else returns table of files
      */
     @Override
@@ -338,50 +343,55 @@ public class FileList extends XNATCatalogTemplate {
                         i = wrk.buildEvent();
                     }
 
-                    UpdateMeta um = new UpdateMeta(i, !(skipUpdateStats));
+                    final UpdateMeta um = new UpdateMeta(i, !(skipUpdateStats));
 
                     try {
                         final List<FileWriterWrapperI> writers = getFileWriters();
-
-                        if (writers != null) {
-                            if (writers.size() > 0) {
-                                if (StringUtils.isEmpty(reference) || !async) {
-                                    List<String> duplicates = buildResourceModifier(overwrite, um).addFile(writers, resourceIdentifier, type, filepath, buildResourceInfo(um), extract);
-                                    if (!overwrite && duplicates.size() > 0) {
-                                        getResponse().setStatus(Status.SUCCESS_OK);
-                                        JSONObject json = new JSONObject();
-                                        json.put("duplicates", duplicates);
-                                        getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, json));
-                                    }else{
-                                        getResponse().setStatus(Status.SUCCESS_OK);
-                                        getResponse().setEntity(new StringRepresentation("", MediaType.TEXT_PLAIN));
-                                    }
-                                } else {
-                                    assert wrk != null;
-                                    wrk.setStatus(PersistentWorkflowUtils.QUEUED);
-                                    WorkflowUtils.save(wrk, wrk.buildEvent());
-                                    MoveStoredFileRequest request = new MoveStoredFileRequest(buildResourceModifier(overwrite, um), resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filepath, buildResourceInfo(um), extract);
-                                    XDAT.sendJmsRequest(request);
-
-                                    getResponse().setStatus(Status.SUCCESS_OK);
-                                    JSONObject json = new JSONObject();
-                                    json.put("workflowId", wrk.getWorkflowId());
-                                    getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, json));
-                                }
+                        if (writers == null || writers.isEmpty()) {
+                            final String method = getRequest().getMethod().toString();
+                            final long   size   = getRequest().getEntity().getAvailableSize();
+                            if (size == 0) {
+                                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You tried to " + method + " to this service, but didn't provide any data (found request entity size of 0). Please check the format of your service request.");
                             } else {
-                                final String method = getRequest().getMethod().toString();
-                                final long size = getRequest().getEntity().getAvailableSize();
-                                if (size == 0) {
-                                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You tried to " + method + " to this service, but didn't provide any data (found request entity size of 0). Please check the format of your service request.");
-                                } else {
-                                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You tried to " + method + " a payload of " + CatalogUtils.formatSize(size) + " to this service, but didn't provide any data. If you think you sent data to upload, you can try to " + method + " with the query-string parameter inbody=true or use multipart/form-data encoding.");
-                                }
+                                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You tried to " + method + " a payload of " + CatalogUtils.formatSize(size) + " to this service, but didn't provide any data. If you think you sent data to upload, you can try to " + method + " with the query-string parameter inbody=true or use multipart/form-data encoding.");
                             }
+                            return;
+                        }
+
+                        final ResourceModifierA resourceModifier = buildResourceModifier(overwrite, um);
+                        if (!async || StringUtils.isEmpty(reference)) {
+                            final List<String>      duplicates       = resourceModifier.addFile(writers, resourceIdentifier, type, filePath, buildResourceInfo(um), extract);
+                            if (!overwrite && duplicates.size() > 0) {
+                                getResponse().setStatus(Status.SUCCESS_OK);
+                                getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, new JSONObject(ImmutableMap.of("duplicates", duplicates))));
+                            }else{
+                                getResponse().setStatus(Status.SUCCESS_OK);
+                                getResponse().setEntity(new StringRepresentation("", MediaType.TEXT_PLAIN));
+                            }
+
+                            if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getXSIType())) {
+                                XDAT.triggerXftItemEvent(proj, XftItemEventI.UPDATE);
+                            }
+                        } else {
+                            assert wrk != null;
+                            wrk.setStatus(PersistentWorkflowUtils.QUEUED);
+                            WorkflowUtils.save(wrk, wrk.buildEvent());
+
+                            final MoveStoredFileRequest request;
+                            if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getXSIType())) {
+                                request = new MoveStoredFileRequest(resourceModifier, resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filePath, buildResourceInfo(um), extract, proj.getId());
+                            } else {
+                                request = new MoveStoredFileRequest(resourceModifier, resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filePath, buildResourceInfo(um), extract);
+                            }
+                            XDAT.sendJmsRequest(request);
+
+                            getResponse().setStatus(Status.SUCCESS_OK);
+                            getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, new JSONObject(ImmutableMap.of("workflowId", wrk.getWorkflowId()))));
                         }
                     } catch (Exception e) {
-                            logger.error("Error occurred while trying to POST file", e);
-                            throw e;
-                        }
+                        logger.error("Error occurred while trying to POST file", e);
+                        throw e;
+                    }
 
                     if (StringUtils.isEmpty(reference) && wrk != null && isNew) {
                         WorkflowUtils.complete(wrk, i);
@@ -425,65 +435,66 @@ public class FileList extends XNATCatalogTemplate {
                         final String parentPath = catFile.getParent();
                         final CatCatalogBean cat = catResource.getCleanCatalog(proj.getRootArchivePath(), false, null, null);
 
-                        CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(cat, filepath);
+                        CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(cat, filePath);
                         if (e != null) {
                             entries.add(e);
                         }
                         if (entries.size() == 0) {
-                            e = (CatEntryBean) CatalogUtils.getEntryById(cat, filepath);
+                            e = (CatEntryBean) CatalogUtils.getEntryById(cat, filePath);
                             if (e != null) {
                                 entries.add(e);
                             }
                         }
 
-                        if (entries.size() == 0 && filepath.endsWith("/")) {
+                        if (entries.size() == 0 && filePath.endsWith("/")) {
                             final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            						return entry.getUri().startsWith(filepath);
+            						return entry.getUri().startsWith(filePath);
             					}
             				};
 
                             entries.addAll(CatalogUtils.getEntriesByFilter(cat, folderFilter));
                         }
 
-                        if (entries.size() == 0 && filepath.endsWith("*")) {
-                            StringBuilder regex = new StringBuilder(filepath);
-                            int lastIndex = filepath.lastIndexOf("*");
+                        if (entries.isEmpty() && filePath.endsWith("*")) {
+                            StringBuilder regex = new StringBuilder(filePath);
+                            int lastIndex = filePath.lastIndexOf("*");
                             regex.replace(lastIndex, lastIndex + 1, ".*");
                             entries.addAll(CatalogUtils.getEntriesByRegex(cat, regex.toString()));
                         }
 
+                        final AtomicInteger deletedCount = new AtomicInteger(0);
                         for (CatEntryI entry : entries) {
-
-                            final File f = new File(parentPath, entry.getUri());
-
-                            if (f.exists()) {
+                            final File file = new File(parentPath, entry.getUri());
+                            if (file.exists()) {
                                 PersistentWorkflowI work = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, security.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_FILE));
                                 EventMetaI ci = work.buildEvent();
 
                                 CatalogUtils.removeEntry(cat, entry);
-                                //update for file deletion
                                 CatalogUtils.writeCatalogToFile(cat, catFile);
+                                CatalogUtils.moveToHistory(catFile, file, (CatEntryBean) entry, ci);
 
-                                CatalogUtils.moveToHistory(catFile, f, (CatEntryBean) entry, ci);
-
-                                if (!isQueryVariableFalse("removeFiles") && !f.delete()) {
-                                    logger.warn("Error attempting to delete physical file for deleted resource: " + f.getAbsolutePath());
+                                if (!isQueryVariableFalse("removeFiles") && !file.delete()) {
+                                    logger.warn("Error attempting to delete physical file for deleted resource: " + file.getAbsolutePath());
                                 }
 
                                 //if parent folder is empty, then delete folder
-                                if (FileUtils.CountFiles(f.getParentFile(), true) == 0) {
-                                    FileUtils.DeleteFile(f.getParentFile());
+                                if (FileUtils.CountFiles(file.getParentFile(), true) == 0) {
+                                    FileUtils.DeleteFile(file.getParentFile());
                                 }
 
                                 CatalogUtils.populateStats(catResource, proj.getRootArchivePath());
                                 SaveItemHelper.authorizedSave(catResource, user, false, false, ci);
+                                deletedCount.getAndIncrement();
 
                                 WorkflowUtils.complete(work, ci);
                             } else {
                                 getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "File missing");
                             }
+                        }
+                        if (deletedCount.get() > 0 && StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getXSIType())) {
+                            XDAT.triggerXftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getStringProperty("ID"), XftItemEventI.DELETE);
                         }
                     } else {
                         getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "File is not an instance of XnatResourcecatalog. Delete operation not supported.");
@@ -632,7 +643,7 @@ public class FileList extends XNATCatalogTemplate {
                     // extend the folder name with scan type as long as it's not a tar (tar's have a 100 character limit)
                     if (!mt.equals(MediaType.APPLICATION_GNU_TAR) && !mt.equals(MediaType.APPLICATION_TAR) &&
                             row[5] != null && !row[5].equals("")) {
-                        // session types can have special characters that interfere with filepath creation, so those should be replaced with underscores
+                        // session types can have special characters that interfere with file-path creation, so those should be replaced with underscores
                         root += "_" + row[5].toString().replaceAll("[\\/\\\\:\\*\\?\"<>\\|]", "_");
                     }
                     root += "/";
@@ -664,9 +675,9 @@ public class FileList extends XNATCatalogTemplate {
 
                     if (file_content != null && file_content.length > 0) {
                         if (entry.getContent() == null) {
-                            if (!ArrayUtils.contains(file_content, "NULL")) return false;
+                            return ArrayUtils.contains(file_content, "NULL");
                         } else {
-                            if (!ArrayUtils.contains(file_content, entry.getContent())) return false;
+                            return ArrayUtils.contains(file_content, entry.getContent());
                         }
                     }
 
@@ -756,25 +767,25 @@ public class FileList extends XNATCatalogTemplate {
                 final String parentPath = catResource.getCatalogFile(rootArchivePath).getParent();
 
                 if (cat != null) {
-                    if (filepath == null || filepath.equals("")) {
+                    if (filePath == null || filePath.equals("")) {
                         table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
                     } else {
                         ArrayList<CatEntryI> entries = new ArrayList<>();
 
-                        CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(cat, filepath);
+                        CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(cat, filePath);
                         if (e != null) {
                             entries.add(e);
                         }
                         if (entries.size() == 0) {
-                            e = (CatEntryBean) CatalogUtils.getEntryById(cat, filepath);
+                            e = (CatEntryBean) CatalogUtils.getEntryById(cat, filePath);
                             if (e != null) {
                                 entries.add(e);
                             }
                         }
-                        if (entries.size() == 0 && filepath.endsWith("/")) {
+                        if (entries.size() == 0 && filePath.endsWith("/")) {
                         	//recursion is on by default
                         	final boolean recursive=!(this.isQueryVariableFalse("recursive"));
-                        	final String dir=filepath;
+                        	final String dir= filePath;
                             final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
@@ -789,9 +800,9 @@ public class FileList extends XNATCatalogTemplate {
             				};
                             entries.addAll(CatalogUtils.getEntriesByFilter(cat, folderFilter));
                         }
-                        if (entries.size() == 0 && filepath.endsWith("*")) {
-                            StringBuilder regex = new StringBuilder(filepath);
-                            int lastIndex = filepath.lastIndexOf("*");
+                        if (entries.size() == 0 && filePath.endsWith("*")) {
+                            StringBuilder regex = new StringBuilder(filePath);
+                            int lastIndex = filePath.lastIndexOf("*");
                             regex.replace(lastIndex, lastIndex + 1, ".*");
                             entries.addAll(CatalogUtils.getEntriesByRegex(cat, regex.toString()));
                         }
@@ -872,7 +883,7 @@ public class FileList extends XNATCatalogTemplate {
             setContentDisposition(downloadName + ".tar");
         }
 
-        if (StringUtils.isEmpty(filepath) && index == null) {
+        if (StringUtils.isEmpty(filePath) && index == null) {
             Hashtable<String, Object> params = new Hashtable<>();
             params.put("title", "Files");
 
@@ -968,7 +979,7 @@ public class FileList extends XNATCatalogTemplate {
             CatCatalogBean cat = catResource.getCleanCatalog(proj.getRootArchivePath(), includeRoot, null, null);
             String parentPath = catResource.getCatalogFile(proj.getRootArchivePath()).getParent();
 
-            if (StringUtils.isEmpty(filepath) && index == null) {
+            if (StringUtils.isEmpty(filePath) && index == null) {
                 String baseURI = getBaseURI();
 
                 if (cat != null) {
@@ -986,9 +997,7 @@ public class FileList extends XNATCatalogTemplate {
 
                         public boolean accept(CatEntryI entry) {
                             if (filter.accept(entry)) {
-                                if (index.equals(count++)) {
-                                    return true;
-                                }
+                                return index.equals(count++);
                             }
 
                             return false;
@@ -996,33 +1005,33 @@ public class FileList extends XNATCatalogTemplate {
 
                     });
                 } else {
-                    String lowercase = filepath.toLowerCase();
+                    String lowercase = filePath.toLowerCase();
 
                     for (String s : XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()) {
                         s = "." + s;
                         if (lowercase.contains(s + "!") || lowercase.contains(s + "/")) {
-                            zipEntry = filepath.substring(lowercase.indexOf(s) + s.length());
-                            filepath = filepath.substring(0, lowercase.indexOf(s) + s.length());
+                            zipEntry = filePath.substring(lowercase.indexOf(s) + s.length());
+                            filePath = filePath.substring(0, lowercase.indexOf(s) + s.length());
                             if (zipEntry.startsWith("!") || zipEntry.startsWith("/")) {
                                 zipEntry = zipEntry.substring(1);
                             }
                             break;
                         }
                     }
-                    entry = CatalogUtils.getEntryByURI(cat, filepath);
+                    entry = CatalogUtils.getEntryByURI(cat, filePath);
 
                     if (entry == null) {
-                        entry = CatalogUtils.getEntryById(cat, filepath);
+                        entry = CatalogUtils.getEntryById(cat, filePath);
                     }
                 }
 
-                if (entry == null && filepath.endsWith("/")) {
+                if (entry == null && filePath.endsWith("/")) {
                 	//if no exact matches, look for a folder
                 	String baseURI = getBaseURI();
 
                 	//recursion is on by default
                 	final boolean recursive=!(this.isQueryVariableFalse("recursive"));
-                	final String dir=filepath;
+                	final String dir= filePath;
                     final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
     					@Override
     					public boolean accept(CatEntryI entry) {
@@ -1038,7 +1047,7 @@ public class FileList extends XNATCatalogTemplate {
 
 
     				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
-    				if(filepath.endsWith("/")){
+    				if(filePath.endsWith("/")){
     					table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
     				}else{
                         getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
@@ -1123,7 +1132,7 @@ public class FileList extends XNATCatalogTemplate {
                 }
             }
         } else {
-            if (filepath == null || filepath.equals("")) {
+            if (filePath == null || filePath.equals("")) {
                 String baseURI = getBaseURI();
                 if (entryFilter == null) {
                     ArrayList<File> files = resource.getCorrespondingFiles(proj.getRootArchivePath());
@@ -1135,7 +1144,7 @@ public class FileList extends XNATCatalogTemplate {
                             row[2] = baseURI + "/resources/" + resource.getXnatAbstractresourceId() + "/files/" + subFile.getName();
                         } else if (locator.equalsIgnoreCase("absolutePath")) {
                             row[2] = subFile.getAbsolutePath();
-                        } else if (locator.equalsIgnoreCase("projectPath")) {
+                        } else {
                             row[2] = subFile.getAbsolutePath().substring(proj.getRootArchivePath().substring(0, proj.getRootArchivePath().lastIndexOf(proj.getId())).length());
                         }
                         row[3] = resource.getLabel();
@@ -1149,7 +1158,7 @@ public class FileList extends XNATCatalogTemplate {
             } else {
                 ArrayList<File> files = resource.getCorrespondingFiles(proj.getRootArchivePath());
                 for (File subFile : files) {
-                    if (subFile.getName().equals(filepath)) {
+                    if (subFile.getName().equals(filePath)) {
                         f = subFile;
                         break;
                     }
@@ -1259,16 +1268,10 @@ public class FileList extends XNATCatalogTemplate {
     }
 
     private FileRepresentation getFileRepresentation(File f, MediaType mt) {
-        FileRepresentation fr = null;
-        try {
-            fr = setFileRepresentation(f, mt);
-        } catch (IOException e) {
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Unable to return file as " + mt.getName());
-        }
-        return fr;
+        return setFileRepresentation(f, mt);
     }
 
-    private FileRepresentation setFileRepresentation(File f, MediaType mt) throws IOException {
+    private FileRepresentation setFileRepresentation(File f, MediaType mt) {
         setResponseHeader("Cache-Control", "must-revalidate");
         return representFile(f, mt);
     }

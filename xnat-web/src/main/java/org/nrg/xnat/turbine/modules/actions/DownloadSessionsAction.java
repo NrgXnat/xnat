@@ -14,6 +14,7 @@ import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.search.DisplayFieldWrapper;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.turbine.modules.actions.ListingAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 public class DownloadSessionsAction extends ListingAction {
@@ -59,10 +62,33 @@ public class DownloadSessionsAction extends ListingAction {
             throw new Exception("Missing expected ID display field.");
         }
 
+        final String projectId;
+        if (StringUtils.isBlank((String) TurbineUtils.GetPassedParameter("project", data))) {
+            projectId = getProjectIdFromSearch(search);
+        } else {
+            projectId = null;
+        }
+
         table.resetRowCursor();
         while (table.hasMoreRows()) {
+            if (StringUtils.isNotBlank(projectId)) {
+                data.getParameters().add("project", projectId);
+            }
             data.getParameters().add("sessions", (String) table.nextRowHash().get(sessionIdHeader));
         }
+    }
+
+    private String getProjectIdFromSearch(final DisplaySearch search) {
+        final String  rootElement = search.getRootElement().getFullXMLName();
+        final Pattern pattern = Pattern.compile(rootElement + ".(?!SUB)[A-z_]+_PROJECT_IDENTIFIER\\.[A-z0-9_]+");
+        for (final Object object : search.getFields().getSortedFields()) {
+            final DisplayFieldWrapper field   = (DisplayFieldWrapper) object;
+            final Matcher             matcher = pattern.matcher(field.getId());
+            if (matcher.matches()) {
+                return (String) field.getValue();
+            }
+        }
+        return null;
     }
 
     private String getSessionIdHeader(final XFTTable table) {

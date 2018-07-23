@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.services.messaging.file;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -16,15 +19,26 @@ import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.WorkflowUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@Component
+@Getter(PRIVATE)
+@Accessors(prefix = "_")
+@Slf4j
 public class MoveStoredFileRequestListener {
+    @Autowired
+    public void setUserProjectCache(final UserProjectCache cache) {
+        _cache = cache;
+    }
     @SuppressWarnings("unused")
     public void onRequest(final MoveStoredFileRequest request) {
         boolean success = true;
@@ -48,8 +62,10 @@ public class MoveStoredFileRequestListener {
 
         if (success)
             try {
-                if (StringUtils.isNotBlank(request.getProject())) {
-                    XDAT.triggerXftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, request.getProject(), XftItemEventI.UPDATE);
+                final String projectId = request.getProject();
+                if (StringUtils.isNotBlank(projectId)) {
+                    getCache().clearProjectCacheEntry(projectId);
+                    XDAT.triggerXftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, XftItemEventI.UPDATE);
                 }
                 WorkflowUtils.complete(wrk, wrk.buildEvent());
             } catch (Exception e) {
@@ -90,5 +106,5 @@ public class MoveStoredFileRequestListener {
         }
     }
 
-    private final static Logger log = LoggerFactory.getLogger(MoveStoredFileRequestListener.class);
+    private UserProjectCache _cache;
 }

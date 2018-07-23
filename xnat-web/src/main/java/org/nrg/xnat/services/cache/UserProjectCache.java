@@ -92,4 +92,15 @@ public interface UserProjectCache extends UserItemCache<XnatProjectdata> {
      * @return One or more projects that match the specified value.
      */
     List<XnatProjectdata> getByField(final UserI user, final String field, final String value);
+
+    /**
+     * Clears the cache entry for the project with the specified ID or alias. This is necessary in some cases
+     * when operations may cause a race condition before a cache entry can be updated.
+     *
+     * @param idOrAlias The ID or alias of the entry to clear.
+     *
+     * @return Returns true if the entry was successfully cleared, false if not (probably means entry wasn't
+     * found, which may be fine.)
+     */
+    boolean clearProjectCacheEntry(final String idOrAlias);
 }

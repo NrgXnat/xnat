@@ -52,6 +52,7 @@ import org.nrg.xnat.restlet.representations.JSONObjectRepresentation;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.services.messaging.file.MoveStoredFileRequest;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -359,6 +360,7 @@ public class FileList extends XNATCatalogTemplate {
                         }
 
                         final ResourceModifierA resourceModifier = buildResourceModifier(overwrite, um);
+                        final String            projectId               = proj.getId();
                         if (!async || StringUtils.isEmpty(reference)) {
                             final List<String>      duplicates       = resourceModifier.addFile(writers, resourceIdentifier, type, filePath, buildResourceInfo(um), extract);
                             if (!overwrite && duplicates.size() > 0) {
@@ -370,6 +372,10 @@ public class FileList extends XNATCatalogTemplate {
                             }
 
                             if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getXSIType())) {
+                                final UserProjectCache cache = XDAT.getContextService().getBeanSafely(UserProjectCache.class);
+                                if (cache != null) {
+                                    cache.clearProjectCacheEntry(projectId);
+                                }
                                 XDAT.triggerXftItemEvent(proj, XftItemEventI.UPDATE);
                             }
                         } else {
@@ -379,7 +385,7 @@ public class FileList extends XNATCatalogTemplate {
 
                             final MoveStoredFileRequest request;
                             if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, parent.getXSIType())) {
-                                request = new MoveStoredFileRequest(resourceModifier, resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filePath, buildResourceInfo(um), extract, proj.getId());
+                                request = new MoveStoredFileRequest(resourceModifier, resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filePath, buildResourceInfo(um), extract, projectId);
                             } else {
                                 request = new MoveStoredFileRequest(resourceModifier, resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filePath, buildResourceInfo(um), extract);
                             }

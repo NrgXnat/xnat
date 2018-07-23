@@ -50,7 +50,7 @@ public interface UserRoleService extends BaseHibernateService<UserRole> {
      * Creates the specified user role combo.
      * @param username    The username.
      * @param role    The role.
-     * @return created UserRole
+     * @return created UserRole, null if the role already exists.
      */
     UserRole addRoleToUser(final String username, final String role);
 

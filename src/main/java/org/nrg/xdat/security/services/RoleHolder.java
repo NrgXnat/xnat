@@ -52,12 +52,12 @@ public class RoleHolder {
         return _roleService.checkRole(user, role);
     }
 
-    public void addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
-        _roleService.addRole(authenticatedUser, user, role);
+    public boolean addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
+        return _roleService.addRole(authenticatedUser, user, role);
     }
 
-    public void deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
-        _roleService.deleteRole(authenticatedUser, user, role);
+    public boolean deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
+        return _roleService.deleteRole(authenticatedUser, user, role);
     }
 
     public boolean isSiteAdmin(final UserI user) {

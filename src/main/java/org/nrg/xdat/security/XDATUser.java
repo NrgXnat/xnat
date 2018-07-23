@@ -402,13 +402,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
-    public void deleteRole(final UserI authenticatedUser, final String role) throws Exception {
+    public boolean deleteRole(final UserI authenticatedUser, final String role) throws Exception {
         if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
             throw new Exception("Invalid permissions for user modification.");
         }
         if (deleteXftRole(authenticatedUser, role) || deleteUserRole(authenticatedUser, role)) {
             XDAT.triggerUserIEvent(getUsername(), XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_DELETE_ROLE, ROLE, role));
+            return true;
         }
+        return false;
     }
 
     private boolean deleteUserRole(final UserI authenticatedUser, final String role) throws Exception {
@@ -466,26 +468,30 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      *
      * @throws Exception When an error occurs.
      */
-    public void addRole(final UserI authenticatedUser, final String role) throws Exception {
+    public boolean addRole(final UserI authenticatedUser, final String role) throws Exception {
         final String username              = getUsername();
         final String authenticatedUsername = authenticatedUser.getUsername();
         if (StringUtils.isBlank(role)) {
             log.info("{} requested to add a blank role to user {}, can't do that.", authenticatedUsername, username);
-            return;
+            return false;
         }
         if (getUserRoleService().isUserRole(username, role)) {
             log.info("{} requested to add role {} to user {}, but that user already has that role.", authenticatedUsername, role, username);
-            return;
+            return false;
         }
         if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
             log.info("{} requested to add role {} to user {}, but is not an administrator and can't manage user roles.", authenticatedUsername, role, username);
             throw new InvalidPermissionException("Invalid permissions for user modification.");
         }
 
-        getUserRoleService().addRoleToUser(username, role);
-        final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + role + " role"));
-        PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-        XDAT.triggerUserIEvent(username, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_ADD_ROLE, ROLE, role));
+        final UserRole userRole = getUserRoleService().addRoleToUser(username, role);
+        if (userRole != null) {
+            final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + role + " role"));
+            PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+            XDAT.triggerUserIEvent(username, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_ADD_ROLE, ROLE, role));
+            return true;
+        }
+        return false;
     }
 
     private Set<String> loadRoleNames() {

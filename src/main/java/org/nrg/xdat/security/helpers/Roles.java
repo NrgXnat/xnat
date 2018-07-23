@@ -26,9 +26,15 @@ import java.util.Collection;
 @SuppressWarnings("ConstantConditions")
 @Slf4j
 public class Roles {
-    public static final String ROLE                  = "role";
-    public static final String OPERATION_ADD_ROLE    = "addRole";
-    public static final String OPERATION_DELETE_ROLE = "deleteRole";
+    public static final String ROLE                     = "role";
+    public static final String ROLES                    = "roles";
+    public static final String ADDED_ROLES              = "addedRoles";
+    public static final String DELETED_ROLES            = "deletedRoles";
+    public static final String OPERATION_ADD_ROLE       = "addRole";
+    public static final String OPERATION_ADD_ROLES      = "addRoles";
+    public static final String OPERATION_DELETE_ROLE    = "deleteRole";
+    public static final String OPERATION_DELETE_ROLES   = "deleteRoles";
+    public static final String OPERATION_MODIFIED_ROLES = "modifiedRoles";
 
     public static Collection<RoleDefinitionI> getRoles() {
         return getRoleRepositoryService().getRoles();
@@ -38,12 +44,12 @@ public class Roles {
         return getRoleService().checkRole(user, role);
     }
 
-    public static void deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        getRoleService().deleteRole(authenticatedUser, user, role);
+    public static boolean deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception {
+        return getRoleService().deleteRole(authenticatedUser, user, role);
     }
 
-    public static void addRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        getRoleService().addRole(authenticatedUser, user, role);
+    public static boolean addRole(UserI authenticatedUser, UserI user, String role) throws Exception {
+        return getRoleService().addRole(authenticatedUser, user, role);
     }
 
     public static boolean isSiteAdmin(UserI user) {

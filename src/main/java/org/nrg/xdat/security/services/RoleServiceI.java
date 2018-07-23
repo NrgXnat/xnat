@@ -18,9 +18,9 @@ public interface RoleServiceI {
 
     boolean checkRole(final UserI user, final String role);
 
-    void addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
+    boolean addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
 
-    void deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
+    boolean deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception;
 
     Collection<String> getRoles(UserI user);
 

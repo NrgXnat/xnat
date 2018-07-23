@@ -41,13 +41,13 @@ public class RoleServiceImpl implements RoleServiceI {
     }
 
     @Override
-    public void addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
-        ((XDATUser) user).addRole(authenticatedUser, role);
+    public boolean addRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
+        return ((XDATUser) user).addRole(authenticatedUser, role);
     }
 
     @Override
-    public void deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
-        ((XDATUser) user).deleteRole(authenticatedUser, role);
+    public boolean deleteRole(final UserI authenticatedUser, final UserI user, final String role) throws Exception {
+        return ((XDATUser) user).deleteRole(authenticatedUser, role);
     }
 
     @Override

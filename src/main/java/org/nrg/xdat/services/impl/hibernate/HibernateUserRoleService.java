@@ -9,8 +9,7 @@
 
 package org.nrg.xdat.services.impl.hibernate;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.UserRoleDAO;
 import org.nrg.xdat.entities.UserRole;
@@ -18,9 +17,11 @@ import org.nrg.xdat.services.UserRoleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.validation.ConstraintViolationException;
 import java.util.List;
 
 @Service
+@Slf4j
 public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole, UserRoleDAO> implements UserRoleService {
     /**
      * Finds all roles for the specified user
@@ -32,6 +33,7 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
     public List<UserRole> findRolesForUser(final String username){
     	return getDao().findByUser(username);
     }
+
     /**
      * Finds all users for the specified role.
      * @param role    The role to match.
@@ -55,36 +57,33 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
     }
 
     @Override
+    @Transactional
     public boolean isUserRole(final String username, final String role) {
-        return false;
+        return findUserRole(username, role) != null;
     }
 
     @Override
     @Transactional
     public UserRole addRoleToUser(final String username, final String role) {
-        UserRole token = newEntity();
-        token.setUsername(username);
-        token.setRole(role);
-        getDao().create(token);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Created new role " + token.getRole() + " for user: " + token.getUsername());
+        try {
+            if (!isUserRole(username, role)) {
+                final UserRole userRole = create(username, role);
+                log.debug("Created new role {} for user: {}", role, username);
+                return userRole;
+            }
+        } catch (ConstraintViolationException e) {
+            log.warn("Got a constraint violation exception trying to add the role {} to user '{}', in spite of checking that that role didn't already exist.", role, username, e);
         }
-        return token;
+        return null;
     }
 
     @Override
     @Transactional
     public void delete(final String username, final String role) {
-        UserRole ur = getDao().findByUserRole(username, role);
-        if (ur != null) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Deleting user role: " + username + " " + role);
-            }
-            getDao().delete(ur);
+        final UserRole userRole = findUserRole(username, role);
+        if (userRole != null) {
+            log.debug("Deleting user role: {} {}", username, role);
+            getDao().delete(userRole);
         }
     }
-
-    private static final Log _log = LogFactory.getLog(HibernateUserRoleService.class);
-
-
 }

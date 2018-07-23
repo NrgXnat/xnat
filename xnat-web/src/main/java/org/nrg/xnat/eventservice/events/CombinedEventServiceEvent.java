@@ -110,7 +110,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     }
 
     @Override
-    public Boolean providesPayloadSignature() { return false;}
+    public Boolean serializablePayload() { return false;}
 
     @Override
     public String getPayloadSignature() {return null;}

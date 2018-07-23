@@ -63,4 +63,6 @@ public interface EventService {
     List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
+
+    List<String> getRecentTriggers(Integer count);
 }

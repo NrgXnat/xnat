@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
@@ -74,6 +75,7 @@ public class EventServiceImpl implements EventService {
     private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
     private Configuration jaywayConf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+    private List<String> recentTriggers = new ArrayList<>();
 
     @Autowired
     public EventServiceImpl(ContextService contextService,
@@ -338,17 +340,25 @@ public class EventServiceImpl implements EventService {
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event, String projectId) {
+        String payloadSignature = null;
         try {
+            payloadSignature = event.getPayloadSignature();
+        } catch (Throwable e) {
+            log.error("Exception extracting payload signature from " + event.getDisplayName() + "\n" + e.getMessage());
+        }
+        try{
             EventSignature eventSignature = EventSignature.builder()
                     .eventType(event.getType())
                     .projectId(projectId)
                     .status(event.getCurrentStatus() != null ?  event.getCurrentStatus().name() : null)
+                    .payload(payloadSignature)
                     .build();
             String eventKey = mapper.writeValueAsString(eventSignature);
             eventBus.notify(eventKey, Event.wrap(event));
+            recentTriggers.add(eventKey);
             log.debug("Fired EventService Event for Label: " + eventKey);
         } catch (Throwable e) {
-            log.error("Exception Triggering Event", e.getMessage());
+            log.error("Exception Triggering Event: " + e.getMessage());
         }
     }
 
@@ -476,6 +486,15 @@ public class EventServiceImpl implements EventService {
         return eventPropertyService.generateJsonPathFilter(nodeFilters);
     }
 
+    @Override
+    public List<String> getRecentTriggers(Integer count) {
+        if(count != null && count > 0 && recentTriggers != null && !recentTriggers.isEmpty()) {
+            return recentTriggers.stream().limit(count).collect(Collectors.toList());
+        } else {
+            return recentTriggers;
+        }
+    }
+
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
         return SimpleEvent.builder()
                     .id(event.getType() == null ? "" : event.getType())
@@ -489,7 +508,7 @@ public class EventServiceImpl implements EventService {
                       .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                       .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                       .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
-                      .payloadSignature(event.providesPayloadSignature() ? event.getPayloadSignature() : null)
+                      .payloadSignature(event.serializablePayload() ? event.getPayloadSignature() : null)
                       .build();
     }
 

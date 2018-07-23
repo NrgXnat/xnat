@@ -15,6 +15,7 @@ public abstract class EventSignature {
     @JsonProperty("event-type")   public abstract String eventType();
     @Nullable @JsonProperty("project-id") public abstract String projectId();
     @Nullable @JsonProperty("status")     public abstract String status();
+    @Nullable @JsonProperty("payload")    public abstract String payload();
 
 
 
@@ -22,11 +23,13 @@ public abstract class EventSignature {
 
     public static EventSignature create(@JsonProperty("event-type")   String eventType,
                                         @Nullable @JsonProperty("project-id") String projectId,
-                                        @JsonProperty("status")     String status) {
+                                        @JsonProperty("status")     String status,
+                                        @JsonProperty("payload")    String payload) {
         return builder()
                 .eventType(eventType)
                 .projectId(projectId)
                 .status(status)
+                .payload(payload)
                 .build();
     }
 
@@ -39,6 +42,8 @@ public abstract class EventSignature {
         public abstract Builder projectId(String projectId);
 
         public abstract Builder status(String status);
+
+        public abstract Builder payload(String payload);
 
         public abstract EventSignature build();
     }

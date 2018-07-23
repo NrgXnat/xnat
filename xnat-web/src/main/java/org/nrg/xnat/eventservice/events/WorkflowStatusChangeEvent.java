@@ -3,11 +3,11 @@ package org.nrg.xnat.eventservice.events;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.event.XnatEventServiceEvent;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -25,8 +25,7 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
     final String displayName = "Workflow Status Change";
     final String description = "XNAT Workflow status change detected.";
 
-    @Autowired
-    private ObjectMapper mapper;
+    final ObjectMapper mapper = XDAT.getContextService().getBeanSafely(ObjectMapper.class);
 
     public WorkflowStatusChangeEvent() {}
 
@@ -58,13 +57,13 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
     }
 
     @Override
-    public Boolean providesPayloadSignature() { return true;}
+    public Boolean serializablePayload() { return true;}
 
     @Override
     public String getPayloadSignature() {
         String payloadJson = null;
         try {
-            if (getObject() != null && mapper.canSerialize(getObject().getClass())) {
+            if (getObject() != null && mapper != null && mapper.canSerialize(getObject().getClass())) {
                 log.debug("Serializing WorkflowStatusChangeEvent payload.");
                 payloadJson = mapper.writeValueAsString(getObject());
             }

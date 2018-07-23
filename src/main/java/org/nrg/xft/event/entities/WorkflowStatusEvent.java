@@ -9,8 +9,7 @@
 
 package org.nrg.xft.event.entities;
 
-import java.util.Map;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.event.AutomationEvent;
@@ -22,6 +21,8 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 
+import java.util.Map;
+
 /**
  * The Class WorkflowStatusEvent.
  */
@@ -32,6 +33,7 @@ public class WorkflowStatusEvent extends AutomationEvent {
 	private static final long serialVersionUID = 7465778737330635218L;
 	
 	/** The workflow. */
+	@JsonIgnore
 	PersistentWorkflowI workflow;
 	
 	/** The status. */

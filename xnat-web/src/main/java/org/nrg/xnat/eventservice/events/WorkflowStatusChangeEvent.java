@@ -1,8 +1,13 @@
 package org.nrg.xnat.eventservice.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -12,14 +17,23 @@ import java.util.stream.Collectors;
 @Service
 @XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
 public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<WorkflowStatusChangeEvent, WorkflowStatusEvent> {
+    private static final Logger log = LoggerFactory.getLogger(WorkflowStatusChangeEvent.class);
+
+
     public enum Status {CHANGED}
 
     final String displayName = "Workflow Status Change";
     final String description = "XNAT Workflow status change detected.";
 
-    public WorkflowStatusChangeEvent(){};
+    @Autowired
+    private ObjectMapper mapper;
 
-    public WorkflowStatusChangeEvent(final WorkflowStatusEvent payload, final String eventUser, final WorkflowStatusChangeEvent.Status status, final String projectId) {
+    public WorkflowStatusChangeEvent() {}
+
+    ;
+
+    public WorkflowStatusChangeEvent(final WorkflowStatusEvent payload, final String eventUser,
+                                     final WorkflowStatusChangeEvent.Status status, final String projectId) {
         super(payload, eventUser, status, projectId);
     }
 
@@ -41,5 +55,22 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
     @Override
     public EventServiceListener getInstance() {
         return new WorkflowStatusChangeEvent();
+    }
+
+    @Override
+    public Boolean providesPayloadSignature() { return true;}
+
+    @Override
+    public String getPayloadSignature() {
+        String payloadJson = null;
+        try {
+            if (getObject() != null && mapper.canSerialize(getObject().getClass())) {
+                log.debug("Serializing WorkflowStatusChangeEvent payload.");
+                payloadJson = mapper.writeValueAsString(getObject());
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize WorkflowStatusChangeEvent payload.\n" + e.getMessage());
+        }
+        return payloadJson;
     }
 }

@@ -489,6 +489,7 @@ public class EventServiceImpl implements EventService {
                       .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                       .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                       .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
+                      .payloadSignature(event.providesPayloadSignature() ? event.getPayloadSignature() : null)
                       .build();
     }
 

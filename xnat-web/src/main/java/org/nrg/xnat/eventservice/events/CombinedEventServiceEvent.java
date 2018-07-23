@@ -110,6 +110,12 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     }
 
     @Override
+    public Boolean providesPayloadSignature() { return false;}
+
+    @Override
+    public String getPayloadSignature() {return null;}
+
+    @Override
     public void accept(Event<EventT> event){
         if( event.getData() instanceof EventServiceEvent) {
             this.eventDetectedTimestamp = new Date();

@@ -398,7 +398,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * the role from the old XFT structure and the new Hibernate structure.
      *
      * @param authenticatedUser The user requesting the role deletion.
-     * @param role             The role to be deleted.
+     * @param role              The role to be deleted.
      *
      * @throws Exception When an error occurs.
      */
@@ -407,7 +407,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             throw new Exception("Invalid permissions for user modification.");
         }
         if (deleteXftRole(authenticatedUser, role) || deleteUserRole(authenticatedUser, role)) {
-            XDAT.triggerXftItemEvent(this, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_DELETE_ROLE, ROLE, role));
+            XDAT.triggerUserIEvent(getUsername(), XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_DELETE_ROLE, ROLE, role));
         }
     }
 
@@ -462,28 +462,30 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * to the old XFT structure and the new Hibernate structure.
      *
      * @param authenticatedUser The user requesting the role addition.
-     * @param role             The role to be added.
+     * @param role              The role to be added.
      *
      * @throws Exception When an error occurs.
      */
     public void addRole(final UserI authenticatedUser, final String role) throws Exception {
+        final String username              = getUsername();
+        final String authenticatedUsername = authenticatedUser.getUsername();
         if (StringUtils.isBlank(role)) {
-            log.info("{} requested to add a blank role to user {}, can't do that.", authenticatedUser.getUsername(), getUsername());
+            log.info("{} requested to add a blank role to user {}, can't do that.", authenticatedUsername, username);
             return;
         }
-        if (getUserRoleService().isUserRole(getUsername(), role)) {
-            log.info("{} requested to add role {} to user {}, but that user already has that role.", authenticatedUser.getUsername(), role, getUsername());
+        if (getUserRoleService().isUserRole(username, role)) {
+            log.info("{} requested to add role {} to user {}, but that user already has that role.", authenticatedUsername, role, username);
             return;
         }
         if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
-            log.info("{} requested to add role {} to user {}, but is not an administrator and can't manage user roles.", authenticatedUser.getUsername(), role, getUsername());
+            log.info("{} requested to add role {} to user {}, but is not an administrator and can't manage user roles.", authenticatedUsername, role, username);
             throw new InvalidPermissionException("Invalid permissions for user modification.");
         }
 
-        getUserRoleService().addRoleToUser(getUsername(), role);
+        getUserRoleService().addRoleToUser(username, role);
         final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user", this.getStringProperty("xdat_user_id"), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + role + " role"));
         PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-        XDAT.triggerXftItemEvent(this, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_ADD_ROLE, ROLE, role));
+        XDAT.triggerUserIEvent(username, XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_ADD_ROLE, ROLE, role));
     }
 
     private Set<String> loadRoleNames() {
@@ -1160,10 +1162,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private static final long serialVersionUID = -8144623503683531831L;
 
-    private final Set<String>                           _roleNames                 = new HashSet<>();
-    private final List<XdatStoredSearch>                _storedSearches            = new ArrayList<>();
-    private final Set<GrantedAuthority>                 _authorities               = new HashSet<>();
-    private final Map<String, ArrayList<ItemI>>         _userSessionCache          = new HashMap<>();
+    private final Set<String>                   _roleNames        = new HashSet<>();
+    private final List<XdatStoredSearch>        _storedSearches   = new ArrayList<>();
+    private final Set<GrantedAuthority>         _authorities      = new HashSet<>();
+    private final Map<String, ArrayList<ItemI>> _userSessionCache = new HashMap<>();
 
     private boolean                   extended                   = false;
     private boolean                   rolesNotUpdatedFromService = true;

@@ -1,37 +1,24 @@
 /*
  * core: org.nrg.xdat.services.impl.hibernate.HibernateUserRoleService
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2018, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-/**
- * H2AliasTokenService
- * (C) 2012 Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD License
- *
- * Created on 4/17/12 by rherri01
- */
 package org.nrg.xdat.services.impl.hibernate;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.UserRoleDAO;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.services.UserRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole, UserRoleDAO> implements UserRoleService {

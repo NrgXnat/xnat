@@ -81,8 +81,9 @@ public class RoleServiceImpl implements RoleServiceI {
                                                        "  xrt.role_name " +
                                                        "FROM xdat_user u " +
                                                        "  LEFT JOIN xdat_r_xdat_role_type_assign_xdat_user u2r ON u.xdat_user_id = u2r.xdat_user_xdat_user_id " +
-                                                       "  LEFT JOIN xdat_role_type xrt on u2r.xdat_role_type_role_name = xrt.role_name " +
-                                                       "WHERE" +
+                                                       "  LEFT JOIN xdat_role_type xrt ON u2r.xdat_role_type_role_name = xrt.role_name " +
+                                                       "WHERE " +
+                                                       "  xrt.role_name IS NOT NULL AND " +
                                                        "  u.login = :username";
     private static final String QUERY_USER_HAS_ROLE  = "SELECT EXISTS(" + QUERY_ROLES_FOR_USER + " AND xrt.role_name = :role)";
 

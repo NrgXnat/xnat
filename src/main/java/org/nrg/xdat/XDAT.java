@@ -39,6 +39,7 @@ import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
@@ -564,6 +565,10 @@ public class XDAT implements Initializable, Configurable{
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
 		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).properties(properties).build());
+	}
+
+	public static void triggerUserIEvent(final String username, final String action, final Map<String, ?> properties) {
+		triggerEvent(XftItemEvent.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).id(username).action(action).properties(properties).build());
 	}
 
 	public static void triggerXftItemEvent(final XFTItem item, final String action, final Map<String, ?> properties) {

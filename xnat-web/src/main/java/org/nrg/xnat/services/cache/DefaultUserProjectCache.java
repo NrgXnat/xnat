@@ -318,6 +318,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     @Override
+    public boolean clearProjectCacheEntry(final String idOrAlias) {
+        return evictProjectCache(idOrAlias);
+    }
+
+    @Override
     protected boolean handleEventImpl(final XftItemEventI event) {
         final String xsiType = event.getXsiType();
         switch (xsiType) {
@@ -439,24 +444,51 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     private boolean handleUserEvent(final XftItemEventI event) {
         final String         username   = event.getId();
         final Map<String, ?> properties = event.getProperties();
         final String         operation  = (String) properties.get(OPERATION);
-        final String         role       = (String) properties.get(ROLE);
+        final boolean        addedAdmin;
+        final boolean        deletedAdmin;
 
         switch (operation) {
             case OPERATION_ADD_ROLE:
-                if (StringUtils.equals(ROLE_ADMINISTRATOR, role)) {
-                    _siteAdmins.add(username);
-                }
+                addedAdmin = StringUtils.equals(ROLE_ADMINISTRATOR, (String) properties.get(ROLE));
+                deletedAdmin = false;
+                break;
+
+            case OPERATION_ADD_ROLES:
+                addedAdmin = ((List<String>) properties.get(ROLES)).contains(ROLE_ADMINISTRATOR);
+                deletedAdmin = false;
                 break;
 
             case OPERATION_DELETE_ROLE:
-                if (StringUtils.equals(ROLE_ADMINISTRATOR, role)) {
-                    _siteAdmins.remove(username);
-                }
+                addedAdmin = false;
+                deletedAdmin = StringUtils.equals(ROLE_ADMINISTRATOR, (String) properties.get(ROLE));
                 break;
+
+            case OPERATION_DELETE_ROLES:
+                addedAdmin = false;
+                deletedAdmin = ((List<String>) properties.get(ROLES)).contains(ROLE_ADMINISTRATOR);
+                break;
+
+            case OPERATION_MODIFIED_ROLES:
+                final List<String> addedRoles = (List<String>) properties.get(ADDED_ROLES);
+                final List<String> deletedRoles = (List<String>) properties.get(DELETED_ROLES);
+                addedAdmin = addedRoles != null && addedRoles.contains(ROLE_ADMINISTRATOR);
+                deletedAdmin = deletedRoles != null && deletedRoles.contains(ROLE_ADMINISTRATOR);
+                break;
+
+            default:
+                addedAdmin = false;
+                deletedAdmin = false;
+        }
+        if (addedAdmin) {
+            _siteAdmins.add(username);
+        }
+        if (deletedAdmin) {
+            _siteAdmins.remove(username);
         }
         return false;
     }
@@ -484,13 +516,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         initializeProjectCache(projectId);
     }
 
-    private void evictProjectCache(final String projectId) {
+    private boolean evictProjectCache(final String projectId) {
         final ProjectCache projectCache = getCachedProjectCache(projectId);
         if (projectCache == null || projectCache.getProject() == null) {
             log.info("No cache found for the project '{}', nothing much to be done.", projectId);
+            return false;
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
             evict(projectId);
+            return true;
         }
     }
 

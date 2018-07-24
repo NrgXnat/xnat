@@ -132,13 +132,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
 
-                final boolean hasAllDataAccess    = Groups.hasAllDataAccess(user);
-                final String  assessorsQueryToUse = hasAllDataAccess ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
+                final boolean hasProjectDataAccess = Groups.hasAllDataAccess(user) || Permissions.isProjectPublic(projectId);
+                final String  assessorsQueryToUse  = hasProjectDataAccess ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
                 context.put("assessors", Lists.transform(_parameterized.query(assessorsQueryToUse, new HashMap<String, Object>() {{
                     put("sessionIds", sessionsUserCanAccess);
-                    if (!hasAllDataAccess) {
-                        put("userId", user.getID());
-                    }
+                    put("userId", user.getID());
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {

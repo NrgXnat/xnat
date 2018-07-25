@@ -35,7 +35,7 @@ public class InitializingTaskException extends Exception {
         return _level;
     }
 
-    enum Level {
+    public enum Level {
         RequiresInitialization,
         SingleNotice,
         Info,

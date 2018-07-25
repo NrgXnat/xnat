@@ -1,0 +1,10 @@
+{
+    "name": "New Subject",
+    "active": true,
+    "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+    "event-filter": {
+        "event-type": "org.nrg.xnat.eventservice.services.SubjectEvent",
+        "status": "CREATED"
+    },
+    "act-as-event-user": false
+}

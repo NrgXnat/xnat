@@ -18,7 +18,7 @@ public abstract class EventFilterCreator {
     @Nullable @JsonProperty("status")       public abstract String status();
 
     // ** Post-detection filter components ** //
-    @Nullable @JsonProperty("json-path-filter") public abstract String jsonPathFilter();
+    @Nullable @JsonProperty("payload-filter") public abstract String jsonPathFilter();
     @Nullable @JsonProperty("filter-nodes")     public abstract Map<String, JsonPathFilterNode> nodeFilters();
 
 
@@ -31,7 +31,7 @@ public abstract class EventFilterCreator {
             @JsonProperty("event-type")            String eventType,
             @Nullable @JsonProperty("project-ids") List<String> projectIds,
             @Nullable @JsonProperty("status")      String status,
-            @Nullable @JsonProperty("json-path-filter") String jsonPathFilter,
+            @Nullable @JsonProperty("payload-filter") String jsonPathFilter,
             @Nullable @JsonProperty("filter-nodes")     Map<String, JsonPathFilterNode> nodeFilters) {
         return builder()
                 .name(name)

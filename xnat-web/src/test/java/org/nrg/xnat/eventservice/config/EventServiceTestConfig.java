@@ -73,8 +73,8 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService){
-        return new SubscriptionDeliveryEntityServiceImpl(eventService);
+    public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService, final @Lazy EventSubscriptionEntityService eventSubscriptionService){
+        return new SubscriptionDeliveryEntityServiceImpl(eventService, eventSubscriptionService);
     }
 
     @Bean
@@ -175,5 +175,6 @@ public class EventServiceTestConfig {
     public ScanEvent scanArchiveEvent() {return new ScanEvent();}
     @Bean
     public SessionEvent sessionArchiveEvent() {return new SessionEvent();}
-
+    @Bean
+    public WorkflowStatusChangeEvent workflowStatusChangeEvent() {return new WorkflowStatusChangeEvent();}
 }

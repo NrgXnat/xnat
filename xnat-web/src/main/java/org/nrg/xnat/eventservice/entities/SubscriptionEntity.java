@@ -1,21 +1,11 @@
 package org.nrg.xnat.eventservice.entities;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.eventservice.model.Subscription;
 
-import javax.annotation.Nonnull;
-import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
+import javax.persistence.*;
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +30,16 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
     private Boolean actAsEventUser;
     private String subscriptionOwner;
     private List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities;
+    private Integer registration;
 
-    public SubscriptionEntity(String name, Boolean active, String listenerRegistrationKey, String customListenerId, String actionKey, Map<String, String> attributes, EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser, String subscriptionOwner, List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities) {
+
+    public SubscriptionEntity(String name, Boolean active, String listenerRegistrationKey,
+                              String customListenerId, String actionKey,
+                              Map<String, String> attributes,
+                              EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser,
+                              String subscriptionOwner,
+                              List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities,
+                              Integer registration) {
         this.name = name;
         this.active = active;
         this.listenerRegistrationKey = listenerRegistrationKey;
@@ -52,46 +50,48 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.actAsEventUser = actAsEventUser;
         this.subscriptionOwner = subscriptionOwner;
         this.subscriptionDeliveryEntities = subscriptionDeliveryEntities;
+        this.registration = registration;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SubscriptionEntity)) return false;
         if (!super.equals(o)) return false;
         SubscriptionEntity that = (SubscriptionEntity) o;
-        return java.util.Objects.equals(name, that.name) &&
-                java.util.Objects.equals(active, that.active) &&
-                java.util.Objects.equals(listenerRegistrationKey, that.listenerRegistrationKey) &&
-                java.util.Objects.equals(customListenerId, that.customListenerId) &&
-                java.util.Objects.equals(actionKey, that.actionKey) &&
-                java.util.Objects.equals(attributes, that.attributes) &&
-                java.util.Objects.equals(eventServiceFilterEntity, that.eventServiceFilterEntity) &&
-                java.util.Objects.equals(actAsEventUser, that.actAsEventUser) &&
-                java.util.Objects.equals(subscriptionOwner, that.subscriptionOwner) &&
-                java.util.Objects.equals(subscriptionDeliveryEntities, that.subscriptionDeliveryEntities);
+        return Objects.equal(name, that.name) &&
+                Objects.equal(active, that.active) &&
+                Objects.equal(listenerRegistrationKey, that.listenerRegistrationKey) &&
+                Objects.equal(customListenerId, that.customListenerId) &&
+                Objects.equal(actionKey, that.actionKey) &&
+                Objects.equal(attributes, that.attributes) &&
+                Objects.equal(eventServiceFilterEntity, that.eventServiceFilterEntity) &&
+                Objects.equal(actAsEventUser, that.actAsEventUser) &&
+                Objects.equal(subscriptionOwner, that.subscriptionOwner) &&
+                Objects.equal(subscriptionDeliveryEntities, that.subscriptionDeliveryEntities) &&
+                Objects.equal(registration, that.registration);
     }
 
     @Override
     public int hashCode() {
-
-        return java.util.Objects.hash(super.hashCode(), name, active, listenerRegistrationKey, customListenerId, actionKey, attributes, eventServiceFilterEntity, actAsEventUser, subscriptionOwner, subscriptionDeliveryEntities);
+        return Objects.hashCode(super.hashCode(), name, active, listenerRegistrationKey, customListenerId, actionKey, attributes, eventServiceFilterEntity, actAsEventUser, subscriptionOwner, subscriptionDeliveryEntities, registration);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("name", name)
-                .add("active", active)
-                .add("listenerRegistrationKey", listenerRegistrationKey)
-                .add("customListenerId", customListenerId)
-                .add("actionKey", actionKey)
-                .add("attributes", attributes)
-                .add("eventServiceFilterEntity", eventServiceFilterEntity)
-                .add("actAsEventUser", actAsEventUser)
-                .add("subscriptionOwner", subscriptionOwner)
-                .add("subscriptionDeliveryEntities", subscriptionDeliveryEntities)
-                .toString();
+        return "SubscriptionEntity{" +
+                "name='" + name + '\'' +
+                ", active=" + active +
+                ", listenerRegistrationKey='" + listenerRegistrationKey + '\'' +
+                ", customListenerId='" + customListenerId + '\'' +
+                ", actionKey='" + actionKey + '\'' +
+                ", attributes=" + attributes +
+                ", eventServiceFilterEntity=" + eventServiceFilterEntity +
+                ", actAsEventUser=" + actAsEventUser +
+                ", subscriptionOwner='" + subscriptionOwner + '\'' +
+                ", subscriptionDeliveryEntities=" + subscriptionDeliveryEntities +
+                ", registration=" + registration +
+                '}';
     }
 
     public String getName() { return name; }
@@ -133,10 +133,12 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.subscriptionDeliveryEntities = subscriptionDeliveryEntities;
     }
 
+    @Transient
     public static SubscriptionEntity fromPojo(final Subscription subscription) {
         return fromPojoWithTemplate(subscription, new SubscriptionEntity());
     }
 
+    @Transient
     public static SubscriptionEntity fromPojoWithTemplate(final Subscription subscription, final SubscriptionEntity template) {
         if(template==null) {
             return fromPojo(subscription);
@@ -148,41 +150,16 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         template.active = subscription.active() != null ? subscription.active() : (template.active == null ? true : template.active);
         template.listenerRegistrationKey = subscription.listenerRegistrationKey() != null ? subscription.listenerRegistrationKey() : template.listenerRegistrationKey;
         template.customListenerId = subscription.customListenerId() != null ? subscription.customListenerId() : template.customListenerId;
-        template.actionKey = subscription.actionKey() != null ? subscription.actionKey() :template.actionKey;
+        template.actionKey = subscription.actionKey() != null ? subscription.actionKey() : template.actionKey;
         template.attributes = subscription.attributes() != null ? subscription.attributes() : template.attributes;
         template.eventServiceFilterEntity = subscription.eventFilter() != null ? EventServiceFilterEntity.fromPojo(subscription.eventFilter()) : template.eventServiceFilterEntity;
         template.actAsEventUser = subscription.actAsEventUser() != null ? subscription.actAsEventUser() : template.actAsEventUser;
         template.subscriptionOwner = subscription.subscriptionOwner() != null ? subscription.subscriptionOwner() : template.subscriptionOwner;
+        template.registration = subscription.registration() != null ? subscription.registration().hashCode() : (template.registration != null ? template.registration : 0);
+
         return template;
     }
 
-    @Transient
-    public Subscription toPojo() {
-        return Subscription.builder()
-                           .id(this.getId())
-                           .name(this.name)
-                           .active(this.active)
-                           .listenerRegistrationKey(this.listenerRegistrationKey)
-                           .customListenerId(this.customListenerId)
-                           .actionKey(this.actionKey)
-                           .attributes(this.attributes)
-                           .eventFilter(eventServiceFilterEntity != null ? eventServiceFilterEntity.toPojo() : null)
-                           .actAsEventUser(this.actAsEventUser)
-                           .subscriptionOwner(this.subscriptionOwner)
-                           .build();
-    }
-
-    @Nonnull
-    @Transient
-    static public List<Subscription> toPojo(final List<SubscriptionEntity> subscriptionEntities) {
-        List<Subscription> subscriptions = new ArrayList<>();
-        if(subscriptionEntities!= null) {
-            for (SubscriptionEntity subscriptionEntity : subscriptionEntities) {
-                subscriptions.add(subscriptionEntity.toPojo());
-            }
-        }
-        return subscriptions;
-    }
 
     public Boolean getActive() {
         return active;
@@ -212,4 +189,11 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
 
     public void setSubscriptionOwner(String subscriptionOwner) { this.subscriptionOwner = subscriptionOwner; }
 
+    public Integer getRegistration() {
+        return registration;
+    }
+
+    public void setRegistration(Integer registration) {
+        this.registration = registration;
+    }
 }

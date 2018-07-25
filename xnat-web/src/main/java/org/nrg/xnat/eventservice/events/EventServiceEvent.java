@@ -21,10 +21,10 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     String getPayloadXnatType();
      // Is the value returned by getPayloadXnatType() a known xsi type?
     Boolean isPayloadXsiType();
-    // Event is expected to be instantiated with JSON representation of (at least some of) the payload object
-    Boolean serializablePayload();
+    // Event is expected to be triggered with JSON representation of (at least some of) the payload object
+    Boolean filterablePayload();
     // JSON String representation of payload - used for Reactor filtering
-    String getPayloadSignature();
+    Object getPayloadSignatureObject();
     // Get the user triggering the event
     String getUser();
      // Get the time of event triggering

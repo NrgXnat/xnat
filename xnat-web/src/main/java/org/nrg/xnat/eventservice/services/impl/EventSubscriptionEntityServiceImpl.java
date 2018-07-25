@@ -1,9 +1,16 @@
 package org.nrg.xnat.eventservice.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.jayway.jsonpath.Filter;
+import com.google.common.collect.Sets;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -33,16 +40,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.registry.Registration;
+import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
+import reactor.bus.selector.Selectors;
+import reactor.fn.Consumer;
+import reactor.fn.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.Transient;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-
-import static reactor.bus.selector.JsonPathSelector.J;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -79,28 +92,36 @@ public class EventSubscriptionEntityServiceImpl
         this.userManagementService = userManagementService;
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         log.debug("EventSubscriptionService started normally.");
+
+        configureJsonPath();
     }
 
+    private void configureJsonPath() {
+        // Set the default JayWay JSONPath configuration
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new JacksonJsonProvider();
+            private final MappingProvider mappingProvider = new JacksonMappingProvider();
+
+            @Override
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            @Override
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            @Override
+            public Set<Option> options() {
+                return Sets.newHashSet(Option.SUPPRESS_EXCEPTIONS);
+            }
+        });
+    }
 
     @Override
     public Subscription validate(Subscription subscription) throws SubscriptionValidationException {
-        if(subscription.eventFilter() == null){
-            log.error("Missing EventFilter on subscription ", subscription.name());
-            throw new SubscriptionValidationException("Missing Event Filter");
-        }
-        if(!Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
-            String jsonPathFilter = subscription.eventFilter().jsonPathFilter();
-            try {
-                JsonPath compile = JsonPath.compile(jsonPathFilter);
-                if(compile == null) {
-                    log.error("Could not compile jsonPath filter: " + jsonPathFilter);
-                    throw new SubscriptionValidationException("Could not compile jsonPath filter: " + jsonPathFilter);
-                }
-                } catch (Throwable e) {
-                log.error("Could not compile jsonPath filter: " + jsonPathFilter, e.getMessage());
-                throw new SubscriptionValidationException("Could not compile jsonPath filter: " + jsonPathFilter + e.getMessage());
-            }
-        }
         UserI actionUser = null;
         try {
             actionUser = userManagementService.getUser(subscription.subscriptionOwner());
@@ -147,6 +168,36 @@ public class EventSubscriptionEntityServiceImpl
             log.error(listenerErrorMessage + "\n" + e.getMessage());
             throw new SubscriptionValidationException(listenerErrorMessage + "\n" + e.getMessage());
         }
+        // ** Validate event filter ** //
+        if (subscription.eventFilter() == null) {
+            log.error("Missing EventFilter on subscription ", subscription.name());
+            throw new SubscriptionValidationException("Missing Event Filter");
+        } else {
+            try {
+                log.debug("Validating event filter contents.\n" + subscription.eventFilter().toString());
+                String payloadJsonPath = buildPayloadJsonPath(subscription, componentManager.getEvent(eventType));
+                if(!Strings.isNullOrEmpty(payloadJsonPath) && JsonPath.compile(payloadJsonPath) == null){
+                    log.error("Could not build JsonPath filter for payload: " + payloadJsonPath);
+                    throw new SubscriptionValidationException("Could not build JsonPath filter for Reactor: " + payloadJsonPath);
+                }
+                if (!Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
+                    if(subscription.eventFilter().jsonPathFilter().startsWith("$") || subscription.eventFilter().jsonPathFilter().contains("$[?")){
+                        log.error("Payload JsonPath filter contains $ or $[?. Filter string should include only predicate path." + "\n" + subscription.eventFilter().jsonPathFilter());
+                        throw new SubscriptionValidationException("\"Payload JsonPath filter contains $ or $[?. Filter string should include only predicate path.\"");
+                    }
+                    String jsonPathFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+                        if (JsonPath.compile(jsonPathFilter) == null) {
+                            log.error("Could not compile jsonPath filter: " + jsonPathFilter);
+                            throw new SubscriptionValidationException("Could not compile jsonPath filter: " + jsonPathFilter);
+                        }
+                }
+            } catch (Throwable e) {
+                log.error("Could not compile jsonPath filter." + e.getMessage());
+                throw new SubscriptionValidationException("Could not compile jsonPath filter. " +  e.getMessage());
+            }
+
+        }
+
         try {
             // Check that Action is valid and service is accessible
             EventServiceActionProvider provider = actionManager.getActionProviderByKey(subscription.actionKey());
@@ -174,6 +225,8 @@ public class EventSubscriptionEntityServiceImpl
             }
             String eventType = subscription.eventFilter().eventType();
             Class<?> eventClazz = Class.forName(eventType);
+            EventServiceEvent event = componentManager.getEvent(eventType);
+
             EventServiceListener listener = null;
             // Is a custom listener defined and valid
             if(!Strings.isNullOrEmpty(subscription.customListenerId())){
@@ -186,20 +239,17 @@ public class EventSubscriptionEntityServiceImpl
             if(listener != null) {
                 EventServiceListener uniqueListener = listener.getInstance();
                 uniqueListener.setEventService(eventService);
-                Filter jsonPathReactorFilter;
-                jsonPathReactorFilter = EventFilter.builder().
-                        eventType(eventType).projectIds(subscription.eventFilter().projectIds()).status(subscription.eventFilter().status()).build()
-                        .buildReactorFilter();
-
-                //Selector selector = R(eventFilterRegexMatcher);
-                Selector selector = J("$.[?]", jsonPathReactorFilter);
-                log.debug("Building Reactor JSONPath Selector on matcher: " + jsonPathReactorFilter.toString());
-                Registration registration = eventBus.on(selector, uniqueListener);
+                Predicate predicate = new SubscriptionPredicate(subscription);
+                Selector predicateSelector = Selectors.predicate(predicate);
+                Registration registration = eventBus.on(predicateSelector, uniqueListener);
                 log.debug("Activated Reactor Registration: " + registration.hashCode() + "  RegistrationKey: " + (uniqueListener.getInstanceId() == null ? "" : uniqueListener.getInstanceId().toString()));
+                log.debug("Selector:\n" + ((SubscriptionPredicate) predicate).subscription.toString());
                 subscription = subscription.toBuilder()
                                            .listenerRegistrationKey(uniqueListener.getInstanceId() == null ? "" : uniqueListener.getInstanceId().toString())
                                            .active(true)
+                                           .registration(registration)
                                            .build();
+
             } else {
                 log.error("Could not activate subscription:" + Long.toString(subscription.id()) + ". No appropriate listener found.");
                 throw new SubscriptionValidationException("Could not activate subscription. No appropriate listener found.");
@@ -208,14 +258,23 @@ public class EventSubscriptionEntityServiceImpl
             log.debug("Updated subscription: " + subscription.name() + " with registration key: " + subscription.listenerRegistrationKey());
 
         }
-        catch (SubscriptionValidationException | ClassNotFoundException | NotFoundException e) {
+        catch (Throwable e) {
             log.error("Event subscription failed for " + subscription.toString());
             log.error(e.getMessage());
         }
         return subscription;
     }
 
+    private String buildPayloadJsonPath(Subscription subscription, EventServiceEvent event){
+        String payloadJsonPath = null;
+        if(event.filterablePayload() && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())){
+            log.debug("Creating payload filter for Reactor Selector:");
+            payloadJsonPath = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+            log.debug("Final JSONPath Payload Filter : " + payloadJsonPath);
+        }
+        return payloadJsonPath;
 
+    }
 
     @Override
     public Subscription deactivate(@Nonnull Subscription subscription) throws NotFoundException, EntityNotFoundException{
@@ -229,7 +288,11 @@ public class EventSubscriptionEntityServiceImpl
             if(entity != null && entity.getId() != 0) {
                 entity.setActive(false);
                 entity.setListenerRegistrationKey(null);
-                deactivatedSubscription = entity.toPojo();
+                if(subscription.registration() != null) {
+                    subscription.registration().cancel();
+                    entity.setRegistration(null);
+                }
+                deactivatedSubscription = toPojo(entity);
                 update(entity);
                 log.debug("Deactivated subscription:" + Long.toString(subscription.id()));
             }
@@ -237,7 +300,7 @@ public class EventSubscriptionEntityServiceImpl
                 log.error("Failed to deactivate subscription - no entity found for id:" + Long.toString(subscription.id()));
                 throw new EntityNotFoundException("Could not retrieve EventSubscriptionEntity from id: " + subscription.id());
             }
-        } catch(NotFoundException|EntityNotFoundException e){
+        } catch(Throwable e){
             log.error("Failed to deactivate subscription.\n" + e.getMessage());
 
         }
@@ -355,12 +418,12 @@ public class EventSubscriptionEntityServiceImpl
     @Override
     public List<Subscription> getSubscriptionsByKey(String key) throws NotFoundException {
         List<SubscriptionEntity> subscriptionEntities = getDao().findByKey(key);
-        return SubscriptionEntity.toPojo(getDao().findByKey(key));
+        return toPojo(getDao().findByKey(key));
     }
 
     @Override
     public Subscription getSubscription(Long id) throws NotFoundException {
-        Subscription subscription = super.get(id).toPojo();
+        Subscription subscription = toPojo(super.get(id));
         try {
             subscription = validate(subscription).toBuilder().valid(true).validationMessage(null).build();
         } catch (SubscriptionValidationException e) {
@@ -383,7 +446,7 @@ public class EventSubscriptionEntityServiceImpl
             uniqueName += Strings.isNullOrEmpty(actionName) ? "Action" : actionName;
             uniqueName += " on ";
             uniqueName += Strings.isNullOrEmpty(eventName) ? "Event" : eventName;
-            uniqueName += " " + status;
+            uniqueName += status != null ? (" " + status) : "";
             uniqueName += " for ";
             uniqueName += forProject;
 
@@ -402,10 +465,6 @@ public class EventSubscriptionEntityServiceImpl
         return uniqueName;
     }
 
-    private Subscription toPojo(final SubscriptionEntity eventSubscriptionEntity) {
-        return eventSubscriptionEntity == null ? null : eventSubscriptionEntity.toPojo();
-    }
-
     private SubscriptionEntity fromPojo(final Subscription eventSubscription) {
         return eventSubscription == null ? null : SubscriptionEntity.fromPojo(eventSubscription);
     }
@@ -417,6 +476,106 @@ public class EventSubscriptionEntityServiceImpl
         return SubscriptionEntity.fromPojoWithTemplate(eventSubscription, retrieve(eventSubscription.id()));
     }
 
+    private Registration loadReactorRegistration(@Nonnull Integer registrationHash){
+        Registry<Object, Consumer<? extends Event<?>>> consumerRegistry = eventBus.getConsumerRegistry();
+        Iterator<Registration<Object, ? extends Consumer<? extends Event<?>>>> registrationIterator = consumerRegistry.iterator();
+        while(registrationIterator.hasNext()){
+            Registration registration = registrationIterator.next();
+            if(registration.hashCode() == registrationHash){
+                return registration;
+            }
+        }
+        return null;
+    }
 
+    @Transient
+    @Override
+    public Subscription toPojo(SubscriptionEntity entity) {
+        return Subscription.builder()
+                           .id(entity.getId())
+                           .name(entity.getName())
+                           .active(entity.getActive())
+                           .listenerRegistrationKey(entity.getListenerRegistrationKey())
+                           .customListenerId(entity.getCustomListenerId())
+                           .actionKey(entity.getActionKey())
+                           .attributes(entity.getAttributes())
+                           .eventFilter(entity.getEventServiceFilterEntity() != null ? entity.getEventServiceFilterEntity().toPojo() : null)
+                           .actAsEventUser(entity.getActAsEventUser())
+                           .subscriptionOwner(entity.getSubscriptionOwner())
+                           .registration(entity.getRegistration() == null ?
+                                   null :
+                                   loadReactorRegistration(entity.getRegistration())
+                           )
+                           .build();
+    }
+
+    @Nonnull
+    @Transient
+    @Override
+    public List<Subscription> toPojo(final List<SubscriptionEntity> subscriptionEntities) {
+        List<Subscription> subscriptions = new ArrayList<>();
+        if(subscriptionEntities!= null) {
+            for (SubscriptionEntity subscriptionEntity : subscriptionEntities) {
+                subscriptions.add(this.toPojo(subscriptionEntity));
+            }
+        }
+        return subscriptions;
+    }
+
+    class SubscriptionPredicate implements Predicate<Object> {
+        Subscription subscription;
+        private Configuration subscriptionConf = Configuration.defaultConfiguration()
+                    .addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
+        public SubscriptionPredicate(Subscription subscription) {
+            this.subscription = subscription;
+        }
+
+        @Override
+        public boolean test(Object object) {
+            if(object == null || !(object instanceof EventServiceEvent)){
+                return false;
+            }
+            try{
+                EventServiceEvent event = (EventServiceEvent) object;
+                EventFilter filter = subscription.eventFilter();
+                if(filter == null) {
+                    log.error("Subscription: " + subscription.name() +" Event Filter object is null - event cannot be detected without a filter.");
+                    return false;
+                }
+                // Check for exclusion based on event type
+                if (Strings.isNullOrEmpty(filter.eventType()) || !filter.eventType().contentEquals(event.getType())){
+                    return false;
+                }
+                // Check for exclusion based on status
+                if(!Strings.isNullOrEmpty(filter.status()) &&
+                        !filter.status().contentEquals(event.getCurrentStatus() != null ?  event.getCurrentStatus().name() : "")) {
+                    return false;
+                }
+                // Check for exclusion based on project id
+                if (filter.projectIds() != null && !filter.projectIds().isEmpty() &&
+                        filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId()))){
+                    return false;
+                }
+                // Check for exclusion based on payload filter (if available)
+                if(!Strings.isNullOrEmpty(filter.jsonPathFilter()) && event.filterablePayload() && event.getPayloadSignatureObject() != null) {
+                    try {
+                        String payloadSignature = mapper.writeValueAsString(event.getPayloadSignatureObject());
+                        String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+                        List<String> filterResult = JsonPath.using(subscriptionConf).parse(payloadSignature).read(jsonFilter);
+                        if(filterResult.isEmpty()) {
+                            return false;
+                        }
+                    } catch (JsonProcessingException e){
+                        log.error("Exception attempting to filter EventService event on serialized payload.");
+                        return false;
+                    }
+                }
+            } catch (Throwable e){
+                log.error("Exception thrown attempting to test Reactor key in SubscriptionPredicate.test \n" + e.getMessage());
+                return false;
+            }
+            return true;
+        }
+    }
 
 }

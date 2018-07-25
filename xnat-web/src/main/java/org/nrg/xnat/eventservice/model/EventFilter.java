@@ -8,6 +8,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.jayway.jsonpath.Criteria;
 import com.jayway.jsonpath.Filter;
+import com.jayway.jsonpath.Predicate;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nullable;
@@ -25,7 +26,7 @@ public abstract class EventFilter {
     @Nullable @JsonProperty("status")     public abstract String status();
 
     // ** Post-detection filter components ** //
-    @Nullable @JsonProperty("json-path-filter") public abstract String jsonPathFilter();
+    @Nullable @JsonProperty("payload-filter") public abstract String jsonPathFilter();
     @Nullable @JsonProperty("filter-nodes") public abstract Map<String, JsonPathFilterNode> nodeFilters();
 
 
@@ -45,7 +46,7 @@ public abstract class EventFilter {
     //   "project-ids":"ProjectId1",
     //   "status":"CREATED"
     // }
-    public Filter buildReactorFilter(){
+    public Filter  buildReactorFilter(){
         Criteria criteria = Criteria.where("event-type").exists(true).and("event-type").is(eventType());
         if(projectIds() != null && !projectIds().isEmpty() &&
                 !(projectIds().size() > 0 && (projectIds().get(0) == "" || projectIds().get(0) == null))) {
@@ -54,6 +55,7 @@ public abstract class EventFilter {
         if(status() != null){
             criteria = criteria.and("status").exists(true).and("status").is(status());
         }
+
         return Filter.filter(criteria);
     }
 
@@ -85,7 +87,7 @@ public abstract class EventFilter {
                                      @JsonProperty("event-type")            String eventType,
                                      @Nullable @JsonProperty("project-ids") List<String> projectIds,
                                      @Nullable @JsonProperty("status")      String status,
-                                     @Nullable @JsonProperty("json-path-filter") String jsonPathFilter,
+                                     @Nullable @JsonProperty("payload-filter") String jsonPathFilter,
                                      @Nullable @JsonProperty("filter-nodes")     Map<String, JsonPathFilterNode> nodeFilters) {
         return EventFilter.builder()
                 .id(id)

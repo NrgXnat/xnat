@@ -147,6 +147,7 @@ public class EventServiceFilterEntity {
     public void setNodeFilterString(String nodeFilterString) {
         this.nodeFilterString = nodeFilterString;
     }
+
     public String getJsonPathFilter() {
         return jsonPathFilter;
     }
@@ -154,6 +155,7 @@ public class EventServiceFilterEntity {
     public void setJsonPathFilter(String jsonPathFilter) {
         this.jsonPathFilter = jsonPathFilter;
     }
+
     @Transient
     public EventFilter toPojo() {
         EventFilter eventFilter = EventFilter.builder()

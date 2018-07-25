@@ -52,7 +52,6 @@ public interface EventService {
     void reactivateAllSubscriptions();
 
     void triggerEvent(EventServiceEvent event);
-    void triggerEvent(EventServiceEvent event, String projectId);
 
 
     void processEvent(EventServiceListener listener, Event event);

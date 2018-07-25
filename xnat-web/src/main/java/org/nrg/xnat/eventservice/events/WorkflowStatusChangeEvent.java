@@ -1,6 +1,5 @@
 package org.nrg.xnat.eventservice.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.XDAT;
@@ -57,19 +56,18 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
     }
 
     @Override
-    public Boolean serializablePayload() { return true;}
+    public Boolean filterablePayload() { return true;}
 
     @Override
-    public String getPayloadSignature() {
-        String payloadJson = null;
+    public Object getPayloadSignatureObject() {
+        Object payloadSignatureObject = null;
         try {
             if (getObject() != null && mapper != null && mapper.canSerialize(getObject().getClass())) {
-                log.debug("Serializing WorkflowStatusChangeEvent payload.");
-                payloadJson = mapper.writeValueAsString(getObject());
+                payloadSignatureObject = getObject();
             }
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize WorkflowStatusChangeEvent payload.\n" + e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to return WorkflowStatusChangeEvent payload signature.\n" + e.getMessage());
         }
-        return payloadJson;
+        return payloadSignatureObject;
     }
 }

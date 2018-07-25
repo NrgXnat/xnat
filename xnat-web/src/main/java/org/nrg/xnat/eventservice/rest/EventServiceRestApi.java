@@ -71,6 +71,13 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         this.eventService = eventService;
     }
 
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/triggers/{count}"}, method = GET, produces = JSON)
+    @ApiOperation(value = "Get recent Event Service triggers.")
+    @ResponseBody
+    public List<String> getRecentTriggers(final @PathVariable Integer count) {
+        return eventService.getRecentTriggers(count);
+    }
+
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST)
     @ApiOperation(value = "Create a Subscription", code = 201)
     public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription,

@@ -8,10 +8,13 @@ import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.model.Subscription;
 
+import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.Transient;
 import java.util.List;
 
 public interface EventSubscriptionEntityService extends BaseHibernateService<SubscriptionEntity>{
+
 
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription validate(Subscription eventSubscription) throws SubscriptionValidationException;
@@ -28,4 +31,11 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     List<Subscription> getSubscriptions(String projectId);
     List<Subscription> getSubscriptionsByKey(String key) throws NotFoundException;
     Subscription getSubscription(Long id) throws NotFoundException;
+
+    @Transient
+    Subscription toPojo(SubscriptionEntity entity);
+
+    @Nonnull
+    @Transient
+    List<Subscription> toPojo(List<SubscriptionEntity> subscriptionEntities);
 }

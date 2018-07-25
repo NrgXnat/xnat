@@ -25,7 +25,7 @@ public abstract class SimpleEvent {
     @JsonProperty("is-xsi-type") public abstract boolean isXsiType();
     @Nullable @JsonProperty("filter-nodes") public abstract Map<String, JsonPathFilterNode> nodeFilters();
     @Nullable @JsonProperty("event-properties") public abstract List<EventPropertyNode> eventProperties();
-    @JsonIgnore @Nullable @JsonProperty("payload-signature") public abstract String payloadSignature();
+    @JsonIgnore @Nullable @JsonProperty("payload-signature") public abstract Object payloadSignature();
 
 
     public static SimpleEvent create(@JsonProperty("id") String id,
@@ -76,7 +76,7 @@ public abstract class SimpleEvent {
 
         public abstract Builder eventProperties(List<EventPropertyNode> eventProperties);
 
-        public abstract Builder payloadSignature(String payloadSignature);
+        public abstract Builder payloadSignature(Object payloadSignature);
 
         public abstract SimpleEvent build();
     }

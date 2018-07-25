@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import reactor.bus.registry.Registration;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Null;
@@ -29,6 +30,7 @@ public abstract class Subscription {
     @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
     @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
+    @Nullable @JsonIgnore @JsonProperty("registration") public abstract Registration registration();
 
 
     public static Builder builder() {
@@ -45,17 +47,10 @@ public abstract class Subscription {
         return this.toBuilder().valid(true).validationMessage("").build();
     }
 
-    @JsonCreator
-    public static Subscription create(@JsonProperty("id") final Long id,
-                                      @Nullable @JsonProperty("name") final String name,
-                                      @JsonProperty("active") final Boolean active,
-                                      @JsonProperty("registration-key") final String listenerRegistrationKey,
-                                      @Nullable @JsonProperty("custom-listener-id") String customListenerId,
-                                      @JsonProperty("action-key") final String actionKey,
-                                      @Nullable @JsonProperty("attributes") final Map<String, String> attributes,
-                                      @JsonProperty("event-filter") final EventFilter eventFilter,
-                                      @JsonProperty("act-as-event-user") final Boolean actAsEventUser,
-                                      @JsonProperty("subscription-owner") final String subscriptionOwner) {
+    public static Subscription create(Long id, String name, Boolean active, String listenerRegistrationKey,
+                                      String customListenerId, String actionKey, Map<String, String> attributes,
+                                      EventFilter eventFilter, Boolean actAsEventUser, String subscriptionOwner,
+                                      Boolean valid, String validationMessage) {
         return builder()
                 .id(id)
                 .name(name)
@@ -67,6 +62,8 @@ public abstract class Subscription {
                 .eventFilter(eventFilter)
                 .actAsEventUser(actAsEventUser)
                 .subscriptionOwner(subscriptionOwner)
+                .valid(valid)
+                .validationMessage(validationMessage)
                 .build();
     }
 
@@ -141,6 +138,8 @@ public abstract class Subscription {
         public abstract Builder valid(Boolean valid);
 
         public abstract Builder validationMessage(String validationMessage);
+
+        public abstract Builder registration(Registration registration);
 
         public abstract Subscription build();
     }

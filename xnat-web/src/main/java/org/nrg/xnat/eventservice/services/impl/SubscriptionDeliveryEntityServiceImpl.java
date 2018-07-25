@@ -10,6 +10,7 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +35,12 @@ public class SubscriptionDeliveryEntityServiceImpl
 
     private static final Logger log = LoggerFactory.getLogger(SubscriptionDeliveryEntityService.class);
     private EventService eventService;
+    private EventSubscriptionEntityService eventSubscriptionEntityService;
 
     @Autowired
-    public SubscriptionDeliveryEntityServiceImpl(@Lazy EventService eventService) {
+    public SubscriptionDeliveryEntityServiceImpl(@Lazy EventService eventService, @Lazy EventSubscriptionEntityService eventSubscriptionEntityService) {
         this.eventService = eventService;
+        this.eventSubscriptionEntityService = eventSubscriptionEntityService;
     }
 
     @Override
@@ -124,7 +127,7 @@ public class SubscriptionDeliveryEntityServiceImpl
                 .actionInputs(entity.getActionInputs())
                 .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
                 .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
-                .subscription(entity.getSubscription().toPojo())
+                .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
                 .build();
         try{
             subscriptionDelivery = subscriptionDelivery.toBuilder()

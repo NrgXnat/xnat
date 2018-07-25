@@ -63,6 +63,16 @@ public class SampleEvent implements EventServiceEvent {
     }
 
     @Override
+    public Boolean filterablePayload() {
+        return false;
+    }
+
+    @Override
+    public String getPayloadSignatureObject() {
+        return null;
+    }
+
+    @Override
     public String getUser() {
         return eventUser;
     }

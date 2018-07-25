@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -75,7 +76,7 @@ public class EventServiceImpl implements EventService {
     private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
     private Configuration jaywayConf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
-    private List<String> recentTriggers = new ArrayList<>();
+    private List<EventServiceEvent> recentTriggers = new ArrayList<>();
 
     @Autowired
     public EventServiceImpl(ContextService contextService,
@@ -332,31 +333,10 @@ public class EventServiceImpl implements EventService {
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event) {
-        String projectId = event.getProjectId();
-        // TODO: Extract project id from event payload
-        triggerEvent(event, projectId);
-    }
-
-    @Async
-    @Override
-    public void triggerEvent(EventServiceEvent event, String projectId) {
-        String payloadSignature = null;
-        try {
-            payloadSignature = event.getPayloadSignature();
-        } catch (Throwable e) {
-            log.error("Exception extracting payload signature from " + event.getDisplayName() + "\n" + e.getMessage());
-        }
         try{
-            EventSignature eventSignature = EventSignature.builder()
-                    .eventType(event.getType())
-                    .projectId(projectId)
-                    .status(event.getCurrentStatus() != null ?  event.getCurrentStatus().name() : null)
-                    .payload(payloadSignature)
-                    .build();
-            String eventKey = mapper.writeValueAsString(eventSignature);
-            eventBus.notify(eventKey, Event.wrap(event));
-            recentTriggers.add(eventKey);
-            log.debug("Fired EventService Event for Label: " + eventKey);
+            log.debug("Firing EventService Event for Label: " + event.toString());
+            eventBus.notify(event, Event.wrap(event));
+            recentTriggers.add(event);
         } catch (Throwable e) {
             log.error("Exception Triggering Event: " + e.getMessage());
         }
@@ -417,7 +397,7 @@ public class EventServiceImpl implements EventService {
                                 subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
                                 return;
                             } else {
-                                String jsonFilter = subscription.eventFilter().jsonPathFilter();
+                                String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
                                 List<String> filterResult = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
                                 String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
                                 if (filterResult.isEmpty()) {
@@ -488,11 +468,27 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<String> getRecentTriggers(Integer count) {
-        if(count != null && count > 0 && recentTriggers != null && !recentTriggers.isEmpty()) {
-            return recentTriggers.stream().limit(count).collect(Collectors.toList());
+        List<EventServiceEvent> triggerEvents;
+        if (count != null && count > 0 && recentTriggers != null && !recentTriggers.isEmpty()) {
+            triggerEvents = Lists.reverse(recentTriggers).stream().limit(count).collect(Collectors.toList());
         } else {
-            return recentTriggers;
+            triggerEvents = Lists.reverse(recentTriggers);
         }
+        List<String> triggers = new ArrayList<>();
+        try {
+            for (EventServiceEvent event : triggerEvents) {
+                EventSignature eventSignature = EventSignature.builder()
+                                                              .eventType(event.getType())
+                                                              .projectId(Strings.isNullOrEmpty(event.getProjectId()) ? null : event.getProjectId())
+                                                              .status(event.getCurrentStatus() != null ? event.getCurrentStatus().name() : null)
+                                                              .payload(event.filterablePayload() ? event.getPayloadSignatureObject() : null)
+                                                              .build();
+                triggers.add(mapper.writeValueAsString(eventSignature));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return triggers;
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
@@ -508,7 +504,7 @@ public class EventServiceImpl implements EventService {
                       .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                       .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                       .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
-                      .payloadSignature(event.serializablePayload() ? event.getPayloadSignature() : null)
+                      .payloadSignature(event.filterablePayload() ? event.getPayloadSignatureObject() : null)
                       .build();
     }
 

@@ -5,6 +5,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
@@ -17,6 +18,7 @@ import java.util.Set;
 @Slf4j
 @Entity
 @Table
+@Audited
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ArchiveProcessorInstance extends AbstractHibernateEntity {
     public ArchiveProcessorInstance(){

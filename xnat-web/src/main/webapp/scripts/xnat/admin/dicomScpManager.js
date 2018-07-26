@@ -198,6 +198,7 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="aeTitle"]').val(item.aeTitle);
                     $form.find('[name="port"]').val(item.port);
                     $form.find('[name="enabled"]').val(item.enabled);
+                    $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
                 }
 
                 spawneri.render($container);

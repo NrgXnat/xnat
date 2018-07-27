@@ -79,7 +79,6 @@ var XNAT = getObject(XNAT||{});
         }
         return /^(https:)/.test(docUrl) ? 'https:' : 'http:'
     };
-
     url.protocol = url.getProtocol();
 
     url.getDomain = function(){
@@ -106,6 +105,13 @@ var XNAT = getObject(XNAT||{});
         }
         return url.getProtocol() + '//' + url.getDomain() + url.getPort(':') + rootUrl(_url);
     };
+
+    // use this to generate a download protocol for the XNAT Desktop Client
+    function xnatUrl(_url){
+        var xprotocol = (url.getProtocol() === 'https:') ? 'xnats:' : 'xnat:';
+        return xprotocol + '//' + url.getDomain() + rootUrl(_url);
+    }
+    url.xnatUrl = xnatUrl;
 
     // better encodeURIComponent() that catches
     // these additional characters: !'()*

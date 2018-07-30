@@ -28,7 +28,6 @@
             </button>
             #addGlobalCustomScreens("xnat_imageScanData/scanActions")
         </div>
-        <span class="clear clearfix"></span>
     </div>
     #set($scanAssessors =$!om.getScanAssessors())
     <script type="text/javascript">

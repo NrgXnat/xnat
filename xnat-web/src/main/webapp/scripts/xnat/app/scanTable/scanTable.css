@@ -54,6 +54,7 @@
     content: "\f0d7";
     float: right;
     font-size: 11px;
+    line-height: 11px; 
     margin-right: 9px;
     margin-top: 2px;
 }

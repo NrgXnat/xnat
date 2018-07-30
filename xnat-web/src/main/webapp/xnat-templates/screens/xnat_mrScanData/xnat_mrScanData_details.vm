@@ -3,187 +3,153 @@
 
 <table class="xnat-table alt1 compact rows-only scan-details" style="border: none;">
     <tr>
-        <td></td>
-        <td>Image</td>
+        <th>Image</th>
         <td align="left">
             #scanSnapshotImage($content $om $scan)
         </td>
     </tr>
     #if($scan.getProperty("quality"))
         <tr>
-            <td></td>
-            <td>Quality</td>
+            <th>Quality</th>
             <td align="left">#escapeProperty("quality")</td>
         </tr>
     #end
     #if($scan.getProperty("condition"))
         <tr>
-            <td></td>
-            <td>Condition</td>
+            <th>Condition</th>
             <td align="left">#escapeProperty("condition")</td>
         </tr>
     #end
     #if($scan.getProperty("series_description"))
         <tr>
-            <td></td>
-            <td>Series Desc</td>
+            <th>Series Desc</th>
             <td align="left">#escapeProperty("series_description")</td>
         </tr>
     #end
     #if($scan.getProperty("modality"))
         <tr>
-            <td></td>
-            <td>Modality</td>
+            <th>Modality</th>
             <td align="left">#escapeProperty("modality")</td>
         </tr>
     #end
     #if($scan.getProperty("frames"))
         <tr>
-            <td></td>
-            <td>Frames</td>
+            <th>Frames</th>
             <td align="left">#escapeProperty("frames")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.imageType"))
         <tr>
-            <td></td>
-            <td>Image Type</td>
+            <th>Image Type</th>
             <td align="left">#escapeProperty("parameters.imageType")</td>
         </tr>
     #end
     #if($scan.getProperty("coil"))
         <tr>
-            <td></td>
-            <td>Coil</td>
+            <th>Coil</th>
             <td align="left">#escapeProperty("coil")</td>
         </tr>
     #end
     #if($scan.getProperty("fieldStrength"))
         <tr>
-            <td></td>
-            <td>Field Strength</td>
+            <th>Field Strength</th>
             <td align="left">#escapeProperty("fieldStrength")</td>
         </tr>
     #end
     #if($!scan.getProperty("parameters.voxelRes.x") || $!scan.getProperty("parameters.voxelRes.y") || $!scan.getProperty("parameters.voxelRes.z"))
         <tr>
-            <td></td>
-            <td>Vox. Res.</td>
+            <th>Vox. Res.</th>
             <td align="left">#escapeProperty("parameters.voxelRes.x"), #escapeProperty("parameters.voxelRes.y"), #escapeProperty("parameters.voxelRes.z")</td>
         </tr>
     #end
     #if($!scan.getProperty("parameters.fov.x") || $!scan.getProperty("parameters.fov.y"))
         <tr>
-            <td></td>
-            <td>FOV</td>
+            <th>FOV</th>
             <td align="left">#escapeProperty("parameters.fov.x") &times; #escapeProperty("parameters.fov.y")</td>
         </tr>
     #end
     #if($!scan.getProperty("parameters.matrix.x") || $!scan.getProperty("parameters.matrix.y"))
         <tr>
-            <td></td>
-            <td>Matrix</td>
+            <th>Matrix</th>
             <td align="left">#escapeProperty("parameters.matrix.x") &times; #escapeProperty("parameters.matrix.y")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.partitions"))
         <tr>
-            <td></td>
-            <td>Part.</td>
+            <th>Part.</th>
             <td align="left">#escapeProperty("parameters.partitions")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.tr"))
         <tr>
-            <td></td>
-            <td>TR</td>
+            <th>TR</th>
             <td align="left">#escapeProperty("parameters.tr")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.te"))
         <tr>
-            <td></td>
-            <td>TE</td>
+            <th>TE</th>
             <td align="left">#escapeProperty("parameters.te")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.ti"))
         <tr>
-            <td></td>
-            <td>TI</td>
+            <th>TI</th>
             <td align="left">#escapeProperty("parameters.ti")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.flip"))
         <tr>
-            <td></td>
-            <td>Flip</td>
+            <th>Flip</th>
             <td align="left">#escapeProperty("parameters.flip")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.sequence"))
         <tr>
-            <td></td>
-            <td>Sequence</td>
+            <th>Sequence</th>
             <td align="left">#escapeProperty("parameters.sequence")</td>
         </tr>
     #end
     #if($scan.getProperty("parameters.origin"))
         <tr>
-            <td></td>
-            <td>Origin</td>
+            <th>Origin</th>
             <td align="left">#escapeProperty("parameters.origin")</td>
         </tr>
     #end
     #if($scan.getProperty("note"))
         <tr>
-            <td></td>
-            <td>Note</td>
+            <th>Note</th>
             <td align="left">#escapeProperty("note")</td>
         </tr>
     #end
     #if($scan.getProperty("validation.status"))
         <tr>
-            <td></td>
-            <td>Validity</td>
+            <th>Validity</th>
             <td align="left">#escapeHTML($!scan.getStringProperty("validation.status"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.method"))
         <tr>
-            <td></td>
-            <td>Validation Method</td>
+            <th>Validation Method</th>
             <td align="left">#escapeHTML($!scan.getStringProperty("validation.method"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.date"))
         <tr>
-            <td></td>
-            <td>Validation Date</td>
+            <th>Validation Date</th>
             <td align="left">#escapeHTML($!scan.getStringProperty("validation.date"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.notes"))
         <tr>
-            <td></td>
-            <td>Validation Notes</td>
+            <th>Validation Notes</th>
             <td align="left">#escapeHTML($!scan.getStringProperty("validation.notes"))</td>
-        </tr>
-    #end
-
-    #if($scan.getUid())
-        <tr>
-            <td></td>
-            <td colspan="2">
-                <a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a>
-            </td>
         </tr>
     #end
 
     #foreach($addP in $scan.getParameters_addparam())
         <tr>
-            <td></td>
-            <td>$!addP.getName()</td>
+            <th>$!addP.getName()</th>
             <td align="left">#escapeHTML($!addP.getAddfield())</td>
         </tr>
     #end
@@ -197,9 +163,8 @@
             #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
             #if($scanById)
                 <tr>
-                    <td></td>
-                    <td><a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeHTML($!scanAssessor.getHeader()):</a>
-                    </td>
+                    <th><a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeHTML($!scanAssessor.getHeader()):</a>
+                    </th>
                     <td border=0 style="font-weight:bold; text-align:left;" NOWRAP>
                         $!scanAssessor.getScanById($scanID).getSummary()
                     </td>
@@ -208,5 +173,14 @@
         #end
     #end
     #parse("screens/defacing_qc.vm")
+    
+    #if($scan.getUid())
+        <tr>
+            <td></td>
+            <td>
+                <a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a>
+            </td>
+        </tr>
+    #end
 </table>
 <!-- END /xnat-templates/screens/xnat_mrScanData/xnat_mrScanData_details.vm -->

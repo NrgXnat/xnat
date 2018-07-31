@@ -1066,16 +1066,36 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected boolean hasAccessTo(final String projectId) {
-        return Roles.isSiteAdmin(this) || getAccessibleProjects().contains(projectId);
+        return Roles.isSiteAdmin(this) || getEditableProjects().contains(projectId);
     }
 
     /**
-     * Code copied here from
+     * Returns a list of IDs for the projects the user can delete (i.e. the user is an owner of the project).
+     *
+     * @return All the projects where this user has delete permissions.
+     */
+    @SuppressWarnings("unused")
+    protected List<String> getOwnedProjects() {
+        return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), DELETE);
+    }
+
+    /**
+     * Returns a list of IDs for the projects the user can edit.
      *
      * @return All the projects where this user has edit permissions.
      */
-    protected List<String> getAccessibleProjects() {
-        return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), SecurityManager.EDIT);
+    protected List<String> getEditableProjects() {
+        return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), EDIT);
+    }
+
+    /**
+     * Returns a list of IDs for the projects the user can read.
+     *
+     * @return All the projects where this user has read permissions.
+     */
+    @SuppressWarnings("unused")
+    protected List<String> getReadableProjects() {
+        return getGroupsAndPermissionsCache().getProjectsForUser(getUsername(), READ);
     }
 
     @SuppressWarnings("unused")

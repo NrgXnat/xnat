@@ -472,7 +472,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserEditableProjects(final UserI user) {
-        return ((XDATUser) user).getAccessibleProjects();
+        return ((XDATUser) user).getEditableProjects();
     }
 
     @Override

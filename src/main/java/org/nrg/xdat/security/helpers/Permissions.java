@@ -624,6 +624,7 @@ public class Permissions {
      *
      * @throws Exception When an unknown or unexpected error occurs.
      */
+    @SuppressWarnings("unused")
     public static boolean initializeDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception {
         return getPermissionsService().initializeDefaultAccessibility(tag, accessibility, forceInit, authenticatedUser, ci);
     }
@@ -868,8 +869,18 @@ public class Permissions {
         }
     }
 
-    public static List<String> getAccessibleProjects(final UserI user) {
+    @SuppressWarnings("unused")
+    public static List<String> getOwnedProjects(final UserI user) {
+        return getPermissionsService().getUserOwnedProjects(user);
+    }
+
+    @SuppressWarnings("unused")
+    public static List<String> getEditableProjects(final UserI user) {
         return getPermissionsService().getUserEditableProjects(user);
+    }
+
+    public static List<String> getReadableProjects(final UserI user) {
+        return getPermissionsService().getUserReadableProjects(user);
     }
 
     private static NamedParameterJdbcTemplate getTemplate(final NamedParameterJdbcTemplate template) {
@@ -885,8 +896,7 @@ public class Permissions {
 
     public static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("projectId", projectId);
-        final boolean               exists     = template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class);
-        if (!exists) {
+        if (!template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class)) {
             return null;
         }
         switch (template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, parameters, Integer.class)) {
@@ -903,6 +913,7 @@ public class Permissions {
         return verifyAccessToSessions(template, user, new HashSet<>(sessionIds), null);
     }
 
+    @SuppressWarnings("unused")
     public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
         return verifyAccessToSessions(template, user, sessionIds, null);
     }
@@ -1013,10 +1024,12 @@ public class Permissions {
         return projectSessionMap;
     }
 
+    @SuppressWarnings("unused")
     public static Set<String> getInvalidProjectIds(final JdbcTemplate template, final Set<String> projectIds) {
         return Sets.difference(projectIds, getAllProjectIds(template));
     }
 
+    @SuppressWarnings("unused")
     public static Set<String> getInvalidProjectIds(final NamedParameterJdbcTemplate template, final Set<String> projectIds) {
         return Sets.difference(projectIds, getAllProjectIds(template));
     }

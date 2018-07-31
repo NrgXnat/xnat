@@ -10,7 +10,6 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +56,7 @@ import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 import static org.nrg.xdat.security.helpers.Roles.*;
+import static org.nrg.xdat.security.helpers.Users.getGrantedAuthorities;
 import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 /**
@@ -269,7 +269,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
      */
     public boolean isGuest() {
-        return getAuthorities().contains(Users.AUTHORITY_ANONYMOUS);
+        final String username = getUsername();
+        return StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username);
     }
 
     /**
@@ -919,30 +920,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public Collection<GrantedAuthority> getAuthorities() {
         if (_authorities.size() == 0) {
-            final String username = getUsername();
-            if (StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username)) {
-                _authorities.addAll(Users.AUTHORITIES_ANONYMOUS);
-            } else {
-                if (isSiteAdmin()) {
-                    _authorities.addAll(Users.AUTHORITIES_ADMIN);
-                }
-                if (isDataAdmin()) {
-                    _authorities.add(Users.AUTHORITY_DATA_ADMIN);
-                }
-                if (isDataAccess()) {
-                    _authorities.add(Users.AUTHORITY_DATA_ACCESS);
-                }
-                _authorities.addAll(Users.AUTHORITIES_USER);
-            }
-            final List<String> groups = Groups.getGroupIdsForUser(this);
-            if (groups != null && groups.size() > 0) {
-                for (String group : groups) {
-                    if (StringUtils.isNotBlank(group) && !StringUtils.equalsAny(group, Users.ROLE_ADMIN, Users.ROLE_USER, Users.ROLE_ANONYMOUS)) {
-                        _authorities.add(Users.getGrantedAuthority(group));
-                    }
-                }
-            }
-            log.debug("Created granted authorities list for user {}: {}", getUsername(), Joiner.on(", ").join(_authorities));
+            _authorities.addAll(getGrantedAuthorities(this));
         }
         return ImmutableSet.copyOf(_authorities);
     }

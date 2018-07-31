@@ -20,25 +20,15 @@ import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.services.UserRegistrationDataService;
-import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -151,25 +141,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
-                                Authentication authentication = XDAT.setUserDetails(found);
-                                UserHelper.setUserHelper(data.getRequest(), found);
-
+                                XDAT.loginUser(found, data.getRequest(), tempPass);
                                 data.setMessage("User registration complete.");
 
                                 AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
                                 AdminUtils.sendNewUserEmailMessage(found.getUsername(), found.getEmail());
-
-                                XFTItem item = XFTItem.NewItem("xdat:user_login", found);
-                                Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();
-                                item.setProperty("xdat:user_login.user_xdat_user_id", found.getID());
-                                item.setProperty("xdat:user_login.login_date", today);
-                                item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-                                item.setProperty("xdat:user_login.session_id", data.getSession().getId());
-                                SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
-
-                                if (!found.isGuest()) {
-                                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                                }
 
                                 try {
                                     directRequest(data, context, found);

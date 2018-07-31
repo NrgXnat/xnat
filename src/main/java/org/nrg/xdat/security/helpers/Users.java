@@ -10,6 +10,9 @@
 package org.nrg.xdat.security.helpers;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +24,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
@@ -70,7 +74,9 @@ public class Users {
     public static final SimpleGrantedAuthority  AUTHORITY_DATA_ACCESS       = new SimpleGrantedAuthority(ROLE_DATA_ACCESS);
     public static final SimpleGrantedAuthority  AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
     public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
-    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = Collections.<GrantedAuthority>singletonList(AUTHORITY_ADMIN);
+    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
     public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
     public static final Function<UserI, String> USERI_TO_USERNAME           = new Function<UserI, String>() {
         @Nullable
@@ -135,14 +141,11 @@ public class Users {
     }
 
     public static GrantedAuthority getGrantedAuthority(final String role) {
-        if (!_authorities.containsKey(role)) {
-            _authorities.put(role, new SimpleGrantedAuthority(role));
+        final String qualified = StringUtils.prependIfMissing(role, "ROLE_");
+        if (!_authorities.containsKey(qualified)) {
+            _authorities.put(qualified, new SimpleGrantedAuthority(qualified));
         }
-        return _authorities.get(role);
-    }
-
-    public static Set<String> getKnownGrantedAuthorities() {
-        return _authorities.keySet();
+        return _authorities.get(qualified);
     }
 
     /**
@@ -600,6 +603,53 @@ public class Users {
         return _encoder;
     }
 
+    /**
+     * Creates the set of granted authorities for the user based on the user's various assigned roles and settings.
+     *
+     * @param user The user for whom you want to build a granted authorities set.
+     *
+     * @return The set of granted authorities for the user.
+     */
+    @Nonnull
+    public static Set<GrantedAuthority> getGrantedAuthorities(@Nonnull final UserI user) {
+        if (user.isGuest()) {
+            return new HashSet<>(AUTHORITIES_ANONYMOUS);
+        }
+
+        final Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+        if (Roles.isSiteAdmin(user)) {
+            grantedAuthorities.addAll(AUTHORITIES_ADMIN);
+        }
+        if (user instanceof XDATUser && ((XDATUser) user).isDataAdmin()) {
+            grantedAuthorities.addAll(AUTHORITIES_DATA_ADMIN);
+        }
+        if (user instanceof XDATUser && ((XDATUser) user).isDataAccess()) {
+            grantedAuthorities.addAll(AUTHORITIES_DATA_ACCESS);
+        }
+        if (grantedAuthorities.isEmpty()) {
+            grantedAuthorities.addAll(AUTHORITIES_USER);
+        }
+
+        final List<String> groupIds = Groups.getGroupIdsForUser(user);
+        if (groupIds != null && !groupIds.isEmpty()) {
+            grantedAuthorities.addAll(Lists.transform(Lists.newArrayList(Iterables.filter(groupIds, new Predicate<String>() {
+                @Override
+                public boolean apply(@Nullable final String group) {
+                    return StringUtils.isNotBlank(group) && !StringUtils.equalsAny(group, Users.ROLE_ADMIN, Users.ROLE_USER, Users.ROLE_ANONYMOUS);
+                }
+            })), new Function<String, GrantedAuthority>() {
+                @Nullable
+                @Override
+                public GrantedAuthority apply(@Nullable final String group) {
+                    return Users.getGrantedAuthority(group);
+                }
+            }));
+        }
+
+        log.debug("Created granted authorities list for user {}: {}", user.getUsername(), _authorities);
+        return grantedAuthorities;
+    }
+
     private static Map<Integer, String> getCachedUserIds() {
         if (_users.isEmpty()) {
             synchronized (_users) {
@@ -615,6 +665,7 @@ public class Users {
         return _users;
     }
 
+    @SuppressWarnings("deprecation")
     private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);
     private static final Map<Integer, String>          _users               = new ConcurrentHashMap<>();
     private static final Map<String, GrantedAuthority> _authorities         = new HashMap<>();

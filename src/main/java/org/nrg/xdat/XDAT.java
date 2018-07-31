@@ -75,10 +75,10 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.jms.Destination;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
@@ -248,12 +248,7 @@ public class XDAT implements Initializable, Configurable{
 			return setGuestUserDetails();
 		}
 
-		final Collection<GrantedAuthority> authorities = new ArrayList<>();
-		if (Roles.isSiteAdmin(user)) {
-			authorities.add(AUTHORITY_ADMIN);
-		}
-		authorities.add(AUTHORITY_ADMIN);
-		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
+		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>(Roles.isSiteAdmin(user) ? AUTHORITIES_ADMIN : AUTHORITIES_USER));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		return authentication;
 	}
@@ -604,15 +599,15 @@ public class XDAT implements Initializable, Configurable{
         _screenTemplatesFolder = new File(screenTemplatesFolder);
     }
 
-    public static File getScreenTemplatesSubfolder(String subfolder) {
+    public static File getScreenTemplatesSubfolder(final String subfolder) {
         if (StringUtils.isBlank(subfolder)) {
             return new File(getScreenTemplatesFolder());
         }
 
         File current = new File(getScreenTemplatesFolder(), "");
 
-        String[] subfolders = subfolder.split("/");
-        for (String folder : subfolders) {
+        final String[] subfolders = subfolder.split("/");
+        for (final String folder : subfolders) {
             current = new File(current, folder);
             if (!current.exists()) {
                 // This is actually OK, it just means there are no overrides, so return null.
@@ -891,35 +886,36 @@ public class XDAT implements Initializable, Configurable{
         return channel;
     }
 
-	public static void loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception {
+	public static void loginUser(final RunData data, final UserI user, final boolean forcePasswordChange) throws Exception {
 		final PopulateItem populator = PopulateItem.Populate(data, XFT.PREFIX + ":user", true);
-		final ItemI found = populator.getItem();
-		final String tempPass = data.getParameters().getString("xdat:user.primary_password");
+		final ItemI        found     = populator.getItem();
 
-		UserHelper.setUserHelper(data.getRequest(), user);
 		data.getSession().setAttribute("forcePasswordChange", forcePasswordChange);
+
+		loginUser(user, data.getRequest(), data.getParameters().getString("xdat:user.primary_password"));
+	}
+
+	public static void loginUser(final UserI user, final HttpServletRequest request) throws Exception {
+		loginUser(user, request, "");
+	}
+
+	public static void loginUser(final UserI user, final HttpServletRequest request, final String password) throws Exception {
+		UserHelper.setUserHelper(request, user);
 
 		final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
 		item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
 		item.setProperty("xdat:user_login.login_date", Calendar.getInstance(TimeZone.getDefault()).getTime());
-		item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-		item.setProperty("xdat:user_login.session_id", data.getSession().getId());
+		item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
+		item.setProperty("xdat:user_login.session_id", request.getSession().getId());
 		SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
 
-		final Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-		grantedAuthorities.add(AUTHORITY_USER);
-		if (Roles.isSiteAdmin(user)) {
-			grantedAuthorities.add(AUTHORITY_ADMIN);
-		}
-
-		final Object username = found.getProperty("login");
-		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, tempPass, grantedAuthorities);
+		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, password, getGrantedAuthorities(user));
 		if (!user.isGuest()) {
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 		}
 	}
 
-    public static void sendJmsRequest(final Object request) {
+	public static void sendJmsRequest(final Object request) {
         sendJmsRequest(XDAT.getContextService().getBean(JmsTemplate.class), request);
 	}
 

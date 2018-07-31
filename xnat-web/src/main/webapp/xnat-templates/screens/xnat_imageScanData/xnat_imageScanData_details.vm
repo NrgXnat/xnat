@@ -50,13 +50,19 @@
             <td align="left">#escapeProperty("frames")</td>
         </tr>
 	#end
+    #if($scan.getProperty("note"))
+        <tr>
+            <th>Note</th>
+            <td align="left">#escapeProperty("note")</td>
+        </tr>
+    #end
 
 	#if($scan.getUid())
     <tr>
         <td></td>
         <td>
 			<a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">
-                <u>View DICOM Headers</u>
+                View DICOM Headers
             </a>
 		</td>
 	#end

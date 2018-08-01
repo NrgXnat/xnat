@@ -38,7 +38,6 @@ import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -85,7 +84,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         super(cacheManager,
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.builder().xsiType(XnatInvestigatordata.SCHEMA_ELEMENT_NAME).action(XftItemEvent.DELETE).build(),
+              XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(Predicates.or(XftItemEventCriteria.IS_PROJECT_GROUP, new Predicate<XftItemEventI>() {
                   @Override
                   public boolean apply(final XftItemEventI event) {

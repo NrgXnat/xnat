@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.services.investigators.impl.xft;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xapi.exceptions.InitializationException;
@@ -24,6 +23,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -37,7 +37,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -172,6 +174,7 @@ public class DefaultInvestigatorService implements InvestigatorService {
             throw new InitializationException("Failed to save the investigator with ID {}. Check the logs for possible errors or exceptions.");
         }
 
+        XDAT.triggerXftItemEvent(existing, XftItemEventI.UPDATE, getInvestigatorEventProperties(investigatorId));
         return getInvestigator(investigator.getFirstname(), investigator.getLastname());
     }
 
@@ -188,12 +191,18 @@ public class DefaultInvestigatorService implements InvestigatorService {
             throw new NotFoundException(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ":ID = " + investigatorId);
         }
         try {
-            final List<String> projects = _template.queryForList(QUERY_INVESTIGATOR_PROJECTS, new MapSqlParameterSource("investigatorId", investigatorId), String.class);
+            final Map<String, Object> properties = getInvestigatorEventProperties(investigatorId);
             SaveItemHelper.authorizedDelete(investigator.getItem(), user, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.REMOVE_INVESTTGATOR));
-            XDAT.triggerXftItemEvent(XnatInvestigatordata.SCHEMA_ELEMENT_NAME, Integer.toString(investigatorId), XftItemEvent.DELETE, ImmutableMap.<String, Object>of("projects", projects));
+            XDAT.triggerXftItemEvent(XnatInvestigatordata.SCHEMA_ELEMENT_NAME, Integer.toString(investigatorId), XftItemEvent.DELETE, properties);
         } catch (Exception e) {
             throw new XftItemException("Failed to delete the investigator with ID " + investigatorId, e);
         }
+    }
+
+    final Map<String, Object> getInvestigatorEventProperties(final int investigatorId) {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("projects", _template.queryForList(QUERY_INVESTIGATOR_PROJECTS, new MapSqlParameterSource("investigatorId", investigatorId), String.class));
+        return properties;
     }
 
     private static final String INVESTIGATOR_QUERY          = "SELECT " +

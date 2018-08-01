@@ -115,7 +115,7 @@ public class XftItemEvent implements XftItemEventI {
 
         public Builder element(final BaseElement element) {
             try {
-                return typeAndId(element.getXSIType(), element.getStringProperty("ID"));
+                return typeAndId(element.getXSIType(), StringUtils.defaultIfBlank(element.getStringProperty("ID"), element.getItem().getPKValueString()));
             } catch (ElementNotFoundException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Instantiation, "Submitted a BaseElement of type '" + element.getClass().getName() + "', which doesn't seem to have a property named ID. I don't know how to handle this element: " + e.ELEMENT, e);
             } catch (FieldNotFoundException e) {

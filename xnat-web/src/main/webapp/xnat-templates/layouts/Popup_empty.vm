@@ -4,6 +4,7 @@ $navigation.setTemplate("/htmlOpen.vm")
 <script type="text/javascript">
     window.loggedIn = true;
     window.isPopup=true;
+    window.loadDataTypes = false;
     jq(function(){
         jq('body').addClass('popup');
     });

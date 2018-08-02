@@ -13,6 +13,7 @@ $navigation.setTemplate("/htmlOpen.vm")
 <script type="text/javascript">
     window.loggedIn = true; // just assume we're logged in - how else would we get here?
     window.isPopup = true;
+    window.loadDataTypes = false;
     jq(function(){
         jq('body').addClass('popup');
     });

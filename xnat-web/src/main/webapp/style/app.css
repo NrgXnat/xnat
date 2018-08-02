@@ -2869,6 +2869,10 @@ td.quality-unusable {
     border-bottom: 1px solid #d0d0d0;
 }
 
+img.scan-snapshot {
+    max-width: 500px;
+}
+
 /* not sure what these spacers do but pretty sure they should go away - let's see what breaks */
 span.spacer {
     display: none !important;

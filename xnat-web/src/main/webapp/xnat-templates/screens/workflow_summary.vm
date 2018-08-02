@@ -6,7 +6,7 @@
     </h3>
 
     <div id="span$!scanCounter" style="position:relative; display:none;">
-        <table class="xnat-table alt1">
+        <table class="xnat-table compact">
             <tr>
                 <th>Action</th>
                 <th>Launch Time</th>

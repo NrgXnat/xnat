@@ -448,7 +448,7 @@
                 <h4>Options</h4>
                 <section>
                     <dl>
-                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="client" checked></dt>
+                        <dt><input type="radio" id="client-download" name="download_type" class="download-type ignore" value="client" checked></dt>
                         <dd><label for="direct-download"><b>Option 1: Download via Desktop Client</b></label></dd>
                         <dd>
                             An XML download manifest will be sent to the XNAT Desktop Client, which works behind the scenes to download your files.

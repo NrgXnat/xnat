@@ -45,24 +45,20 @@
                 </TR>
             </TABLE>
             <SCRIPT type="text/javascript">
+                var protocols = [], createdProtocols = [];
+                var div_bodys = document.getElementById('div_bodys');
+                var protocols_sel = document.getElementById('protocols_sel');
+                var complete_pg_btn = document.getElementById('complete_page');
+                var omId = '${om.getId()}';
+
+                // reset container elements
+                div_bodys.innerHTML = '';
+                protocols_sel.innerHTML = '<option value="">Select...</option>';
+
                 XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
 
                     window.available_elements = data.sortedElements;
                     window.browseableElements = data.elementMap;
-
-                    var protocols = new Array();
-
-                    var div_bodys = document.getElementById('div_bodys');
-                    var protocols_sel = document.getElementById('protocols_sel');
-                    var complete_pg_btn = document.getElementById('complete_page');
-
-                    // reset container elements
-                    div_bodys.innerHTML = '';
-                    protocols_sel.innerHTML = '<option value="">Select...</option>';
-
-                    var createdProtocols = [];
-
-                    var omId = '${om.getId()}';
 
                     function addProtocolElements(protocolName, protocolId, dataType){
                         if (createdProtocols.indexOf(dataType) === -1) {
@@ -158,8 +154,38 @@
                         completePage(this);
                     }
 
+                    window.verifyProtocolSetup = function(selection){
+                        // initialize array
+                        var undefined;
+
+                        // selected item can be a protocol name or an xsitype
+                        if (selection.protocol !== undefined) {
+                            var protocolMatches = window.protocolsManagers
+                                    .filter(function(mgr){ return selection.protocol === mgr.id });
+                        }
+                        else if (selection.xsitype !== undefined) {
+                            var protocolMatches = window.protocolsManagers
+                                    .filter(function(mgr){ return selection.xsitype === mgr.opts.dataType });
+                        }
+
+                        console.log('Matching protocols: ',protocolMatches);
+                        if (protocolMatches.length !== 1) {
+                            XNAT.ui.dialog.message({
+                                title: false,
+                                content: '<b>Error:</b> A temporary datatype configuration error has been detected. Please log out and log back in before continuing this operation.'
+                            });
+                            return false;
+                        }
+                        else {
+                            return true;
+                        }
+                    }
+
                     protocols_sel.onchange = function(e){
-                        selectProtocol(this);
+                        // verify that the window.protocolsManagers array is properly set up before continuing.
+                        var selectedProtocol = jq(this).find('option:selected').val();
+
+                        if(verifyProtocolSetup({ protocol: selectedProtocol })) selectProtocol(this);
                     }
                 });
             </SCRIPT>

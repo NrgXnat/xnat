@@ -11,7 +11,6 @@ package org.nrg.xnat.helpers.uri.archive;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -77,7 +76,8 @@ public abstract class ResourceURIA extends ArchiveURI implements ResourceURII {
      */
     @Override
     public List<XnatAbstractresourceI> getResources(final boolean includeAll) {
-        return Lists.newArrayList(getXnatResource());
+        final XnatAbstractresourceI xnatResource = getXnatResource();
+        return xnatResource != null ? Collections.singletonList(xnatResource) : Collections.<XnatAbstractresourceI>emptyList();
     }
 
     /**

@@ -691,19 +691,19 @@ public class DefaultCatalogService implements CatalogService {
     /**
      * Performs the actual work of refreshing a single catalog.
      *
-     * @param user       The user requesting the refresh operation.
-     * @param resource   The archive path for the resource to refresh.
-     * @param operations The operations to be performed.
+     * @param user         The user requesting the refresh operation.
+     * @param resourcePath The archive path for the resource to refresh.
+     * @param operations   The operations to be performed.
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
-    private void _refreshCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ServerException, ClientException {
+    private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations) throws ServerException, ClientException {
         try {
-            final URIManager.DataURIA uri = UriParserUtils.parseURI(resource);
+            final URIManager.DataURIA uri = UriParserUtils.parseURI(resourcePath);
 
             if (!(uri instanceof URIManager.ArchiveItemURI)) {
-                throw new ClientException("Invalid Resource URI:" + resource);
+                throw new ClientException("Invalid Resource URI:" + resourcePath);
             }
 
             final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
@@ -711,12 +711,12 @@ public class DefaultCatalogService implements CatalogService {
 
             try {
                 if (!Permissions.canEdit(user, item)) {
-                    throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to edit the resource " + resource);
+                    throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to edit the resource " + resourcePath);
                 }
             } catch (ClientException e) {
                 throw e;
             } catch (Exception e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + resource);
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + resourcePath);
             }
 
             if (item != null) {
@@ -747,14 +747,19 @@ public class DefaultCatalogService implements CatalogService {
                         log.error("An error occurred trying to check the edit permissions for user " + user.getUsername(), e);
                     }
 
-                    final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
+                    final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
 
-                    for (XnatAbstractresourceI res : resourceURI.getResources(true)) {
-                        final String archiveRootPath = item.getArchiveRootPath();
-                        refreshResourceCatalog((XnatAbstractresource) res, archiveRootPath, populateStats, checksum, delete, append, user, wrk.buildEvent());
+                    final List<XnatAbstractresourceI> resources = resourceURI.getResources(true);
+                    if (resources.isEmpty()) {
+                        log.warn("Trying to refresh the resources for catalog '{}', but no resources were returned for the calculated URI: {}", resourcePath, resourceURI.getUri());
+                    } else {
+                        for (final XnatAbstractresourceI resource : resources) {
+                            final String archiveRootPath = item.getArchiveRootPath();
+                            refreshResourceCatalog((XnatAbstractresource) resource, archiveRootPath, populateStats, checksum, delete, append, user, workflow.buildEvent());
+                        }
                     }
 
-                    WorkflowUtils.complete(wrk, wrk.buildEvent());
+                    WorkflowUtils.complete(workflow, workflow.buildEvent());
                 } catch (ClientException e) {
                     throw e;
                 } catch (PersistentWorkflowUtils.JustificationAbsent justificationAbsent) {
@@ -764,13 +769,13 @@ public class DefaultCatalogService implements CatalogService {
                 } catch (PersistentWorkflowUtils.IDAbsent idAbsent) {
                     throw new ClientException("No workflow ID was provided for the refresh action, but is required by the system configuration.");
                 } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
-                    throw new ClientException("Couldn't find the primary project for the specified resource " + resource);
+                    throw new ClientException("Couldn't find the primary project for the specified resource " + resourcePath);
                 } catch (Exception e) {
                     throw new ServerException("An error occurred trying to save the workflow for the refresh operation.", e);
                 }
             }
         } catch (MalformedURLException e) {
-            throw new ClientException("Invalid Resource URI:" + resource);
+            throw new ClientException("Invalid Resource URI:" + resourcePath);
         }
     }
 

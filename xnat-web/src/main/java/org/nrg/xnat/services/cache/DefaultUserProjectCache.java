@@ -61,6 +61,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -199,7 +200,13 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return false;
         }
 
-        final String       userId       = user.getUsername();
+        final String userId    = user.getUsername();
+        final String projectId = getCanonicalProjectId(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.info("User '{}' is checking whether cache entry exists for project ID or alias '{}' but that doesn't seem to be a valid project ID or alias, returning false", userId, idOrAlias);
+            return false;
+        }
+
         final ProjectCache projectCache = getProjectCache(idOrAlias);
         return projectCache != null && projectCache.hasUser(userId);
     }
@@ -215,7 +222,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public boolean canDelete(final String userId, final String idOrAlias) {
-        return hasAccess(userId, idOrAlias, Delete);
+        final String projectId = getCanonicalProjectId(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.info("Checking delete privileges for user '{}' for project ID or alias '{}' but that doesn't seem to be a valid project ID or alias, returning false", userId, idOrAlias);
+            return false;
+        }
+        return hasAccess(userId, projectId, Delete);
     }
 
     /**
@@ -230,7 +242,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @Override
     @SuppressWarnings("unused")
     public boolean canWrite(final String userId, final String idOrAlias) {
-        return hasAccess(userId, idOrAlias, Edit);
+        final String projectId = getCanonicalProjectId(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.info("Checking edit privileges for user '{}' for project ID or alias '{}' but that doesn't seem to be a valid project ID or alias, returning false", userId, idOrAlias);
+            return false;
+        }
+        return hasAccess(userId, projectId, Edit);
     }
 
     /**
@@ -244,7 +261,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public boolean canRead(final String userId, final String idOrAlias) {
-        return hasAccess(userId, idOrAlias, Read);
+        final String projectId = getCanonicalProjectId(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.info("Checking read privileges for user '{}' for project ID or alias '{}' but that doesn't seem to be a valid project ID or alias, returning false", userId, idOrAlias);
+            return false;
+        }
+        return hasAccess(userId, projectId, Read);
     }
 
     /**
@@ -257,27 +279,33 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     @Override
     public XnatProjectdata get(final UserI user, final String idOrAlias) {
+        final String projectId = getCanonicalProjectId(idOrAlias);
+        if (StringUtils.isBlank(projectId)) {
+            log.debug("User '{}' requested a project with ID or alias '{}' but that's not in the alias mapping cache or xnat_projectdata table, so doesn't seem to exist, returning null", user.getUsername(), idOrAlias);
+            return null;
+        }
         final String userId;
         if (user != null) {
             userId = user.getUsername();
             // Check that the project is readable by the user and, if not, return null.
-            if (!canRead(userId, idOrAlias)) {
-                log.info("User {} attempted to retrieve the project by ID or alias {}, but that project isn't accessible for the user. Returning null.", userId, idOrAlias);
+            if (!hasAccess(userId, projectId, Read)) {
+                log.info("User '{}' attempted to retrieve the project '{}' with ID or alias '{}', but the user doesn't have at least read access to that project. Returning null.", userId, projectId, idOrAlias);
                 return null;
             }
         } else {
             userId = "<none>";
         }
 
-        log.debug("Found a cached project with ID or alias '{}' that is accessible by the user {}.", idOrAlias, userId);
-        final ProjectCache projectCache = getProjectCache(idOrAlias);
+        final ProjectCache projectCache = getProjectCache(projectId);
         if (projectCache != null) {
-            log.debug("Found a cached project for ID or alias {} for user {}.", idOrAlias, userId);
+            log.debug("Found cached project '{}' for ID or alias '{}' for user '{}'.", projectId, idOrAlias, userId);
             final XnatProjectdata project = projectCache.getProject();
-            project.setUser(user);
+            if (user != null) {
+                project.setUser(user);
+            }
             return project;
         } else {
-            log.info("Call to has({}, {}), which returned true, but getProjectCache({}) returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", userId, idOrAlias, idOrAlias);
+            log.info("Resolved ID or alias '{}' to project ID '{}' for user '{}', but getProjectCache({}) returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", idOrAlias, projectId, userId);
             // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
             return null;
         }
@@ -352,28 +380,34 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return false;
         }
 
-        final String  action          = event.getAction();
-        final boolean isProjectDelete = StringUtils.equals(DELETE, action);
+        final String action = event.getAction();
+        log.info("Got an XFTItemEvent for project '{}' with action '{}', handling now", projectId, action);
+        switch (action) {
+            case CREATE:
+                log.debug("Created new project, caching ID '{}' and initializing project cache entry", projectId);
+                _aliasMapping.put(projectId, projectId);
+                initializeProjectCache(projectId);
+                break;
 
-        if (StringUtils.equals(CREATE, action)) {
-            _aliasMapping.put(projectId, projectId);
-            log.debug("Created new project, cached ID {}", projectId);
-        } else if (isProjectDelete) {
-            _aliasMapping.remove(projectId);
-            final List<String> aliases = _projectsAndAliases.removeAll(projectId);
-            for (final String alias : aliases) {
-                _aliasMapping.remove(alias);
-            }
-            log.debug("The project {} was deleted, so skipping cache reinitialization. Removed ID and any aliases from cache: {}", projectId, aliases);
+            case DELETE:
+                final List<String> aliases = _projectsAndAliases.removeAll(projectId);
+                log.debug("The project {} was deleted, so evicting cache entry and removing ID and any aliases: {}", projectId, aliases);
+                _aliasMapping.remove(projectId);
+                for (final String alias : aliases) {
+                    _aliasMapping.remove(alias);
+                }
+                evictProjectCache(projectId);
+                break;
+
+            case UPDATE:
+                log.debug("The project '{}' was updated, refreshing cache entry", projectId);
+                refreshProjectCache(projectId);
+                break;
+
+            default:
+                log.warn("Got the action '{}' for project '{}', I don't know what to do with this action.", action, projectId);
+                return false;
         }
-
-        log.info("Got an XFTItemEvent for project '{}' with action '{}', refreshing now", projectId, action);
-        if (isProjectDelete) {
-            evictProjectCache(projectId);
-        } else {
-            refreshProjectCache(projectId);
-        }
-
         return true;
     }
 
@@ -510,23 +544,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return true;
     }
 
-    private void refreshProjectCache(final String projectId) {
-        evictProjectCache(projectId);
-        initializeProjectCache(projectId);
-    }
-
-    private boolean evictProjectCache(final String projectId) {
-        final ProjectCache projectCache = getCachedProjectCache(projectId);
-        if (projectCache == null || projectCache.getProject() == null) {
-            log.info("No cache found for the project '{}', nothing much to be done.", projectId);
-            return false;
-        } else {
-            log.info("Found project cache for project {}, evicting the project cache.", projectId);
-            evict(projectId);
-            return true;
-        }
-    }
-
     private Object convertStringToMappedTypeObject(final GenericWrapperField field, final String value) {
         final String mappedType = field.getType(XFTItem.JAVA_CONVERTER);
         log.debug("Converting value '{}' to mapped type '{}", value, mappedType);
@@ -583,7 +600,22 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         });
     }
 
-    private boolean hasAccess(final String userId, final String idOrAlias, final AccessLevel accessLevel) {
+    /**
+     * Tests whether the indicated user can access the project with the given ID at the requested level. Note that this
+     * method expects the project ID, not an alias, so it should be resolved to project ID before calling this method.
+     *
+     * @param userId      The username of the user to test.
+     * @param projectId   The ID of the project to be queried.
+     * @param accessLevel The access level requested.
+     *
+     * @return Returns true if the user has <i>at least</i> the specified access level to the project.
+     */
+    private boolean hasAccess(@Nonnull final String userId, @Nonnull final String projectId, @Nonnull final AccessLevel accessLevel) {
+        if (StringUtils.isAnyBlank(userId, projectId)) {
+            log.error("You must specify a value for both user ID and project ID.");
+            return false;
+        }
+
         // If the user is not in the user lists, try to retrieve and cache it.
         final XDATUser user;
         final boolean  isSiteAdmin;
@@ -593,6 +625,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             try {
                 // Get the user...
                 user = new XDATUser(userId);
+
                 // If the user is an admin, add the user ID to the admin list and return true.
                 if (user.isSiteAdmin()) {
                     _siteAdmins.add(userId);
@@ -618,7 +651,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 }
             } catch (UserNotFoundException e) {
                 // User doesn't exist, so return false
-                log.error("Got a request to test '{}' access to project with ID or alias '{}' for user {}, but that user doesn't exist.", accessLevel, idOrAlias, userId);
+                log.error("Got a request to test '{}' access to project with ID or alias '{}' for user {}, but that user doesn't exist.", accessLevel, projectId, userId);
                 return false;
             } catch (UserInitException e) {
                 // Something bad happened so note it and move on.
@@ -634,16 +667,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         try {
-            // Check for existing cache for the current project.
-            final String projectId = getCanonicalProjectId(idOrAlias, user, userId);
-            if (StringUtils.isBlank(projectId)) {
-                return false;
-            }
-
             final ProjectCache projectCache = getProjectCache(projectId);
 
-            // If the project cache is null, the project doesn't exist (same as isCachedNonexistentProject() but it wasn't cached previously).
-            if (projectCache == null) {
+            // If the project cache is null, the project doesn't exist.
+            if (projectCache == null || projectCache.getProject() == null) {
                 return false;
             }
 
@@ -663,7 +690,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         } catch (UserNotFoundException e) {
             log.error("A user not found exception occurred searching for the user {}. This really shouldn't happen as I checked for the user's existence earlier.", userId, e);
         } catch (Exception e) {
-            log.error("An error occurred trying to test whether the user {} can read the project specified by ID or alias {}", userId, idOrAlias, e);
+            log.error("An error occurred trying to test whether the user {} can read the project specified by ID or alias {}", userId, projectId, e);
         }
         return false;
     }
@@ -675,12 +702,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      * allows the project to be retrieved once on initial reference then just pulled from the cache later.
      *
      * @param idOrAlias The ID or alias to test.
-     * @param user      The user object for the user requesting the project.
-     * @param userId    The user ID for the user requesting the project. This is used to retrieve the user object if the user parameter is null.
      *
      * @return The ID of the project with the submitted ID or alias.
      */
-    private String getCanonicalProjectId(final String idOrAlias, final UserI user, final String userId) {
+    private String getCanonicalProjectId(final String idOrAlias) {
         // First check for cached ID or alias.
         if (_aliasMapping.containsKey(idOrAlias)) {
             // Found it so return that.
@@ -689,17 +714,17 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return projectId;
         }
 
-        log.info("User {} requested project by ID or alias {}, not found so starting initialization.", getUserId(user, userId), idOrAlias);
-        initializeProjectCache(idOrAlias);
-
-        // Return the mapped value for the ID or alias, which should now be initialized (even if it's initialized to "not a project")
-        if (_aliasMapping.containsKey(idOrAlias)) {
-            final String projectId = _aliasMapping.get(idOrAlias);
-            log.debug("After initialization, found canonical project ID {} for the ID or alias {}", projectId, idOrAlias);
+        log.debug("Couldn't find project by ID or alias {}, querying database.", idOrAlias);
+        try {
+            final String projectId = _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource("idOrAlias", idOrAlias), String.class);
+            log.debug("After querying, found canonical project ID {} for the ID or alias {}", projectId, idOrAlias);
             return projectId;
-        } else {
-            log.debug("After initialization, no project was found that matches the ID or alias {}", idOrAlias);
+        } catch (EmptyResultDataAccessException e) {
+            log.debug("After querying, no project was found that matches the ID or alias {}", idOrAlias);
             return null;
+        } catch (IncorrectResultSizeDataAccessException e) {
+            log.error("Somehow came back with more than one result searching for the project ID or alias {}: should have gotten {} result and ended up with {}", idOrAlias, e.getExpectedSize(), e.getActualSize());
+            throw e;
         }
     }
 
@@ -715,79 +740,60 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Gets the project ID from the ID or alias submitted.
+     * Gets the cache for the project identified by the project ID. If the project doesn't exist, this method returns null. Otherwise, it checks the project cache
+     * and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache, this method tries to find the
+     * project by ID. If it's not found, it returns null as before but, if it is found, the project is cached.
      *
-     * @param idOrAlias Can be the project ID or an alias.
-     *
-     * @return The project ID, null if it can't be found.
-     */
-    private String getProjectIdFromIdOrAlias(final String idOrAlias) {
-        if (_aliasMapping.containsKey(idOrAlias)) {
-            return _aliasMapping.get(idOrAlias);
-        }
-
-        try {
-            return _template.queryForObject(QUERY_GET_PROJECT_BY_ID_OR_ALIAS, new MapSqlParameterSource("idOrAlias", idOrAlias), String.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (IncorrectResultSizeDataAccessException e) {
-            log.error("Somehow came back with more than one result searching for the project ID or alias {}: should have gotten {} result and ended up with {}", idOrAlias, e.getExpectedSize(), e.getActualSize());
-            return null;
-        }
-    }
-
-    /**
-     * Gets the cache for the project identified by the ID or alias parameter. If the project is cached as non-existent, this method returns null. Otherwise,
-     * it checks the project cache and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache,
-     * this method tries to find the project by ID or alias. If it's not found, it's then cached as non-existent and the method returns null as before. If it is
-     * found, the project is cached.
-     *
-     * @param idOrAlias The ID or alias of the project to retrieve.
+     * @param projectId The ID of the project to retrieve.
      *
      * @return The project cache consisting of the project as the "left" or "key" value and a map of users and their access level to the project as the "right" or "value" value.
      */
     @SuppressWarnings("unchecked")
     @Nullable
-    private ProjectCache getProjectCache(final String idOrAlias) {
+    private ProjectCache getProjectCache(final String projectId) {
         // If we've already mapped and cached the project...
-        if (_aliasMapping.containsKey(idOrAlias)) {
-            // Resolve the ID or alias to the mapped project ID.
-            final String projectId = _aliasMapping.get(idOrAlias);
-            log.debug("Found project ID {} for the ID or alias {}, returning project cache for that ID.", projectId, idOrAlias);
+        if (_projectsAndAliases.containsKey(projectId)) {
+            log.debug("Project ID '{}' is cached, returning project cache for that ID.", projectId);
 
             // And then return the project cache.
             final ProjectCache projectCache = getCachedProjectCache(projectId);
             if (projectCache != null && projectCache.getProject() != null) {
                 return projectCache;
             }
-            log.info("Found cached project ID '{}' for ID or alias '{}', but there's no project cache entry or the project cache is null. Initializing the cache entry in response.", projectId, idOrAlias);
+            log.info("Found cached project ID '{}', but there's no project cache entry or the project cache is null. Initializing the cache entry.", projectId);
         }
 
-        return initializeProjectCache(idOrAlias);
+        return initializeProjectCache(projectId);
     }
 
+    /**
+     * Initializes the cache for the specified project.
+     *
+     * @param projectId The ID of the project to retrieve.
+     *
+     * @return Returns a new cache object for the indicated project if it exists, null otherwise.
+     */
     @Nullable
-    private synchronized ProjectCache initializeProjectCache(final String idOrAlias) {
-        // Get the project ID from the alias map. If there's not an entry presume that it's the ID.
-        final String projectId = getProjectIdFromIdOrAlias(idOrAlias);
-        if (StringUtils.isBlank(projectId)) {
-            log.error("There is no project that has an ID or alias of: {}", idOrAlias);
+    private synchronized ProjectCache initializeProjectCache(final String projectId) {
+        // Get the canonical project ID using the submitted project ID. This should return the same value.
+        final String canonicalProjectId = getCanonicalProjectId(projectId);
+        if (StringUtils.isBlank(canonicalProjectId)) {
+            log.error("There is no project that has an ID or alias of: {}", projectId, new Exception());
+            return null;
+        } else if (!StringUtils.equals(projectId, canonicalProjectId)) {
+            log.error("Got canonical project ID '{}' for so-called project ID '{}', but this method requires the canonical project ID. You're doing it wrong.", canonicalProjectId, projectId);
             return null;
         }
 
         if (has(projectId)) {
-            log.info("Found project ID {} for ID or alias {} and it has a project cache entry, this was probably initialized by another thread.", projectId, idOrAlias);
+            log.info("Found cache entry for project ID '{}', this was probably initialized by another thread.", projectId);
             return getCachedProjectCache(projectId);
         }
 
-        log.info("Locking and initializing project cache for ID or alias {}, which mapped to project ID {}", idOrAlias, projectId);
+        log.info("Locking and initializing project cache for ID '{}'", projectId);
         final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
         if (project == null) {
-            if (StringUtils.equals(idOrAlias, projectId)) {
-                log.error("Could not find a project for the ID {}", projectId);
-            } else {
-                log.error("Could not find a project for the ID {} or alias {}", projectId, idOrAlias);
-            }
+            log.error("Could not find a project for the ID '{}'", projectId);
             return null;
         }
 
@@ -812,6 +818,23 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return projectCache;
     }
 
+    private void refreshProjectCache(final String projectId) {
+        evictProjectCache(projectId);
+        initializeProjectCache(projectId);
+    }
+
+    private boolean evictProjectCache(final String projectId) {
+        final ProjectCache projectCache = getCachedProjectCache(projectId);
+        if (projectCache == null || projectCache.getProject() == null) {
+            log.info("No cache found for the project '{}', nothing much to be done.", projectId);
+            return false;
+        } else {
+            log.info("Found project cache for project {}, evicting the project cache.", projectId);
+            evict(projectId);
+            return true;
+        }
+    }
+
     private ProjectCache getCachedProjectCache(final String cacheId) {
         return getCachedObject(cacheId, ProjectCache.class);
     }
@@ -832,27 +855,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         _projectsAndAliases.put(projectId, projectId);
         _projectsAndAliases.putAll(projectId, aliases);
         log.debug("Just cached ID and aliases for project {}: {}", projectId, aliases);
-    }
-
-    /**
-     * Tries to resolve the user ID. If the <b>userId</b> parameter isn't blank, this method just returns that. If the <b>userId</b> parameter is blank,
-     * this method checks whether the <b>user</b> object is null. If it is, an error message is logged and an unknown value is returned. If it's not, this
-     * method calls the {@link UserI#getUsername()} method and returns that value.
-     *
-     * @param user   The user object.
-     * @param userId The user ID.
-     *
-     * @return A user ID sussed out from a combination of the two parameters.
-     */
-    private static String getUserId(final UserI user, final String userId) {
-        if (StringUtils.isNotBlank(userId)) {
-            return userId;
-        }
-        if (user == null) {
-            log.warn("This method was called with both userId blank and user as null. This will be a problem elsewhere most likely.");
-            return "UNKNOWN";
-        }
-        return user.getUsername();
     }
 
     @SuppressWarnings("unused")

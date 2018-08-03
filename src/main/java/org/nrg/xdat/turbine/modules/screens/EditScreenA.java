@@ -160,5 +160,5 @@ public abstract class EditScreenA extends SecureScreen {
     private static final String NO_DATA_ITEM_FOUND = "Invalid Search Parameters: No data item found.";
     private static final String ERROR_CREATING_ITEM = "Invalid Search Parameters: Error creating item.";
 
-    private ItemI item = null;
+    protected ItemI item = null;
 }

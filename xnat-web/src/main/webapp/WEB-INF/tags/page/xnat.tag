@@ -373,7 +373,7 @@ ${bodyTop}
                             <ul>
                                 <!-- Sequence: 10 -->
                                 <!-- Images -->
-                                <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">Upload Assistant</a></li>
+                                <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">XNAT Desktop Applications</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/CompressedUploaderPage.vm">Compressed Uploader</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/DICOMSCPPage.vm">DICOM SCP</a></li>
                             </ul>

@@ -1,5 +1,6 @@
 <!-- Sequence: 10 -->
 <!-- allowGuest: true -->
 <li><a href="https://wiki.xnat.org/xnat-tools" target="_blank">XNAT Tools</a></li>
+<li><a href="https://download.xnat.org/desktop-client" target="_blank">XNAT Desktop Client</a></li>
 <li><a href="https://wiki.xnat.org/xnat-tools/dicombrowser" target="_blank">DICOM Browser</a></li>
 <li><a href="https://wiki.xnat.org/xnat-tools/xnat-web-services-client-tools" target="_blank">Command Prompt Tools</a></li>

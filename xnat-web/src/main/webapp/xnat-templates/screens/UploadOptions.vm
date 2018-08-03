@@ -2,7 +2,7 @@
 
 <div style="width: 500px;">
 
-    #set($sectionTitle = "<h3>Option 1: XNAT Upload Assistant</h3>")
+    #set($sectionTitle = "<h3>Option 1: XNAT Desktop Applications</h3>")
     #parse("/screens/UploadAssistantPage.vm")
 
     <hr style="margin: 2em 0" />

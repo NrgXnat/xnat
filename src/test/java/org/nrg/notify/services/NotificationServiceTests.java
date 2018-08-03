@@ -41,7 +41,7 @@ import static org.junit.Assert.*;
 
 /**
  * Many of these tests are annotated with {@link Transactional} to support session persistence through the execution
- * of the test. In the Spring Web context, this is usually handled with the OpenSessionInView intercepter configuration.
+ * of the test. In the Spring Web context, this is usually handled with the OpenSessionInView interceptor configuration.
  * Basically the issue is that a Hibernate session is instantiated at the boundary of the Transactional annotation. Any
  * objects that have lazily-fetched data members that aren't accessed within the transaction context will become
  * unresolvable later once the session has expired. Maintaining the Transactional layer at the test method level allows
@@ -55,7 +55,7 @@ public class NotificationServiceTests {
     public NotificationServiceTests() {
         _log.info("Creating test class");
     }
-    
+
     @Before
     public void initialize() {
         _log.info("Initializing test class");
@@ -65,19 +65,20 @@ public class NotificationServiceTests {
     public void teardown() {
         _log.info("Tearing down test class");
     }
-    
+
     /**
      * Tests creating, retrieving, updating, and deleting categories.
+     *
      * @throws InterruptedException This is required for the {@link Thread#sleep(long)} call.
      */
     @Test
-    public void testManageCategory() throws InterruptedException, NrgServiceException {
+    public void testManageCategory() throws InterruptedException {
 
         // Verify the service.
         assertNotNull(_service);
 
         int allWithDisabledOffset = _service.getCategoryService().getAllWithDisabled().size();
-        int allOffset = _service.getCategoryService().getAll().size();
+        int allOffset             = _service.getCategoryService().getAll().size();
 
         if (allWithDisabledOffset > 0 || allOffset > 0) {
             _log.warn("There is an issue with query caching where categories are properly deleted when execution is relatively slow, but persist when test execution is fast, e.g. when running from Maven Surefire. These offsets compensate for that, but generally speaking are super lame. The appropriate thing to do would be to have the cache cleared and/or die between executions, but using a non-singleton cache also breaks unit test execution.");
@@ -94,59 +95,62 @@ public class NotificationServiceTests {
         category1.setScope(CategoryScope.Project);
         _service.getCategoryService().create(category1);
 
-        long entityId1 = category1.getId();
-        Category retrievedCat1 = _service.getCategoryService().retrieve(entityId1);
-        assertEquals(category1, retrievedCat1);
-        Date created = retrievedCat1.getCreated();
-        Date timestamp = retrievedCat1.getTimestamp();
+        final long entityId1 = category1.getId();
+
+        final Category cat1Retrieve1 = _service.getCategoryService().retrieve(entityId1);
+        assertEquals(category1, cat1Retrieve1);
+        final Date created   = cat1Retrieve1.getCreated();
+        final Date timestamp = cat1Retrieve1.getTimestamp();
         assertEquals(category1.getCreated(), created);
-        assertEquals(created, timestamp);
+        assertEquals(category1.getTimestamp(), timestamp);
 
         category1.setEvent("event1updated");
         Thread.sleep(500);
         _service.getCategoryService().update(category1);
-        retrievedCat1 = _service.getCategoryService().retrieve(entityId1);
-        assertEquals(category1, retrievedCat1);
-        assertEquals("event1updated", retrievedCat1.getEvent());
-        assertEquals(retrievedCat1.getCreated(), created);
-        assertFalse(retrievedCat1.getTimestamp() == created);
-        assertFalse(retrievedCat1.getTimestamp() == timestamp);
+
+        final Category cat1Retrieve2 = _service.getCategoryService().retrieve(entityId1);
+        assertEquals(category1, cat1Retrieve2);
+        assertEquals("event1updated", cat1Retrieve2.getEvent());
+        assertEquals(cat1Retrieve2.getCreated(), created);
+        assertNotSame(cat1Retrieve2.getTimestamp(), created);
+        assertNotSame(cat1Retrieve2.getTimestamp(), timestamp);
 
         _service.getCategoryService().delete(entityId1);
-        retrievedCat1 = _service.getCategoryService().retrieve(entityId1);
-        assertNull(retrievedCat1);
+        final Category cat1Retrieve3 = _service.getCategoryService().retrieve(entityId1);
+        assertNull(cat1Retrieve3);
 
-        Category category2 = _service.getCategoryService().newEntity();
+        final Category category2 = _service.getCategoryService().newEntity();
         category2.setEvent("event2");
         category2.setScope(CategoryScope.Project);
         _service.getCategoryService().create(category2);
 
-        long entityId2 = category2.getId();
-        Category retrievedCat2 = _service.getCategoryService().retrieve(entityId2);
-        assertEquals(category2, retrievedCat2);
+        final long     entityId2     = category2.getId();
+        final Category cat2Retrieve1 = _service.getCategoryService().retrieve(entityId2);
+        assertEquals(category2, cat2Retrieve1);
 
-        List<Category> allCategories = _service.getCategoryService().getAllWithDisabled();
-        List<Category> categories = _service.getCategoryService().getAll();
-        assertNotNull(allCategories);
-        assertNotNull(categories);
+        final List<Category> allCategories1 = _service.getCategoryService().getAllWithDisabled();
+        final List<Category> categories1    = _service.getCategoryService().getAll();
+        assertNotNull(allCategories1);
+        assertNotNull(categories1);
 
-        assertEquals(2 + allWithDisabledOffset, allCategories.size());
-        assertEquals(1 + allOffset, categories.size());
+        assertEquals(2 + allWithDisabledOffset, allCategories1.size());
+        assertEquals(1 + allOffset, categories1.size());
 
         _service.getCategoryService().delete(category2);
-        retrievedCat2 = _service.getCategoryService().retrieve(entityId2);
-        assertNull(retrievedCat2);
 
-        allCategories = _service.getCategoryService().getAllWithDisabled();
-        categories = _service.getCategoryService().getAll();
-        assertNotNull(allCategories);
-        assertNotNull(categories);
-        assertEquals(2 + allWithDisabledOffset, allCategories.size());
-        assertEquals(allOffset, categories.size());
+        final Category cat2Retrieve2 = _service.getCategoryService().retrieve(entityId2);
+        assertNull(cat2Retrieve2);
+
+        final List<Category> allCategories2 = _service.getCategoryService().getAllWithDisabled();
+        final List<Category> categories2    = _service.getCategoryService().getAll();
+        assertNotNull(allCategories2);
+        assertNotNull(categories2);
+        assertEquals(2 + allWithDisabledOffset, allCategories2.size());
+        assertEquals(allOffset, categories2.size());
     }
-    
+
     @Test(expected = ConstraintViolationException.class)
-    public void testCategoryConstraints() throws NrgServiceException {
+    public void testCategoryConstraints() {
         Category category1 = _service.getCategoryService().newEntity();
         category1.setScope(CategoryScope.Site);
         category1.setEvent("duplicate");
@@ -161,7 +165,7 @@ public class NotificationServiceTests {
      * Creates multiple categories and definitions.
      */
     @Test
-    public void testCategoryAndDefinitions() throws NrgServiceException {
+    public void testCategoryAndDefinitions() {
         // Create a category.
         Category category1 = _service.getCategoryService().newEntity();
         assertNotNull(category1);
@@ -188,7 +192,7 @@ public class NotificationServiceTests {
         assertNotNull(retrievedDef2);
         assertEquals(definition11, retrievedDef1);
         assertEquals(definition12, retrievedDef2);
-        
+
         Category category2 = _service.getCategoryService().newEntity();
         category2.setEvent("eventB");
         category2.setScope(CategoryScope.Project);
@@ -208,7 +212,7 @@ public class NotificationServiceTests {
         assertNotNull(definitions);
         assertEquals(2, definitions.size());
     }
-    
+
     @Test(expected = DuplicateDefinitionException.class)
     @Transactional
     public void testDuplicateDefinitions() throws NrgServiceException {
@@ -223,7 +227,7 @@ public class NotificationServiceTests {
         Subscriber subscriber2 = _service.getSubscriberService().createSubscriber("Subscriber 2", "subscriber2@rickherrick.com");
         Subscriber subscriber3 = _service.getSubscriberService().createSubscriber("Subscriber 3", "subscriber3@rickherrick.com");
         Subscriber subscriber4 = _service.getSubscriberService().createSubscriber("Subscriber 4", "subscriber4@rickherrick.com");
-        
+
         Definition definition1 = _service.createDefinition(CategoryScope.Project, "subevent1", 11L);
         Definition definition2 = _service.createDefinition(CategoryScope.Project, "subevent1", 12L);
         Definition definition3 = _service.createDefinition(CategoryScope.Project, "subevent2", 21L);
@@ -231,7 +235,7 @@ public class NotificationServiceTests {
 
         Channel channel1 = _service.getChannelService().createChannel("htmlMail", "text/html");
         Channel channel2 = _service.getChannelService().createChannel("textMail", "text/plain");
-        
+
         Subscription subscription111 = _service.subscribe(subscriber1, SubscriberType.User, definition1, channel1);
         Subscription subscription121 = _service.subscribe(subscriber1, SubscriberType.User, definition2, channel1);
         Subscription subscription132 = _service.subscribe(subscriber1, SubscriberType.User, definition3, channel2);
@@ -269,7 +273,7 @@ public class NotificationServiceTests {
         assertEquals(3, subscriberSubscriptions3.size());
         assertNotNull(subscriberSubscriptions4);
         assertEquals(2, subscriberSubscriptions4.size());
-        
+
         List<Subscription> definitionSubscriptions1 = definition1.getSubscriptions();
         List<Subscription> definitionSubscriptions2 = definition2.getSubscriptions();
         List<Subscription> definitionSubscriptions3 = definition3.getSubscriptions();
@@ -283,7 +287,7 @@ public class NotificationServiceTests {
         assertEquals(2, definitionSubscriptions3.size());
         assertNotNull(definitionSubscriptions4);
         assertEquals(3, definitionSubscriptions4.size());
-        
+
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(MailMessage.PROP_SUBJECT, "Test notification");
         parameters.put(MailMessage.PROP_HTML, "<html><body>This is a test notification, which includes an <b>HTML</b> message payload.</body></html>");
@@ -293,16 +297,17 @@ public class NotificationServiceTests {
     }
 
     /**
-     * @param subscription       The subscription to validate.
-     * @param subscriberName     The subscriber login name.
-     * @param subscriberEmail    The subscriber email.
-     * @param entity             The ID of the entity with which the subscription is associated.
-     * @param scope              The {@link org.nrg.notify.api.CategoryScope scope} of the subscription category.
-     * @param event              The event associated with the subscription.
-     * @param channelName        The channel name.
-     * @param mimeType           The requested MIME type for the subscription.
+     * @param subscription    The subscription to validate.
+     * @param subscriberName  The subscriber login name.
+     * @param subscriberEmail The subscriber email.
+     * @param entityId        The ID of the entity with which the subscription is associated.
+     * @param scope           The {@link org.nrg.notify.api.CategoryScope scope} of the subscription category.
+     * @param event           The event associated with the subscription.
+     * @param channelName     The channel name.
+     * @param mimeType        The requested MIME type for the subscription.
      */
-    private void validateSubscription(Subscription subscription, String subscriberName, String subscriberEmail, long entity, CategoryScope scope, String event, String channelName, String mimeType) {
+    @SuppressWarnings("SameParameterValue")
+    private void validateSubscription(final Subscription subscription, final String subscriberName, final String subscriberEmail, final long entityId, final CategoryScope scope, final String event, final String channelName, final String mimeType) {
         assertNotNull(subscription);
         Subscriber subscriber = subscription.getSubscriber();
         assertNotNull(subscriber);
@@ -310,7 +315,7 @@ public class NotificationServiceTests {
         assertEquals(subscriberEmail, subscriber.getEmails());
         Definition definition = subscription.getDefinition();
         assertNotNull(definition);
-        assertEquals(entity, definition.getEntity());
+        assertEquals(entityId, definition.getEntity());
         Category category = definition.getCategory();
         assertNotNull(category);
         assertEquals(scope, category.getScope());

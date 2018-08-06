@@ -37,12 +37,13 @@
     <div id="user-change-password" class="html-template">
         #parse("screens/XDATScreen_password.vm")
     </div>
-    
-    <script src="$content.getURI("/scripts/xnat/app/userProfile.js")"></script>
+
     <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/userCacheManagement.js")"></script>
 
     <script>
         XNAT.app.userProfile.init('#user-profile-manager');
+        XNAT.app.userCache.init();
     </script>
     <div class="clearfix clear"></div>
 ##    #parse("screens/XDATScreen_aliasTokens.vm")

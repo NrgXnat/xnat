@@ -119,13 +119,48 @@ var XNAT = getObject(XNAT || {});
                 }
             }
         };
+        var userCacheTab = {
+            kind: 'tab',
+            label: 'Manage Cached Resources',
+            group: 'General',
+            contents: {
+                userCachePanel: {
+                    kind: 'panel',
+                    label: 'Cache Settings',
+                    footer: false,
+                    contents: {
+                        userCacheHeader: {
+                            tag: 'div',
+                            element: {
+                                style: { margin: '0 0 2em' }
+                            },
+                            contents:
+                            '<div class="message">' +
+                            'The XNAT datatype access cache stores lists of common items that users have access to that seldom change, such as project roles and browseable datatypes. ' +
+                            'This increases site performance by reducing the number of server calls required to render the UI. When those items are updated, the cache should be automatically flushed. ' +
+                            'However, users may run across times when cached data appears to be stale. In those instances (or whenever you wish), users can manually refresh their datatype access cache. ' +
+                            '</div>'
+                        },
+                        userCacheControl: {
+                            tag: 'div#user-cache-control',
+                            contents:
+                            '<p><a class="btn1 flush-user-cache" href="#!">Reset Access Cache</a> <span id="user-cache-modified-status" class="pad10h"></span></p>'
+                        },
+                        userCacheContainer: {
+                            tag: 'div#user-cache-container'
+                        }
+                    }
+                }
+            }
+        };
         var userProfileTabSet = {
             kind: 'tabs',
             name: 'userProfileSettings',
             label: 'Event Service Administration',
             contents: {
                 userProfileTab: userProfileTab,
-                aliasTokenTab: aliasTokenTab
+                aliasTokenTab: aliasTokenTab,
+                userCacheTab: userCacheTab,
             }
         };
 

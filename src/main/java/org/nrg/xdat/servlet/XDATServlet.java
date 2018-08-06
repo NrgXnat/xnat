@@ -32,6 +32,7 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
+import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -248,7 +249,27 @@ public class XDATServlet extends HttpServlet {
                 //manually execute create statements
                 if (!_sql.isEmpty()) {
                     logger.info("Initializing database schema...");
-                    execute(transaction, writer, _sql);
+                    try {
+                        execute(transaction, writer, _sql);
+                    }
+                    catch(Throwable t){
+                        String errMessage = t.getMessage();
+                        if(Pattern.compile(".*cannot\\sdrop\\stable(?s).*view.*depends\\son\\stable.*").matcher(errMessage).find()) {
+                            //In cases where it is failing to modify a table because one or more views depend on it, simply drop all XNAT views and try again.
+                            transaction.rollback();
+                            String dbName = "xnat";
+                            Object dbUsername = XDAT.getContextService().getBean("dbUsername", String.class);
+                            if (dbUsername != null) {
+                                dbName = dbUsername.toString();
+                            }
+                            transaction.execute(getViewDropSql(dbName));
+                            execute(transaction, writer, GenericWrapperUtils.GetExtensionTables());
+                            execute(transaction, writer, _sql);
+                        }
+                        else{
+                            throw t;
+                        }
+                    }
                 }
 
                 //update the stored functions used for retrieving XFTItems and manipulating them
@@ -453,6 +474,50 @@ public class XDATServlet extends HttpServlet {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }
+
+    private List<String> getViewDropSql(String user) {
+        final List<String> dropSql = Lists.newArrayList();
+        dropSql.add(
+                "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
+                        "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+                        "BEGIN " +
+                        "RETURN QUERY " +
+                        "SELECT " +
+                        "n.nspname AS table_schema, " +
+                        "c.relname AS view_name " +
+                        "FROM pg_catalog.pg_class c " +
+                        "LEFT JOIN pg_catalog.pg_namespace n " +
+                        "ON (n.oid = c.relnamespace) " +
+                        "WHERE c.relkind = 'v' " +
+                        "AND c.relowner = (SELECT usesysid " +
+                        "FROM pg_catalog.pg_user " +
+                        "WHERE usename = $1); " +
+                        "END$$ LANGUAGE plpgsql;");
+        dropSql.add(
+                "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
+                        "RETURNS INTEGER AS $$ " +
+                        "DECLARE " +
+                        "r RECORD; " +
+                        "s TEXT; " +
+                        "c INTEGER := 0; " +
+                        "BEGIN " +
+                        "RAISE NOTICE 'Dropping views for user %', $1; " +
+                        "FOR r IN " +
+                        "SELECT * FROM find_user_views($1) " +
+                        "LOOP " +
+                        "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+                        "EXECUTE s; " +
+                        "c := c + 1; " +
+                        "RAISE NOTICE 's = % ', S; " +
+                        "END LOOP; " +
+                        "RETURN c; " +
+                        "END$$ LANGUAGE plpgsql;"
+        );
+        dropSql.add(
+                "SELECT drop_user_views('" + user + "');"
+        );
+        return dropSql;
     }
 }
 

@@ -24,8 +24,7 @@ $sectionTitle
     cancel any ongoing transfer.
 </p>
 <p>
-    Get the latest version of the XNAT Desktop Client<br>
-    <a href="https://download.xnat.org/desktop-client/" target="_blank"><img src="https://download.xnat.org/i/desktop-client/latest.svg" alt="Download the latest version of the XNAT Desktop Client" /></a>
+    <a href="https://download.xnat.org/desktop-client/" target="_blank" class="btn1 btn-sm">Download the XNAT Desktop Client</a>
 </p>
 
 
@@ -37,8 +36,7 @@ $sectionTitle
     leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
 </p>
 <p>
-    Get the latest version of the XNAT Upload Assistant<br>
-    <a href="https://download.xnat.org/upload-assistant/" target="_blank"><img src="https://download.xnat.org/i/upload-assistant/latest.svg" alt="Download the latest version of the XNAT Upload Assistant" /></a>
+    <a href="https://download.xnat.org/upload-assistant/" target="_blank" class="btn1 btn-sm">Download the XNAT Upload Assistant</a>
 </p>
 
 <div class="alert" style="width:500px">

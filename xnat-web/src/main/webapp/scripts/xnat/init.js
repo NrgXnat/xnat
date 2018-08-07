@@ -56,6 +56,11 @@ var XNAT = getObject(XNAT);
             e.preventDefault();
         });
 
+        $doc.on('click', 'a[data-wait]', function(e){
+            var msg = $(this).data('wait') || 'Please wait...';
+            XNAT.dialog.static.wait(msg);
+        });
+
         // <input type="checkbox" name="bogus" data-values="yes|no" data-proxy="id-of-proxy-input">
         // ...or...
         // <input type="checkbox" name="bogus" title="bogus=yes|no">

@@ -363,10 +363,15 @@ window.xmodal = getObject(window.xmodal);
             // calculate dialog body max-height from window height
             this.bodyHeight = (this.windowHeight * 0.9) - this.footerHeight - 40 - 2;
 
-            // body container
-            this.dialogBody$ = this.body$ = $.spawn('div.body.content.xnat-dialog-body', {
+            // [bodyConfig] allows customization of the dialog body <div>
+            this.bodyConfig = extend(true, {
                 style: { maxHeight: pxSuffix(this.bodyHeight) }
-            }).append(this.content$);
+            }, this.bodyConfig || {});
+
+            // body container
+            this.dialogBody$ = this.body$ =
+                $.spawn('div.body.content.xnat-dialog-body', this.bodyConfig)
+                 .append(this.content$);
 
             // footer (where the footer content and buttons go)
             if (this.footer !== false) {
@@ -1366,6 +1371,32 @@ window.xmodal = getObject(window.xmodal);
 
         return dialog.open(config);
 
+    };
+
+    // render a 'static' dialog with no title bar or footer to block user interraction
+    dialog.static = function(message, opts){
+        var cfg = extend(true, {
+            width: 300,
+            header: false,
+            footer: false,
+            mask: true,
+            padding: '0',
+            top: '80px',
+            content: message || spawn('div.message.md', 'Please wait...')
+        }, opts);
+        return dialog.init(cfg);
+    };
+
+    dialog.static.message = function(message, opts){
+        var cfg = extend(true, {
+            mask: false
+        }, opts);
+        return dialog.static(spawn('div.message.md', message), cfg).open();
+    };
+
+    dialog.static.wait = function(message, opts){
+        var msg = message || ' Please wait...';
+        return dialog.static(spawn('div.message.waiting.md', msg), opts).open();
     };
 
     $(document).ready(function(){

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.h2.Driver;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.CompositeDicomObjectIdentifier;
 import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
@@ -30,6 +31,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
+import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -318,6 +320,19 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public void enableDicomSCPInstances(final int... ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
         toggleEnabled(true, Arrays.asList(ArrayUtils.toObject(ids)));
+        for(int id:ids) {
+            try {
+                String prefKey = "dicomSCPInstances:" + id;
+                Preference instance = getPreference(prefKey);
+                if(instance!=null){
+                    JSONObject jsonObj = new JSONObject(instance.getValue());
+                    jsonObj.put("enabled",true);
+                    set(jsonObj.toString(),prefKey);
+                }
+            } catch (InvalidPreferenceName invalidPreferenceName) {
+                invalidPreferenceName.printStackTrace();
+            }
+        }
     }
 
     public void disableDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -326,6 +341,19 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public void disableDicomSCPInstances(final int... ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
         toggleEnabled(false, Arrays.asList(ArrayUtils.toObject(ids)));
+        for(int id:ids) {
+            try {
+                String prefKey = "dicomSCPInstances:" + id;
+                Preference instance = getPreference(prefKey);
+                if(instance!=null){
+                    JSONObject jsonObj = new JSONObject(instance.getValue());
+                    jsonObj.put("enabled",false);
+                    set(jsonObj.toString(),prefKey);
+                }
+            } catch (InvalidPreferenceName invalidPreferenceName) {
+                invalidPreferenceName.printStackTrace();
+            }
+        }
     }
 
     /**

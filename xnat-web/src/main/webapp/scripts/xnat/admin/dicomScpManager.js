@@ -160,15 +160,14 @@ var XNAT = getObject(XNAT || {});
                 // collect <option> elements
                 var options = [];
 
-                forOwn(identifiers, function(key, val){
-                    var label = key;
-                    label += (key === 'dicomObjectIdentifier') ? ' (Default)' : '';
+                Object.keys(identifiers).forEach(function(identifier){
+                    var label = (identifier === 'dicomObjectIdentifier') ? identifier+ ' (Default)' : identifier;
                     var option = spawn('option', {
-                        value: key,
+                        value: identifier,
                         html: label
                     });
-                    if (key === 'dicomObjectIdentifier') {
-                        option.setAttribute('selected', 'selected');
+                    if (item.identifier !== undefined && item.identifier === identifier) {
+                        option.setAttribute('selected','selected');
                         option.selected = true;
                     }
                     options.push(option)

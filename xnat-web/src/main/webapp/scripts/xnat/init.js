@@ -56,10 +56,26 @@ var XNAT = getObject(XNAT);
             e.preventDefault();
         });
 
+        // display 'wait' dialog for elements with a [data-wait] attribute
         $doc.on('click', 'a[data-wait]', function(e){
             var msg = $(this).data('wait') || 'Please wait...';
             XNAT.dialog.static.wait(msg);
         });
+
+
+        // display 'wait' dialog when requesting data download
+        function downloadWaitMsg(msg){
+            return XNAT.dialog.static.wait(msg || 'Preparing data for download...');
+        }
+        $('#actionsMenu').on('click', 'a[title="Download Images"]', function(e){
+            downloadWaitMsg()
+        });
+        $('#search_tabs').on('click', 'a.yuimenuitemlabel', function(e){
+            if (this.textContent === 'Download') {
+                downloadWaitMsg();
+            }
+        });
+
 
         // <input type="checkbox" name="bogus" data-values="yes|no" data-proxy="id-of-proxy-input">
         // ...or...

@@ -378,6 +378,14 @@ dependencies {
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
 
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDir
+        testOutputDir = compileTestJava.destinationDir
+    }
+}
+
 lombok {
     version = dependencyManagement.importedProperties["lombok.version"]
     sha256 = ""

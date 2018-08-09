@@ -117,7 +117,6 @@ public interface CatalogService {
     XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
     /**
-     * /**
      * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive
      * space of the parent data object and have the same name as the catalog. The contents of the locations specified by
      * the sources parameters are copied into the resource folder: if each source is a directory, only that directory's

@@ -453,10 +453,10 @@ window.xmodal = getObject(window.xmodal);
             ]);
 
             if (this.hasFooter) {
-               this.content$[0].style.paddingBottom = pxSuffix(this.footerHeight - 1);
+                // this.content$[0].style.marginBottom = pxSuffix(this.footerHeight - 1);
                 // insert an element to help with sizing when there's a footer
                 this.dialog$.spawn('div.footer-pad', {
-                    style: { height: '1px' }
+                    style: { height: pxSuffix(this.footerHeight) }
                 }, NBSP).append(this.footer$)
             }
 
@@ -1328,12 +1328,13 @@ window.xmodal = getObject(window.xmodal);
             return;
         }
 
-        var tmpl;
+        var tmpl, URL;
 
         var config = {
             title: '',
             width: 800,
             // height: 600,
+            speed: 0,
             maxBtn: true,
             esc: false,
             enter: false,
@@ -1347,35 +1348,36 @@ window.xmodal = getObject(window.xmodal);
 
         if (isPlainObject(url)) {
             extendDeep(config, url);
+            URL = config.url;
         }
         else if (isString(url)) {
             extendDeep(config, obj);
-            config.url = url;
+            URL = url;
         }
 
-        if (!config.url) {
+        if (!url || !URL) {
             console.error('dialog.load() requires a "url" property');
             return;
         }
 
-        config.url = XNAT.url.rootUrl(config.url);
-
         config.content$ = $.spawn('div.load-content');
         config.content = config.content$[0];
 
-        config.beforeShow = function(obj){
-            config.content$.load(config.url, function(){
-                obj.setHeight(config.height || (config.content$.height() + 100))
-            });
-        };
+        var DLG = dialog.init(config);
 
-        return dialog.open(config);
+        config.content$.load(XNAT.url.rootUrl(URL), function(){
+            // just wait for the content to load before opening the dialog...
+            // ...THEN the heights of dialog elements should be calculated properly
+            DLG.open();
+        });
+
+        return DLG;
 
     };
 
     // render a 'static' dialog with no title bar or footer to block user interraction
     dialog.static = function(message, opts){
-        var cfg = extend(true, {
+        var cfg = {
             width: 300,
             header: false,
             footer: false,
@@ -1383,15 +1385,13 @@ window.xmodal = getObject(window.xmodal);
             padding: '0',
             top: '80px',
             content: message || spawn('div.message.md', 'Please wait...')
-        }, opts);
-        return dialog.init(cfg);
+        };
+        return dialog.init(extend(true, cfg, opts));
     };
 
     dialog.static.message = function(message, opts){
-        var cfg = extend(true, {
-            mask: false
-        }, opts);
-        return dialog.static(spawn('div.message.md', message), cfg).open();
+        var cfg = { mask: false };
+        return dialog.static(spawn('div.message.md', message), extend(true, cfg, opts)).open();
     };
 
     dialog.static.wait = function(message, opts){

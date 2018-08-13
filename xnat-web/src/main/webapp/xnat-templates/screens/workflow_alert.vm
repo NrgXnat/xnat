@@ -42,10 +42,10 @@
 		#set ($completed = [])
 
 		#foreach( $workflow in $om.getWorkflows() ) 
-			#if($workflow.getStatus()=="Complete")
+			#if($workflow.isComplete())
 				#set($added = $completed.add($workflow.getOnlyPipelineName()))
 			#end
-			#if($workflow.getStatus()=="Error" || $workflow.getStatus()=="Failed")
+			#if($workflow.isFailed())
 				#if(!$completed.contains($workflow.getOnlyPipelineName()))
 					#set($hasErrorProcess = true)
 					<tr>

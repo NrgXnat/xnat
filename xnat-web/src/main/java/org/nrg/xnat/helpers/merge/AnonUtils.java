@@ -30,6 +30,8 @@ public interface AnonUtils {
 
     List<Configuration> getAllScripts(String projectId);
 
+    String getStudyScript(String studyId) throws ConfigServiceException;
+
     String getProjectScript(String projectId) throws ConfigServiceException;
 
     void setProjectScript(String login, String script, String projectId) throws ConfigServiceException;
@@ -45,4 +47,6 @@ public interface AnonUtils {
     void disableSiteWide(String login) throws ConfigServiceException;
 
     void disableProjectSpecific(String login, String projectId) throws ConfigServiceException;
+
+    void disableStudy(String login, final String studyId) throws ConfigServiceException;
 }

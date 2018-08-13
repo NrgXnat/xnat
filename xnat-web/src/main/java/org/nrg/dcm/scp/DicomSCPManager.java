@@ -42,6 +42,11 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
+import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
+import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
+import org.nrg.xdat.security.user.XnatUserProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
@@ -74,13 +79,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     public static final String PREF_ID = "dicomSCPInstances";
 
     @Autowired
-    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
-        super(preferenceService, eventService);
+    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {        super(preferenceService, eventService);
 
         _provider = receivedFileUserProvider;
         _context = context;
 
         _isEnableDicomReceiver = siteConfigPreferences.isEnableDicomReceiver();
+
+        _importer = importer;
 
         String primaryBeanId = null;
 
@@ -294,6 +300,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     }
 
+    public DicomSCPInstance getDicomSCPInstance(final String aeTitle) {
+        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE, new HashMap<String, Object>() {{
+            put("aeTitle", aeTitle);
+        }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+    }
+
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {
         try {
         return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
@@ -415,6 +427,10 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public DicomObjectIdentifier<XnatProjectdata> getDefaultDicomObjectIdentifier() {
         return getDicomObjectIdentifiers().get(_primaryDicomObjectIdentifierBeanId);
+    }
+
+    public ProcessorGradualDicomImporter getImporter() {
+        return _importer;
     }
 
     public void resetDicomObjectIdentifier() {
@@ -573,13 +589,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_INSTANCE_BY_ID                    = "SELECT * FROM dicom_scp_instance WHERE id = :id";
     private static final String GET_ENABLED_INSTANCES_BY_PORT         = "SELECT * FROM dicom_scp_instance WHERE enabled = :enabled AND port = :port";
     private static final String DOES_INSTANCE_ID_EXIST                = "SELECT EXISTS(" + GET_INSTANCE_BY_ID + ")";
+    private static final String GET_INSTANCE_BY_AE_TITLE              = "SELECT * FROM dicom_scp_instance WHERE ae_title = :aeTitle";
     private static final String GET_INSTANCE_BY_AE_TITLE_AND_PORT     = "SELECT * FROM dicom_scp_instance WHERE ae_title = :aeTitle AND port = :port";
     private static final String DOES_INSTANCE_AE_TITLE_AND_PORT_EXIST = "SELECT EXISTS(" + GET_INSTANCE_BY_AE_TITLE_AND_PORT + ")";
     private static final String GET_PORTS_BY_IDS                      = "SELECT DISTINCT port FROM dicom_scp_instance WHERE id IN (:ids)";
     private static final String GET_PORTS_FOR_ENABLED_INSTANCES       = "SELECT DISTINCT port FROM dicom_scp_instance WHERE enabled = TRUE";
 
     // Update queries: updating DicomSCPs required.
-    private static final String CREATE_OR_UPDATE_INSTANCE         = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, ENABLED) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled)";
+    private static final String CREATE_OR_UPDATE_INSTANCE         = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
     private static final String ENABLE_OR_DISABLE_INSTANCES_BY_ID = "UPDATE dicom_scp_instance SET enabled = :enabled WHERE id IN (:ids)";
     private static final String DELETE_INSTANCES_BY_ID            = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
 
@@ -598,7 +615,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
                                         resultSet.getInt("port"),
                                         resultSet.getString("identifier"),
                                         resultSet.getString("file_namer"),
-                                        resultSet.getBoolean("enabled"));
+                                        resultSet.getBoolean("enabled"),
+                                        resultSet.getBoolean("custom_processing"));
         }
     };
 
@@ -609,6 +627,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private final IdentifiersToMapFunction   _identifiersToMapFunction;
     private final EmbeddedDatabase           _database;
     private final NamedParameterJdbcTemplate _template;
+    private final ProcessorGradualDicomImporter       _importer;
 
     private boolean _isEnableDicomReceiver;
 

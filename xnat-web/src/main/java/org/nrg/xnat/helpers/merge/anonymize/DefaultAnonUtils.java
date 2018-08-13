@@ -154,6 +154,34 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     @Override
+    public String getStudyScript(String studyId) throws ConfigServiceException{
+        if (logger.isDebugEnabled()) {
+            logger.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
+        }
+        final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+        final boolean enabled = StringUtils.equals(_configService.getStatus(DicomEdit.ToolName, path, Scope.Site, studyId),Configuration.ENABLED_STRING);
+        if(enabled) {
+            return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Site, studyId);
+        }
+        else{
+            return null;
+        }
+    }
+
+    public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException{
+        final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, studyId);
+        }
+        if (studyId == null) {
+            XDAT.getConfigService().replaceConfig(login, "", DicomEdit.ToolName, path, script);
+        } else {
+            XDAT.getConfigService().replaceConfig(login, "", DicomEdit.ToolName, path, script, Scope.Site, studyId);
+        }
+
+    }
+
+    @Override
     public String getProjectScript(final String projectId) throws ConfigServiceException {
         if (logger.isDebugEnabled()) {
             logger.debug("Getting {} script for project: {}", DicomEdit.ToolName, projectId);
@@ -221,6 +249,14 @@ public class DefaultAnonUtils implements AnonUtils {
         } else {
             final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
             _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Project, projectId);
+        }
+    }
+
+    @Override
+    public void disableStudy(String login, final String studyId) throws ConfigServiceException {
+        if (StringUtils.isNotBlank(studyId)) {
+            final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+            _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Site, studyId);
         }
     }
 

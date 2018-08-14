@@ -9,37 +9,34 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xft.security.UserI;
 
+@Slf4j
 public abstract class AdminAction extends SecureAction {
-	/* (non-Javadoc)
+    /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.screens.SecureScreen#isAuthorized(org.apache.turbine.util.RunData)
      */
     @Override
     protected boolean isAuthorized(RunData data) throws Exception {
-        boolean authorized= super.isAuthorized(data);
-        if (authorized)
-        {
-            if (!Roles.isSiteAdmin(TurbineUtils.getUser(data)))
-            {
-                authorized=false;
-                data.setMessage("Unauthorized access.  Please login to gain access to this page.");
-                logger.error("Unauthorized Access to an Admin Action (prevented).");
-                AccessLogger.LogActionAccess(data, "Unauthorized access");
-                AdminUtils.sendAdminEmail(TurbineUtils.getUser(data),"Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Action (" + data.getAction() +") prevented.");
-                data.getResponse().sendError(403);
-                
-            }
+        if (!super.isAuthorized(data)) {
+            return false;
         }
-        
-        return authorized;
-    }
 
-    private static final Logger logger = LoggerFactory.getLogger(AdminAction.class);
+        final UserI user = getUser();
+        if (Roles.isSiteAdmin(user)) {
+            return true;
+        }
+
+        data.setMessage("Unauthorized access.  Please login to gain access to this page.");
+        log.error("Unauthorized Access to an Admin Action (prevented).");
+        AccessLogger.LogActionAccess(data, "Unauthorized access");
+        AdminUtils.sendAdminEmail(user, "Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Action (" + data.getAction() + ") prevented.");
+        data.getResponse().sendError(403);
+        return false;
+    }
 }

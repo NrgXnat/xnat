@@ -1,6 +1,5 @@
 package org.nrg.xft.event;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.event.EventI;
 import org.nrg.xft.XFTItem;
 
@@ -64,7 +63,8 @@ public interface XftItemEventI extends EventI {
     boolean isMultiItemEvent();
 
     /**
-     * Gets the XSI type for a {@link #isMultiItemEvent() single-item event}.
+     * Gets the XSI type for the object associated with the event. This works for both {@link #isMultiItemEvent() multi-item events}
+     * and single-item events, since multi-item events <i>must</i> have the same XSI type for all associated objects.
      *
      * @return Returns the XSI type of the associated {@link XFTItem}.
      */
@@ -78,12 +78,12 @@ public interface XftItemEventI extends EventI {
     String getId();
 
     /**
-     * Gets a list of XSI type and ID pairs for the event. Note that this works for {@link #isMultiItemEvent() multi-item events}
-     * as well as single-item events. For single-item events, a list containing a single element is returned.
+     * Gets a list of IDs for the event. Note that this works for both {@link #isMultiItemEvent() multi-item}
+     * and single-item events. For single-item events, a list containing a single ID is returned.
      *
-     * @return Returns a list of XSI type ID of the associated {@link XFTItem}.
+     * @return Returns a list of IDs of the associated {@link XFTItem}.
      */
-    List<Pair<String, String>> getTypeAndIds();
+    List<String> getIds();
 
     /**
      * Gets the action associated with the event.

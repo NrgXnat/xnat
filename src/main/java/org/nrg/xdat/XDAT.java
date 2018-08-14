@@ -11,16 +11,15 @@ package org.nrg.xdat;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import org.apache.commons.configuration.Configuration;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.event.EventI;
@@ -82,6 +81,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,14 +94,13 @@ import static org.nrg.xdat.security.helpers.Users.*;
  */
 // TODO: Remove all @SuppressWarnings() annotations.
 @SuppressWarnings("unused")
+@Slf4j
 public class XDAT implements Initializable, Configurable{
-
 	public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
 	public static final String IP_WHITELIST_PATH               = "/system/ipWhitelist";
 	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
 
-	private static final Logger logger                    = Logger.getLogger(XDAT.class);
-	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: %s. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
 
 	private static ContextService             _contextService;
 	private static DataSource                 _dataSource;
@@ -121,6 +121,33 @@ public class XDAT implements Initializable, Configurable{
 
 	private String instanceSettingsLocation = null;
 
+	/**
+	 * configure torque
+	 *
+	 * @param configuration Configuration
+	 * @see org.apache.stratum.lifecycle.Configurable
+	 */
+	@Override
+	public void configure(org.apache.commons.configuration.Configuration configuration) 	{
+		instanceSettingsLocation = configuration.getString("instance_settings_directory");
+	}
+
+	/**
+	 * initialize Torque
+	 *
+	 * @see org.apache.stratum.lifecycle.Initializable
+	 */
+	@Override
+	public void initialize()
+	{
+		try {
+			log.info("Starting Service XDAT");
+			init(instanceSettingsLocation);
+		} catch (Exception exception) {
+			log.error("An error occurred trying to start the XDAT service", exception);
+		}
+	}
+
 	public static Map<String, Long> getTotalCounts() {
 		final GroupsAndPermissionsCache cache = getContextService().getBeanSafely(GroupsAndPermissionsCache.class);
 		return cache != null ? cache.getTotalCounts(): Collections.<String, Long>emptyMap();
@@ -131,11 +158,11 @@ public class XDAT implements Initializable, Configurable{
     }
 
     public static String getWhitelistConfiguration(UserI user) throws ConfigServiceException {
-        org.nrg.config.entities.Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
-        if (whitelist == null || StringUtils.isBlank(whitelist.getContents())) {
-            whitelist = createDefaultWhitelist(user);
+        final Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
+        if (whitelist != null && StringUtils.isNotBlank(whitelist.getContents())) {
+			return whitelist.getContents();
         }
-        return whitelist.getContents();
+        return createDefaultWhitelist(user).getContents();
     }
 
 	public static String getSiteConfigurationProperty(final String property) throws ConfigServiceException {
@@ -143,25 +170,25 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	@SuppressWarnings("RedundantThrows")
-	public static String getSiteConfigurationProperty(final String property, final String _default) throws ConfigServiceException {
+	public static String getSiteConfigurationProperty(final String property, final String defaultValue) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		final String value = preferences.getValue(property);
-		return StringUtils.defaultIfBlank(value, _default);
+		return StringUtils.defaultIfBlank(value, defaultValue);
 	}
 
-	public static boolean getBoolSiteConfigurationProperty(final String property, final boolean _default) {
+	public static boolean getBoolSiteConfigurationProperty(final String property, final boolean defaultValue) {
 		try {
-			return BooleanUtils.toBoolean(getSiteConfigurationProperty(property, BooleanUtils.toStringTrueFalse(_default)));
+			return BooleanUtils.toBoolean(getSiteConfigurationProperty(property, BooleanUtils.toStringTrueFalse(defaultValue)));
 		} catch (ConfigServiceException e) {
-			return _default;
+			return defaultValue;
 		}
 	}
 
-	public static String safeSiteConfigProperty(final String property, final String _default) {
+	public static String safeSiteConfigProperty(final String property, final String defaultValue) {
 		try {
-			return getSiteConfigurationProperty(property, _default);
+			return getSiteConfigurationProperty(property, defaultValue);
 		} catch (Throwable e) {
-			return _default;
+			return defaultValue;
 		}
 	}
 
@@ -179,12 +206,9 @@ public class XDAT implements Initializable, Configurable{
 		final boolean isAnonymous = authentication == null || authentication instanceof AnonymousAuthenticationToken;
 
 		final Object principal;
-
 		try {
 			if (isAnonymous) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Attempted to retrieve user object, but found " + (authentication == null ? "no stored authentication object" : "an anonymous auth token") + ". Returning guest user.");
-				}
+				log.debug("Attempted to retrieve user object, but found {}. Returning guest user.", authentication == null ? "no stored authentication object" : "an anonymous auth token");
 				return Users.getGuest();
 			}
 
@@ -192,38 +216,28 @@ public class XDAT implements Initializable, Configurable{
 
 			try {
                 if (principal == null) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Attempted to retrieve user object and found an authentication object of type " + authentication.getClass().getName() + ", but it had no associated principal");
-                    }
+					log.debug("Attempted to retrieve user object and found an authentication object of type {}, but it had no associated principal", authentication.getClass());
                     return null;
                 }
 
                 if (principal instanceof UserI) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Found authenticated user object for user " + ((UserI) principal).getLogin());
-                    }
+					log.debug("Found authenticated user object for user {}", ((UserI) principal).getLogin());
                     return (UserI) principal;
                 }
 
                 if (principal instanceof String) {
                     if (StringUtils.isBlank((String) principal)) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Found principal object of type String but it was empty.");
-                        }
+						log.debug("Found principal object of type String but it was empty.");
                         return null;
                     }
                     final UserI user = Users.getUser((String) principal);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Found principal object of type String and successfully retrieved the user: " + principal);
-                    }
+					log.debug("Found principal object of type String and successfully retrieved the user: {}", principal);
                     return user;
                 }
             } catch (UserInitException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user with login: " + principal, e);
             } catch (UserNotFoundException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Found principal object of type String with value \"" + principal + "\", but couldn't find the corresponding user object.");
-                }
+				log.debug("Found principal object of type String with value \"{}\", but couldn't find the corresponding user object.", principal);
                 return null;
             }
 		} catch (UserNotFoundException e) {
@@ -232,10 +246,7 @@ public class XDAT implements Initializable, Configurable{
 			throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the guest user", e);
 		}
 
-		if (logger.isEnabledFor(Level.WARN)) {
-			logger.warn("This is weird. Found principal object of type " + principal.getClass().getName() + ". I don't really know what to do with this. Its value was: " + principal);
-		}
-
+		log.warn("This is weird. Found principal object of type {}. I don't really know what to do with this. Its value was: {}", principal.getClass(), principal);
 		return null;
 	}
 
@@ -266,12 +277,12 @@ public class XDAT implements Initializable, Configurable{
 
 			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
 		} catch (Exception exception) {
-            logger.error("Error performing su operation", exception);
+            log.error("Error performing su operation to user {}", user.getUsername(), exception);
 		}
 		try {
             new XDATLoginUser().doRedirect(data, context, user);
 		} catch (Exception exception) {
-			logger.error("Error performing su redirect", exception);
+			log.error("Error performing su redirect for user {}", user.getUsername(), exception);
 		}
 	}
 
@@ -279,35 +290,10 @@ public class XDAT implements Initializable, Configurable{
         try {
             return getSiteConfigurationProperty("siteLogoPath", "");
         } catch (ConfigServiceException e) {
-            logger.error("An error occurred trying to retrieve the site logo path setting, using the default", e);
+            log.error("An error occurred trying to retrieve the site logo path setting, using the default", e);
             return "/images/logo.png";
         }
     }
-
-	/**
-	 * configure torque
-	 *
-	 * @param configuration Configuration
-	 * @see org.apache.stratum.lifecycle.Configurable
-	 */
-	public void configure(Configuration configuration) 	{
-		instanceSettingsLocation = configuration.getString("instance_settings_directory");
-	}
-
-	/**
-	 * initialize Torque
-	 *
-	 * @see org.apache.stratum.lifecycle.Initializable
-	 */
-	public void initialize()
-	{
-		try {
-			logger.info("Starting Service XDAT");
-			init(instanceSettingsLocation);
-		} catch (Exception exception) {
-            logger.error(exception);
-		}
-	}
 
 	public static void RefreshDisplay()
 	{
@@ -373,7 +359,7 @@ public class XDAT implements Initializable, Configurable{
 							throw new ElementNotFoundException(security.getElementName());
 						}
 					} catch (ElementNotFoundException e) {
-						logger.error(getElementNotFoundMessage(e));
+						log.error(ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT, e);
 					}
 				}
 
@@ -386,15 +372,15 @@ public class XDAT implements Initializable, Configurable{
 							throw new ElementNotFoundException(security.getElementName());
 						}
 					} catch (ElementNotFoundException e) {
-						logger.error(getElementNotFoundMessage(e));
+						log.error(ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT, e);
 					}
 				}
 			} catch (Exception e) {
-				logger.error("", e);
+				log.error("An error occurred while initializing XDAT", e);
 			}
 		}
 
-		logger.info("Initializing Display Manager");
+		log.info("Initializing Display Manager");
 		DisplayManager.GetInstance(location);
 	}
 
@@ -433,7 +419,7 @@ public class XDAT implements Initializable, Configurable{
 	    buffer.append("COMMIT;");
 		FileUtils.OutputToFile(buffer.toString(),file);
 
-		logger.info("File Created: " + file);
+		log.info("File Created: {}", file);
 	}
 
 	public static void GenerateCreateSQL(String file) throws Exception
@@ -459,7 +445,7 @@ public class XDAT implements Initializable, Configurable{
 		FileUtils.OutputToFile(buffer.toString(),file);
 
 		ViewManager.OutputFieldNames();
-		logger.info("File Created: " + file);
+		log.info("File Created: {}", file);
 	}
 
 	@SuppressWarnings("unused")
@@ -558,6 +544,10 @@ public class XDAT implements Initializable, Configurable{
 		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).build());
 	}
 
+	public static void triggerXftItemEvent(final BaseElement[] baseElements, final String action) {
+		triggerEvent(XftItemEvent.builder().elements(Arrays.asList(baseElements)).action(action).build());
+	}
+
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
 		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).properties(properties).build());
 	}
@@ -614,7 +604,7 @@ public class XDAT implements Initializable, Configurable{
                 return null;
             }
             if (!current.isDirectory()) {
-                logger.error("",new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder."));
+                log.error("The path indicated by {} isn't a folder.", current.getAbsolutePath(), new NrgRuntimeException());
                 return null;
             }
         }
@@ -926,10 +916,6 @@ public class XDAT implements Initializable, Configurable{
         jmsTemplate.convertAndSend(destination, request);
 	}
 
-	public static String getElementNotFoundMessage(final ElementNotFoundException e) {
-		return String.format(ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT);
-	}
-
 	private static boolean hasUsers() {
 		try {
 			return (new DatabaseHelper(XDAT.getContextService().getBean(DataSource.class))).tableExists("xdat_user");
@@ -939,34 +925,28 @@ public class XDAT implements Initializable, Configurable{
 		}
 	}
 
-	private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
-        String username = user.getUsername();
-        String reason = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
-        return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
+	private static synchronized Configuration createDefaultWhitelist(final UserI user) throws ConfigServiceException {
+		final String username = user.getUsername();
+		final String reason   = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
+		return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 	}
 
-    public static List<String> getLocalhostIPs() {
-        List<String> localhostIPs = new ArrayList<>();
-        try {
-            InetAddress[] addresses = InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
-            for (InetAddress address : addresses) {
-                String hostAddress = address.getHostAddress();
-                if (hostAddress.contains("%")) {
-                    hostAddress = hostAddress.substring(0, hostAddress.indexOf("%"));
-                }
-                localhostIPs.add(hostAddress);
-            }
-        } catch (UnknownHostException exception) {
-            logger.error("Localhost is unknown host... Wha?", exception);
-        }
-            if (!localhostIPs.contains(IP_LOCALHOST_V4)) {
-                localhostIPs.add(IP_LOCALHOST_V4);
-            }
-            if (!localhostIPs.contains(IP_LOCALHOST_V6)) {
-                localhostIPs.add(IP_LOCALHOST_V6);
-            }
-            return localhostIPs;
-    }
+	public static Set<String> getLocalhostIPs() {
+		final Set<String> localhostIPs = new HashSet<>(LOCALHOST_IPS);
+		final String      siteUrl      = XDAT.getSiteConfigPreferences().getSiteUrl();
+		try {
+			final InetAddress[] addresses = ArrayUtils.addAll(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()), InetAddress.getAllByName(new URI(siteUrl).getHost()));
+			for (final InetAddress address : addresses) {
+				final String hostAddress = address.getHostAddress();
+				localhostIPs.add(hostAddress.contains("%") ? hostAddress.substring(0, hostAddress.indexOf("%")) : hostAddress);
+			}
+		} catch (URISyntaxException e) {
+			log.error("The configured site URL {} is an invalid URL.", siteUrl, e);
+		} catch (UnknownHostException exception) {
+			log.error("Localhost is unknown host... Wha?", exception);
+		}
+		return localhostIPs;
+	}
 
 	private static void logShortStackTrace(final String message, final int depth) {
 		logShortStackTrace(message, null, depth);
@@ -991,9 +971,8 @@ public class XDAT implements Initializable, Configurable{
         for (final StackTraceElement element : ArrayUtils.subarray(stackTrace, start.get(), start.getAndAdd(depth))) {
 			buffer.append("    at ").append(element.getClassName()).append(".").append(element.getMethodName()).append("():").append(element.getLineNumber()).append("\n");
 		}
-		logger.error(buffer.toString());
+		log.error(buffer.toString());
 	}
 
-	private static final String IP_LOCALHOST_V4 = "127.0.0.1";
-    private static final String IP_LOCALHOST_V6 = "0:0:0:0:0:0:0:1";
+	private static final List<String> LOCALHOST_IPS = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");
 }

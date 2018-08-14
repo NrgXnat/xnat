@@ -575,7 +575,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         Users.getGuest(true);
 
         if (triggerEvent) {
-            _eventService.triggerEvent(builder().typeAndId("xnat:projectData", tag).action(UPDATE).property("accessibility", accessibility).build());
+            _eventService.triggerEvent(builder().xsiType("xnat:projectData").id(tag).action(UPDATE).property("accessibility", accessibility).build());
         }
 
         return true;
@@ -659,7 +659,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 ((XDATUser) affected).setElementAccess(elementAccess);
             }
             if (triggerEvent) {
-                _eventService.triggerEvent(builder().typeAndId(elementName, fieldValue).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(elementName).id(fieldValue).action(UPDATE).build());
             }
         } catch (XFTInitException e) {
             log.error("An error occurred initializing XFT", e);

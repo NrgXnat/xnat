@@ -11,14 +11,21 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.BrowserType;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -32,9 +39,8 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -47,19 +53,27 @@ import java.util.Enumeration;
 /**
  * @author Tim
  */
+@Slf4j
 public abstract class SecureAction extends VelocitySecureAction {
-    private static final Logger logger = LoggerFactory.getLogger(SecureAction.class);
+    @Nonnull
+    protected UserI getUser() {
+        try {
+            return ObjectUtils.defaultIfNull(XDAT.getUserDetails(), Users.getGuest());
+        } catch (UserNotFoundException | UserInitException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "An error occurred retrieving the user principal.", e);
+        }
+    }
 
     protected void preserveVariables(final RunData data, final Context context) {
         if (data.getParameters().containsKey("project")) {
             final String project = (String) TurbineUtils.GetPassedParameter("project", data);
-            logger.debug("{}: maintaining project '{}'", getClass().getName(), project);
+            log.debug("{}: maintaining project '{}'", getClass(), project);
             context.put("project", TurbineUtils.escapeParam(project));
         }
     }
 
     protected void error(final Throwable e, final RunData data) {
-        logger.error("", e);
+        log.error("An error occurred", e);
         if (e instanceof InvalidPermissionException) {
             try {
                 AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Possible Authorization Bypass Attempt", "User attempted to access or modify protected content at action: " + data.getAction() + "; " + e.getMessage());
@@ -96,7 +110,11 @@ public abstract class SecureAction extends VelocitySecureAction {
             }
             search.setRedirectURI(path.toString());
         } catch (UnsupportedEncodingException e) {
-            logger.error("An error occurred trying to redirect the user to the report screen {}", report, e);
+            try {
+                log.error("An error occurred trying to redirect the user to the report screen '{}' for item {}", report, item.getItem().getIDValue(), e);
+            } catch (XFTInitException | ElementNotFoundException ignored) {
+                log.error("An error occurred trying to redirect the user to the report screen '{}' for an item of type {} (couldn't get item ID, that threw an exception as well)", report, item.getXSIType(), e);
+            }
         }
     }
 
@@ -115,7 +133,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             }
             data.setRedirectURI(path.toString());
         } catch (UnsupportedEncodingException e) {
-            logger.error("An error occurred trying to redirect the user to the screen {}", report, e);
+            log.error("An error occurred trying to redirect the user to the screen {}", report, e);
         }
     }
 
@@ -125,7 +143,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             final SchemaElement schemaElement = SchemaElement.GetElement(item.getXSIType());
             redirectToReportScreen(DisplayItemAction.GetReportScreen(schemaElement), item, data);
         } catch (XFTInitException | ElementNotFoundException e) {
-            logger.error("An error occurred trying to redirect the user to the report screen", e);
+            log.error("An error occurred trying to redirect the user to the report screen", e);
         }
     }
 
@@ -287,7 +305,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     public void handleException(RunData data, XFTItem first, Throwable error, String itemIdentifier) {
-        logger.error("", error);
+        log.error("", error);
         data.getSession().setAttribute(itemIdentifier, first);
         data.addMessage(error.getMessage());
         if (data.getParameters().getString("edit_screen") != null) {

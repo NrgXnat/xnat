@@ -1,17 +1,13 @@
 package org.nrg.xft.event.methods;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.gs.collections.impl.factory.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xft.XFTItem;
@@ -132,13 +128,7 @@ public class XftItemEventCriteria {
      * @return Returns true if the event matches the criteria, false otherwise.
      */
     public boolean matches(final XftItemEventI event) {
-        final Set<String> xsiTypes = new HashSet<>(Lists.transform(event.getTypeAndIds(), new Function<Pair<String, String>, String>() {
-            @Override
-            public String apply(final Pair<String, String> typeAndId) {
-                return typeAndId.getKey();
-            }
-        }));
-        final boolean matchesXsiTypes   = matchesXsiType(xsiTypes);
+        final boolean matchesXsiTypes   = matchesXsiType(event.getXsiType());
         final boolean matchesAction     = matchesAction(event.getAction());
         final boolean matchesPredicates = matchesPredicates(event);
         final boolean matches           = matchesXsiTypes && matchesAction && matchesPredicates;
@@ -190,22 +180,20 @@ public class XftItemEventCriteria {
         return set;
     }
 
-    private boolean matchesXsiType(final Set<String> xsiTypes) {
-        if (!Sets.intersect(_xsiTypes, xsiTypes).isEmpty()) {
+    private boolean matchesXsiType(final String xsiType) {
+        if (_xsiTypes.contains(xsiType)) {
             return true;
         }
         for (final String mappedXsiType : _xsiTypes) {
-            for (final String xsiType : xsiTypes) {
-                try {
-                    final GenericWrapperElement element = GenericWrapperElement.GetElement(xsiType);
-                    if (element.instanceOf(mappedXsiType)) {
-                        return true;
-                    }
-                } catch (XFTInitException e) {
-                    log.error("An XFT error occurred trying to retrieve the element for XSI type {}.", xsiType, e);
-                } catch (ElementNotFoundException e) {
-                    log.error("Couldn't find the element {} while trying to retrieve requested type {}", e.ELEMENT, xsiType, e);
+            try {
+                final GenericWrapperElement element = GenericWrapperElement.GetElement(xsiType);
+                if (element.instanceOf(mappedXsiType)) {
+                    return true;
                 }
+            } catch (XFTInitException e) {
+                log.error("An XFT error occurred trying to retrieve the element for XSI type {}.", xsiType, e);
+            } catch (ElementNotFoundException e) {
+                log.error("Couldn't find the element {} while trying to retrieve requested type {}", e.ELEMENT, xsiType, e);
             }
         }
         return false;

@@ -12,7 +12,6 @@ import com.github.zhurlik.SwaggerTask
 import io.swagger.models.Contact
 import io.swagger.models.Info
 import io.swagger.models.License
-import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
@@ -21,10 +20,11 @@ buildscript {
     }
     repositories {
         mavenLocal()
-        mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        mavenCentral()
+        jcenter()
         maven {
             url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
             name "XNAT Release Repository"
@@ -35,6 +35,7 @@ buildscript {
         }
     }
     dependencies {
+        gradleApi()
         classpath "com.bmuschko:gradle-cargo-plugin:2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
@@ -92,8 +93,8 @@ repositories {
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def javaVersion = Jvm.current().javaVersion
-if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
+def javaVersion = JavaVersion.current()
+if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.java10Compatible) {
     allprojects {
         tasks.withType(Javadoc) {
             options.addStringOption("Xdoclint:none", "-quiet")

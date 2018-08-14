@@ -19,7 +19,6 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.TurbineException;
 import org.json.JSONException;
@@ -1355,7 +1354,7 @@ public abstract class SecureResource extends Resource {
             if (BaseElement.class.isAssignableFrom(item.getClass())) {
                 builder.element((BaseElement) item);
             } else {
-                builder.typeAndId(ImmutablePair.of(item.getXSIType(), item.getId()));
+                builder.xsiType(item.getXSIType()).id(item.getId());
             }
             XDAT.triggerEvent(builder.build());
             WorkflowUtils.complete(workflow, ci);

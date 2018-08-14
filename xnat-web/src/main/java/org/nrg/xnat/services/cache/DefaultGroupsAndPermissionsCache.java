@@ -827,9 +827,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean handleElementSecurityEvents(final XftItemEventI event) {
-        final String dataType = event.getId();
-
-        log.debug("Handling {} event for '{}' ID {}. Updating guest browseable element displays...", event.getAction(), event.getXsiType(), dataType);
+        log.debug("Handling {} event for '{}' IDs {}. Updating guest browseable element displays...", event.getAction(), event.getXsiType(), event.getIds());
         final Map<String, ElementDisplay> displays = updateGuestBrowseableElementDisplays();
 
         if (log.isTraceEnabled()) {
@@ -842,11 +840,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             evict(cacheId);
         }
 
-        final List<String> groupIds = getGroupIdsForDataType(dataType);
-        log.debug("Found {} groups that reference the '{}' data type, updating cache entries for: {}", groupIds.size(), dataType, StringUtils.join(groupIds, ", "));
-        for (final String groupId : groupIds) {
-            log.trace("Updating data type '{}' for the group '{}'", dataType, groupId);
-            updateDataTypeForCachedGroup(groupId, dataType);
+        for (final String dataType : event.getIds()) {
+            final List<String> groupIds = getGroupIdsForDataType(dataType);
+            log.debug("Found {} groups that reference the '{}' data type, updating cache entries for: {}", groupIds.size(), dataType, StringUtils.join(groupIds, ", "));
+            for (final String groupId : groupIds) {
+                log.trace("Updating data type '{}' for the group '{}'", dataType, groupId);
+                updateDataTypeForCachedGroup(groupId, dataType);
+            }
         }
 
         return true;
@@ -1318,14 +1318,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final QueryOrganizer organizer = new QueryOrganizer(dataType, user, ViewManager.ALL);
         organizer.addField(dataTypeIdField);
 
-        final String dataTypeCountQuery = "SELECT COUNT(*) AS data_type_count FROM (" + organizer.buildQuery() + ") SEARCH";
+        final String dataTypeQuery      = organizer.buildQuery();
+        final String dataTypeCountQuery = "SELECT COUNT(*) AS data_type_count FROM (" + dataTypeQuery + ") SEARCH";
         final Long   count              = _template.queryForObject(dataTypeCountQuery, EmptySqlParameterSource.INSTANCE, Long.class);
         log.debug("Executed count query for data type '{}' on ID field '{}' and found {} instances: \"{}\"", dataType, dataTypeIdField, count, dataTypeCountQuery);
         readableCounts.put(dataType, count);
 
         // Experiment types are updated when the subject is updated.
         if (StringUtils.equalsIgnoreCase(dataType, XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-            final String subquery = StringUtils.replaceEach(organizer.buildQuery(),
+            final String subquery = StringUtils.replaceEach(dataTypeQuery,
                                                             new String[]{organizer.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
                                                             REPLACEMENT_LIST);
 

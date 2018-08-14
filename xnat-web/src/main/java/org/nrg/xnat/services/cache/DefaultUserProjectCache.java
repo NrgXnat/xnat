@@ -281,7 +281,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     public XnatProjectdata get(final UserI user, final String idOrAlias) {
         final String projectId = getCanonicalProjectId(idOrAlias);
         if (StringUtils.isBlank(projectId)) {
-            log.debug("User '{}' requested a project with ID or alias '{}' but that's not in the alias mapping cache or xnat_projectdata table, so doesn't seem to exist, returning null", user.getUsername(), idOrAlias);
+            if (user != null) {
+                log.debug("User '{}' requested a project with ID or alias '{}' but that's not in the alias mapping cache or xnat_projectdata table, so doesn't seem to exist, returning null", user.getUsername(), idOrAlias);
+            } else {
+                log.debug("A system call (no user specified) requested a project with ID or alias '{}' but that's not in the alias mapping cache or xnat_projectdata table, so doesn't seem to exist, returning null", idOrAlias);
+            }
             return null;
         }
         final String userId;

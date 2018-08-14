@@ -57,6 +57,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
 
             if (!shouldUpdateViews) {
                 log.info("XDATServlet indicates that views do not need to be updated, terminating task.");
+                return;
             }
 
             final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();

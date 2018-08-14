@@ -7,7 +7,7 @@ $page.setVlinkColor($ui.vlink)
 $!template.setLayoutTemplate("DefaultExptList.vm")
 #set ($currentPage = $currentPage + 1)
 #if ($data.message)
-<div class="error">$data.message</div><br>
+<div class="message">$data.message</div><br>
 #end
 #parse("/screens/admin_bar.vm")
 

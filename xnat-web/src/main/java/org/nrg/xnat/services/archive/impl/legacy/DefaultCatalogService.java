@@ -580,10 +580,11 @@ public class DefaultCatalogService implements CatalogService {
 
                     final boolean quarantine = item.getGenericSchemaElement().isQuarantine();
 
-                    if (item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")) {
+                    if (item.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME) || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
                         PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                     }
 
+                    final boolean isProject = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
                     if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                         final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
                         if (parentId != null) {
@@ -594,7 +595,7 @@ public class DefaultCatalogService implements CatalogService {
                                 SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                             }
                         }
-                    } else {
+                    } else if (!isProject) {
                         if (generateId) {
                             if (item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
                                 item.setProperty(XnatExperimentdata.SCHEMA_ELEMENT_NAME + "/ID", XnatExperimentdata.CreateNewID());
@@ -612,15 +613,16 @@ public class DefaultCatalogService implements CatalogService {
 
                     final String xsiType = item.getXSIType();
                     final String idValue = item.getIDValue();
-                    log.debug("Item '{}' of type {} successfully stored", xsiType, idValue);
 
-                    if (item.instanceOf("xnat:projectData")) {
+                    if (isProject) {
                         final XnatProjectdata project   = new XnatProjectdata(item);
                         final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
                         XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
                     } else {
                         XDAT.triggerXftItemEvent(xsiType, idValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
                     }
+
+                    log.debug("Item '{}' of type {} successfully stored", xsiType, idValue);
 
                     final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
                     if (StringUtils.equalsIgnoreCase(schemaElement.getGenericXFTElement().getType().getLocalPrefix(), "xdat") || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(), "xnat:investigatorData", "xnat:projectData")) {

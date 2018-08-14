@@ -1425,6 +1425,12 @@ public abstract class SecureResource extends Resource {
         return createOrUpdateImpl(true, item, overwriteSecurity, allowDataDeletion, workflow, meta);
     }
 
+    public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final EventDetails event) throws Exception {
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), getUser(), item.getItem(), event);
+        final EventMetaI meta = workflow.buildEvent();
+        return update(item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
+
     public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
         return createOrUpdateImpl(false, item, overwriteSecurity, allowDataDeletion, workflow, meta);
     }

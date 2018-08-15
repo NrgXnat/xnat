@@ -52,12 +52,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "classes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<String>> getProcessorClasses() {
-        ArrayList<String> processorNames = new ArrayList<>();
-        for(ArchiveProcessor proc : _processors){
-            processorNames.add(proc.getClass().getName());
-
-        }
-        return new ResponseEntity<List<String>>(processorNames, HttpStatus.OK);
+        return new ResponseEntity<>(processorNames(), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Creates a new site processor instance from the submitted attributes.", notes = "Returns the newly created site processor instance with the submitted attributes.", response = ArchiveProcessorInstance.class)
@@ -70,6 +65,10 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     public ResponseEntity<ArchiveProcessorInstance> createSiteProcessor(@RequestBody final ArchiveProcessorInstance processor) throws Exception {
         if (StringUtils.isBlank(processor.getProcessorClass())) {
             _log.error("User {} tried to create site processor instance without a processor class.", getSessionUser().getUsername());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        else if(!processorNames().contains(processor.getProcessorClass())){
+            _log.error("User {} tried to create site processor instance for processor class {}, which is not a valid class.", getSessionUser().getUsername(), processor.getProcessorClass());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (!StringUtils.equals(ArchiveProcessorInstance.SITE_SCOPE,processor.getScope())) {
@@ -125,6 +124,10 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             isDirty = true;
         }
         if (StringUtils.isNotBlank(processor.getProcessorClass()) && !StringUtils.equals(processor.getProcessorClass(), existingProcessor.getProcessorClass())) {
+            if(!processorNames().contains(processor.getProcessorClass())){
+                _log.error("User {} tried to create site processor instance for processor class {}, which is not a valid class.", getSessionUser().getUsername(), processor.getProcessorClass());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
             existingProcessor.setProcessorClass(processor.getProcessorClass());
             isDirty = true;
         }
@@ -205,6 +208,19 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    private List<String> processorNames(){
+        if(processorNames==null) {
+            processorNames = new ArrayList<>();
+            for (ArchiveProcessor proc : _processors) {
+                processorNames.add(proc.getClass().getName());
+
+            }
+        }
+        return processorNames;
+    }
+
+    private List<String> processorNames = null;
 
     private static final Logger _log = LoggerFactory.getLogger(ArchiveProcessorInstanceApi.class);
 

@@ -19,9 +19,4 @@ public class DummyArchiveProcessor extends AbstractArchiveProcessor {
     public boolean process(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         return true;
     }
-
-    @Override
-    public boolean accept(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
-        return processorConfiguredForDataComingInToThisScpReceiver(instance, aeParameters);
-    }
 }

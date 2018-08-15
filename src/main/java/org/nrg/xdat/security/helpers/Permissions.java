@@ -126,7 +126,7 @@ public class Permissions {
 
     /**
      * Can the user create an element based on a collection of key/value pairs {@link SecurityValues}.
-     *
+     * <p>
      * This is similar to running canCreate(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user   The user.
@@ -144,7 +144,7 @@ public class Permissions {
 
     /**
      * Can the user read an element based on a collection of key/value pairs {@link SecurityValues}.
-     *
+     * <p>
      * This is similar to running canRead(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user   The user.
@@ -161,7 +161,7 @@ public class Permissions {
 
     /**
      * Can the user edit an element based on a collection of key/value pairs {@link SecurityValues}.
-     *
+     * <p>
      * This is similar to running canEdit(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user   The user.
@@ -179,7 +179,7 @@ public class Permissions {
 
     /**
      * Can the user activate an element based on a collection of key/value pairs {@link SecurityValues}.
-     *
+     * <p>
      * This is similar to running canActivate(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user   The user.
@@ -197,7 +197,7 @@ public class Permissions {
 
     /**
      * Can the user delete an element based on a collection of key/value pairs {@link SecurityValues}.
-     *
+     * <p>
      * This is similar to running canDelete(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user   The user.
@@ -686,7 +686,7 @@ public class Permissions {
 
     /**
      * Adds/modifies specified permissions for this group.  However, nothing is saved to the database.
-     *
+     * <p>
      * Call Groups.save() to save the modifications.
      *
      * @param group             The group to modify.
@@ -895,11 +895,10 @@ public class Permissions {
     }
 
     public static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
-        final MapSqlParameterSource parameters = new MapSqlParameterSource("projectId", projectId);
-        if (!template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class)) {
+        if (!verifyProjectExists(template, projectId)) {
             return null;
         }
-        switch (template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, parameters, Integer.class)) {
+        switch (template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, new MapSqlParameterSource("projectId", projectId), Integer.class)) {
             case 1:
                 return "public";
             case 0:
@@ -907,6 +906,14 @@ public class Permissions {
             default:
                 return "private";
         }
+    }
+
+    public static boolean verifyProjectExists(final NamedParameterJdbcTemplate template, final String projectId) {
+        return template.queryForObject(QUERY_PROJECT_EXISTS, new MapSqlParameterSource("projectId", projectId), Boolean.class);
+    }
+
+    public static boolean verifySubjectExists(final NamedParameterJdbcTemplate template, final String subjectId) {
+        return template.queryForObject(QUERY_SUBJECT_EXISTS, new MapSqlParameterSource("subjectId", subjectId), Boolean.class);
     }
 
     public static ArrayListMultimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
@@ -1123,8 +1130,6 @@ public class Permissions {
                                                             + "      AND xfm.comparison_type = 'equals' "
                                                             + "ORDER BY project";
 
-    private static final String QUERY_PROJECT_EXISTS = "SELECT EXISTS (SELECT true FROM xnat_projectdata WHERE id = :projectId)";
-
     private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED = "SELECT coalesce((SELECT xfm.active_element "
                                                                        + "FROM xdat_field_mapping xfm "
                                                                        + "  LEFT JOIN xdat_field_mapping_set xfms "
@@ -1142,6 +1147,14 @@ public class Permissions {
                                                                        + "      AND xfm.delete_element = 0 "
                                                                        + "      AND xfm.comparison_type = 'equals' "
                                                                        + "      AND xfm.field_value = :projectId), -1)";
+    private static final String QUERY_PROJECT_EXISTS                 = "SELECT EXISTS(SELECT " +
+                                                                       "  TRUE " +
+                                                                       "FROM xnat_projectdata " +
+                                                                       "WHERE id = :projectId) AS exists";
+    private static final String QUERY_SUBJECT_EXISTS                 = "SELECT EXISTS(SELECT " +
+                                                                       "  TRUE " +
+                                                                       "FROM xnat_subjectdata " +
+                                                                       "WHERE id = :subjectId) AS exists";
 
     private static final List<String> PROJECT_GROUPS      = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();

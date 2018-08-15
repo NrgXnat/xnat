@@ -21,6 +21,7 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
+import org.nrg.xnat.processors.ArchiveProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
@@ -38,9 +40,24 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 @RequestMapping(value = "/processors")
 public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @Autowired
-    public ArchiveProcessorInstanceApi(final ArchiveProcessorInstanceService service, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
+    public ArchiveProcessorInstanceApi(final ArchiveProcessorInstanceService service, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final List<ArchiveProcessor> processors) {
         super(userManagementService, roleHolder);
         _service = service;
+        _processors = processors;
+    }
+
+    @ApiOperation(value = "Get list of processor classes.", notes = "The processor classes function returns a list of all processor classes in the XNAT system.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the processor classes."),
+            @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "classes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<List<String>> getProcessorClasses() {
+        ArrayList<String> processorNames = new ArrayList<>();
+        for(ArchiveProcessor proc : _processors){
+            processorNames.add(proc.getClass().getName());
+
+        }
+        return new ResponseEntity<List<String>>(processorNames, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Creates a new site processor instance from the submitted attributes.", notes = "Returns the newly created site processor instance with the submitted attributes.", response = ArchiveProcessorInstance.class)
@@ -192,4 +209,6 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     private static final Logger _log = LoggerFactory.getLogger(ArchiveProcessorInstanceApi.class);
 
     private final ArchiveProcessorInstanceService _service;
+
+    private final List<ArchiveProcessor> _processors;
 }

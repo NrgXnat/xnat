@@ -47,7 +47,7 @@ public class ResourceManager {
     public File getTestResourceFile(final String resourcePath) throws ResourceNotFoundException {
         final URL resource = getClass().getClassLoader().getResource(resourcePath);
         if (resource == null) {
-            throw new ResourceNotFoundException("Unable to find the resource " + resourcePath);
+            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Paths.get("").toAbsolutePath());
         }
         return getTestResourceFile(resource);
     }
@@ -74,7 +74,7 @@ public class ResourceManager {
     public InputStream getTestResourceInputStream(final String resourcePath) throws ResourceNotFoundException {
         final URL resource = getClass().getClassLoader().getResource(resourcePath);
         if (resource == null) {
-            throw new ResourceNotFoundException("Unable to find the resource " + resourcePath);
+            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Paths.get("").toAbsolutePath());
         }
         return getTestResourceInputStream(resource);
     }

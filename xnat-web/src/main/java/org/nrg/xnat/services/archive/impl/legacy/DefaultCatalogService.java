@@ -550,12 +550,28 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             try (final FileInputStream parserInput = new FileInputStream(temporary)) {
-                final SAXReader reader       = new SAXReader(user);
-                final XFTItem   item         = reader.parse(parserInput);
-                final String    xsiTypeForId = getXsiTypeForId(item.getPKString());
-                final boolean   isCreate     = StringUtils.isBlank(xsiTypeForId);
-                if (!isCreate && !item.instanceOf(xsiTypeForId)) {
-                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' and ID '" + item.getPKString() + "', but that ID already exists with type '" + xsiTypeForId + "', which is not compatible.");
+                final SAXReader reader = new SAXReader(user);
+                final XFTItem   item   = reader.parse(parserInput);
+
+                final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
+                final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+                final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
+                if (!isProject && !isSubject && !isExperiment) {
+                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, or experiment.");
+                }
+
+                final String  primaryKey = item.getIDValue();
+                final boolean isCreate;
+                if (isExperiment) {
+                    final String xsiType = getXsiTypeForExperimentId(primaryKey);
+                    isCreate = StringUtils.isBlank(xsiType);
+                    if (!isCreate && !item.instanceOf(xsiType)) {
+                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' and ID '" + primaryKey + "', but that ID already exists with type '" + xsiType + "', which is not compatible.");
+                    }
+                } else if (isSubject) {
+                    isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
+                } else {
+                    isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
                 }
 
                 log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
@@ -568,7 +584,7 @@ public class DefaultCatalogService implements CatalogService {
                 if (!validation.isValid() &&
                     validation.getResults().size() == 1 &&
                     validation.hasField("ID") &&
-                    (item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME) || item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME))) {
+                    (isExperiment || isSubject)) {
                     generateId = true;
                     validation.removeResult("ID");
                 } else {
@@ -584,7 +600,6 @@ public class DefaultCatalogService implements CatalogService {
                         PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                     }
 
-                    final boolean isProject = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
                     if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                         final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
                         if (parentId != null) {
@@ -595,9 +610,9 @@ public class DefaultCatalogService implements CatalogService {
                                 SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                             }
                         }
-                    } else if (!isProject) {
+                    } else if (!isProject || !isCreate) {
                         if (generateId) {
-                            if (item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
+                            if (isExperiment) {
                                 item.setProperty(XnatExperimentdata.SCHEMA_ELEMENT_NAME + "/ID", XnatExperimentdata.CreateNewID());
                             } else {
                                 item.setProperty(XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/ID", XnatSubjectdata.CreateNewID());
@@ -609,16 +624,17 @@ public class DefaultCatalogService implements CatalogService {
                             log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
                             throw e;
                         }
+                    } else {
+                        final XnatProjectdata project   = new XnatProjectdata(item);
+                        final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
+                        XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
                     }
 
                     final String xsiType = item.getXSIType();
                     final String idValue = item.getIDValue();
 
-                    if (isProject) {
-                        final XnatProjectdata project   = new XnatProjectdata(item);
-                        final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
-                        XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
-                    } else {
+                    // Project create fires its own event, so we only use this one if this isn't a project create operation.
+                    if (!(isProject && isCreate)) {
                         XDAT.triggerXftItemEvent(xsiType, idValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
                     }
 
@@ -651,9 +667,9 @@ public class DefaultCatalogService implements CatalogService {
      *
      * @return The XSI type of the experiment if it exists, null if it doesn't exist.
      */
-    private String getXsiTypeForId(final String id) {
+    private String getXsiTypeForExperimentId(final String id) {
         try {
-            return _parameterized.queryForObject(QUERY_FIND_XSI_TYPE_FOR_ID, new MapSqlParameterSource("id", id), String.class);
+            return _parameterized.queryForObject(QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID, new MapSqlParameterSource("id", id), String.class);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -1445,7 +1461,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  ${scanTypesClause} AND " +
                                                                          "  ${scanFormatsClause} " +
                                                                          "ORDER BY scan_id";
-    private static final String QUERY_FIND_XSI_TYPE_FOR_ID             = "SELECT " +
+    private static final String QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID  = "SELECT " +
                                                                          "  xme.element_name " +
                                                                          "FROM xnat_experimentData expt " +
                                                                          "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +

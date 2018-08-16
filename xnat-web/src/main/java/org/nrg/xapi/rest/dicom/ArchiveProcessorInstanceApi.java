@@ -23,6 +23,7 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
+import org.nrg.xnat.helpers.ArchiveProcessorInstanceSummary;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.processors.StudyRemappingArchiveProcessor;
@@ -186,6 +187,20 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<List<ArchiveProcessorInstance>> getAllEnabledSiteProcessors() {
         return new ResponseEntity<>(_service.getAllEnabledSiteProcessors(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Get basic information about all enabled site processor instances.", notes = "The enabled site processors summary information function returns a list of basic information for all enabled site processor instances configured in the XNAT system.", response = ArchiveProcessorInstanceSummary.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of basic information for all of the currently enabled site processor instances."),
+            @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "site/enabled/summary", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authenticated)
+    @ResponseBody
+    public ResponseEntity<List<ArchiveProcessorInstanceSummary>> getAllEnabledSiteProcessorsSummaryInformation() {
+        List<ArchiveProcessorInstanceSummary> summaries = new ArrayList<>();
+        List<ArchiveProcessorInstance> fullInstances = _service.getAllEnabledSiteProcessors();
+        for(ArchiveProcessorInstance instance: fullInstances){
+            summaries.add(new ArchiveProcessorInstanceSummary(instance));
+        }
+        return new ResponseEntity<>(summaries, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of enabled site processor instances for specified SCP receiver.", notes = "The enabled site processors function returns a list of all enabled site processor instances configured in the XNAT system for this receiver. Receiver should be specified like aeTitle:port.", response = ArchiveProcessorInstance.class, responseContainer = "List")

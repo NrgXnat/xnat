@@ -15,6 +15,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.exceptions.XapiException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -68,8 +69,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         else if(!processorNames().contains(processor.getProcessorClass())){
-            _log.error("User {} tried to create site processor instance for processor class {}, which is not a valid class.", getSessionUser().getUsername(), processor.getProcessorClass());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new XapiException(HttpStatus.BAD_REQUEST, "The provided processor class does not exist.");
         }
         if (!StringUtils.equals(ArchiveProcessorInstance.SITE_SCOPE,processor.getScope())) {
             _log.error("User {} tried to create site processor instance with non-site scope.", getSessionUser().getUsername());
@@ -125,8 +125,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         }
         if (StringUtils.isNotBlank(processor.getProcessorClass()) && !StringUtils.equals(processor.getProcessorClass(), existingProcessor.getProcessorClass())) {
             if(!processorNames().contains(processor.getProcessorClass())){
-                _log.error("User {} tried to create site processor instance for processor class {}, which is not a valid class.", getSessionUser().getUsername(), processor.getProcessorClass());
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                throw new XapiException(HttpStatus.BAD_REQUEST, "The provided processor class does not exist.");
             }
             existingProcessor.setProcessorClass(processor.getProcessorClass());
             isDirty = true;

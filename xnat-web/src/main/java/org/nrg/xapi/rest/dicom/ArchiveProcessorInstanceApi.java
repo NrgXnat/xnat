@@ -14,6 +14,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.dcm.scp.DicomSCPInstance;
+import org.nrg.dcm.scp.DicomSCPManager;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.XapiException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -23,6 +25,7 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
+import org.nrg.xnat.processors.StudyRemappingArchiveProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +38,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
 
 @Api(description = "XNAT Data Archive Processor Instance API")
 @XapiRestController
 @RequestMapping(value = "/processors")
 public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @Autowired
-    public ArchiveProcessorInstanceApi(final ArchiveProcessorInstanceService service, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final List<ArchiveProcessor> processors) {
+    public ArchiveProcessorInstanceApi(final ArchiveProcessorInstanceService service, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final DicomSCPManager manager, final List<ArchiveProcessor> processors) {
         super(userManagementService, roleHolder);
         _service = service;
         _processors = processors;
+        _manager = manager;
     }
 
     @ApiOperation(value = "Get list of processor classes.", notes = "The processor classes function returns a list of all processor classes in the XNAT system.", response = String.class, responseContainer = "List")
@@ -192,6 +197,40 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_service.getAllEnabledSiteProcessorsForAe(aeAndPort), HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Returns whether the provided AE and port are able to remap the data.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Remapping successfully checked."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
+    @XapiRequestMapping(value = "site/canRemap/receiver/{aeAndPort}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authenticated)
+    @ResponseBody
+    public ResponseEntity<Boolean> receiverCanRemap(@PathVariable("aeAndPort") final String aeAndPort) throws Exception {
+        try {
+            String[] aePortArray = aeAndPort.split(":");
+            final DicomSCPInstance scpInstance = _manager.getDicomSCPInstance(aePortArray[0], Integer.parseInt(aePortArray[1]));
+            if(scpInstance!=null && scpInstance.getCustomProcessing()){
+                List<ArchiveProcessorInstance> processorInstances = _service.getAllEnabledSiteProcessorsForAe(aeAndPort);
+                for(ArchiveProcessorInstance processorInstance : processorInstances){
+                    try{
+                        String procClass = processorInstance.getProcessorClass();
+                        if(!StringUtils.isBlank(procClass)){
+                            Class<?> cls = Class.forName(procClass);
+                            if(StudyRemappingArchiveProcessor.class.isAssignableFrom(cls)){
+                                return new ResponseEntity<>(true, HttpStatus.OK);
+                            }
+                        }
+                    }
+                    catch(Exception e){
+                        _log.error("Failed to determine whether processor instance for a SCP receiver is able to remap.", e);
+                    }
+                }
+            }
+        }
+        catch(Exception e){
+            _log.error("Failed to determine whether SCP receiver is able to remap.", e);
+        }
+        return new ResponseEntity<>(false, HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Get the requested site processor instance by ID.", notes = "Returns the requested site processor instance.", response = ArchiveProcessorInstance.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the requested site processor instance."),
             @ApiResponse(code = 404, message = "The requested site processor instance wasn't found."),
@@ -226,4 +265,6 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     private final ArchiveProcessorInstanceService _service;
 
     private final List<ArchiveProcessor> _processors;
+
+    private final DicomSCPManager _manager;
 }

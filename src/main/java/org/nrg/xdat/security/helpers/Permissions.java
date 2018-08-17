@@ -10,13 +10,11 @@
 package org.nrg.xdat.security.helpers;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -1050,6 +1048,19 @@ public class Permissions {
     }
 
     /**
+     * Returns a query template that can be used with a parameterized JDBC template to query whether an instance of a particular data type exists.
+     *
+     * @param table      The table in which the object may be persisted.
+     * @param primaryKey The primary key to check.
+     * @param parameter  The name of the parameter to be supplied to the parameterized template.
+     *
+     * @return A query that can be run to determine whether an object of the specified data type and ID exists.
+     */
+    public static String getObjectExistsQuery(final String table, final String primaryKey, final String parameter) {
+        return StringSubstitutor.replace(QUERY_OBJECT_EXISTS, ImmutableMap.<String, Object>of("table", table, "pk", primaryKey, "parameter", parameter));
+    }
+
+    /**
      * Requires one parameter:
      *
      * <ul>
@@ -1147,14 +1158,12 @@ public class Permissions {
                                                                        + "      AND xfm.delete_element = 0 "
                                                                        + "      AND xfm.comparison_type = 'equals' "
                                                                        + "      AND xfm.field_value = :projectId), -1)";
-    private static final String QUERY_PROJECT_EXISTS                 = "SELECT EXISTS(SELECT " +
+    private static final String QUERY_OBJECT_EXISTS                  = "SELECT EXISTS(SELECT " +
                                                                        "  TRUE " +
-                                                                       "FROM xnat_projectdata " +
-                                                                       "WHERE id = :projectId) AS exists";
-    private static final String QUERY_SUBJECT_EXISTS                 = "SELECT EXISTS(SELECT " +
-                                                                       "  TRUE " +
-                                                                       "FROM xnat_subjectdata " +
-                                                                       "WHERE id = :subjectId) AS exists";
+                                                                       "FROM ${table} " +
+                                                                       "WHERE ${pk} = :${parameter}) AS exists";
+    private static final String QUERY_PROJECT_EXISTS                 = getObjectExistsQuery("xnat_projectdata", "id", "projectId");
+    private static final String QUERY_SUBJECT_EXISTS                 = getObjectExistsQuery("xnat_subjectdata", "id", "subjectId");
 
     private static final List<String> PROJECT_GROUPS      = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();

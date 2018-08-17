@@ -556,8 +556,9 @@ public class DefaultCatalogService implements CatalogService {
                 final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
                 final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
                 final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
-                if (!isProject && !isSubject && !isExperiment) {
-                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, or experiment.");
+                final boolean isStoredSearch    = item.instanceOf(XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+                if (!isProject && !isSubject && !isExperiment && !isStoredSearch) {
+                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, experiment, or stored search.");
                 }
 
                 final String  primaryKey = item.getIDValue();
@@ -570,8 +571,11 @@ public class DefaultCatalogService implements CatalogService {
                     }
                 } else if (isSubject) {
                     isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
-                } else {
+                } else if (isProject) {
                     isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
+                }
+                else{//To accommodate stored searches
+                    isCreate = true;
                 }
 
                 log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");

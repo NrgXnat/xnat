@@ -474,6 +474,7 @@ jar {
 }
 
 war {
+    duplicatesStrategy = DuplicatesStrategy.WARN
     manifest {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,

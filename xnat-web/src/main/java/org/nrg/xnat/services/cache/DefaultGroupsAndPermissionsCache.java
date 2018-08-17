@@ -285,8 +285,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             final List<PermissionCriteriaI> criteria = new ArrayList<>();
 
             final Map<String, ElementAccessManager> managers = getElementAccessManagers(username);
-            if (managers == null) {
-                log.warn("Couldn't find element access managers for user {} trying to retrieve permissions for data type {}", username, dataType);
+            if (managers.isEmpty()) {
+                log.info("Couldn't find element access managers for user {} trying to retrieve permissions for data type {}", username, dataType);
             } else {
                 final ElementAccessManager manager = managers.get(dataType);
                 if (manager == null) {
@@ -304,20 +304,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 log.debug("Found {} user groups for the user {}", userGroups.size(), username, userGroups.isEmpty() ? "" : ": " + Joiner.on(", ").join(userGroups.keySet()));
             }
 
-            for (final String groupId : userGroups.keySet()) {
-                final UserGroupI group = userGroups.get(groupId);
-                if (group != null) {
-                    final List<PermissionCriteriaI> permissions = group.getPermissionsByDataType(dataType);
-                    if (permissions != null) {
-                        if (log.isInfoEnabled()) {
-                            log.info("Searched for permission criteria for user {} on type {} in group {}: {}", username, dataType, groupId, dumpCriteriaList(permissions));
-                        }
-                        criteria.addAll(permissions);
-                    } else {
-                        log.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", dataType, username, groupId);
+            for (final UserGroupI group : userGroups.values()) {
+                final List<PermissionCriteriaI> permissions = group.getPermissionsByDataType(dataType);
+                if (permissions != null) {
+                    if (log.isInfoEnabled()) {
+                        log.info("Searched for permission criteria for user {} on type {} in group {}: {}", username, dataType, group.getId(), dumpCriteriaList(permissions));
                     }
+                    criteria.addAll(permissions);
                 } else {
-                    log.warn("Tried to retrieve group {} for user {}, but this returned null.", groupId, username);
+                    log.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", dataType, username, group.getId());
                 }
             }
 
@@ -1056,7 +1051,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
-    private Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
+    private @Nonnull Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
         if (StringUtils.isBlank(username)) {
             return Collections.emptyMap();
         }

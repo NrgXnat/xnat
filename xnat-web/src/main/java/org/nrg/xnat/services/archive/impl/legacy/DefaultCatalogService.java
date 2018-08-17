@@ -68,6 +68,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -556,29 +557,9 @@ public class DefaultCatalogService implements CatalogService {
                 final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
                 final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
                 final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
-                final boolean isStoredSearch    = item.instanceOf(XdatStoredSearch.SCHEMA_ELEMENT_NAME);
-                if (!isProject && !isSubject && !isExperiment && !isStoredSearch) {
-                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, experiment, or stored search.");
-                }
-
-                final String  primaryKey = item.getIDValue();
-                final boolean isCreate;
-                if (isExperiment) {
-                    final String xsiType = getXsiTypeForExperimentId(primaryKey);
-                    isCreate = StringUtils.isBlank(xsiType);
-                    if (!isCreate && !item.instanceOf(xsiType)) {
-                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' and ID '" + primaryKey + "', but that ID already exists with type '" + xsiType + "', which is not compatible.");
-                    }
-                } else if (isSubject) {
-                    isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
-                } else if (isProject) {
-                    isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
-                }
-                else{//To accommodate stored searches
-                    isCreate = true;
-                }
-
-                log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
+                // if (!isProject && !isSubject && !isExperiment) {
+                //     throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, or experiment.");
+                // }
 
                 final ValidationResults validation = XFTValidator.Validate(item);
 
@@ -594,6 +575,29 @@ public class DefaultCatalogService implements CatalogService {
                 } else {
                     generateId = false;
                 }
+
+                final String primaryKey = item.getIDValue();
+                final String xsiType    = item.getXSIType();
+
+                final boolean isCreate;
+                if (isExperiment) {
+                    final String persistedXsiType = getXsiTypeForExperimentId(primaryKey);
+                    isCreate = StringUtils.isBlank(persistedXsiType);
+                    if (!isCreate && !item.instanceOf(persistedXsiType)) {
+                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + xsiType + "' and ID '" + primaryKey + "', but that ID already exists with type '" + persistedXsiType + "', which is not compatible.");
+                    }
+                } else if (isSubject) {
+                    isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
+                } else if (isProject) {
+                    isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
+                } else {
+                    // For items other than projects, subjects, and experiments, e.g. stored searches,
+                    final String table  = item.getGenericSchemaElement().getSQLName();
+                    final String column = StringUtils.defaultIfBlank(item.getPKString(), "id").split("=")[0];
+                    isCreate = !checkObjectExists(table, column, primaryKey);
+                }
+
+                log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
 
                 if (validation.isValid()) {
                     log.info("Validation: PASSED");
@@ -634,7 +638,7 @@ public class DefaultCatalogService implements CatalogService {
                         XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
                     }
 
-                    final String xsiType = item.getXSIType();
+                    // The previous primary key could have been blank, so we need to get it again.
                     final String idValue = item.getIDValue();
 
                     // Project create fires its own event, so we only use this one if this isn't a project create operation.
@@ -660,6 +664,15 @@ public class DefaultCatalogService implements CatalogService {
             } else {
                 log.debug("Something failed when trying to delete temporary file at {}", temporary.getPath());
             }
+        }
+    }
+
+    private Boolean checkObjectExists(final String table, final String column, final String primaryKey) {
+        try {
+            return _parameterized.queryForObject(Permissions.getObjectExistsQuery(table, column, "objectId"), new MapSqlParameterSource("objectId", primaryKey), Boolean.class);
+        } catch (BadSqlGrammarException e) {
+            log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. Returning false.", e);
+            return false;
         }
     }
 
@@ -1496,6 +1509,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "WHERE " +
                                                                          "  xme.element_name IN (:assessorTypes) AND " +
                                                                          "  session.id = :sessionId";
+    private static final String QUERY_VERIFY_OBJECT_EXISTS             = "SELECT NOT EXISTS(SELECT TRUE FROM ${TABLE} WHERE ${PK} = :id) AS exists";
 
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
 

@@ -23,9 +23,9 @@ import java.util.Map;
 public class StudyRemappingArchiveProcessor extends AbstractArchiveProcessor {
 
     @Override
-    public boolean process(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
+    public boolean process(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         try {
-            final String studyInstanceUID = imageData.getString(Tag.StudyInstanceUID);
+            final String studyInstanceUID = dicomData.getString(Tag.StudyInstanceUID);
 
             String script = DefaultAnonUtils.getService().getStudyScript(studyInstanceUID);
 
@@ -38,10 +38,10 @@ public class StudyRemappingArchiveProcessor extends AbstractArchiveProcessor {
                     subj = sessionData.getSubject();
                     folder = sessionData.getFolderName();
                 }
-                mizer.anonymize(metadata, proj, subj, folder, script);
+                mizer.anonymize(dicomData, proj, subj, folder, script);
             }
         } catch (Throwable e) {
-            log.debug("Dicom anonymization failed: " + metadata, e);
+            log.debug("Dicom anonymization failed: " + dicomData, e);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
         }
         return true;

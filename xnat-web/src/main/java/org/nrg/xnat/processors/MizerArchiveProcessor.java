@@ -18,7 +18,7 @@ import java.util.Map;
 public class MizerArchiveProcessor extends AbstractArchiveProcessor {
 
     @Override
-    public boolean process(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
+    public boolean process(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         try {
             Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
             if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
@@ -32,19 +32,19 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
                     subj = sessionData.getSubject();
                     folder = sessionData.getFolderName();
                 }
-                mizer.anonymize(metadata, proj, subj, folder, c.getContents());
+                mizer.anonymize(dicomData, proj, subj, folder, c.getContents());
             } else {
                 log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", sessionData.getProject(), sessionData.getSubject(), sessionData.getName());
             }
         } catch (Throwable e) {
-            log.debug("Dicom anonymization failed: " + metadata, e);
+            log.debug("Dicom anonymization failed: " + dicomData, e);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
         }
         return true;
     }
 
     @Override
-    public boolean accept(final DicomObject metadata, final DicomObject imageData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
+    public boolean accept(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         try {
             // check to see of this session came in through an application that may have performed anonymization
             // prior to transfer, e.g. the XNAT Upload Assistant.
@@ -59,7 +59,7 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
                 return false;
             }
         } catch (Throwable e) {
-            log.debug("Failed check of whether dicom anonymization could be performed: " + metadata, e);
+            log.debug("Failed check of whether dicom anonymization could be performed: " + dicomData, e);
             //Throw exception so we don't just proceed with importing the data without anonymization.
             //I'm not certain whether this is what we want, but this is how it currently works and I don't want to mess anything up.
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);

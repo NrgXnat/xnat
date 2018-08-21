@@ -18,6 +18,11 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
+
+import static org.nrg.dicomtools.filters.SeriesImportFilter.KEY_LIST;
+import static org.nrg.dicomtools.filters.SeriesImportFilter.KEY_MODALITIES;
+
 @Component
 @Slf4j
 public class SeriesImportFilterHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
@@ -51,8 +56,14 @@ public class SeriesImportFilterHandlerMethod extends AbstractXnatPreferenceHandl
     }
 
     private void setFilter(final String value) {
-        final SeriesImportFilter filter = DicomFilterService.buildSeriesImportFilter(value);
-        _dicomFilterService.commit(filter, getAdminUsername(), "Updated site-wide series import filter from administrator UI.");
+        final SeriesImportFilter            seriesImportFilter = _dicomFilterService.getSeriesImportFilter();
+        final LinkedHashMap<String, String> properties         = seriesImportFilter.toMap();
+        if (seriesImportFilter.getMode() != SeriesImportFilterMode.ModalityMap) {
+            properties.put(KEY_LIST, value);
+        } else {
+            properties.put(KEY_MODALITIES, value);
+        }
+        _dicomFilterService.commit(DicomFilterService.buildSeriesImportFilter(properties), getAdminUsername(), "Updated site-wide series import filter from administrator UI.");
     }
 
     private void setFilterEnabledFlag(final String value) {

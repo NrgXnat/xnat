@@ -173,7 +173,7 @@ var XNAT = getObject(XNAT || {});
                     options.push(option)
                 });
 
-                if (options.length > 1) {
+                if (Object.keys(identifiers).length > 1) {
 
                     var identifierSelect = $form.find('#scp-identifier');
 

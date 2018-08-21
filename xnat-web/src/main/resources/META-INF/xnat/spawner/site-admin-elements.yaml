@@ -1292,7 +1292,7 @@ dicomScpEditor:
             id: scp-identifier
             name: identifier
             label: Identifier
-#            className: hidden
+            className: hidden
             element:
                 title: Select DICOM Object Identifier
                 disabled: disabled

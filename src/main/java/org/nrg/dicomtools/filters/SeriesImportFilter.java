@@ -38,6 +38,7 @@ public interface SeriesImportFilter {
     String KEY_EXCLUDE = "exclude";
     String KEY_LIST = "list";
     String KEY_SERIES_DESCRIPTION = "SeriesDescription";
+    String KEY_MODALITIES = "modalities";
     String KEY_DEFAULT_MODALITY = "default";
     String DEFAULT_MODALITY = "MR";
 

@@ -149,7 +149,7 @@ public class DicomFilterService {
                     throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Error updating configuration for the series import filter", exception);
                 }
             }
-            if (enabled && !existing.getStatus().equals(Configuration.ENABLED_STRING) && !isModeChanged && !isFilterChanged) { // if mode or list changed, the updated version is already enabled
+            if (enabled && !existing.getStatus().equals(Configuration.ENABLED_STRING)) {
                 try {
                     if (StringUtils.isBlank(projectId)) {
                         _configService.enable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null);
@@ -160,7 +160,7 @@ public class DicomFilterService {
                     final String message = StringUtils.isBlank(projectId) ? "Error enabling the site-wide series import filter" : "Error enabling the series import filter for project " + projectId;
                     throw new NrgServiceRuntimeException(NrgServiceError.Unknown, message, exception);
                 }
-            } else if (!enabled && (existing.getStatus().equals(Configuration.ENABLED_STRING) || isModeChanged || isFilterChanged)) { // if we are disabling a filter, or need to disable a newly updated filter
+            } else if (!enabled && existing.getStatus().equals(Configuration.ENABLED_STRING)) {
                 try {
                     if (StringUtils.isBlank(projectId)) {
                         _configService.disable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null);

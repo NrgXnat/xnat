@@ -301,6 +301,15 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        return insertResources(user, parentUri, resources, false, label, description, format, content, tags);
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
         final Collection<File> missing = Lists.newArrayList();
         for (final File source : resources) {
             if (!source.exists()) {
@@ -315,7 +324,9 @@ public class DefaultCatalogService implements CatalogService {
 
         final File destination = new File(catalog.getUri()).getParentFile();
         for (final File source : resources) {
-            if (source.isDirectory()) {
+            if (source.isDirectory() && preserveDirectories) {
+                FileUtils.copyDirectoryToDirectory(source, destination);
+            } else if (source.isDirectory() && !preserveDirectories) {
                 FileUtils.copyDirectory(source, destination);
             } else {
                 FileUtils.copyFileToDirectory(source, destination);

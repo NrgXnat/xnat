@@ -11,12 +11,12 @@
 #set($userHelper = $data.getSession().getAttribute("userHelper"))
 
 <!-- Browse/Default -->
-<li class="hidden"><a href="#!" class="nolink">My Projects</a>
+<li class="hidden"><a href="#!" class="nolink">My $!displayManager.getPluralDisplayNameForProject()</a>
     <ul id="my-projects" class="shadowed dark-shadow">
         <!-- Sequence: 10 -->
     </ul>
 </li>
-<li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All Projects</a>
+<li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All $!displayManager.getPluralDisplayNameForProject()</a>
     <ul id="browse-projects" class="shadowed dark-shadow">
         <!-- Sequence: 11 -->
         #if($siteConfig.uiAllowNonAdminProjectCreation || $userHelper.canCreate("xnat:subjectData/project"))
@@ -24,14 +24,20 @@
         #end
     </ul>
 </li>
-<li class="hidden"><a href="#!" class="nolink">Favorite Projects</a>
+<li class="hidden"><a href="#!" class="nolink">Favorite $!displayManager.getPluralDisplayNameForProject()</a>
     <ul id="favorite-projects">
         <!-- Sequence: 20 -->
     </ul>
 </li>
 <li class="hidden"><a href="#!" class="nolink">Data</a>
     <ul id="browse-data">
+        <li class="loading-access-browse"><a href="#!">Loading...</a></li>
         <!-- Sequence: 30 -->
+    </ul>
+</li>
+<li class="hidden"><a href="#!" class="nolink">Stored Searches</a>
+    <ul id="stored-search-menu">
+        <!-- Sequence: 40 -->
     </ul>
 </li>
 

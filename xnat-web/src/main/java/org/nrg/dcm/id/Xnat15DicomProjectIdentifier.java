@@ -29,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
+    @SuppressWarnings("WeakerAccess")
     protected Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
         super(userProjectCache);
     }
@@ -83,6 +84,7 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         }
     }
 
+    @SuppressWarnings("RegExpRedundantEscape")
     private static final Pattern CUSTOM_RULE_PATTERN = Pattern.compile("\\((\\p{XDigit}{4})\\,(\\p{XDigit}{4})\\):(.+?)(?::(\\d+))?");
 
     private static DicomDerivedString parseRule(final String rule) {

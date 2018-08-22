@@ -9,8 +9,8 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -21,15 +21,15 @@ import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 
 public class UserSession extends SecureResource {
-    protected UserI user = null;
-
-    public UserSession(Context context, Request request, Response response) {
+    public UserSession(final Context context, final Request request, final Response response) {
         super(context, request, response);
 
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
 
         // copy the user from the request into the session
-        getHttpSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
+        getHttpSession().setAttribute("userHelper", UserHelper.getUserHelperService(getUser()));
+
+        _includeXnatCsrfToken = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(getQueryVariable("CSRF")), false);
     }
 
     @Override
@@ -43,13 +43,12 @@ public class UserSession extends SecureResource {
     }
 
     @Override
-    public void removeRepresentations() throws ResourceException {
+    public void removeRepresentations() {
         getHttpSession().invalidate();
     }
 
     @Override
-    public void acceptRepresentation(Representation entity)
-            throws ResourceException {
+    public void acceptRepresentation(final Representation entity) {
         getResponse().setEntity(sessionIdRepresentation());
     }
 
@@ -59,7 +58,8 @@ public class UserSession extends SecureResource {
     }
 
     private Representation sessionIdRepresentation() {
-        return new StringRepresentation(getHttpSession().getId(),
-                MediaType.TEXT_PLAIN);
+        return new StringRepresentation(getHttpSession().getId() + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : ""), MediaType.TEXT_PLAIN);
     }
+
+    private final boolean _includeXnatCsrfToken;
 }

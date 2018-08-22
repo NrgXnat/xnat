@@ -43,7 +43,9 @@ var XNAT = getObject(XNAT);
 
     var userAdminPage = (XNAT.page && XNAT.page.userAdminPage) || false;
 
-    usersGroups.showAdvanced = true;
+    // usersGroups.showAdvanced = true;
+    usersGroups.showAdvanced = userAdminPage;
+    usersGroups.adminControls = userAdminPage;
 
     // return a url for doing a rest call
     function setUrl(part1, part2, part3){
@@ -182,7 +184,7 @@ var XNAT = getObject(XNAT);
     // RETURNS A DOM ELEMENT
     usersGroups.userSwitchElement = function(username, type, status){
         return XNAT.ui.input.switchbox({
-            value: realValue(status),
+            value: firstDefined(status, '') + '',
             element: {
                 name: type,
                 className: 'user-' + type,
@@ -191,7 +193,7 @@ var XNAT = getObject(XNAT);
             },
             onText: 'Yes',
             offText: 'No'
-        });
+        }).get();
     };
 
 
@@ -202,16 +204,20 @@ var XNAT = getObject(XNAT);
         }).render(container)
     }
 
-
     function saveUserData(form, opts){
         var $form = $$(form);
-        var username = $form.find('input#username').val();
+        // var username = $form.find('input#username').val();
+
         opts = cloneObject(opts);
+        opts.cache = false;
+        var successMsg = opts.msg || 'User info saved.';
+
         var doSubmit = $form.submitJSON(opts);
+
         if (doSubmit.done) {
             doSubmit.done(function(){
                 // xmodal.loading.open();
-                XNAT.ui.banner.top(2000, 'User info saved.', 'success')
+                XNAT.ui.banner.top(2000, successMsg, 'success')
             });
         }
         if (doSubmit.fail) {
@@ -230,7 +236,7 @@ var XNAT = getObject(XNAT);
     // define the user properties dialog
     function editUserDialog(data, onclose){
         if (data && !data.username) {
-            return xmodal.message('Error', 'An error occurred displaying user data.');
+            return XNAT.dialog.message('Error', 'An error occurred displaying user data.');
         }
         // define the <form> Spawner element
         function userForm(){
@@ -358,26 +364,35 @@ var XNAT = getObject(XNAT);
             }
         }
         var updated = false;
-        return xmodal.open({
+        return XNAT.dialog.open({
             width: 600,
-            height: 600,
+            // height: 600,
+            speed: 200,
+            esc: true,
+            enter: false,
             title: 'User Properties for <b>' + data.username + '</b>',
-            content: '<div class="user-data"></div>',
-            beforeShow: function(obj){
-                var _userForm = XNAT.spawner.spawn(userForm());
-                obj.$modal.find('div.user-data').append(_userForm.get())
-            },
-            okLabel: 'Save',
-            okClose: false,
-            okAction: function(obj){
-                var $form = obj.$modal.find('form#user-account-form-panel');
-                var doSave = saveUserData($form);
-                doSave.done(function(){
-                    updated = true;
-
-                    obj.close();
-                });
-            },
+            content: XNAT.spawner.spawn(userForm()).get(),
+            buttons: [
+                {
+                    label: 'Save',
+                    close: false,
+                    isDefault: true,
+                    action: function(obj){
+                        var $form = obj.$modal.find('form');
+                        if (XNAT.validate.form($form)){
+                            var doSave = saveUserData($form);
+                            doSave.done(function(){
+                                updated = true;
+                                obj.close();
+                            });
+                        }
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ],
             onClose: function(obj){
                 if (typeof onclose === 'function') {
                     onclose(obj)
@@ -393,7 +408,11 @@ var XNAT = getObject(XNAT);
 
     // get user data and return AJAX promise object
     function getUserData(username){
-        var _url = XNAT.url.restUrl('/xapi/users/' + username);
+        var _url = XNAT.url.restUrl('/xapi/users/profile/' + username);
+        delete XNAT.data['/xapi/users/profile/' + username];
+        delete XNAT.data['/xapi/users/profiles'];
+        delete XNAT.data['/xapi/users/current'];
+        delete XNAT.data['/xapi/users/' + username];
         return XNAT.xhr.get(_url)
     }
 
@@ -432,19 +451,18 @@ var XNAT = getObject(XNAT);
     function renderUsersTable(container, url){
         // console.log('renderUsersTable');
         var $container = container ? $$(container) : $(userTableContainer);
-        var _usersTable;
         if ($container.length) {
             setTimeout(function(){
                 $container.html('loading...');
+                setTimeout(function(){
+                    XNAT.dialog.loadingBar.show();
+                    XNAT.spawner.spawn({
+                        usersTable: usersGroups.spawnUsersTable(url)
+                    }).render($container.empty(), function(){
+                        XNAT.dialog.loadingBar.hide();
+                    });
+                }, 10);
             }, 1);
-            setTimeout(function(){
-                _usersTable = XNAT.spawner.spawn({
-                    usersTable: usersGroups.spawnUsersTable(url)
-                });
-                _usersTable.done(function(){
-                    this.render($container.empty(), 20);
-                });
-            }, 10);
             // return _usersTable;
         }
     }
@@ -512,24 +530,24 @@ var XNAT = getObject(XNAT);
 
     // renders cells for 'verified' and 'enabled' status
     function userStatusInfo(type, off){
-        var username = this.username;
+        var username = escapeHtml(this.username || '');
         var status = realValue(this[type]);
         var SORTER = status ? 1 : 0;
-        var IMG = status ? '/images/cg.gif' : '/images/cr.gif';
+        var iconClass = status ? '.fa-check' : '';
         return spawn('!', [
             ['i.hidden.sorting.filtering.' + type, SORTER+''],
             ['a.user-' + type + '-status.edit-user', {
                 title: username + ': ' + (status ? type : off),
                 href: '#!',
                 style: { display: 'block', padding: '2px' }
-            }, [['img', { src: XNAT.url.rootUrl(IMG) }]]]
+            }, [['i.fa' + iconClass ]]]
         ]);
     }
 
 
     // renders cells for 'active' users column
     function activeUserInfo(){
-        var username = this.username;
+        var username = escapeHtml(this.username || '');
         var sessionCount = 0;
         activeUsers = XNAT.data['/xapi/users/active'];
         if (username && activeUsers && activeUsers[username] && activeUsers[username].sessions.length) {
@@ -542,11 +560,8 @@ var XNAT = getObject(XNAT);
                     title: username + ': kill ' + sessionCount + ' active session(s)',
                     href: '#!',
                     style: { display: 'block', padding: '2px' }
-                }, [['img', { src: XNAT.url.rootUrl('/images/cg.gif') }]]]
+                }, [['i.fa.fa-user-circle']]]
             ])
-        }
-        else {
-            return '<i class="hidden">-1</i>&mdash;'
         }
     }
 
@@ -557,7 +572,7 @@ var XNAT = getObject(XNAT);
         return spawn('!', [
             ['i.last-login.hidden.sorting', (9999999999999-value || '9999999999999')+''],
             ['input.hidden.last-login.timestamp.filtering|type=hidden', { value: value }],
-            ['span.date-time', (value ? (new Date(value)).toLocaleString() : '&mdash;')]
+            ['span.date-time', (value ? (new Date(value)).toLocaleString() : '')]
         ])
     }
 
@@ -577,12 +592,12 @@ var XNAT = getObject(XNAT);
 
         // full name column
         $row.find('a.full-name')
-            .text(profile.lastName + ', ' + profile.firstName);
+            .html(escapeHtml(profile.lastName + ', ' + profile.firstName));
 
         // email column
         $row.find('a.send-email')
             .attr('title', profile.email + ': send email')
-            .text(profile.email);
+            .html(escapeHtml(profile.email));
 
         // verified status column
         $row.find('td.verified')
@@ -613,7 +628,7 @@ var XNAT = getObject(XNAT);
         return XNAT.xhr.get({
             url: XNAT.url.restUrl(USER_URL),
             success: function(DATA){
-                XNAT.data[USER_URL] = DATA;
+                // XNAT.data[USER_URL] = DATA;
                 if (userAdminPage) {
                     window.setTimeout(function(){
                         getActiveUsers().done(function(ACTIVE){
@@ -628,15 +643,105 @@ var XNAT = getObject(XNAT);
         })
     }
 
+    usersGroups.changePasswordDialog = function(data){
+        function changePasswordForm(){
+            var form = {
+                kind: 'panel.form',
+                name: 'changeUserPasswordForm',
+                id: 'change-user-password-form',
+                label: 'Change Password',
+                footer: false,
+                validate: true,
+                method: 'PUT',
+                contentType: 'json',
+                refresh: false,
+                reload: true,
+                action: '~/xapi/users/' + data.username,
+                element: {
+                    autocomplete: 'off'
+                },
+                contents: {
+                    username: {
+                        kind: 'panel.input.hidden',
+                        value: data.username
+                    },
+                    password: {
+                        kind: 'panel.input.password',
+                        label: 'Password',
+                        element: {
+                            placeholder: '*****',
+                            autocomplete: 'off',
+                            data: { message: passwordComplexityMessage }
+                        },
+                        validate: 'required pattern:'+passwordComplexity+' max-length:255'
+                    },
+                    confirmPassword: {
+                        kind: 'panel.input.password',
+                        label: 'Confirm Password',
+                        element: {
+                            placeholder: '*****',
+                            autocomplete: 'off',
+                            data: { message: 'Password fields must match' }
+                        },
+                        validate: 'matches:[name=password]'
+                    }
+                }
+            };
+            return form;
+        }
+
+        var cpForm$ = null;
+        var updated = false;
+        var formContainer$ = null;
+
+
+        XNAT.dialog.open({
+            title: 'Change Password for '+data.username,
+            width: 500,
+            content: '<div id="change-password-form"></div>',
+            beforeShow: function(obj){
+                formContainer$ = obj.dialog$.find('#change-password-form');
+                XNAT.spawner.spawn({
+                    changePasswordForm: changePasswordForm()
+                }).render(formContainer$);
+            },
+            afterShow: function(){
+                cpForm$ = formContainer$.find('form');
+            },
+            buttons: [
+                {
+                    label: 'Update Password',
+                    close: false,
+                    isDefault: true,
+                    action: function(obj){
+                        var doSave = saveUserData(cpForm$, { msg: 'User password updated successfully' });
+                        doSave.done(function(){
+                            updated = true;
+                            obj.close();
+                        });
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        });
+    };
+
 
     function userAccountForm(data){
 
-        var _load = data ? serverRoot + '/xapi/users/' + data.username : false;
-
         data = data || {};
 
+        var usernameEsc = data.username = escapeHtml(data.username || '');
+
+        var _load = data ? serverRoot + '/xapi/users/profile/' + data.username : false;
+
+        var doEdit = _load && data.username;
+
         // username could be text or input element
-        function usernameField(){
+        function usernameField(username){
             var obj = {
                 label: 'Username'
             };
@@ -645,7 +750,7 @@ var XNAT = getObject(XNAT);
                 obj.contents = {
                     usernameText: {
                         kind: 'html',
-                        content: data.username
+                        content: usernameEsc
                     },
                     usernameInput: {
                         kind: 'input.hidden',
@@ -657,22 +762,76 @@ var XNAT = getObject(XNAT);
             else {
                 obj.kind = 'panel.input.text';
                 obj.name = 'username';
-                obj.validate = 'alpha-num-safe required';
+                obj.validate = 'username required';
                 obj.value = '';
             }
             return obj;
         }
 
+        function passwordField(){
+            var obj = {
+                label: 'Password'
+            };
+            if (data && data.username) {
+                obj.kind = 'panel.element';
+                obj.contents = {
+                    changePasswordLink: {
+                        kind: 'html',
+                        content:
+                            '<a href="#!" class="change-password" style="display: inline-block; margin: -4px 0 4px;" data-username="'+data.username+'">' +
+                            '<button class="btn btn-sm">Change User Password</button></a>'
+                    }
+                }
+            }
+            else {
+                obj.kind = 'panel.input.password';
+                obj.element = {
+                    placeholder: '*****',
+                    autocomplete: 'off',
+                    data: { message: passwordComplexityMessage }
+                };
+                obj.validate = 'allow-empty pattern:'+passwordComplexity+' max-length:255'
+            }
+            return obj;
+        }
+
+        function confirmPasswordField(){
+            if (data && data.username) {
+                return false;
+            }
+            else {
+                return {
+                    kind: 'panel.input.password',
+                    label: 'Confirm Password',
+                    element: {
+                        placeholder: '*****',
+                        autocomplete: 'off',
+                        data: { message: 'Password fields must match' }
+                    },
+                    validate: 'matches:[name=password]'
+                }
+            }
+        }
+
+        var userVerified = data.verified || 'false';
+        var userEnabled = data.enabled || 'false';
+
         var form = {
             kind: 'panel.form',
+            name: 'userAccountForm',
+            id: 'user-account-form',
             label: 'Account Information',
             footer: false,
             validate: true,
-            method: _load ? 'PUT' : 'POST',
+            method: doEdit ? 'PUT' : 'POST',
             contentType: 'json',
-            load: _load,
+            load: doEdit ? _load : '',
             refresh: false,
-            action: '/xapi/users' + (_load ? '/' + data.username : ''),
+            reload: true,
+            action: '~/xapi/users' + (doEdit ? ('/' + data.username) : ''),
+            element: {
+                autocomplete: 'off'
+            },
             contents: {
                 // details: {
                 //     kind: 'panel.subhead',
@@ -683,31 +842,22 @@ var XNAT = getObject(XNAT);
                 //     validate: _load ? 'number required' : 'allow-empty',
                 //     value: data.id || ''
                 // },
-                pad: {
-                    kind: 'html',
-                    content: '<br>'
-                },
+                // pad: {
+                //     html: '<br>'
+                // },
                 usernameField: usernameField(),
-                password: {
-                    kind: 'panel.input.password',
-                    label: 'Password',
-                    element: {
-                        placeholder: '********',
-                        data: { message: passwordComplexityMessage }
-                    },
-                    validate: 'allow-empty pattern:' + passwordComplexity + ' max-length:255'//,
-                    //value: data.password || ''
-                },
+                password: passwordField(),
+                confirmPassword: confirmPasswordField(),
                 firstName: {
                     kind: 'panel.input.text',
                     label: 'First Name',
-                    validate: 'required',
+                    validate: 'name-safe required',
                     value: data.firstName || ''
                 },
                 lastName: {
                     kind: 'panel.input.text',
                     label: 'Last Name',
-                    validate: 'required',
+                    validate: 'name-safe required',
                     value: data.lastName || ''
                 },
                 email: {
@@ -715,32 +865,42 @@ var XNAT = getObject(XNAT);
                     label: 'Email',
                     validate: 'email required',
                     value: data.email || ''
-                },
-                verified: {
-                    kind: 'panel.input.switchbox',
-                    label: 'Verified',
-                    value: data.verified !== undefined ? data.verified + '' : 'false',
-                    element: {
-                        //disabled: !!_load,
-                        title: data.username + ':verified'//,
-                        //on: { click: _load ? setVerified : diddly }
-                    }
-                },
-                enabled: {
-                    kind: 'panel.input.switchbox',
-                    label: 'Enabled',
-                    value: data.enabled !== undefined ? data.enabled + '' : 'false',
-                    element: {
-                        //disabled: !!_load,
-                        title: data.username + ':enabled'//,
-                        //on: { click: _load ? setEnabled : diddly }
-                    }
                 }
             }
         };
 
+        // only show admin controls if this form is being shown from within the Admin Users UI
+        if (usersGroups.adminControls) {
+            form.contents.verified = {
+                kind: 'panel.input.switchbox',
+                    label: 'Verified',
+                    options: 'true|false',
+                    value: userVerified,
+                    // checked: !/false/i.test(userVerified)//,
+                    element: {
+                    // disabled: !!_load,
+                    checked: !/false/i.test(userVerified)//,
+                    // title: username + ':verified'//,
+                    // on: { click: _load ? setVerified : diddly }
+                }
+            };
+            form.contents.enabled = {
+                kind: 'panel.input.switchbox',
+                label: 'Enabled',
+                options: 'true|false',
+                value: userEnabled,
+                // checked: !/false/i.test(userEnabled)//,
+                element: {
+                    //disabled: !!_load,
+                    checked: !/false/i.test(userEnabled)//,
+                    //title: username + ':enabled'//,
+                    //on: { click: _load ? setEnabled : diddly }
+                }
+            }
+        }
+
         // add 'Advanced Settings' when editing existing user
-        if (_load && usersGroups.showAdvanced) {
+        if (doEdit && usersGroups.showAdvanced) {
             form.contents.advancedSettings = {
                 kind: 'panel.element',
                 label: 'Advanced',
@@ -753,8 +913,8 @@ var XNAT = getObject(XNAT);
                             on: {
                                 click: function(e){
                                     e.preventDefault();
-                                    var modalId = $(this).closest('div.xmodal').attr('id');
-                                    xmodal.modals[modalId].close();
+                                    var modalId = $(this).closest('div.xnat-dialog').attr('data-dialog');
+                                    XNAT.dialog.getDialog(modalId).close();
                                     window.top.usernameForUserThatIsCurrentlyBeingEdited = data.username;
                                     userProjectsAndSecurity(e, data.username);
                                 }
@@ -770,12 +930,42 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        // Add a submit button if this form is being displayed outside the Admin Users UI
+        if (doEdit && !usersGroups.adminControls) {
+            form.contents.submitButton = {
+                kind: 'panel.element',
+                contents: {
+                    submitUserFormButton: {
+                        kind: 'html',
+                        content: '<button class="btn primary" id="save-user-profile">Update Profile</button>'
+                    }
+                }
+            }
+        }
+
         usersGroups.showAdvanced = true;
 
         return form;
 
     }
+    usersGroups.userAccountForm = userAccountForm; 
 
+    // open a separate dialog to edit user password
+    $(document).on('click','.change-password',function(){
+        var username = $(this).data('username');
+        usersGroups.changePasswordDialog({ username: username });
+    });
+
+    // external user profile form validation and submission
+    $(document).on('click','#save-user-profile',function(){
+        var $form = $(this).parents('form'), updated;
+        if (XNAT.validate.form($form)){
+            var doSave = saveUserData($form);
+            doSave.done(function(){
+                updated = true;
+            });
+        }
+    });
 
     // open a dialog to edit user properties
     function editUser(e, onclose){
@@ -839,11 +1029,14 @@ var XNAT = getObject(XNAT);
             src: _url,
             name: 'advanced-user-settings',
             width: 800,
-            height: '100%',
+            height: '80%',
             title: 'Edit User Info',
             // footer: false,
             okLabel: 'Close',
             cancel: false,
+            beforeShow: function(){
+                XNAT.dialog.close(XNAT.dialog.topUID, true);
+            },
             onClose: function(){
                 var editedUser = window.top.usernameForUserThatIsCurrentlyBeingEdited;
                 if (!window.top.XNAT.page.userAdminPage) {
@@ -865,44 +1058,53 @@ var XNAT = getObject(XNAT);
     // open a dialog for creating a new user
     function newUserDialog(){
         var updated = false;
-        return xmodal.open({
+        var formContainer$ = null;
+        return XNAT.dialog.open({
             width: 600,
-            height: 500,
+            // height: 500,
+            speed: 200,
             title: 'Create New User',
-            content: '<div class="new-user-form"></div>',
-            beforeShow: function(){
-                var _container = this.$modal.find('div.new-user-form');
-                renderUserAccountForm(null, _container);
-            },
-            okLabel: 'Save',
-            okClose: 'false',
-            okAction: function(obj){
-                var $form = obj.$modal.find('form#user-account-form-panel');
-                var _username = $form.find('input[name="username"]').val();
-                // make sure new username is not a duplicate
-                var getUserList = usersGroups.userData().usernames();
-                getUserList.done(function(users){
-                    if (users.indexOf(_username) > -1) {
-                        XNAT.ui.dialog.alert('The username ' +
-                            '<b>' + _username + '</b> is already in use. ' +
-                            'Please enter a different username value and ' +
-                            'try again.');
-                        return false;
+            content: (function(){
+                formContainer$ = $.spawn('div.new-user-form');
+                renderUserAccountForm(null, formContainer$);
+                return formContainer$[0];
+            })(),
+            buttons: [
+                {
+                    label: 'Save',
+                    close: false,
+                    isDefault: true,
+                    action: function(obj){
+                        // userAccountForm
+                        var userForm$ = formContainer$.find('form');
+                        var _username = userForm$.find('input[name="username"]').val();
+                        // make sure new username is not a duplicate
+                        var getUserList = usersGroups.userData().usernames();
+                        getUserList.done(function(users){
+                            if (users.indexOf(_username) > -1) {
+                                XNAT.ui.dialog.alert('The username ' +
+                                    '<b>' + _username + '</b> is already in use. ' +
+                                    'Please enter a different username value and ' +
+                                    'try again.');
+                                return false;
+                            }
+
+                            var doSave = saveUserData(userForm$);
+                            doSave.done(function(){
+                                updated = true;
+                                obj.close();
+                            });
+                        });
                     }
-                    var doSave = saveUserData($form);
-                    doSave.done(function(){
-                        updated = true;
-                        obj.close();
-                    });
-                });
-            },
+                }
+            ],
             onClose: function(){
                 // always update the whole table when adding a user.
                 // usersGroups.spawnTabs();
-                renderUsersTable();
-                // if (updated) {
-                //     updateUsersTable(true);
-                // }
+                // renderUsersTable();
+                if (updated) {
+                    updateUsersTable(true);
+                }
             }
         })
     }
@@ -965,8 +1167,9 @@ var XNAT = getObject(XNAT);
                             // spawnUsersTable().render($container.empty());
                             // usersGroups.spawnTabs();
                             setTimeout(function(){
+                                XNAT.dialog.loadingBar.show();
                                 updateUsersTable(true);
-                            }, 10);
+                            }, 1);
                         }
                     }
                 }
@@ -983,7 +1186,10 @@ var XNAT = getObject(XNAT);
                     },
                     on: {
                         click: function(e){
-                            renderUsersTable($(userTableContainer), '/xapi/users/profiles');
+                            setTimeout(function(){
+                                XNAT.dialog.loadingBar.show();
+                                renderUsersTable($(userTableContainer), '/xapi/users/profiles');
+                            }, 1);
                         }
                     }
                 }
@@ -1137,12 +1343,12 @@ var XNAT = getObject(XNAT);
         function killActiveSessions(e){
             e.preventDefault();
             var username = this.title.split(':')[0].trim();
-            return xmodal.confirm({
+            return XNAT.dialog.confirm({
                 title: 'Kill Active Sessions?',
                 content: 'Kill all active sessions for <b>' + username + '</b>?',
                 okClose: false,
                 okAction: function(obj){
-                    XNAT.xhr.delete({
+                    XNAT.xhr['delete']({
                         url: XNAT.url.rootUrl('/xapi/users/active/' + username),
                         success: function(){
                             obj.close();
@@ -1210,7 +1416,7 @@ var XNAT = getObject(XNAT);
             var $dataRows = [];
 
             // load 'current' users initially
-            var URL = url || '/xapi/users/current';
+            var URL = XNAT.url.restUrl(url || '/xapi/users/current');
 
             // TODO:
             // TODO: set min-width as well as max-width
@@ -1255,7 +1461,8 @@ var XNAT = getObject(XNAT);
                         '    #user-profiles td.username .truncate { width: 90px; } \n' +
                         '    #user-profiles td.fullName .truncate { width: 100px; } \n' +
                         '    #user-profiles td.email .truncate { width: 140px; } \n' +
-                        '}'
+                        '} \n' +
+                        '#user-account-form, #user-account-form-panel { border: none; margin: 0; }'
                     }
                 },
                 onRender: showUsersTable,
@@ -1318,14 +1525,13 @@ var XNAT = getObject(XNAT);
                         filter: true, // add filter: true to individual items to add a filter
                         // th: { style: { width: styles.username }},
                         // td: { style: { width: styles.username }},
-                        apply: function(username, tr){
-                            //console.log(tr);
+                        apply: function(){
                             // var _username = truncateText(username);
                             return spawn('a.username.link.truncate.edit-user', {
                                 href: '#!',
-                                title: username + ': details',
+                                title: this.username + ': details',
                                 // html: _username,
-                                html: username//,
+                                html: escapeHtml(this.username)//,
                                 // style: { width: styles.username },
                                 // data: { username: username }
                             });
@@ -1337,11 +1543,10 @@ var XNAT = getObject(XNAT);
                         // td: { style: { width: styles.name }},
                         apply: function(){
                             // var _fullName = truncateText(this.lastName + ', ' + this.firstName);
-                            var _fullName = (this.lastName + ', ' + this.firstName);
                             return spawn('a.full-name.link.truncate.edit-user', {
                                 href: '#!',
                                 title: this.username + ': project and security settings',
-                                html: _fullName//,
+                                html: escapeHtml(this.lastName + ', ' + this.firstName)//,
                                 // style: { width: styles.name },
                                 // data: { username: this.username }
                             });
@@ -1352,15 +1557,14 @@ var XNAT = getObject(XNAT);
                         label: 'Email',
                         // th: { style: { width: styles.email }},
                         // td: { style: { width: styles.email }},
-                        apply: function(email){
-                            // var _email = truncateText(email);
+                        apply: function(){
                             return spawn('a.send-email.link.truncate.edit-user', {
                                 href: '#!',
-                                title: email + ': send email',
+                                title: this.email + ': send email',
                                 // style: { width: styles.email },
                                 // title: 'Send email to: ' + email,
                                 // html: _email
-                                html: email
+                                html: escapeHtml(this.email)
                             })
                         }
                     },
@@ -1519,7 +1723,13 @@ var XNAT = getObject(XNAT);
                                                 $dataRows.addClass(FILTERCLASS).filter(function(){
                                                     var timestamp = this.querySelector('input.last-login.timestamp');
                                                     var lastLogin = +(timestamp.value);
-                                                    return selectedValue === lastLogin-1 || selectedValue > (currentTime - lastLogin);
+                                                    if (selectedValue === -1) {
+                                                        // special handling for users that have never logged in
+                                                        return lastLogin === 0;
+                                                    }
+                                                    else {
+                                                        return selectedValue === lastLogin-1 || selectedValue > (currentTime - lastLogin);
+                                                    }
                                                 }).removeClass(FILTERCLASS);
                                             }
                                         }
@@ -1563,10 +1773,13 @@ var XNAT = getObject(XNAT);
         var tabsConfig = setupTabs();
         var $container = $$(container || XNAT.tabs.container);
         $container.html('loading...');
-        setTimeout(function(){
-            usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-            usersGroups.tabs.render($container.empty(), 20);
-        }, 200);
+            setTimeout(function(){
+                XNAT.dialog.loadingBar.show();
+                usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
+                usersGroups.tabs.render($container.empty(), function(){
+                    XNAT.dialog.loadingBar.hide()
+                });
+            }, 1);
         // usersGroups.tabs.done(usersGroups.showUsersTable);
     };
 

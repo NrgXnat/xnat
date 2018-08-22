@@ -25,10 +25,11 @@ var XNAT = getObject(XNAT||{});
     }
 }(function(){
 
-    var url, xhr,
+    var app, url, xhr,
         root = this,
         undefined;
 
+    XNAT.app = app = getObject(XNAT.app||{});
     XNAT.url = url = getObject(XNAT.url||{});
     XNAT.xhr = xhr = getObject(XNAT.xhr||{});
 
@@ -55,8 +56,8 @@ var XNAT = getObject(XNAT||{});
     function fixRoot(root, url){
         // remove slashes from both sides of 'root'
         var rootTemp = trimSlashes(root) + '/';
-        // remove slash from beginning of 'url'
-        var urlTemp  = chopSlashes(url);
+        // remove slash and 'root' chars from beginning of 'url'
+        var urlTemp  = chopSlashes(url.replace(/^[~*]/, ''));
         // uh...
         var newUrl = ((root ? rootTemp : '') + (url ? urlTemp : ''));
         var rootRegex = new RegExp('^(' + rootTemp + ')+', 'g');
@@ -78,7 +79,6 @@ var XNAT = getObject(XNAT||{});
         }
         return /^(https:)/.test(docUrl) ? 'https:' : 'http:'
     };
-
     url.protocol = url.getProtocol();
 
     url.getDomain = function(){
@@ -92,16 +92,26 @@ var XNAT = getObject(XNAT||{});
 
     url.domain = url.getDomain();
 
-    url.getPort = function(){
-        return window.location.port;
+    // return the current location's port number
+    // (if present), optionally prefixed with [sep]
+    url.getPort = function(sep){
+        var port = window.location.port;
+        return port ? (sep || '') + port : '';
     };
 
     url.fullUrl = function(_url){
         if (window.location.origin) {
             return window.location.origin + rootUrl(_url);
         }
-        return url.getProtocol() + '//' + url.getDomain() + ':' + url.getPort() + rootUrl(_url);
+        return url.getProtocol() + '//' + url.getDomain() + url.getPort(':') + rootUrl(_url);
     };
+
+    // use this to generate a download protocol for the XNAT Desktop Client
+    function xnatUrl(_url){
+        var xprotocol = (url.getProtocol() === 'https:') ? 'xnats:' : 'xnat:';
+        return xprotocol + '//' + url.getDomain() + rootUrl(_url);
+    }
+    url.xnatUrl = xnatUrl;
 
     // better encodeURIComponent() that catches
     // these additional characters: !'()*
@@ -418,7 +428,7 @@ var XNAT = getObject(XNAT||{});
     });
 
 
-    url.reloadHash = function(key, value, delim){
+    url.reloadHash = function(key, value, delim, callback){
         var newHash = XNAT.url.updateHashPart('', key, value, delim);
         //window.location.replace(newHash);
         //window.location.reload();
@@ -545,6 +555,25 @@ var XNAT = getObject(XNAT||{});
 
     }
     url.buildUrl = url.setup = urlSetup;
+
+
+    // replace parseable URL parts while preserving 'special' prefix
+    url.parse = function( URL ){
+        if (!URL) return '';
+        var urlTemp = URL;
+        // preserve 'special' syntax prefixes
+        var parts = URL.split(/^(\$*[*?~]?\s*[:=]*\s*)/);
+        // if there's only one part, there's no prefix
+        if (parts.length === 1) {
+            urlTemp = strReplace(URL);
+        }
+        else {
+            urlTemp = strReplace(parts[2])
+        }
+        return (parts[1] || '') + rootUrl(urlTemp);
+    };
+    url.replace = url.parse;
+
 
     // build url path from object, array, or argument sequence
     // ({ projects: 'foo', subject: 'bar' })

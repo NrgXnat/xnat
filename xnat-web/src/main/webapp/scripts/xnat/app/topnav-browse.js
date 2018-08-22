@@ -18,16 +18,17 @@
     var $browseData = $('#browse-data');
     var $favoriteProjects = $('#favorite-projects');
     var $myProjects = $('#my-projects');
-    var undefined;
+    var $storedSearches = $('#stored-search-menu');
+    var undef;
 
     var displayProjectList = function($parent, projectData){
         if (!projectData.length) return;
         function projectListItem(val, len){
             var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
-            var TEXT = (val || '<i><i>&ndash;</i></i>');
+            var TEXT = (val ? escapeHtml(val) : '<i><i>&ndash;</i></i>');
             var linkText = spawn('a.truncate', {
-                title: val,
+                title: escapeHtml(val),
                 // style: { width: len },
                 href: URL
             }, TEXT);
@@ -99,7 +100,7 @@
                 }
             }
         });
-        $parent.append(_menuItem).parents('li').removeClass('hidden');
+        $parent.html('').append(_menuItem).parents('li').removeClass('hidden');
     };
 
     function displayProjectNavFail(){
@@ -131,7 +132,7 @@
                 item: 'list-item'
             }
         });
-        $container.append(_menuItem).parents('li').removeClass('hidden');
+        $container.html('').append(_menuItem).parents('li').removeClass('hidden');
     }
 
     var xnatJSON = XNAT.xhr.getJSON;
@@ -139,7 +140,7 @@
 
     // populate project list
     xnatJSON({
-        url: restUrl('/data/projects', ['accessible=true']),
+        url: restUrl('/data/projects', ['format=json', 'accessible=true']),
         success: function(data){
             displayProjectList($browseProjects, data.ResultSet.Result)
         },
@@ -150,7 +151,7 @@
 
     // look for my projects. If found, show that dropdown list.
     xnatJSON({
-        url: restUrl('/data/projects', ['accessible=true', 'users=true']),
+        url: restUrl('/data/projects', ['format=json', 'accessible=true', 'users=true']),
         success: function(data){
             displayProjectList($myProjects, data.ResultSet.Result);
         },
@@ -161,7 +162,7 @@
 
     // look for favorite projects. If found, show that dropdown list.
     xnatJSON({
-        url: restUrl('/data/projects', ['favorite=true']),
+        url: restUrl('/data/projects', ['format=json', 'favorite=true']),
         success: function(data){
             var FAVORITES = data.ResultSet.Result.map(function(item){
                 var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
@@ -172,7 +173,7 @@
                         href: URL,
                         title: item.name,
                         style: { width: '100%' }
-                    }, item.secondary_id)
+                    }, escapeHtml(item.secondary_id))
                 }
             });
             displaySimpleList($favoriteProjects, FAVORITES)
@@ -193,26 +194,96 @@
                 href: dataTypeUrl(type.element_name),
                 title: type.element_name,
                 style: { width: '100%' }
-            }, type.plural)
+            }, escapeHtml(type.plural))
         }
     }
 
+    function compareSearches(a,b) {
+        // sort alphabetically by the brief_description field, accounting for accented characters if necessary.
+        return a.brief_description.localeCompare(b.brief_description);
+    }
+
     // populate data list
-    if (window.available_elements !== undefined && window.available_elements.length) {
-        var DATATYPES = [dataTypeItem({
-            element_name: 'xnat:subjectData',
-            plural: 'Subjects'
-        })];
-        var sortedTypes = sortObjects(window.available_elements, 'plural');
-        forEach(sortedTypes, function(type){
-            if (type.plural === undefined) return;
-            if (/workflowData|subjectData/i.test(type.element_name)) return;
-            DATATYPES.push(dataTypeItem(type));
-        });
-        displaySimpleList($browseData, DATATYPES);
-    }
-    else {
-        $browseData.parent('li').addClass('disabled');
-    }
+    XNAT.app.dataTypeAccess.getElements['browseable'].ready(
+        // success
+        function(data){
+
+            var sortedElements = data.sortedElements;
+            var elementMap = data.elementMap;
+
+            if (!data || !sortedElements || !sortedElements.length) {
+                $browseData.parent('li').addClass('disabled');
+                return;
+            }
+
+            var DATATYPES = [];
+
+            // use what's stored for 'Subjects' plural display
+            if (elementMap && elementMap['xnat:subjectData']) {
+                DATATYPES.push(dataTypeItem(elementMap['xnat:subjectData']));
+            }
+            else {
+                DATATYPES.push(dataTypeItem({
+                    element_name: 'xnat:subjectData',
+                    plural: lookupObjectValue(XNAT, 'app.displayNames.plural.subject')
+                }));
+            }
+
+            forEach(sortedElements, function(type){
+                if (type.plural === undef) return;
+                if (/workflowData|subjectData/i.test(type.element_name)) return;
+                DATATYPES.push(dataTypeItem(type));
+            });
+
+            displaySimpleList($browseData, DATATYPES);
+
+        },
+        // failure
+        function(e){
+            console.warn(e);
+            $browseData.parent('li').addClass('disabled');
+        }
+    );
+
+    // if (window.available_elements !== undef && window.available_elements.length) {
+    //     var DATATYPES = [dataTypeItem({
+    //         element_name: 'xnat:subjectData',
+    //         plural: 'Subjects'
+    //     })];
+    //     var sortedTypes = sortObjects(window.available_elements, 'plural');
+    //     forEach(sortedTypes, function(type){
+    //         if (type.plural === undef) return;
+    //         if (/workflowData|subjectData/i.test(type.element_name)) return;
+    //         DATATYPES.push(dataTypeItem(type));
+    //     });
+    //     displaySimpleList($browseData, DATATYPES);
+    // }
+    // else {
+    //     $browseData.parent('li').addClass('disabled');
+    // }
+
+    // populate stored search list
+    xnatJSON({
+        url: restUrl('/data/search/saved', ['format=json']),
+        success: function(data){
+            if (data.ResultSet.Result.length){
+                data.ResultSet.Result.sort(compareSearches);
+                STORED = data.ResultSet.Result.map(function(item){
+                    var URL = XNAT.url.rootUrl('/app/template/Search.vm/node/ss.'+item.id);
+                    return {
+                        name: item.brief_description,
+                        item: spawn('a',{
+                            href: URL,
+                            style: { width: '100%' }
+                        }, escapeHtml(item.brief_description) )
+                    }
+                });
+                displaySimpleList($storedSearches, STORED);
+            }
+        },
+        error: function(e){
+            console.log(e);
+        }
+    })
 
 })();

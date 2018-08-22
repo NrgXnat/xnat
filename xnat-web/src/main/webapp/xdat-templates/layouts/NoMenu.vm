@@ -1,6 +1,8 @@
 $navigation.setTemplate("/htmlOpen.vm")
 ## insert any template-specific <head> code here
-
+<script>
+    window.loadDataTypes = false;
+</script>
 $navigation.setTemplate("/bodyOpen.vm")
 ## insert any template-specific code here that needs to be directly after opening <body> tag
 

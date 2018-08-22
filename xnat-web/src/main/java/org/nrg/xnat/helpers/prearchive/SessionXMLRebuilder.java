@@ -9,20 +9,17 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.task.XnatTask;
 import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.task.AbstractXnatTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 
@@ -37,118 +34,116 @@ import java.util.List;
  * The Class SessionXMLRebuilder.
  */
 @XnatTask(taskId = "SessionXMLRebuilder", description = "Session XML Rebuilder", defaultExecutionResolver = "SingleNodeExecutionResolver", executionResolverConfigurable = true)
-public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
-
+@Slf4j
+public class SessionXMLRebuilder extends AbstractXnatTask {
     /**
-     * Instantiates a new session xml rebuilder.
+     * Instantiates a new session XML rebuilder.
      *
-     * @param provider the provider
-     * @param appInfo the app info
+     * @param provider    the provider
+     * @param appInfo     the app info
      * @param jmsTemplate the jms template
-     * @param interval the interval
+     * @param interval    the interval
      */
-    public SessionXMLRebuilder(final Provider<UserI> provider, final XnatAppInfo appInfo, final JmsTemplate jmsTemplate, final JdbcTemplate jdbcTemplate, final double interval) {
-        super(XDAT.getContextService().getBean(XnatTaskService.class));
+    public SessionXMLRebuilder(final Provider<UserI> provider, final XnatTaskService taskService, final XnatAppInfo appInfo, final JmsTemplate jmsTemplate, final JdbcTemplate jdbcTemplate, final double interval) {
+        super(taskService, true, appInfo, jdbcTemplate);
         _provider = provider;
-        _appInfo = appInfo;
         _interval = interval;
         _jmsTemplate = jmsTemplate;
-        _helper = new DatabaseHelper(jdbcTemplate);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void run() {
-        try {
-            if (!_appInfo.isInitialized() || !_helper.tableExists("xdat_search", "prearchive") || !XFTManager.isInitialized()) {
-                if (!_markedUninitialized) {
-                    logger.info("Application is not yet initialized, session XML rebuild operation delayed until initialization completed.");
-                    _markedUninitialized = true;
-                }
-                return;
-            }
-        } catch (final SQLException e) {
-            logger.error("An error occurred trying to access the database to check for the table 'xdat_search.prearchive'.", e);
-            return;
-        }
-
+    protected void runTask() {
         try {
             final UserI user = _provider.get();
             if (user == null) {
-                logger.warn("The user for running the session XML rebuilder process was not found. Aborting for now.");
+                log.warn("The user for running the session XML rebuilder process was not found. Aborting for now.");
                 return;
             }
-            
-            if (!shouldRunTask()) {
-            	logger.trace("Session XML rebuilder not configured to run on this node.  Skipping.");
-            	return;
+
+            if (!PrearcDatabase.ready) {
+                log.info("The prearchive database is not ready, exiting.");
+                return;
             }
-            logger.trace("Running prearc job as {}", user.getLogin());
-            
-            List<SessionData> sds = null;
-            long now = Calendar.getInstance().getTimeInMillis();
-            try {
-                if (PrearcDatabase.ready) {
-                    sds = PrearcDatabase.getAllSessions();
-                }
-            } catch (SessionException e) {
-                logger.error("", e);
-            } catch (SQLException e) {
-                // Swallow this message so it doesn't fill the logs before the prearchive is initialized.
-                if (!e.getMessage().contains("relation \"xdat_search.prearchive\" does not exist")) {
-                    logger.error("", e);
-                }
-            } catch (Exception e) {
-                logger.error("", e);
-            }
-            int updated = 0;
-            int total = 0;
-            if (sds != null && sds.size() > 0) {
-                for (final SessionData sessionData : sds) {
-                    total++;
-                    if (sessionData.getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING) && !sessionData.getPreventAutoCommit() && !StringUtils.trimToEmpty(sessionData.getSource()).equals(SessionData.UPLOADER)) {
+
+            log.trace("Running prearc job as {}", user.getLogin());
+            final List<SessionData> allSessions       = PrearcDatabase.getAllSessions();
+            final int               totalSessionCount = allSessions.size();
+
+            int updatedSessionCount   = 0;
+            int processedSessionCount = 0;
+            log.info("Checking whether any prearc entries should be processed, found {} sessions", totalSessionCount);
+            if (!allSessions.isEmpty()) {
+                final long now = Calendar.getInstance().getTimeInMillis();
+                for (final SessionData sessionData : allSessions) {
+                    processedSessionCount++;
+                    final SessionDataTriple        triple            = sessionData.getSessionDataTriple();
+                    final PrearcUtils.PrearcStatus status            = sessionData.getStatus();
+                    final Boolean                  preventAutoCommit = sessionData.getPreventAutoCommit();
+                    final String                   source            = sessionData.getSource();
+
+                    log.debug("Testing session #{} of {} total, '{}' with status {}, prevent auto commit {}, source {}", processedSessionCount, totalSessionCount, triple, status, preventAutoCommit, source);
+
+                    if (status.equals(PrearcUtils.PrearcStatus.RECEIVING) && !preventAutoCommit && !StringUtils.trimToEmpty(source).equals(SessionData.UPLOADER)) {
                         try {
-                            final File sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
-                            final long then = sessionData.getLastBuiltDate().getTime();
-                            final double diff = diffInMinutes(then, now);
-                            if (diff >= _interval && !PrearcUtils.isSessionReceiving(sessionData.getSessionDataTriple())) {
-                                updated++;
+                            final File   sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
+                            final long   then       = sessionData.getLastBuiltDate().getTime();
+                            final double diff       = diffInMinutes(then, now);
+
+                            log.debug("Prearchive session '{}' is {} minutes old", sessionData.toString(), diff);
+
+                            if (diff >= _interval && !PrearcUtils.isSessionReceiving(triple)) {
+                                updatedSessionCount++;
                                 try {
+                                    log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, setting status to QUEUED_BUILDING", updatedSessionCount, sessionData.toString(), diff, _interval);
                                     if (PrearcDatabase.setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING)) {
-                                        logger.debug("Creating JMS queue entry for {} to archive {}", user.getUsername(), sessionData.getExternalUrl());
+                                        log.debug("Creating JMS queue entry for {} to archive {}", user.getUsername(), sessionData.getExternalUrl());
                                         final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, sessionData, sessionDir, "Rebuild");
                                         XDAT.sendJmsRequest(_jmsTemplate, request);
+                                    } else {
+                                        log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", sessionData.toString());
                                     }
                                 } catch (Exception exception) {
-                                    logger.error("Error when setting prearchive session status to QUEUED", exception);
+                                    log.error("Error when setting prearchive session status to QUEUED", exception);
                                 }
                             } else if (diff >= (_interval * 10)) {
-                                logger.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
+                                log.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
+                            } else if (diff < _interval) {
+                                log.debug("Prearchive session {} is {} minutes old, less than configured interval {}, remaining in RECEIVING status", sessionData.toString(), diff, _interval);
                             }
                         } catch (IOException e) {
                             final String message = String.format("An error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-                            logger.error(message, e);
+                            log.error(message, e);
                         } catch (InvalidPermissionException e) {
                             final String message = String.format("A permissions error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-                            logger.error(message, e);
+                            log.error(message, e);
                         } catch (Exception e) {
                             final String message = String.format("An unknown error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-                            logger.error(message, e);
+                            log.error(message, e);
                         }
                     }
                 }
             }
-            logger.info("Built {} of {}", updated, total);
+            log.info("Built {} of {}", updatedSessionCount, processedSessionCount);
+        } catch (SessionException e) {
+            log.error("", e);
+        } catch (SQLException e) {
+            // Swallow this message so it doesn't fill the logs before the prearchive is initialized.
+            if (!e.getMessage().contains("relation \"xdat_search.prearchive\" does not exist")) {
+                log.error("", e);
+            }
         } catch (final NrgServiceRuntimeException e) {
             switch (e.getServiceError()) {
                 case UserServiceError:
-                    logger.warn("The user for running the session XML rebuilder process could not be initialized. This probably means the system is still initializing. Check the database if this is not the case.");
+                    log.warn("The user for running the session XML rebuilder process could not be initialized. This probably means the system is still initializing. Check the database if this is not the case.");
                     break;
                 default:
                     throw e;
             }
+        } catch (final Exception e) {
+            log.error("An unknown error occurred", e);
         }
     }
 
@@ -156,7 +151,8 @@ public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
      * Diff in minutes.
      *
      * @param start the start
-     * @param end the end
+     * @param end   the end
+     *
      * @return the double
      */
     public static double diffInMinutes(long start, long end) {
@@ -164,24 +160,7 @@ public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
         return Math.floor(seconds / 60);
     }
 
-    /** The Constant logger. */
-    private static final Logger logger = LoggerFactory.getLogger(SessionXMLRebuilder.class);
-
-    /** The _provider. */
     private final Provider<UserI> _provider;
-    
-    /** The _app info. */
-    private       XnatAppInfo     _appInfo;
-    
-    /** The _interval. */
     private final double          _interval;
-    
-    /** The _jms template. */
     private final JmsTemplate     _jmsTemplate;
-    
-    /** The helper. */
-    private final DatabaseHelper  _helper;
-
-    /** The _marked uninitialized. */
-    private boolean _markedUninitialized = false;
 }

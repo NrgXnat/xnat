@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cfg.ImprovedNamingStrategy;
@@ -18,8 +19,6 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
@@ -38,6 +37,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
+@Slf4j
 public class OrmConfig {
     @Bean
     public ImprovedNamingStrategy namingStrategy() {
@@ -46,36 +46,44 @@ public class OrmConfig {
 
     @Bean
     public PropertiesFactoryBean hibernateProperties(final Environment environment) {
-        final PropertiesFactoryBean bean       = new PropertiesFactoryBean();
-        final Properties            properties = Beans.getNamespacedProperties(environment, "hibernate", false);
+        final Properties properties = Beans.getNamespacedProperties(environment, "hibernate", false);
         if (properties.size() == 0) {
-            if (_log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 final StringBuilder message = new StringBuilder("No Hibernate properties specified, using default properties:\n");
                 for (final String property : DEFAULT_HIBERNATE_PROPERTIES.stringPropertyNames()) {
                     message.append(" * ").append(property).append(": ").append(DEFAULT_HIBERNATE_PROPERTIES.getProperty(property)).append("\n");
                 }
-                _log.debug(message.toString());
+                log.debug(message.toString());
             }
             properties.putAll(DEFAULT_HIBERNATE_PROPERTIES);
         }
+
+        final PropertiesFactoryBean bean = new PropertiesFactoryBean();
         bean.setProperties(properties);
         return bean;
     }
 
     @Bean
-    public RegionFactory regionFactory(final Properties hibernateProperties) throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        final String regionFactoryClass = hibernateProperties.getProperty("hibernate.cache.region.factory_class", DEFAULT_REGION_FACTORY_CLASS);
-        final Class<? extends RegionFactory> clazz = Class.forName(regionFactoryClass).asSubclass(RegionFactory.class);
+    public RegionFactory regionFactory(final Properties hibernateProperties) throws NrgServiceException {
+        final String className = hibernateProperties.getProperty("hibernate.cache.region.factory_class", DEFAULT_REGION_FACTORY_CLASS);
         try {
-            @SuppressWarnings("JavaReflectionMemberAccess")
-            final Constructor<? extends RegionFactory> constructor = clazz.getConstructor(Properties.class);
-            return constructor.newInstance(hibernateProperties);
-        } catch (NoSuchMethodException e) {
-            return clazz.newInstance();
+            final Class<? extends RegionFactory> clazz = Class.forName(className).asSubclass(RegionFactory.class);
+            try {
+                final Constructor<? extends RegionFactory> constructor = clazz.getConstructor(Properties.class);
+                return constructor.newInstance(hibernateProperties);
+            } catch (NoSuchMethodException e) {
+                return clazz.newInstance();
+            }
+        } catch (ClassNotFoundException e) {
+            log.error("Couldn't find the specified cache region factory class '{}'", className, e);
+            throw new NrgServiceException(NrgServiceError.ConfigurationError, "Couldn't find the specified cache region factory class '" + className + "'", e);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            log.error("An error occurred trying to create an instance of the '{}' class", className, e);
+            throw new NrgServiceException(NrgServiceError.ConfigurationError, "An error occurred trying to create an instance of the '" + className + "' class", e);
         }
     }
 
-    @Bean
+        @Bean
     public FactoryBean<SessionFactory> sessionFactory(final Environment environment, final DataSource dataSource, final RegionFactory regionFactory, final XnatPluginBeanManager manager) throws NrgServiceException {
         try {
             final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(manager, XNAT_ENTITIES_PACKAGES);
@@ -90,7 +98,7 @@ public class OrmConfig {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager(final SessionFactory sessionFactory) throws NrgServiceException {
+    public PlatformTransactionManager transactionManager(final SessionFactory sessionFactory) {
         return new HibernateTransactionManager(sessionFactory);
     }
 
@@ -109,6 +117,4 @@ public class OrmConfig {
         setProperty("hibernate.cache.region.factory_class", DEFAULT_REGION_FACTORY_CLASS);
         setProperty("hibernate.cache.use_query_cache", "true");
     }};
-
-    private static final Logger _log = LoggerFactory.getLogger(OrmConfig.class);
 }

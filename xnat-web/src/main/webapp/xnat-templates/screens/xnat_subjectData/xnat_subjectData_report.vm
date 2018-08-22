@@ -42,15 +42,15 @@ width:1px;
       <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
   </ul>
  <div class="yui-content">   
-  <div id="tab1"><p>
+  <div id="tab1">
  <table>
 #parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectData",$!project))
  </table>
-</p></div>  
+</div>
  
-  <div id="tab2"><p>
-#parse($turbineUtils.getTemplateName("sharing","xnat:subjectData",$!project))
-</p></div> 
+  <div id="tab2">
+	  #parse($turbineUtils.getTemplateName("sharing","xnat:subjectData",$!project))
+  </div>
   </div> 
  </DIV>
 </div>

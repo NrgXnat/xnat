@@ -23,7 +23,7 @@ var XNAT = getObject(XNAT||{}),
 
     var xhr, url,
         root = this,
-        undefined;
+        undefined, undef;
 
     XNAT.xhr = xhr = getObject(XNAT.xhr||{});
     XNAT.url = url = getObject(XNAT.url||{});
@@ -168,7 +168,8 @@ var XNAT = getObject(XNAT||{}),
         }
 
         this.method = method;
-        this.url = url;
+        // XNAT-specific parsing of root URL with ~/ or */ syntax
+        this.url = /^([~*]\/)/.test(url) ? XNAT.url.rootUrl(url) : url;
         this.data = data;
         this.success = callback;
 
@@ -369,11 +370,17 @@ var XNAT = getObject(XNAT||{}),
         'put' : { method: 'PUT' },
         'delete' : { method: 'DELETE' },
         'getJSON' : { method: 'GET', dataType: 'json', format: 'json' },
+        'getFormatJSON' : { method: 'GET', dataType: 'json', format: 'json' },
         'getHTML' : { method: 'GET', dataType: 'html', format: 'html' },
+        'getFormatHTML' : { method: 'GET', dataType: 'html', format: 'html' },
         'getXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
+        'getFormatXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
         'getText' : { method: 'GET', dataType: 'text', format: 'text' },
+        'getFormatText' : { method: 'GET', dataType: 'text', format: 'text' },
         'putJSON' : { method: 'PUT', contentType: 'application/json', processData: false },
-        'postJSON' : { method: 'POST', contentType: 'application/json', processData: false }
+        'postJSON' : { method: 'POST', contentType: 'application/json', processData: false },
+        'putXML' : { method: 'PUT', contentType: 'text/xml', processData: false },
+        'postXML' : { method: 'POST', contentType: 'text/xml', processData: false }
     };
 
     xhr.shorthands._delete = xhr.shorthands.delete_ = xhr.shorthands['delete'];
@@ -384,11 +391,17 @@ var XNAT = getObject(XNAT||{}),
     // XNAT.xhr.put()
     // XNAT.xhr.delete() || XNAT.xhr._delete() || XNAT.xhr.delete_()
     // XNAT.xhr.getJSON()
+    // XNAT.xhr.getFormatJSON()  // adds 'format=json' param
     // XNAT.xhr.getHTML()
+    // XNAT.xhr.getFormatHTML()  // adds 'format=html' param
     // XNAT.xhr.getXML()
+    // XNAT.xhr.getFormatXML()   // adds 'format=xml' param
     // XNAT.xhr.getText()
+    // XNAT.xhr.getFormatText()  // adds 'format=text' param
     // XNAT.xhr.putJSON()
     // XNAT.xhr.postJSON()
+    // XNAT.xhr.putXML()
+    // XNAT.xhr.postXML()
     // >>>
     forOwn(xhr.shorthands, function(type, opts){
         xhr[type] = function(/* url, data/null, opts_or_callback, callback */){
@@ -399,14 +412,14 @@ var XNAT = getObject(XNAT||{}),
 
     // only do JSON.stringify on Arrays or Objects
     function safeStringify(val){
-        if ($.isArray(val) || $.isPlainObject(val)) {
+        if (isArray(val) || isPlainObject(val)) {
             return JSON.stringify(val);
         }
         return ''+val;
     }
 
-    // replace url params with values from [name] or [data-param] attribute
-    // <form data-method="put" action="/xapi/theme/{{themeName}}">
+    // replace url params with values from [name] or [data-param] attribute (if it exists)
+    // <form data-method="put" action="/xapi/theme/[[themeName]]">
     //     <input type="text" name="themeName">
     // </form>
     function urlParams(form, url, params){
@@ -414,10 +427,15 @@ var XNAT = getObject(XNAT||{}),
         var $form = $$(form);
         var URL = url || $form.attr('action') || $form.data('url');
 
+        // replace items in url string
+        if (/{{|{\(/.test(URL)) {
+            URL = strReplace(URL);
+        }
+
         // which params are we replacing?
-        // /url/path/{{param1}}/{{param2}}
-        var urlParams = URL.split('{{').slice(1).map(function(name){
-            return name.split('}}')[0].trim();
+        // /url/path/[[param1]]/[[param2]]
+        var urlParams = URL.split('[[').slice(1).map(function(name){
+            return name.split(']]')[0].trim();
         });
 
         // return url if no params to replace
@@ -429,8 +447,12 @@ var XNAT = getObject(XNAT||{}),
         params = getObject(params);
 
         forEach(urlParams, function(name){
-            var _str = '{{' + name + '}}';
-            var _val = params[name] || $form.find('[name="' + name + '"]').val() || '';
+            var $input = $form.find('[name="' + name + '"]');
+            var _str = '[[' + name + ']]';
+            var _val = isDefined(params[name]) ? params[name]+'' : '';
+            if (!_val && $input.length) {
+                _val = $input.filter(':checked').val() || $input[0].value
+            }
             URL = URL.replace(_str, _val);
         });
 
@@ -465,7 +487,9 @@ var XNAT = getObject(XNAT||{}),
     xhr.formToJSON = formToJSON;
 
     $.fn.formToJSON = $.fn.toJSON = function(stringify){
-        return formToJSON(this, stringify);
+        var json = this.getValues();
+        return stringify ? JSON.stringify(json) : json;
+        // return formToJSON(this, stringify);
     };
 
     // helper function to fire $.fn.changeVal() if available
@@ -480,195 +504,6 @@ var XNAT = getObject(XNAT||{}),
         return $el;
     }
 
-    // set form element values from an object map
-    // 'inputs' can be a form element, selector, or array of inputs
-    function setValues(inputs, dataObj, opts){
-
-        // cache and check if form exists
-        var $inputs = $$(inputs),
-            values = getObject(dataObj);
-
-        if (!$inputs.length) return;
-
-        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
-            $inputs = $inputs.find(':input');
-        }
-
-        // apply values to each input
-        $inputs.not('button').each(function(){
-
-            var $this = $(this),
-                // dataObj *could* be a string - in that case use window
-                rootObj = isString(dataObj) ? (window[dataObj] || window) : dataObj,
-                lookupRegex = /^((\$\?|\?\?|!\?)(:|=|\|)?\s*)/,
-                name = this.name || this.title,
-                val;
-
-            // if there's a pre-existing value that starts with
-            // a special string, use that as the name
-            // - $? - lookup value via ajax
-            // - ?? - lookup value from a global var/object
-            // - !? - do a js eval to get the value
-            if (lookupRegex.test(this.value)) {
-                name = this.value.replace(lookupRegex, '');
-            }
-
-            if (!name) {
-                return;
-            }
-
-            val = lookupObjectValue(rootObj, name);
-
-            // add the value to the returned 'values' object
-            values[name] = val;
-
-            // don't set values of inputs with EXISTING
-            // values that start with "@?"
-            // -- those get parsed on submission
-            if (!val && this.value && /^(@\?)/.test(this.value)) {
-                return;
-            }
-
-            if (Array.isArray(val)) {
-                val = val.join(', ');
-                $this.addClass('array-list')
-            }
-            else {
-                val = stringable(val) ? val+'' : JSON.stringify(val);
-            }
-
-            //if (val === "") return;
-
-            if (/checkbox/i.test(this.type)) {
-                val = realValue(val);
-                // allow values other than 'true' or 'false'
-                this.checked = (this.value && val && isEqual(this.value, val)) ? true : val;
-                if (this.value === '') {
-                    this.value = val;
-                }
-                //changeValue($this, val);
-            }
-            else if (/radio/i.test(this.type)) {
-                this.checked = isEqual(this.value, val);
-                if (this.checked) {
-                    $this.trigger('change');
-                }
-            }
-            else if (this.multiple) {
-                if (stringable(val)) {
-                    val = (val+'').split(/\s*,\s*/);
-                }
-                if (Array.isArray(val)) {
-                    forEach(this.options, function(menuOption){
-                        if (val.indexOf(menuOption.value) > -1){
-                            menuOption.selected = true;
-                        }
-                    });
-                }
-            }
-            else {
-                changeValue($this, val);
-            }
-
-            if (!/textarea/i.test(this.tagName) && !/password/i.test(this.type)) {
-                $this.dataAttr('value', val);
-            }
-
-            $this.removeClass('dirty').addClass('ready')
-                    .off('change.setValues')
-                    .on('change.setValues', function(){
-                        $(this).addClass('dirty');
-                    });
-
-        });
-
-        // XNAT.data =
-        //         getObject(XNAT.data||{});
-        //
-        // XNAT.data.forms =
-        //         getObject(XNAT.data.forms||{});
-        //
-        // // save data for future reference
-        // // ???
-        // XNAT.data.forms[formName] = values;
-
-        // probably more useful to return
-        // the values that were just set
-        return values;
-
-        //return $inputs;
-    }
-
-    // make globally accessible through $
-    $.setValues = setValues;
-
-    // this could be a handy jQuery method
-    $.fn.setValues = function(dataObj, opts){
-        setValues(this, dataObj, opts);
-        return this;
-    };
-
-    // return values of named form elements
-    // as an object using element 'name' attributes
-    // as the object property names
-    function getValues(inputs){
-
-        var $inputs = $$(inputs),
-            values = {},
-            $form, _form;
-
-        if (!$inputs.length) return;
-
-        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
-            $inputs = $inputs.find(':input');
-        }
-
-        $form = $($inputs[0]).closest('form');
-        _form = $form[0];
-        _form.id = _form.id || randomID('form_', false);
-        _form.name = _form.name || toCamelCase(_form.id);
-
-        $inputs.not('button').each(function(){
-
-            var $this = $(this),
-                name = this.name || this.id || this.title,
-                val = realValue($this.val()||'');
-
-            // make sure 'name' is camelCase
-            name = toCamelCase(name);
-
-            if (/checkbox/i.test(this.type)) {
-                values[name] = val || this.checked;
-            }
-            else if (/radio/i.test(this.type)) {
-                // only get the value of the 'checked' radio button
-                if (this.checked) {
-                    values[name] = val || this.checked;
-                }
-            }
-            else {
-                values[name] = val;
-            }
-
-        });
-
-        values[0] = _form;
-
-        return values;
-
-    }
-
-    // make globally accessible through $
-    $.getValues = getValues;
-
-    // get values of selected form elements
-    $.fn.getValues = function(callback){
-        var values = getValues(this);
-        if (typeof callback === 'function') {
-            callback.call(this, values);
-        }
-        return values;
-    };
 
     // accept either a form element or array (or collection)
     // of input elements for the 'inputs' argument
@@ -725,7 +560,7 @@ var XNAT = getObject(XNAT||{}),
             this.value = eval(source);
         });
 
-        // replace {{param}} strings in url with
+        // replace [[param]] strings in url with
         // values from data or named form elements
         opts.url = urlParams($form, opts.url, opts.data);
 
@@ -777,9 +612,9 @@ var XNAT = getObject(XNAT||{}),
                     '<b>' + error.field + (error.message ? ':</b> ' + error.message : '</b>') +
                     '</li>'
             });
-            xmodal.message({
+            XNAT.dialog.message({
                 width: 500,
-                height: 300,
+                // height: 300,
                 title: 'Validation Failed',
                 content: '' +
                     '<p>Please correct errors with the following fields:</p> ' +
@@ -807,7 +642,7 @@ var XNAT = getObject(XNAT||{}),
             }
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
-                opts.data = JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false));
+                opts.data = firstDefined(opts.data, JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false)));
                 opts.processData = false;
                 if (opts.contentType === 'text/json') {
                     opts.contentType = 'text/plain';
@@ -816,7 +651,7 @@ var XNAT = getObject(XNAT||{}),
                     opts.contentType = 'application/json';
                 }
             }
-            else {
+            else if (firstDefined(opts.processData, true)) {
                 opts.data = $form.find(':input').not('.ignore').serialize();
             }
             opts.success = function(data){
@@ -831,8 +666,7 @@ var XNAT = getObject(XNAT||{}),
         else if (/GET/i.test(opts.method)){
             opts.success = function(data){
                 callback.apply($form, arguments);
-                // DON'T TRUST RETURNED DATA
-                setValues($form, data);
+                $form.setValues(data);
             };
         }
 
@@ -841,6 +675,13 @@ var XNAT = getObject(XNAT||{}),
 
     };
     xhr.submit = xhr.form;
+
+    $.fn.submitForm = function(opts){
+        var $form = $(this);
+        return xhr.form($form, extend(true, {
+            method: $form.data('method') || this.method || 'POST'
+        }, opts))
+    };
 
     // $('form.foo').submitJSON();
     $.fn.submitJSON = function(opts){

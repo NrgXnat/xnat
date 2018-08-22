@@ -1,13 +1,14 @@
-<!-- BEGIN xnat-templates/screens/Login.vm -->
-#* @vtlvariable name="method" type="java.lang.String" *#
-#* @vtlvariable name="login_methods" type="java.util.List" *#
-#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
-#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
-#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
-#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="systemName" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+<!-- BEGIN xnat-templates/screens/Login.vm -->
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
@@ -40,7 +41,18 @@ $page.setTitle("$siteId - Please Login")
 
 #if($turbineUtils.GetPassedParameter("par",$data))
 ## create custom layout when parameters are passed to the login page from an external link.
-    <div id="login_welcome">
+
+    <div id="login_welcome" class="login-box-container-flex">
+        #if($data.getMessage())
+            <div class="warning" style="margin-bottom: 2em;">
+                <strong>Note: </strong> $data.getMessage()
+            </div>
+        #end
+
+        <div id="PAR_welcome" style="margin-bottom: 2em; padding-bottom: 2em; border-bottom: 1px solid #eee">
+            <h1>Welcome To $siteId</h1>
+            <p>You have received an invitation to join a project on this site. To continue, please register a new account or log in with an existing one.</p>
+        </div>
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
@@ -53,22 +65,16 @@ $page.setTitle("$siteId - Please Login")
         #end
     </div>
 
-    #if($data.getMessage())
-    <div class="warning">
-        <strong>Note: </strong> $data.getMessage()
-    </div>
-    #end
-
-    <div id="register_box_container">
-        <h3><span>New User Registration</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
+    <div id="register_box_container" class="login-box-container-fixed">
+        <h3><span>Register A New Account</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
         <div class="clear"></div>
         <div id="register_box">
             #parse("/screens/register_box.vm")
         </div>
     </div>
 
-    <div id="login_box_container" class="hidden">
-        <h3><span>Existing User Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
+    <div id="login_box_container" class="hidden login-box-container-fixed">
+        <h3><span>Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
         <div class="clear"></div>
         <div class="message">
             <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
@@ -78,15 +84,17 @@ $page.setTitle("$siteId - Please Login")
         <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
             <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-                #if($login_methods && $login_methods.size() == 0)
-                    <input type="hidden" id="login_method" name="login_method" value="Database">
-                #elseif($login_methods && $login_methods.size() > 1)
-                    <label for="login_method">Login</label>
-                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                        #foreach ($method in $login_methods)
-                            <option value="$method">$method</option>
-                        #end
-                    </select>
+                #if($login_methods)
+                    #if ($login_methods.size() == 0)
+                        <input type="hidden" id="login_method" name="login_method" value="Database">
+                    #elseif($login_methods.size() > 1)
+                        <label for="login_method">Login</label>
+                        <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
+                            #foreach ($provider in $login_methods)
+                                <option value="$provider.providerId">$provider.name</option>
+                            #end
+                        </select>
+                    #end
                 #end
                 <p>
                     <label for="username">User</label>
@@ -141,7 +149,7 @@ $page.setTitle("$siteId - Please Login")
 #else
 ## standard layout for login page
 
-    <div id="login_welcome">
+    <div id="login_welcome" class="login-box-container-flex">
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
@@ -154,25 +162,28 @@ $page.setTitle("$siteId - Please Login")
         #end
     </div>
 
-    <div id="login_box">
+    <div class="login-box-container-fixed">
+        <div id="login_box">
 
         #if($data.getMessage())
-        <div class="message" style="border-bottom: 0">
-            <strong>Note: </strong> $data.getMessage()
-        </div>
+            <div class="message" style="border-bottom: 0">
+                <strong>Note: </strong> $data.getMessage()
+            </div>
 
         #end
 
         <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-            #if($login_methods && $login_methods.size() == 0)
-                <input type="hidden" id="login_method" name="login_method" value="Database">
-            #elseif($login_methods && $login_methods.size() > 1)
-                <label for="login_method">Login</label>
-                <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                    #foreach ($method in $login_methods)
-                        <option value="$method">$method</option>
-                    #end
-                </select>
+            #if($login_methods)
+                #if($login_methods.size() == 0))
+                    <input type="hidden" id="login_method" name="login_method" value="Database">
+                #elseif($login_methods.size() > 1)
+                    <label for="login_method">Login</label>
+                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
+                        #foreach ($provider in $login_methods)
+                            <option value="$provider.providerId">$provider.name</option>
+                        #end
+                    </select>
+                #end
             #end
             <p>
                 <label for="username">User</label>
@@ -204,6 +215,7 @@ $page.setTitle("$siteId - Please Login")
 
             <input type="hidden" name="XNAT_CSRF" value="">
         </form>
+    </div>
     </div>
 
     <div class="clear"></div>
@@ -264,7 +276,6 @@ $page.setTitle("$siteId - Please Login")
 
     });
 
-    console.log('$!turbineUtils.escapeJS($siteConfig.passwordComplexityMessage)');
 </script>
 
 

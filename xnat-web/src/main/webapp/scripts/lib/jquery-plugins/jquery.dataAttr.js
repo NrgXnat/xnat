@@ -111,7 +111,7 @@ $.fn.dataAttr = function(name, value){
             // var func = $('#el').data('foo');
             // func();
         }
-        attrVal = (typeof attrVal === 'string') ? attrVal : JSON.stringify(attrVal);
+        attrVal = /string|number|boolean/.test(typeof attrVal) ? attrVal : JSON.stringify(attrVal);
         $this.data(dataPropName, value).attr(dataAttrName, attrVal);
         if (EVENT_NAME){
             $(document.body).on(EVENT_NAME, $this.selector, $this.data(dataPropName));

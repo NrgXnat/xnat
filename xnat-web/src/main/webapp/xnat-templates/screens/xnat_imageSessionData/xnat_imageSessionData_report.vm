@@ -197,7 +197,7 @@
         obj.categories.ids.push("assessors");
         obj.categories["assessors"]=new Array();
 			#foreach($assessor in $om.getMinimalLoadAssessors())
-            var element_name = window.available_elements.getByName("$!assessor.getXSIType()");
+            var element_name = window.available_elements_getByName("$!assessor.getXSIType()");
             if(undefined != element_name && null != element_name){
                 obj.categories["assessors"].push({id:"$assessor.getId()",label:"$!assessor.getLabel() " + element_name.singular});
             }else{

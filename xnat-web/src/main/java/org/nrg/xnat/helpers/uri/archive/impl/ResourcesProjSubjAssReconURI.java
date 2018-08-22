@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.helpers.uri.archive.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatReconstructedimagedata;
@@ -20,61 +21,48 @@ import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.helpers.uri.archive.ResourcesProjSubjSessionURIA;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
+import java.util.List;
 import java.util.Map;
 
-public class ResourcesProjSubjAssReconURI extends ResourcesProjSubjSessionURIA  implements AssessedURII,ResourceURII,ArchiveItemURI,ReconURII{
-	private XnatReconstructedimagedata recon=null;
-	
-	public ResourcesProjSubjAssReconURI(Map<String, Object> props, String uri) {
-		super(props, uri);
-	}
+@Slf4j
+public class ResourcesProjSubjAssReconURI extends ResourcesProjSubjSessionURIA implements AssessedURII, ResourceURII, ArchiveItemURI, ReconURII {
+    public ResourcesProjSubjAssReconURI(Map<String, Object> props, String uri) {
+        super(props, uri);
+    }
 
-	protected void populateRecon() {
-		super.populateSession();
+    @Override
+    public XnatReconstructedimagedata getRecon() {
+        this.populateRecon();
+        return this.reconstruction;
+    }
 
-		if(recon==null){
-			final String reconID= (String)props.get(URIManager.RECON_ID);
-			
-			if(recon==null&& reconID!=null){
-				recon=(XnatReconstructedimagedata)XnatReconstructedimagedata.getXnatReconstructedimagedatasById(reconID, null, false);
-			}
-		}
-	}
+    @Override
+    public ArchivableItem getSecurityItem() {
+        return getSession();
+    }
 
-	public XnatReconstructedimagedata getRecon(){
-		this.populateRecon();
-		return this.recon;
-	}
+    @Override
+    public XnatAbstractresourceI getXnatResource() {
+        final XnatReconstructedimagedata reconstruction = getRecon();
+        if (reconstruction == null) {
+            return null;
+        }
 
-	@Override
-	public ArchivableItem getSecurityItem() {
-		return getSession();
-	}
+        final List<XnatAbstractresourceI> resources = getReconstructionResources(reconstruction, StringUtils.defaultIfBlank((String) props.get(URIManager.TYPE), "out"));
+        return getMatchingResource(resources);
+    }
 
-	@Override
-	public XnatAbstractresourceI getXnatResource() {
-		if(this.getRecon()!=null){
-			String type=(String)this.props.get(URIManager.TYPE);
-			
-			if(type==null){
-				type="out";
-			}
-			
-			if(type.equals("out")){
-				for(XnatAbstractresourceI res:this.getRecon().getOut_file()){
-					if(StringUtils.equals(res.getLabel(), this.getResourceLabel())){
-						return res;
-					}
-				}
-			}else if(type.equals("in")){
-				for(XnatAbstractresourceI res:this.getRecon().getIn_file()){
-					if(StringUtils.equals(res.getLabel(), this.getResourceLabel())){
-						return res;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
+    protected void populateRecon() {
+        populateSession();
+
+        if (reconstruction == null) {
+            final String reconID = (String) props.get(URIManager.RECON_ID);
+
+            if (reconstruction == null && reconID != null) {
+                reconstruction = XnatReconstructedimagedata.getXnatReconstructedimagedatasById(reconID, null, false);
+            }
+        }
+    }
+
+    private XnatReconstructedimagedata reconstruction = null;
 }

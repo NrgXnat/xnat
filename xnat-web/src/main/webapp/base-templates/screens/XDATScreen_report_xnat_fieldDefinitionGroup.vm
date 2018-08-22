@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
-$page.setTitle("FieldDefinitionSet Details")
+$page.setTitle("Field Definition Group Details")
 $page.setLinkColor($ui.alink)
 $page.setVlinkColor($ui.vlink)
 #if ($turbineUtils.GetPassedParameter("popup", $data))
@@ -12,7 +12,7 @@ $page.setVlinkColor($ui.vlink)
 			<table width="100%">
 				<TR>
 					<TD align="left" valign="middle">
-						<font face="$ui.sansSerifFonts" size="3"><b>FieldDefinitionSet Details</b></font>
+						<font face="$ui.sansSerifFonts" size="3"><b>Field Definition Group Details</b></font>
 					</TD>
 				</TR>
 			</TABLE>

@@ -25,14 +25,26 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             class="btn1 btn-sm">Setup Additional Bundle</button>
     </div>
 
-    <div id="bundle-table" class="data-table">
-        $!dataTable
+    <div id="bundle-table-container" class="data-table">
+        <!-- content inserted via javascript -->
     </div>
+
+    ## put the table HTML inside a <template> tag to prevent
+    ## automatic rendering/execution
+    <template id="bundle-table-html">
+        $!dataTable
+    </template>
 
     <script type="text/javascript">
         (function(){
 
-            var __table = jq('#bundle-table').find('> table');
+            var tableContainer$ = $('#bundle-table-container');
+
+            var tableData = $('#bundle-table-html').html();
+
+            tableContainer$.html(sanitizeHandlers(tableData));
+
+            var __table = tableContainer$.find('> table');
             __table.addClass('xnat-table highlight sortable');
             __table.find('th').each(function(){
                 this.innerText = titleCase(this.innerText);

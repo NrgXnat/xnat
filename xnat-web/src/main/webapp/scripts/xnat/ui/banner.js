@@ -111,7 +111,7 @@ var XNAT = getObject(XNAT || {});
             speedIn = 0;
             speedOut = 0;
         }
-        if (hold === true){
+        if (/true|-1/.test(hold)){
             this.$newBanner[_in](speedIn);
         }
         else {
@@ -137,7 +137,7 @@ var XNAT = getObject(XNAT || {});
 
     Banner.fn.show = function(hold) {
         this.$newBanner.show();
-        if (hold && hold !== true) {
+        if (hold && !/true|-1/.test(hold)) {
             this.$newBanner.delay(hold||2000).hide();
         }
         return this;
@@ -244,7 +244,7 @@ var XNAT = getObject(XNAT || {});
         var bnr = new Banner(opts);
         return bnr.render(opts.container, 'prepend');
     };
-    
+
     banner.saved = function(hold, text){
         return banner.headerBanner(hold||2000, text||'Saved.', 'success');
     };

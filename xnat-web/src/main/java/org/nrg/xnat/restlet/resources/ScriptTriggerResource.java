@@ -126,9 +126,9 @@ public class ScriptTriggerResource extends AutomationResource {
 		final UserI user = getUser();
 
 		if (StringUtils.isNotBlank(projectId)) {
-			validateProjectAccess(projectId);
+			validateProjectAccess(projectId, !method.equals(Method.GET));
 			setProjectId(projectId);
-		} else if (!Roles.isSiteAdmin(user) && !method.equals(Method.GET)) {
+		} else if (!method.equals(Method.GET) && !Roles.isSiteAdmin(user)) {
 			final String message = "User " + user.getLogin()
 					+ " attempted to access forbidden script trigger resource at the site level.";
 			_log.warn(message);

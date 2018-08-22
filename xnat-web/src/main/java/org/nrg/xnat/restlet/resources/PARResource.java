@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Roles;
@@ -21,20 +22,15 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Objects;
 
 /**
  * @author timo
  */
+@Slf4j
 public class PARResource extends SecureResource {
-    private static final Logger               _log = LoggerFactory.getLogger(PARResource.class);
-    private              ProjectAccessRequest par  = null;
-
     public PARResource(Context context, Request request, Response response) throws Exception {
         super(context, request, response);
         final UserI user   = getUser();
@@ -49,20 +45,20 @@ public class PARResource extends SecureResource {
             if (StringUtils.isBlank(projectId)) {
                 if (!Roles.isSiteAdmin(user)) {
                     response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view this type of PAR.");
-                    if (_log.isWarnEnabled()) {
-                        _log.warn("Attempt by user " + user.getLogin() + " to access PAR " + par.getRequestId());
+                    if (log.isWarnEnabled()) {
+                        log.warn("Attempt by user " + user.getLogin() + " to access PAR " + par.getRequestId());
                     }
                 }
             } else {
                 XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, null, false);
                 if (project == null) {
                     response.setStatus(Status.CLIENT_ERROR_NOT_FOUND, "The project associated with the project access request appears to be gone.");
-                    _log.error("Found the PAR " + par.getRequestId() + " which is missing associated project " + par.getProjectId());
+                    log.error("Found the PAR " + par.getRequestId() + " which is missing associated project " + par.getProjectId());
                 } else {
                     if (!Roles.isSiteAdmin(user) && !project.canEdit(user) && !isParUser()) {
                         response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You don't have the appropriate permissions to view this PAR (must be admin or have edit permissions on the associated project).");
-                        if (_log.isWarnEnabled()) {
-                            _log.warn("Attempt by user " + user.getLogin() + " to access PAR " + par.getRequestId() + " associated with project " + par.getProjectId());
+                        if (log.isWarnEnabled()) {
+                            log.warn("Attempt by user " + user.getLogin() + " to access PAR " + par.getRequestId() + " associated with project " + par.getProjectId());
                         }
                     }
                 }
@@ -91,7 +87,7 @@ public class PARResource extends SecureResource {
                         par.process(user, false, getEventType(), getReason(), getComment());
                     }
                 } catch (Exception e) {
-                    _log.error("Error trying to process PAR " + par.getRequestId(), e);
+                    log.error("Error trying to process PAR " + par.getRequestId(), e);
                 }
             }
             returnDefaultRepresentation();
@@ -108,9 +104,8 @@ public class PARResource extends SecureResource {
         Hashtable<String, Object> params = new Hashtable<>();
         try {
             final UserI user = getUser();
-            ArrayList<ProjectAccessRequest> pars = ProjectAccessRequest.RequestPARsByUserEmail(user.getEmail(), user);
-            for (ProjectAccessRequest par : pars) {
-                Object[] row = new Object[4];
+            for (final ProjectAccessRequest par : ProjectAccessRequest.RequestPARsByUserEmail(user.getEmail(), user)) {
+                final Object[] row = new Object[4];
                 row[0] = par.getRequestId();
                 row[1] = par.getProjectId();
                 row[2] = par.getCreateDate();
@@ -119,7 +114,7 @@ public class PARResource extends SecureResource {
             }
 
         } catch (Exception e) {
-            _log.error("Error retrieving PAR " + par.getRequestId(), e);
+            log.error("Error retrieving PAR " + par.getRequestId(), e);
         }
 
         return representTable(table, overrideVariant(variant), params);
@@ -129,4 +124,6 @@ public class PARResource extends SecureResource {
         final UserI user = getUser();
         return Objects.equals(par.getUserId(), user.getID()) || (par.getUserId() == null && StringUtils.equalsIgnoreCase(par.getEmail(), user.getEmail()));
     }
+
+    private ProjectAccessRequest par;
 }

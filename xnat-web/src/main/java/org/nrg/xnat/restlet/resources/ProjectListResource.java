@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.table;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatStoredSearch;
@@ -108,12 +109,13 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                 if (item.getCurrentDBVersion() == null) {
                     if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
-                        this.returnSuccessfulCreateFromList(BaseXnatProjectdata.createProject(project, user, allowDataDeletion, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility")));
+                        final XnatProjectdata saved = BaseXnatProjectdata.createProject(project, user, allowDataDeletion, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
+                        returnSuccessfulCreateFromList(saved.getId());
                     } else {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
+                        getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
                     }
                 } else {
-                    this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Project already exists.");
+                    getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Project already exists.");
                 }
             }
         } catch (ActionException e) {
@@ -203,7 +205,7 @@ public class ProjectListResource extends QueryOrganizerResource {
         }
 
         @Override
-        public Representation handle(SecureResource resource, Variant variant) throws Exception {
+        public Representation handle(SecureResource resource, Variant variant) {
 
             DisplaySearch ds = new DisplaySearch();
             UserI user = resource.getUser();
@@ -232,12 +234,17 @@ public class ProjectListResource extends QueryOrganizerResource {
                 CriteriaCollection allCC = new CriteriaCollection("AND");
                 CriteriaCollection orCC = new CriteriaCollection("OR");
 
-                String dataAccess = resource.getQueryVariable(DATA_ACCESSIBILITY);
-                if (dataAccess != null) {
-                    if (dataAccess.equalsIgnoreCase(DATA_WRITABLE)) {
-                        if (!Groups.hasAllDataAccess(user)) {
-                            CriteriaCollection cc = new CriteriaCollection("OR");
-                            DisplayCriteria dc = new DisplayCriteria();
+                final String dataAccess = resource.getQueryVariable(DATA_ACCESSIBILITY);
+                if (StringUtils.isNotBlank(dataAccess) && !StringUtils.equalsAnyIgnoreCase(dataAccess, DATA_WRITABLE, DATA_READABLE)) {
+                    throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "The value specified for the " + DATA_ACCESSIBILITY + " parameter is invalid: " + dataAccess + ". Must be one of " + DATA_READABLE + " or " + DATA_WRITABLE + ".");
+                }
+
+                final boolean hasAllDataAccess = Groups.hasAllDataAccess(user);
+                if (!hasAllDataAccess && StringUtils.isNotBlank(dataAccess)) {
+                    CriteriaCollection cc = new CriteriaCollection("OR");
+                    DisplayCriteria dc = new DisplayCriteria();
+                    switch (dataAccess) {
+                        case DATA_WRITABLE:
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_MEMBERS");
                             dc.setComparisonType(" LIKE ");
                             dc.setValue("% " + user.getLogin() + " %", false);
@@ -250,11 +257,8 @@ public class ProjectListResource extends QueryOrganizerResource {
                             cc.add(dc);
 
                             allCC.addCriteria(cc);
-                        }
-                    } else if (dataAccess.equalsIgnoreCase(DATA_READABLE)) {
-                        if (!Groups.hasAllDataAccess(user)) {
-                            CriteriaCollection cc = new CriteriaCollection("OR");
-                            DisplayCriteria dc = new DisplayCriteria();
+                            break;
+                        case DATA_READABLE:
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
                             dc.setComparisonType(" LIKE ");
                             dc.setValue("% " + user.getLogin() + " %", false);
@@ -266,15 +270,13 @@ public class ProjectListResource extends QueryOrganizerResource {
                             cc.add(dc);
 
                             allCC.addCriteria(cc);
-                        }
-                    } else {
-                        throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "The value specified for the " + DATA_ACCESSIBILITY + " parameter is invalid: " + dataAccess + ". Must be one of " + DATA_READABLE + " or " + DATA_WRITABLE + ".");
+                            break;
                     }
                 }
 
-                String access = resource.getQueryVariable(ACCESSIBLE);
-                if (access != null) {
-                    if (!Groups.isMember(user, "ALL_DATA_ACCESS") && !Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                final String access = resource.getQueryVariable(ACCESSIBLE);
+                if (StringUtils.isNotBlank(access)) {
+                    if (!hasAllDataAccess) {
                         CriteriaCollection cc = new CriteriaCollection("OR");
                         DisplayCriteria dc = new DisplayCriteria();
                         dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
@@ -312,22 +314,20 @@ public class ProjectListResource extends QueryOrganizerResource {
                         allCC.addCriteria(cc2);
                     }
                 }
-                String users = resource.getQueryVariable("users");
-                if (users != null) {
-                    if (users.equalsIgnoreCase("true")) {
-                        CriteriaCollection cc = new CriteriaCollection("OR");
-                        DisplayCriteria dc = new DisplayCriteria();
-                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
-                        dc.setComparisonType(" LIKE ");
-                        dc.setValue("% " + user.getLogin() + " %", false);
-                        cc.add(dc);
 
-                        orCC.addCriteria(cc);
-                    }
+                final String users = resource.getQueryVariable("users");
+                if (StringUtils.equalsIgnoreCase(users, "true")) {
+                    CriteriaCollection cc = new CriteriaCollection("OR");
+                    DisplayCriteria dc = new DisplayCriteria();
+                    dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
+                    dc.setComparisonType(" LIKE ");
+                    dc.setValue("% " + user.getLogin() + " %", false);
+                    cc.add(dc);
+                    orCC.addCriteria(cc);
                 }
 
-                String owner = resource.getQueryVariable(AccessLevel.Owner.code());
-                if (owner != null) {
+                final String owner = resource.getQueryVariable(AccessLevel.Owner.code());
+                if (StringUtils.isNotBlank(owner)) {
                     if (owner.equalsIgnoreCase("true")) {
                         CriteriaCollection cc = new CriteriaCollection("OR");
                         DisplayCriteria dc = new DisplayCriteria();
@@ -350,7 +350,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
                 if (resource.getQueryVariable("admin") != null) {
                     if (resource.isQueryVariableTrue("admin")) {
-                        if (Roles.isSiteAdmin(user)) {
+                        if (hasAllDataAccess) {
                             CriteriaCollection cc = new CriteriaCollection("OR");
                             DisplayCriteria dc = new DisplayCriteria();
                             dc.setSearchFieldByDisplayField("xnat:projectData", "ID");
@@ -521,22 +521,21 @@ public class ProjectListResource extends QueryOrganizerResource {
                 throw new Exception("You must specify one of the following values for the permissions parameter: " + Joiner.on(", ").join(PERMISSIONS));
             }
 
-            final String             dataType          = resource.getQueryVariable("dataType");
-            final UserI              user              = resource.getUser();
-            final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            if (userHelperService != null) {
-                final Map<Object, Object> projects = userHelperService.getCachedItemValuesHash("xnat:projectData", null, false, "xnat:projectData/ID", "xnat:projectData/secondary_ID");
-                for (final Object key : projects.keySet()) {
-                    final String projectId = (String) key;
-                    // If no data type is specified, we check both MR and PET session data permissions. This is basically
-                    // tailored for checking for projects to which the user can upload imaging data.
-                    final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(user, dataType + "/project", projectId, permissions);
-                    if (canEdit) {
-                        table.insertRowItems(projectId, projects.get(projectId));
-                    }
+            final String              dataType          = resource.getQueryVariable("dataType");
+            final UserI               user              = resource.getUser();
+            final UserHelperServiceI  userHelperService = UserHelper.getUserHelperService(user);
+            final Map<Object, Object> projects          = userHelperService.getCachedItemValuesHash("xnat:projectData", null, false, "xnat:projectData/ID", "xnat:projectData/secondary_ID");
+
+            for (final Object key : projects.keySet()) {
+                final String projectId = (String) key;
+                // If no data type is specified, we check both MR and PET session data permissions. This is basically
+                // tailored for checking for projects to which the user can upload imaging data.
+                final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(user, dataType + "/project", projectId, permissions);
+                if (canEdit) {
+                    table.insertRowItems(projectId, projects.get(projectId));
                 }
-                table.sort("secondary_id", "ASC");
             }
+            table.sort("secondary_id", "ASC");
             return resource.representTable(table, resource.overrideVariant(variant), null);
         }
     }
@@ -549,7 +548,7 @@ public class ProjectListResource extends QueryOrganizerResource {
         }
 
         @Override
-        public Representation handle(SecureResource resource, Variant variant) throws Exception {
+        public Representation handle(SecureResource resource, Variant variant) {
             ProjectListResource projResource = (ProjectListResource) resource;
             XFTTable table;
             UserI user = resource.getUser();
@@ -560,7 +559,7 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                 projResource.populateQuery(qo);
 
-                if (!Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                if (!Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
                     String restriction = SecurityManager.READ;
 
                     if (resource.containsQueryVariable("restrict")){

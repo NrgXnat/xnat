@@ -9,13 +9,16 @@
 
 package org.nrg.xnat.security.alias;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
+import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -26,7 +29,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
 
+import java.util.List;
+
+@Component
+@Slf4j
 public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider implements XnatAuthenticationProvider {
     @Autowired
     public AliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
@@ -39,10 +47,12 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * Performs authentication with the same contract as {@link AuthenticationManager#authenticate(Authentication)}.
      *
      * @param authentication the authentication request object.
+     *
      * @return a fully authenticated object including credentials. May return <code>null</code> if the
-     * <code>AuthenticationProvider</code> is unable to support authentication of the passed
-     * <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
-     * supports the presented <code>Authentication</code> class will be tried.
+     *         <code>AuthenticationProvider</code> is unable to support authentication of the passed
+     *         <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
+     *         supports the presented <code>Authentication</code> class will be tried.
+     *
      * @throws AuthenticationException if authentication fails.
      */
     @Override
@@ -53,6 +63,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
             throw new BadCredentialsException("No valid alias token found for alias: " + alias);
         }
         // Translate the token into the actual user name and allow the DAO to retrieve the user object.
+        log.debug("Authenticating token for {}", alias);
         return super.authenticate(authentication);
     }
 
@@ -70,8 +81,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * conducted at runtime the <code>ProviderManager</code>.</p>
      *
      * @param authentication DOCUMENT ME!
+     *
      * @return <code>true</code> if the implementation can more closely evaluate the <code>Authentication</code> class
-     * presented
+     *         presented
      */
     @Override
     public boolean supports(final Class<?> authentication) {
@@ -89,6 +101,21 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         return false;
     }
 
+    /**
+     * This is a no-op method: the alias token provider is never visible and can't be set to be visible.
+     *
+     * @param visible This parameter's value is ignored.
+     */
+    @Override
+    public void setVisible(final boolean visible) {
+        //
+    }
+
+    /**
+     * Gets the provider's name.
+     *
+     * @return The provider's name.
+     */
     @Override
     public String getName() {
         return XdatUserAuthService.TOKEN;
@@ -109,35 +136,101 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         return getName();
     }
 
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
+     */
+    @Deprecated
     @Override
     public int getOrder() {
-        return _order;
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+        return 0;
+    }
+
+    /**
+     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
+     */
+    @Deprecated
+    @Override
+    public void setOrder(final int order) {
+        log.info("The order property is deprecated and will be removed in a future version of XNAT.");
+    }
+
+    /**
+     * Auto-enabling is not supported for this provider. This implementation will always return false.
+     *
+     * @return This implementation will always return false.
+     */
+    @Override
+    public boolean isAutoEnabled() {
+        return false;
+    }
+
+    /**
+     * Auto-enabling is not supported for this provider. Attempting to change this property has no effect.
+     *
+     * @param autoEnabled The value set for this implementation is ignored.
+     */
+    @Override
+    public void setAutoEnabled(final boolean autoEnabled) {
+        log.info("This provider does not support auto-enabling.");
+    }
+
+    /**
+     * Auto-verification is not supported for this provider. This implementation will always return false.
+     *
+     * @return This implementation will always return false.
+     */
+    @Override
+    public boolean isAutoVerified() {
+        return false;
+    }
+
+    /**
+     * Auto-verification is not supported for this provider. Attempting to change this property has no effect.
+     *
+     * @param autoVerified The value set for this implementation is ignored.
+     */
+    @Override
+    public void setAutoVerified(final boolean autoVerified) {
+        throw new UnsupportedOperationException("This provider does not support auto-verification.");
     }
 
     @Override
-    public void setOrder(int order) {
-        _order = order;
+    public XnatAuthenticationToken createToken(final String username, final String password) {
+        log.debug("Creating new alias token authentication token for alias {}", username);
+        return new AliasTokenAuthenticationToken(username, password);
+    }
+
+    @Override
+    public boolean supports(final Authentication authentication) {
+        final String providerId      = getProviderId();
+        final String tokenProviderId = ((XnatAuthenticationToken) authentication).getProviderId();
+        log.debug("Checking whether this provider with ID {} supports an authentication token with provider ID {}", providerId, tokenProviderId);
+        return supports(authentication.getClass()) && StringUtils.equals(providerId, tokenProviderId);
     }
 
     @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (authentication.getCredentials() == null) {
-            logger.debug("Authentication failed: no credentials provided");
+            log.debug("Authentication failed: no credentials provided");
             throw new BadCredentialsException("The submitted alias token was empty.");
         }
 
         if (!UserI.class.isAssignableFrom(userDetails.getClass())) {
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
         }
+
         final UserI xdatUserDetails = (UserI) userDetails;
+        log.debug("Validating alias token login for user {}", xdatUserDetails.getUsername());
         Users.validateUserLogin(xdatUserDetails);
 
-        String alias  = ((AliasTokenAuthenticationToken) authentication).getAlias();
-        String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
-        String userId = _aliasTokenService.validateToken(alias, secret);
+        final String alias  = ((AliasTokenAuthenticationToken) authentication).getAlias();
+        final String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
+        final String userId = _aliasTokenService.validateToken(alias, secret);
         if (StringUtils.isBlank(userId) || !userId.equals(userDetails.getUsername())) {
             throw new BadCredentialsException("The submitted alias token was invalid: " + alias);
         }
+        log.info("Validated alias token login for user {} with alias {}", userId, alias);
     }
 
     /**
@@ -151,36 +244,37 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * the correctness of credentials was assured by subclasses adopting a binding-based strategy in this method.
      * Accordingly it is important that subclasses either disable caching (if they want to ensure that this method is
      * the only method that is capable of authenticating a request, as no <code>UserDetails</code> will ever be
-     * cached) or ensure subclasses implement {@link #additionalAuthenticationChecks(org.springframework.security.core.userdetails.UserDetails,
-     * org.springframework.security.authentication.UsernamePasswordAuthenticationToken)} to compare the credentials of a cached <code>UserDetails</code> with
-     * subsequent authentication requests.</p>
+     * cached) or ensure subclasses implement {@link #additionalAuthenticationChecks(UserDetails, UsernamePasswordAuthenticationToken)}
+     * to compare the credentials of a cached <code>UserDetails</code> with subsequent authentication requests.</p>
      * <p>Most of the time subclasses will not perform credentials inspection in this method, instead
-     * performing it in {@link #additionalAuthenticationChecks(org.springframework.security.core.userdetails.UserDetails, org.springframework.security.authentication.UsernamePasswordAuthenticationToken)} so
+     * performing it in {@link #additionalAuthenticationChecks(UserDetails, UsernamePasswordAuthenticationToken)} so
      * that code related to credentials validation need not be duplicated across two methods.</p>
      *
      * @param username       The username to retrieve
      * @param authentication The authentication request, which subclasses <em>may</em> need to perform a binding-based
      *                       retrieval of the <code>UserDetails</code>
+     *
      * @return the user information (never <code>null</code> - instead an exception should the thrown)
+     *
      * @throws AuthenticationException If the credentials could not be validated (generally a
      *                                 <code>BadCredentialsException</code>, an <code>AuthenticationServiceException</code> or
      *                                 <code>UsernameNotFoundException</code>)
      */
     @Override
     protected UserDetails retrieveUser(final String username, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
-        AliasToken token = _aliasTokenService.locateToken(username);
+        final AliasToken token = _aliasTokenService.locateToken(username);
         if (token == null) {
             throw new UsernameNotFoundException("Unable to locate token with alias: " + username);
         }
         /*
          * We don't really know which provider the user was authenticated under when this token was created.
-         * The hack is to return the user details for the most recent successful login of the user, as that is likely the provider that was used.
-         * Not perfect, but better than just hard-coding to localdb provider (cause then it won't work for a token created by an LDAP-authenticated user).
+         * The hack is to return the user details for the most recent successful login of the user, as that is likely
+         * the provider that was used. Not perfect, but better than just hard-coding to localdb provider cause then
+         * it won't work for a token created by an user authenticated by some other means).
          */
         return _userAuthService.getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
     }
 
     private final AliasTokenService   _aliasTokenService;
     private final XdatUserAuthService _userAuthService;
-    private int _order = -1;
 }

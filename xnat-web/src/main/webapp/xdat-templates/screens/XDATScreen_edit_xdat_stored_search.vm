@@ -36,7 +36,7 @@ function verifySecurity(){
 
 	XNAT.app.lastElement=elemName;
 
-	var registration=window.available_elements.getByName(elemName);
+	var registration=window.available_elements_getByName(elemName);
     if ((XNAT.app.needsCheck) && (registration == null || registration == undefined)) {
         xmodal.confirm({
             width: 440,

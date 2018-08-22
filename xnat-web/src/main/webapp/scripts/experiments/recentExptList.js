@@ -136,7 +136,7 @@ function MinExptList(_div, _options){
                 if (expt.workflow_status == "Complete") {
                     td.innerHTML = "";
                 }
-                else if (expt.workflow_status == "Failed") {
+                else if (expt.workflow_status.startsWith("Failed") && expt.workflow_status != "Failed (Dismissed)") {
                     td.innerHTML = "<i class='fa fa-warning' title='Failed'/>";
                 }
                 else if (expt.workflow_status == "Queued") {

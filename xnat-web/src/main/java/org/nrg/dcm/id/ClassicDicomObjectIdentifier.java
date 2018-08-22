@@ -14,12 +14,13 @@ import org.dcm4che2.data.Tag;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.cache.UserProjectCache;
-import org.nrg.xnat.utils.XnatUserProvider;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("WeakerAccess")
 public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier {
     private static final ImmutableList<Extractor> attributeExtractors = new ImmutableList.Builder<Extractor>().add(new ContainedAssignmentExtractor(Tag.PatientComments, "AA", Pattern.CASE_INSENSITIVE))
                                                                                                               .add(new ContainedAssignmentExtractor(Tag.StudyComments, "AA", Pattern.CASE_INSENSITIVE))
@@ -39,6 +40,8 @@ public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier
     }
 
     public static List<Extractor> getAAExtractors() { return attributeExtractors; }
+    @SuppressWarnings("unused")
     public static List<Extractor> getSessionExtractors() { return sessionExtractors; }
+    @SuppressWarnings("unused")
     public static List<Extractor> getSubjectExtractors() { return subjectExtractors; }
 }

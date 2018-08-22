@@ -1,4 +1,4 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
@@ -11,13 +11,8 @@
   ~ Released under the Simplified BSD.
   --%>
 
-<c:if test="${empty requestScope.hasInit}">
-    <pg:init>
-        <c:if test="${empty requestScope.hasVars}">
-            <pg:jsvars/>
-        </c:if>
-    </pg:init>
-</c:if>
+<pg:init/>
+<pg:jsvars/>
 
 <c:set var="_msg">
     Nope.

@@ -25,7 +25,7 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
 
-    var timeout, timer, undefined;
+    var timeout, timer, siteRoot, undef;
     var $timeLeftDisplay = $('#timeLeft');
 
     var resetCookies = getQueryStringValue('cookies') === 'reset';
@@ -34,6 +34,9 @@ var XNAT = getObject(XNAT);
 
     XNAT.app.timeout = timeout = timer =
         getObject(XNAT.app.timeout || {});
+
+    XNAT.app.siteRoot = siteRoot =
+        XNAT.app.siteRoot || XNAT.url.rootUrl();
 
     function dateString(ms, strip){
         var str = (new Date(ms)).toString();
@@ -65,7 +68,7 @@ var XNAT = getObject(XNAT);
             this.name = name !== undefined ? name : this.name;
             this.value = '';
             this.opts = {
-                path: XNAT.url.rootUrl(),
+                path: siteRoot,
                 domain: XNAT.url.getDomain()
             };
         }
@@ -86,7 +89,7 @@ var XNAT = getObject(XNAT);
             this.name = name !== undefined ? name : this.name;
             this.value = '';
             this.opts = {
-                path: XNAT.url.rootUrl(),
+                path: siteRoot,
                 domain: XNAT.url.getDomain()
             };
             return this;
@@ -112,6 +115,15 @@ var XNAT = getObject(XNAT);
             return this;
         };
 
+        fn.getJSON = function(name){
+            this.name = name !== undefined ? name : this.name;
+            return getObject(Cookies.getJSON(this.name));
+        };
+
+        fn.getValue = function(prop){
+            return XNAT.cookie.getValue(this.name, prop);
+        };
+
         fn.is = function(value){
             return (this.get().value || '').toString() === value.toString();
         };
@@ -124,6 +136,13 @@ var XNAT = getObject(XNAT);
         fn.cookie = function(name){
             this.name = name;
             this.exists();
+            return this;
+        };
+
+        fn.update = function(prop, val){
+            prop = prop || '*';
+            val = firstDefined(val, '/');
+            XNAT.cookie.setValue(this.name, prop, val, this.opts);
             return this;
         };
 
@@ -177,21 +196,24 @@ var XNAT = getObject(XNAT);
     timeout.startTime = Date.now();
 
     // parse the timeout values
-    timeout.getValues = function(){
-        var expCookie = cookie.SESSION_EXPIRATION_TIME.get().value;
-        if (timeout.expCookie && timeout.expCookie === expCookie) return;
-        timeout.expCookie = expCookie; // save it for next time
-        expCookie = (expCookie || '').replace(/"/g, '').split(',');
-        //timeout.startTime = +expCookie[0].trim() + 100;
-        timeout.startTime = Date.now();
-        timeout.duration = +((expCookie[1] || '').trim());
-        timeout.endTime = timeout.startTime + timeout.duration;
-        return {
-            startTime: timeout.startTime,
-            duration: timeout.duration,
-            endTime: timeout.endTime
+    timeout.getValues = (function(){
+        // define the function
+        function getTimeoutValues(){
+            var expCookie = cookie.SESSION_EXPIRATION_TIME.get().value;
+            if (timeout.expCookie && timeout.expCookie === expCookie) return;
+            timeout.expCookie = expCookie; // save it for next time
+            expCookie = (expCookie || '').replace(/"/g, '').split(',');
+            return {
+                startTime: (timeout.startTime = +((expCookie[0] || '').trim())),
+                duration: (timeout.duration = +((expCookie[1] || '').trim())),
+                endTime: (timeout.endTime = timeout.startTime + timeout.duration)
+            }
         }
-    };
+        // call the function to initialize the needed values
+        getTimeoutValues();
+        // return for later use with timeout.getValues()
+        return getTimeoutValues;
+    })();
 
 
     // set SESSION_TIMEOUT_* cookies on load
@@ -217,9 +239,23 @@ var XNAT = getObject(XNAT);
         };
     }
 
+    var shaded = false;
+
     var shade = XNAT.ui.dialog.shade({
         protected: true,
-        id: 'page-obfuscator'
+        id: 'page-obfuscator',
+        beforeShow: function(){
+            debugLog('shade.beforeShow');
+            return shaded !== true;
+        },
+        afterShow: function(){
+            debugLog('shade.afterShow');
+            shaded = true;
+        },
+        afterHide: function(){
+            debugLog('shade.afterHide');
+            shaded = false;
+        }
     }).hide();
 
     // custom shade
@@ -309,6 +345,7 @@ var XNAT = getObject(XNAT);
         //
         // resumeSession(USERNAME, LOC_HREF);
 
+        var warned = false;
 
         // create the dialog but don't render until DOM load
         // and don't show it until needed
@@ -316,12 +353,14 @@ var XNAT = getObject(XNAT);
 
             var z = 99999;
 
+            debugLog('warningDialog');
+
             var warning = XNAT.ui.dialog.init({
                 id: 'session-timeout-warning',
                 classes: 'keep static',
                 width: 360,
                 // height: 200,
-                speed: -1,   // do not open
+                // speed: -1,   // do not open
                 nuke: false, // do not destroy on close
                 protected: true, // do not destroy EVER
                 title: false,
@@ -331,27 +370,29 @@ var XNAT = getObject(XNAT);
                     '<b class="mono timeout-hours"></b> hours ' +
                     '<b class="mono timeout-minutes"></b> minutes ' +
                     '<b class="mono timeout-seconds"></b> seconds.' +
-                    '</br></br>Click <b>"Renew"</b> to reset session timer.' +
+                    '<br><br>Click <b>"Renew"</b> to reset session timer.' +
                 '</div>',
                 beforeShow: function(){
                     // console.log('beforeShow');
                     // ONLY SHOW THE DIALOG IF NOT OPEN OR CANCELLED
-                    return !timeout.dialogIsOpen && cookie.SESSION_DIALOG_CANCELLED.is('false');
+                    return !warned || cookie.SESSION_DIALOG_CANCELLED.is('false');
+                    // return !timeout.dialogIsOpen && cookie.SESSION_DIALOG_CANCELLED.is('false');
                 },
                 afterShow: function(){
                     // console.log('afterShow');
                     // set this as a js var so it's window-independent
                     cookie.SESSION_DIALOG_OPEN.set('true');
+                    warned = true;
                     timeout.dialogIsOpen = true;
                     // if (cookie.SESSION_DIALOG_CANCELLED.is('false')) {
                     //     cookie.SESSION_DIALOG_OPEN.set('true');
                     //     timeout.dialogIsOpen = true;
                     // }
                 },
-                onHide: function(){
-                    // console.log('onHide');
-                    return timeout.dialogIsOpen;
-                },
+                // onHide: function(){
+                //     // console.log('onHide');
+                //     return timeout.dialogIsOpen;
+                // },
                 afterHide: function(){
                     // console.log('afterHide');
                     shade.hide();
@@ -390,7 +431,9 @@ var XNAT = getObject(XNAT);
                 // },
                 bogus: null
 
-            }).hide();
+            });
+
+            warning.hide();
 
             warning.hours = warning.$modal.find('b.timeout-hours');
             warning.minutes = warning.$modal.find('b.timeout-minutes');
@@ -427,12 +470,14 @@ var XNAT = getObject(XNAT);
 
 
         function redirectToLogin(){
+            var END = timeout.endTime;
             var NOW = Date.now();
             // var USR = USERNAME;
             // var LOC = LOC_HREF;
             // var lastPageEnc = encodePageInfo(USR, LOC).encoded;
+            window.clearInterval(timeout.intervalCheck);
             timeout.redirecting = true;
-            timeout.warningDialog.hide(0);
+            timeout.warningDialog.hide();
             if (!shade.isOpen) {
                 shade.open();
             }
@@ -440,7 +485,7 @@ var XNAT = getObject(XNAT);
                 title: false,
                 content: '' +
                 '<div class="warning" style="font-size:14px;">' +
-                'User session ended: ' + (new Date(NOW)).toLocaleString() +
+                'User session ended: ' + (new Date(END)).toLocaleString() +
                 '</div>',
                 // padding: 30,
                 okAction: function(){
@@ -473,12 +518,12 @@ var XNAT = getObject(XNAT);
 
 
         function renewSession(){
-            // redirect if trying to renew an inactive session
+            // redirect if trying to renew an expired session
             if (cookie.SESSION_ACTIVE.is('false')) {
                 // resumeSession();
                 redirectToLogin();
             }
-            timeout.warningDialog.hide(100);
+            timeout.warningDialog.hide();
             shade.hide();
             cookie.SESSION_EXPIRATION_TIME.get();
             timeout.getValues();
@@ -504,7 +549,10 @@ var XNAT = getObject(XNAT);
 
         timeout.renew = function(){
             return timeout.touch().done(function(data){
-                cookie.SESSION_DIALOG_CANCELLED.set('true');
+                if (timeout.warningDialog.isOpen) {
+                    timeout.warningDialog.hide();
+                    cookie.SESSION_DIALOG_CANCELLED.set('true');
+                }
                 // an object is returned if session is still valid
                 timeout.sessionExpired = !isPlainObject(data);
                 if (timeout.sessionExpired) {
@@ -524,7 +572,7 @@ var XNAT = getObject(XNAT);
 
 
         timeout.handleCancel = function(){
-            timeout.warningDialog.hide(100);
+            timeout.warningDialog.hide();
             timeout.cancelled = true;
             cookie.SESSION_DIALOG_CANCELLED.set('true');
             cookie.SESSION_DIALOG_OPEN.set('false');
@@ -534,9 +582,13 @@ var XNAT = getObject(XNAT);
         // check every second to see if our timeout time has been reached
         timeout.check = function(){
 
+            // debugLog('timeout.check()');
+
             timeout.getValues();
 
             var NOW = Date.now();
+
+            timeout.redirecting = timeout.redirecting || shade.isOpen;
 
             // redirect if TIMED_OUT cookie is true
             if (!timeout.redirecting && cookie.SESSION_TIMED_OUT.is('true')) {
@@ -559,7 +611,9 @@ var XNAT = getObject(XNAT);
 
             // close dialog if closed from another window
             if (cookie.SESSION_DIALOG_OPEN.is('false')) {
-                timeout.warningDialog.hide(0);
+                if (timeout.warningDialog.isOpen) {
+                    timeout.warningDialog.hide();
+                }
             }
 
             // if endTime minus showTime is less than now
@@ -570,7 +624,7 @@ var XNAT = getObject(XNAT);
                     return false;
                 }
                 cookie.SESSION_DIALOG_CANCELLED.set('false');
-                timeout.warningDialog.toTop(false).show(100);
+                timeout.warningDialog.show().toTop();
                 return false;
             }
 
@@ -608,7 +662,7 @@ var XNAT = getObject(XNAT);
         timeout.init = function(){
             if (!timeout.running) {
                 timeout.running = true;
-                window.setInterval(
+                timeout.intervalCheck = window.setInterval(
                     function(){
                         timeout.check();
                         timeout.sessionCountdown();
@@ -618,29 +672,33 @@ var XNAT = getObject(XNAT);
             }
         };
 
+    })();
+
+    // don't start the timer until the page is finished loading
+    $(window).on('load', function(){
         // only run the timer if *not* a guest user (if an authenticated user)
         if ((!!XNAT.cookie.get('guest')) && (XNAT.cookie.get('guest') === 'false')) {
             timeout.init();
         }
+    });
 
-        // attach event handler to elements with 'renew-session' class
-        $(document).on('click', '#timeLeftRenew, .renew-session', function(){
-            timeout.renew();
-        });
+    $(window).on('beforeunload', function(){
+        // var lastPageEnc = encodePageInfo(USERNAME, LOC_HREF).encoded;
+        // // cookie.SESSION_LAST_USER.set(lastUserEnc);
+        // // check for 'resume=false' query string to prevent loading certain pages
+        // if (getQueryStringValue('resume').toString() !== 'false') {
+        //     cookie.SESSION_LAST_PAGE.set(lastPageEnc);
+        // }
+        // else {
+        //     cookie.SESSION_LAST_PAGE.set('');
+        // }
+    });
 
-        $(window).on('beforeunload', function(){
-            // var lastPageEnc = encodePageInfo(USERNAME, LOC_HREF).encoded;
-            // // cookie.SESSION_LAST_USER.set(lastUserEnc);
-            // // check for 'resume=false' query string to prevent loading certain pages
-            // if (getQueryStringValue('resume').toString() !== 'false') {
-            //     cookie.SESSION_LAST_PAGE.set(lastPageEnc);
-            // }
-            // else {
-            //     cookie.SESSION_LAST_PAGE.set('');
-            // }
-        });
-
-    })();
+    // attach event handler to elements with 'renew-session' class
+    $(document).on('click', '.renew-session', function(e){
+        e.preventDefault();
+        timeout.renew();
+    });
 
 
     // this script has loaded

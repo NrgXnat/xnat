@@ -9,15 +9,16 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
@@ -26,24 +27,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 
+@Slf4j
+@SuppressWarnings("unused")
 public class XDATScreen_add_xnat_projectData extends EditScreenA {
-	static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_add_xnat_projectData.class);
-	
-	public String getElementName() {
-	    return "xnat:projectData";
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getElementName() {
+	    return XnatProjectdata.SCHEMA_ELEMENT_NAME;
 	}
-	
-	public ItemI getEmptyItem(RunData data) throws Exception
-	{
-	    String s = getElementName();
-		ItemI temp =  XFTItem.NewItem(s,TurbineUtils.getUser(data));
-		return temp;
-	}
-	/* (non-Javadoc)
-	 * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
-	 */
-	public void finalProcessing(RunData data, Context context) {
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+	public void finalProcessing(final RunData data, final Context context) {
         Hashtable hash = XNATUtils.getInvestigatorsForCreate(getElementName(),data);
         context.put("investigators",hash);
         context.put("arc",ArcSpecManager.GetInstance());
@@ -51,15 +50,16 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
             context.put("destination", TurbineUtils.GetPassedParameter("destination", data));
         }
         try {
-            ArrayList<ElementSecurity> root = new ArrayList<ElementSecurity>();
-            ArrayList<ElementSecurity> subjectAssessors = new ArrayList<ElementSecurity>();
-            ArrayList<ElementSecurity> mrAssessors = new ArrayList<ElementSecurity>();
-            ArrayList<ElementSecurity> petAssessors = new ArrayList<ElementSecurity>();
-            
+            ArrayList<ElementSecurity> root = new ArrayList<>();
+            ArrayList<ElementSecurity> subjectAssessors = new ArrayList<>();
+            ArrayList<ElementSecurity> mrAssessors = new ArrayList<>();
+            ArrayList<ElementSecurity> petAssessors = new ArrayList<>();
+
+            final String id = getEditItem().getStringProperty("ID");
             Collection<ElementSecurity> all =ElementSecurity.GetElementSecurities().values();
             for (ElementSecurity es: all){
                 try {
-                    if (es.getAccessible() || (item.getStringProperty("ID")!=null && es.matchesUsageEntry(item.getStringProperty("ID")))){
+                    if (es.getAccessible() || (StringUtils.isNotBlank(id) && es.matchesUsageEntry(id))) {
                         GenericWrapperElement g= es.getSchemaElement().getGenericXFTElement();
                         
                         if(g.instanceOf("xnat:mrAssessorData")){
@@ -73,7 +73,7 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
                         }
                     }
                 } catch (Throwable e) {
-                    logger.error("",e);
+                    log.error("",e);
                 }
             }
             
@@ -81,18 +81,16 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
-	    context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
-		    
-			if (item.getProperty("ID")!=null)
-			{
-                ArcProject p = ArcSpecManager.GetInstance().getProjectArc(item.getStringProperty("ID"));
-                if (p!=null){
-                    context.put("arcP", p);
+	        context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
+
+            if (StringUtils.isNotBlank(id)) {
+                final ArcProject arcProject = ArcSpecManager.GetInstance().getProjectArc(id);
+                if (arcProject != null) {
+                    context.put("arcP", arcProject);
                 }
-			}
+            }
 		} catch (Exception e) {
-			logger.error("",e);
+			log.error("",e);
 		}
 	}
-
 }

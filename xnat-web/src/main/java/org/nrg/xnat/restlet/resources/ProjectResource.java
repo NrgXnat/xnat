@@ -10,8 +10,14 @@
 package org.nrg.xnat.restlet.resources;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 import org.nrg.action.ActionException;
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -19,13 +25,16 @@ import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -34,24 +43,24 @@ import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 import org.restlet.resource.Representation;
-import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import java.util.Date;
+import java.util.Collection;
 import java.util.List;
 
+import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.SCHEMA_ELEMENT_NAME;
+import static org.restlet.data.Status.*;
+
+@Slf4j
 public class ProjectResource extends ItemResource {
-    private static final Logger logger = LoggerFactory.getLogger(ProjectResource.class);
+    private final XnatProjectdata project;
+    private final String          projectId;
 
-    private XnatProjectdata project = null;
-    private final String projectId;
-
-    public ProjectResource(Context context, Request request, Response response) throws ResourceException {
+    public ProjectResource(Context context, Request request, Response response) throws ClientException {
         super(context, request, response);
 
         // This was part of a fix for XNAT-3453, but it breaks other non-standard REST ways of setting project properties.
@@ -60,14 +69,13 @@ public class ProjectResource extends ItemResource {
         // }
 
         projectId = (String) getParameter(request, "PROJECT_ID");
-        if (projectId != null) {
-            project = XnatProjectdata.getProjectByIDorAlias(projectId, getUser(), false);
+        if (StringUtils.isBlank(projectId)) {
+            throw new ClientException(CLIENT_ERROR_BAD_REQUEST, "No project ID specified for the REST call. This shouldn't happen.");
         }
+        project = XnatProjectdata.getProjectByIDorAlias(projectId, getUser(), false);
 
-        if (project != null) {
-            getVariants().add(new Variant(MediaType.TEXT_HTML));
-            getVariants().add(new Variant(MediaType.TEXT_XML));
-        }
+        getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.TEXT_XML));
 
         fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.PROJECT_DATA, false));
     }
@@ -84,217 +92,201 @@ public class ProjectResource extends ItemResource {
 
     @Override
     public void handleDelete() {
+        if (project == null || StringUtils.isNotBlank(filepath)) {
+            getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST);
+            return;
+        }
         final UserI user = getUser();
-
-        if (user == null || user.isGuest()) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-        } else {
-            if (filepath != null && !filepath.equals("")) {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+        try {
+            if (user.isGuest() || !Permissions.canDelete(user, project)) {
+                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN);
                 return;
             }
-
-            if (project != null) {
-                try {
-                    final boolean removeFiles = isQueryVariableTrue("removeFiles");
-                    if (Permissions.canDelete(user, project)) {
-                        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, XnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, EventUtils.getDeleteAction(project.getXSIType())));
-                        final EventMetaI ci = workflow.buildEvent();
-
-                        try {
-                            project.delete(removeFiles, user, ci);
-                            PersistentWorkflowUtils.complete(workflow, ci);
-                            if(XDAT.getBoolSiteConfigurationProperty("security.allowProjectIdReuse", false)) {
-                                Date curr = new Date();
-                                long timestamp = curr.getTime();
-                                String query = "UPDATE xnat_projectdata_history SET id = '" + project.getId() + timestamp + "' where id = '" + project.getId() + "';";
-                                PoolDBUtils.ExecuteNonSelectQuery(query, project.getItem().getDBName(), user.getLogin());
-                            }
-                        } catch (Exception e) {
-                            logger.error("", e);
-                            PersistentWorkflowUtils.fail(workflow, ci);
-                            throw e;
-                        }
-                    } else {
-                        getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to delete this project.");
-                    }
-                } catch (Exception e) {
-                    logger.error("", e);
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
-                }
-            }
+        } catch (Exception e) {
+            log.error("An error occurred checking permissions for user " + user.getUsername() + " to delete the project " + projectId, e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL);
+            return;
         }
+
+        try {
+            final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, SCHEMA_ELEMENT_NAME, projectId, projectId, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, EventUtils.getDeleteAction(XnatProjectdata.SCHEMA_ELEMENT_NAME)));
+            final EventMetaI          event    = workflow.buildEvent();
+
+            try {
+                project.delete(isQueryVariableTrue("removeFiles"), user, event);
+                PersistentWorkflowUtils.complete(workflow, event);
+                return;
+            } catch (Exception e) {
+                log.error("An error occurred when user " + user.getUsername() + " tried to delete the project " + projectId, e);
+                PersistentWorkflowUtils.fail(workflow, event);
+            }
+        } catch (Exception e) {
+            log.error("An error occurred trying manage delete operation for user " + user.getUsername() + " on project " + projectId, e);
+        }
+        // If we got here, the delete operation failed, so the server error status should always be set.
+        getResponse().setStatus(SERVER_ERROR_INTERNAL);
+
     }
 
     @Override
     public void handlePut() {
         final UserI user = getUser();
-        if (user == null || user.isGuest()) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-        } else {
-            try {
-                if (project == null || Permissions.canEdit(user, project)) {
-                    XFTItem item = loadItem("xnat:projectData", true);
+        if (user.isGuest()) {
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN);
+            return;
+        }
 
-                    if (item == null) {
-                        String xsiType = getQueryVariable("xsiType");
-                        if (xsiType != null) {
-                            item = XFTItem.NewItem(xsiType, user);
-                        }
-                    }
+        // Project equal to null means a new project, so either non-admins must be able to create projects or the user must be an admin.
+        if (project == null && !XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() && !Roles.isSiteAdmin(user)) {
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User " + user.getUsername() + " doesn't have permission to create projects on this system");
+            return;
+        }
+        // All file path settings require an existing project, so if there's a file path and no project, that's bad, m'kay?
+        final boolean hasFilePath = StringUtils.isNotBlank(filepath);
+        if (hasFilePath && project == null) {
+            getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, "You can't set the '" + StringUtils.substringBefore(filepath, "/") + "' attribute without specifying the project on which you want to set it.");
+            return;
+        }
+        // If we do have a project, we can go ahead and check permissions to edit it now before we go any farther.
+        if (project != null && !Permissions.canEditProject(user, projectId)) {
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User " + user.getUsername() + " doesn't have permission to edit the project " + projectId);
+            return;
+        }
 
-                    if (item == null) {
-                        if (project != null) {
+        try {
+            if (project == null || Permissions.canEdit(user, project)) {
+                XFTItem item = getProjectXftItem(user);
+
+                if (item == null) {
+                    getResponse().setStatus(CLIENT_ERROR_EXPECTATION_FAILED, "Need PUT Contents");
+                    return;
+                }
+
+                final boolean allowDataDeletion = BooleanUtils.toBoolean(getQueryVariable("allowDataDeletion"));
+                if (item.instanceOf("xnat:projectData")) {
+                    XnatProjectdata workingProject = new XnatProjectdata(item);
+
+                    if (hasFilePath) {
+                        if (StringUtils.isBlank(workingProject.getId())) {
                             item = project.getItem();
+                            workingProject = project;
                         }
-                    }
 
-                    if (item == null) {
-                        getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Need PUT Contents");
-                        return;
-                    }
-
-                    boolean allowDataDeletion = false;
-                    if (getQueryVariable("allowDataDeletion") != null && getQueryVariable("allowDataDeletion").equalsIgnoreCase("true")) {
-                        allowDataDeletion = true;
-                    }
-
-                    if (item.instanceOf("xnat:projectData")) {
-                        XnatProjectdata project = new XnatProjectdata(item);
-
-                        if (filepath != null && !filepath.equals("")) {
-                            if (project.getId() == null) {
-                                item = this.project.getItem();
-                                project = this.project;
+                        if (!Permissions.canEdit(user, item)) {
+                            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
+                            return;
+                        }
+                        if (filepath.startsWith("quarantine_code/")) {
+                            final String quarantineCode = StringUtils.removeStart(filepath, "quarantine_code/");
+                            if (StringUtils.isNotBlank(quarantineCode)) {
+                                final ArcProject arcProject = workingProject.getArcSpecification();
+                                arcProject.setQuarantineCode(translateArcProjectCode(quarantineCode));
+                                create(workingProject, arcProject, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured quarantine code"));
+                                ArcSpecManager.Reset();
                             }
+                        } else if (filepath.startsWith("prearchive_code/")) {
+                            final String prearchiveCode = StringUtils.removeStart(filepath, "prearchive_code/");
+                            if (StringUtils.isNotBlank(prearchiveCode)) {
+                                if (XDAT.getBoolSiteConfigurationProperty("project.allow-auto-archive", true) || StringUtils.equals(prearchiveCode, "0")) {
+                                    final ArcProject arcProject = workingProject.getArcSpecification();
+                                    arcProject.setPrearchiveCode(translateArcProjectCode(prearchiveCode));
+                                    create(workingProject, arcProject, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured prearchive code"));
+                                    ArcSpecManager.Reset();
+                                } else {
+                                    getResponse().setStatus(CLIENT_ERROR_FORBIDDEN);
+                                }
+                            }
+                        } else if (filepath.startsWith("current_arc/")) {
+                            final String currentArc = StringUtils.removeStart(filepath, "current_arc/");
+                            if (StringUtils.isNotBlank(currentArc)) {
+                                final ArcProject arcProject = workingProject.getArcSpecification();
+                                arcProject.setCurrentArc(currentArc);
+                                create(workingProject, arcProject, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured current arc"));
+                                ArcSpecManager.Reset();
+                            }
+                        } else if (filepath.startsWith("scan_type_mapping/")) {
+                            final String scanTypeMapping = StringUtils.removeStart(filepath, "scan_type_mapping/");
+                            workingProject.setUseScanTypeMapping(BooleanUtils.toBoolean(scanTypeMapping));
+                            update(workingProject, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured current arc"));
+                            ArcSpecManager.Reset();
+                        } else {
+                            getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST);
+                        }
+                    } else {
+                        if (StringUtils.isBlank(workingProject.getId())) {
+                            workingProject.setId(projectId);
+                        } else if (!StringUtils.equalsIgnoreCase(projectId, workingProject.getId())) {
+                            getResponse().setStatus(CLIENT_ERROR_EXPECTATION_FAILED, "The project ID for the REST call must match the value in submitted request body.");
+                            return;
+                        }
 
+                        if (!XftStringUtils.isValidId(workingProject.getId()) && !isQueryVariableTrue("testHyphen")) {
+                            getResponse().setStatus(CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
+                            return;
+                        }
+
+                        if (item.getCurrentDBVersion() != null) {
                             if (!Permissions.canEdit(user, item)) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
+                                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
                                 return;
-                            }
-                            if (filepath.startsWith("quarantine_code/")) {
-                                String qc = filepath.substring(16);
-                                if (!qc.equals("")) {
-                                    ArcProject ap = project.getArcSpecification();
-                                    try {
-                                        Integer qcI = Integer.valueOf(qc);
-                                        ap.setQuarantineCode(qcI);
-                                    } catch (NumberFormatException e) {
-                                        switch (qc) {
-                                            case "true":
-                                                ap.setQuarantineCode(1);
-                                                break;
-                                            case "false":
-                                                ap.setQuarantineCode(0);
-                                                break;
-                                            default:
-                                                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Prearchive code must be an integer.");
-                                                return;
-                                        }
-                                    }
-
-                                    create(project, ap, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured quarantine code"));
-                                    ArcSpecManager.Reset();
-                                }
-                            } else if (filepath.startsWith("prearchive_code/")) {
-                                String qc = filepath.substring(16);
-                                if (!qc.equals("")) {
-                                    if (XDAT.getBoolSiteConfigurationProperty("project.allow-auto-archive", true) || StringUtils.equals(qc, "0")) {
-                                        ArcProject ap = project.getArcSpecification();
-                                        try {
-                                            Integer qcI = Integer.valueOf(qc);
-                                            ap.setPrearchiveCode(qcI);
-                                        } catch (NumberFormatException e) {
-                                            switch (qc) {
-                                                case "true":
-                                                    ap.setPrearchiveCode(1);
-                                                    break;
-                                                case "false":
-                                                    ap.setPrearchiveCode(0);
-                                                    break;
-                                                default:
-                                                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Prearchive code must be an integer.");
-                                                    return;
-                                            }
-                                        }
-                                        create(project, ap, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured prearchive code"));
-                                        ArcSpecManager.Reset();
-                                    } else {
-                                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-                                    }
-                                }
-                            } else if (filepath.startsWith("current_arc/")) {
-                                String qc = filepath.substring(12);
-                                if (!qc.equals("")) {
-                                    ArcProject ap = project.getArcSpecification();
-                                    ap.setCurrentArc(qc);
-
-                                    create(project, ap, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN, "Configured current arc"));
-                                    ArcSpecManager.Reset();
-                                }
-                            } else if (filepath.startsWith("scan_type_mapping/")) {
-                                String stm = filepath.substring(18);
-                                if (stm.equals("false")) {
-                                    project.setUseScanTypeMapping(false);
-                                } else if (stm.equals("true")) {
-                                    project.setUseScanTypeMapping(true);
-                                }
-                            } else {
-                                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
                             }
                         } else {
-                            if (StringUtils.isBlank(project.getId())) {
-                                project.setId(projectId);
-                            }
-
-                            if (StringUtils.isBlank(project.getId())) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Requires XNAT ProjectData ID");
+                            final Long count = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class).queryForObject("SELECT COUNT(id) FROM xnat_projectdata_history WHERE id = :projectId", new MapSqlParameterSource("projectId", projectId), Long.class);
+                            if (count > 0) {
+                                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Project '" + projectId + "' was used in a previously deleted project and cannot be reused.");
                                 return;
-                            }
-
-                            if (!XftStringUtils.isValidId(project.getId()) && !isQueryVariableTrue("testHyphen")) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
-                                return;
-                            }
-
-                            if (item.getCurrentDBVersion() != null) {
-                                if (!Permissions.canEdit(user, item)) {
-                                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
-                                    return;
-                                }
-                            } else {
-                                Long count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(ID) FROM xnat_projectdata_history WHERE ID='" + project.getId() + "';", "COUNT", null, null);
-                                if (count > 0) {
-                                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Project '" + project.getId() + "' was used in a previously deleted project and cannot be reused.");
-                                    return;
-                                }
-                            }
-
-                            if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
-                                project.preSave();
-                                BaseXnatProjectdata.createProject(project, user, allowDataDeletion, true, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
-                            } else {
-                                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
                             }
                         }
+
+                        // Validate project fields.  If there are conflicts, build a error message and display it to the user.
+                        final Collection<String> conflicts = workingProject.validateProjectFields();
+                        if (!conflicts.isEmpty()) {
+                            getResponse().setStatus(CLIENT_ERROR_CONFLICT, "Requested new project conflicts with existing projects: " + StringUtils.join(conflicts, ", "));
+                            return;
+                        }
+
+                        if (project == null) {
+                            BaseXnatProjectdata.createProject(workingProject, user, allowDataDeletion, true, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
+                        } else {
+                            SaveItemHelper.authorizedSave(item, user, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN));
+                            XDAT.triggerXftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, XftItemEventI.UPDATE);
+                        }
                     }
-                } else {
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
                 }
-            } catch (ActionException e) {
-                getResponse().setStatus(e.getStatus(), e.getMessage());
-            } catch (InvalidPermissionException | IllegalArgumentException e) {
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
-            } catch (Exception e) {
-                logger.error("Unknown exception type", e);
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+            } else {
+                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");
+            }
+        } catch (ActionException e) {
+            getResponse().setStatus(e.getStatus(), e.getMessage());
+        } catch (InvalidPermissionException | IllegalArgumentException e) {
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unknown exception type", e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL);
+        }
+    }
+
+    @Nullable
+    protected XFTItem getProjectXftItem(final UserI user) throws ClientException, ServerException, XFTInitException, ElementNotFoundException {
+        XFTItem item = loadItem("xnat:projectData", true);
+
+        if (item == null) {
+            String xsiType = getQueryVariable("xsiType");
+            if (xsiType != null) {
+                item = XFTItem.NewItem(xsiType, user);
             }
         }
+
+        if (item == null) {
+            if (project != null) {
+                item = project.getItem();
+            }
+        }
+        return item;
     }
 
     @Override
     public Representation represent(Variant variant) {
-
         if (project != null) {
             FilteredResourceHandlerI handler = null;
             try {
@@ -305,7 +297,7 @@ public class ProjectResource extends ItemResource {
                     }
                 }
             } catch (InstantiationException | IllegalAccessException e1) {
-                logger.error("", e1);
+                log.error("", e1);
             }
 
             try {
@@ -315,12 +307,12 @@ public class ProjectResource extends ItemResource {
                     return null;
                 }
             } catch (Exception e) {
-                logger.error("", e);
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+                log.error("", e);
+                getResponse().setStatus(SERVER_ERROR_INTERNAL);
                 return null;
             }
         } else {
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified experiment.");
+            getResponse().setStatus(CLIENT_ERROR_NOT_FOUND, "Unable to find the specified experiment.");
             return null;
         }
     }
@@ -343,42 +335,55 @@ public class ProjectResource extends ItemResource {
         }
 
         @Override
-        public Representation handle(SecureResource resource, Variant variant) throws Exception {
-            MediaType mt = resource.overrideVariant(variant);
+        public Representation handle(SecureResource resource, Variant variant) {
+            MediaType       mt           = resource.overrideVariant(variant);
             ProjectResource projResource = (ProjectResource) resource;
             if (resource.filepath != null && !resource.filepath.equals("")) {
                 if (resource.filepath.equals("quarantine_code")) {
                     try {
                         return new StringRepresentation(projResource.project.getArcSpecification().getQuarantineCode().toString(), mt);
                     } catch (Throwable e) {
-                        logger.error("", e);
-                        projResource.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                        log.error("", e);
+                        projResource.getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
                         return null;
                     }
                 } else if (resource.filepath.startsWith("prearchive_code")) {
                     try {
                         return new StringRepresentation(projResource.project.getArcSpecification().getPrearchiveCode().toString(), mt);
                     } catch (Throwable e) {
-                        logger.error("", e);
-                        projResource.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                        log.error("", e);
+                        projResource.getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
                         return null;
                     }
                 } else if (resource.filepath.startsWith("current_arc")) {
                     try {
                         return new StringRepresentation(projResource.project.getArcSpecification().getCurrentArc(), mt);
                     } catch (Throwable e) {
-                        logger.error("", e);
-                        resource.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                        log.error("", e);
+                        resource.getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
                         return null;
                     }
                 } else {
-                    resource.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+                    resource.getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST);
                     return null;
                 }
             } else {
                 return projResource.representItem(projResource.project.getItem(), mt);
             }
         }
+    }
 
+    private int translateArcProjectCode(final String code) throws ClientException {
+        if (NumberUtils.isCreatable(code)) {
+            return NumberUtils.createInteger(code);
+        }
+        switch (code) {
+            case "true":
+                return 1;
+            case "false":
+                return 0;
+            default:
+                throw new ClientException(CLIENT_ERROR_BAD_REQUEST, "The submitted code " + code + " is invalid: must be an integer.");
+        }
     }
 }

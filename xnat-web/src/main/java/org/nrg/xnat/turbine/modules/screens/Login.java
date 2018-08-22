@@ -9,29 +9,42 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.ThemeService;
+import org.nrg.xnat.security.XnatProviderManager;
 
+@Slf4j
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
-    public final static Logger logger = Logger.getLogger(Login.class);
     @Override
-    protected void doBuildTemplate(RunData data, Context c) throws Exception {
-        ThemeService themeService = XDAT.getThemeService();
-        String themedRedirect = themeService.getThemePage("Login");
-        if(themedRedirect != null) {
-            c.put("themedRedirect", themedRedirect);
+    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+        context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());
+
+        final ThemeService themeService   = XDAT.getThemeService();
+        final String       themedRedirect = themeService.getThemePage("Login");
+        if (StringUtils.isNotBlank(themedRedirect)) {
+            context.put("themedRedirect", themedRedirect);
             return;
         }
         String themedStyle = themeService.getThemePage("theme", "style");
-        if(themedStyle != null) {
-            c.put("themedStyle", themedStyle);
+        if (themedStyle != null) {
+            context.put("themedStyle", themedStyle);
         }
         String themedScript = themeService.getThemePage("theme", "script");
-        if(themedScript != null) {
-            c.put("themedScript", themedScript);
+        if (themedScript != null) {
+            context.put("themedScript", themedScript);
         }
     }
+
+    private XnatProviderManager getProviderManager() {
+        if (_manager == null) {
+            _manager = XDAT.getContextService().getBean(XnatProviderManager.class);
+        }
+        return _manager;
+    }
+
+    private static XnatProviderManager _manager;
 }

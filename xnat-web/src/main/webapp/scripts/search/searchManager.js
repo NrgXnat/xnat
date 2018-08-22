@@ -181,7 +181,7 @@ function SearchXMLManager(_xml){
 		popupBD.appendChild(filterDIV);
 
 		var title= document.createElement("div");
-        var obj = window.available_elements.getByName(element_name)
+        var obj = window.available_elements_getByName(element_name)
         if(obj.singular){
           obj = obj.singular;
         } else{
@@ -287,12 +287,12 @@ function SearchXMLManager(_xml){
 		var si_tr=document.createElement("tr");
 			var si_th1=document.createElement("td");
 			si_th1.colSpan="4";
-			si_th1.innerHTML="Your search of <b>" + window.available_elements.getByName(this.searchDOM.RootElementName).plural +"</b> has already been joined to: ";
+			si_th1.innerHTML="Your search of <b>" + window.available_elements_getByName(this.searchDOM.RootElementName).plural +"</b> has already been joined to: ";
 			var jjcC=0;
 			for(var jJC=0;jJC<joined.length;jJC++){
 				if(joined[jJC]!=this.searchDOM.RootElementName){
 					if(jjcC++>0)si_th1.innerHTML+=", ";
-					si_th1.innerHTML+="<b>" + window.available_elements.getByName(joined[jJC]).plural + "</b>";
+					si_th1.innerHTML+="<b>" + window.available_elements_getByName(joined[jJC]).plural + "</b>";
 				}
 			}
 			si_th1.innerHTML+=".<br><br>";
@@ -303,7 +303,7 @@ function SearchXMLManager(_xml){
 		var si_tr=document.createElement("tr");
 		var si_th1=document.createElement("td");
 		si_th1.colSpan="4";
-		si_th1.innerHTML="Specify which data-type to join your <b>" + window.available_elements.getByName(this.searchDOM.RootElementName).plural +"</b> search results to.";
+		si_th1.innerHTML="Specify which data-type to join your <b>" + window.available_elements_getByName(this.searchDOM.RootElementName).plural +"</b> search results to.";
 		si_tr.appendChild(si_th1);
 		si_tb.appendChild(si_tr);
 
@@ -815,7 +815,7 @@ function SearchXMLManager(_xml){
 
 	this.colors=new Array();
 	this.gbc=function(en){
-		var tEN=window.available_elements.getByName(en);
+		var tEN=window.available_elements_getByName(en);
 		if(tEN!=null){
 			if(tEN.lbg!=""){
 				return tEN.lbg;
@@ -830,7 +830,7 @@ function SearchXMLManager(_xml){
 		for(var _efC=0;_efC<this.pFs.length;_efC++){
 			if(this.shouldShowLabels || this.pFs[_efC].SRC!=2){
 				if(this.pFs[_efC].d==undefined){
-					this.pFs[_efC].d=this.pFs[_efC].DESC + " (" + window.available_elements.getByName(this.pFs[_efC].ELEMENT_NAME).singular + ")";
+					this.pFs[_efC].d=this.pFs[_efC].DESC + " (" + window.available_elements_getByName(this.pFs[_efC].ELEMENT_NAME).singular + ")";
 				}
 				if(!this.containsField(this.pFs[_efC].ELEMENT_NAME,this.pFs[_efC].FIELD_ID)){
 					var tO=new Option(this.pFs[_efC].d);
@@ -860,7 +860,7 @@ function SearchXMLManager(_xml){
 
 		for(var cfSC=0;cfSC<this.currentFields.length;cfSC++){
 			if(this.currentFields[cfSC].d==undefined){
-				this.currentFields[cfSC].d=this.currentFields[cfSC].Header + " (" + window.available_elements.getByName(this.currentFields[cfSC].ElementName).singular + ")";
+				this.currentFields[cfSC].d=this.currentFields[cfSC].Header + " (" + window.available_elements_getByName(this.currentFields[cfSC].ElementName).singular + ")";
 			}
 			this.cfS.options[cfSC]=new Option(this.currentFields[cfSC].d);
 			this.cfS.options[cfSC].element_name=this.currentFields[cfSC].ElementName;

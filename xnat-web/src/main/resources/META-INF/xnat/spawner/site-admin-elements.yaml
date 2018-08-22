@@ -41,8 +41,8 @@ passwordExpirationInterval:
     label: Password Expiration (Interval)
     validation: interval onblur
     after: >
-      <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
-      Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
+        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
 
 passwordExpirationDate:
     kind: input.text
@@ -50,14 +50,12 @@ passwordExpirationDate:
     name: passwordExpirationDate
     label: Password Expiration (Date)
     validation: allow-empty date-iso onblur
-    after:
-        datePicker:
-            tag: span#datePicker
-            content: >
-              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='fa fa-calendar'></span>
-              <br>
-              <p class='description'>Expire passwords that were last changed before this date and
-              require those users to change them.</p>
+    after: >
+        <span id="datePicker">&nbsp;&nbsp;
+        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
+        <br>
+        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
+        </span>
 
 siteDescriptionType:
     kind: panel.element
@@ -80,19 +78,15 @@ siteDescriptionType:
             name: siteDescriptionType
             id: siteDescriptionTypePage
             value: Page
-            after:
-                label:
-                    tag: label.pad5h|for=siteDescriptionTypePage
-                    content: Page
+            after: >
+                <label class="pad5h" for="siteDescriptionTypePage">Page</label>
         siteDescriptionTypeText:
             kind: input.radio
             name: siteDescriptionType
             id: siteDescriptionTypeText
             value: Text
-            after:
-                label:
-                    tag: label.pad5h|for=siteDescriptionTypeText
-                    content: Text (Markdown)
+            after: >
+                <label class="pad5h" for="siteDescriptionTypeText">Text (Markdown)</label>
         pagePath:
             tag: div.input-bundle.page
             contents:
@@ -118,7 +112,8 @@ siteLogo:
             kind: input.text
             placeholder: /images/logo.png
             validation: uri onblur
-            description: "The path to the file to be used as the site logo."
+            after: >
+                <p class="description">The path to the file to be used as the site logo.</p>
 
 siteLoginLanding:
     kind: panel.input.text
@@ -354,6 +349,11 @@ generalSecuritySettings:
                         any: Any
                         http: http
                         https: https
+        enabledProviders:
+            kind: panel.input.textList
+            label: Enabled Authentication Providers
+            description: >
+                Specifies the authentication providers that are currently enabled on the XNAT server.
         requireLogin:
             kind: panel.input.switchbox
             name: requireLogin
@@ -363,16 +363,6 @@ generalSecuritySettings:
             description: >
                 If required, then only registered users will be able to access your site. If not required, anyone
                 visiting your site will automatically be logged in as 'guest' with access to public data.
-        refreshGuestFrequency:
-            kind: panel.input.text
-            name: refreshGuestFrequency
-            label: Refresh Guest Frequency
-            validation: interval onblur
-            description: >
-                How often to update the guest user object that is shared by users who are not logged in. If the
-                guest didn't have access to any sessions of a given type and one is added, the guest user will
-                not see this session in Browse->Data until the guest user object is refreshed. Uses
-                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
@@ -523,8 +513,10 @@ userLoginsSessionControls:
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         interactiveAgentIds:
-            kind: panel.input.text
+            kind: panel.input.textList
+            size: 60
             name: interactiveAgentIds
+            delim: ","
             label: Interactive Agent IDs
             placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
             description: >
@@ -532,8 +524,10 @@ userLoginsSessionControls:
               request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
               scriptable or automatable client. Separate multiple agent IDs with commas.
         dataPaths:
-            kind: panel.input.text
+            kind: panel.input.textList
+            size: 60
             name: dataPaths
+            delim: ","
             label: Data Paths
             placeholder: /xapi/**, /data/**, /REST/**, /fs/**
             description: >
@@ -581,28 +575,22 @@ passwords:
                     id: passwordExpirationTypeDisabled
                     name: passwordExpirationType
                     value: Disabled
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeDisabled
-                            content: Disabled
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDisabled">Disabled</label>
                 passwordExpirationTypeInterval:
                     kind: input.radio
                     id: passwordExpirationTypeInterval
                     name: passwordExpirationType
                     value: Interval
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeInterval
-                            content: Interval
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeInterval">Interval</label>
                 passwordExpirationTypeDate:
                     kind: input.radio
                     id: passwordExpirationTypeDate
                     name: passwordExpirationType
                     value: Date
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeDate
-                            content: Date
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDate">Date</label>
                 passwordExpirationInterval:
                     tag: div.input-bundle.interval
                     contents:
@@ -626,8 +614,7 @@ passwords:
             label: Password History
             validation: interval onblur
             description: >
-              Interval for which users cannot reuse an old password of theirs. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval for which users cannot reuse an old password of theirs. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         requireSaltedPasswords:
             kind: panel.input.switchbox
             id: require-salted-passwords
@@ -876,6 +863,7 @@ notifications:
 themeManagement:
     kind: panel
     name: themeManagement
+    id: theme-management-panel
     label: Theme Management
     footer: false
     contents:
@@ -913,60 +901,18 @@ themeManagement:
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
+# create a container for the plugin table to be spawned into
 pluginTable:
-    kind: table.dataTable
-    id: xnat-plugin-list
-    name: pluginList
-    load: /xapi/plugins
-    # specify which properties to show in the table
-    columns:
-        id: ~data-id  # '~data' adds this item as a [data-] attribute to each <tr>
-        beanName: ~data-bean
-        pluginInfo:
-            label: Plugin Info
-            filter: true
-            apply: >
-                !? function(){
-                       var item = this;
-                       var itemTable = XNAT.table({
-                           className: 'xnat-table clean compact borderless'
-                       });
-                       itemTable.tbody();
-                       function itemRow(TH, TD){
-                           var _TH = spawn('b', TH);
-                           itemTable.tr().td({ className: 'text-right' }, _TH).td({}, TD);
-                       }
-                       itemRow('Plugin Name:', spawn('b', item.name));
-                       itemRow('Plugin ID:', item.id);
-                       itemRow('Plugin Version:', item.version);
-                       itemRow('Plugin Class:', item.pluginClass);
-                       itemRow('Description:', item.description);
-                       return itemTable.table;
-                   }
-        viewPluginInfo:
-            label: Plugin JSON
-            value: "&ndash;" # this gets overwritten with 'html' below
-            className: center
-            # function that accepts current item as sole argument and parent object as 'this'
-            # returned value will be new value - if nothing's returned, value is passed through
-            # apply: "{(  function(){ return formatJSON(this) }  )}"
-            html: >
-                <a href="#!" class="view-plugin-info link">View Plugin Info</a>
-    messages:
-        noData: >
-            There are no plugins installed in this XNAT. Try searching for plugins on <a href="http://marketplace.xnat.org/plugins/" title="XNAT Marketplace" target="_blank">XNAT Marketplace</a>.
-        error: >
-            An error occurred retrieving information for installed plugins.
+    tag: "div#plugin-table-container"
 
 pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
 
 pluginOpenUrlsConfig:
-    kind: panel
-    name: pluginOpenUrlsConfig
-    header: false
-    footer: false
+    tag: div
     contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
         pluginOpenUrlsScript:
             tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 
@@ -1099,12 +1045,12 @@ registrationOptions:
                 If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
                 If true, users who wish to change their email will also be required to verify their new email address.
-        emailVerificationMessage:
-            kind: panel.textarea
-            name: emailVerificationMessage
-            label: "Email Verification Message"
-            code: html
-            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
+#        emailVerificationMessage:
+#            kind: panel.textarea
+#            name: emailVerificationMessage
+#            label: "Email Verification Message"
+#            code: html
+#            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration
@@ -1294,14 +1240,81 @@ pipelineSettings:
     contents:
         ${processingUrl}
 
+dicomScpEditor:
+    kind: panel.form
+    name: dicomScpEditor
+    header: false
+    footer: false
+    load: false
+    action: "#!"
+    method: null
+    #contentType: json
+    element:
+        style:
+            border: none
+            marginBottom: 0
+    contents:
+        scpId:
+            kind: panel.input.hidden
+            id: scp-id
+            name: id
+            className: hidden
+        aeTitle:
+            kind: panel.input.text
+            id: scp-title
+            name: aeTitle
+            label: AE Title
+            #description: AE Title for DICOM Receiver
+            validation: not-empty
+        port:
+            kind: panel.input.number
+            id: scp-port
+            name: port
+            label: Port
+            #description: Port for DICOM Receiver
+            validation: integer gte:1 lte:65535
+        enabled:
+            kind: input.hidden
+            id: scp-enabled
+            name: enabled
+            className: hidden
+        customProcessing:
+            kind: panel.input.switchbox
+            name: customProcessing
+            label: Custom Processing
+            #show: false
+#            className: hidden
+            onText: "Custom Processing: <b>Enabled</b>"
+            offText: "Custom Processing <b>Disabled</b>"
+            description: Enable or Disable Custom Processing for DICOM Receiver
+        identifier:
+            kind: panel.select.single
+            id: scp-identifier
+            name: identifier
+            label: Identifier
+            className: hidden
+            element:
+                title: Select DICOM Object Identifier
+                disabled: disabled
+            description: >
+                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
+#            fileNamer:
+#                kind: panel.input.text
+#                name: fileNamer
+#                label: File Namer
+#            identifier:
+#                kind: panel.input.text
+#                name: identifier
+#                label: Identifier
+
 dicomScpReceivers:
     kind: panel
     name: dicomScpReceivers
     label: Manage DICOM SCP Receivers
     footer: false
     contents:
-        message:
-            tag: div.message.bold
+        cautionMessage:
+            tag: div.warning.bold
             content: >
                 Caution: Changes to these settings take effect immediately.
                 Note that any changes, including defining a new receiver and
@@ -1309,58 +1322,6 @@ dicomScpReceivers:
                 <i>all other receivers</i> on the same port. Before performing
                 any operations like this, verify that there are no transmissions
                 currently in progress to any of the receivers on that port.
-        dicomScpEditorTemplate:
-            tag: "div#dicom-scp-editor-template.html-template"
-            contents:
-                dicomScpEditor:
-                    kind: panel.form
-                    name: dicomScpEditor
-                    id: dicom-scp-editor
-                    header: false
-                    footer: false
-                    action: /xapi/dicomscp
-                    contentType: json
-                    contents:
-                        pad:
-                            tag: div.pad20top
-                        scpId:
-                            kind: panel.input.hidden
-                            id: scp-id
-                            name: id
-                            className: hidden
-                        aeTitle:
-                            kind: panel.input.text
-                            id: scp-title
-                            name: aeTitle
-                            label: AE Title
-#                            description: AE Title for DICOM Receiver
-                            validation: not-empty
-                        port:
-                            kind: panel.input.number
-                            id: scp-port
-                            name: port
-                            label: Port
-#                            description: Port for DICOM Receiver
-                            validation: integer
-                        identifier:
-                            kind: panel.select.single
-                            id: scp-identifier
-                            name: identifier
-                            label: Identifier
-                            className: hidden
-                            element:
-                                title: Select DICOM Object Identifier
-                                disabled: disabled
-                            description: >
-                                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
-#                        fileNamer:
-#                            kind: panel.input.text
-#                            name: fileNamer
-#                            label: File Namer
-#                        identifier:
-#                            kind: panel.input.text
-#                            name: identifier
-#                            label: Identifier
         dicomScpManager:
             tag: "div#dicom-scp-manager"
         dicomScpManagerScript:
@@ -1418,70 +1379,7 @@ investigators:
             content: >
                 XNAT.app.investigators.dataTable('#investigators-list-container')
 
-investigatorsOld:
-    kind: panel
-    name: investigators
-    label: List of Investigators
-    contents:
-        investigatorsContainer:
-            tag: div#investigators-list-container
-        newInvestigatorButton:
-            tag: button#create-new-investigator.btn1|style=margin-top:15px
-            content: Create New Investigator
-        investigatorsjs:
-            tag: script|src=/scripts/xnat/app/investigators.js
-        investigatorsTable:
-            kind: table.dataTable
-            id: xnat-investigators-list
-            load: /xapi/investigators
-            messages:
-                noData: >
-                    There are no investigators defined in this system. Click the button below to create one.
-                error: >
-                    An error occurred retrieving investigator information.
-            sortable: firstname, lastname, email, institution
-            before:
-                script:
-                    tag: script
-                    content: >
-                        XNAT.admin = getObject(XNAT.admin);
-                        XNAT.admin.investigatorTable = XNAT.app.investigators.init().dataTable();
-                        XNAT.admin.investigatorFieldValue = function(val){
-                            return val || '<div class="center">-</div>'
-                        };
-                        XNAT.admin.investigatorProjectList = function(projects){
-                            return projects && projects.map ? projects.map(function(proj){
-                                return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
-                            }).join(', ') : '-';
-                        };
-            items:
-                xnatInvestigatordataId:
-                    label: <div class="hidden"></div>
-                    className: center
-                    content: <a href="#!" class="view-investigator link" data-id="__VALUE__">View</a>
-#                title:
-#                    label: Title
-#                    call: function(val){ return val || '-' }
-                firstname:
-                    label: First Name
-                    call: XNAT.admin.investigatorFieldValue
-                lastname:
-                    label: Last Name
-                    call: XNAT.admin.investigatorFieldValue
-                email:
-                    label: Email
-                    call: XNAT.admin.investigatorFieldValue
-                institution:
-                    label: Institution
-                    call: XNAT.admin.investigatorFieldValue
-                primaryProjects:
-                    label: Project PI
-                    call: XNAT.admin.investigatorProjectList
-                investigatorProjects:
-                    label: ~!
-                    call: XNAT.admin.investigatorProjectList
-
-scanTypeMapping:
+setScanTypeMapping:
     kind: panel.form
     label: Scan Type Mapping
     method: POST
@@ -1502,31 +1400,30 @@ developmentUtilities:
         spawner:
             kind: panel.element
             label: Spawner
-#            description: Manage spawner elements.
             contents:
                 link:
-                    tag: a.link
-                    element:
-                        href: ~/page/admin/spawner/
-                        target: _blank
-                        html: Manage Spawner Elements
+                    tag: a.link|target=_blank|href=/page/#/admin/spawner/
+                    content: Manage Spawner Elements
         swagger:
             kind: panel.element
             label: Swagger
-#            description: View the Swagger page.
             contents:
                 link:
-                    tag: a.link
-                    element:
-                        href: ~/xapi/swagger-ui.html
-                        target: _blank
-                        html: View the Swagger page
+                    tag: a.link|target=_blank|href=/xapi/swagger-ui.html
+                    content: View the Swagger page
+        monitoring:
+            kind: panel.element
+            label: Monitoring
+            contents:
+                link:
+                    tag: a.link|target=_blank|href=/monitoring
+                    content: View the JavaMelody application monitoring page
 
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
-adminPage:
+root:
     kind: tabs
     name: adminPage
     label: Administer XNAT
@@ -1569,10 +1466,10 @@ adminPage:
             group: xnatSetup
             contents:
                 ${notifications}
-        themesAndFeatures:
+        manageThemes:
             kind: tab
-            name: themesAndFeatures
-            label: Themes & Features
+            name: manageThemes
+            label: Themes
             group: xnatSetup
             contents:
                 ${themeManagement}
@@ -1674,7 +1571,7 @@ adminPage:
             kind: tab
             label: Miscellaneous
             contents:
-                ${scanTypeMapping}
+                ${setScanTypeMapping}
                 ${developmentUtilities}
 
 
@@ -1716,7 +1613,7 @@ dataStorage:
         ${prearchivePath}
         ${ftpPath}
         ${buildPath}
-        ${bipelinePath}
+        ${pipelinePath}
         ${cachePath}
 #        ${zipExtensions}
 #        ${checksums}

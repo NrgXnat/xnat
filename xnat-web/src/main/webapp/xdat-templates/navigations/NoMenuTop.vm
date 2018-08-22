@@ -20,6 +20,7 @@ $page.setBgColor($ui.bgcolor)
                 if (window.isLoginPage) {
                     $('#user_info').hide();
                 }
+                window.isGuest = true;
             </script>
         #else
             #set($username = $user.getUsername())

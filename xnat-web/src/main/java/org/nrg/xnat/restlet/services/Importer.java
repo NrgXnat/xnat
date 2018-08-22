@@ -16,6 +16,10 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xnat.archive.operations.DicomImportOperation;
+import org.nrg.xnat.processor.importer.ProcessorImporterMap;
+import org.nrg.xnat.restlet.actions.importer.*;
+import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
 import org.nrg.xnat.status.StatusList;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -28,10 +32,6 @@ import org.nrg.xnat.helpers.transactions.PersistentStatusQueueManagerI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils.UriParser;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
-import org.nrg.xnat.restlet.actions.importer.ImporterNotFoundException;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
@@ -48,10 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Importer extends SecureResource {
 	private static final String CRLF = "\r\n";
@@ -183,16 +180,49 @@ public class Importer extends SecureResource {
 					}
 				}
 			}
-			
+			if (handler != null && fw.size() <=1) {
+
+				try {
+					final ProcessorImporterMap processorImporterMap
+							= XDAT.getContextService().getBean("processorImporterMap", ProcessorImporterMap.class);
+					Set<String> handlerStrings = processorImporterMap.keySet();
+					if(handlerStrings.contains(handler)){
+						FileWriterWrapperI fww = null;
+						if(fw.size()==1) {
+							fww = fw.get(0);
+						}
+
+						final Class<? extends ProcessorImporterHandlerA> importerClass = processorImporterMap.get(handler);
+						final ProcessorImporterHandlerA processorImporter = XDAT.getContextService().getBean(importerClass);
+						final DicomImportOperation operation  = processorImporter.getOperation(handler, user, fww, params);
+						if (storeStatusList(operation)) {
+							return;
+						}
+						response = processorImporter.doImport(operation);
+
+						if(entity!=null && APPLICATION_XMIRC.equals(entity.getMediaType())){
+							returnString("OK", Status.SUCCESS_OK);
+							return;
+						}
+
+						returnDefaultRepresentation();
+						return;
+					}
+
+				}catch(Throwable t){
+					logger.error("Failed to get map of processor importers.",t);
+				}
+			}
+
 			if(fw.size()==0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
 				
 				this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
 				return;
 				
 			} else if (handler != null && fw.size() == 0) {
-				
+
 				try {				
-					importer = ImporterHandlerA.buildImporter(handler, 
+					importer = ImporterHandlerA.buildImporter(handler,
 															  listenerControl, 
 															  user, 
 															  null, // FileWriterWrapperI is null because no files should have been uploaded. 
@@ -277,6 +307,20 @@ public class Importer extends SecureResource {
 
             storeStatusList(listenerControl, sq);
         }
+		return false;
+	}
+
+	public boolean storeStatusList(final DicomImportOperation operation) {
+		if(httpSessionListener){
+			if(StringUtils.isEmpty(listenerControl)){
+				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "'" + XNATRestConstants.TRANSACTION_RECORD_ID + "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
+				return true;
+			}
+			final StatusList sq = new StatusList();
+			operation.addStatusListener(sq);
+
+			storeStatusList(listenerControl, sq);
+		}
 		return false;
 	}
 

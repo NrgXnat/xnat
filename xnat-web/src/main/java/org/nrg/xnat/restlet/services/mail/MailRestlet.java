@@ -9,10 +9,10 @@
 
 package org.nrg.xnat.restlet.services.mail;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.text.StringEscapeUtils;
 import org.nrg.action.ClientException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.xdat.XDAT;
@@ -210,7 +210,7 @@ public class MailRestlet extends SecureResource {
                 }
             }
         }
-        return addresses.toArray(new String[addresses.size()]);
+        return addresses.toArray(new String[0]);
     }
 
     private Map<String, List<String>> getHeaders() {

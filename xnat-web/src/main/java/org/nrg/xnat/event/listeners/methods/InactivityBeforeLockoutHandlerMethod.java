@@ -9,65 +9,87 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.DisableInactiveUsers;
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
+import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToIntSeconds;
 
 @Component
-public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+@Getter(PROTECTED)
+@Setter(AccessLevel.PRIVATE)
+@Accessors(prefix = "_")
+public class InactivityBeforeLockoutHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
-    public InactivityBeforeLockoutHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final XnatUserProvider primaryAdminUserProvider) {
-        _preferences = preferences;
-        _scheduler = scheduler;
-        _userProvider = primaryAdminUserProvider;
+    public InactivityBeforeLockoutHandlerMethod(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
+        super(scheduler, INACTIVITY_BEFORE_LOCKOUT, LOCKOUT_DURATION, INACTIVITY_BEFORE_LOCKOUT_SCHEDULE);
+
+        _template = template;
+
+        final String inactivityBeforeLockout         = preferences.getInactivityBeforeLockout();
+        final String maxFailedLoginsLockoutDuration  = preferences.getMaxFailedLoginsLockoutDuration();
+        final String inactivityBeforeLockoutSchedule = preferences.getInactivityBeforeLockoutSchedule();
+
+        log.debug("Initializing InactivityBeforeLockoutHandlerMethod with inactivityBeforeLockout '{}', lockout duration '{}', and scheduled to run '{}'", inactivityBeforeLockout, maxFailedLoginsLockoutDuration, inactivityBeforeLockoutSchedule);
+
+        setInactivityBeforeLockout(convertPGIntervalToIntSeconds(inactivityBeforeLockout));
+        setMaxFailedLoginsLockoutDuration(convertPGIntervalToIntSeconds(maxFailedLoginsLockoutDuration));
+        setInactivityBeforeLockoutSchedule(inactivityBeforeLockoutSchedule);
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    protected AbstractXnatRunnable getTask() {
+        return new DisableInactiveUsers(getTemplate(), getInactivityBeforeLockout(), getMaxFailedLoginsLockoutDuration());
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateInactivityBeforeLockout();
+    protected Trigger getTrigger() {
+        return new CronTrigger(getInactivityBeforeLockoutSchedule());
+    }
+
+    /**
+     * Updates the value for the specified preference according to the preference type.
+     *
+     * @param preference The preference to set.
+     * @param value      The value to set.
+     */
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        log.debug("Found preference {} that this handler can handle, setting value to {}", preference, value);
+        switch (preference) {
+            case INACTIVITY_BEFORE_LOCKOUT:
+                setInactivityBeforeLockout(convertPGIntervalToIntSeconds(value));
+                break;
+
+            case LOCKOUT_DURATION:
+                setMaxFailedLoginsLockoutDuration(convertPGIntervalToIntSeconds(value));
+                break;
+
+            case INACTIVITY_BEFORE_LOCKOUT_SCHEDULE:
+                setInactivityBeforeLockoutSchedule(value);
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateInactivityBeforeLockout();
-        }
-    }
+    private static final String INACTIVITY_BEFORE_LOCKOUT          = "inactivityBeforeLockout";
+    private static final String LOCKOUT_DURATION                   = "maxFailedLoginsLockoutDuration";
+    private static final String INACTIVITY_BEFORE_LOCKOUT_SCHEDULE = "inactivityBeforeLockoutSchedule";
 
-    private void updateInactivityBeforeLockout() {
-        _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-        for (ScheduledFuture temp : _scheduledInactivityBeforeLockout) {
-            temp.cancel(false);
-        }
-        _scheduledInactivityBeforeLockout.clear();
-        try {
-            _scheduledInactivityBeforeLockout.add(_scheduler.schedule(new DisableInactiveUsers(_userProvider, (new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getInactivityBeforeLockout()))).intValue(), (new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()))).intValue()), new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule())));
-        } catch (SQLException ignored) {
-            // Do nothing: the SQL exception here is superfluous.
-        }
-    }
+    private final NamedParameterJdbcTemplate _template;
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("inactivityBeforeLockout", "inactivityBeforeLockoutSchedule"));
-
-    private final ArrayList<ScheduledFuture> _scheduledInactivityBeforeLockout = new ArrayList<>();
-
-    private final SiteConfigPreferences   _preferences;
-    private final ThreadPoolTaskScheduler _scheduler;
-    private final XnatUserProvider        _userProvider;
+    private int    _inactivityBeforeLockout;
+    private int    _maxFailedLoginsLockoutDuration;
+    private String _inactivityBeforeLockoutSchedule;
 }

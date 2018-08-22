@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.helpers.uri.archive.impl;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -22,50 +21,42 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 
 import java.util.Map;
 
-public class ResourcesSubjURI extends ResourceURIA implements ArchiveItemURI,ResourceURII,SubjectURII{
-	private XnatSubjectdata subj=null;
-	
-	public ResourcesSubjURI(Map<String, Object> props, String uri) {
-		super(props, uri);
-	}
+public class ResourcesSubjURI extends ResourceURIA implements ArchiveItemURI, ResourceURII, SubjectURII {
+    public ResourcesSubjURI(Map<String, Object> props, String uri) {
+        super(props, uri);
+    }
 
-	protected void populate(){
-		if(subj==null){
-			
-			final String subjID= (String)props.get(URIManager.SUBJECT_ID);
-			
-			if(subj==null){
-				subj=XnatSubjectdata.getXnatSubjectdatasById(subjID, null, false);
-			}
-		}
-	}
-	
-	public XnatSubjectdata getSubject(){
-		this.populate();
-		return subj;
-	}
-	
-	@Override
-	public ArchivableItem getSecurityItem() {
-		return getSubject();
-	}
+    @Override
+    public ArchivableItem getSecurityItem() {
+        return getSubject();
+    }
 
+    @Override
+    public XnatAbstractresourceI getXnatResource() {
+        final XnatSubjectdata subject = getSubject();
+        return subject != null ? getMatchingResource(subject.getResources_resource()) : null;
+    }
 
-	@Override
-	public XnatAbstractresourceI getXnatResource() {
-		if(this.getSubject()!=null){
-			for(XnatAbstractresourceI res:this.getSubject().getResources_resource()){
-				if(StringUtils.equals(res.getLabel(), this.getResourceLabel())){
-					return res;
-				}
-			}
-		}
-		
-		return null;
-	}
+    @Override
+    public XnatProjectdata getProject() {
+        return this.getSubject().getProjectData();
+    }
 
-	@Override
-	public XnatProjectdata getProject() {
-		return this.getSubject().getProjectData();
-	}
+    public XnatSubjectdata getSubject() {
+        this.populate();
+        return subj;
+    }
+
+    protected void populate() {
+        if (subj == null) {
+
+            final String subjID = (String) props.get(URIManager.SUBJECT_ID);
+
+            if (subj == null) {
+                subj = XnatSubjectdata.getXnatSubjectdatasById(subjID, null, false);
+            }
+        }
+    }
+
+    private XnatSubjectdata subj = null;
 }

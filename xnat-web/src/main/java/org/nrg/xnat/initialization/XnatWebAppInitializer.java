@@ -9,15 +9,12 @@
 
 package org.nrg.xnat.initialization;
 
+import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
@@ -25,13 +22,9 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
-import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.servlet.Log4JServlet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
@@ -43,9 +36,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import org.apache.log4j.PropertyConfigurator;
 
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_CLASS_ARRAY;
+
+@SuppressWarnings("unused")
+@Slf4j
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+    public static ServletContext getServletContext() {
+        return SERVLET_CONTEXT;
+    }
 
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
@@ -59,16 +58,12 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         // Initialize the Spring stuff.
         super.onStartup(context);
 
-        // Now initialize everything else.
-        context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
-        context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
-
         context.addListener(XnatSessionEventPublisher.class);
         context.addListener(AxisHTTPSessionListener.class);
 
         Turbine.setTurbineServletConfig(new XnatTurbineConfig(context));
 
-        _context = context;
+        SERVLET_CONTEXT = context;
 
         addServlet(XDATServlet.class, 1, "/xdat/*");
         addServlet(Turbine.class, 2, "/app/*");
@@ -82,7 +77,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected String[] getServletMappings() {
-        return new String[]{"/admin/*", "/xapi/*"};
+        return new String[]{"/admin/*", "/xapi/*", "/pages/*"};
     }
 
     @Override
@@ -91,12 +86,12 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         configClasses.add(RootConfig.class);
         configClasses.addAll(getPluginConfigs());
         configClasses.add(ControllerConfig.class);
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return configClasses.toArray(new Class[0]);
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return EMPTY_ARRAY;
+        return EMPTY_CLASS_ARRAY;
     }
 
     @Override
@@ -126,32 +121,26 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         }
     }
 
-    private static final long MAX_FILE_SIZE = 1048576 * 20; // 20 MB max file size.
-
-    private static final long MAX_REQUEST_SIZE = 20971520;  // 20MB max request size.
-
-    private static final int FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
-
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
         try {
             for (final XnatPluginBean plugin : XnatPluginBeanManager.scanForXnatPluginBeans().values()) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
+                if (log.isInfoEnabled()) {
+                    log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
                 }
                 configs.add(Class.forName(plugin.getPluginClass()));
             }
         } catch (ClassNotFoundException e) {
-            _log.error("Did not find a class specified in a plugin definition.", e);
+            log.error("Did not find a class specified in a plugin definition.", e);
         }
 
-        _log.info("Found a total of {} plugins", configs.size());
+        log.info("Found a total of {} plugins", configs.size());
         return configs;
     }
 
     private void addServlet(final Class<? extends Servlet> clazz, final int loadOnStartup, final String... mappings) {
-        final String name = StringUtils.uncapitalize(clazz.getSimpleName());
-        final ServletRegistration.Dynamic registration = _context.addServlet(name, clazz);
+        final String                      name         = StringUtils.uncapitalize(clazz.getSimpleName());
+        final ServletRegistration.Dynamic registration = SERVLET_CONTEXT.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);
     }
@@ -189,8 +178,9 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         private ServletContext _context;
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(XnatWebAppInitializer.class);
-    private static final Class<?>[] EMPTY_ARRAY = new Class<?>[0];
-
-    private ServletContext _context;
+    private static final long                         MAX_FILE_SIZE       = 1048576 * 20; // 20 MB max file size.
+    private static final long                         MAX_REQUEST_SIZE    = 20971520;  // 20MB max request size.
+    private static final int                          FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
+    private static final ImmutableMap<String, String> LOG4J_INIT_PARAMS   = ImmutableMap.of("log4j-init-file", "WEB-INF/classes/log4j.properties");
+    private static       ServletContext               SERVLET_CONTEXT     = null;
 }

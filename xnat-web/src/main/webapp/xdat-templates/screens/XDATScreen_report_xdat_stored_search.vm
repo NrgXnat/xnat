@@ -7,6 +7,7 @@ $page.setVlinkColor($ui.vlink)
 	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
 	#set ($popup = "false")
 #end
+#macro(escStringProperty $prop)$!turbineUtils.escapeHTML("$!item.getStringProperty($prop)")#end
 <TABLE width="100%">
 	<TR>
 		<TD>
@@ -25,11 +26,12 @@ $page.setVlinkColor($ui.vlink)
 				<TR>
 					<TD valign="top">
 						<TABLE>
-							<TR><TD>ID</TD><TD>$!item.getStringProperty("xdat:stored_search/ID")</TD></TR>
-														<TR><TD>Brief Description</TD><TD>$!item.getStringProperty("xdat:stored_search/brief-description")</TD></TR>
-							<TR><TD>Description</TD><TD>$!item.getStringProperty("xdat:stored_search/description")</TD></TR>
-							<TR><TD>Pivot Data Type</TD><TD>$!item.getStringProperty("xdat:stored_search/root_element_name")</TD></TR>
-							<TR><TD>Sort By</TD><TD>$!item.getStringProperty("xdat:stored_search/sort_by/element_name") $!item.getStringProperty("xdat:stored_search/sort_by/field_ID")</TD></TR>
+							<TR><TD>ID</TD><TD>#escStringProperty("xdat:stored_search/ID")</TD></TR>
+##							<TR><TD>Brief Description</TD><TD>$!turbineUtils.escapeHTML(#escStringProperty("xdat:stored_search/brief-description")</TD></TR>
+                            <TR><TD>Brief Description</TD><TD>#escStringProperty("xdat:stored_search/brief-description")</TD></TR>
+                            <TR><TD>Description</TD><TD>#escStringProperty("xdat:stored_search/description")</TD></TR>
+							<TR><TD>Pivot Data Type</TD><TD>#escStringProperty("xdat:stored_search/root_element_name")</TD></TR>
+							<TR><TD>Sort By</TD><TD>#escStringProperty("xdat:stored_search/sort_by/element_name") #escStringProperty("xdat:stored_search/sort_by/field_ID")</TD></TR>
 							<TR><TD>Display Diff Columns</TD><TD>#xdatBooleanDisplay("xdat:stored_search/allow-diff-columns" $item true)</TD></TR>
 							<TR><TD>Limited Access</TD><TD>#xdatBooleanDisplay("xdat:stored_search/secure" $item true)</TD></TR>
 						</TABLE>
@@ -48,7 +50,7 @@ $page.setVlinkColor($ui.vlink)
 					<TD align="left" valign="top">
 						<TABLE><TR><TD>
 							#set($xdat_search_field_1_NUM_ROWS=$item.getChildItems("xdat:stored_search/search_field").size())
-							
+
 							#if($xdat_search_field_1_NUM_ROWS>0)
 								<BR><font face="$ui.sansSerifFonts" size="2"><b>Displayed Fields ($xdat_search_field_1_NUM_ROWS)</b></font><BR>
 								#set($xdat_search_field_1_NUM_ROWS=$xdat_search_field_1_NUM_ROWS - 1)
@@ -61,7 +63,7 @@ $page.setVlinkColor($ui.vlink)
 										<TH>value</TH>
 										<TH>sequence</TH>
 									</TR>
-								#foreach($xdat_search_field_1_COUNTER in [0..$xdat_search_field_1_NUM_ROWS])									
+								#foreach($xdat_search_field_1_COUNTER in [0..$xdat_search_field_1_NUM_ROWS])
 										<TR>
 											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/element_name")</TD>
 											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID")</TD>
@@ -99,7 +101,7 @@ $page.setVlinkColor($ui.vlink)
 													#if($xdat_criteria_3_NUM_ROWS>0)
 														<font face="$ui.sansSerifFonts" size="2"><b>Criteria</b></font><BR>
 														#set($xdat_criteria_3_NUM_ROWS=$xdat_criteria_3_NUM_ROWS - 1)
-														
+
 															<TABLE>
 																<TR>
 																	<TH>schema_field</TH>

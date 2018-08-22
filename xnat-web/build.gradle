@@ -12,7 +12,6 @@ import com.github.zhurlik.SwaggerTask
 import io.swagger.models.Contact
 import io.swagger.models.Info
 import io.swagger.models.License
-import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
@@ -20,11 +19,11 @@ buildscript {
     }
     repositories {
         mavenLocal()
-        jcenter()
-        mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        mavenCentral()
+        jcenter()
         maven {
             url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
             name "XNAT Release Repository"
@@ -35,13 +34,14 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
-        classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
+        gradleApi()
+        classpath "com.bmuschko:gradle-cargo-plugin:2.3"
+        classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
-        classpath "io.franzbecker:gradle-lombok:1.10"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
+        classpath "io.franzbecker:gradle-lombok:1.14"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
@@ -52,10 +52,10 @@ buildscript {
 group "org.nrg.xnat"
 version = vXnat
 
-apply plugin: "com.github.zhurlik.swagger"
-apply plugin: "com.palantir.git-version"
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.github.zhurlik.swagger"
+apply plugin: "com.palantir.git-version"
 apply plugin: "eclipse"
 apply plugin: "groovy"
 apply plugin: "idea"
@@ -69,6 +69,10 @@ apply plugin: "war"
 
 repositories {
     mavenLocal()
+    maven {
+        url "https://www.dcm4che.org/maven2/"
+        name "dcm4che Maven Repository"
+    }
     maven {
         url "http://maven.imagej.net/content/groups/public"
         name "ImageJ Maven Repository"
@@ -88,8 +92,8 @@ repositories {
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def javaVersion = Jvm.current().javaVersion
-if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
+def javaVersion = JavaVersion.current()
+if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.java10Compatible) {
     allprojects {
         tasks.withType(Javadoc) {
             options.addStringOption("Xdoclint:none", "-quiet")
@@ -105,7 +109,7 @@ if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
             tasks.withType(JavaCompile) {
                 options.fork = true
                 options.compilerArgs << "-XDignore.symbol.file"
-                options.bootClasspath = rt17jar as String
+                options.bootstrapClasspath = files(rt17jar as String)
             }
         }
     } else {
@@ -132,66 +136,69 @@ if (hasProperty("archiveName")) {
 configurations {
     javadocCoverage
 
-    all*.exclude group: "ant", module: "ant"
-    all*.exclude group: "avalon-logkit"
-    all*.exclude group: "berkeleydb"
-    all*.exclude group: "com.github.jai-imageio"
-    all*.exclude group: "com.metaparadigm"
-    all*.exclude group: "com.sun.jdmk", module: "jmxtools"
-    all*.exclude group: "com.sun.jmx", module: "jmxri"
-    all*.exclude group: "commons-beanutils", module: "commons-beanutils-core"
-    all*.exclude group: "commons-betwixt"
-    all*.exclude group: "commons-dbcp"
-    all*.exclude group: "commons-email"
-    all*.exclude group: "commons-messenger"
-    all*.exclude group: "commons-pool"
-    all*.exclude group: "edu.ucar", module: "netcdf"
-    all*.exclude group: "excalibur-component"
-    all*.exclude group: "excalibur-instrument"
-    all*.exclude group: "excalibur-logger"
-    all*.exclude group: "excalibur-pool"
-    all*.exclude group: "fulcrum"
-    all*.exclude group: "geronimo-spec"
-    all*.exclude group: "hsqldb"
-    all*.exclude group: "imagej"
-    all*.exclude group: "jakarta-regexp"
-    all*.exclude group: "jamon"
-    all*.exclude group: "javax.jms", module: "jms"
-    all*.exclude group: "javax.mail", module: "mail"
-    all*.exclude group: "javax.servlet", module: "servlet-api"
-    all*.exclude group: "javax.sql", module: "jdbc-stdext"
-    all*.exclude group: "javax.transaction", module: "jta"
-    all*.exclude group: "jdbc", module: "jdbc"
-    all*.exclude group: "jmock"
-    all*.exclude group: "jms", module: "jms"
-    all*.exclude group: "jndi"
-    all*.exclude group: "jython"
-    all*.exclude group: "mockobjects"
-    all*.exclude group: "mysql"
-    all*.exclude group: "net.sf.saxon", module: "Saxon-B"
-    all*.exclude group: "net.sf.saxon", module: "saxon"
-    all*.exclude group: "net.sf.saxon", module: "saxon-dom"
-    all*.exclude group: "net.sf.saxon", module: "saxon-xpath"
-    all*.exclude group: "ojb", module: "ojb"
-    all*.exclude group: "org.apache.geronimo.specs"
-    all*.exclude group: "org.apache.struts"
-    all*.exclude group: "org.nrg", module: "nrg"
-    all*.exclude group: "org.nrg", module: "nrgutil"
-    all*.exclude group: "org.nrg", module: "plexiviewer"
-    all*.exclude group: "org.nrg.xdat", module: "beans"
-    all*.exclude group: "org.nrg.xnat", module: "web"
-    all*.exclude group: "quartz"
-    all*.exclude group: "resources", module: "resources"
-    all*.exclude group: "servletapi"
-    all*.exclude group: "stax", module: "stax-api"
-    all*.exclude group: "tomcat"
-    all*.exclude group: "velocity"
-    all*.exclude group: "xerces", module: "xmlParserAPIs"
-    all*.exclude group: "xml-apis"
-    all*.exclude group: "xmlrpc"
-    all*.exclude module: "log4j-slf4j-impl"
-    all*.exclude module: "pipelineCNDAXNAT"
-    all*.exclude module: "slf4j-simple"
+    all {
+        exclude group: "ant", module: "ant"
+        exclude group: "avalon-logkit"
+        exclude group: "berkeleydb"
+        exclude group: "com.github.jai-imageio"
+        exclude group: "com.google.code.findbugs", module: "annotations"
+        exclude group: "com.metaparadigm"
+        exclude group: "com.sun.jdmk", module: "jmxtools"
+        exclude group: "com.sun.jmx", module: "jmxri"
+        exclude group: "commons-beanutils", module: "commons-beanutils-core"
+        exclude group: "commons-betwixt"
+        exclude group: "commons-dbcp"
+        exclude group: "commons-email"
+        exclude group: "commons-messenger"
+        exclude group: "commons-pool"
+        exclude group: "edu.ucar", module: "netcdf"
+        exclude group: "excalibur-component"
+        exclude group: "excalibur-instrument"
+        exclude group: "excalibur-logger"
+        exclude group: "excalibur-pool"
+        exclude group: "fulcrum"
+        exclude group: "geronimo-spec"
+        exclude group: "hsqldb"
+        exclude group: "imagej"
+        exclude group: "jakarta-regexp"
+        exclude group: "jamon"
+        exclude group: "javax.jms", module: "jms"
+        exclude group: "javax.mail", module: "mail"
+        exclude group: "javax.servlet", module: "servlet-api"
+        exclude group: "javax.sql", module: "jdbc-stdext"
+        exclude group: "javax.transaction", module: "jta"
+        exclude group: "jdbc", module: "jdbc"
+        exclude group: "jmock"
+        exclude group: "jms", module: "jms"
+        exclude group: "jndi"
+        exclude group: "jython"
+        exclude group: "mockobjects"
+        exclude group: "mysql"
+        exclude group: "net.sf.saxon", module: "Saxon-B"
+        exclude group: "net.sf.saxon", module: "saxon"
+        exclude group: "net.sf.saxon", module: "saxon-dom"
+        exclude group: "net.sf.saxon", module: "saxon-xpath"
+        exclude group: "ojb", module: "ojb"
+        exclude group: "org.apache.geronimo.specs"
+        exclude group: "org.apache.struts"
+        exclude group: "org.nrg", module: "nrg"
+        exclude group: "org.nrg", module: "nrgutil"
+        exclude group: "org.nrg", module: "plexiviewer"
+        exclude group: "org.nrg.xdat", module: "beans"
+        exclude group: "org.nrg.xnat", module: "web"
+        exclude group: "org.python"
+        exclude group: "quartz"
+        exclude group: "resources", module: "resources"
+        exclude group: "servletapi"
+        exclude group: "stax", module: "stax-api"
+        exclude group: "tomcat"
+        exclude group: "velocity"
+        exclude group: "xerces", module: "xmlParserAPIs"
+        exclude group: "xmlrpc"
+        exclude module: "log4j-slf4j-impl"
+        exclude module: "pipelineCNDAXNAT"
+        exclude module: "slf4j-simple"
+    }
 }
 
 dependencyManagement.imports {
@@ -267,6 +274,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-ldap"
     implementation "org.springframework.security:spring-security-taglibs"
     implementation "org.springframework.ldap:spring-ldap-core"
+    implementation "org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE"
+    implementation "org.springframework.security:spring-security-jwt:1.0.8.RELEASE"
 
     implementation "org.hibernate:hibernate-core"
     implementation "org.hibernate:hibernate-ehcache"
@@ -303,7 +312,7 @@ dependencies {
 
     implementation "org.apache.commons:commons-configuration2"
     implementation "org.apache.commons:commons-math"
-
+    implementation "org.apache.commons:commons-text"
     implementation "org.apache.httpcomponents:httpclient"
     implementation "org.apache.httpcomponents:httpcore"
     implementation "org.apache.httpcomponents:httpcore-nio"
@@ -336,6 +345,8 @@ dependencies {
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
 
+    compileOnly "com.google.code.findbugs:jsr305"
+
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"
@@ -361,8 +372,22 @@ dependencies {
     testCompile "org.nrg:test"
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
+    testCompile "org.assertj:assertj-core"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDir
+        testOutputDir = compileTestJava.destinationDir
+    }
+}
+
+lombok {
+    version = dependencyManagement.importedProperties["lombok.version"] as String
+    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
 }
 
 tomcatRun.contextPath = "/"
@@ -398,36 +423,74 @@ cargo {
 // Pulls in the Jenkins BUILD_NUMBER environment variable if available.
 def buildDate = new Date()
 def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
-def revision = gitVersion().replace("${version}-", "")
+def isDirty, branchName, gitHash, gitHashFull, commitDistance, lastTag, isCleanTag
 
-logger.info "Git version:            ${gitVersion()}"
-logger.info "Build-Date:             ${buildDate}"
-logger.info "Build-Number:           ${buildNumber}"
-logger.info "Implementation-Sha:     ${revision}"
-logger.info "Implementation-Version: ${version}"
+try {
+    def gitDetails = versionDetails()
+    isDirty = gitVersion().endsWith ".dirty"
+    branchName = gitDetails.branchName ?: "Unknown"
+    gitHash = gitDetails.gitHash
+    gitHashFull = gitDetails.gitHashFull
+    commitDistance = gitDetails.commitDistance
+    lastTag = gitDetails.lastTag
+    isCleanTag = gitDetails.isCleanTag
+} catch (IllegalArgumentException e) {
+    logger.info "Got an error trying to read VCS metadata from git. It's possible this project is not under VCS control. Using placeholder values for manifest entries."
+    isDirty = true
+    branchName = "Unknown"
+    gitHash = "None"
+    gitHashFull = "None"
+    commitDistance = 0
+    lastTag = "None"
+    isCleanTag = false
+}
+
+logger.info "Build-Date:              ${buildDate}"
+logger.info "Build-Number:            ${buildNumber}"
+logger.info "Implementation-Version:  ${version}"
+logger.info "Implementation-Sha-Full: ${gitHashFull}"
+logger.info "Implementation-Sha:      ${gitHash}"
+logger.info "Implementation-Commit:   ${commitDistance}"
+logger.info "Implementation-LastTag:  ${lastTag}"
+logger.info "Implementation-Branch:   ${branchName}"
+logger.info "Implementation-CleanTag: ${isCleanTag}"
+logger.info "Implementation-Dirty:    ${isDirty}"
 
 jar {
     manifest {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
-                "Implementation-Sha": revision,
-                "Implementation-Version": version
+                "Implementation-Version": version,
+                "Implementation-Sha": gitHash,
+                "Implementation-Sha-Full": gitHashFull,
+                "Implementation-Commit": commitDistance,
+                "Implementation-LastTag": lastTag,
+                "Implementation-Branch": branchName,
+                "Implementation-CleanTag": isCleanTag,
+                "Implementation-Dirty": isDirty
     }
 }
 
 war {
+    duplicatesStrategy = DuplicatesStrategy.WARN
     manifest {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
-                "Implementation-Sha": revision,
-                "Implementation-Version": version
+                "Implementation-Version": version,
+                "Implementation-Sha": gitHash,
+                "Implementation-Sha-Full": gitHashFull,
+                "Implementation-Commit": commitDistance,
+                "Implementation-LastTag": lastTag,
+                "Implementation-Branch": branchName,
+                "Implementation-CleanTag": isCleanTag,
+                "Implementation-Dirty": isDirty
     }
 }
 
 jacoco {
-    toolVersion = dependencyManagement.importedProperties["jacoco.version"]
+    toolVersion = dependencyManagement.importedProperties["jacoco.version"] as String
 }
 
 jacocoTestReport {
@@ -478,6 +541,7 @@ task swagger(type: SwaggerTask, dependsOn: classes) {
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadoc")
+    classpath = configurations.compileClasspath
     options.docletpath = configurations.javadocCoverage.files.asType(List)
     options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
 }

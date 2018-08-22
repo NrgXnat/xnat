@@ -145,7 +145,7 @@ public class BatchTransfer extends Thread{
                 SaveItemHelper.authorizedSave(session,user, false, false,wkdata.buildEvent());
                 
 
-//                        logger.error("",e2);
+//                        log.error("",e2);
 //                        ArrayList error = new ArrayList();
 //                        error.add(mr.getId());
 //                        error.add("Error storing session xml. Please consult with your site administrator.");
@@ -180,7 +180,7 @@ public class BatchTransfer extends Thread{
         				fos.close();
         			}
 //                    } catch (Exception e) {
-//                	logger.error("",e);
+//                	log.error("",e);
 //                    }
                 }else{
                     logger.error("Error updating prearchive xml file.\n"+ xml.getAbsolutePath() + " does not exist.");
@@ -279,7 +279,7 @@ public class BatchTransfer extends Thread{
 //                        wkdata.setCurrentStepLaunchTime(java.util.Calendar.getInstance().getTime());
 //                        wkdata.save(mr.getUser(), false, false);
 //                    } catch (Exception e) {
-//                        logger.error("",e);
+//                        log.error("",e);
 //                    }
                   
                   if (partialMR instanceof XnatMrsessiondata) {
@@ -304,7 +304,7 @@ public class BatchTransfer extends Thread{
                       wkdata.setNextStepId("Cache Upload");
                       wkdata.save(user, false, false);
                   } catch (Exception e) {
-                      logger.error("",e);
+                      log.error("",e);
                   }
                   
                   try {
@@ -313,13 +313,13 @@ public class BatchTransfer extends Thread{
                       System.out.println("done.");
                   } catch (RuntimeException e1) {
                       System.out.println("failed.");
-                      logger.error("zip failed", e1);
+                      log.error("zip failed", e1);
                       try {
                           wkdata.setStatus("Failed");
                           wkdata.setCurrentStepLaunchTime(java.util.Calendar.getInstance().getTime());
                           wkdata.save(user, false, false);
                       } catch (Exception e) {
-                          logger.error("",e);
+                          log.error("",e);
                       }
                       Collection<String> error = new ArrayList<String>(2);
                       error.add(partialMR.getId());

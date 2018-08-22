@@ -19,14 +19,35 @@
 <div class="$msgClass">$data.message</div><br>
 #end
 
-#if($expired)
+#if($expired || $missingSalt)
     <div class="alert">Your password has expired. Please create a new one.</div>
+    #parse("screens/XDATScreen_password.vm")
+
+#elseif($forgot)
+    #parse("screens/XDATScreen_password.vm")
+
+#else
+    <script src="$content.getURI('/scripts/xnat/app/userProfile.js')"></script>
+
+    <h2>Manage User Login and Profile</h2>
+    <div id="user-profile-manager" class="xnat-tab-container"></div>
+    <div id="user-change-email" class="html-template">
+        #parse("screens/XDATScreen_change_email.vm")
+    </div>
+    <div id="user-change-password" class="html-template">
+        #parse("screens/XDATScreen_password.vm")
+    </div>
+
+    <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/userCacheManagement.js")"></script>
+
+    <script>
+        XNAT.app.userProfile.init('#user-profile-manager');
+        XNAT.app.userCache.init();
+    </script>
+    <div class="clearfix clear"></div>
+##    #parse("screens/XDATScreen_aliasTokens.vm")
 #end
 
-#if(!$user.isGuest())
-    #if (!$expired && !$forgot && !$missingSalt)
-        #parse("screens/XDATScreen_change_email.vm")
-    <br/><br/>
-    #end
-    #parse("screens/XDATScreen_password.vm")
-#end
+
+

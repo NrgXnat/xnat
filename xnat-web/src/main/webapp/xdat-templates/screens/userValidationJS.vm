@@ -1,15 +1,26 @@
+#* @vtlvariable name="hidePassword" type="java.lang.Boolean" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 <!-- BEGIN xdat-templates/screens/userValidationJS.vm -->
 ##modified to prevent values greater than 255 characters.
 <!-- <script type="text/javascript" src="$content.getURI("scripts/user/validateUsername.js")"></script> -->
+#if(!$hidePassword)
+    #set($validatePassword = "true")
+#else
+    #set($validatePassword = "false")
+#end
 <script type="text/javascript">
     console.log('userValidationJs.vm');
+    console.log('hidePassword','$hidePassword');
+    console.log('validatePassword','$validatePassword');
 
     $(document).ready(function(){
         $('#register_form').off('submit').on('submit',function(e){
             // e.preventDefault();
-            
+
             var errorCount = 0, errorMessages = [];
             var _form = $(this);
+            var validatePassword = $validatePassword;
 
             // define fields to validate
             var username        = document.getElementById('xdat:user.login');
@@ -28,30 +39,34 @@
             validateUsername.minLength(1).failure('Please enter a username');
             validateUsername.is('username').failure('Username can only contain letters and numbers. No spaces or special characters allowed.');
 
-            console.log('validateNewPass');
+            if (validatePassword) {
+                console.log('validateNewPass');
 
-            // password
-            var validateNewPass = XNAT.validate(password).reset().chain();
-            validateNewPass.minLength(1).failure('New Password: field cannot be empty');
-            validateNewPass.maxLength(255).failure('New Password: field cannot be longer than 255 characters');
-            validateNewPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('New Password: '+ passwordComplexityMessage);
+                // password
+                var validateNewPass = XNAT.validate(password).reset().chain();
+                validateNewPass.minLength(1).failure('New Password: field cannot be empty');
+                validateNewPass.maxLength(255).failure('New Password: field cannot be longer than 255 characters');
+                validateNewPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('New Password: ' + passwordComplexityMessage);
 
-            // confirm password
-            var validateConfirmPass = XNAT.validate(confirm_password).reset().chain();
-            validateConfirmPass.minLength(1).failure('Confirm Password: field cannot be empty');
-            validateConfirmPass.maxLength(255).failure('Confirm Password: field cannot be longer than 255 characters');
-            validateConfirmPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('Confirm Password: ' + passwordComplexityMessage);
-            validateConfirmPass.matches(password).failure('Password fields must match');
+                // confirm password
+                var validateConfirmPass = XNAT.validate(confirm_password).reset().chain();
+                validateConfirmPass.minLength(1).failure('Confirm Password: field cannot be empty');
+                validateConfirmPass.maxLength(255).failure('Confirm Password: field cannot be longer than 255 characters');
+                validateConfirmPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('Confirm Password: ' + passwordComplexityMessage);
+                validateConfirmPass.matches(password).failure('Password fields must match');
+            } else {
+                console.log('Skipping validateNewPass');
+            }
 
             // firstname
             var validateFirstname = XNAT.validate(firstname).reset().chain();
             validateFirstname.minLength(1).failure('Please enter your first name');
-            validateFirstname.is('nameSafe').failure('Name fields can only contain unaccented letters and spaces');
+            validateFirstname.is('nameSafe').failure('Name fields cannot contain accented or special characters');
 
             // lastname
             var validateLastname = XNAT.validate(lastname).reset().chain();
             validateLastname.minLength(1).failure('Please enter your last name');
-            validateLastname.is('nameSafe').failure('Name fields can only contain unaccented letters and spaces');
+            validateLastname.is('nameSafe').failure('Name fields cannot contain accented or special characters');
 
             // email
             var validateEmail = XNAT.validate(email).reset().chain();

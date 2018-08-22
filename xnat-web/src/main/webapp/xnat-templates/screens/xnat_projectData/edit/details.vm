@@ -70,7 +70,13 @@
     #project_details #investigatorBox { margin-top: 2px; }
 </style>
 
-#set ($PROJECT_DISPLAY_NAME = $displayManager.getSingularDisplayNameForProject())
+#define($projectIdEsc)#escapeAll($!project.getId())#end
+
+#define ($projectDisplayNameSingular)
+    #escapeAll($displayManager.getSingularDisplayNameForProject())
+#end
+
+#set ($PROJECT_DISPLAY_NAME = $projectDisplayNameSingular.toString().trim())
 #set ($PROJECT_DISPLAY_LOWER = $PROJECT_DISPLAY_NAME.toLowerCase())
 
 <table id="project_details">
@@ -172,7 +178,7 @@
 <script type="text/javascript" src="$content.getURI("scripts/generated/xnat_investigatorData.js")"></script>
 
 <script>
-    
+
     (function(){
 
         var projectDetails$ = $('#project_details');
@@ -182,7 +188,7 @@
         #elseif ( $parentTemplate == 'edit' )
             projectDetails$.addClass('edit-project');
         #end
-        
+
         var investigators = XNAT.app.investigators = getObject(XNAT.app.investigators);
         var projectID = XNAT.data.context.projectID;
 
@@ -218,7 +224,7 @@
         var temp = val;
         var regex = /^[0-9A-Za-z_-]+$/g;
         if (!(regex.test(temp))) {
-            xmodal.message('Validation Error', 'No special characters allowed in ${PROJECT_DISPLAY_LOWER} ( abbreviation.');
+            xmodal.message('Validation Error', 'No special characters allowed in ${PROJECT_DISPLAY_LOWER} abbreviation.');
             return "";
         }
         var newVal = '';

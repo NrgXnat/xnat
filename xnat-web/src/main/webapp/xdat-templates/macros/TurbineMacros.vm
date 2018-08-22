@@ -7,6 +7,18 @@
 ## Default macro file for XNAT
 ##
 
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").toString().trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").toString().trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s")).toString().trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").toString().trim()#end
+#macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
+
+## convert " to &quot; - prevents breaking out of HTML attributes
+#macro(replaceQuotes $str)$str.toString().replaceAll('"', '&quot;')#end
+
+## convert ' to &apos; - prevents breaking out of single-quoted attributes
+#macro(replaceSingleQuotes $str)$str.toString().replaceAll("'", "&apos;")#end
+
 #macro(insertPipelineNotification)
    <br/>
     <p>&nbsp;</p>
@@ -62,15 +74,16 @@
 #end
 
 #macro (xdatTextBox $name $item $defaultValue $vr)
-#if ($vr)
-  #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+<!-- macro: xdatTextBox -->
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
     #end
@@ -80,15 +93,15 @@
 #end
 
 #macro (xdatTextBoxWID $name $item $defaultValue $vr $id)
-#if ($vr)
-  #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
     #end
@@ -107,36 +120,37 @@
 #end
 
 #macro (xdatStringBoxOnChange $name $item $defaultValue $onChange $vr $classes)
-	#if ($vr)
-		#if($vr.getField($name))
-			<span style="color:red;">&#8658</span>
-		#end
-	#end
-    #if ("$!classes" == "")
-        #set ($classes = "")
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
     #end
-	#if ($item.getProperty($name))
-		#if($item.isPKField($name) && (!$vr.getField($name)))
-			<input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-			$item.getProperty($name)
-		#else
-			<input id="$name" class="$!classes" type="text" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-		#end
-	#else
-		<input id="$name" class="$!classes" type="text" name="$name" value="$defaultValue" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-	#end
+  #end
+  #if ("$!classes" == "")
+    #set ($classes = "")
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+      <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+      <input id="$name" class="$!classes" type="text" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+    #end
+  #else
+    <input id="$name" class="$!classes" type="text" name="$name" value="$defaultValue" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+  #end
 #end
 
 #macro (xdatStringBoxWSize $name $item $defaultValue $vr $size)
-#if ($vr)
-  #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+<!-- macro: xdatStringBoxWSize -->
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$name" type="text" name="$name" size="$size" value="$item.getStringProperty($name)"/>
     #end
@@ -146,21 +160,22 @@
 #end
 
 #macro (xdatTextArea $name $item $defaultValue $vr $rows $cols)
-#if ($vr)
+<!-- macro: xdatTextArea -->
+  #if ($vr)
     #if($vr.getField($name))
-        <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
     #end
-#end
-    #if ($item.getProperty($name))
-        <textarea rows="$rows" cols="$cols" id="$name" name="$name">$item.getStringProperty($name)</textarea>
-    #else
-        <textarea rows="$rows" cols="$cols" id="$name" name="$name">$defaultValue</textarea>
-    #end
+  #end
+  #if ($item.getProperty($name))
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$item.getStringProperty($name)</textarea>
+  #else
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$defaultValue</textarea>
+  #end
 #end
 
 #macro (xdatPKDisplay $name $item)
   <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
-  $item.getProperty($name)
+  #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
 #end
 
 #macro (xdatBooleanDisplay $name $item $defaultValue)
@@ -172,6 +187,7 @@
 #end
 
 #macro (xdatHiddenBox $name $item $defaultValue)
+  <!-- macro: xdatHiddenBox -->
   #if ($item.getProperty($name))
   <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
   #else
@@ -182,7 +198,7 @@
 #macro (xdatBooleanCheckbox $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = $!item.getBooleanProperty($name))
@@ -194,9 +210,10 @@
 #end
 
 #macro (xdatBooleanRadio $name $item $defaultValue $vr)
-#if ($vr)
+<!-- macro: xdatBooleanRadio -->
+  #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getBooleanProperty($name,$defaultValue))
@@ -209,9 +226,10 @@
 #end
 
 #macro (xdatBooleanRadioYesNo $name $item $defaultValue $vr)
+<!-- macro: xdatBooleanRadioYesNo -->
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getBooleanProperty($name,$defaultValue))
@@ -226,7 +244,7 @@
 #macro (xdatBooleanRadioYesNoWithoutDefault $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = "$!item.getBooleanProperty($name)")
@@ -247,7 +265,7 @@
 #macro (xdatBooleanRadioYesNoWithoutDefaultWONClick $name $item $vr $onchange)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = "$!item.getBooleanProperty($name)")
@@ -267,12 +285,12 @@
 #macro (xdatRadioButtonGroup $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -285,35 +303,37 @@
 #end
 
 #macro (xdatComboBox $name $item $settings_alias $vr)
+  <!-- macro: xdatComboBox -->
  #if ($vr)
     #if($vr.getField($name))
-       <span style="color:red;">&#8658</span>
+       <span style="color:red;">&#8658;</span>
     #end
  #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
       <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-      $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
       <select id="$name" name="$name"></select>
       <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
       <script type="text/javascript">
           (function(){
               var comboBox = new CustomSelectBox("$name", $settings_alias);
-              comboBox.render("$!turbineUtils.escapeHTML($!item.getProperty($name))");
+              comboBox.render('#escapeAll("$!item.getProperty($name)")');
           })();
       </script>
   #end
 #end
 
 #macro (xdatSelectBox $name $item $possibleValues $vr)
-#if ($vr)
+<!-- macro: xdatSelectBox -->
+  #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
   #if($possibleValues)
     #if ($possibleValues.size()==0)
@@ -365,12 +385,12 @@
 #macro (xdatSelectBoxWSingleValueLbl $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$!item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
   #if($possibleValues)
     #if ($possibleValues.size()==0)
@@ -425,12 +445,12 @@
 #macro (xdatSelectBoxWSingleValueWID $name $item $possibleValues $vr $id)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -438,7 +458,7 @@
       <select id="$id" name="$name">
         <option value="">(SELECT)</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -448,19 +468,19 @@
 #macro (xdatSelectBoxWDefault $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
     #else
       <select id="$name" name="$name">
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -470,12 +490,12 @@
 #macro (xdatSimpleSelectBoxLbl $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -483,7 +503,7 @@
       <select id="$name" name="$name">
         <option value="">$!lbl</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -494,12 +514,12 @@
 #macro (xdatSimpleSelectBoxLblWKeyValue $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -507,7 +527,7 @@
       <select id="$name" name="$name">
         <option value="">$!lbl</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>$pValue.get(1)</option>
+        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue.get(1)")</option>
         #end
       </select>
     #end
@@ -515,18 +535,18 @@
 #end
 
 #macro (xdatSimpleSelectBox $name $item $possibleValues $vr)
-	xdatSimpleSelectBoxLbl("(SELECT)" $name $item $possibleValues $vr)
+	#xdatSimpleSelectBoxLbl("(SELECT)" $name $item $possibleValues $vr)
 #end
 
 #macro (xdatIntegerValueSelectBox $name $item $possibleValues $offset $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -535,7 +555,7 @@
         <option value="">(SELECT)</option>
         #foreach ($pValue in $possibleValues)
         #set($intValue = ($velocityCount - 1) + $offset)
-        <option value="$intValue" #if("$intValue" == "$!item.getProperty($name)") SELECTED #end>$pValue</option>
+        <option value="$intValue" #if("$intValue" == "$!item.getProperty($name)") SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -543,9 +563,10 @@
 #end
 
 #macro (xdatDateBox $name $item $vr $years)
+  <!-- macro: xdatDateBox -->
  #if ($vr)
     #if($vr.getField($name))
-       <span style="color:red;">&#8658</span>
+       <span style="color:red;">&#8658;</span>
     #end
  #end
    #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
@@ -651,7 +672,7 @@
 #macro (xdatDateBoxNotReported $name $item $vr $years)
 	#if ($vr)
 		#if($vr.getField($name))
-			<span style="color:red;">&#8658</span>
+			<span style="color:red;">&#8658;</span>
 		#end
 	#end
 
@@ -768,7 +789,7 @@
 #macro (xdatDateTimeBox $name $item $vr $years)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
@@ -865,7 +886,7 @@
 #macro (xdatTimeBox $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
 #set ($hours=[["08","8AM",8],["09","9AM",9],["10","10AM",10],["11","11AM",11],["12","12PM",12],["13","1PM",13],["14","2PM",14],["15","3PM",15],["16","4PM",16],["17","5PM",17],["18","6PM",18],["19","7PM",19],["20","8PM",20],["21","9PM",21],["22","10PM",22],["23","11PM",23],["00","12AM",0],["01","1AM",1],["02","2AM",2],["03","3AM",3],["04","4AM",4],["05","5AM",5],["06","6AM",6],["07","7AM",7]]	)
@@ -941,6 +962,7 @@
 
 ## EDIT PROPS
 #macro (xdatEditProps $item $edit_screen)
+  <!-- macro: xdatEditProps -->
   #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
   #if($dataPopup)
   #else
@@ -952,7 +974,7 @@
 #end
 
 #macro (xdatSearchField $schemaElement $displayField)
-
+  <!-- macro: xdatSearchField -->
     #if ($displayField.getDataType().equalsIgnoreCase("string"))
         #if ($displayField.hasEnumeration())
         <select name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals">
@@ -996,6 +1018,7 @@
 #end
 
 #macro (xdatSearchElement $schemaElement $cols)
+  <!-- macro: xdatSearchElement -->
   #set($elementDisplay = $schemaElement.Display)
   #if($elementDisplay)
     #if ($elementDisplay.getCustomSearchVM())
@@ -1300,7 +1323,7 @@
   #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
   #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
   #set ($scanSnapshotId = "scan${scan.id}snapshot")
-  <a target="_blank" href="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
+  <a target="_blank" class="scan-original-link" href="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
     <img id="$scanSnapshotId" class="scan-snapshot" data-xnat-src="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")">
   </a>
 #end
@@ -1578,18 +1601,10 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
  #end
 #end
 
-#macro(escapeHTML $s)
-$!turbineUtils.escapeHTML($s)
-#end
-
-#macro(escapeJS $s)
-$!turbineUtils.escapeJS($s)
-#end
-
 #macro(selectEmployment $value $item $vr)
     #if ($vr)
         #if($vr.getField($name))
-            <span style="color: red; ">&#8658</span>
+            <span style="color: red; ">&#8658;</span>
         #end
     #end
     #set($employment=$!item.getProperty($value))
@@ -1626,6 +1641,7 @@ $!turbineUtils.escapeJS($s)
 #end
 
 #macro(auditBoxes $span $align $reason $action)
+  <!-- macro: auditBoxes -->
 	#if($showReason)
 	<tr>
 		<td colspan="$span" align="$align">
@@ -1747,7 +1763,7 @@ $!turbineUtils.escapeJS($s)
 #macro (xdatCalendar $property $item $vr)
     #if ($vr)
         #if($vr.getField($property))
-            <span style="color: red;">&#8658</span>
+            <span style="color: red;">&#8658;</span>
         #end
     #end
     #set ($rawDate = $!item.getDateProperty($property))
@@ -1789,7 +1805,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
     #else
         <span class="tip_text">
             $!tipText.get(0) ## This displays the first item in the list as the main text.
-        <span style="top:20px;white-space:nowrap;left:-10;width:auto;" class="tip shadowed">
+        <span style="top:20px;white-space:nowrap;left:-10px;width:auto;" class="tip shadowed">
             #set($current = 1)
             #set($size = $tipText.size())
             #set($delimiter = "<br/>")
@@ -2026,7 +2042,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
 #macro (cndaSelectBoxSimple $name $item $possibleValues $vr)
     #if ($vr)
         #if($vr.getField($name))
-            <font color="red">&#8658</font>
+            <font color="red">&#8658;</font>
         #end
     #end
     #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -2059,7 +2075,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
 
  #if ($vr)
       #if($vr.getField($name))
-           <font color="red">&#8658</font>
+           <font color="red">&#8658;</font>
       #end
  #end
      #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])

@@ -16,44 +16,18 @@
  * Is that a good idea? Maybe, maybe not.
  */
 
-// Avoid console errors in browsers that lack a console.
-(function(){
-    var method;
-    var noop = function(){};
-    var methods = [
-        'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
-        'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-        'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
-        'timeStamp', 'trace', 'warn'
-    ];
-    var length = methods.length;
-    var console = (window.console = window.console || {});
-    var i = 0;
-    while ( length-- ) {
-        method = methods[i++];
-        // Only stub undefined methods.
-        if ( !console[method] ) {
-            console[method] = noop;
-        }
-    }
-}());
-
 function diddly(){}
 
 // utility for getting URL query string value
-function getQueryStringValue( param ){
+function getQueryStringValue(param){
     var search = window.location.search;
     if (!param || !search) { return '' }
-    if (search.indexOf(param) === -1) { return '' }
-    var val = search.
-        split(param+'=')[1].
-        split('&')[0].
-        split('#')[0].
-        replace(/\/*$/,''); // remove any 'bonus' trailing slashes
+    if (search.indexOf(param + '=') === -1) { return '' }
+    var val = search.split(param + '=')[1].split('&')[0].split('#')[0].replace(/\/*$/,''); // remove any 'bonus' trailing slashes
     return decodeURIComponent(val);
 }
 
-function getParameterByName( name ){
+function getParameterByName(name){
     return getQueryStringValue(name)
 }
 
@@ -71,6 +45,149 @@ function getUrlHashValue(start, end){
     part = hash.split(start||'#')[1]||'';
     part = part.split(end||/\/#|#/)[0]||'';
     return part;
+}
+
+window.debug = window.debug ||
+    getQueryStringValue('debug') ||
+    window.jsdebug ||
+    false;
+
+window.jsdebug = window.jsdebug ||
+    getQueryStringValue('jsdebug') ||
+    window.debug ||
+    false;
+
+// Avoid console errors in browsers that lack a console.
+(function(){
+    var method, debugMethod;
+    var noop = function(){};
+    var methods = [
+        'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+        'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+        'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+        'timeStamp', 'trace', 'warn'
+    ];
+    var length = methods.length;
+    var console = (window.console = window.console || {});
+    var i = 0;
+    while ( length-- ) {
+        method = methods[i++];
+        // Only stub undefined methods.
+        if ( !console[method] ) {
+            console[method] = noop;
+        }
+        // Create aliases to use only when debugging
+        debugMethod = 'debug' + method.charAt(0).toUpperCase() + method.slice(1);
+        window[debugMethod] = window.jsdebug || window.debug ? console[method] : noop;
+    }
+    // explicitly define functions to make IDEs happy
+    window.debugLog = window['debugLog'] || noop;
+    window.debugWarn = window['debugWarn'] || noop;
+    window.debugError = window['debugError'] || noop;
+}());
+
+(function(){
+
+    function escapeHtml(str, regex) {
+        return (str + '').replace(regex || /[&<>"']/g, function(s){
+            var entityMap = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                // '/': '&#x2F;',
+                '---': '---'
+            };
+            return entityMap[s] || s;
+        });
+    }
+    window.escapeHtml = escapeHtml;
+    window.escapeHTML = escapeHtml;
+
+    function unescapeHtml(str) {
+        return (str + '').replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function(s){
+            var entityMap = {
+                '&amp;': '&',
+                '&lt;': '<',
+                '&gt;': '>',
+                '&quot;': '"',
+                '&apos;': "'",
+                '&#39;': "'",
+                '&#x2F;': '/',
+                '---': '---'
+            };
+            return entityMap[s] || s;
+        });
+    }
+    window.unescapeHtml = unescapeHtml;
+    window.unescapeHTML = unescapeHtml;
+
+    // fix double-escaped strings
+    function unescapeAllHtml(str){
+        return unescapeHtml(unescapeHtml(str));
+    }
+    window.unescapeAllHtml = unescapeAllHtml;
+    window.unescapeAllHTML = unescapeAllHtml;
+
+})();
+
+/**
+ * Convert a string to HTML entities
+ * @param {String} str - string to convert
+ */
+function toHtmlEntities(str) {
+    return (str + '').replace(/./gm, function(s) {
+        return '&#' + s.charCodeAt(0) + ';';
+    });
+}
+
+/**
+ * Create string from HTML entities
+ * @param {String} str - string to un-convert
+ */
+function fromHtmlEntities(str) {
+    return (str + '').replace(/&#\d+;/gm, function(s) {
+        return String.fromCharCode(s.match(/\d+/gm)[0]);
+    })
+}
+
+/**
+ * Sanitize specified HTML tags
+ * @param {String} html - html to process
+ * @param {String} [tags] - optional pipe-separated list of tags
+ * @returns {String}
+ */
+function sanitizeTags(html, tags){
+    var TAGS = tags ||
+        'applet|audio|canvas|embed|frame|frameset|iframe|' +
+        'img|input|link|object|script|style|video';
+    var reTAGS = new RegExp('<(' + TAGS + ')[^>]+>', 'gi');
+    // reTAGS = /<(iframe|img|input|script)[^>]+>/gi;
+    return html.replace(reTAGS, function(tag){
+        return tag.replace(/</, '&lt;').replace(/>/, '&gt;');
+    });
+}
+
+/**
+ * Remove potentially harmful inline event handlers
+ * (avoid using inline event handlers in the first place)
+ * @param {String} html - html to process
+ * @param {String} [events] - optional pipe-separated list of handlers
+ * @returns {String}
+ */
+function sanitizeHandlers(html, events){
+    var EVENTS = events ||
+        'onerror|onhashchange|onload|onchange|onfocus|' +
+        'onforminput|oninput|onselect|onsubmit|' +
+        'onkeydown|onkeypress|onkeyup|' +
+        'onmousemove|onmouseout|onmouseover|onmouseup|onmousewheel|' +
+        'onreadystatechange';
+    var reEVENTS = new RegExp(EVENTS, 'gi');
+    return html.replace(reEVENTS, function(evt){
+        // change on* attributes to 'data-event-on-*' attributes
+        return evt.replace(/^on/, 'data-event-on-');
+    });
 }
 
 function firstDefined() {
@@ -155,6 +272,19 @@ function isEmptyObject( obj ){
 }
 function getObject( obj ){
     return (isPlainObject(obj) || isFunction(obj)) ? obj : {};
+}
+function firstObject(obj1, obj2, etc){
+    var i = 0;
+    var argLen = arguments.length;
+    var obj;
+    while (i < argLen) {
+        obj = arguments[i];
+        if (isPlainObject(obj) || isFunction(obj)){
+            return obj;
+        }
+        (i += 1);
+    }
+    return {};
 }
 function isArray( arr ){
     if ( Array.isArray ) {
@@ -372,13 +502,13 @@ function setObject(obj, str, val) {
     parts = str.split('.');
     while (parts.length > 1) {
         part = parts.shift();
-        obj = getObject(obj);
-        if (!obj[part]) {
+        // obj = getObject(obj);
+        if (!(part in obj)) {
             obj[part] = {};
         }
         obj = obj[part];
     }
-    obj[parts[0]] = val || {};
+    obj[parts[0]] = val || obj[parts[0]] || {};
     return obj;
 }
 
@@ -409,7 +539,7 @@ function lookupObjectValue(root, objStr, prop){
         root = window;
     }
 
-    if (!objStr) return '';
+    if (typeof objStr !== 'string') return objStr || '';
 
     root = root || window;
 
@@ -458,6 +588,36 @@ function lookupObjectValue(root, objStr, prop){
 
 }
 
+// replace values wrapped in {{...}} or {(...)} to:
+function strReplace(str){
+
+    // {{ foo.bar.baz }} // object lookup
+    var LOOKUP_REGEX = /{{(.*?)}}/g;
+
+    // {( 1+2+3 )} // js eval, or...
+    // (( 1+2+3 )) // js eval
+    var EVAL_REGEX = /{\((.*?)\)}|\(\((.*?)\)\)/g;
+
+    return (str+'').replace(LOOKUP_REGEX, function(part){
+        var pt = (part+'').trim()
+                          .replace(/^{{\s*|\s*}}$/g, '');
+        return firstDefined(lookupObjectValue(pt), part);
+    }).replace(EVAL_REGEX, function(part){
+        var pt = (part+'').trim()
+                          .replace(/^{\(\s*|\s*\)}$/g, '')
+                          .replace(/^\(\(\s*|\s*\)\)$/g, '');
+        if (jsdebug) console.log(part);
+        if (jsdebug) console.log(pt);
+        try {
+            return firstDefined(eval(pt), part);
+        }
+        catch(e){
+            if (jsdebug) console.log(e);
+            return part;
+        }
+    });
+}
+
 // return the last item in an array-like object
 function getLast(arr){
     if (!arr) { return null }
@@ -477,14 +637,37 @@ function once(func, args) {
 // array(-like) object with a length property
 // works like native Array.forEach();
 function forEach(arr, fn, context){
-    var i = -1, len;
-    if (!arr || !arr.length) { return }
+    var i = -1, len, out;
+    if (!arr || !arr.length) { return [] }
+    out = new Array(arr.length);
     len = arr.length;
-    if (isFunction(fn)) {
-        while (++i < len) {
+    fn = (fn && isFunction(fn)) ? fn : null;
+    while (++i < len) {
+        out[i] = arr[i];
+        if (fn) {
             fn.call(context || arr[i], arr[i], i);
         }
     }
+    return out;
+}
+
+// halt execution if fn() returns explicit false
+function forEachCheck(arr, fn, context){
+    var i = -1, len, fnResult;
+    var results = [];
+    if (!arr || !arr.length) { return [] }
+    len = arr.length;
+    fn = (fn && isFunction(fn)) ? fn : null;
+    while (++i < len) {
+        if (fn) {
+            fnResult = fn.call(context || arr[i], arr[i], i);
+            results.push(fnResult);
+            if (fnResult === false) {
+                break;
+            }
+        }
+    }
+    return results;
 }
 
 function forIn(obj, fn, context){
@@ -615,7 +798,7 @@ function toNumber( val, strip, force, dec ){
 
         // strip non-numeric characters (besides decimal)
         if (strip){
-            val = val.replace(/[^0-9\.]/g,'');
+            val = val.replace(/[^0-9.]/g,'');
         }
 
         // chop off after 2nd decimal, if present
@@ -930,9 +1113,9 @@ function debugMode(){
             getQueryStringValue('debug') ||
             getQueryStringValue('js') ||
             '').toLowerCase();
-    if (/(debug=off|debug=false)/.test(hash)) return false;
-    if (/(debug|true|on)/.test(debug)) return true;
-    if (/(debug)/.test(hash)) return true;
+    if (/(js)*debug=(off|false)/.test(hash)) return false;
+    if (/debug|true|on/.test(debug)) return true;
+    if (/debug|jsdebug/.test(hash)) return true;
     return false;
 }
 
@@ -1106,12 +1289,15 @@ function insertScript( url, min, name ){
 // returns new <script> DOM ELEMENT
 function scriptElement( src, title, body ){
     var script = document.createElement('script');
+    var parts = (src || '').split('|');
+    var scriptSrc = (parts[0] || '').trim();
+    var scriptMin = (parts[1] || '').trim();
     script.type = "text/javascript";
     if (title){
         script.title = title;
     }
-    if (src){
-        script.src = src;
+    if (scriptSrc){
+        script.src = scriptMin ? scriptSrc.replace(/\.js$/i, setMin(scriptMin + '.js')) : scriptSrc;
     }
     else {
         script.innerHTML = body || '';
@@ -1343,6 +1529,33 @@ function waitForIt(interval, test, callback){
             clearInterval(waiting);
             return called;
         }
-    }, interval || 10);
+    }, interval || 1);
     return waiting;
+}
+
+// wait for element to show up in the DOM
+// then execute callback
+function waitForElement(interval, selector, callback){
+    var counter = 0;
+    var $element;
+    waitForIt(interval || 1, function(){
+        if (++counter > 10000) {
+            return true;
+        }
+        if (jsdebug) {
+            // console.log('waiting for element: ' + selector);
+        }
+        $element = $(selector);
+        return $element.length
+    }, function(){
+        if (counter > 10000) {
+            console.warn("can't find element: " + selector);
+        }
+        else {
+            if (jsdebug) {
+                // console.log('element found: ' + selector);
+            }
+            callback.call($element[0], $element);
+        }
+    })
 }

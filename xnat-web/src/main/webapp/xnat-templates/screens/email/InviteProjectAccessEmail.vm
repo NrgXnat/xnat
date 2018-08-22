@@ -1,0 +1,29 @@
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="admin_email" type="java.lang.String" *#
+#* @vtlvariable name="par" type="org.nrg.xnat.turbine.utils.ProjectAccessRequest" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="projectOM" type="org.nrg.xdat.om.XnatProjectdata" *#
+##
+## xnat-web: src/main/webapp/xnat-templates/screens/InviteProjectAccessEmail.vm
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
+<!-- BEGIN xnat-templates/screens/InviteProjectAccessEmail.vm -->
+#set ($acceptUrl = "${server}/app/action/AcceptProjectAccess/par/${par.guid}?hash=${par.hashedEmail}")
+<p>Hello,<br>
+    You have been invited to join the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() on $system by $user.getFirstname() $user.getLastname(). If you were not expecting to receive this invitation, you can safely ignore this email.</p>
+<p>
+    To accept this invitation and begin working in this $displayManager.getSingularDisplayNameForProject().toLowerCase(), please click the following link: <a href="$acceptUrl">$acceptUrl.</a>
+</p>
+<p>---</p>
+<p>
+    The $system Team<br>
+    <a href="$acceptUrl">$server</a><br>
+    <a href="mailto:$admin_email">$admin_email</a>
+</p>
+
+<!-- END xnat-templates/screens/InviteProjectAccessEmail.vm -->

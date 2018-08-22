@@ -10,6 +10,13 @@ $page.setVlinkColor($ui.vlink)
 #if ($data.message)
 <div class="error">$data.message</div><br>
 #end
+
+#set ($USERNAME = "$!userObject.getUsername()")
+<script>
+    window.editUser = '${USERNAME}';
+    console.log('window.editUser: "${USERNAME}"')
+</script>
+
 #parse("/screens/LoadProjectsJS.vm")
 <form id="userform" name="form1" method="post" action="$link.setAction("ModifyUserGroups")">
     <table width=100% align="left" border="0">
@@ -128,363 +135,20 @@ $page.setVlinkColor($ui.vlink)
         <tr>
             <td>
                 <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+
                     <h3>Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</h3>
-                    <table width="100%" border="0">
-                        <tr>
-                            <td valign="top">
-                                <table border="0" width="100%">
-                                    <tr>
-                                        <td>
-                                            <div id="groupDIV"></div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div id="addGroupDIV"></div>
-                                        </td>
-                                    </tr>
 
-                                    #xdatEditProps($item $edit_screen)
+                    <div style="padding:10px;">
+                        ## container for user group table
+                        <div id="user-group-membership-table">
+                            <!-- listing of this user's group memberships -->
+                        </div>
 
-                                    <tr>
-                                        <td align="right">
-                                            <input type="hidden" name="xdat:user.login" value="$!item.getProperty("login")">
-                                            <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Save">
-                                        </td>
-                                    </tr>
+                        <br>
+                        ## 'Add Role' button - adds a row to the above table containing projects and roles (groups)
+                        <button type="button" class="btn btn1" id="user-add-group">Add Role</button>
+                    </div>
 
-                                </table>
-                                <script type="text/javascript">
-                                    var selectedgroups = new Array();
-                                    var selectedtags = new Array();
-
-                                    var allgroups = new Array();
-                                    var alltags = new Array();
-
-                                    function addTag(t){
-                                        var matched = false;
-                                        for (var atx = 0; atx < alltags.length; atx++) {
-                                            if (alltags[atx] == t) {
-                                                matched = true;
-                                                break;
-                                            }
-                                        }
-
-                                        if (!matched) {
-                                            alltags.push(t);
-                                        }
-                                    }
-
-                                    function xdat_userGroup(id, name, tag){
-                                        this.id = id;
-                                        this.name = name;
-                                        this.tag = tag;
-                                        addTag(tag);
-                                    }
-                                        #foreach($group in $allGroups)
-                                            #if("$!group.getTag()" != "")
-                                            allgroups.push(new xdat_userGroup("$group.getId()", "$!group.getDisplayname()", "$!group.getTag()"));
-                                            #end
-                                        #end
-
-
-                                    function addGroupToSelectedArray(g, t){
-                                        var matched = false;
-                                        var x = 0;
-                                        for (var agsax = 0; agsax < selectedtags.length; agsax++) {
-                                            if (selectedtags[agsax] == t) {
-                                                matched = true;
-                                                break;
-                                            }
-                                        }
-
-                                        if (matched) {
-                                            selectedgroups[agsax] = g;
-                                        }
-                                        else {
-                                            selectedgroups.push(g);
-                                            selectedtags.push(t);
-                                        }
-                                    }
-
-                                    function getTagForGroup(g){
-                                        var t = null;
-                                        for (var tgx = 0; tgx < allgroups.length; tgx++) {
-                                            if (allgroups[tgx].id == g) {
-                                                t = allgroups[tgx].tag;
-                                            }
-                                        }
-                                        return t;
-                                    }
-
-                                    function hasTag(tag){
-                                        var t = false;
-                                        for (var hTx = 0; hTx < selectedtags.length; hTx++) {
-                                            if (selectedtags[hTx] == tag) {
-                                                t = true;
-                                            }
-                                        }
-                                        return t;
-                                    }
-
-                                    function getTagIndex(tag){
-                                        var t = -1;
-                                        for (var gTIx = 0; gTIx < selectedtags.length; gTIx++) {
-                                            if (selectedtags[gTIx] == tag) {
-                                                t = gTIx;
-                                                break;
-                                            }
-                                        }
-                                        return t;
-                                    }
-
-                                    function hasGroup(g){
-                                        var t = false;
-                                        for (var hGx = 0; hGx < selectedgroups.length; hGx++) {
-                                            if (selectedgroups[hGx] == g) {
-                                                t = true;
-                                            }
-                                        }
-                                        return t;
-                                    }
-
-                                    function getGroupsForTag(t){
-                                        var groupArray = new Array();
-
-                                        for (var gGFTi = 0; gGFTi < allgroups.length; gGFTi++) {
-                                            if (allgroups[gGFTi].tag == t) {
-                                                groupArray.push(allgroups[gGFTi]);
-                                            }
-                                        }
-                                        return groupArray;
-                                    }
-
-                                    function addGroup(g){
-                                        var t = getTagForGroup(g);
-                                        if (t != null) {
-                                            addGroupToSelectedArray(g, t);
-                                        }
-                                    }
-
-                                        #foreach($groupid in $userObject.getGroups_groupid())
-                                        addGroup("$!groupid.getGroupid()");
-                                        #end
-
-                                    function renderGroups(){
-                                        var groupCounter = 1;
-                                        var groupDIV = document.getElementById("groupDIV");
-                                        if (groupDIV.hasChildNodes()) {
-                                            while (groupDIV.childNodes.length >= 1) {
-                                                groupDIV.removeChild(groupDIV.firstChild);
-                                            }
-                                        }
-
-                                        var t = document.createElement("TABLE");
-                                        var tBody = document.createElement("TBODY");
-                                        t.appendChild(tBody);
-
-                                        //Sorts selectedgroups and selectedtags arrays by $displayManager.getSingularDisplayNameForProject().toLowerCase()
-                                        name
-                                        var found = true;
-                                        var tempGroup;
-                                        var tempTag;
-                                        while (found) {
-                                            found = false;
-                                            for (i = 0; i < selectedtags.length - 1; i++) {
-                                                if (window.projectTracker.getProjectById(selectedtags[i])
-                                                                .getDisplayName()
-                                                                .toLowerCase() > window.projectTracker.getProjectById(selectedtags[i + 1])
-                                                                .getDisplayName().toLowerCase()) {
-                                                    found = true;
-                                                    tempGroup = selectedgroups[i + 1];
-                                                    tempTag = selectedtags[i + 1];
-                                                    selectedgroups[i + 1] = selectedgroups[i];
-                                                    selectedtags[i + 1] = selectedtags[i];
-                                                    selectedgroups[i] = tempGroup;
-                                                    selectedtags[i] = tempTag;
-                                                }
-                                            }
-                                        }
-
-                                        for (var stX = 0; stX < selectedtags.length; stX++) {
-                                            var tr = document.createElement("TR");
-
-                                            var td = document.createElement("TD");
-                                            td.innerHTML = groupCounter;
-                                            tr.appendChild(td);
-
-                                            td = document.createElement("TH");
-                                            td.align = "left";
-                                            td.innerHTML = window.projectTracker.getProjectById(selectedtags[stX])
-                                                    .getDisplayName();
-                                            tr.appendChild(td);
-
-                                            var name = selectedgroups[stX];
-
-                                            var input = document.createElement("SELECT");
-                                            input.id = "xdat:user.groups.groupID[" + (groupCounter) + "].groupID";
-                                            input.name = "xdat:user.groups.groupID[" + (groupCounter) + "].groupID";
-                                            input.style.display = "none";
-                                            var groupsFTag = getGroupsForTag(selectedtags[stX]);
-                                            input.options[0] = new Option("NONE", "NONE");
-                                            for (var h = 0; h < groupsFTag.length; h++) {
-                                                input.options[h + 1] = new Option(groupsFTag[h].name, groupsFTag[h].id);
-                                                if (groupsFTag[h].id == selectedgroups[stX]) {
-                                                    input.selectedIndex = h + 1;
-                                                    name = groupsFTag[h].name;
-                                                }
-                                            }
-                                            input.tag = selectedtags[stX];
-                                            input.onchange = function(){editPerformed(this);};
-
-                                            td = document.createElement("TD");
-                                            td.innerHTML = name;
-                                            tr.appendChild(td);
-
-                                            td = document.createElement("TD");
-                                            td.appendChild(input);
-                                            tr.appendChild(td);
-
-                                            var newInputV = document.createElement('input');
-                                            newInputV.type = 'button';
-                                            newInputV.value = 'Edit';
-                                            newInputV.onclick = function(){editRequested(this.previousSibling);};
-                                            td.style.whiteSpace = "nowrap";
-                                            td.appendChild(newInputV);
-
-                                            tr.appendChild(td);
-
-                                            tBody.appendChild(tr);
-
-                                            groupCounter++;
-                                        }
-
-                                        groupDIV.appendChild(t);
-
-                                        var addGroupDIV = document.getElementById("addGroupDIV");
-
-                                        if (addGroupDIV.hasChildNodes()) {
-                                            while (addGroupDIV.childNodes.length >= 1) {
-                                                addGroupDIV.removeChild(addGroupDIV.firstChild);
-                                            }
-                                        }
-
-                                        var t = document.createElement("TABLE");
-                                        var tbody = document.createElement("TBODY");
-                                        var tr = document.createElement("TR");
-
-                                        t.appendChild(tbody);
-                                        tbody.appendChild(tr);
-                                        addGroupDIV.appendChild(t);
-
-                                        var td = document.createElement("TD");
-                                        td.innerHTML = "Add to $displayManager.getSingularDisplayNameForProject().toLowerCase():";
-                                        tr.appendChild(td);
-
-                                        //Do a case-insensitive sort before adding the options to the dropdown.
-                                        alltags.sort(function(a, b){
-                                            a = a.toLowerCase();
-                                            b = b.toLowerCase();
-                                            if (a > b) return 1;
-                                            if (a < b) return -1;
-                                            return 0;
-                                        });
-
-                                        var select = document.createElement("SELECT");
-                                        select.id = "all_projects";
-                                        select.options[select.options.length] = new Option("(SELECT)", "");
-                                        for (var atl = 0; atl < alltags.length; atl++) {
-                                            var projectId = alltags[atl];
-                                            if (!hasTag(projectId)) {
-                                                var project = window.projectTracker.getProjectById(projectId);
-                                                if (project) {
-                                                    select.options[select.options.length] = new Option(projectId, projectId);
-                                                }
-                                            }
-                                        }
-                                        select.onchange = function(){
-                                            populateLevels(this);
-                                        };
-
-                                        td = document.createElement("TD");
-                                        td.appendChild(select);
-                                        tr.appendChild(td);
-
-
-
-                                        td = document.createElement("TD");
-                                        td.innerHTML = " as ";
-                                        tr.appendChild(td);
-
-
-
-                                        var select = document.createElement("SELECT");
-                                        select.id = "projects_levels";
-                                        select.options[select.options.length] = new Option("(SELECT)", "");
-                                        td = document.createElement("TD");
-                                        td.appendChild(select);
-                                        tr.appendChild(td);
-
-
-                                        td = document.createElement("TD");
-                                        var newInputV = document.createElement('input');
-                                        newInputV.type = 'button';
-                                        newInputV.value = 'Add';
-                                        newInputV.onclick = function(){addRequested();};
-                                        td.style.whiteSpace = "nowrap";
-                                        td.appendChild(newInputV);
-                                        tr.appendChild(td);
-
-
-                                        tbody.appendChild(tr);
-                                    }
-
-                                    function editRequested(select){
-                                        select.style.display = "block";
-                                    }
-
-                                    function addRequested(){
-                                        if (document.getElementById("projects_levels").selectedIndex > 0 && document.getElementById("all_projects").selectedIndex > 0) {
-                                            addGroupToSelectedArray(document.getElementById("projects_levels").options[document.getElementById("projects_levels").selectedIndex].value, document.getElementById("all_projects").options[document.getElementById("all_projects").selectedIndex].value);
-                                            renderGroups();
-                                        }
-                                    }
-
-                                    function populateLevels(select){
-                                        if (document.getElementById("all_projects").selectedIndex > 0) {
-                                            var input = document.getElementById("projects_levels");
-                                            var t = document.getElementById("all_projects").options[document.getElementById("all_projects").selectedIndex].value;
-                                            var groupsFTag = getGroupsForTag(t);
-                                            input.options[0] = new Option("(SELECT)", "");
-                                            for (var gFTh = 0; gFTh < groupsFTag.length; gFTh++) {
-                                                input.options[gFTh + 1] = new Option(groupsFTag[gFTh].name, groupsFTag[gFTh].id);
-                                            }
-                                        }
-                                    }
-
-                                    function editPerformed(select){
-                                        var _option = select.options[select.selectedIndex];
-                                        var _value = _option.value;
-                                        if (_value == "NONE") {
-                                            var index = getTagIndex(select.tag);
-                                            if (index > -1) {
-                                                selectedgroups.splice(index, 1);
-                                                selectedtags.splice(index, 1);
-                                            }
-                                        }
-                                        else {
-                                            addGroupToSelectedArray(_value, select.tag);
-                                        }
-                                        select.style.display = "none";
-                                        renderGroups();
-                                    }
-
-                                    renderGroups();
-
-                                </script>
-                            </td>
-                        </tr>
-                    </table>
                 </div>
             </td>
         </tr>
@@ -505,8 +169,8 @@ $page.setVlinkColor($ui.vlink)
                                     #foreach($role in $allRoles)
                                         <tr>
                                             <td align="left">
-                                                <input type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
-                                                <label for="role_">$role.getName()</label>
+                                                <input class="access role" type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
+                                                <label for="role_$role.getKey()">$role.getName()</label>
                                                 : $!role.getDescription()
                                             </td>
                                         </tr>
@@ -545,13 +209,13 @@ $page.setVlinkColor($ui.vlink)
                                         <tr>
                                             <td align="left">
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="" checked/><label for="data_none">No</label>
+                                                    <input class="access group" type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="NULL" checked/><label for="data_none">No</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                    <input class="access group" type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                    <input class="access group" type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
                                                 </label>
                                             </td>
                                         </tr>
@@ -564,51 +228,9 @@ $page.setVlinkColor($ui.vlink)
 
                                 <button id="update-user-roles" type="button" class="btn1">Save</button>
 
-                                <script>
-                                    $('#update-user-roles').on('click', function(e){
-
-                                        e.preventDefault();
-
-                                        xmodal.loading.open();
-
-                                        var roleCheckboxes = document.getElementsByName('custom_role');
-                                        var i = -1;
-
-                                        function setRole(i){
-
-                                            if (i === roleCheckboxes.length) {
-                                                document.getElementById('userform').submit();
-                                                //xmodal.loading.close();
-                                                return false;
-                                            }
-
-                                            var _val = roleCheckboxes[i].value;
-                                            var _url = '/xapi/users/$userObject.getLogin()/roles/' + _val;
-                                            var mthd = 'PUT';
-
-                                            console.log(_val);
-
-                                            // DELETE if not checked
-                                            if (!roleCheckboxes[i].checked) {
-                                                mthd = 'DELETE'
-                                            }
-
-                                            return XNAT.xhr.request({
-                                                method: mthd,
-                                                url: XNAT.url.rootUrl(_url),
-                                                success: function(){
-                                                    setRole(++i)
-                                                }
-                                            });
-
-                                        }
-
-                                        // set roles
-                                        // start at index 0
-                                        setRole(0);
-
-                                    })
-                                </script>
+                                ## #set ($projectAccessScript = "/scripts/xnat/data/projectAccess.jsp?user=${USERNAME}")
+                                ## <script type="text/javascript" src="$content.getURI($projectAccessScript)"></script>
+                                <script type="text/javascript" src="$content.getURI('/scripts/xnat/admin/usersAdvanced.js')"></script>
 
                             </td>
                         </tr>

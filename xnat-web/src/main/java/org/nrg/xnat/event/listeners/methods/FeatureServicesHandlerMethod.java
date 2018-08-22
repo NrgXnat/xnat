@@ -9,41 +9,32 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.security.helpers.Features;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class FeatureServicesHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
-    @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+@Slf4j
+public class FeatureServicesHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
+    @Autowired
+    public FeatureServicesHandlerMethod() {
+        super(FEATURE_SERVICE, FEATURE_REPOSITORY_SERVICE);
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateFeatureServices();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        switch (preference) {
+            case FEATURE_SERVICE:
+                Features.setFeatureServiceImplementation(value);
+                break;
+
+            case FEATURE_REPOSITORY_SERVICE:
+                Features.setFeatureRepositoryServiceImplementation(value);
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if(PREFERENCES.contains(preference)){
-            updateFeatureServices();
-        }
-    }
-
-	private void updateFeatureServices(){
-        Features.setFeatureServiceToSiteConfigPreference();
-        Features.setFeatureRepositoryServiceToSiteConfigPreference();
-    }
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("featureService", "featureRepositoryService"));
-
+    private static final String FEATURE_SERVICE            = "featureService";
+    private static final String FEATURE_REPOSITORY_SERVICE = "featureRepositoryService";
 }

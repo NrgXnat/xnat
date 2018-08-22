@@ -9,8 +9,7 @@
 
 package org.nrg.xnat.event.listeners;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.prefs.events.AbstractPreferenceHandler;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xdat.preferences.NotificationsPreferences;
@@ -23,37 +22,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class NotificationsPreferenceHandler extends AbstractPreferenceHandler<PreferenceEvent> {
-	private String _toolId=NotificationsPreferences.NOTIFICATIONS_TOOL_ID;
-	private final List<PreferenceHandlerMethod> _methods = new ArrayList<>();
+    @Inject
+    public NotificationsPreferenceHandler(final EventBus eventBus) {
+        super(eventBus);
+    }
 
-	@Inject
-	public NotificationsPreferenceHandler(final EventBus eventBus){
-		super(eventBus);
-	}
+    @Override
+    public String getToolId() {
+        return NotificationsPreferences.NOTIFICATIONS_TOOL_ID;
+    }
 
+    @Override
+    public void setToolId(String toolId) {
+        log.info("Someone tried to set my tool ID to {}, but the tool ID can't be changed.");
+    }
 
-	@Override
-	public String getToolId() {
-		return _toolId;
-	}
+    @Override
+    public List<PreferenceHandlerMethod> getMethods() {
+        return _methods;
+    }
 
-	@Override
-	public void setToolId(String toolId) {
-		_toolId=toolId;
-	}
+    @Override
+    public void addMethod(PreferenceHandlerMethod method) {
+        _methods.add(method);
+    }
 
-	@Override
-	public List<PreferenceHandlerMethod> getMethods(){
-		return _methods;
-	}
-
-	@Override
-	public void addMethod(PreferenceHandlerMethod method){
-		_methods.add(method);
-	}
-
-	private static final Log _log = LogFactory.getLog(NotificationsPreferenceHandler.class);
-
-
+    private final List<PreferenceHandlerMethod> _methods = new ArrayList<>();
 }

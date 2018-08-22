@@ -14,27 +14,20 @@ import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
-import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
-import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.ValidationException;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
@@ -51,16 +44,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXException;
 
-import java.net.URISyntaxException;
-import java.util.*;
-
 public class ExperimentResource extends ItemResource {
-
-    private XnatProjectdata _project;
-    private final String _experimentId;
-    private XnatExperimentdata _experiment = null;
-    private XnatExperimentdata _existing = null;
-
     public ExperimentResource(Context context, Request request, Response response) {
         super(context, request, response);
 
@@ -76,8 +60,6 @@ public class ExperimentResource extends ItemResource {
             final UserI user = getUser();
             _project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
             _existing = XnatExperimentdata.GetExptByProjectIdentifier(projectId, _experimentId, user, false);
-        } else {
-            _project = null;
         }
     }
 
@@ -113,33 +95,8 @@ public class ExperimentResource extends ItemResource {
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
                     return null;
                 }
-            } else if (filepath != null && !filepath.equals("") && filepath.startsWith("projects")) {
-                XFTTable t = new XFTTable();
-                ArrayList<String> al = new ArrayList<>();
-                al.add("label");
-                al.add("ID");
-                al.add("Secondary_ID");
-                al.add("Name");
-                t.initTable(al);
-
-                Object[] row = new Object[4];
-                row[0] = _experiment.getLabel();
-                XnatProjectdata primary = _experiment.getPrimaryProject(false);
-                row[1] = primary.getId();
-                row[2] = primary.getSecondaryId();
-                row[3] = primary.getName();
-                t.rows().add(row);
-
-                for (Map.Entry<XnatProjectdataI, String> entry : _experiment.getProjectDatas().entrySet()) {
-                    row = new Object[4];
-                    row[0] = entry.getValue();
-                    row[1] = entry.getKey().getId();
-                    row[2] = entry.getKey().getSecondaryId();
-                    row[3] = entry.getKey().getName();
-                    t.rows().add(row);
-                }
-
-                return representTable(t, mt, new Hashtable<String, Object>());
+            } else if (StringUtils.startsWith(filepath, "projects")) {
+                return representProjectsForArchivableItem(_experiment.getLabel(), _experiment.getPrimaryProject(false), _experiment.getProjectDatas(), mt);
             } else {
                 return representItem(_experiment.getItem(), mt);
             }
@@ -203,16 +160,6 @@ public class ExperimentResource extends ItemResource {
                     XnatProjectdata newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
                     String newLabel = getQueryVariable("label");
                     if (newProject != null) {
-                        if (_experiment.getProject().equals(newProject.getId())) {
-                            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project:" + newProject.getId());
-                            return;
-                        }
-
-                        if (!Permissions.canRead(user, _experiment)) {
-                            setGuestDataResponse("Specified user account has insufficient privileges for experiments in this project.");
-                            return;
-                        }
-
                         int index = 0;
                         XnatExperimentdataShare matched = null;
                         for (XnatExperimentdataShareI pp : _experiment.getSharing_share()) {
@@ -228,33 +175,8 @@ public class ExperimentResource extends ItemResource {
                         }
 
                         if (getQueryVariable("primary") != null && getQueryVariable("primary").equals("true")) {
-                            if (newLabel == null || newLabel.equals("")) newLabel = _experiment.getLabel();
-                            if (newLabel == null || newLabel.equals("")) newLabel = _experiment.getId();
-
-
-                            if (!Permissions.canDelete(user, _experiment)) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient privileges for experiments in this project.");
-                                return;
-                            }
-
-                            XnatExperimentdata match = XnatExperimentdata.GetExptByProjectIdentifier(newProject.getId(), newLabel, user, false);
-                            if (match != null) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified label is already in use.");
-                                return;
-                            }
-
-                            List<String> assessorList = null;
-                            if (getQueryVariable("moveAssessors") != null) {
-                                String moveAssessors = getQueryVariable("moveAssessors");
-                                assessorList = Arrays.asList(moveAssessors.split(","));
-                            }
-
-                            EventMetaI c = BaseXnatExperimentdata.ChangePrimaryProject(user, _experiment, newProject, newLabel, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.MODIFY_PROJECT), assessorList);
-
-                            if (matched != null) {
-                                SaveItemHelper.authorizedRemoveChild(_experiment.getItem(), "xnat:experimentData/sharing/share", matched.getItem(), user, c);
-                                _experiment.removeSharing_share(index);
-                            }
+                            changeExperimentPrimaryProject(_experiment, _project, newProject, newLabel, matched, index);
+                            return;
                         } else {
                             if (matched == null) {
 
@@ -266,11 +188,7 @@ public class ExperimentResource extends ItemResource {
                                     }
                                 }
                                 if (Permissions.canCreate(user, _experiment.getXSIType() + "/project", newProject.getId())) {
-                                    XnatExperimentdataShare pp = new XnatExperimentdataShare(user);
-                                    pp.setProject(newProject.getId());
-                                    if (newLabel != null) pp.setLabel(newLabel);
-                                    pp.setProperty("sharing_share_xnat_experimentda_id", _experiment.getId());
-                                    BaseXnatExperimentdata.SaveSharedProject(pp, _experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+                                    shareExperimentToProject(user, newProject, _experiment, newLabel);
                                 } else {
                                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for experiments in the " + newProject.getId() + " project.");
                                     return;
@@ -369,34 +287,7 @@ public class ExperimentResource extends ItemResource {
                                 return;
                             }
 
-                            Rename renamer = new Rename(_project, _existing, label, user, getReason(), getEventType());
-                            try {
-                                renamer.call();
-                            } catch (Rename.ProcessingInProgress e) {
-                                logger.error("Specified session is being processed (" + e.getPipeline_name() + ").", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified session is being processed (" + e.getPipeline_name() + ").");
-                                return;
-                            } catch (Rename.DuplicateLabelException | Rename.LabelConflictException e) {
-                                logger.error("The specified label is already in use", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified label is already in use.");
-                                return;
-                            } catch (Rename.FolderConflictException e) {
-                                logger.error("File system destination contains pre-existing files", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "File system destination contains pre-existing files");
-                                return;
-                            } catch (InvalidArchiveStructure e) {
-                                logger.error("Non-standard archive structure in existing experiment directory.", e);
-                                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Non-standard archive structure in existing experiment directory.");
-                                return;
-                            } catch (URISyntaxException e) {
-                                logger.error("Malformed URI found", e);
-                                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Malformed URI found");
-                                return;
-                            } catch (Exception e) {
-                                logger.error("", e);
-                                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-                                return;
-                            }
+                            rename(_project, _existing, label, user);
                         }
                         return;
                     }
@@ -415,7 +306,6 @@ public class ExperimentResource extends ItemResource {
                         fst.call();
                     }
                 }
-
 
                 if (StringUtils.isNotBlank(_experiment.getLabel()) && !XftStringUtils.isValidId(_experiment.getId())) {
                     getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in experiment label.");
@@ -450,11 +340,7 @@ public class ExperimentResource extends ItemResource {
                     // Preserve the previous version of the experiment before we save it.
                     XnatExperimentdata previous = getExistingExperiment(_experiment);
 
-                    if (SaveItemHelper.authorizedSave(_experiment, user, false, allowDataDeletion, c)) {
-                        WorkflowUtils.complete(wrk, c);
-                        Users.clearCache(user);
-                        MaterializedView.deleteByUser(user);
-
+                    if (_existing == null ? create(_experiment, false, allowDataDeletion, wrk, c) : update(_experiment, false, allowDataDeletion, wrk, c)) {
                         if (_project.getArcSpecification().getQuarantineCode() != null && _project.getArcSpecification().getQuarantineCode().equals(1)) {
                             _experiment.quarantine(user);
                         }
@@ -533,50 +419,7 @@ public class ExperimentResource extends ItemResource {
             return;
         }
 
-        XnatProjectdata newProject = null;
-
-        if (filepath != null && !filepath.equals("")) {
-            if (filepath.startsWith("projects/")) {
-                String newProjectS = filepath.substring(9);
-                newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
-                if (newProject == null) {
-                    setGuestDataResponse("Unable to identify project: " + newProjectS);
-                    return;
-                }
-            } else {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-                return;
-            }
-        } else if (!_experiment.getProject().equals(_project.getId())) {
-            newProject = _project;
-        }
-
-        PersistentWorkflowI wrk;
-        try {
-            wrk = WorkflowUtils.buildOpenWorkflow(user, _experiment.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(_experiment.getXSIType())));
-            EventMetaI c = wrk.buildEvent();
-
-            try {
-                String msg = _experiment.delete((newProject != null) ? newProject : _project, user, isQueryVariableTrue("removeFiles"), c);
-                if (msg != null) {
-                    WorkflowUtils.fail(wrk, c);
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, msg);
-                } else {
-                    WorkflowUtils.complete(wrk, c);
-                }
-            } catch (Exception e) {
-                try {
-                    WorkflowUtils.fail(wrk, c);
-                } catch (Exception e1) {
-                    logger.error("", e1);
-                }
-                logger.error("", e);
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-            }
-        } catch (PersistentWorkflowUtils.EventRequirementAbsent e1) {
-            logger.error("", e1);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e1.getMessage());
-        }
+        deleteItem(_project, _experiment);
     }
 
     private void setSubject(final XFTItem item) throws Exception {
@@ -671,4 +514,10 @@ public class ExperimentResource extends ItemResource {
         }
         return retExp;
     }
+
+    private final String _experimentId;
+
+    private XnatProjectdata    _project    = null;
+    private XnatExperimentdata _experiment = null;
+    private XnatExperimentdata _existing   = null;
 }

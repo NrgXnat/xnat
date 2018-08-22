@@ -32,6 +32,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,21 +156,25 @@ public class CStoreService extends DicomService implements CStoreSCP {
 
     private final DicomObjectIdentifier<XnatProjectdata> identifier;
     private final Provider<UserI> userProvider;
+    private final ProcessorGradualDicomImporter importer;
     private DicomFileNamer namer = null;
+    private final DicomSCPManager _manager;
 
 
-    public CStoreService(final DicomObjectIdentifier<XnatProjectdata> identifier,
-            final Provider<UserI> userProvider) {
+    public CStoreService(final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> identifier,
+                         final Provider<UserI> userProvider, final DicomSCPManager manager) {
         super(CUIDS);
+        this.importer = importer;
         this.identifier = identifier;
         this.userProvider = userProvider;
+        this._manager = manager;
     }
 
-    public CStoreService(final DicomObjectIdentifier<XnatProjectdata> identifier,
-            final UserI user) {
-        this(identifier, new Provider<UserI>() {
+    public CStoreService(final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> identifier,
+            final UserI user, final DicomSCPManager manager) {
+        this(importer, identifier, new Provider<UserI>() {
             public UserI get() { return user; }
-        });
+        }, manager);
     }
 
     /*
@@ -222,16 +227,36 @@ public class CStoreService extends DicomService implements CStoreSCP {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
         try {
             try {
-                final GradualDicomImporter importer = new GradualDicomImporter(this,
-                        userProvider.get(), fw,
-                        ImmutableMap.of(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as),
-                                GradualDicomImporter.TSUID_PARAM, tsuid,
-                                GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET()));
-                importer.setIdentifier(identifier);
-                if (null != namer) {
-                    importer.setNamer(namer);
+                boolean useDefaultImporter = true;
+                try {
+                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
+                    useDefaultImporter = !instance.getCustomProcessing();
                 }
-                importer.call();
+                catch(Throwable t){
+                    logger.error("Failed to get whether the SCP receiver is set up to do custom processing. Default importer will be used.",t);
+                }
+
+                if(useDefaultImporter) {
+
+
+                    final GradualDicomImporter importer = new GradualDicomImporter(this,
+                            userProvider.get(), fw,
+                            ImmutableMap.of(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as),
+                                    GradualDicomImporter.TSUID_PARAM, tsuid,
+                                    GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET()));
+                    importer.setIdentifier(identifier);
+                    if (null != namer) {
+                        importer.setNamer(namer);
+                    }
+                    importer.call();
+                }
+                else{
+                    final ImmutableMap<String, Object> parameters = ImmutableMap.of(ProcessorGradualDicomImporter.SENDER_ID_PARAM, identifySender(as), ProcessorGradualDicomImporter.TSUID_PARAM, tsuid, ProcessorGradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET(), ProcessorGradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET(), ProcessorGradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnector().getPort());
+                    importer.doImport(this, userProvider.get(), fw, parameters, identifier, namer);
+                }
+
+
+
             } catch (final ClientException e) {
                 logger.error("C-STORE operation failed", e);
                 throw new DicomServiceException(rq, ERROR_CANNOT_UNDERSTAND,
@@ -284,27 +309,34 @@ public class CStoreService extends DicomService implements CStoreSCP {
     public static final class Specifier {
         private final String aeTitle;
         private final Provider<UserI> userProvider;
+        private final ProcessorGradualDicomImporter importer;
         private final DicomObjectIdentifier<XnatProjectdata> identifier;
         private final DicomFileNamer namer;
+        private final DicomSCPManager manager;
         
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
+                final ProcessorGradualDicomImporter importer,
                 final DicomObjectIdentifier<XnatProjectdata> identifier,
-                final DicomFileNamer namer) {
+                final DicomFileNamer namer, final DicomSCPManager manager) {
             this.aeTitle = aeTitle;
             this.userProvider = userProvider;
+            this.importer = importer;
             this.identifier = identifier;
             this.namer = namer;
+            this.manager = manager;
         }
         
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
-                final DicomObjectIdentifier<XnatProjectdata> identifier) {
-            this(aeTitle, userProvider, identifier, null);
+                final ProcessorGradualDicomImporter importer,
+                final DicomObjectIdentifier<XnatProjectdata> identifier,
+                final DicomSCPManager manager) {
+            this(aeTitle, userProvider, importer, identifier, null, manager);
         }
         
         public CStoreService build() {
-            final CStoreService cstore = new CStoreService(identifier, userProvider);
+            final CStoreService cstore = new CStoreService(importer, identifier, userProvider, manager);
             if (null != namer) {
                 cstore.setNamer(namer);
             }

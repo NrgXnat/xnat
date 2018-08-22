@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.utils;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -16,6 +17,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
@@ -25,6 +27,7 @@ import org.nrg.xft.db.ItemAccessHistory;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -41,6 +44,7 @@ import java.util.regex.Pattern;
 
 import static org.nrg.xdat.om.base.BaseXnatProjectdata.getProjectByIDorAlias;
 import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.*;
+import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 public class ProjectAccessRequest {
     public static boolean CREATED_PAR_TABLE = false;
@@ -73,6 +77,7 @@ public class ProjectAccessRequest {
         initializeFromDataRow(table.nextRow());
     }
 
+    @SuppressWarnings("RedundantThrows")
     public ProjectAccessRequest(Object[] row) throws SQLException, DBPoolException {
         initializeFromDataRow(row);
     }
@@ -80,6 +85,7 @@ public class ProjectAccessRequest {
     /**
      * @return the _userString
      */
+    @SuppressWarnings("unused")
     public String getUserString() {
         return _userString;
     }
@@ -92,6 +98,7 @@ public class ProjectAccessRequest {
     /**
      * @return The user ID for the request approver
      */
+    @SuppressWarnings("unused")
     public Integer getApproverUserId() {
         return _approverUserId;
     }
@@ -239,7 +246,7 @@ public class ProjectAccessRequest {
     /**
      * Save the project access request with the <b>user</b> as the request approver.
      * @param user    The user to specify as the request approver.
-     * @throws Exception
+     * @throws Exception When an unexpected error occurs.
      */
     public void save(UserI user) throws Exception{
         if (!CREATED_PAR_TABLE) {
@@ -302,7 +309,7 @@ public class ProjectAccessRequest {
      * @param reason       The reason for the operation.
      * @param comment      Any related comments.
      * @return A list of all of the project access requests associated with the original email and accepted or declined.
-     * @throws Exception
+     * @throws Exception When an unexpected error occurs.
      */
     public List<String> process(UserI user, boolean accept, EventUtils.TYPE eventType, String reason, String comment) throws Exception {
         return process(user, accept, eventType, reason, comment, true);
@@ -320,7 +327,7 @@ public class ProjectAccessRequest {
         return RequestPAR(String.format(PAR_BY_USER_AND_PROJ_ID, userId.toString(), projectId), user);
     }
 
-    public static ArrayList<ProjectAccessRequest> RequestPARsByUserEmail(String email, UserI user) {
+    public static List<ProjectAccessRequest> RequestPARsByUserEmail(String email, UserI user) {
         return RequestPARs(String.format(PAR_BY_EMAIL, email), user);
     }
 
@@ -334,8 +341,8 @@ public class ProjectAccessRequest {
         }
     }
 
-    public static ArrayList<ProjectAccessRequest> RequestPARs(String where, UserI user) {
-        ArrayList<ProjectAccessRequest> PARs = new ArrayList<ProjectAccessRequest>();
+    public static List<ProjectAccessRequest> RequestPARs(String where, UserI user) {
+        final List<ProjectAccessRequest> PARs = new ArrayList<>();
         try {
             String query = getPARQuery(where);
             XFTTable table = runInitQuery(query, user);
@@ -464,10 +471,7 @@ public class ProjectAccessRequest {
 	         invitee = StringUtils.remove(invitee, '\'');
             String guid = UUID.randomUUID().toString();
 
-            StringBuilder query = new StringBuilder("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('");
-            query.append(invitee).append("', '").append(guid).append("', '").append(project.getId()).append("', ").append(user.getID()).append(", '").append(context.get("access_level")).append("');");
-
-	         PoolDBUtils.ExecuteNonSelectQuery(query.toString(), user.getDBName(), user.getLogin());
+            PoolDBUtils.ExecuteNonSelectQuery("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('" + invitee + "', '" + guid + "', '" + project.getId() + "', " + user.getID() + ", '" + context.get("access_level") + "');", user.getDBName(), user.getLogin());
 
             request = RequestPAR("xs_par_table.email = '" + invitee + "' AND guid = '" + guid + "' AND proj_id = '" + project.getId() + "' AND approved IS NULL", user);
 	    } catch (SQLException exception) {
@@ -477,9 +481,10 @@ public class ProjectAccessRequest {
 	    }
 
 	    context.put("par", request);
+        context.put("displayManager", DisplayManager.GetInstance());
 
         StringWriter writer = new StringWriter();
-        Template template = Velocity.getTemplate("/screens/InviteProjectAccessEmail.vm");
+        Template template = Velocity.getTemplate("/screens/email/InviteProjectAccessEmail.vm");
         template.merge(context, writer);
 
         String bcc = null;
@@ -497,6 +502,7 @@ public class ProjectAccessRequest {
         }
     }
 
+    @SuppressWarnings({"unused", "RedundantThrows"})
     private ProjectAccessRequest() throws SQLException, DBPoolException {
         // Here for creation of objects from initialization functions.
     }
@@ -515,27 +521,25 @@ public class ProjectAccessRequest {
 
 		if (accept) {
 
-			XnatProjectdata project = getXnatProjectdatasById(_projectId, null, false);
-
-			PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(null, user, SCHEMA_ELEMENT_NAME, _projectId, _projectId, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, eventType, EventUtils.ADD_USER_TO_PROJECT, reason, comment));
-			EventMetaI eventInfo = workflow.buildEvent();
+            final XnatProjectdata     project   = getXnatProjectdatasById(_projectId, null, false);
+            final PersistentWorkflowI workflow  = WorkflowUtils.getOrCreateWorkflowData(null, user, SCHEMA_ELEMENT_NAME, _projectId, _projectId, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, eventType, EventUtils.ADD_USER_TO_PROJECT, reason, comment));
+            final EventMetaI          eventInfo = workflow.buildEvent();
 
 			try {
-				for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
-					if (StringUtils.equals(entry.getValue().getTag(),_projectId)) {
-						if(!UserHelper.getUserHelperService(user).isOwner(_projectId)){
-							Groups.removeUserFromGroup(user, user, entry.getValue().getId(), eventInfo);
-						}
-					}
-				}
+                for (final UserGroupI group : Groups.getGroupsForUser(user).values()) {
+                    if (StringUtils.equals(group.getTag(), _projectId) && !UserHelper.getUserHelperService(user).isOwner(_projectId)) {
+                        Groups.removeUserFromGroup(user, user, group.getId(), eventInfo);
+                    }
+                }
 
 				if (!_level.startsWith(project.getId())) {
 					_level = project.getId() + "_" + _level;
 				}
 
-				UserGroupI grp=Groups.addUserToGroup(_level, user, user, eventInfo);
-				Groups.updateUserForGroup(user, grp.getId(),grp);
+				final UserGroupI group = Groups.addUserToGroup(_level, user, user, eventInfo);
+                Groups.updateUserForGroup(user, group.getId(), group);
 
+                XDAT.triggerXftItemEvent(project, XftItemEventI.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, Collections.singleton(user.getUsername())));
 				WorkflowUtils.complete(workflow, eventInfo);
 
 				try {
@@ -616,9 +620,9 @@ public class ProjectAccessRequest {
     }
 
     private List<String> processRelatedPARs(String parEmail, UserI user, boolean accept, EventUtils.TYPE eventType, String reason, String comment) {
-        List<String> processedProjects = new ArrayList<String>();
-        List<ProjectAccessRequest> parsForEmail = RequestPARsByUserEmail(parEmail, user);
-        for(ProjectAccessRequest par : parsForEmail) {
+        final List<String> processedProjects = new ArrayList<>();
+        final List<ProjectAccessRequest> parsForEmail = RequestPARsByUserEmail(parEmail, user);
+        for(final ProjectAccessRequest par : parsForEmail) {
             try {
                 processedProjects.addAll(par.process(user, accept, eventType, reason, comment, false));
             } catch (Exception exception) {

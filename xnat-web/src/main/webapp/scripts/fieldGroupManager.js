@@ -93,6 +93,9 @@ this.save=function(){
 
 	var newGroup=this.group;
 
+	// validate that datatypes are properly stored in the window.protocolsManagers array
+	if (!window.verifyProtocolSetup({ xsitype: newGroup.DataType })) return false;
+	
 	if (newGroup.getId()!=null && newGroup.getId()!=""){
 
 		if(newGroup.isNew==undefined || window.allGroups.indexOfID(newGroup.getDataType(),newGroup.getId())==-1){

@@ -36,12 +36,14 @@ public class RequestProjectAccessForm extends SecureScreen {
         } 
         
         String access_level = ((String) TurbineUtils.GetPassedParameter("access_level",data));
+        String comments = ((String) TurbineUtils.GetPassedParameter("comments",data));
         Integer id = TurbineUtils.GetPassedInteger("id", data);
         UserI other =Users.getUser(id);
         
-        context.put("user", other);
+        context.put("requester", other);
         context.put("projectOM", project);
         context.put("access_level", access_level);
+        context.put("comments",comments);
     }
     
     @Override

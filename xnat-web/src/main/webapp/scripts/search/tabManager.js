@@ -34,7 +34,7 @@ function TabManager(_id){
     this.suppress_select=false;
 
   this.dataTables=new Array();
-  
+
   this.csrfToken=null;
 
   this.init=function(array){
@@ -193,14 +193,14 @@ function TabManager(_id){
         var _id = obj.ID;
         if (obj.content) {
             this.tabView.addTab(new YAHOO.widget.Tab({
-                label: obj.label + "<span style='height:12px;width:1px;'></span>",
-                dataSrc: obj.content,
+                label: escapeHtml(obj.label) + "<span style='height:12px;width:1px;'></span>",
+                dataSrc: sanitizeHandlers(obj.content),
                 active: true
             }));
         }
         else {
             var tempTab = new YAHOO.widget.Tab({
-                label: obj.label + '&nbsp;<span class="close"><i class="fa fa-close"></i></span>',
+                label: escapeHtml(unescapeHtml(obj.label)) + '&nbsp;<span class="close totally-bogus"><i class="fa fa-close"></i></span>',
                 content: '<div id="' + _id + '_dt_p" class="xT_p"></div><div id="' + _id + '_dt_c" class="xT_c" style="overflow:auto;"><div id="' + _id + '_dt" class="xT_dt">Preparing Results</div></div>',
                 active: true
             });
@@ -278,7 +278,7 @@ function TabManager(_id){
       log_div=document.createElement("div");
       document.firstChild.appendChild(log_div);
     }
-    log_div.innerHTML+=msg;
+    log_div.innerHTML += msg;
   }
 
   this.setHeight=function(_int){

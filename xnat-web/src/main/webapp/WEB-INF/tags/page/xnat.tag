@@ -1,18 +1,10 @@
 <%--@elvariable id="siteConfigPreferences" type="org.nrg.xdat.preferences.SiteConfigPreferences"--%>
-<%--@elvariable id="themeService" type="org.nrg.xdat.services.impl.ThemeServiceImpl"--%>
+<%--@elvariable id="themeService" type="org.nrg.xdat.services.ThemeService"--%>
 <%@ tag description="Document Skeleton" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
-
-<%--
-  ~ web: xnat.tag
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
-  ~ All Rights Reserved
-  ~
-  ~ Released under the Simplified BSD.
-  --%>
 
 <%@ attribute name="page" %>
 <%@ attribute name="title" %>
@@ -23,24 +15,31 @@
 
 <head>
 
-    <c:if test="${empty requestScope.hasInit}">
-        <pg:init>
-            <c:if test="${empty requestScope.hasVars}">
-                <pg:jsvars/>
-            </c:if>
-        </pg:init>
-    </c:if>
+    <pg:init/>
 
     ${headTop}
+
+    <c:set var="versionString" value="v=175rc1"/>
+
+    <c:set var="lastAccessed" value="${fn:split(cookie.SESSION_EXPIRATION_TIME.value, ',')[0]}"/>
+
+    <c:set var="js" value="js?${versionString}"/>
+    <c:set var="minjs" value="min.${js}"/>
+
+    <c:set var="DEBUG" value="false"/>
+
+    <c:if test="${param.debug == true || param.jsdebug == true}">
+        <c:set var="DEBUG" value="true"/>
+        <c:set var="minjs" value="${js}"/>
+    </c:if>
 
     <title>${empty title ? 'XNAT' : title}</title>
 
     <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
-    <%--<c:set var="_scripts" value="${SITE_ROOT}/scripts"/>--%>
-    <%--<c:set var="_scriptsLib" value="${SITE_ROOT}/scripts/lib"/>--%>
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
-    <c:set var="_user" value="${sessionScope.username}"/>
-    <c:set var="versionString" value="v=1.7.3a"/>
+    <c:set var="USERNAME" value="${sessionScope.username}"/>
+
+    <c:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="session"/>
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta http-equiv="Pragma" content="no-cache">
@@ -49,11 +48,13 @@
     <meta http-equiv="expires" content="-1">
     <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
+    <pg:jsvars/>
+
     <!-- load polyfills before ANY other JavaScript -->
-    <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
+    <script src="${SITE_ROOT}/scripts/polyfills.${js}"></script>
 
     <!-- XNAT global functions (no dependencies) -->
-    <script src="${SITE_ROOT}/scripts/globals.js"></script>
+    <script src="${SITE_ROOT}/scripts/globals.${js}"></script>
 
     <!-- set global vars that are used often -->
     <script type="text/javascript">
@@ -65,6 +66,10 @@
         //var requireReason = typeof false != 'undefined' ? false : null;
 
         window.loggedIn = realValue(${sessionScope.loggedIn});
+        window.isGuest = realValue(${sessionScope.isGuest});
+        window.username = realValue('${USERNAME}');
+
+        window.cacheLastModified = realValue(${sessionScope.cacheLastModified});
 
         XNAT.theme = {};
         XNAT.theme.name = '${themeService.theme.name}';
@@ -75,9 +80,9 @@
     </script>
 
     <!-- required libraries -->
-    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.${minjs}"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;
@@ -85,26 +90,30 @@
 
     <!-- jQuery plugins -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.${js}"></script>
 
     <!-- other libraries -->
-    <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/ace/ace.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/js.cookie.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.${js}"></script>
+    <%--<script src="${SITE_ROOT}/scripts/lib/form2js/src/js2form.${js}"></script>--%>
+    <script src="${SITE_ROOT}/scripts/lib/x2js/xml2json.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/DefiantJS/dist/defiant.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jsonpath/jsonpath.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/ace/ace.${js}"></script>
 
     <!-- XNAT utility functions -->
-    <script src="${SITE_ROOT}/scripts/utils.js"></script>
+    <script src="${SITE_ROOT}/scripts/utils.${js}"></script>
 
     <script type="text/javascript">
 
         if (window.loggedIn) {
-            Cookies.set('guest', 'false', { path: '/' });
+            Cookies.set('guest', 'false', { path: '${SITE_ROOT}' });
         }
 
         /*
@@ -145,9 +154,7 @@
         // will be converted
         // putting this here to be at the top of
         // the jQuery DOM-ready queue
-        jq(function(){
-            menuInit()
-        });
+        jq(function(){ menuInit() });
     </script>
 
     <script type="text/javascript">
@@ -164,7 +171,7 @@
             });
         };
 
-        jq(function(){
+        $(function(){
             // add hidden input with CSRF data
             // to all forms on page load
             XNAT.app.addFormCSRF();
@@ -176,7 +183,7 @@
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
 
     <!-- Icon sets -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.min.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?x=${lastAccessed}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
 
@@ -190,47 +197,53 @@
 
     <!-- legacy XNAT scripts -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.css?${versionString}">
-    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
-    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.${js}"></script>
 
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.css?${versionString}1">--%>
-    <%--<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.${js}"></script>--%>
 
     <!-- date input stuff -->
     <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
-    <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.${minjs}"></script>
 
     <!-- XNAT JLAPI stylesheets -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
 
     <!-- XNAT JLAPI scripts -->
-    <script src="${SITE_ROOT}/scripts/xnat/util/sub64.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/cookie.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/input.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/select.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/table.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/panel.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/banner.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/util/sub64.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/parse.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/validate.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/url.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/xhr.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/cookie.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/event.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/element.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/storage.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/form.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/templates.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/input.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/select.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/table.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/panel.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/banner.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/popup.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.${js}"></script>
 
-    <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
+    <!-- The Spawner! -->
+    <script src="${SITE_ROOT}/scripts/xnat/spawner.${js}"></script>
 
     <!-- XNAT app scripts -->
-    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/customPage.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.${js}"></script>
 
     ${headBottom}
 
     <!-- JS functions to initialize XNAT -->
-    <script src="${SITE_ROOT}/scripts/xnat/init.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/init.${js}"></script>
 
 </head>
 <body id="xnat-app" class="xnat app">
@@ -240,27 +253,22 @@ ${bodyTop}
 <div id="user_bar">
     <div class="inner">
 
-        <c:if test="${_user != '-' || sessionScope.isGuest}">
+        <c:if test="${USERNAME != '-' || sessionScope.isGuest}">
 
             <img id="attention_icon" src="${SITE_ROOT}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
-            <span id="user_info">Logged in as: &nbsp;<a href="${SITE_ROOT}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>
-                <span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
+            <span id="user_info">Logged in as: &nbsp;<a href="${SITE_ROOT}/app/template/XDATScreen_UpdateUser.vm">${USERNAME}</a> <b>|</b>
+                <span class="tip_icon" style="margin-right:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">
                         Your XNAT session will auto-logout after a certain period of inactivity.
                         You can reset the timer without reloading thepage by clicking "renew."
                     </span>
                 </span>
-                Auto-logout in:
-                <b id="timeLeft">-:--:--</b> -
-                <a id="timeLeftRenew" href="#!">renew</a>
-                <b>|</b>
-                <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
+                Auto-logout in: <b id="timeLeft">-:--:--</b> - <a class="renew-session" href="#!">renew</a> <b>|</b> <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
             <script>
                 window.loggedIn = true;
             </script>
-            <%--<script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>--%>
-            <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
+            <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.${js}"></script>
 
         </c:if>
 
@@ -268,7 +276,7 @@ ${bodyTop}
     </div>
 </div><!-- /user_bar -->
 
-<c:if test="${_user != '-' && page != 'setup'}">
+<c:if test="${USERNAME != '-' && page != 'setup'}">
 
     <style type="text/css">
         #quickSearchForm .chosen-results {
@@ -365,7 +373,7 @@ ${bodyTop}
                             <ul>
                                 <!-- Sequence: 10 -->
                                 <!-- Images -->
-                                <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">Upload Assistant</a></li>
+                                <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">XNAT Desktop Applications</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/CompressedUploaderPage.vm">Compressed Uploader</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/DICOMSCPPage.vm">DICOM SCP</a></li>
                             </ul>
@@ -542,7 +550,7 @@ ${bodyTop}
     </div>
     <!-- /#main_nav -->
 
-    <script src="${SITE_ROOT}/scripts/xnat/app/topnav-browse.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/topnav-browse.${js}"></script>
 
     <script>
 
@@ -745,7 +753,7 @@ ${bodyTop}
     <div id="tp_fm"></div>
 
     <div id="breadcrumbs"></div>
-    <script src="${SITE_ROOT}/scripts/xnat/ui/breadcrumbs.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/breadcrumbs.${js}"></script>
     <script language="javascript">
         window.isProjectPage = (XNAT.data.context.xsiType === 'xnat:projectData');
         // wrap it up to keep things
@@ -760,7 +768,6 @@ ${bodyTop}
     <div id="layout_content">
         <!--BEGIN SCREEN CONTENT -->
         <!-- start xnat-templates/screens/Page.vm -->
-        <script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
 
         <div id="view-page">
 
@@ -819,10 +826,12 @@ ${bodyTop}
     </script>
 
     <div id="mylogger"></div>
+    <div class="clear"></div>
 </div>
 <!-- /page_wrapper -->
-<div class="clear"></div>
-<div id="xnat_power"></div>
+<div id="xnat_power">
+    <div class="clear"></div>
+</div>
 
 <script type="text/javascript">
 

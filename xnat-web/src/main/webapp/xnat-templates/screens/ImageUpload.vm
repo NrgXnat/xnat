@@ -454,8 +454,8 @@ function checkProgress(){
  <tr>
   <td valign="top" align="left">
       <div style="width:500px">
-          You can upload DICOM and ECAT files using the <<a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
-          Assistant</a>. This tool is installed on your local machine and provides the ability to access multiple XNAT
+          You can upload DICOM and ECAT files using the <<a href="$link.setPage("UploadAssistantPage.vm")">XNAT Desktop
+          Applications</a>. These tools are installed on your local machine and provide the ability to access multiple XNAT
           servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it leaves
           your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
       </div>

@@ -45,11 +45,11 @@ function selectDefault(elementName){
 			  	  <TR><TH>Pivot Element</TH><TD colspan=2>
 		  			<select id="exptType" name="ELEMENT_0" ONCHANGE="return showPaneFromList(this);">
 					  	#foreach ($typeObject in $typeObjects)
-						  	<option value="$typeObject.getElementName()" #if($typeObject.getElementName()=="xnat:mrSessionData") SELECTED #end>$typeObject.getDescription()</option>
+						  	<option value="$typeObject.getElementName()" #if($typeObject.getElementName()=="xnat:mrSessionData") SELECTED #end>#escapeHTML($typeObject.getDescription())</option>
 						  #end
 					  </select><BR><BR></tD></TR>
 				  #foreach ($typeObject in $typeObjects)
-				  	<TR><TD><B>$typeObject.getDescription()</B></TD>
+				  	<TR><TD><B>#escapeHTML($typeObject.getDescription())</B></TD>
 				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="" CHECKED/> None</TD>
 				  		#if($typeObject.getVersions().get("brief") || $typeObject.getVersions().get("detailed"))
 				  		#if($typeObject.getVersions().get("brief"))
@@ -64,7 +64,7 @@ function selectDefault(elementName){
 				  		#end
 				  		#else
 				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="brief" DISABLED/> Brief</TD>
-				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="detailed"/> Detailed</TD>		
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="detailed"/> Detailed</TD>
 				  		#end
 				  	</TR>
 				  #end
@@ -78,7 +78,9 @@ function selectDefault(elementName){
 		  	<ul>
 			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
 				  #foreach ($typeObject in $typeObjects)
-				  	<li style="border-bottom:1px solid #6D99B6;padding:3px 5px 5px 5px;"><a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$velocityCount">$typeObject.getDescription()</a></li>
+				  	<li style="border-bottom:1px solid #6D99B6;padding:3px 5px 5px 5px;">
+						<a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$velocityCount">#escapeHTML($typeObject.getDescription())</a>
+					</li>
 				  #end
 			  </ul>
 		</TD>
@@ -88,7 +90,7 @@ function selectDefault(elementName){
 			  <span id="panel$typeObject.getElementName()" VALIGN="top" style="display:none;">
 				  <TABLE VALIGN="top">
 				  	<TR>
-				  		<TH colspan=2 valign="top">$typeObject.getDescription() Search Criteria</TH>
+				  		<TH colspan=2 valign="top">#escapeHTML($typeObject.getDescription()) Search Criteria</TH>
 				  	</TR>
 				  	<TR>
 				  		<TD>#xdatSearchElement($typeObject.getSchemaElement() 3)
@@ -96,7 +98,7 @@ function selectDefault(elementName){
 				  	</TR>
 				  </TABLE>
 		      </span>
-			#end  			  
+			#end
   		</TD>
   		<TR>
 	  		<TD colspan=2 ALIGN="center">

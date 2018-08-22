@@ -1,3 +1,5 @@
+<%--@elvariable id="siteConfigPreferences" type="org.nrg.xdat.preferences.SiteConfigPreferences"--%>
+<%--@elvariable id="themeService" type="org.nrg.xdat.services.ThemeService"--%>
 <%@ tag description="Initialize Variables" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -12,15 +14,17 @@
   ~ Released under the Simplified BSD.
   --%>
 
-<jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl" scope="request"/>
-
 <c:if test="${empty requestScope.hasInit}">
+
+    <%-- alias siteConfigPreferences --%>
+    <c:set var="siteConfig" value="${siteConfigPreferences}" scope="session"/>
 
     <%-- set empty user info --%>
     <c:set var="loggedIn" value="false" scope="session"/>
     <c:set var="username" value="-" scope="session"/>
     <c:set var="isAdmin" value="false" scope="session"/>
     <c:set var="isGuest" value="false" scope="session"/>
+    <c:set var="cacheLastModified" value="" scope="session"/>
 
     <%-- set vars for user --%>
     <sec:authorize access="isAuthenticated()">
@@ -41,11 +45,11 @@
         <c:set var="isGuest" value="true" scope="session"/>
     </sec:authorize>
 
-    <c:set var="themeName" value="${themeService.theme.name}" scope="request"/>
+    <c:set var="themeName" value="${themeService.theme.name}" scope="session"/>
 
     <%-- if there's a theme specified in the request, use that --%>
     <c:if test="${empty themeName && not empty param.theme}">
-        <c:set var="themeName" value="${param.theme}" scope="request"/>
+        <c:set var="themeName" value="${param.theme}" scope="session"/>
     </c:if>
 
     <%-- set 'siteRoot' to the root of your web app --%>
@@ -56,13 +60,13 @@
         <c:set var="siteRoot" value="/${pageContext.request.contextPath}" scope="session"/>
     </c:if>
 
-    <c:set var="themeRoot" value="${siteRoot}/themes/${themeName}" scope="request"/>
-    <c:set var="pageRoot" value="${themeRoot}/pages" scope="request"/>
+    <c:set var="themeRoot" value="${siteRoot}/themes/${themeName}" scope="session"/>
+    <c:set var="pageRoot" value="${themeRoot}/pages" scope="session"/>
 
     <%-- if no themeName is found, set vars to use root items --%>
     <c:if test="${empty themeName}">
-        <c:set var="themeRoot" value="${siteRoot}" scope="request"/>
-        <c:set var="pageRoot" value="${siteRoot}/page" scope="request"/>
+        <c:set var="themeRoot" value="${siteRoot}" scope="session"/>
+        <c:set var="pageRoot" value="${siteRoot}/page" scope="session"/>
     </c:if>
 
     <%-- get session expiration time --%>

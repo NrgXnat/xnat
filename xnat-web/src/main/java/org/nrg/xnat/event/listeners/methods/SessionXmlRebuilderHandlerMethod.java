@@ -9,69 +9,84 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
+import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
 
 @Component
-public class SessionXmlRebuilderHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+@Getter(PROTECTED)
+@Setter(PRIVATE)
+@Accessors(prefix = "_")
+public class SessionXmlRebuilderHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
-    public SessionXmlRebuilderHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final JmsTemplate jmsTemplate, final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo, final JdbcTemplate jdbcTemplate) {
-        _preferences = preferences;
-        _scheduler = scheduler;
+    public SessionXmlRebuilderHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final XnatTaskService taskService, final JmsTemplate jmsTemplate, final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo, final JdbcTemplate jdbcTemplate) {
+        super(scheduler, primaryAdminUserProvider, REPEAT, INTERVAL);
+
+        _taskService = taskService;
         _jmsTemplate = jmsTemplate;
         _jdbcTemplate = jdbcTemplate;
-        _provider = primaryAdminUserProvider;
         _appInfo = appInfo;
+
+        setSessionXmlRebuilderInterval(preferences.getSessionXmlRebuilderInterval());
+        setSessionXmlRebuilderRepeat(preferences.getSessionXmlRebuilderRepeat());
     }
 
-    @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    @NotNull
+    protected AbstractXnatRunnable getTask() {
+        return new SessionXMLRebuilder(getUserProvider(), getTaskService(), getAppInfo(), getJmsTemplate(), getJdbcTemplate(), getSessionXmlRebuilderInterval());
     }
 
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateSessionXmlRebuilder();
+    @NotNull
+    protected Trigger getTrigger() {
+        return new PeriodicTrigger(getSessionXmlRebuilderRepeat());
+    }
+
+    /**
+     * Updates the value for the specified preference according to the preference type.
+     *
+     * @param preference The preference to set.
+     * @param value      The value to set.
+     */
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        log.debug("Found preference {} that this handler can handle, setting value to {}", preference, value);
+        switch (preference) {
+            case REPEAT:
+                setSessionXmlRebuilderRepeat(Long.parseLong(value));
+                break;
+
+            case INTERVAL:
+                setSessionXmlRebuilderInterval(Integer.parseInt(value));
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateSessionXmlRebuilder();
-        }
-    }
+    private static final String REPEAT   = "sessionXmlRebuilderRepeat";
+    private static final String INTERVAL = "sessionXmlRebuilderInterval";
 
-    private void updateSessionXmlRebuilder() {
-        _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-        for (ScheduledFuture temp : scheduledXmlRebuilder) {
-            temp.cancel(false);
-        }
-        scheduledXmlRebuilder.clear();
-        scheduledXmlRebuilder.add(_scheduler.schedule(new SessionXMLRebuilder(_provider, _appInfo, _jmsTemplate, _jdbcTemplate, _preferences.getSessionXmlRebuilderInterval()), new PeriodicTrigger(_preferences.getSessionXmlRebuilderRepeat())));
-    }
+    private final XnatTaskService _taskService;
+    private final JmsTemplate     _jmsTemplate;
+    private final JdbcTemplate    _jdbcTemplate;
+    private final XnatAppInfo     _appInfo;
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("sessionXmlRebuilderRepeat", "sessionXmlRebuilderInterval"));
-
-    private final ArrayList<ScheduledFuture> scheduledXmlRebuilder = new ArrayList<>();
-
-    private final SiteConfigPreferences   _preferences;
-    private final ThreadPoolTaskScheduler _scheduler;
-    private final JmsTemplate             _jmsTemplate;
-    private final JdbcTemplate            _jdbcTemplate;
-    private final XnatUserProvider        _provider;
-    private       XnatAppInfo             _appInfo;
+    private int  _sessionXmlRebuilderInterval;
+    private long _sessionXmlRebuilderRepeat;
 }

@@ -9,81 +9,60 @@
 
 package org.nrg.xnat.servlet;
 
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.turbine.Turbine;
-import org.nrg.framework.beans.XnatPluginBean;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.beans.XnatPluginBeanManager;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.util.List;
 import java.util.Properties;
 
 @SuppressWarnings("serial")
+@Slf4j
 public class Log4JServlet extends HttpServlet {
-
-    /* (non-Javadoc)
-     * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-     */
-    @Override
-    protected void doGet(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException, IOException {
-        if(org.nrg.xdat.security.helpers.Roles.isSiteAdmin(org.nrg.xdat.XDAT.getUserDetails())){
-            loadProperties();
-        }
-        else{
-            throw new ServletException("Only admins can access Log4jServlet.");
-        }
+    public Log4JServlet() {
+        _instance = this;
     }
 
-    /* (non-Javadoc)
-     * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
-     */
-    @Override
-    public void init(ServletConfig arg0) throws ServletException {
-        loadProperties();
+    public static Log4JServlet getInstance() {
+        return _instance;
     }
 
-    private void loadProperties() throws ServletException {
-        Properties properties = new Properties();
-        try {
-            File file = new File(Turbine.getRealPath("/WEB-INF/classes/log4j.properties"));
-            FileInputStream fileInput = new FileInputStream(file);
-            properties.load(fileInput);
-            fileInput.close();
-        } catch (Throwable t) {
-            throw new ServletException("Log4jServlet loading of properties failed.", t);
-        }
-        try {
-            for (final XnatPluginBean plugin : XnatPluginBeanManager.scanForXnatPluginBeans().values()) {
-                try{
-                    String log4jPropertiesFile = plugin.getLog4jPropertiesFile();
-                    if(!org.apache.commons.lang.StringUtils.isEmpty(log4jPropertiesFile)) {
-                        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:"+log4jPropertiesFile)) {
-                            Properties pluginProperties = PropertiesLoaderUtils.loadProperties(resource);
-                            for(Object propertyKey : pluginProperties.keySet()){
-                                properties.setProperty(propertyKey.toString(), pluginProperties.getProperty(propertyKey.toString()));
-                            }
-                        }
-                    }
-                } catch (Throwable t) {
-                    throw new ServletException("Log4jServlet loading of properties failed for plugin "+plugin.getName()+".", t);
-                }
+    /**
+     * Initializes the logging system based on the configured application settings.
+     */
+    @Override
+    public void init(final ServletConfig config) throws ServletException {
+        super.init(config);
+        loadProperties(config.getServletContext().getRealPath(""));
+    }
+
+    @Override
+    protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+        response.sendRedirect("/xapi/logs/reset");
+    }
+
+    private void loadProperties(final String rootPath) {
+        final List<String> paths   = DefaultLoggingService.getPluginLog4jResourcePaths(XnatPluginBeanManager.scanForXnatPluginBeans());
+        final Properties   results = DefaultLoggingService.reset(DefaultLoggingService.getLog4jProperties(rootPath, paths));
+        log.info("Completed initial configuration for log4j from {} properties", results.size());
+        if (log.isTraceEnabled()) {
+            log.trace("Configuration properties:");
+            try (final StringWriter writer = new StringWriter()) {
+                results.store(writer, "Generated properties for XNAT log4j configuration");
+                log.trace(writer.getBuffer().toString());
+            } catch (IOException e) {
+                log.warn("An error occurred trying to write the log4j properties", e);
             }
-        } catch (Throwable t) {
-            throw new ServletException("Log4jServlet loading of plugin properties failed.", t);
-        }
-        try{
-            PropertyConfigurator.configure(properties);
-        } catch (Throwable t) {
-            throw new ServletException("Log4jServlet configuring of properties failed.", t);
         }
     }
+
+    private static Log4JServlet _instance;
 }

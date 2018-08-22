@@ -2,5 +2,5 @@
 <!-- allowGuest: true -->
 
    <li class="yuimenuitem">
-    <a class="yuimenuitemlabel" href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</A>
+    <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</A>
    </li>

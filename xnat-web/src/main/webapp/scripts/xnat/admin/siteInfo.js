@@ -31,4 +31,14 @@ console.log('siteInfo.js');
 
     }
 
+    // XNAT-5533 remove trailing slash(es) from siteUrl, if it was added
+    $(document).on('change', 'input[name="siteUrl"]', function(){
+        var siteUrl = (this.value + '').trim();
+        var endSlash = /\/+$/;
+        if (endSlash.test(siteUrl)) {
+            this.value = siteUrl.replace(endSlash,'');
+            XNAT.ui.banner.top(2000, 'Site URL should not have trailing slashes', 'info');
+        }
+    });
+
 })();

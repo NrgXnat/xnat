@@ -1,15 +1,9 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<%--
-  ~ web: content.jsp
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
-  ~ All Rights Reserved
-  ~
-  ~ Released under the Simplified BSD.
-  --%>
+<%--@elvariable id="hibernateSpawnerService" type="org.nrg.xnat.spawner.services.SpawnerService"--%>
 
 <c:set var="redirect">
     <div class="error">Not authorized. Redirecting...</div>
@@ -34,56 +28,116 @@
 
                     <div class="content-tabs xnat-tab-container">
 
-                        <%--
-                        <div class="xnat-nav-tabs side pull-left">
-                            <!-- ================== -->
-                            <!-- Admin tab flippers -->
-                            <!-- ================== -->
-                        </div>
-                        <div class="xnat-tab-content side pull-right">
-                            <!-- ================== -->
-                            <!-- Admin tab panes    -->
-                            <!-- ================== -->
-                        </div>
-                        --%>
+                        <div id="tabs-loading" class="message waiting">Loading...</div>
+
+                            <%--&lt;%&ndash;--%>
+                            <div class="xnat-nav-tabs side pull-left">
+                                <!-- ================== -->
+                                <!-- Admin tab flippers -->
+                                <!-- ================== -->
+                            </div>
+                            <div class="xnat-tab-content side pull-right">
+                                <!-- ================== -->
+                                <!-- Admin tab panes    -->
+                                <!-- ================== -->
+                            </div>
+                            <%--&ndash;%&gt;--%>
 
                     </div>
 
                 </div>
 
-                <c:set var="pluginsUrl" value="/xapi/plugins"/>
-                <c:set var="spawnerNamespacesUrl" value="/xapi/spawner/namespaces"/>
+                <script>
+                    XNAT.app = getObject(XNAT.app || {});
+                    XNAT.app.pluginSettings = getObject(XNAT.app.pluginSettings || {});
+                    XNAT.app.pluginSettings.siteTabConfigs = [];
+                    function returnValue(value){ return value }
+                </script>
 
-                <c:import url="${pluginsUrl}" var="plugins"/>
-                <c:import url="${spawnerNamespacesUrl}" var="spawnerNamespaces"/>
+                <c:catch var="jspError">
 
-                <%--<script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>--%>
+                    <%-- don't worry about getting the list of plugins...
+                         ...any Spawner namespace with :siteSettings will get processed --%>
+
+                    <c:forEach items="${hibernateSpawnerService.namespaces}" var="namespace">
+                        <%-- only get 'siteSettings' items --%>
+                        <script>console.log('namespace: ${namespace}')</script>
+                        <c:if test="${fn:endsWith(namespace, 'siteSettings')}">
+                            <c:import url="/xapi/spawner/resolve/${namespace}/siteSettings" var="pluginTabsConfig"/>
+                            <c:if test="${empty pluginTabsConfig}">
+                                <%-- originally 'siteSettings' was the expected name of
+                                     the root element, but now 'root' is preferred --%>
+                                <script>console.log('(no "siteSettings" property; using "root")')</script>
+                                <c:import url="/xapi/spawner/resolve/${namespace}/root" var="pluginTabsConfig"/>
+                            </c:if>
+                            <script>
+                                (function(){
+                                    var config = returnValue(${pluginTabsConfig});
+                                    if (!config) return;
+                                    if (config.hasOwnProperty('siteSettings')) {
+                                        XNAT.app.pluginSettings.siteTabConfigs.push(config['siteSettings'])
+                                    }
+                                    else if (config.hasOwnProperty('root')) {
+                                        XNAT.app.pluginSettings.siteTabConfigs.push(config['root'])
+                                    }
+                                })();
+                            </script>
+                        </c:if>
+                    </c:forEach>
+
+                </c:catch>
+
+                <c:if test="${not empty jspError}">
+                    <script>
+                        console.error('JSP error:');
+                        console.error('${jspError}');
+                    </script>
+                </c:if>
 
                 <script>
                     (function(){
-
-                        XNAT.xapi = getObject(XNAT.xapi);
-
-                        <c:if test="${not empty plugins}">
-                            XNAT.xapi.plugins = ${plugins};
-                            XNAT.data['${pluginsUrl}'] = XNAT.xapi.plugins;
-                        </c:if>
-
-                        <c:if test="${not empty spawnerNamespaces}">
-                            XNAT.xapi.spawnerNamespaces = ${spawnerNamespaces};
-                            XNAT.data['${spawnerNamespacesUrl}'] = XNAT.xapi.spawnerNamespaces;
-                        </c:if>
-
-                        XNAT.data = extend(true, {
-                            plugins: XNAT.xapi.plugins,
-                            spawnerNamespaces: XNAT.xapi.spawnerNamespaces
-                        }, XNAT.data||{});
-
-                        // render siteSettings tab into specified container
-                        var siteSettingsTabs = $('#plugin-settings-tabs').find('div.content-tabs');
-                        XNAT.app.pluginSettings.showTabs = true;
-                        XNAT.app.pluginSettings.siteSettings(siteSettingsTabs);
-
+                        var siteSettingsTabs = {};
+                        // alias for brevity
+                        var tabConfigs = XNAT.app.pluginSettings.siteTabConfigs;
+                        if (tabConfigs.length) {
+                            // show the 'Plugin Settings' item in the 'Administer' menu
+                            $('#view-plugin-settings').show().hidden(false);
+                            forEach(tabConfigs, function(tabConfig){
+                                // resolve top-level 'contains'/'contents' properties
+                                if (tabConfig.hasOwnProperty('contains')) {
+                                    tabConfig.contents = tabConfig[tabConfig.contains];
+                                    delete tabConfig[tabConfig.contains];
+                                    delete tabConfig.contains;
+                                }
+                                // resolve 'meta.tabGroups'/'tabGroups'/'groups' properties
+                                if (tabConfig.meta && tabConfig.meta.tabGroups) {
+                                    tabConfig.groups = tabConfig.meta.tabGroups;
+                                    delete tabConfig.meta.tabGroups;
+                                }
+                                else if (tabConfig.tabGroups) {
+                                    tabConfig.groups = tabConfig.tabGroups;
+                                    delete tabConfig.tabGroups;
+                                }
+                                // merge all configs into a single config object
+                                extend(true, siteSettingsTabs, tabConfig);
+                            });
+                            // make sure these properties are set correctly
+                            siteSettingsTabs.kind = 'tabs';
+                            siteSettingsTabs.name = 'siteSettingsTabs';
+                            // render the tabs
+                            XNAT.spawner
+                                .spawn({ siteSettingsTabs: siteSettingsTabs })
+                                .render($('#plugin-settings-tabs').find('.xnat-tab-container'))
+                                .done(function(spawned){
+                                    var selectTab = getUrlHashValue('tab=');
+                                    var tabSelector = selectTab ? 'ul.nav > li[data-tab="' + selectTab + '"]' : 'ul.nav > li[data-tab]';
+                                    // XNAT.ui.tab.activate(getUrlHashValue('tab='), spawned);
+                                    waitForElement(1, tabSelector, function(){
+                                        $('#tabs-loading').remove();
+                                        $(tabSelector).first().trigger('click');
+                                    });
+                                })
+                        }
                     })();
                 </script>
 
@@ -96,4 +150,3 @@
     <div id="xnat-scripts"></div>
 
 </pg:restricted>
-

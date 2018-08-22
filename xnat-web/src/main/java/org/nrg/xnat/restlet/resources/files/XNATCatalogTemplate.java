@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
@@ -29,14 +30,14 @@ import java.util.Date;
 
 public class XNATCatalogTemplate extends XNATTemplate {
 	XFTTable catalogs=null;
-	
+
 	ArrayList<String> resource_ids=null;
 	ArrayList<XnatAbstractresource> resources=new ArrayList<XnatAbstractresource>();
-		
+
 	public XNATCatalogTemplate(Context context, Request request,
 			Response response,boolean allowAll) {
 		super(context, request, response);
-		
+
 		String resourceID= (String)getParameter(request,"RESOURCE_ID");
 
 		if(resourceID!=null){
@@ -45,15 +46,15 @@ public class XNATCatalogTemplate extends XNATTemplate {
 				resource_ids.add(s);
 				}
 			}
-			
+
 			try {
 			catalogs=this.loadCatalogs(resource_ids,true,allowAll);
 			} catch (Exception e) {
 	            logger.error("",e);
 			}
 	}
-	
-	
+
+
 	public String getBaseURI() throws ElementNotFoundException{
 		StringBuffer sb =new StringBuffer("/data");
 		if(proj!=null && sub!=null){
@@ -117,7 +118,7 @@ public class XNATCatalogTemplate extends XNATTemplate {
 			}
 			}
 		}else if(sub!=null){
-			
+
 		}else if(proj!=null){
 			sb.append("/projects/");
 			sb.append(proj.getId());
@@ -139,10 +140,10 @@ public class XNATCatalogTemplate extends XNATTemplate {
                 return null;
             }
         }
-        
+
         return f;
     }
-	
+
     public XnatResourceInfo buildResourceInfo(EventMetaI ci){
 		final String description;
 	    if(this.getQueryVariable("description")!=null){
@@ -150,67 +151,57 @@ public class XNATCatalogTemplate extends XNATTemplate {
 	    }else{
 	    	description=null;
 	    }
-	    
+
 	    final String format;
 	    if(this.getQueryVariable("format")!=null){
 	    	format=this.getQueryVariable("format");
 	    }else{
 	    	format=null;
 	    }
-	    
+
 	    final String content;
 	    if(this.getQueryVariable("content")!=null){
 	    	content=this.getQueryVariable("content");
 	    }else{
 	    	content=null;
 	    }
-	    
+
 	    String[] tags;
 	    if(this.getQueryVariables("tags")!=null){
 	    	tags = this.getQueryVariables("tags");
 	    }else{
 	    	tags=null;
 	    }
-        
+
 	    Date d=EventUtils.getEventDate(ci, false);
 		return XnatResourceInfo.buildResourceInfo(description, format, content, tags,getUser(),d,d,EventUtils.getEventId(ci));
 	}
-			
-	protected ResourceModifierA buildResourceModifier(final boolean overwrite,EventMetaI ci) throws Exception{
-		XnatImagesessiondata assessed=null;
-			
-		if(this.assesseds.size()==1)assessed=(XnatImagesessiondata)assesseds.get(0);
-			
-		//this should allow dependency injection - TO
-		final ResourceModifierBuilderI builder=new DirectResourceModifierBuilder();
-		
-		if(recons.size()>0){
-			//reconstruction						
-			builder.setRecon(assessed,recons.get(0), type);
-		}else if(scans.size()>0){
-			//scan
-			builder.setScan(assessed, scans.get(0));
-		}else if(expts.size()>0){
-			final XnatExperimentdata expt=this.expts.get(0);
-//			experiment
-			
-			if(expt.getItem().instanceOf("xnat:imageAssessorData")){
-				if(assessed==null){
-					assessed=((XnatImageassessordata)expt).getImageSessionData();
-				}
 
-				builder.setAssess((XnatImagesessiondata)assessed, (XnatImageassessordata)expt, type);
-			}else{
-				builder.setExpt((proj!=null)?proj:expt.getProjectData(), expt);
-			}
-		}else if(sub!=null){
-			builder.setSubject(proj, sub);
-		}else if(proj!=null){
-			builder.setProject(proj);
-			}else{
-			throw new Exception("Unknown resource");
-		}
-		
+	protected ResourceModifierA buildResourceModifier(final boolean overwrite,EventMetaI ci) throws Exception{
+        final XnatImagesessiondata assessed = assesseds.size() == 1 ? (XnatImagesessiondata) assesseds.get(0) : null;
+
+        //this should allow dependency injection - TO
+        final ResourceModifierBuilderI builder = new DirectResourceModifierBuilder();
+
+        if (!recons.isEmpty()) {
+            builder.setRecon(assessed, recons.get(0), type);
+        } else if (!scans.isEmpty()) {
+            builder.setScan(assessed, scans.get(0));
+        } else if (!expts.isEmpty()) {
+            final XnatExperimentdata expt = expts.get(0);
+            if (expt.getItem().instanceOf("xnat:imageAssessorData")) {
+                builder.setAssess(ObjectUtils.defaultIfNull(assessed, ((XnatImageassessordata) expt).getImageSessionData()), (XnatImageassessordata) expt, type);
+            } else {
+                builder.setExpt(ObjectUtils.defaultIfNull(proj, expt.getProjectData()), expt);
+            }
+        } else if (sub != null) {
+            builder.setSubject(proj, sub);
+        } else if (proj != null) {
+            builder.setProject(proj);
+        } else {
+            throw new Exception("Unknown resource");
+        }
+
 		return builder.buildResourceModifier(overwrite,getUser(),ci);
 	}
 }

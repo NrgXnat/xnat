@@ -1,6 +1,6 @@
-
-<tr>
-	<th align="left">Scanner</th>
+<!-- BEGIN /xnat-templates/screens/xnat_petmrSessionData/upload/xnat_petmrSessionData_fields.vm -->
+<tr valign="top">
+    <th align="left"><p style="margin-top: 0.5em">Scanner Name</p></th>
 
 	#set($currentScanner=$item.getProperty("scanner"))
 	#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imageScanData scan ON isd.id=scan.image_session_id WHERE xme.element_name='${datatype}' AND scan.scanner='$currentScanner'"))
@@ -20,41 +20,10 @@
 		<td> #xdatTextBox("${datatype}.scanner" $item "" $vr)</td>
 	#else
 		<td>
-			<script type="text/javascript">
-				window.ss=new Object();
-				
-				#if($project)
-					window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=xnat_petmrSessionData";
-				#end
-
-				window.ss.local_values=new Array();
-				window.ss.custom = new Array();
-				window.ss.valueField="scanner";
-				
-				## Push the current scanner name into the array.
-				## Use the custom array to insure that the value is displayed weather we 
-				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
-				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-                window.ss.custom.push("$!turbineUtils.escapeHTML($currScannerName)");
-			
-				## Push other scanner names into the array.
-				#foreach ($pValue in $scanners)
-					#if($pValue.get(0))
-						## Don't add the current scanner name since we added it above.
-						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
-							#set($tempScannerName=$!turbineUtils.escapeHTML($pValue.get(0)))
-                        	window.ss.local_values.push({"scanner":"$tempScannerName"});
-						#end
-					#end
-				#end
-			</script>
-				
-			#xdatComboBox("${datatype}.scanner" $item "window.ss" $vr)
-			<a onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
-			#if($item.getStringProperty("${datatype}/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
-                &nbsp; ($!item.getStringProperty("${datatype}/scanner/manufacturer") $!item.getStringProperty("${datatype}/scanner/model") $!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner")))
-				##<script>document.write(escapeHtml(unescapeAllHtml('$!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner"))')))</script>)
+			#if (!$datatype)
+				#set ($datatype = 'xnat:petmrSessionData')
 			#end
+			#parse('/screens/xnat_imageSessionData/upload/scanners.vm')
 		</td>
 	#end
 </tr>
@@ -80,10 +49,10 @@
 		  document.getElementById("mark.tr").style.display=window.tr_visibility;
 		  document.getElementById("coil.tr").style.display=window.tr_visibility;
 		}
-		</script>	
+		</script>
 <tr>
 			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
-		</tr>	
+		</tr>
 		<tr id="operator.tr" name="additional_fields" style="display:none">
 			 <td>Operator</td>
 			 <td>
@@ -106,7 +75,7 @@
 		  </td>
 		  <td></td> <!-- no hints available -->
 		</tr>
-		
+
 		<tr id="stab.tr" name="additional_fields" style="display:none">
 	<td>Stabilization Method</td>	<!-- align="left" -->
 	<td>
@@ -117,7 +86,7 @@
 		#end
 	</td>
 	<td></td>	<!-- no hints available -->
-</tr>		
+</tr>
 
 		<tr id="mark.tr" name="additional_fields" style="display:none">
 	<td>Reference Mark</td>	<!-- align="left" -->
@@ -129,7 +98,7 @@
 	#end
 	</td>
 	<td></td> <!-- no hints available -->
-</tr>		
+</tr>
 
 		<tr id="coil.tr" name="additional_fields" style="display:none">
 	<td>Receiver coil</td>	<!-- align="left" -->
@@ -203,3 +172,5 @@
     <th align="left">Emission Scan Start-time</th>
     <td>#xdatTimeBox("xnat:petmrSessionData/start_time_scan" $item $vr)</td>
 </tr>
+
+<!-- END /xnat-templates/screens/xnat_petmrSessionData/upload/xnat_petmrSessionData_fields.vm -->

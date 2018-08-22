@@ -3,12 +3,13 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 function CustomSelectBox(_input,_settings){
-	this.settings=_settings;
-	
+
+    this.settings = _settings || {};
+
 	if(typeof _input == 'string'){
 		this.select = (document.getElementById(_input));
 	}else if(typeof _input == 'object'){
@@ -16,19 +17,19 @@ function CustomSelectBox(_input,_settings){
 	}else{
 		return;
 	}
-	
+
 	if(this.settings.valueField==undefined){
 		this.settings.valueField="value";
 	}
-	
+
 	if(this.settings.displayField==undefined){
 		this.settings.displayField=this.settings.valueField;
 	}
-	
+
 	var menu = this.select;
-	
+
 	this.render=function(_default){
-        
+
         var selectManager = this;
 
         menu.onchange=function(obj){
@@ -49,7 +50,7 @@ function CustomSelectBox(_input,_settings){
 					XNAT.xhr.get(selectManager.settings.uri, initCallback);
                     // YAHOO.util.Connect.asyncRequest('GET', selectManager.settings.uri, initCallback, null, selectManager);
                 }
-                else {						
+                else {
 					selectManager.populate();
 				}
             }
@@ -65,19 +66,16 @@ function CustomSelectBox(_input,_settings){
 				creator.render();
 			}
 		};
-        
+
 		selectManager.populate=function(obj,_v){
 
 		    menu.innerHTML = '';
 
 		    function newOption(value, label, isDefault, selected){
                 var option = document.createElement('option');
-                value = window.unescapeAllHTML(value||'');
-                label = window.unescapeAllHTML(label||'');
-                // value = window.escapeHTML(value);
+                // option.value = window.unescapeAllHTML(value||'');
                 option.value = value;
-                label = window.escapeHTML(label);
-                option.innerHTML = label;
+                option.innerHTML = window.escapeHTML(window.unescapeAllHTML(label||''));
                 option.defaultSelected = isDefault || false;
                 option.selected = selected || false;
                 return option;
@@ -86,7 +84,7 @@ function CustomSelectBox(_input,_settings){
             var hasDefault = false;
 
 			menu.options[0]=new Option("Select...","NULL");
-					
+
 			if(selectManager.settings.custom!=undefined){
 				for(var tC=0;tC<selectManager.settings.custom.length;tC++){
 					var v=selectManager.settings.custom[tC];
@@ -101,20 +99,20 @@ function CustomSelectBox(_input,_settings){
 					}
 				}
 			}
-			
+
 			if(selectManager.settings.all_values!=undefined){
 				for(var tC=0;tC<selectManager.settings.all_values.length;tC++){
 					var v=selectManager.settings.all_values[tC];
-					
+
                     menu.appendChild(newOption(
                         v[selectManager.settings.valueField],
                         v[selectManager.settings.displayField],
                         v[selectManager.settings.valueField]==_v,
                         v[selectManager.settings.valueField]==_v
                     ));
-                    
+
                     // menu.options[menu.options.length]=new Option(v[selectManager.settings.valueField],v[selectManager.settings.displayField],(v[selectManager.settings.valueField]==_v)?true:false,(v[selectManager.settings.valueField]==_v)?true:false);
-					
+
                     if(v[selectManager.settings.valueField]==_v){
                         hasDefault = true
 						menu.selectedIndex=(menu.options.length-1);
@@ -155,11 +153,11 @@ function CustomSelectBox(_input,_settings){
                 }
 
             }
-			
+
 			menu.options[menu.options.length]=new Option("Add custom entry...","");
 
 		};
-		
+
 		selectManager.populate(null,_default);
 	}
 }
@@ -168,8 +166,8 @@ function CustomSelectBox(_input,_settings){
 function CustomValueCreator(_options){
   	this.options=_options;
     this.onResponse=new YAHOO.util.CustomEvent("response",this);
-  
-	this.render=function(){	
+
+	this.render=function(){
 		this.panel=new YAHOO.widget.Dialog("valueDialog",{
             close:true,
             width:"350px",
@@ -180,19 +178,19 @@ function CustomValueCreator(_options){
             visible:false
         });
 		this.panel.setHeader("Define New Value");
-				
+
 		var bd = document.createElement("form");
-					
+
 		var table = document.createElement("table");
 		var tb = document.createElement("tbody");
 		table.appendChild(tb);
 		bd.appendChild(table);
-		
+
 		//modality
 		var tr=document.createElement("tr");
 		var td1=document.createElement("th");
 		var td2=document.createElement("td");
-		
+
 		td1.innerHTML="New Value:";
 		td1.align="left";
 		var input = document.createElement("input");
@@ -205,9 +203,9 @@ function CustomValueCreator(_options){
 		tr.appendChild(td1);
 		tr.appendChild(td2);
 		tb.appendChild(tr);
-		
+
 		this.panel.setBody(bd);
-		
+
 		this.panel.form=bd;
 
 		this.panel.selector=this;

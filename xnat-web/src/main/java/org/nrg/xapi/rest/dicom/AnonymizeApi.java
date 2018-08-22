@@ -10,6 +10,7 @@
 package org.nrg.xapi.rest.dicom;
 
 import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.annotations.XapiRestController;
@@ -24,8 +25,6 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,6 +38,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @Api(description = "XNAT DICOM Anonymization API")
 @XapiRestController
 @RequestMapping(value = "/anonymize")
+@Slf4j
 public class AnonymizeApi extends AbstractXapiProjectRestController {
     @Autowired
     public AnonymizeApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final AnonUtils anonUtils, final SiteConfigPreferences preferences) {
@@ -71,12 +71,12 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         return new ResponseEntity<>(_anonUtils.getSiteWideScript(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets the site-wide anonymization script.", response = Void.class)
+    @ApiOperation(value = "Sets the site-wide anonymization script.")
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully stored the contents of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public ResponseEntity<Void> setSiteWideAnonScript(@RequestBody final String script) throws ConfigServiceException {
+    public ResponseEntity<Void> setSiteWideAnonScript(@RequestBody final String script) {
         _preferences.setSitewideAnonymizationScript(script);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -86,16 +86,16 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
-    public ResponseEntity<Boolean> isSiteWideAnonScriptEnabled() throws ConfigServiceException {
+    public ResponseEntity<Boolean> isSiteWideAnonScriptEnabled() {
         return new ResponseEntity<>(_preferences.getEnableSitewideAnonymizationScript(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Enables or disables the site-wide anonymization script.", response = Void.class)
+    @ApiOperation(value = "Enables or disables the site-wide anonymization script.")
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public ResponseEntity<Void> setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", required = true) @RequestParam(required= false, defaultValue = "true") final boolean enable) throws ConfigServiceException {
+    public ResponseEntity<Void> setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", required = true) @RequestParam(required= false, defaultValue = "true") final boolean enable) {
         _preferences.setEnableSitewideAnonymizationScript(enable);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -116,7 +116,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         return new ResponseEntity<>(script, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets the project-specific anonymization script.", response = Void.class)
+    @ApiOperation(value = "Sets the project-specific anonymization script.")
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully stored the contents of the project-specific anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script."),
                    @ApiResponse(code = 404, message = "The specified project wasn't found."),
@@ -126,12 +126,12 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                                                          @PathVariable("projectId")
                                                          @ProjectId final String projectId,
                                                      @ApiParam(value = "Whether the specified project's anonymization script should be enabled or disabled.", required = true)
-                                                     @RequestBody final String script) throws NrgServiceException {
+                                                     @RequestBody final String script) {
         try {
             _anonUtils.setProjectScript(getSessionUser().getUsername(), script, projectId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (ConfigServiceException e) {
-            _log.error("An error occurred when user " + getSessionUser().getUsername() + " tried to set an anonymization script for project " + projectId, e);
+            log.error("An error occurred when user {} tried to set an anonymization script for project {}", getSessionUser().getUsername(), projectId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -141,11 +141,11 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Read)
-    public ResponseEntity<Boolean> isProjectAnonScriptEnabled(@PathVariable("projectId") @ProjectId final String projectId) throws NrgServiceException {
+    public ResponseEntity<Boolean> isProjectAnonScriptEnabled(@PathVariable("projectId") @ProjectId final String projectId) {
         return new ResponseEntity<>(_anonUtils.isProjectScriptEnabled(projectId), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Enables or disables the project-specific anonymization script.", response = Void.class)
+    @ApiOperation(value = "Enables or disables the project-specific anonymization script.")
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the project-specific anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
@@ -159,8 +159,6 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(AnonymizeApi.class);
 
     private final AnonUtils             _anonUtils;
     private final SiteConfigPreferences _preferences;

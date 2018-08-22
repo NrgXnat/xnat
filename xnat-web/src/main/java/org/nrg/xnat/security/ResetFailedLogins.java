@@ -9,32 +9,58 @@
 
 package org.nrg.xnat.security;
 
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-public class ResetFailedLogins implements Runnable {
+import java.sql.SQLException;
 
-    public ResetFailedLogins(final JdbcTemplate template, final SiteConfigPreferences preferences) {
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@Accessors(prefix = "_")
+public class ResetFailedLogins extends AbstractXnatRunnable {
+    public ResetFailedLogins(final NamedParameterJdbcTemplate template, final int maxFailedLogins, final String maxFailedLoginsLockoutDuration) {
         _template = template;
-        _preferences = preferences;
+        _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+        _sqlParameterSource = new MapSqlParameterSource("maxFailedLogins", maxFailedLogins).addValue("duration", maxFailedLoginsLockoutDuration);
     }
 
     @Override
-    public void run() {
-        if (_template.queryForObject("SELECT count(*) from xhbm_xdat_user_auth", Integer.TYPE) > 0) {
-            final int updated = _template.update("UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= "+_preferences.getMaxFailedLogins()+" AND lockout_time < NOW() - INTERVAL '" + _preferences.getMaxFailedLoginsLockoutDuration() + "'");
-            if (_log.isInfoEnabled()) {
-                _log.info("Reset {} failed login attempts.", updated);
+    protected void runTask() {
+        // If we don't have the table marked as existing...
+        if (!_userAuthTableExists) {
+            try {
+                // Then let's check again. Maybe it exists now!
+                _userAuthTableExists = _helper.tableExists("xhbm_xdat_user_auth");
+            } catch (SQLException e) {
+                log.warn("An error occurred trying to check whether the xhbm_xdat_user_auth table exists", e);
             }
+        }
+
+        // OK, if it exists now...
+        if (_userAuthTableExists) {
+            // Update any rows where their failed logins exceeds the configured max
+            // but the last failure was longer ago than the max lockout time.
+            final int updated = _template.update(QUERY, getSqlParameterSource());
+            log.info("Reset {} failed login attempts.", updated);
         } else {
-            _log.info("Didn't reset any failed login attempts, there's no data in the relevant table.");
+            log.info("Didn't reset any failed login attempts, there's no data in the relevant table.");
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(ResetFailedLogins.class);
+    private static final String QUERY = "UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= :maxFailedLogins AND lockout_time < NOW() - :duration::INTERVAL";
 
-    private final JdbcTemplate _template;
-    private final SiteConfigPreferences _preferences;
+    private final NamedParameterJdbcTemplate _template;
+    private final DatabaseHelper             _helper;
+    private final SqlParameterSource         _sqlParameterSource;
+
+    private boolean _userAuthTableExists;
 }

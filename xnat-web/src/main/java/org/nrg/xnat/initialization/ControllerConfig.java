@@ -17,3 +17,4 @@ import org.springframework.context.annotation.Import;
 @Import(RestApiConfig.class)
 public class ControllerConfig {
 }
+

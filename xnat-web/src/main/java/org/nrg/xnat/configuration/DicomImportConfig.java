@@ -13,16 +13,20 @@ import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.services.cache.UserProjectCache;
-import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 @Configuration
 @ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
@@ -35,13 +39,13 @@ public class DicomImportConfig {
     }
 
     @Bean
-    public DicomFileNamer dicomFileNamer() throws Exception {
-        return new TemplatizedDicomFileNamer("${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}");
+    public DicomFileNamer dicomFileNamer(final SiteConfigPreferences preferences) {
+        return new TemplatizedDicomFileNamer(preferences.getDicomFileNameTemplate());
     }
 
     @Bean
     public List<String> sessionDataFactoryClasses() {
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     @Bean

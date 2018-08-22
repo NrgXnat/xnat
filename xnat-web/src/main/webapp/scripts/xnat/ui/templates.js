@@ -150,7 +150,7 @@ var XNAT = getObject(XNAT);
             addClassName(element, [opts.className, opts.classes, opts.addClass]);
         }
 
-        var inner = spawn('div.panel-element-content');
+        var inner = spawn('div.panel-element-content', [element]);
 
         var panelElement = template.panelElement(opts, [
 
@@ -158,18 +158,12 @@ var XNAT = getObject(XNAT);
             (opts.label ? ['label.element-label|for='+element.id||opts.id, opts.label] : ''),
 
             ['div.element-wrapper', [].concat(
-
                 (opts.beforeElement ? opts.beforeElement : []),
-
-                element,
-
                 inner,
-
                 (opts.afterElement ? opts.afterElement : []),
-
                 spawn('div.description', opts.description||'')
-
             )]
+
         ]);
 
         panelElement.target = panelElement.inner = inner;
@@ -193,7 +187,7 @@ var XNAT = getObject(XNAT);
             type: opts.type||'text',
             id: opts.id,
             name: opts.name,
-            size: opts.size || 25,
+            size: opts.size || 30,
             title: opts.title||opts.label||opts.name||opts.id,
             value: opts.value||''
         }, opts.element);
@@ -238,7 +232,7 @@ var XNAT = getObject(XNAT);
         var hasValue = isDefined(opts.value);
 
         if (hasValue){
-            XNAT.ui.input.setValue($element, opts.value);
+            XNAT.form.setValue($element, opts.value);
         }
 
         // // look up a namespaced object value if the value starts with '??'
@@ -295,12 +289,6 @@ var XNAT = getObject(XNAT);
 
         // special stuff for switchbox elements
         if (/switchbox/i.test(opts.kind)) {
-            // inner.push(spawn('label.switchbox', [
-            //     element,
-            //     ['span.switchbox-outer', [['span.switchbox-inner']]],
-            //     ['span.switchbox-on', opts.onText||''],
-            //     ['span.switchbox-off', opts.offText||'']
-            // ]))
             inner.push(XNAT.ui.input.switchbox(opts, element));
         }
         else {

@@ -42,20 +42,21 @@ public class DateValidation {
         }
     }
 
-    public Date parseDate(final String date) throws ParseException {
+    public Date parseDate(final String date) throws SiteConfigurationException {
         try {
-            return DateUtils.parseDateStrictly(date, DATE_FORMATS.toArray(new String[DATE_FORMATS.size()]));
-        } catch (ParseException e) {
-            return DateUtils.parseDateStrictly(date, DATE_TIME_FORMATS.toArray(new String[DATE_TIME_FORMATS.size()]));
-        }
-    }
-
-    public String convertDateToLongString(final String date) throws SiteConfigurationException {
-        try {
-            return Long.toString(parseDate(date).getTime());
+            try {
+                return DateUtils.parseDateStrictly(date, DATE_FORMATS.toArray(new String[DATE_FORMATS.size()]));
+            } catch (ParseException e) {
+                return DateUtils.parseDateStrictly(date, DATE_TIME_FORMATS.toArray(new String[DATE_TIME_FORMATS.size()]));
+            }
         } catch (ParseException e) {
             throw new SiteConfigurationException(NrgServiceError.ConfigurationError, "The specified date \"" + date + "\" is in an invalid format. This should use one of the formats: " + Joiner.on(", ").join(DATE_FORMATS), e);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public String convertDateToLongString(final String date) throws SiteConfigurationException {
+        return Long.toString(parseDate(date).getTime());
     }
 
     private final List<String> DATE_FORMATS;

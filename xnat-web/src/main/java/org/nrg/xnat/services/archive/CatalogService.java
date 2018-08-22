@@ -9,17 +9,19 @@
 
 package org.nrg.xnat.services.archive;
 
+import org.apache.ecs.xhtml.label;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
-import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -57,15 +59,16 @@ public interface CatalogService {
      * </ul>
      *
      * Each key can reference a list containing one or more data object IDs. This function returns the ID of the newly
-     * created catalog. You can retrieve the catalog itself by calling {@link #getResourcesForCatalog(UserI, String)}.
+     * created catalog. You can retrieve the catalog itself by calling {@link #getCachedCatalog(UserI, String)}.
      *
      * @param user       The user requesting the resources.
      * @param resources  The resources to be included in the catalog.
+     * @param withSize   Whether to include the total size of the files that will be included
      * @return The ID of the newly created catalog containing the requested resources.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
+    Map<String,String> buildCatalogForResources(final UserI user, final Map<String, List<String>> resources, final boolean withSize) throws InsufficientPrivilegesException;
 
     /**
      * Retrieves the catalog with the submitted ID.
@@ -115,7 +118,6 @@ public interface CatalogService {
     XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
     /**
-     * /**
      * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive
      * space of the parent data object and have the same name as the catalog. The contents of the locations specified by
      * the sources parameters are copied into the resource folder: if each source is a directory, only that directory's
@@ -136,6 +138,31 @@ public interface CatalogService {
      * @throws Exception When something goes wrong.
      */
     XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
+
+    /**
+     * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive
+     * space of the parent data object and have the same name as the catalog. The contents of the locations specified by
+     * the sources parameters are copied into the resource folder.
+     * * If the source is a file, that file is copied into the resource folder.
+     * * If the source is a directory, and preserveDirectories=true, the directory and its contents are copied in.
+     *      If preserveDirectories=false, only that directory's contents&emdash;that is,
+     *      not the directory itself&emdash;are copied into the resource folder.
+     *
+     * @param user                  The user creating the catalog.
+     * @param parentUri             The URI of the resource parent.
+     * @param resources             The files and/or folders to copy into the resource folder.
+     * @param preserveDirectories   Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
+     * @param label                 The label for the new resource catalog.
+     * @param description           The description of the resource catalog.
+     * @param format                The format of the data in the resource catalog.
+     * @param content               The content of the data in the resource catalog.
+     * @param tags                  Tags for categorizing the data in the resource catalog.
+     *
+     * @return The newly created {@link XnatResourcecatalog} object representing the new resource.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
     /**
      * Creates a new resource catalog with the indicated attributes. The new resource catalog is not associated with any
@@ -301,4 +328,30 @@ public interface CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException;
+
+    /**
+     * Inserts the XML object into the XNAT data store. The submitted XML is validated and inserted (created or updated as appropriate). The contents of the parameters map
+     * can contain the following parameters:
+     *
+     * <ul>
+     *     <li>event_reason</li>
+     * 	   <li>event_type</li>
+     * 	   <li>event_action</li>
+     * 	   <li>event_comment</li>
+     * </ul>
+     *
+     * These values are used when creating the audit entries in XNAT for the object creation or update operation. If values aren't provided for these parameters, default
+     * values are set in their place. In addition, the parameter map can include property values to set on the resulting XFTItem, with the map key corresponding to the
+     * property's XML path and map value to the property value. Generally however, property values should just be set directly in the XML.
+     *
+     * @param user              The user inserting the XML object.
+     * @param input             An input stream from which the XML object can be read.
+     * @param allowDataDeletion Indicates whether values on an existing XML object should be overwritten by values in the inserted XML.
+     * @param parameters        A map of parameters.
+     *
+     * @return The resulting {@link XFTItem} object.
+     *
+     * @throws Exception When an error occurs during object creation or update.
+     */
+    XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception;
 }

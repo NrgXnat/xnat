@@ -9,8 +9,12 @@
 
 package org.nrg.xnat.configuration;
 
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.security.PermissionsServiceImpl;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -22,12 +26,17 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 @Configuration
 @ComponentScan({"org.nrg.xnat.services.archive.impl",
                 "org.nrg.xnat.services.cache",
-                "org.nrg.xnat.services.investigators",
+                "org.nrg.xnat.services.investigators.impl.xft",
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation"})
 public class XnatServicesConfig {
     @Bean
-    public PermissionsServiceI permissionsService(final NamedParameterJdbcTemplate template) {
-        return new PermissionsServiceImpl(template);
+    public PermissionsServiceI permissionsService(final NrgEventService eventService) {
+        return new PermissionsServiceImpl(eventService);
+    }
+
+    @Bean
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
+        return new UserGroupManager(cache, template);
     }
 }

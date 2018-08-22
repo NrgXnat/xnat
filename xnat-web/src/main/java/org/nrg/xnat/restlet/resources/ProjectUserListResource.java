@@ -15,6 +15,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
@@ -70,7 +71,7 @@ public class ProjectUserListResource extends SecureResource {
         if (_project != null) {
             final StringBuilder query = new StringBuilder("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(_project.getId()).append("' ");
             if(this.getQueryVariable("includeAllDataAccess")!=null && this.getQueryVariable("includeAllDataAccess").equalsIgnoreCase("true")){
-                query.append(" OR g.id ='ALL_DATA_ADMIN' ");
+                query.append(" OR g.id ='").append(Groups.ALL_DATA_ADMIN_GROUP).append("' ");
             }
             try {
                 if(!_displayHiddenUsers){

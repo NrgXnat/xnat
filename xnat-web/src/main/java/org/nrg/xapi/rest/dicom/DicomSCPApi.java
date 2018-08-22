@@ -42,7 +42,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
 @Api(description = "XNAT DICOM SCP management API")
 @XapiRestController
-@RequestMapping(value = "/dicomscp")
+    @RequestMapping(value = "/dicomscp")
 public class DicomSCPApi extends AbstractXapiRestController {
     @Autowired
     public DicomSCPApi(final DicomSCPManager manager, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
@@ -113,7 +113,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomSCPInstance>> getDicomSCPInstances() {
-        final List<DicomSCPInstance> instances = new ArrayList<>(_manager.getDicomSCPInstances().values());
+        final List<DicomSCPInstance> instances = _manager.getDicomSCPInstancesList();
         return new ResponseEntity<>(instances, HttpStatus.OK);
     }
 
@@ -182,6 +182,12 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                                    }))
                                                                    @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicateTitleAndPortException, UnknownDicomHelperInstanceException, DicomNetworkException {
         if (_manager.hasDicomSCPInstance(id)) {
+            DicomSCPInstance existingScp = _manager.getDicomSCPInstance(id);
+            if(existingScp.getPort()!=instance.getPort()){
+                //User is changing the port of the SCP receiver. Receiver must be removed from old port
+                _manager.disableDicomSCPInstances(id);
+            }
+
             // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
             // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
             instance.setId(id);

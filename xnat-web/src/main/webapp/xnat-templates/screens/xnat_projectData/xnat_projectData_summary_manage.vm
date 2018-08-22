@@ -172,15 +172,7 @@
             }
 
 </style>
-##<script type="text/javascript">
-##    writeScripts([
-##        scriptUrl('lib/ace/ace.js'),
-##        scriptUrl('seriesImportFilter.js'),
-##        scriptUrl('settingsManager.js'),
-##        scriptUrl('xnat/app/eventsManager.js')
-##    ]);
-##</script>
-<script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
+
 <script type="text/javascript" src="$content.getURI("scripts/seriesImportFilter.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/settingsManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/xnat/app/eventsManager.js")"></script>
@@ -415,8 +407,8 @@
                                 <div class="info">
                                     Creating a whitelist means that <i>only</i> DICOM series with a series description
                                     that matches one of series filter patterns will be considered by XNAT import tools
-                                    such as the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
-                                    Assistant</a>. Creating a blacklist means that all DICOM series will be considered
+                                    such as the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Desktop Applications</a>.
+                                    Creating a blacklist means that all DICOM series will be considered
                                     <i>except</i> for series that have one of the specified series filter patterns. A
                                     modality map lets you specify boolean expressions in JavaScript that can use DICOM
                                     header values from incoming DICOM objects to decide the appropriate modality for the

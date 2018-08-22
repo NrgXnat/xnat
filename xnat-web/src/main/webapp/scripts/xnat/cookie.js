@@ -71,6 +71,16 @@ var XNAT = getObject(XNAT);
         }
     }
 
+    function getSubCookie(name, prop){
+        var cookieObject = Cookies.getJSON(name);
+        if (isPlainObject(cookieObject)) {
+            return cookieObject[prop];
+        }
+        else {
+            return cookieObject;
+        }
+    }
+
     function cookieExists(name){
         return getCookie(name) !== undef;
     }
@@ -96,6 +106,29 @@ var XNAT = getObject(XNAT);
     cookie.get = getCookie;
     cookie.set = setCookie;
     cookie.exists = cookieExists;
+
+    cookie.subCookie = getSubCookie;
+    cookie.getValue = getSubCookie;
+
+    // update JSON cookie with [obj]
+    cookie.update = function(name, obj, opts) {
+        var cookieObject = Cookies.getJSON(name);
+        // just set the value if not an object
+        if (!isPlainObject(cookieObject)) {
+            return setCookie(name, obj, opts);
+        }
+        forOwn(obj, function(key, val){
+            cookieObject[key] = val;
+        });
+        return setCookie(name, cookieObject, opts);
+    };
+
+    // force setting of object without trampling on other properties
+    cookie.setValue = function(name, prop, val, opts){
+        var cookieObject = getObject(Cookies.getJSON(name));
+        cookieObject[prop] = val;
+        return setCookie(name, cookieObject, opts);
+    };
 
     // pass an array for 'names' argument
     // to RESET multiple cookies with one call

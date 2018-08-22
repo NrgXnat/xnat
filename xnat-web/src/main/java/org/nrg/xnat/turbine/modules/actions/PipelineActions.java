@@ -178,8 +178,6 @@ public class PipelineActions extends SecureAction{
             }else {
                 String msg = "<p><b>The build process was successfully launched.  Status email will be sent upon its completion.</b></p>";
                 context.put("msg",msg);
-                String breadCrumbs = "\"&nbsp;>&nbsp;<a href='/app/template/BrowseProjects.vm'>Studies</a>\"";
-                context.put("breadcrumbLinks",breadCrumbs);
                 data.setScreenTemplate("GenericMessage.vm");
             }
         } catch (Exception e){

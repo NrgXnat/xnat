@@ -9,23 +9,25 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.PETTracerUtils;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class GetSiteWidePETTracerList extends AbstractInitializingTask {
     @Autowired
-    public GetSiteWidePETTracerList(final XnatUserProvider primaryAdminUserProvider, final PETTracerUtils petTracerUtils) {
+    public GetSiteWidePETTracerList(final XnatUserProvider primaryAdminUserProvider, final PETTracerUtils petTracerUtils, final SiteConfigPreferences preferences) {
         _adminUsername = primaryAdminUserProvider.getLogin();
         _petTracerUtils = petTracerUtils;
+        _preferences = preferences;
     }
 
     @Override
@@ -36,12 +38,12 @@ public class GetSiteWidePETTracerList extends AbstractInitializingTask {
     @Override
     protected void callImpl() throws InitializingTaskException {
         try {
-            final String path = PETTracerUtils.buildScriptPath(PETTracerUtils.ResourceScope.SITE_WIDE, "");
-            final Configuration configuration = _petTracerUtils.getTracerList(path, null);
+            final Configuration configuration = _petTracerUtils.getSiteWideTracerList();
             if (configuration == null) {
-                _log.info("Creating PET Tracer List.");
-                final String siteWide = PETTracerUtils.getDefaultTracerList();
-                _petTracerUtils.setSiteWideTracerList(_adminUsername, path, siteWide);
+                final String tracers = PETTracerUtils.getDefaultTracerList();
+                log.info("No site-wide PET tracer setting found, storing default PET tracer list: {}", tracers);
+                _petTracerUtils.setSiteWideTracerList(_adminUsername, tracers);
+                _preferences.setSitewidePetTracers(tracers);
             }
         } catch (ConfigServiceException e) {
             throw new InitializingTaskException(InitializingTaskException.Level.Warn, "An error occurred accessing the configuration service, it may not be initialized yet.", e);
@@ -50,8 +52,7 @@ public class GetSiteWidePETTracerList extends AbstractInitializingTask {
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(GetSiteWidePETTracerList.class);
-
-    private final String         _adminUsername;
-    private final PETTracerUtils _petTracerUtils;
+    private final String                _adminUsername;
+    private final PETTracerUtils        _petTracerUtils;
+    private final SiteConfigPreferences _preferences;
 }

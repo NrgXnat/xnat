@@ -12,7 +12,7 @@
 <input type="button" value="Add Scan" onclick="addScan(this)"/>
 #end
 </DIV>
-		  	    
+
 					<TABLE>
 					 <thead>
 	  <TR>
@@ -32,7 +32,7 @@
 <script type="text/javascript" src="$content.getURI("scripts/yui/build/autocomplete/autocomplete-min.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/imageScanData/scan_tools.js")"></script>
 <script type="text/javascript">
-  
+
   function addScan(_button){
      this.modalitySelector=new scanInit({modalities:[{"value":"xnat:petScanData","display":"PET"},{"value":"xnat:ctScanData","display":"CT"}]});
      			this.modalitySelector.onResponse.subscribe(function(){
@@ -41,14 +41,14 @@
         window.scanSet.new_scans.push(tempScan);
         window.scanSet.onLoad.fire();
   			   },this,this);
-  			
+
 			     this.modalitySelector.render();
   }
-  
+
   var options = new Object();
   options.session_id="$om.getId()";
     options.types=new Object();
-  
+
  #set($scanTypes = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("select DISTINCT isd.type from xnat_petsessiondata mr LEFT JOIN xnat_experimentData expt ON mr.id=expt.id LEFT JOIN xnat_imagescandata isd ON mr.id=isd.image_session_id LEFT JOIN xdat_meta_element xme ON isd.extension=xme.xdat_meta_element_id WHERE expt.project='$project' AND xme.element_name='xnat:petScanData'"))
   #if($scanTypes.size()>0)
     options.types["xnat:petScanData"]=new Object();
@@ -58,7 +58,7 @@
       options.types["xnat:petScanData"].values.push({"value":"$!scanT.get(0)","display":"$!scanT.get(0)"});
     #end
   #end
-  
+
   #set($ctscanTypes = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("select DISTINCT isd.type from xnat_petsessiondata mr LEFT JOIN xnat_experimentData expt ON mr.id=expt.id LEFT JOIN xnat_imagescandata isd ON mr.id=isd.image_session_id LEFT JOIN xdat_meta_element xme ON isd.extension=xme.xdat_meta_element_id WHERE expt.project='$project' AND xme.element_name='xnat:ctScanData'"))
   #if($ctscanTypes.size()>0)
     options.types["xnat:ctScanData"]=new Object();
@@ -68,46 +68,46 @@
       options.types["xnat:ctScanData"].values.push({"value":"$!scanT.get(0)","display":"$!scanT.get(0)"});
     #end
   #end
-  
+
 #if($allowDataDeletion)
    options.allowDataDeletion="$allowDataDeletion";
 #else
    options.allowDataDeletion="true";
 #end
-  
+
   window.scanSet=new ScanSet(options);
   if(window.classMapping==undefined)window.classMapping=new ClassMapping();
-  
+
   #set($numScans = $om.getSortedScans().size())
 	  #if($numScans>0)
 	  #set ($TOP_SCAN = $numScans - 1)
 	  #foreach($scani in [0..$TOP_SCAN])
     #set($scan=$om.getSortedScans().get($scani))
     var tempScan = window.classMapping.newInstance("$!scan.getXSIType()");
-    tempScan.setProperty("ID","$!scan.getId()");
-	#if($scan.getType())
-    	tempScan.setProperty("type","$!scan.getType()");
+    tempScan.setProperty("ID",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getId())")');
+          #if($scan.getType())
+    	tempScan.setProperty("type",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getType())")');
 	#else
-    	tempScan.setProperty("type","$!scan.getSeriesDescription()");
+    	tempScan.setProperty("type",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getSeriesDescription())")');
 	#end
-    tempScan.setProperty("quality","$!scan.getQuality()");
-    tempScan.setProperty("note","$!scan.getNote()");
+      tempScan.setProperty("quality",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getQuality())")');
+      tempScan.setProperty("note",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getNote())")');
     #if($om.getId())
      	tempScan.stats='$!scan.getFormattedReadableFileStats($user)';
 	#else
 		tempScan.stats='<div id="scan${scan.getId()}Actions" data-scan-id="$scan.getId()" class="scanActions"></div>';
 	#end
-    tempScan.setProperty("series_description","$!scan.getSeriesDescription()");
-    tempScan.setProperty("xnat_imageScanData_id","$!scan.getProperty('xnat_imagescandata_id')");
+    tempScan.setProperty("series_description",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getSeriesDescription())")');
+    tempScan.setProperty("xnat_imageScanData_id",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getProperty('xnat_imagescandata_id'))")');
     window.scanSet.scans.push(tempScan);
   #end
   #end
-  
+
   window.scanSet.onLoad.subscribe(function(obj){
     var listing=new scanListingEditor("scan_tbody",this);
     listing.render();
   });
-      
+
   #if($siteConfig.uiAllowScanAddition)
       if(window.scanSet.scans.length==0){
         for(var newC=0;newC<2;newC++){
@@ -118,7 +118,7 @@
     #end
 
   XNAT.app.sTMod=$siteConfig.uiAllowScanTypeModification
-      
+
   window.scanSet.onLoad.fire();
 </script>
 <!-- END /xnat-templates/screens/xnat_petSessionData/edit/scans.vm -->

@@ -49,10 +49,103 @@ var XNAT = getObject(XNAT);
     // add build info to page elements *AFTER* DOM load
     $(function(){
 
+        var $doc = $(document);
+
         // prevent default click triggers on '#' links
-        $(document).on('click', '[href^="#"], [href^="@!"]', function(e){
+        $doc.on('click', '[href^="#"], [href^="@!"]', function(e){
             e.preventDefault();
         });
+
+        // display 'wait' dialog for elements with a [data-wait] attribute
+        $doc.on('click', 'a[data-wait]', function(e){
+            var msg = $(this).data('wait') || 'Please wait...';
+            XNAT.dialog.static.wait(msg);
+        });
+
+
+        // display 'wait' dialog when requesting data download
+        function downloadWaitMsg(msg){
+            return XNAT.dialog.static.wait(msg || 'Preparing data for download...');
+        }
+        $('#actionsMenu').on('click', 'a[title="Download Images"]', function(e){
+            downloadWaitMsg()
+        });
+        $('#search_tabs').on('click', 'a.yuimenuitemlabel', function(e){
+            if (this.textContent === 'Download') {
+                downloadWaitMsg();
+            }
+        });
+
+
+        // <input type="checkbox" name="bogus" data-values="yes|no" data-proxy="id-of-proxy-input">
+        // ...or...
+        // <input type="checkbox" name="bogus" title="bogus=yes|no">
+        // ...or...
+        // <input type="checkbox" name="bogus" title="bogus: yes|no">
+        $doc.on('change', 'input.controller[type="checkbox"]', function(){
+
+            var ckbx$ = $(this);
+            var ckbx0 = this;
+            var NAME = (ckbx0.name || ckbx0.title.split(/[:=]/)[0] || ckbx$.data('name')).trim();
+            var values = ['true', 'false'];
+            var dataValues = ckbx$.data('values') || ckbx$.data('options');
+
+            ckbx0.name = NAME;
+
+            // if the [title] attribute contains '=' (or ':') and '|'
+            // ...it's probably the value options
+            if (!dataValues && /.+[:=].+[|]/.test(ckbx0.title)) {
+                dataValues = (ckbx0.title.split(/[:=]/)[1] || '').trim();
+            }
+
+            if (dataValues) {
+                values = (dataValues+'').split('|');
+            }
+
+            ckbx0.value = ckbx0.checked ? (values[0]+'').trim() : (values[1]+'').trim();
+
+        });
+
+        // make sure switchboxes track values properly
+        // encode the input name and values into the [title] attribute of the outer <label> element:
+        // <label class="switchbox" title="myInput=checkedValue|uncheckedValue">
+        // ...or...
+        // <label class="switchbox" title="myInput: checkedValue|uncheckedValue">
+        // $(document).on('change', 'input.switchbox', function(){
+        //     var chkbox$ = $(this);
+        //     var chkbox0 = chkbox$[0];
+        //     var switch$ = chkbox$.closest('label.switchbox');
+        //     var switch0 = switch$[0];
+        //     var NAME    = switch0.title.split(/[:=]/)[0];
+        //     var VALUES  = (switch0.title.split(/[:=]/)[1] || '').split('|') || ['true', 'false'];
+        //     var proxy$  = switch$.find('input.proxy');
+        //     var proxy0  = proxy$[0];
+        //     if (!proxy0) {
+        //         proxy0 = spawn('input.proxy|type=hidden');
+        //         switch0.appendChild(proxy0);
+        //     }
+        //     proxy0.name = NAME;
+        //     proxy0.value = chkbox0.checked ? (VALUES[0]+'').trim() : (VALUES[1]+'').trim();
+        //     // set [name] attribute for the checkbox to an empty string
+        //     if (chkbox0.name) {
+        //         chkbox0.name = '';
+        //     }
+        //     chkbox0.value = proxy0.value
+        // });
+
+        var siteLogo = $('#header_logo').find('> img');
+        // make sure the image in the #header_logo is loaded...
+        // ...checks for a [src] attribute ending with a valid
+        // image format extension (tolerates query string)
+        if (siteLogo.length && !/([.](gif|jpg|jpeg|png|svg)[?]?.*)$/i.test(siteLogo[0].src)) {
+            XNAT.xhr.get({
+                url: XNAT.url.rootUrl('/xapi/siteConfig/siteLogoPath'),
+                dataType: 'text',
+                success: function(path){
+                    siteLogo.attr('src', XNAT.url.rootUrl(path));
+                }
+            });
+        }
 
         // add version to title attribute of XNAT logos
         if (window.top.loggedIn !== undef && window.top.loggedIn === true) {
@@ -81,7 +174,7 @@ var XNAT = getObject(XNAT);
                 }
 
                 $('#xnat_power')
-                    .empty()
+                    // .empty()
                     .spawn('a.xnat-version', {
                         href: 'http://www.xnat.org',
                         target: '_blank',

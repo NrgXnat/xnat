@@ -6,9 +6,8 @@
  *
  * Released under the Simplified BSD.
  */
-
 /**
- * Polyfills for older browsers (IE8).
+ * Polyfills for older browsers
  */
 
 // Shortcut for element.appendChild()
@@ -33,6 +32,17 @@ if(!("lastElementChild" in document.documentElement)){
             return null;
         }
     });
+}
+
+// .forEach() method for NodeList
+if (NodeList && !NodeList.prototype.forEach) {
+    NodeList.prototype.forEach = function(callback, thisArg){
+        var i   = -1;
+        thisArg = thisArg || window;
+        while (++i < this.length) {
+            callback.call(thisArg, this[i], i, this)
+        }
+    };
 }
 
 // String.trim() polyfill (IE8)
@@ -84,6 +94,39 @@ if (!Array.prototype.indexOf) {
         }
         return -1;
     }
+}
+
+// Production steps of ECMA-262, Edition 5, 15.4.4.15
+// Reference: http://es5.github.io/#x15.4.4.15
+if (!Array.prototype.lastIndexOf) {
+    Array.prototype.lastIndexOf = function(searchElement /*, fromIndex*/) {
+        'use strict';
+        if (this === void 0 || this === null) {
+            throw new TypeError();
+        }
+        var n, k,
+            t = Object(this),
+            len = t.length >>> 0;
+        if (len === 0) {
+            return -1;
+        }
+        n = len - 1;
+        if (arguments.length > 1) {
+            n = Number(arguments[1]);
+            if (n != n) {
+                n = 0;
+            }
+            else if (n != 0 && n != (1 / 0) && n != -(1 / 0)) {
+                n = (n > 0 || -1) * Math.floor(Math.abs(n));
+            }
+        }
+        for (k = n >= 0 ? Math.min(n, len - 1) : len - Math.abs(n); k >= 0; k--) {
+            if (k in t && t[k] === searchElement) {
+                return k;
+            }
+        }
+        return -1;
+    };
 }
 
 // Array.map() polyfill (IE8)
@@ -415,7 +458,7 @@ if (typeof Object.create != 'function') {
     })();
 }
 
-// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
 if (!Object.keys) {
     Object.keys = (function() {
         'use strict';
@@ -455,4 +498,62 @@ if (!Object.keys) {
             return result;
         };
     }());
+}
+
+if (!Function.prototype.bind) {
+    Function.prototype.bind = function(oThis){
+        if (typeof this !== 'function') {
+            // closest thing possible to the ECMAScript 5
+            // internal IsCallable function
+            throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+        }
+
+        var aArgs   = Array.prototype.slice.call(arguments, 1),
+            fToBind = this,
+            fNOP    = function(){},
+            fBound  = function(){
+                return fToBind.apply(this instanceof fNOP
+                    ? this
+                    : oThis,
+                    aArgs.concat(Array.prototype.slice.call(arguments)));
+            };
+
+        if (this.prototype) {
+            // Function.prototype doesn't have a prototype property
+            fNOP.prototype = this.prototype;
+        }
+        fBound.prototype = new fNOP();
+
+        return fBound;
+    };
+}
+
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(search, pos) {
+        return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+    };
+}
+
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(search, thisLength) {
+        var undef;
+        if (thisLength === undef || thisLength > this.length) {
+            thisLength = this.length;
+        }
+        return this.substring(thisLength - search.length, thisLength) === search;
+    };
+}
+
+if (!String.prototype.includes) {
+    String.prototype.includes = function(search, start) {
+        'use strict';
+        if (typeof start !== 'number') {
+            start = 0;
+        }
+        if (start + search.length > this.length) {
+            return false;
+        } else {
+            return this.indexOf(search, start) !== -1;
+        }
+    };
 }

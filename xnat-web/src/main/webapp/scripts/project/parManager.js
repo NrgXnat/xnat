@@ -241,7 +241,6 @@ var XNAT = getObject(XNAT || {});
 
                         XNAT.ui.panel.select.single({
                             name: 'access_level',
-                            className: 'required',
                             options: groupSelectOptions,
                             label: 'Access Level',
                             validation: 'required not-empty'

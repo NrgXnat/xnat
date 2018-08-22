@@ -9,19 +9,18 @@
 
 package org.nrg.xnat.security.tokens;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.nrg.xdat.services.XdatUserAuthService;
 
-public class XnatDatabaseUsernamePasswordAuthenticationToken extends UsernamePasswordAuthenticationToken{
+public class XnatDatabaseUsernamePasswordAuthenticationToken extends AbstractXnatAuthenticationToken {
+    public XnatDatabaseUsernamePasswordAuthenticationToken(final Object principal, final Object credentials) {
+        super(XdatUserAuthService.LOCALDB, principal, credentials);
+    }
 
-	public XnatDatabaseUsernamePasswordAuthenticationToken(Object principal,
-			Object credentials) {
-		super(principal, credentials);
-	}
-
-	public String toString(){
-		if(getPrincipal()!=null)
-			return getPrincipal().toString();
-		else
-			return "";
-	}
+    public String toString() {
+        if (getPrincipal() != null) {
+            return getPrincipal().toString();
+        } else {
+            return "";
+        }
+    }
 }

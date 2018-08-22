@@ -31,7 +31,8 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
      *
      * @param cache The cache used to store retrieved project instances for
      */
-    public DbBackedProjectIdentifier(final UserProjectCache cache) {
+    @SuppressWarnings("WeakerAccess")
+    protected DbBackedProjectIdentifier(final UserProjectCache cache) {
         _log.debug("Creating DbBackedProjectIdentifier object with default constructor.");
         _cache = cache;
     }

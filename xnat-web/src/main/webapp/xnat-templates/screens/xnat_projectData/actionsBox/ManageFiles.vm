@@ -1,4 +1,9 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
 <!-- BEGIN xnat-templates/screens/xnat_projectData/actionsBox/ManageFiles.vm -->
 #if($user.checkFeature($om,"manage_files") && $siteConfig.uiShowProjectManageFiles)
      <li class="yuimenuitem">

@@ -23,7 +23,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Decompress;
-import org.nrg.dicom.mizer.service.*;
+import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -66,24 +66,22 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String SENDER_ID_PARAM       = "Sender-ID";
     public static final String TSUID_PARAM           = "Transfer-Syntax-UID";
 
-    public GradualDicomImporter(final Object listenerControl,
-                                final UserI user,
-                                final FileWriterWrapperI fileWriter,
-                                final Map<String, Object> parameters)
-            throws IOException, ClientException {
+    @SuppressWarnings("RedundantThrows")
+    public GradualDicomImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String, Object> parameters) throws ServerException {
         super(listenerControl, user, fileWriter, parameters);
         _user = user;
-        _userId = user.getUsername();
         _fileWriter = fileWriter;
         _parameters = parameters;
         if (_parameters.containsKey(TSUID_PARAM)) {
             _transferSyntax = TransferSyntax.valueOf((String) _parameters.get(TSUID_PARAM));
         }
+        //noinspection unchecked
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
-    public List<String> call() throws ClientException, ServerException {
+    public List<String> call() throws ClientException {
         final String name = _fileWriter.getName();
         final DicomObject dicom;
         final XnatProjectdata project;
@@ -328,15 +326,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     }
 
-    private boolean canCreateIn(final XnatProjectdata p) {
-        try {
-            return PrearcUtils.canModify(_user, p.getId());
-        } catch (Throwable t) {
-            logger.error("Unable to check permissions for " + _user + " in " + p, t);
-            return false;
-        }
-    }
-
     private XnatProjectdata getProject(final String alias, final Callable<XnatProjectdata> lookupProject) {
         if (null != alias) {
             logger.debug("looking for project matching alias {} from query parameters", alias);
@@ -437,6 +426,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static <K, V> String getString(final Map<K, V> m, final K k, final V defaultValue) {
         final V v = m.get(k);
         if (null == v) {
@@ -462,8 +452,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder, final File f, final String source)
-            throws ClientException, IOException {
+    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder, final File f, final String source) throws ClientException, IOException {
         IOException ioexception = null;
         final FileOutputStream fos = new FileOutputStream(f);
         final BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -559,7 +548,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final UserProjectCache    _cache;
     private final FileWriterWrapperI  _fileWriter;
     private final UserI               _user;
-    private final String              _userId;
     private final Map<String, Object> _parameters;
 
     private TransferSyntax     _transferSyntax;

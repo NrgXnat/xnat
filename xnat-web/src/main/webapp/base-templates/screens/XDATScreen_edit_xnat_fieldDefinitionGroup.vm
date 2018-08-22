@@ -22,7 +22,7 @@ $page.setVlinkColor($ui.vlink)
 			<table width="100%">
 				<TR>
 					<TD align="left" valign="middle">
-						<DIV class="edit_title">FieldDefinitionSet Details</DIV>
+						<DIV class="edit_title">Field Definition Group Details</DIV>
 					</TD>
 				</TR>
 			</TABLE>

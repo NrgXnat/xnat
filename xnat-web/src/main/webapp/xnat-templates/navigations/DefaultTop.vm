@@ -1,4 +1,15 @@
+#* @vtlvariable name="navigation" type="org.apache.turbine.util.template.TemplateNavigation" *#
+#* @vtlvariable name="sessionIpCsv" type="java.lang.String" *#
+#* @vtlvariable name="sessionCount" type="java.lang.Integer" *#
+#* @vtlvariable name="sessionIpCount" type="java.lang.Integer" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="last_login" type="java.util.Date" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="popup" type="java.lang.String" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="timeLeft" type="java.lang.String" *#
 <!-- START: xnat-templates/navigations/DefaultTop.vm -->
@@ -106,7 +117,6 @@
         #if($!user != "" && $user.isGuest())
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
             <script type="text/javascript">
-                window.username = '';
                 XNAT.cookie.set('guest', 'true');
             </script>
         #else
@@ -117,9 +127,8 @@
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">Your XNAT session will auto-logout after a certain period of inactivity. You can reset that timer without reloading the page by clicking "renew."</span>
                 </span>
                 ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in
-                Auto-logout in: <b id="timeLeft">-:--:--</b> - <a id="timeLeftRenew" href="javascript:" onClick="XNAT.app.timeout.handleOk()">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
+                Auto-logout in: <b id="timeLeft">-:--:--</b> - <a class="renew-session" href="#!">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script type="text/javascript">
-                    window.username = '$!username';
                     XNAT.cookie.set('guest', 'false');
                 </script>
             #end
@@ -220,10 +229,6 @@
         mainNav.find('li ul, li li ul').closest('li').addClass('more');
         mainNav.find('li li ul').addClass('subnav');
 
-        mainNav.on('click.nolink', 'a[href^="#"]', function(e){
-            e.preventDefault();
-        });
-
         mainNav.on('click.topnav', '> li', function(e){
             e.stopPropagation();
 
@@ -254,10 +259,17 @@
 
         });
 
-        mainNav.on('click', 'a', function(e){
+        mainNav.on('click.nolink', 'a[href^="#"]', function(e){
+            e.preventDefault();
+        });
+
+        mainNav.on('click', 'a:not([href^="#"])', function(e){
+            e.stopPropagation();
             var href = $(this).attr('href');
             if (href.indexOf('#') !== 0) {
-                mainNavClose.call(this, e)
+                window.setTimeout(function(){
+                    mainNavClose.call(this, e)
+                }, 100);
             }
         });
         mainNavBackdrop.on('click', mainNavClose);
@@ -374,8 +386,14 @@
 </script>
 <script>
     window.loggedIn = true;
+    window.isGuest = realValue('$!user.isGuest()');
+    (function () {
+        var bannerMessage = '$turbineUtils.getBannerMessage($data)';
+        if (bannerMessage) {
+            XNAT.ui.banner.top(5000, bannerMessage);
+        }
+    })();
 </script>
-##<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
 <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
 
 

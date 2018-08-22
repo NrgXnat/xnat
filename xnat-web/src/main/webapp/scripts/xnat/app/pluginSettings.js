@@ -285,12 +285,14 @@ var XNAT = getObject(XNAT);
     pluginSettings.siteSettings = function(tabContainer, callback){
         pluginSettings.siteSettingsTabs =
             pluginSettings.siteSettingsTabs ||
-            tabContainer ? $$(tabContainer) : $('#plugin-settings-tabs').find('div.content-tabs');
+            tabContainer ?
+                $$(tabContainer) :
+                $('#plugin-settings-tabs').find('div.content-tabs');
         // these properties MUST be set before spawning 'tabs' widgets
-        XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.siteSettingsTabs).empty();
+        XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.siteSettingsTabs);
         XNAT.tabs.layout = XNAT.tabs.layout || 'left';
         pluginSettings.showTabs = true;
-        return pluginSettings.renderSettings('siteSettings', pluginSettings.siteSettingsTabs, callback);
+        return pluginSettings.renderSettings('siteSettings', callback);
     };
 
     // render project-level settings for installed plugins
@@ -300,10 +302,10 @@ var XNAT = getObject(XNAT);
             tabContainer ?
                 $$(tabContainer) :
                 $('#project-settings-tabs').find('div.content-tabs');
-        XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.projectSettingsTabs).empty();
+        XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.projectSettingsTabs);
         XNAT.tabs.layout = XNAT.tabs.layout || 'left';
         pluginSettings.showTabs = true;
-        return pluginSettings.renderSettings('projectSettings', pluginSettings.projectSettingsTabs, callback);
+        return pluginSettings.renderSettings('projectSettings', callback);
     };
 
     // call it.

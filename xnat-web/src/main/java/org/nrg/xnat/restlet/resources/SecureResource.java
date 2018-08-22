@@ -9,12 +9,15 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.noelios.restlet.http.HttpConstants;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.fileupload.DefaultFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.TurbineException;
@@ -26,13 +29,16 @@ import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -50,6 +56,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -61,6 +68,8 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.archive.Rename;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.FileWriterWrapper;
 import org.nrg.xnat.itemBuilders.WorkflowBasedHistoryBuilder;
 import org.nrg.xnat.restlet.XnatItemRepresentation;
@@ -92,9 +101,12 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
+
+import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
 public abstract class SecureResource extends Resource {
@@ -134,14 +146,10 @@ public abstract class SecureResource extends Resource {
 
     public static final MediaType TEXT_CSV = MediaType.register("text/csv", "CSV");
 
-
-    protected List<String> actions = null;
-    public String userName = null;
-    private UserI user = null;
-    public String requested_format = null;
-    public String filepath = null;
-
-    private final SerializerService _serializer;
+    protected List<String> actions          = null;
+    public String          userName         = null;
+    public String          requested_format;
+    public String          filepath;
 
     public SecureResource(Context context, Request request, Response response) {
         super(context, request, response);
@@ -154,9 +162,6 @@ public abstract class SecureResource extends Resource {
 
         requested_format = getQueryVariable("format");
 
-        // expects that the user exists in the session (either via traditional
-        // session or set via the XnatSecureGuard
-        user = XDAT.getUserDetails();
         filepath = getRequest().getResourceRef().getRemainingPart();
         if (filepath != null) {
             if (filepath.contains("?")) {
@@ -168,7 +173,15 @@ public abstract class SecureResource extends Resource {
 
             filepath = TurbineUtils.escapeParam(filepath);
         }
-        logAccess();
+
+        try {
+            // expects that the user exists in the session (either via traditional
+            // session or set via the XnatSecureGuard
+            _user = ObjectUtils.defaultIfNull(XDAT.getUserDetails(), Users.getGuest());
+            logAccess();
+        } catch (UserNotFoundException | UserInitException e) {
+            throw new RuntimeException("An error occurred where it really should not have occurred", e);
+        }
     }
 
     public static Object getParameter(Request request, String key) {
@@ -185,10 +198,9 @@ public abstract class SecureResource extends Resource {
     }
 
     public void logAccess() {
-        final String url = getSiteUrlResolvedReference().toString();
-
+        final String url = getRequest().getResourceRef().toString();
         if (!(Method.GET.equals(getRequest().getMethod()) && url.contains("resources/SNAPSHOTS"))) {
-            AccessLogger.LogServiceAccess(user != null ? user.getLogin() : "", getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
+            AccessLogger.LogServiceAccess(getUser().getUsername(), getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
         }
     }
 
@@ -267,9 +279,8 @@ public abstract class SecureResource extends Resource {
      */
     private Form getBodyAsForm() {
         if (_body == null) {
-            Representation entity = getRequest().getEntity();
-
-            if (entity != null && RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
+            final Representation entity = getRequest().getEntity();
+            if (RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
                 _mediaType = entity.getMediaType();
                 _body = new Form(entity);
             }
@@ -400,9 +411,7 @@ public abstract class SecureResource extends Resource {
 
     public boolean isQueryVariable(String key, String value, boolean caseSensitive) {
         if (getQueryVariable(key) != null) {
-            if ((caseSensitive && getQueryVariable(key).equals(value)) || (!caseSensitive && getQueryVariable(key).equalsIgnoreCase(value))) {
-                return true;
-            }
+            return (caseSensitive && getQueryVariable(key).equals(value)) || (!caseSensitive && getQueryVariable(key).equalsIgnoreCase(value));
         }
         return false;
     }
@@ -483,7 +492,7 @@ public abstract class SecureResource extends Resource {
                         }
                         params.put("table", table);
                         params.put("hideTopBar", isQueryVariableTrue("hideTopBar"));
-                        return new StandardTurbineScreen(MediaType.TEXT_HTML, getRequest(), user, getQueryVariable("requested_screen"), params);
+                        return new StandardTurbineScreen(MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), params);
                     } catch (TurbineException e) {
                         logger.error("", e);
                         return new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, true);
@@ -505,10 +514,13 @@ public abstract class SecureResource extends Resource {
 
     public void returnRepresentation(Representation representation) {
         getResponse().setEntity(representation);
-        Representation selectedRepresentation = getResponse().getEntity();
+        setStatusBasedOnConditions();
+    }
+
+    protected void setStatusBasedOnConditions() {
+        final Representation selectedRepresentation = getResponse().getEntity();
         if (getRequest().getConditions().hasSome()) {
             final Status status = getRequest().getConditions().getStatus(getRequest().getMethod(), selectedRepresentation);
-
             if (status != null) {
                 getResponse().setStatus(status);
                 getResponse().setEntity(null);
@@ -579,7 +591,7 @@ public abstract class SecureResource extends Resource {
 
         if (mt.equals(MediaType.TEXT_HTML)) {
             try {
-                return new ItemHTMLRepresentation(item, MediaType.TEXT_HTML, getRequest(), user, getQueryVariable("requested_screen"), new Hashtable<String, Object>());
+                return new ItemHTMLRepresentation(item, MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), new Hashtable<String, Object>());
             } catch (Exception e) {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
                 return null;
@@ -683,6 +695,7 @@ public abstract class SecureResource extends Resource {
             req_format = "";
         }
 
+        final UserI user = getUser();
         if (parseFileItems) {
             if ((RequestUtil.hasContent(entity) && RequestUtil.compareMediaType(entity, MediaType.MULTIPART_FORM_DATA)) && !req_format.equals("form")) {
                 //handle multi part form data (where xml is being submitted as a field in a multi part form)
@@ -915,6 +928,12 @@ public abstract class SecureResource extends Resource {
     protected Reference getSiteUrlResolvedReference() {
         final Reference reference = getRequest().getResourceRef();
         try {
+            // If the reference starts with the processing URL, we'll assume that that's what they really meant and
+            // just return that without translating it to the siteUrl.
+            final String processingUrl = XDAT.getSiteConfigurationProperty("processingUrl", null);
+            if (StringUtils.startsWithIgnoreCase(reference.toString(), processingUrl)) {
+                return reference;
+            }
             final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
             try {
             	final String path = reference.getPath();
@@ -924,7 +943,6 @@ public abstract class SecureResource extends Resource {
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
                 reference.setBaseRef(reference.getScheme() + "://" + reference.getAuthority() + basePath);
-                
             } catch (MalformedURLException e) {
                 logger.warn("An error occurred trying to convert the site URL value " + siteUrlProperty + " to a URL object: " + e.getMessage());
             }
@@ -951,6 +969,7 @@ public abstract class SecureResource extends Resource {
         returnRepresentation(representItem(item, MediaType.TEXT_XML));
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected void setResponseHeader(String key, String value) {
         Form responseHeaders = (Form) getResponse().getAttributes().get("org.restlet.http.headers");
 
@@ -970,10 +989,12 @@ public abstract class SecureResource extends Resource {
         return isQueryVariableTrueHelper(getQueryVariable(key, request));
     }
 
-    protected static boolean isQueryVariableTrueHelper(Object queryVariableObj) {
-        if (queryVariableObj != null && queryVariableObj instanceof String) {
-            String queryVariable = (String) queryVariableObj;
-            return !(queryVariable.equalsIgnoreCase("false") || queryVariable.equalsIgnoreCase("0"));
+    protected static boolean isQueryVariableTrueHelper(final Object queryVariableObj) {
+        if (queryVariableObj == null) {
+            return false;
+        }
+        if (queryVariableObj instanceof String) {
+            return !(StringUtils.equalsAnyIgnoreCase((String) queryVariableObj, "false", "0"));
         } else {
             return false;
         }
@@ -994,7 +1015,7 @@ public abstract class SecureResource extends Resource {
     @Nonnull
     public UserI getUser() {
         try {
-            return user == null ? Users.getGuest() : user;
+            return ObjectUtils.defaultIfNull(_user, Users.getGuest());
         } catch (UserNotFoundException | UserInitException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "An error occurred retrieving the guest user.", e);
         }
@@ -1273,7 +1294,7 @@ public abstract class SecureResource extends Resource {
         final boolean includeFiles = (StringUtils.isEmpty(files)) ? false : Boolean.valueOf(files);
         final boolean includeDetails = (StringUtils.isEmpty(details)) ? false : Boolean.valueOf(details);
 
-        return new JSONObjectRepresentation(MediaType.APPLICATION_JSON, (new WorkflowBasedHistoryBuilder(item, key, user, includeFiles, includeDetails)).toJSON(getQueryVariable("dateFormat")));
+        return new JSONObjectRepresentation(MediaType.APPLICATION_JSON, (new WorkflowBasedHistoryBuilder(item, key, getUser(), includeFiles, includeDetails)).toJSON(getQueryVariable("dateFormat")));
     }
 
     public Integer getEventId() {
@@ -1311,9 +1332,11 @@ public abstract class SecureResource extends Resource {
     }
 
     public void delete(ArchivableItem item, EventDetails event) throws Exception {
+        final UserI               user     = getUser();
         final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, item.getXSIType(), item.getId(), item.getProject(), event);
-        final EventMetaI ci = workflow.buildEvent();
+        final EventMetaI          ci       = workflow.buildEvent();
 
+        final XftItemEvent.Builder builder = XftItemEvent.builder();
         try {
             if (isQueryVariableTrue("removeFiles")) {
                 final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
@@ -1323,11 +1346,17 @@ public abstract class SecureResource extends Resource {
                     if (om instanceof XnatAbstractresource) {
                         XnatAbstractresource resourceA = (XnatAbstractresource) om;
                         resourceA.deleteWithBackup(item.getArchiveRootPath(), user, ci);
+                        builder.item(resource);
                     }
                 }
             }
             DBAction.DeleteItem(item.getItem().getCurrentDBVersion(), user, ci, false);
-
+            if (BaseElement.class.isAssignableFrom(item.getClass())) {
+                builder.element((BaseElement) item);
+            } else {
+                builder.xsiType(item.getXSIType()).id(item.getId());
+            }
+            XDAT.triggerEvent(builder.build());
             WorkflowUtils.complete(workflow, ci);
         } catch (Exception e) {
             WorkflowUtils.fail(workflow, ci);
@@ -1338,8 +1367,9 @@ public abstract class SecureResource extends Resource {
     }
 
     public void delete(ArchivableItem parent, ItemI item, EventDetails event) throws Exception {
+        final UserI               user     = getUser();
         final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, parent.getXSIType(), parent.getId(), parent.getProject(), event);
-        final EventMetaI ci = workflow.buildEvent();
+        final EventMetaI          ci       = workflow.buildEvent();
 
         try {
             if (isQueryVariableTrue("removeFiles")) {
@@ -1366,34 +1396,43 @@ public abstract class SecureResource extends Resource {
     }
 
     @SuppressWarnings("unused")
-    public void create(ArchivableItem parent, ItemI sub, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
-        PersistentWorkflowI wrk = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, parent.getItem(), event);
-        EventMetaI c = wrk.buildEvent();
+    public boolean create(final ArchivableItem parent, final ItemI sub, final boolean overwriteSecurity, final boolean allowDataDeletion, final EventDetails event) throws Exception {
+        final UserI               user     = getUser();
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, parent.getItem(), event);
+        final EventMetaI          meta     = workflow.buildEvent();
 
         try {
-            if (SaveItemHelper.authorizedSave(sub, user, false, false, c)) {
-                WorkflowUtils.complete(wrk, c);
+            if (SaveItemHelper.authorizedSave(sub, user, false, false, meta)) {
+                WorkflowUtils.complete(workflow, meta);
+                Users.clearCache(user);
                 MaterializedView.deleteByUser(user);
+                return true;
             }
+            return false;
         } catch (Exception e) {
-            WorkflowUtils.fail(wrk, c);
+            WorkflowUtils.fail(workflow, meta);
             throw e;
         }
     }
 
-    public void create(ArchivableItem sub, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
-        PersistentWorkflowI wrk = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, sub.getItem(), event);
-        EventMetaI c = wrk.buildEvent();
+    public boolean create(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, EventDetails event) throws Exception {
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), getUser(), item.getItem(), event);
+        final EventMetaI meta = workflow.buildEvent();
+        return create(item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
 
-        try {
-            if (SaveItemHelper.authorizedSave(sub, user, overwriteSecurity, allowDataDeletion, c)) {
-                WorkflowUtils.complete(wrk, c);
-                MaterializedView.deleteByUser(user);
-            }
-        } catch (Exception e) {
-            WorkflowUtils.fail(wrk, c);
-            throw e;
-        }
+    public boolean create(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        return createOrUpdateImpl(true, item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
+
+    public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final EventDetails event) throws Exception {
+        final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), getUser(), item.getItem(), event);
+        final EventMetaI meta = workflow.buildEvent();
+        return update(item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
+
+    public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        return createOrUpdateImpl(false, item, overwriteSecurity, allowDataDeletion, workflow, meta);
     }
 
     protected static Representation returnStatus(ItemI i, MediaType mt) {
@@ -1410,6 +1449,7 @@ public abstract class SecureResource extends Resource {
 
     protected void postSaveManageStatus(ItemI i) throws ActionException {
         try {
+            final UserI user = getUser();
             if (isQueryVariableTrue("activate")) {
                 if (Permissions.canActivate(user, i.getItem())) {
                     PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, i.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, "Activated"));
@@ -1487,10 +1527,184 @@ public abstract class SecureResource extends Resource {
             throw new org.nrg.action.ServerException("Error modifying status", e);
         }
     }
-
+    
     protected void respondToException(Exception exception, Status status) {
         logger.error("Transaction got a status: " + status, exception);
         getResponse().setStatus(status, exception.getMessage());
+    }
+
+    protected Representation representProjectsForArchivableItem(final String label, final XnatProjectdata project, final Map<XnatProjectdataI, String> projects, final MediaType mediaType) {
+        final XFTTable table = new XFTTable();
+        table.initTable(new ArrayList<>(Arrays.asList("label", "ID", "Secondary_ID", "Name")));
+
+        Object[] row = new Object[4];
+        row[0] = label;
+        row[1] = project.getId();
+        row[2] = project.getSecondaryId();
+        row[3] = project.getName();
+        table.rows().add(row);
+
+        for (final XnatProjectdataI key : projects.keySet()) {
+            table.rows().add(ArrayUtils.toArray(projects.get(key), key.getId(), key.getSecondaryId(), key.getName()));
+        }
+
+        return representTable(table, mediaType, new Hashtable<String, Object>());
+    }
+
+    protected void changeExperimentPrimaryProject(final XnatExperimentdata experiment, final XnatProjectdata source, final XnatProjectdata destination, final String newLabel, final XnatExperimentdataShare share, final int index) throws Exception {
+        final UserI user = getUser();
+        if (!Permissions.canDelete(user, experiment)) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient privileges for experiments in this project.");
+            return;
+        }
+
+        if (experiment.getProject().equals(destination.getId())) {
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Already assigned to project: " + destination.getId());
+            return;
+        }
+
+        final String workingLabel = StringUtils.defaultIfBlank(newLabel, StringUtils.defaultIfBlank(experiment.getLabel(), experiment.getId()));
+
+        final XnatExperimentdata match = XnatExperimentdata.GetExptByProjectIdentifier(destination.getId(), workingLabel, user, false);
+
+        if (match != null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified label is already in use.");
+        }
+
+        final List<String> assessorList = StringUtils.isNotBlank(getQueryVariable("moveAssessors")) ? Arrays.asList(getQueryVariable("moveAssessors").split(",")) : null;
+
+        final EventMetaI meta = BaseXnatExperimentdata.ChangePrimaryProject(user, experiment, destination, workingLabel, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.MODIFY_PROJECT), assessorList);
+        XDAT.triggerXftItemEvent(experiment, XftItemEvent.MOVE, ImmutableMap.<String, Object>of("origin", source.getId(), "target", destination.getId()));
+
+        if (share != null) {
+            SaveItemHelper.authorizedRemoveChild(experiment.getItem(), "xnat:experimentData/sharing/share", share.getItem(), user, meta);
+            experiment.removeSharing_share(index);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment) throws Exception {
+        shareExperimentToProject(user, newProject, experiment, null);
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final String newLabel) throws Exception {
+        shareExperimentToProject(user, newProject, experiment, new XnatExperimentdataShare(user), newLabel);
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final XnatExperimentdataShare shared, final String newLabel) throws Exception {
+        final String newProjectId = newProject.getId();
+
+        shared.setProject(newProjectId);
+        shared.setProperty("sharing_share_xnat_experimentda_id", experiment.getId());
+        if(StringUtils.isNotBlank(newLabel)) {
+            shared.setLabel(newLabel);
+        }
+
+        BaseXnatExperimentdata.SaveSharedProject(shared, experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+        XDAT.triggerXftItemEvent(experiment, XftItemEvent.SHARE, ImmutableMap.<String, Object>of("target", newProjectId));
+    }
+
+    protected void deleteItem(final XnatProjectdata proj, final BaseElement item) {
+        if (!ArchivableItem.class.isAssignableFrom(item.getClass())) {
+            throw new IllegalArgumentException("The BaseElement item must also implement the ArchivableItem interface, but the class " + item.getClass().getName() + " doesn't.");
+        }
+
+        try {
+            final UserI               user       = getUser();
+            final XnatProjectdata     newProject = getProjectFromFilePath(proj, (ArchivableItem) item);
+            final PersistentWorkflowI wrk        = WorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(item.getXSIType())));
+            final EventMetaI          c          = wrk.buildEvent();
+
+            try {
+                final boolean                      removeFiles = isQueryVariableTrue("removeFiles");
+                final XnatProjectdata              project     = (newProject != null) ? newProject : proj;
+                final Class<? extends BaseElement> itemType    = item.getClass();
+
+                final String message;
+                if (XnatPvisitdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatPvisitdata) item).delete(project, user, removeFiles, c);
+                } else if (XnatImagesessiondata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatImagesessiondata) item).delete(project, user, removeFiles, c);
+                } else if (XnatSubjectdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatSubjectdata) item).delete(project, user, removeFiles, c);
+                } else if (XnatExperimentdata.class.isAssignableFrom(itemType)) {
+                    message = ((XnatExperimentdata) item).delete(project, user, removeFiles, c);
+                } else {
+                    message = null;
+                }
+                if (message != null) {
+                    WorkflowUtils.fail(wrk, c);
+                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
+                } else {
+                    XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
+                    WorkflowUtils.complete(wrk, c);
+                }
+            } catch (Exception e) {
+                try {
+                    WorkflowUtils.fail(wrk, c);
+                } catch (Exception e1) {
+                    logger.error("", e1);
+                }
+                logger.error("", e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            }
+        } catch (PersistentWorkflowUtils.EventRequirementAbsent e) {
+            logger.error("Forbidden: " + e.getMessage(), e);
+            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+        } catch (NotFoundException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    protected XnatProjectdata getProjectFromFilePath(final XnatProjectdata project, final ArchivableItem item) throws NotFoundException {
+        if (filepath != null && !filepath.equals("")) {
+            if (filepath.startsWith("projects/")) {
+                final String          newProjectId = filepath.substring(9);
+                final XnatProjectdata newProject   = XnatProjectdata.getXnatProjectdatasById(newProjectId, getUser(), false);
+                if (newProject == null) {
+                    throw new NotFoundException(newProjectId);
+                }
+                return newProject;
+            } else {
+                throw new IllegalArgumentException("Illegal file path '" + filepath + "' does not start with 'projects/'.");
+            }
+        } else if (!item.getProject().equals(project.getId())) {
+            return project;
+        }
+        return null;
+    }
+
+    protected boolean rename(final XnatProjectdata proj, final ArchivableItem existing, final String label, final UserI user) {
+        try {
+            new Rename(proj, existing, label, user, getReason(), getEventType()).call();
+        } catch (Rename.ProcessingInProgress e) {
+            final String message = "Specified session is being processed (" + e.getPipeline_name() + ").";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (Rename.DuplicateLabelException | Rename.LabelConflictException e) {
+            final String message = "Specified label " + label + " is already in use.";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (Rename.FolderConflictException e) {
+            final String message = "File system destination contains pre-existing files";
+            logger.error(message, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
+            return false;
+        } catch (InvalidArchiveStructure | URISyntaxException e) {
+            final String message = "Non-standard archive structure in existing experiment directory.";
+            logger.error(message, e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, message);
+            return false;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -1599,7 +1813,7 @@ public abstract class SecureResource extends Resource {
         try {
             List<String> userResourceWhitelist = getSerializer().deserializeJson(config, SerializerService.TYPE_REF_LIST_STRING);
             if (userResourceWhitelist != null) {
-                return userResourceWhitelist.contains(user.getUsername());
+                return userResourceWhitelist.contains(getUser().getUsername());
             }
         } catch (IOException e) {
             String message = "Error retrieving user list" + (projectId == null ? "" : " for project " + projectId);
@@ -1619,6 +1833,7 @@ public abstract class SecureResource extends Resource {
      * @throws InstantiationException When an error occurs creating one of the handler objects.
      * @throws IllegalAccessException When access levels are incorrect during access or creation.
      */
+    @SuppressWarnings("RedundantThrows")
     public static List<FilteredResourceHandlerI> getHandlers(String _package, List<FilteredResourceHandlerI> defaultHandlers) throws InstantiationException, IllegalAccessException {
         if (!handlers.containsKey(_package)) {
             synchronized (MUTEX_HANDLERS) {
@@ -1670,4 +1885,29 @@ public abstract class SecureResource extends Resource {
 
         Representation handle(SecureResource resource, Variant variant) throws Exception;
     }
+
+    private boolean createOrUpdateImpl(final boolean isCreate, final ArchivableItem item, final boolean overwriteSecurity, final boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
+        try {
+            final UserI user = getUser();
+            if (SaveItemHelper.authorizedSave(item, user, overwriteSecurity, allowDataDeletion, meta)) {
+                if (isCreate) {
+                    final XFTItem xftItem = item.getItem();
+                    if (xftItem.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME) || xftItem.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME) || xftItem.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
+                        XDAT.triggerXftItemEvent(xftItem, XftItemEvent.CREATE);
+                    }
+                }
+                WorkflowUtils.complete(workflow, meta);
+                Users.clearCache(user);
+                MaterializedView.deleteByUser(user);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            WorkflowUtils.fail(workflow, meta);
+            throw e;
+        }
+    }
+
+    private final UserI             _user;
+    private final SerializerService _serializer;
 }

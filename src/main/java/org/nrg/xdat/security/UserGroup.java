@@ -41,6 +41,7 @@ public class UserGroup implements UserGroupI {
      *
      * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public UserGroup(final XdatUsergroup group) throws Exception {
         init(group);
     }
@@ -72,6 +73,7 @@ public class UserGroup implements UserGroupI {
         init(id, template);
     }
 
+    @SuppressWarnings("unused")
     public UserGroup(final int xdatUsergroupId, final String id, final String displayName, final String tag) {
         pk = xdatUsergroupId;
         this.id = id;
@@ -125,7 +127,7 @@ public class UserGroup implements UserGroupI {
 
     @Override
     public List<String> getUsernames() {
-        return _usernames;
+        return ImmutableList.copyOf(_usernames);
     }
 
     /**
@@ -226,8 +228,72 @@ public class UserGroup implements UserGroupI {
         return ImmutableList.copyOf(_features);
     }
 
+    public boolean hasFeature(final String feature) {
+        return _features.contains(feature);
+    }
+
+    public void addFeature(final String feature) {
+        _features.add(feature);
+    }
+
+    public void addFeatures(final String... features) {
+        addFeatures(Arrays.asList(features));
+    }
+
+    public void addFeatures(final Collection<String> features) {
+        _features.addAll(features);
+    }
+
+    public void removeFeature(final String feature) {
+        _features.remove(feature);
+    }
+
+    public void removeFeatures(final String... features) {
+        removeFeatures(Arrays.asList(features));
+    }
+
+    public void removeFeatures(final Collection<String> features) {
+        _features.removeAll(features);
+    }
+
+    public void clearFeatures() {
+        _features.clear();
+    }
+
     public List<String> getBlockedFeatures() {
         return ImmutableList.copyOf(_blocked);
+    }
+
+    public boolean hasBlockedFeature(final String blockedFeature) {
+        return _blocked.contains(blockedFeature);
+    }
+
+    public void addBlockedFeature(final String blockedFeature) {
+        _blocked.add(blockedFeature);
+    }
+
+    public void addBlockedFeatures(final String... blockedFeatures) {
+        addBlockedFeatures(Arrays.asList(blockedFeatures));
+    }
+
+    public void addBlockedFeatures(final Collection<String> blockedFeatures) {
+        _blocked.addAll(blockedFeatures);
+    }
+
+    public void removeBlockedFeature(final String blockedFeature) {
+        _blocked.remove(blockedFeature);
+    }
+
+    public void removeBlockedFeatures(final String... blockedFeatures) {
+        removeBlockedFeatures(Arrays.asList(blockedFeatures));
+    }
+
+    public void removeBlockedFeatures(final Collection<String> blockedFeatures) {
+        _blocked.removeAll(blockedFeatures);
+    }
+
+    public void clearBlockedFeatures() {
+        _blocked.clear();
     }
 
     /**
@@ -276,15 +342,15 @@ public class UserGroup implements UserGroupI {
     }
 
     public void initializeFeatures() {
-        _features.clear();
-        _blocked.clear();
+        clearFeatures();
+        clearBlockedFeatures();
         final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
         if (features != null) {
             for (final GroupFeature feature : features) {
                 if (feature.isBlocked()) {
-                    _blocked.add(feature.getFeature());
+                    addFeature(feature.getFeature());
                 } else if (feature.isOnByDefault()) {
-                    _features.add(feature.getFeature());
+                    addFeature(feature.getFeature());
                 }
             }
         }
@@ -562,7 +628,7 @@ public class UserGroup implements UserGroupI {
     private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
     private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
     private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
-    private final List<String>                          _usernames                            = new ArrayList<>();
-    private final List<String>                          _features                             = new ArrayList<>();
-    private final List<String>                          _blocked                              = new ArrayList<>();
+    private final Set<String>                           _usernames                            = new HashSet<>();
+    private final Set<String>                           _features                             = new HashSet<>();
+    private final Set<String>                           _blocked                              = new HashSet<>();
 }

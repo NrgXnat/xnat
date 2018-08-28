@@ -9,11 +9,13 @@
 
 package org.nrg.xdat.security.services.impl;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.security.UserGroup;
@@ -28,10 +30,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static lombok.AccessLevel.PRIVATE;
 import static org.nrg.xdat.om.base.auto.AutoXdatUsergroup.SCHEMA_ELEMENT_NAME;
@@ -43,6 +42,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 @Accessors(prefix = "_")
 @Slf4j
 public class FeatureServiceImpl implements FeatureServiceI {
+
     @Autowired
     public void setCache(final GroupsAndPermissionsCache cache) {
         _cache = cache;
@@ -69,21 +69,21 @@ public class FeatureServiceImpl implements FeatureServiceI {
     }
 
     @Override
-    public void addFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
+    public void addFeatureForGroup(final UserGroupI group, final String feature, final UserI authenticatedUser) {
         if (!checkFeature(group, feature)) {
-            GroupFeature gr = _groupFeatureService.findGroupFeature(group.getId(), feature);
-            if (gr == null) {
+            final GroupFeature groupFeature = _groupFeatureService.findGroupFeature(group.getId(), feature);
+            if (groupFeature == null) {
                 _groupFeatureService.addFeatureToGroup(group.getId(), group.getTag(), feature);
             } else {
-                gr.setOnByDefault(true);
-                _groupFeatureService.update(gr);
+                groupFeature.setOnByDefault(true);
+                _groupFeatureService.update(groupFeature);
             }
 
-            ((UserGroup) group).getFeatures().add(feature);
+            ((UserGroup) group).addFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -95,12 +95,12 @@ public class FeatureServiceImpl implements FeatureServiceI {
         if (checkFeature(group, feature)) {
             _groupFeatureService.delete(group.getId(), feature);
 
-            ((UserGroup) group).getFeatures().remove(feature);
-            ((UserGroup) group).getBlockedFeatures().remove(feature);
+            ((UserGroup) group).removeFeature(feature);
+            ((UserGroup) group).removeBlockedFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -111,12 +111,13 @@ public class FeatureServiceImpl implements FeatureServiceI {
     public void removeAllFeatureSettingsFromGroup(UserGroupI group, UserI authenticatedUser) {
         _groupFeatureService.deleteByGroup(group.getId());
 
-        ((UserGroup) group).getFeatures().clear();
-        ((UserGroup) group).getBlockedFeatures().clear();
+        final UserGroup userGroup = (UserGroup) group;
+        userGroup.clearFeatures();
+        userGroup.clearBlockedFeatures();
 
         try {
             //group objects are cached by an old caching implementation which listened for events
-        	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+            _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
         } catch (Exception e1) {
             log.error("", e1);
         }
@@ -135,35 +136,28 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
     @Override
     public Collection<String> getFeaturesForUserByTags(UserI user, Collection<String> tags) {
-        Collection<String> combined = Lists.newArrayList();
-        for (String tag : tags) {
-            for (String feature : getFeaturesForUserByTag(user, tag)) {
-                if (!combined.contains(feature)) {
-                    combined.add(feature);
-                }
-            }
+        final Collection<String> combined = new HashSet<>();
+        for (final String tag : tags) {
+            combined.addAll(getFeaturesForUserByTag(user, tag));
         }
         return combined;
     }
 
     @Override
     public boolean checkFeature(UserGroupI group, String feature) {
-        if (feature == null) {
+        if (StringUtils.isBlank(feature) || Features.isBanned(feature)) {
             return false;
         }
-        if (Features.isBanned(feature)) {
-            return false;
-        }
-
         if (group != null && isOnByDefaultForGroup(group, feature)) {
             //if feature configured to have access, then return true
             return true;
-        } else if (group != null && isOnByDefaultForGroupType(feature, group.getDisplayname())) {
+        }
+        if (group != null && isOnByDefaultForGroupType(feature, group.getDisplayname())) {
             //if not blocked return true, else false
             return !isBlockedByGroup(group, feature);
-        } else
-            //if not blocked return true, else false
-            return Features.isOnByDefault(feature) && (!(group != null && isBlockedByGroup(group, feature)) && !(group != null && isBlockedByGroupType(feature, group.getDisplayname())));
+        }
+        //if not blocked return true, else false
+        return Features.isOnByDefault(feature) && (!(group != null && isBlockedByGroup(group, feature)) && !(group != null && isBlockedByGroupType(feature, group.getDisplayname())));
     }
 
     @Override
@@ -194,7 +188,6 @@ public class FeatureServiceImpl implements FeatureServiceI {
     @Override
     public boolean isOnByDefaultForGroupType(String feature, String displayName) {
         return STATUS.ON.equals(getCachedSettingByType(displayName, feature));
-
     }
 
     @Override
@@ -234,18 +227,19 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
     @Override
     public void disableFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
-        if ((getFeaturesForGroup(group)).contains(feature)) {
-            GroupFeature gr = _groupFeatureService.findGroupFeature(group.getId(), feature);
-            if (gr.isOnByDefault()) {
-                gr.setOnByDefault(false);
-                _groupFeatureService.update(gr);
+        final UserGroup userGroup = (UserGroup) group;
+        if (userGroup.hasFeature(feature)) {
+            final GroupFeature groupFeature = _groupFeatureService.findGroupFeature(group.getId(), feature);
+            if (groupFeature.isOnByDefault()) {
+                groupFeature.setOnByDefault(false);
+                _groupFeatureService.update(groupFeature);
             }
 
-            ((UserGroup) group).getFeatures().remove(feature);
+            userGroup.removeFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -255,14 +249,14 @@ public class FeatureServiceImpl implements FeatureServiceI {
     @Override
     public void blockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
         final UserGroup userGroup = (UserGroup) group;
-        if (!userGroup.getBlockedFeatures().contains(feature)) {
+        if (!userGroup.hasBlockedFeature(feature)) {
             _groupFeatureService.blockFeatureForGroup(group.getId(), group.getTag(), feature);
-            userGroup.getBlockedFeatures().add(feature);
-            userGroup.getFeatures().remove(feature);
+            userGroup.addBlockedFeature(feature);
+            userGroup.removeFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -271,22 +265,20 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
     @Override
     public void unblockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
-        if (((UserGroup) group).getBlockedFeatures().contains(feature)) {
-            GroupFeature gr = _groupFeatureService.findGroupFeature(group.getId(), feature);
-            if (gr.isBlocked()) {
-                gr.setBlocked(false);
-                _groupFeatureService.update(gr);
+        final UserGroup userGroup = (UserGroup) group;
+        if (userGroup.hasBlockedFeature(feature)) {
+            final GroupFeature groupFeature = _groupFeatureService.findGroupFeature(group.getId(), feature);
+            if (groupFeature.isBlocked()) {
+                groupFeature.setBlocked(false);
+                _groupFeatureService.update(groupFeature);
             }
 
-            if ((getFeaturesForGroup(group)).contains(feature)) {
-                ((UserGroup) group).getFeatures().remove(feature);
-            }
-
-            ((UserGroup) group).getBlockedFeatures().add(feature);
+            userGroup.removeFeature(feature);
+            userGroup.addBlockedFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	_eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -294,58 +286,46 @@ public class FeatureServiceImpl implements FeatureServiceI {
     }
 
     @Override
-    public Collection<String> getEnabledFeaturesForGroupType(String type) {
+    public Collection<String> getEnabledFeaturesForGroupType(final String type) {
         initCacheByType();
-        List<String> features = Lists.newArrayList();
-        for (Map.Entry<String, STATUS> entry : byType.entrySet()) {
-            if (STATUS.ON.equals(entry.getValue()) && entry.getKey().startsWith(STATUS_PREFIX + type + ".")) {
-                features.add(entry.getKey().substring((STATUS_PREFIX + type + ".").length()));
+        final List<String> features = new ArrayList<>();
+        final String       prefix   = STATUS_PREFIX + type + ".";
+        for (final Map.Entry<String, STATUS> entry : byType.entrySet()) {
+            final String key = entry.getKey();
+            if (STATUS.ON.equals(entry.getValue()) && key.startsWith(prefix)) {
+                features.add(key.substring((prefix).length()));
             }
         }
         return features;
     }
 
     @Override
-    public Collection<String> getBannedFeaturesForGroupType(String type) {
+    public Collection<String> getBannedFeaturesForGroupType(final String type) {
         initCacheByType();
-        List<String> features = Lists.newArrayList();
-        for (Map.Entry<String, STATUS> entry : byType.entrySet()) {
-            if (STATUS.BLOCKED.equals(entry.getValue()) && entry.getKey().startsWith(STATUS_PREFIX + type + ".")) {
-                features.add(entry.getKey().substring((STATUS_PREFIX + type + ".").length()));
+        final List<String> features = new ArrayList<>();
+        final String       prefix   = STATUS_PREFIX + type + ".";
+        for (final Map.Entry<String, STATUS> entry : byType.entrySet()) {
+            final String key = entry.getKey();
+            if (STATUS.BLOCKED.equals(entry.getValue()) && key.startsWith(prefix)) {
+                features.add(key.substring((prefix).length()));
             }
         }
         return features;
     }
 
     @Override
-    public List<String> getEnabledFeaturesByTag(String tag) {
-        List<String> features = Lists.newArrayList();
-
-        for (GroupFeature gr : _groupFeatureService.getEnabledByTag(tag)) {
-            features.add(gr.getFeature());
-        }
-
-        return features;
+    public List<String> getEnabledFeaturesByTag(final String tag) {
+        return Lists.transform(_groupFeatureService.getEnabledByTag(tag), GROUP_FEATURE_STRING_FUNCTION);
     }
 
     @Override
     public List<String> getBlockedFeaturesByTag(String tag) {
-        List<String> features = Lists.newArrayList();
-
-        for (GroupFeature gr : _groupFeatureService.getBannedByTag(tag)) {
-            features.add(gr.getFeature());
-        }
-
-        return features;
+        return Lists.transform(_groupFeatureService.getBannedByTag(tag), GROUP_FEATURE_STRING_FUNCTION);
     }
 
     @Override
     public Collection<String> getBlockedFeaturesForGroup(UserGroupI group) {
-        if (group != null) {
-            return ((UserGroup) group).getBlockedFeatures();
-        } else {
-            return null;
-        }
+        return group != null ? ((UserGroup) group).getBlockedFeatures() : null;
     }
 
     public enum STATUS {
@@ -357,8 +337,8 @@ public class FeatureServiceImpl implements FeatureServiceI {
     /**
      * Cached features by type
      */
-    static Map<String, STATUS> byType = null;
-    private static final Object MUTEX = new Object();
+    static               Map<String, STATUS> byType = null;
+    private static final Object              MUTEX  = new Object();
 
     private void initCacheByType() {
         if (byType == null) {
@@ -416,6 +396,13 @@ public class FeatureServiceImpl implements FeatureServiceI {
             }
         }
     }
+
+    private static final Function<GroupFeature, String> GROUP_FEATURE_STRING_FUNCTION = new Function<GroupFeature, String>() {
+        @Override
+        public String apply(final GroupFeature groupFeature) {
+            return groupFeature.getFeature();
+        }
+    };
 
     private static final String STATUS_PREFIX = "__";
 

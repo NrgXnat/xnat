@@ -20,21 +20,26 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.services.NrgPreferenceService;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
     @SuppressWarnings("unused")
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
-        this(preferenceService,eventService,null);
+        this(preferenceService, eventService, null);
     }
 
     @SuppressWarnings("WeakerAccess")
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths) {
-        super(preferenceService,configPaths);
+        super(preferenceService, configPaths);
         _eventService = eventService;
     }
 
     @SuppressWarnings("WeakerAccess")
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
-        super(preferenceService,configPaths, initPrefs);
+        super(preferenceService, configPaths, initPrefs);
         _eventService = eventService;
     }
 
@@ -60,7 +65,7 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
     @Override
     public String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
-        final String current = super.set(scope, entityId, value, key, subkeys);
+        final String current              = super.set(scope, entityId, value, key, subkeys);
         if (scope == null || scope == EntityId.Default.getScope()) {
             triggerEventIfChanging(namespacedPropertyId, current, value);
         } else {
@@ -83,6 +88,33 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
         triggerDeletedEvent(scope, entityId, namespacedPropertyId);
     }
 
+    public List<String> setBatch(final Map<String, String> values) throws UnknownToolId, InvalidPreferenceName {
+        return setBatch(EntityId.Default.getScope(), EntityId.Default.getEntityId(), values);
+    }
+
+    public List<String> setBatch(final Scope scope, final String entityId, Map<String, String> values) throws UnknownToolId, InvalidPreferenceName {
+        final List<String>  currentValues = new ArrayList<>();
+        final AtomicBoolean isModified    = new AtomicBoolean();
+        for (final String preferenceId : values.keySet()) {
+            final String value   = values.get(preferenceId);
+            final String current = super.set(scope, entityId, value, preferenceId);
+            currentValues.add(current);
+            if (!StringUtils.equals(current, value)) {
+                isModified.set(true);
+            }
+        }
+        if (isModified.get()) {
+            final PreferenceEvent preferenceEvent;
+            if (scope == null || scope == EntityId.Default.getScope()) {
+                preferenceEvent = new PreferenceEvent(values);
+            } else {
+                preferenceEvent = new PreferenceEvent(scope, entityId, values);
+            }
+            _eventService.triggerEvent(preferenceEvent);
+        }
+        return currentValues;
+    }
+
     private void triggerCreatedEvent(final String namespacedPropertyId, final String value) {
         _eventService.triggerEvent(new PreferenceCreatedEvent(namespacedPropertyId, value));
     }
@@ -91,14 +123,14 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
         _eventService.triggerEvent(new PreferenceCreatedEvent(scope, entityId, namespacedPropertyId, value));
     }
 
-    private void triggerEventIfChanging(final String namespacedPropertyId, final String oldValue, final String newValue){
-        if(!StringUtils.equals(oldValue,newValue)) { //Check if value is being changed.
+    private void triggerEventIfChanging(final String namespacedPropertyId, final String oldValue, final String newValue) {
+        if (!StringUtils.equals(oldValue, newValue)) { //Check if value is being changed.
             _eventService.triggerEvent(new PreferenceEvent(namespacedPropertyId, newValue));
         }
     }
 
-    private void triggerEventIfChanging(final Scope scope, final String entityId, final String namespacedPropertyId, final String oldValue, final String newValue){
-        if(!StringUtils.equals(oldValue,newValue)) { //Check if value is being changed.
+    private void triggerEventIfChanging(final Scope scope, final String entityId, final String namespacedPropertyId, final String oldValue, final String newValue) {
+        if (!StringUtils.equals(oldValue, newValue)) { //Check if value is being changed.
             _eventService.triggerEvent(new PreferenceEvent(scope, entityId, namespacedPropertyId, newValue));
         }
     }

@@ -90,16 +90,8 @@ public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPrefer
 
     @Override
     public void handlePreferences(final Map<String, String> values) {
-        final Set<String>  preferences        = values.keySet();
-        final List<String> handledPreferences = getHandledPreferences();
-        if (!Collections.disjoint(handledPreferences, preferences)) {
-            for (final String preference : handledPreferences) {
-                if (preferences.contains(preference)) {
-                    final String value = values.get(preference);
-                    log.info("Now handling preference {} with new value '{}'", preference, value);
-                    handlePreferenceImpl(preference, value);
-                }
-            }
+        if (!Collections.disjoint(getHandledPreferences(), values.keySet())) {
+            handlePreferencesImpl(values);
         }
     }
 
@@ -113,6 +105,16 @@ public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPrefer
     @Override
     public List<String> getToolIds() {
         return _toolIds;
+    }
+
+    protected void handlePreferencesImpl(final Map<String, String> values) {
+        for (final String preference : getHandledPreferences()) {
+            if (values.containsKey(preference)) {
+                final String value = values.get(preference);
+                log.info("Now handling preference {} with new value '{}'", preference, value);
+                handlePreferenceImpl(preference, value);
+            }
+        }
     }
 
     protected UserI getAdminUser() {

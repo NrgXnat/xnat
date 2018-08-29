@@ -9,6 +9,7 @@
 
 package org.nrg.xapi.rest.settings;
 
+import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -35,10 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
@@ -87,36 +85,62 @@ public class SiteConfigApi extends AbstractXapiRestController {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
-        for (final String name : properties.keySet()) {
-            try {
-                // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
-                if (isInitializing && name.equals("initialized")) {
-                    continue;
+
+        // First try to handle any submitted preferences that should be handled as a group.
+        final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
+        if (!includedPrefsGroups.isEmpty()) {
+            final Set<String> referenced = new HashSet<>();
+            for (final Set<String> groupPreferences : includedPrefsGroups) {
+                referenced.addAll(groupPreferences);
+                final Map<String, String> group = new HashMap<>();
+                for (final String groupPreference : groupPreferences) {
+                    group.put(groupPreference, properties.get(groupPreference).toString());
                 }
-                if (!isInitialized && properties.containsKey("adminEmail")) {
-                    _template.update(EMAIL_UPDATE, properties);
+                try {
+                    _preferences.setBatch(group);
+                } catch (InvalidPreferenceName invalidPreferenceName) {
+                    log.error("Got an invalid preference name error when setting the preferences: {}, which is weird because the site configuration is not strict", groupPreferences, invalidPreferenceName);
                 }
-                final Object value = properties.get(name);
-                if (value instanceof List) {
-                    _preferences.setListValue(name, (List) value);
-                } else if (value instanceof Map) {
-                    //noinspection unchecked
-                    _preferences.setMapValue(name, (Map) value);
-                } else if (value.getClass().isArray()) {
-                    _preferences.setArrayValue(name, (Object[]) value);
-                } else {
-                    _preferences.set(value.toString(), name);
-                }
-                log.info("Set property {} to value: {}", name, value);
-            } catch (InvalidPreferenceName invalidPreferenceName) {
-                log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+            }
+            // Remove all referenced properties. The assumption is that settings handled in prefs groups need to be
+            // handled in those groups and shouldn't be handled individually.
+            for (final String property : referenced) {
+                properties.remove(property);
             }
         }
 
-        // If we're initializing...
-        if (isInitializing) {
-            // Now make the initialized setting true. This will kick off the initialized event handler.
-            _preferences.setInitialized(true);
+        if (!properties.isEmpty()) {
+            for (final String name : properties.keySet()) {
+                try {
+                    // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
+                    if (isInitializing && name.equals("initialized")) {
+                        continue;
+                    }
+                    if (!isInitialized && properties.containsKey("adminEmail")) {
+                        _template.update(EMAIL_UPDATE, properties);
+                    }
+                    final Object value = properties.get(name);
+                    if (value instanceof List) {
+                        _preferences.setListValue(name, (List) value);
+                    } else if (value instanceof Map) {
+                        //noinspection unchecked
+                        _preferences.setMapValue(name, (Map) value);
+                    } else if (value.getClass().isArray()) {
+                        _preferences.setArrayValue(name, (Object[]) value);
+                    } else {
+                        _preferences.set(value.toString(), name);
+                    }
+                    log.info("Set property {} to value: {}", name, value);
+                } catch (InvalidPreferenceName invalidPreferenceName) {
+                    log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+                }
+            }
+
+            // If we're initializing...
+            if (isInitializing) {
+                // Now make the initialized setting true. This will kick off the initialized event handler.
+                _preferences.setInitialized(true);
+            }
         }
 
         return new ResponseEntity<>(HttpStatus.OK);
@@ -165,7 +189,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
                                                       @ApiParam("The value to be set for the property.") @RequestBody final String value) {
-        log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
+        log.info("User '{}' set the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);
@@ -197,7 +221,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "buildInfo/attributes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Map<String, String>>> getBuildAttributeInfo() {
-            log.debug("User {} requested the extended application build attributes.", getSessionUser().getUsername());
+        log.debug("User {} requested the extended application build attributes.", getSessionUser().getUsername());
         return new ResponseEntity<>(_appInfo.getSystemAttributes(), HttpStatus.OK);
     }
 
@@ -231,6 +255,16 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 
+    private List<? extends Set<String>> findPrefsGroups(final Set<String> keySet) {
+        final List<Set<String>> includedPrefsGroups = new ArrayList<>();
+        for (final Set<String> group : PREFS_GROUPS) {
+            if (keySet.containsAll(group)) {
+                includedPrefsGroups.add(group);
+            }
+        }
+        return includedPrefsGroups;
+    }
+
     private static boolean getInitializedValue(final Object initialized) {
         if (initialized == null) {
             return false;
@@ -244,7 +278,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return BooleanUtils.toBoolean(initialized.toString());
     }
 
-    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
+    private static final String                      EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
+    private static final List<? extends Set<String>> PREFS_GROUPS = Collections.singletonList(ImmutableSet.of("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;

@@ -839,8 +839,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             final List<String> groupIds = getGroupIdsForDataType(dataType);
             log.debug("Found {} groups that reference the '{}' data type, updating cache entries for: {}", groupIds.size(), dataType, StringUtils.join(groupIds, ", "));
             for (final String groupId : groupIds) {
-                log.trace("Updating data type '{}' for the group '{}'", dataType, groupId);
-                updateDataTypeForCachedGroup(groupId, dataType);
+                log.trace("Evicting group '{}' due to change in element securities for data type {}", groupId, dataType);
+                evict(groupId);
             }
         }
 
@@ -1026,29 +1026,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         cacheObject(groupId, group);
         log.debug("Retrieved and cached the group for the ID {}", groupId);
         return group;
-    }
-
-    private void updateDataTypeForCachedGroup(final String groupId, final String dataType) {
-        if (has(groupId)) {
-            // If the group is already cached, we can just add any permissions for the group and data type to the existing entry.
-            log.trace("Updating cache entry for group {} with new permissions for data type", groupId, dataType);
-            final UserGroup group = (UserGroup) getCachedGroup(groupId);
-            group.addPermissionCriteria(Lists.transform(Lists.newArrayList(Iterables.filter(_template.queryForList(QUERY_GROUP_DATATYPE_PERMISSIONS, new MapSqlParameterSource("groupId", groupId).addValue("dataType", dataType)), new Predicate<Map<String, Object>>() {
-                @Override
-                public boolean apply(@Nullable final Map<String, Object> definition) {
-                    // Use having read and active elements as a proxy for not actually being populated properly.
-                    return definition != null && definition.get(READ_ELEMENT) != null && definition.get(ACTIVATE_ELEMENT) != null;
-                }
-            })), new Function<Map<String, Object>, PermissionCriteriaI>() {
-                @Override
-                public PermissionCriteriaI apply(final Map<String, Object> properties) {
-                    return new PermissionCriteria(dataType, properties);
-                }
-            }));
-        } else {
-            // Otherwise, cache the group like it's new because, really, it is.
-            cacheGroup(groupId);
-        }
     }
 
     private @Nonnull Map<String, ElementAccessManager> getElementAccessManagers(final String username) {

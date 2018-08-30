@@ -185,6 +185,8 @@ public class UserGroup implements UserGroupI {
     @Override
     public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
         if (!_permissionCriteriaByDataType.containsKey(type)) {
+            _permissionCriteriaByDataType.clear();
+            _permissionCriteriaByDataTypeAndField.clear();
             getAllPermissions();
         }
 

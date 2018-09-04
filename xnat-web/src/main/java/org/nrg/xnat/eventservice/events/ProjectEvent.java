@@ -15,7 +15,7 @@ public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatPr
 
     public enum Status {CREATED, DELETED};
 
-    final String displayName = "Project Status Change";
+    final String displayName = "Project Event";
     final String description = "Project created or deleted.";
 
     public ProjectEvent(){};

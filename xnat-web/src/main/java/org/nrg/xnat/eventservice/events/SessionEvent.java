@@ -25,7 +25,7 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
 
     @Override
     public String getDisplayName() {
-        return "Session Status Change";
+        return "Session Event";
     }
 
     @Override

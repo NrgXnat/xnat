@@ -65,6 +65,14 @@ var XNAT = getObject(XNAT || {});
         });
     }
 
+    function titleCase(string){
+        var words = string.split(' ');
+        words.forEach(function(word,i){
+            words[i] = word[0].toUpperCase() + word.slice(1).toLowerCase();
+        });
+        return words.join(' ');
+    }
+
 
     /* ====================== *
      * Site Admin UI Controls *
@@ -628,7 +636,7 @@ var XNAT = getObject(XNAT || {});
                         optGroup.push(spawn(
                                 'option',
                                 { value: event, data: { xsitype: thisEvent['xnat-type'], status: status }},
-                                thisEvent['display-name'] + ' -- ' + status
+                                thisEvent['display-name'] + ' -- ' + titleCase(status)
                             ));
                     });
                     $form.find('#subscription-event-selector')

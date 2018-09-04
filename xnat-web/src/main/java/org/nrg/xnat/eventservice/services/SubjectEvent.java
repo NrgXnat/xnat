@@ -24,7 +24,7 @@ public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSu
 
     @Override
     public String getDisplayName() {
-        return "Subject Status Change";
+        return "Subject Event";
     }
 
     @Override

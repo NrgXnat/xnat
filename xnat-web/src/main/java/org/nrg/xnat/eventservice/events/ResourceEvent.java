@@ -15,7 +15,7 @@ public class ResourceEvent extends CombinedEventServiceEvent<ResourceEvent, Xnat
 
     public enum Status {CREATED};
 
-    final String displayName = "Resource Status Change";
+    final String displayName = "Resource Event";
     final String description ="New resource catalog saved to session.";
 
     public ResourceEvent(){};

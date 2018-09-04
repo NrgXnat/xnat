@@ -21,7 +21,7 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
 
     public enum Status {CHANGED}
 
-    final String displayName = "Workflow Status Change";
+    final String displayName = "Workflow Status";
     final String description = "XNAT Workflow status change detected.";
 
     final ObjectMapper mapper = XDAT.getContextService().getBeanSafely(ObjectMapper.class);

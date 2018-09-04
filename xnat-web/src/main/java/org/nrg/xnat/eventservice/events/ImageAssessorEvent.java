@@ -23,7 +23,7 @@ public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, 
 
     @Override
     public String getDisplayName() {
-        return "Image Assessor Status Change";
+        return "Image Assessor Event";
     }
 
     @Override

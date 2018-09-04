@@ -24,7 +24,7 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
 
     @Override
     public String getDisplayName() {
-        return "Scan Status Change";
+        return "Scan Event";
     }
 
     @Override

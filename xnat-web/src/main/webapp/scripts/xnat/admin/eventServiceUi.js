@@ -291,8 +291,8 @@ var XNAT = getObject(XNAT || {});
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
                         .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
-                        .td([ projectLinks(subscription['project-id']) ])
-                        .td([ eventNiceName(subscription['event-id']) ])
+                        .td([ projectLinks(subscription['event-filter']['project-ids'][0]) ])
+                        .td([ eventNiceName(subscription['event-filter']['event-type']) ])
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
                         .td([ subscriptionEnabledCheckbox(subscription) ])
@@ -342,11 +342,16 @@ var XNAT = getObject(XNAT || {});
             },
             subEventSelector: {
                 kind: 'panel.select.single',
-                name: 'event-id',
+                name: 'event-type',
                 label: 'Select Event',
                 id: 'subscription-event-selector',
                 element: emptyOptionObj,
                 order: 20
+            },
+            subEventStatus: {
+                kind: 'panel.input.hidden',
+                name: 'status',
+                id: 'subscription-event-status'
             },
             subProjSelector: {
                 kind: 'panel.select.single',
@@ -422,9 +427,9 @@ var XNAT = getObject(XNAT || {});
             },
             subFilter: {
                 kind: 'panel.input.text',
-                name: 'event-filter',
-                label: 'Event Filter',
-                description: 'Optional. Enter filter in JSON path notation, e.g. <pre style="margin-top:0">$[?(@.xsiType == "xnat:mrScanData")]</pre>',
+                name: 'payload-filter',
+                label: 'Event Payload Filter',
+                description: 'Optional. Enter filter in JSON path notation without enclosing brackets, e.g. <pre style="margin-top:0">(@.xsiType == "xnat:mrScanData")</pre>',
                 order: 50
             },
             subUserProxy: {
@@ -448,11 +453,18 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+    // populate the hidden Status field based on selected event
+    function setStatus($element){
+        var $form = $element.parents('form');
+        var status = $element.find('option:selected').data('status');
+        $form.find('input[name=status]').val(status);
+    }
+
     // populate the Action Select menu based on selected project and event (which provides xsitype)
     function findActions($element){
         var $form = $element.parents('form');
         var project = $form.find('select[name=project-id]').find('option:selected').val();
-        var xsiType = $form.find('select[name=event-id]').find('option:selected').data('xsitype');
+        var xsiType = $form.find('select[name=event-type]').find('option:selected').data('xsitype');
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
         var actionSelector = $form.find('select[name=action-key]');
         var url = getEventActionsUrl();
@@ -584,129 +596,150 @@ var XNAT = getObject(XNAT || {});
         subscription = subscription || false;
         action = action || 'Create';
 
-        eventServicePanel.subscriptionAttributes = (subscription) ? subscription.attributes : false;
-        // if (projs.length) {
+        XNAT.ui.dialog.open({
+            title: action + ' Subscription',
+            width: 600,
+            content: '<div id="subscription-form-container"></div>',
+            beforeShow: function(obj){
+                var $container = obj.$modal.find('#subscription-form-container');
+                XNAT.spawner.spawn({ form: createFormObj }).render($container);
 
-            XNAT.ui.dialog.open({
-                title: action + ' Subscription',
-                width: 600,
-                content: '<div id="subscription-form-container"></div>',
-                beforeShow: function(obj){
-                    var $container = obj.$modal.find('#subscription-form-container');
-                    XNAT.spawner.spawn({ form: createFormObj }).render($container);
+                var $form = obj.$modal.find('form');
 
-                    var $form = obj.$modal.find('form');
-
-                    if (projs.length) {
-                        projs.forEach(function(project){
-                            $form.find('#subscription-project-selector')
-                                .append(spawn(
-                                    'option',
-                                    { value: project.ID },
-                                    project['secondary_ID']
-                                ));
-                        });
-                    }
-                    else {
-                        $form.find('#subscription-project-selector').parents('.panel-element').hide();
-                    }
-
-                    Object.keys(eventServicePanel.events).forEach(function(event){
-                        $form.find('#subscription-event-selector')
+                if (projs.length) {
+                    projs.forEach(function(project){
+                        $form.find('#subscription-project-selector')
                             .append(spawn(
                                 'option',
-                                { value: event, data: { xsitype: eventServicePanel.events[event]['xnat-type'] }},
-                                eventServicePanel.events[event]['display-name']
+                                { value: project.ID },
+                                project['secondary_ID']
                             ));
                     });
+                }
+                else {
+                    $form.find('#subscription-project-selector').parents('.panel-element').hide();
+                }
 
-                    if (subscription && subscription['event-filter']) subscription['event-filter'] = subscription['event-filter']['json-path-filter'];
+                Object.keys(eventServicePanel.events).forEach(function(event){
+                    var thisEvent = eventServicePanel.events[event];
+
+                    var optGroup = [];
+                    thisEvent.statuses.forEach(function(status){
+                        optGroup.push(spawn(
+                                'option',
+                                { value: event, data: { xsitype: thisEvent['xnat-type'], status: status }},
+                                thisEvent['display-name'] + ' -- ' + status
+                            ));
+                    });
+                    $form.find('#subscription-event-selector')
+                        .append(spawn('optgroup', optGroup));
+                });
+
+                if (subscription){
+                    // Prepopulate / preselect form fields if we are editing an existing subscription.
+                    // This involves a bit of manipulation of object properties between the subscription and the form elements
+
+                    var subscriptionData = subscription;
+
+                    eventServicePanel.subscriptionAttributes = subscription.attributes;
+
+                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    subscriptionData['event-type'] = subscription['event-filter']['event-type'];
+                    subscriptionData['status'] = subscription['event-filter']['status'];
+                    subscriptionData['payload-filter'] = subscription['event-filter']['payload-filter'];
+                    subscriptionData['inherited-action'] = subscription['action-key']; 
+
                     if (action.toLowerCase() === "clone") {
-                        delete subscription.name;
-                        delete subscription.id;
-                        delete subscription['registration-key'];
+                        delete subscriptionData.name;
+                        delete subscriptionData.id;
+                        delete subscriptionData['registration-key'];
                     }
-
-                    if (action.toLowerCase() !== "create") {
-                        $form.find('#subscription-inherited-action').val(subscription['action-key']);
-
-                        $form.setValues(subscription); // sets values in inputs and selectors, which triggers the onchange listeners below. Action has to be added again after the fact.
-                        $form.addClass((subscription.valid) ? 'valid' : 'invalid');
-
-                        if (Object.keys(subscription.attributes).length) {
-                            $form.find('#subscription-action-preview').show();
-                            $form.find('#sub-action-attribute-preview').html( JSON.stringify(subscription.attributes) );
-                        }
-                    }
-
                     if (action.toLowerCase() === "edit") {
                         $form.find('input[name=id]').prop('disabled',false);
                     }
 
-                },
-                buttons: [
-                    {
-                        label: 'OK',
-                        isDefault: true,
-                        close: true,
-                        action: function(obj){
-                            // convert form inputs to a parseable JSON object
-                            var formData, jsonFormData = {};
-                            obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
+                    $form.setValues(subscriptionData); // sets values in inputs and selectors, which triggers the onchange listeners below. Action has to be added again after the fact.
+                    findActions($form.find('#subscription-event-selector'));
+                    $form.addClass((subscription.valid) ? 'valid' : 'invalid');
 
-                            if (eventServicePanel.subscriptionAttributes) {
-                                jsonFormData.attributes = (typeof eventServicePanel.subscriptionAttributes === 'object') ?
-                                    eventServicePanel.subscriptionAttributes :
-                                    JSON.parse(eventServicePanel.subscriptionAttributes);
-                            }
-                            else {
-                                jsonFormData.attributes = {};
-                            }
-
-                            if (jsonFormData['event-filter']) {
-                                var jsonpathfilter = jsonFormData['event-filter'];
-                                jsonFormData['event-filter'] = {};
-                                jsonFormData['event-filter']['json-path-filter'] = jsonpathfilter;
-                            }
-                            else {
-                                delete jsonFormData['event-filter'];
-                            }
-
-                            formData = JSON.stringify(jsonFormData);
-
-                            var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
-                            var method = (action.toLowerCase() === 'edit') ? 'PUT' : 'POST';
-                            var successMessages = {
-                                'Create': 'Created new event subscription',
-                                'Edit' : 'Edited event subscription',
-                                'Clone' : 'Created new event subscription'
-                            };
-
-                            XNAT.xhr.ajax({
-                                url: url,
-                                data: formData,
-                                method: method,
-                                contentType: 'application/json',
-                                success: function(){
-                                    XNAT.ui.banner.top(2000,successMessages[action],'success');
-                                    eventServicePanel.refreshSubscriptionList();
-                                },
-                                fail: function(e){
-                                    errorHandler(e,'Could not create event subscription')
-                                }
-                            })
-                        }
-                    },
-                    {
-                        label: 'Cancel',
-                        close: true
+                    if (Object.keys(subscription.attributes).length) {
+                        $form.find('#subscription-action-preview').show();
+                        $form.find('#sub-action-attribute-preview').html( JSON.stringify(subscription.attributes) );
                     }
-                ]
-            })
-        // }
-        // else {
-        //     errorHandler({}, 'Could not load projects');
-        // }
+                }
+                else delete eventServicePanel.subscriptionAttributes;
+            },
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(obj){
+                        // Convert form inputs to a parseable JSON object
+                        // This also involves a conversion into the accepted JSON attribute hierarchy
+                        var formData, jsonFormData = {}, projectArray = [];
+                        obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
+
+                        if (eventServicePanel.subscriptionAttributes) {
+                            jsonFormData.attributes = (typeof eventServicePanel.subscriptionAttributes === 'object') ?
+                                eventServicePanel.subscriptionAttributes :
+                                JSON.parse(eventServicePanel.subscriptionAttributes);
+                        }
+                        else {
+                            jsonFormData.attributes = {};
+                        }
+
+                        jsonFormData['event-filter'] = {};
+
+                        jsonFormData['event-filter']['event-type'] = jsonFormData['event-type'];
+                        delete jsonFormData['event-type'];
+
+                        jsonFormData['event-filter']['status'] = jsonFormData['status'];
+                        delete jsonFormData['status'];
+
+                        delete jsonFormData['inherited-action'];
+
+                        if (jsonFormData['project-id']) {
+                            projectArray.push(jsonFormData['project-id']);
+                            jsonFormData['event-filter']['project-ids'] = projectArray;
+                            delete jsonFormData['project-id'];
+                        }
+                        if (jsonFormData['payload-filter']) {
+                            jsonFormData['event-filter']['payload-filter'] = jsonFormData['payload-filter'];
+                            delete jsonFormData['payload-filter'];
+                        }
+
+                        formData = JSON.stringify(jsonFormData);
+
+                        var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
+                        var method = (action.toLowerCase() === 'edit') ? 'PUT' : 'POST';
+                        var successMessages = {
+                            'Create': 'Created new event subscription',
+                            'Edit' : 'Edited event subscription',
+                            'Clone' : 'Created new event subscription'
+                        };
+
+                        XNAT.xhr.ajax({
+                            url: url,
+                            data: formData,
+                            method: method,
+                            contentType: 'application/json',
+                            success: function(){
+                                XNAT.ui.banner.top(2000,successMessages[action],'success');
+                                eventServicePanel.refreshSubscriptionList();
+                            },
+                            fail: function(e){
+                                errorHandler(e,'Could not create event subscription')
+                            }
+                        })
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        })
     };
 
     eventServicePanel.editSubscription = function(action,subscriptionId) {
@@ -819,8 +852,9 @@ var XNAT = getObject(XNAT || {});
     $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
         findActions($(this));
     });
-    $(document).off('change','select[name=event-id]').on('change','select[name=event-id]', function(){
+    $(document).off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
         findActions($(this));
+        setStatus($(this));
     });
     $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
         getActionAttributes($(this));
@@ -1206,7 +1240,7 @@ var XNAT = getObject(XNAT || {});
 
         eventServicePanel.getEvents().done(function(events){
             events.forEach(function(event){
-                eventServicePanel.events[event.id] = event;
+                eventServicePanel.events[event.type] = event;
             });
 
             eventServicePanel.getActions().done(function(actions){

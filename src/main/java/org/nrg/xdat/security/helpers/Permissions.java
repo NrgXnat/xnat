@@ -35,6 +35,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -896,7 +897,7 @@ public class Permissions {
         if (!verifyProjectExists(template, projectId)) {
             return null;
         }
-        switch (template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, new MapSqlParameterSource("projectId", projectId), Integer.class)) {
+        switch (checkProjectAccess(template, projectId)) {
             case 1:
                 return "public";
             case 0:
@@ -1061,6 +1062,25 @@ public class Permissions {
     }
 
     /**
+     * Queries for project access for guest user to determine project accessibility. This method catches an exception that can occur when the guest user has been added to project groups.
+     * It logs an error message informing administrators that the guest user has been added to those groups and performs the access query again without joining to user groups.
+     *
+     * @param template  The JDBC template for performing the query.
+     * @param projectId The project to test for access level.
+     *
+     * @return Returns 1 if the project is public, 0 if the project is protected, and -1 if the project is private.
+     */
+    private static Integer checkProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) {
+        try {
+            return template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, new MapSqlParameterSource("projectId", projectId), Integer.class);
+        } catch (BadSqlGrammarException e) {
+            final List<String> groupIds = _template.queryForList(QUERY_GET_GUEST_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
+            log.warn("Got a bad SQL grammar exception trying to find the access level for the project '{}', which usually indicates that the guest user has been added to groups. Checking for guest user access directly.\nGroups found for guest user: {}\nError code and message: [{}] {}\nSQL in error: {}", projectId, StringUtils.join(groupIds, ", "), e.getSQLException().getErrorCode(), e.getSQLException().getMessage(), e.getSql());
+            return template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED_GUEST_ONLY, new MapSqlParameterSource("projectId", projectId), Integer.class);
+        }
+    }
+
+    /**
      * Requires one parameter:
      *
      * <ul>
@@ -1099,7 +1119,7 @@ public class Permissions {
      * Gets all protected project IDs from the database.
      */
     private static final String QUERY_GET_PROTECTED_PROJECTS = "SELECT "
-                                                               + "  xfm.field_value AS project "
+                                                               + "  DISTINCT xfm.field_value AS project "
                                                                + "FROM xdat_field_mapping xfm "
                                                                + "  LEFT JOIN xdat_field_mapping_set xfms "
                                                                + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
@@ -1122,7 +1142,7 @@ public class Permissions {
      * Gets all public project IDs from the database.
      */
     private static final String QUERY_GET_PUBLIC_PROJECTS = "SELECT "
-                                                            + "  xfm.field_value AS project "
+                                                            + "  DISTINCT xfm.field_value AS project "
                                                             + "FROM xdat_field_mapping xfm "
                                                             + "  LEFT JOIN xdat_field_mapping_set xfms "
                                                             + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
@@ -1141,29 +1161,50 @@ public class Permissions {
                                                             + "      AND xfm.comparison_type = 'equals' "
                                                             + "ORDER BY project";
 
-    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED = "SELECT coalesce((SELECT xfm.active_element "
-                                                                       + "FROM xdat_field_mapping xfm "
-                                                                       + "  LEFT JOIN xdat_field_mapping_set xfms "
-                                                                       + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
-                                                                       + "  LEFT JOIN xdat_element_access xea "
-                                                                       + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
-                                                                       + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
-                                                                       + "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id "
-                                                                       + "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id "
-                                                                       + "WHERE xu.login = 'guest' "
-                                                                       + "      AND xea.element_name = 'xnat:projectData' "
-                                                                       + "      AND xfm.create_element = 0 "
-                                                                       + "      AND xfm.read_element = 1 "
-                                                                       + "      AND xfm.edit_element = 0 "
-                                                                       + "      AND xfm.delete_element = 0 "
-                                                                       + "      AND xfm.comparison_type = 'equals' "
-                                                                       + "      AND xfm.field_value = :projectId), -1)";
-    private static final String QUERY_OBJECT_EXISTS                  = "SELECT EXISTS(SELECT " +
-                                                                       "  TRUE " +
-                                                                       "FROM ${table} " +
-                                                                       "WHERE ${pk} = :${parameter}) AS exists";
-    private static final String QUERY_PROJECT_EXISTS                 = getObjectExistsQuery("xnat_projectdata", "id", "projectId");
-    private static final String QUERY_SUBJECT_EXISTS                 = getObjectExistsQuery("xnat_subjectdata", "id", "subjectId");
+    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED            = "SELECT coalesce((SELECT xfm.active_element "
+                                                                                  + "FROM xdat_field_mapping xfm "
+                                                                                  + "  LEFT JOIN xdat_field_mapping_set xfms "
+                                                                                  + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
+                                                                                  + "  LEFT JOIN xdat_element_access xea "
+                                                                                  + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
+                                                                                  + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
+                                                                                  + "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id "
+                                                                                  + "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id "
+                                                                                  + "WHERE xu.login = 'guest' "
+                                                                                  + "      AND xea.element_name = 'xnat:projectData' "
+                                                                                  + "      AND xfm.create_element = 0 "
+                                                                                  + "      AND xfm.read_element = 1 "
+                                                                                  + "      AND xfm.edit_element = 0 "
+                                                                                  + "      AND xfm.delete_element = 0 "
+                                                                                  + "      AND xfm.comparison_type = 'equals' "
+                                                                                  + "      AND xfm.field_value = :projectId), -1)";
+    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED_GUEST_ONLY = "SELECT coalesce((SELECT xfm.active_element "
+                                                                                  + "FROM xdat_field_mapping xfm "
+                                                                                  + "  LEFT JOIN xdat_field_mapping_set xfms "
+                                                                                  + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
+                                                                                  + "  LEFT JOIN xdat_element_access xea "
+                                                                                  + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
+                                                                                  + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
+                                                                                  + "WHERE xu.login = 'guest' "
+                                                                                  + "      AND xea.element_name = 'xnat:projectData' "
+                                                                                  + "      AND xfm.create_element = 0 "
+                                                                                  + "      AND xfm.read_element = 1 "
+                                                                                  + "      AND xfm.edit_element = 0 "
+                                                                                  + "      AND xfm.delete_element = 0 "
+                                                                                  + "      AND xfm.comparison_type = 'equals' "
+                                                                                  + "      AND xfm.field_value = :projectId), -1)";
+    private static final String QUERY_OBJECT_EXISTS                             = "SELECT EXISTS(SELECT " +
+                                                                                  "  TRUE " +
+                                                                                  "FROM ${table} " +
+                                                                                  "WHERE ${pk} = :${parameter}) AS exists";
+    private static final String QUERY_PROJECT_EXISTS                            = getObjectExistsQuery("xnat_projectdata", "id", "projectId");
+    private static final String QUERY_SUBJECT_EXISTS                            = getObjectExistsQuery("xnat_subjectdata", "id", "subjectId");
+
+    private static final String QUERY_GET_GUEST_GROUPS = "SELECT groupid " +
+                                                         "FROM xdat_user_groupid xug " +
+                                                         "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
+                                                         "WHERE xu.login = 'guest' " +
+                                                         "ORDER BY groupid";
 
     private static final List<String> PROJECT_GROUPS      = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();

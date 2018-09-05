@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * @author Tim
@@ -51,6 +52,8 @@ public class DisplaySearch implements TableSearchI {
     private static final int QUERY_MODE_VAL_CRITERIA = 0;
     private static final int QUERY_MODE_VAL_BYID = 1;
     private static final int QUERY_MODE_VAL_NONE = 2;
+    public static final String REGEX_REPLACE_WITH_UNDERSCORE = "[" + Pattern.quote(".!#$%&'()*+-;<=>?\\\"\\\\^`{|}~") + "]";
+    public static final String REGEX_REMOVE_CHARS = Pattern.quote("/@[]");
     private SchemaElement rootElement = null;
     private String display = "default";
     private final List<String[]> additionalViews = new ArrayList<>();
@@ -200,7 +203,7 @@ public class DisplaySearch implements TableSearchI {
 
             displayFields.addAll(dv.getSortedDisplayFieldRefs());
 
-            if (additionalViews != null && additionalViews.size() > 0) {
+            if (!additionalViews.isEmpty()) {
                 for (Object additionalView : additionalViews) {
                     String[] key = (String[]) additionalView;
                     String elementName = key[0];
@@ -433,9 +436,9 @@ public class DisplaySearch implements TableSearchI {
             }
         }
 
-        String query = qo.buildQuery();
-        if (!query.startsWith("SELECT DISTINCT")) {
-            query = "SELECT DISTINCT " + query.substring(6);
+        StringBuilder query = new StringBuilder(qo.buildQuery());
+        if (!query.toString().startsWith("SELECT DISTINCT")) {
+            query = new StringBuilder("SELECT DISTINCT " + query.substring(6));
         }
         join.append(" FROM (").append(query).append(") SEARCH");
 
@@ -543,10 +546,9 @@ public class DisplaySearch implements TableSearchI {
                     String fName = (String) addon;
                     SchemaElementI foreign = SchemaElement.GetElement(fName);
                     if (isMultipleRelationship(foreign)) {
-                        String foreignFilter = foreign.getGenericXFTElement().getFilterField();
-
-                        String localType = GenericWrapperElement.GetFieldForXMLPath(rootField).getXMLType().getLocalType();
-                        String foreignType = GenericWrapperElement.GetFieldForXMLPath(foreignFilter).getXMLType().getLocalType();
+                        final String foreignFilter = foreign.getGenericXFTElement().getFilterField();
+                        final String localType = GenericWrapperElement.GetFieldForXMLPath(rootField).getXMLType().getLocalType();
+                        final String foreignType = GenericWrapperElement.GetFieldForXMLPath(foreignFilter).getXMLType().getLocalType();
                         if (localType.equalsIgnoreCase(foreignType)) {
                             select.append(", ").append(XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF"));
                         }
@@ -654,16 +656,18 @@ public class DisplaySearch implements TableSearchI {
 
             }
 
-            String whereQuery = "SELECT DISTINCT ";
+            StringBuilder whereQuery = new StringBuilder("SELECT DISTINCT ");
 
             for (int i = 0; i < keyXMLFields.size(); i++) {
-                if (i > 0) whereQuery += ", ";
-                whereQuery += whereqo.getFieldAlias((String) keyXMLFields.get(i));
+                if (i > 0) {
+                    whereQuery.append(", ");
+                }
+                whereQuery.append(whereqo.getFieldAlias((String) keyXMLFields.get(i)));
             }
 
-            whereQuery += " FROM (" + subQuery + ") WHERE_CLAUSE " + where;
+            whereQuery.append(" FROM (").append(subQuery).append(") WHERE_CLAUSE ").append(where);
 
-            query = select.toString() + join.toString() + " RIGHT JOIN (" + whereQuery + ") WHERE_CLAUSE ON ";
+            query = new StringBuilder(select.toString() + join.toString() + " RIGHT JOIN (" + whereQuery + ") WHERE_CLAUSE ON ");
             //query = "SELECT SEARCH.* FROM ("+ whereQuery +") WHERE_CLAUSE LEFT JOIN (" + select + join + orderBy + ") SEARCH ON ";
 
             keys = rootElement.getAllPrimaryKeys().iterator();
@@ -672,15 +676,15 @@ public class DisplaySearch implements TableSearchI {
                 SchemaFieldI sf = (SchemaFieldI) keys.next();
                 String key = sf.getXMLPathString(rootElement.getFullXMLName());
                 if (keyCounter++ > 0) {
-                    query += " AND ";
+                    query.append(" AND ");
                 }
-                query += "WHERE_CLAUSE." + whereqo.getFieldAlias(key) + "=SEARCH." + qo.getFieldAlias(key);
+                query.append("WHERE_CLAUSE.").append(whereqo.getFieldAlias(key)).append("=SEARCH.").append(qo.getFieldAlias(key));
 
             }
 
-            query += orderBy.toString();
+            query.append(orderBy.toString());
         } else {
-            query = select.toString() + join.toString() + orderBy.toString();
+            query = new StringBuilder(select.toString() + join.toString() + orderBy.toString());
         }
 
         if (this.inClauses.size() > 0) {
@@ -701,7 +705,7 @@ public class DisplaySearch implements TableSearchI {
 
             inCounter = 0;
 
-            String orderByClause = "";
+            StringBuilder orderByClause = new StringBuilder();
             for (Map.Entry<String, String> entry : inClauses.entrySet()) {
                 String values = entry.getValue();
                 sb2.append(" RIGHT JOIN (SELECT * FROM stringstosortedtable(").append(values);
@@ -728,9 +732,9 @@ public class DisplaySearch implements TableSearchI {
                 }
 
                 if (inCounter == 0) {
-                    orderByClause += " ORDER BY search0.sort_order";
+                    orderByClause.append(" ORDER BY search0.sort_order");
                 } else {
-                    orderByClause += ", search" + inCounter + ".sort_order";
+                    orderByClause.append(", search").append(inCounter).append(".sort_order");
                 }
 
                 inCounter++;
@@ -754,38 +758,8 @@ public class DisplaySearch implements TableSearchI {
     }
 
 
-    public static String cleanColumnName(String s) {
-        s = StringUtils.replace(s, ",", "_com_");
-        s = StringUtils.replace(s, ":", "_col_");
-        s = StringUtils.replace(s, "-", "_");
-        s = StringUtils.replace(s, "/", "");
-        s = StringUtils.replace(s, "\\", "_");
-        s = StringUtils.replace(s, ";", "_");
-        s = StringUtils.replace(s, "'", "_");
-        s = StringUtils.replace(s, "\"", "_");
-        s = StringUtils.replace(s, "?", "_");
-        s = StringUtils.replace(s, "!", "_");
-        s = StringUtils.replace(s, "~", "_");
-        s = StringUtils.replace(s, "`", "_");
-        s = StringUtils.replace(s, "#", "_");
-        s = StringUtils.replace(s, "$", "_");
-        s = StringUtils.replace(s, "%", "_");
-        s = StringUtils.replace(s, "^", "_");
-        s = StringUtils.replace(s, "&", "_");
-        s = StringUtils.replace(s, "*", "_");
-        s = StringUtils.replace(s, "(", "_");
-        s = StringUtils.replace(s, ")", "_");
-        s = StringUtils.replace(s, "+", "_");
-        s = StringUtils.replace(s, "=", "_");
-        s = StringUtils.replace(s, "|", "_");
-        s = StringUtils.replace(s, "{", "_");
-        s = StringUtils.replace(s, "}", "_");
-        s = StringUtils.replace(s, "[", "");
-        s = StringUtils.replace(s, "]", "");
-        s = StringUtils.replace(s, "<", "_");
-        s = StringUtils.replace(s, ">", "_");
-        s = StringUtils.replace(s, "@", "");
-        return s;
+    public static String cleanColumnName(final String rawColumnName) {
+        return StringUtils.replaceAll(StringUtils.replace(StringUtils.replace(StringUtils.removeAll(rawColumnName, REGEX_REMOVE_CHARS), ":", "_col_"), ",", "_com_"), REGEX_REPLACE_WITH_UNDERSCORE, "_");
     }
 
     /**
@@ -831,13 +805,10 @@ public class DisplaySearch implements TableSearchI {
 
                 //XFT.LogCurrentTime("isMultipleRelationship :2");
                 if (connection != null) {
-                    if (connection[2].equalsIgnoreCase("reference")) {
-                        isMultiple = true;
-                    } else {
+                    if (!connection[2].equalsIgnoreCase("reference")) {
                         try {
                             isMultiple = GenericWrapperElement.IsMultipleReference(connection[0]);
-                        } catch (RuntimeException e) {
-                            isMultiple = true;
+                        } catch (RuntimeException ignored) {
                         }
                     }
                 }
@@ -1700,7 +1671,7 @@ public class DisplaySearch implements TableSearchI {
                     else
                         xsf.setHeader(ref.getHeader());
                     xsf.setType(ref.getDisplayField().getDataType());
-                    xsf.setSequence(new Integer(sequence++));
+                    xsf.setSequence(sequence++);
                     if (ref.getValue() != null && !ref.getValue().equals(""))
                         xsf.setValue(ref.getValue().toString());
                     if (!ref.isVisible()) {
@@ -1747,7 +1718,7 @@ public class DisplaySearch implements TableSearchI {
                                 else
                                     xsf.setHeader(ref.getHeader());
                                 xsf.setType(ref.getDisplayField().getDataType());
-                                xsf.setSequence(new Integer(sequence++));
+                                xsf.setSequence(sequence++);
                                 if (ref.getValue() != null && !ref.getValue().equals(""))
                                     xsf.setValue(ref.getValue().toString());
                                 if (!ref.isVisible()) {

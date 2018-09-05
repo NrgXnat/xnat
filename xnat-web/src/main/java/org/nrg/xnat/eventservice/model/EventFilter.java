@@ -81,6 +81,17 @@ public abstract class EventFilter {
                 .build();
     }
 
+    public EventFilter update(EventFilterUpdate update){
+        return this.toBuilder()
+                          .name(update.name() != null ? update.name() : name())
+                          .eventType(update.eventType() != null ? update.eventType() : eventType())
+                          .projectIds(update.projectIds() != null ? update.projectIds() : projectIds())
+                          .status(update.status() != null ? update.status() : status())
+                          .jsonPathFilter(update.jsonPathFilter() != null ? update.jsonPathFilter() : jsonPathFilter())
+                          .nodeFilters(update.nodeFilters() != null ? update.nodeFilters() : nodeFilters())
+                          .build();
+    }
+
     @JsonCreator
     public static EventFilter create(@Nullable @JsonProperty("id")          Long id,
                                      @Nullable @JsonProperty("name")        String name,

@@ -137,6 +137,19 @@ public abstract class Subscription {
                 .build();
     }
 
+    public Subscription update(final SubscriptionUpdate update){
+        return this.toBuilder()
+            .name(update.name() != null ? update.name() : name())
+            .active(update.active() != null ? update.active() : active())
+            .customListenerId(update.customListenerId() != null ? update.customListenerId() : customListenerId())
+            .actionKey(update.actionKey() != null ? update.actionKey() : actionKey())
+            .attributes(update.attributes() != null ? update.attributes() : attributes())
+            .eventFilter(update.eventFilter() != null ? this.eventFilter().update(update.eventFilter()) : eventFilter())
+            .actAsEventUser(update.actAsEventUser() != null ? update.actAsEventUser() : actAsEventUser())
+            .build();
+
+    }
+
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder id(Long id);

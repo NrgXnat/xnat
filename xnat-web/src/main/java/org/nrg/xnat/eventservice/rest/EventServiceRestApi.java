@@ -24,6 +24,7 @@ import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionCreator;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,14 +134,12 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}", method = PUT)
     @ApiOperation(value = "Update an existing Subscription")
-    public ResponseEntity<Void> updateSubscription(final @PathVariable long id, final @RequestBody Subscription subscription)
+    public ResponseEntity<Void> updateSubscription(final @PathVariable long id, final @RequestBody SubscriptionUpdate update)
             throws NrgServiceRuntimeException, SubscriptionValidationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        final Subscription toUpdate =
-                subscription.id() != null && subscription.id() == id
-                        ? subscription
-                        : subscription.toBuilder().id(id).build();
-        eventService.updateSubscription(toUpdate);
+        final Subscription toUpdate = eventService.getSubscription(id);
+        Subscription updated = toUpdate.update(update);
+        eventService.updateSubscription(updated);
         return ResponseEntity.ok().build();
     }
 

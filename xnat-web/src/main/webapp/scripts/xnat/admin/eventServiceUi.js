@@ -524,13 +524,14 @@ var XNAT = getObject(XNAT || {});
             }
         }
     }
-    function renderAttributeInput(name,props){
+    function renderAttributeInput(name,props,opts){
 
         var obj = {
             label: name,
             name: name,
             description: props.description
         };
+
         if (props.required) obj.validation = 'required';
         obj.value = props['default-value'] || '';
 
@@ -548,23 +549,31 @@ var XNAT = getObject(XNAT || {});
                 obj.onText = 'On';
                 obj.offText = 'Off';
                 obj.value = obj.value || 'true';
+
+                // allow provided opts to override these defaults
+                if (opts) obj = Object.assign( obj, opts );
                 el = XNAT.ui.panel.input.switchbox(obj);
                 break;
+
             default:
+                if (opts) obj = Object.assign( obj, opts );
                 el = XNAT.ui.panel.input.text(obj);
         }
 
         return el;
     }
-    eventServicePanel.enterAttributesDialog = function(attributesObj){
+    eventServicePanel.enterAttributesDialog = function(attributesObj,genericAttributes,actionLabel){
         var inputElements;
         if (Object.keys(attributesObj).length > 0) {
             inputElements = [];
             Object.keys(attributesObj).forEach(function(name){
+                var opts = {};
                 var props = attributesObj[name];
-                if (props['user-settable']) {
-                    inputElements.push( renderAttributeInput(name,props) );
-                }
+
+                // check to see if supplied attribute is a part of the basic set of supported attributes
+                if (Object.keys(genericAttributes).indexOf(name) < 0) opts = { addClass: 'invalid', description: 'This parameter is not natively supported by this action and may be ignored' };
+
+                inputElements.push( renderAttributeInput(name,props,opts) );
             });
             inputElements = spawn('!',inputElements);
         }
@@ -574,8 +583,10 @@ var XNAT = getObject(XNAT || {});
         eventServicePanel.subscriptionAttributes = "";
         XNAT.ui.dialog.open({
             width: 450,
-            title: 'Enter Attributes',
-            content: '<form class="xnat-form-panel panel panel-default" id="attributes-form" style="border: none; margin: 0"><div class="panel-body" id="attributes-elements-container"></div></form>',
+            title: false,
+            content: '<h3 style="font-weight: normal;">Enter Attributes for '+ titleCase(actionLabel) +'</h3>' +
+                '<form class="xnat-form-panel panel panel-default" id="attributes-form" style="border: none; padding-top: 1em;">' +
+                '<div id="attributes-elements-container"></div></form>',
             beforeShow: function(obj){
                 var $container = obj.$modal.find('#attributes-elements-container');
                 $container.append( inputElements );
@@ -605,7 +616,7 @@ var XNAT = getObject(XNAT || {});
         action = action || 'Create';
 
         XNAT.ui.dialog.open({
-            title: action + ' Subscription',
+            title: action + ' Event Subscription',
             width: 600,
             content: '<div id="subscription-form-container"></div>',
             beforeShow: function(obj){
@@ -871,8 +882,28 @@ var XNAT = getObject(XNAT || {});
         e.preventDefault();
         var $form = $(this).parents('form');
         var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
-        var attributesObj = eventServicePanel.actions[actionKey].attributes;
-        eventServicePanel.enterAttributesDialog(attributesObj);
+        var storedAttributes = $form.find('#sub-action-attribute-preview').html();
+        var genericAttributes = eventServicePanel.actions[actionKey].attributes;
+
+        var attributesObj = Object.assign({}, genericAttributes);
+
+        if (storedAttributes.length) {
+            storedAttributes = JSON.parse(storedAttributes);
+
+            // overwrite any generic values with saved values
+            Object.keys(storedAttributes).forEach(function(key,val){
+                attributesObj[key] = val;
+            });
+
+            // if any generic values were ignored, zero them out
+            Object.keys(genericAttributes).forEach(function(key){
+                if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
+                    attributesObj[key] = '';
+                }
+            })
+        }
+
+        eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
     });
 
     /* ---------------------------------- *

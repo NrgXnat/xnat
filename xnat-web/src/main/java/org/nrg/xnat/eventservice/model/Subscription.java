@@ -67,6 +67,30 @@ public abstract class Subscription {
                 .build();
     }
 
+    @JsonCreator
+    public static Subscription create(@Nullable @JsonProperty("id")     Long id,
+                                      @Nullable @JsonProperty("name")   String name,
+                                      @Nullable @JsonProperty("active") Boolean active,
+                                      @JsonProperty("action-key")       String actionKey,
+                                      @Nullable @JsonProperty("attributes") Map<String, String> attributes,
+                                      @JsonProperty("event-filter")     EventFilter eventFilter,
+                                      @Nullable @JsonProperty("act-as-event-user") Boolean actAsEventUser) {
+        return builder()
+                .id(id)
+                .name(name)
+                .active(active)
+                .listenerRegistrationKey(null)
+                .customListenerId(null)
+                .actionKey(actionKey)
+                .attributes(attributes)
+                .eventFilter(eventFilter)
+                .actAsEventUser(actAsEventUser)
+                .subscriptionOwner(null)
+                .valid(null)
+                .validationMessage(null)
+                .build();
+    }
+
     @Deprecated
     public static Subscription create(final SubscriptionCreator creator) {
         EventFilter filter = EventFilter.create(creator.eventFilter());

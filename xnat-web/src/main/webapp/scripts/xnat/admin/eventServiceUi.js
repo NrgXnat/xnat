@@ -237,11 +237,12 @@ var XNAT = getObject(XNAT || {});
                 return spawn( 'div.center', [ projectLink ]);
             }
             else {
-                return 'N/A';
+                return 'All Projects';
             }
         }
-        function eventNiceName(eventId){
-            return eventServicePanel.events[eventId]['display-name'];
+        function eventNiceName(subscription){
+            var eventId = subscription['event-filter']['event-type'];
+            return eventServicePanel.events[eventId]['display-name'] + ': ' + titleCase(subscription['event-filter']['status']);
         }
         function actionNiceName(actionKey){
             return (eventServicePanel.actions[actionKey]) ?
@@ -300,7 +301,7 @@ var XNAT = getObject(XNAT || {});
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
                         .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
                         .td([ projectLinks(subscription['event-filter']['project-ids'][0]) ])
-                        .td([ eventNiceName(subscription['event-filter']['event-type']) ])
+                        .td([ eventNiceName(subscription) ])
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
                         .td([ subscriptionEnabledCheckbox(subscription) ])
@@ -986,11 +987,11 @@ var XNAT = getObject(XNAT || {});
                     th: { className: 'left' },
                     td: { className: 'left' },
                     apply: function(){
-                        var message = "Ran "+ this.subscription.name;
+                        var message = [ spawn('a.view-history',{ href: '#!', data: { id: this.id }, style: { 'font-weight': 'bold' }}, this.subscription.name) ];
                         if (this.trigger) {
-                            message += " on "+ this.trigger.label
+                            message.push( spawn('span', { style: { display: 'block' }}, 'Trigger: '+this.trigger.label) )
                         }
-                        return spawn('a.view-history',{ href: '#!', data: { id: this.id }, style: { 'font-weight': 'bold' }}, message);
+                        return spawn('!', message);
                     }
                 },
                 EVENT: {
@@ -1014,7 +1015,7 @@ var XNAT = getObject(XNAT || {});
                     th: { className: 'left' },
                     td: { className: 'left' },
                     apply: function(){
-                        return this.subscription['project-id'];
+                        return this.project;
                     }
                 },
                 DATE: {

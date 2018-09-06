@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -67,7 +68,7 @@ public class Project extends XnatModelObject {
 
     private void populateProperties(final boolean preload) {
         this.id = xnatProjectdata.getId();
-        this.label = xnatProjectdata.getName();
+        this.label = !Strings.isNullOrEmpty(xnatProjectdata.getName()) ? xnatProjectdata.getName() : xnatProjectdata.getDisplayID();
         this.xsiType = "xnat:projectData";
         try { this.xsiType = xnatProjectdata.getXSIType();} catch(NullPointerException e){log.error("Project failed to detect xsiType. " + e.getMessage());}
         try { this.directory = xnatProjectdata.getRootArchivePath() + "arc001";} catch (NullPointerException e){log.error("Project could not get root archive path " + e.getMessage());}

@@ -1,17 +1,31 @@
 package org.nrg.xnat.eventservice.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
-import org.nrg.xdat.model.*;
+import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
 import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.model.xnat.*;
+import org.nrg.xnat.eventservice.model.xnat.Assessor;
+import org.nrg.xnat.eventservice.model.xnat.Project;
+import org.nrg.xnat.eventservice.model.xnat.Resource;
+import org.nrg.xnat.eventservice.model.xnat.Scan;
+import org.nrg.xnat.eventservice.model.xnat.Session;
+import org.nrg.xnat.eventservice.model.xnat.Subject;
+import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventPropertyService;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.slf4j.Logger;
@@ -20,7 +34,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -48,26 +66,26 @@ public class EventPropertyServiceImpl implements EventPropertyService {
         return null;
     }
 
-    @Override
-    public String serializePayloadObject(Object eventPayloadObject, UserI user) {
-        String jsonObject = null;
-        try {
-            XnatModelObject modelObject = componentManager.getModelObject(eventPayloadObject, user);
-            if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                // Serialize data object
-                log.debug("Serializing event object as known Model Object.");
-                jsonObject = mapper.writeValueAsString(modelObject);
-            } else if (eventPayloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(eventPayloadObject.getClass()))) {
-                log.debug("Serializing event object as unknown object type.");
-                jsonObject = mapper.writeValueAsString(eventPayloadObject);
-            } else {
-                log.debug("Could not serialize event object in: " + eventPayloadObject.toString());
-            }
-        } catch (JsonProcessingException e) {
-            log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);
-        }
-        return jsonObject;
-    }
+//    @Override
+//    public String serializePayloadObject(Object eventPayloadObject, UserI user) {
+//        String jsonObject = null;
+//        try {
+//            XnatModelObject modelObject = componentManager.getModelObject(eventPayloadObject, user);
+//            if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+//                // Serialize data object
+//                log.debug("Serializing event object as known Model Object.");
+//                jsonObject = mapper.writeValueAsString(modelObject);
+//            } else if (eventPayloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(eventPayloadObject.getClass()))) {
+//                log.debug("Serializing event object as unknown object type.");
+//                jsonObject = mapper.writeValueAsString(eventPayloadObject);
+//            } else {
+//                log.debug("Could not serialize event object in: " + eventPayloadObject.toString());
+//            }
+//        } catch (JsonProcessingException e) {
+//            log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);
+//        }
+//        return jsonObject;
+//    }
 
     @Override
     public List<EventPropertyNode> generateEventPropertyKeys(EventServiceEvent event){

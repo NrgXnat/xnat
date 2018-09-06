@@ -14,7 +14,7 @@ public interface EventPropertyService {
 
     Boolean matchFilter(Object eventPayloadObject, String jsonPathFilter);
 
-    String serializePayloadObject(Object eventPayloadObject, UserI user);
+//    String serializePayloadObject(Object eventPayloadObject, UserI user);
 
     Map<String, JsonPathFilterNode> generateEventFilterNodes(EventServiceEvent event);
 

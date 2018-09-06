@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
@@ -356,10 +357,14 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/action"}, params = "actionkey", method = GET)
     @ApiOperation(value = "Get a actions by key in the form of \"ProviderID:ActionID\"")
     @ResponseBody
-    public Action getAction(final @RequestParam String actionkey)
+    public Action getAction(final @RequestParam String actionkey,
+                            final @RequestParam(value = "project", required = false) String projectId,
+                            final @RequestParam(value = "xnattype", required = false) String xnatType)
             throws NrgServiceRuntimeException {
         final UserI user = XDAT.getUserDetails();
-        return eventService.getActionByKey(actionkey, user);
+        List<Action> actions = eventService.getActions(projectId, xnatType, user);
+        Optional<Action> action = actions.stream().filter(a -> actionkey.contentEquals(a.actionKey())).findFirst();
+        return action.isPresent() ? action.get() : null;
     }
 
 

@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -377,7 +378,23 @@ public class EventServiceImpl implements EventService {
 
                         // ** Serialized event object ** //
                         try {
-                            jsonObject = eventPropertyService.serializePayloadObject(esEvent.getObject(), actionUser);
+                            Object eventPayloadObject = esEvent.getObject();
+                            try {
+                                modelObject = componentManager.getModelObject(eventPayloadObject, actionUser);
+                                if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+                                    // Serialize data object
+                                    log.debug("Serializing event object as known Model Object.");
+                                    jsonObject = mapper.writeValueAsString(modelObject);
+                                } else if (eventPayloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(eventPayloadObject.getClass()))) {
+                                    log.debug("Serializing event object as unknown object type.");
+                                    jsonObject = mapper.writeValueAsString(eventPayloadObject);
+                                } else {
+                                    log.debug("Could not serialize event object in: " + eventPayloadObject.toString());
+                                }
+                            } catch (JsonProcessingException e) {
+                                log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);
+                            }
+
                             if(!Strings.isNullOrEmpty(jsonObject)) {
                                 String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
                                 log.debug("Serialized Object: " + objectSubString + "...");
@@ -416,9 +433,10 @@ public class EventServiceImpl implements EventService {
                             String objectLabel = null;
                             if (modelObject != null) {
                                 xsiUri = modelObject.getUri();
-                                objectLabel = modelObject.getLabel();
+                                objectLabel = !Strings.isNullOrEmpty(modelObject.getLabel()) ? modelObject.getLabel() : modelObject.getId();
                             } else if (esEvent.getObject() != null) {
                                 Object object = esEvent.getObject();
+                                objectLabel = object.getClass().getSimpleName();
                                 // TODO: Handle other object types
                             }
                             subscriptionDeliveryEntityService.setTriggeringEvent(

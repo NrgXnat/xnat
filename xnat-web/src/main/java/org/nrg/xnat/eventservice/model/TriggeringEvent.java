@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
@@ -7,6 +8,7 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import javax.annotation.Nullable;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class TriggeringEvent {
 
     @JsonProperty("event-name")      public abstract String eventName();

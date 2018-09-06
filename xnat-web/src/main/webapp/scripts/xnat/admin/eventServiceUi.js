@@ -352,11 +352,16 @@ var XNAT = getObject(XNAT || {});
             },
             subEventSelector: {
                 kind: 'panel.select.single',
-                name: 'event-type',
+                name: 'event-selector',
                 label: 'Select Event',
                 id: 'subscription-event-selector',
-                element: emptyOptionObj,
+                // element: emptyOptionObj,
                 order: 20
+            },
+            subEventType: {
+                kind: 'panel.input.hidden',
+                name: 'event-type',
+                id: 'subscription-event-type'
             },
             subEventStatus: {
                 kind: 'panel.input.hidden',
@@ -464,10 +469,12 @@ var XNAT = getObject(XNAT || {});
     };
 
     // populate the hidden Status field based on selected event
-    function setStatus($element){
+    function setEventStatus($element){
         var $form = $element.parents('form');
         var status = $element.find('option:selected').data('status');
+        var eventType = $element.find('option:selected').data('event-type');
         $form.find('input[name=status]').val(status);
+        $form.find('input[name=event-type]').val(eventType);
     }
 
     // populate the Action Select menu based on selected project and event (which provides xsitype)
@@ -526,6 +533,34 @@ var XNAT = getObject(XNAT || {});
             }
         }
     }
+
+    // display Action Attributes after editing
+    function setActionAttributes($element){
+        var $form = $element.parents('form');
+        var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
+        var storedAttributes = $form.find('#sub-action-attribute-preview').html();
+        var genericAttributes = eventServicePanel.actions[actionKey].attributes;
+
+        var attributesObj = Object.assign({}, genericAttributes);
+
+        if (storedAttributes.length) {
+            storedAttributes = JSON.parse(storedAttributes);
+
+            // overwrite any generic values with saved values
+            Object.keys(storedAttributes).forEach(function(key,val){
+                attributesObj[key] = val;
+            });
+
+            // if any generic values were ignored, zero them out
+            Object.keys(genericAttributes).forEach(function(key){
+                if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
+                    attributesObj[key] = '';
+                }
+            })
+        }
+
+        eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
+    }
     function renderAttributeInput(name,props,opts){
 
         var obj = {
@@ -564,6 +599,7 @@ var XNAT = getObject(XNAT || {});
 
         return el;
     }
+
     eventServicePanel.enterAttributesDialog = function(attributesObj,genericAttributes,actionLabel){
         var inputElements;
         if (Object.keys(attributesObj).length > 0) {
@@ -648,7 +684,11 @@ var XNAT = getObject(XNAT || {});
                     thisEvent.statuses.forEach(function(status){
                         optGroup.push(spawn(
                                 'option',
-                                { value: event, data: { xsitype: thisEvent['xnat-type'], status: status }},
+                                { value: event+':'+status, data: {
+                                    xsitype: thisEvent['xnat-type'],
+                                    status: status,
+                                    'event-type': event
+                                }},
                                 thisEvent['display-name'] + ' -- ' + titleCase(status)
                             ));
                     });
@@ -667,6 +707,7 @@ var XNAT = getObject(XNAT || {});
                     subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
                     subscriptionData['event-type'] = subscription['event-filter']['event-type'];
                     subscriptionData['status'] = subscription['event-filter']['status'];
+                    subscriptionData['event-selector'] = subscription['event-filter']['event-type'] + ':' + subscription['event-filter']['status'];
                     subscriptionData['payload-filter'] = subscription['event-filter']['payload-filter'];
                     subscriptionData['inherited-action'] = subscription['action-key']; 
 
@@ -683,6 +724,8 @@ var XNAT = getObject(XNAT || {});
                     findActions($form.find('#subscription-event-selector'));
                     $form.addClass((subscription.valid) ? 'valid' : 'invalid');
 
+                    // custom set event selector
+
                     if (Object.keys(subscription.attributes).length) {
                         $form.find('#subscription-action-preview').show();
                         $form.find('#sub-action-attribute-preview').html( JSON.stringify(subscription.attributes) );
@@ -694,39 +737,16 @@ var XNAT = getObject(XNAT || {});
                 $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
                     findActions($(this));
                 });
-                $form.off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
+                $form.off('change','select[name=event-selector]').on('change','select[name=event-selector]', function(){
                     findActions($(this));
-                    setStatus($(this));
+                    setEventStatus($(this));
                 });
                 $form.off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
                     getActionAttributes($(this));
                 });
                 $form.off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
                     e.preventDefault();
-                    var $form = $(this).parents('form');
-                    var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
-                    var storedAttributes = $form.find('#sub-action-attribute-preview').html();
-                    var genericAttributes = eventServicePanel.actions[actionKey].attributes;
-
-                    var attributesObj = Object.assign({}, genericAttributes);
-
-                    if (storedAttributes.length) {
-                        storedAttributes = JSON.parse(storedAttributes);
-
-                        // overwrite any generic values with saved values
-                        Object.keys(storedAttributes).forEach(function(key,val){
-                            attributesObj[key] = val;
-                        });
-
-                        // if any generic values were ignored, zero them out
-                        Object.keys(genericAttributes).forEach(function(key){
-                            if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
-                                attributesObj[key] = '';
-                            }
-                        })
-                    }
-
-                    eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
+                    setActionAttributes($(this));
                 });
             },
             buttons: [

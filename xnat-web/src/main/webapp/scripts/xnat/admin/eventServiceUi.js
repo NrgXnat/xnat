@@ -231,10 +231,9 @@ var XNAT = getObject(XNAT || {});
                 }
             }, label);
         }
-        function projectLinks(id){
-            if (id) {
-                var projectLink = spawn('a',{ href: XNAT.url.rootUrl('/data/projects/'+id+'?format=html'), style: { display: 'block' }}, id);
-                return spawn( 'div.center', [ projectLink ]);
+        function displayProjects(projects){
+            if (isArray(projects) && projects.length) {
+                return projects.join(', ');
             }
             else {
                 return 'All Projects';
@@ -297,10 +296,12 @@ var XNAT = getObject(XNAT || {});
 
         eventServicePanel.getSubscriptions().done(function(data){
             if (data.length) {
+                data = data.sort(function(a,b){ return (a.name > b.name) ? 1 : -1 });
+
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
                         .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
-                        .td([ projectLinks(subscription['event-filter']['project-ids'][0]) ])
+                        .td([ displayProjects(subscription['event-filter']['project-ids']) ])
                         .td([ eventNiceName(subscription) ])
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])

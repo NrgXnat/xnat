@@ -1087,6 +1087,7 @@ body [type="reset"] {
     letter-spacing: 0.02em;
     text-decoration: none;
     box-shadow: 0 1px 1px rgba(153,153,153,0.4);
+    margin: 0;
 }
 
 /* style for button hover */

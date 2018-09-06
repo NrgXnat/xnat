@@ -498,7 +498,7 @@ var XNAT = getObject(XNAT || {});
                             // if we're editing an existing subscription, we'll know the action before this select menu knows which actions exist.
                             // get the stored value and mark this option selected if it matches, then clear the stored value.
                             selected='selected';
-                            $form.find('input[name=inherited-action]').val('');
+                            // $form.find('input[name=inherited-action]').val('');
                         }
 
                         actionSelector.append( spawn('option', { value: action['action-key'], selected: selected }, action['display-name'] ))
@@ -688,6 +688,45 @@ var XNAT = getObject(XNAT || {});
                     }
                 }
                 else delete eventServicePanel.subscriptionAttributes;
+
+                // Create form-specific event handlers, enable them after setValues() has run
+                $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
+                    findActions($(this));
+                });
+                $form.off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
+                    findActions($(this));
+                    setStatus($(this));
+                });
+                $form.off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
+                    getActionAttributes($(this));
+                });
+                $form.off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
+                    e.preventDefault();
+                    var $form = $(this).parents('form');
+                    var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
+                    var storedAttributes = $form.find('#sub-action-attribute-preview').html();
+                    var genericAttributes = eventServicePanel.actions[actionKey].attributes;
+
+                    var attributesObj = Object.assign({}, genericAttributes);
+
+                    if (storedAttributes.length) {
+                        storedAttributes = JSON.parse(storedAttributes);
+
+                        // overwrite any generic values with saved values
+                        Object.keys(storedAttributes).forEach(function(key,val){
+                            attributesObj[key] = val;
+                        });
+
+                        // if any generic values were ignored, zero them out
+                        Object.keys(genericAttributes).forEach(function(key){
+                            if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
+                                attributesObj[key] = '';
+                            }
+                        })
+                    }
+
+                    eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
+                });
             },
             buttons: [
                 {
@@ -727,7 +766,11 @@ var XNAT = getObject(XNAT || {});
                         if (jsonFormData['payload-filter']) {
                             jsonFormData['event-filter']['payload-filter'] = jsonFormData['payload-filter'];
                             delete jsonFormData['payload-filter'];
+                        } else {
+                            jsonFormData['event-filter']['payload-filter'] = '';
                         }
+                        if (!jsonFormData['active']) jsonFormData['active'] = false;
+                        if (!jsonFormData['act-as-event-user']) jsonFormData['act-as-event-user'] = false;
 
                         formData = JSON.stringify(jsonFormData);
 
@@ -869,43 +912,43 @@ var XNAT = getObject(XNAT || {});
         XNAT.admin.eventServicePanel.modifySubscription('Create');
     });
 
-    $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
-        findActions($(this));
-    });
-    $(document).off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
-        findActions($(this));
-        setStatus($(this));
-    });
-    $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
-        getActionAttributes($(this));
-    });
-    $(document).off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
-        e.preventDefault();
-        var $form = $(this).parents('form');
-        var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
-        var storedAttributes = $form.find('#sub-action-attribute-preview').html();
-        var genericAttributes = eventServicePanel.actions[actionKey].attributes;
-
-        var attributesObj = Object.assign({}, genericAttributes);
-
-        if (storedAttributes.length) {
-            storedAttributes = JSON.parse(storedAttributes);
-
-            // overwrite any generic values with saved values
-            Object.keys(storedAttributes).forEach(function(key,val){
-                attributesObj[key] = val;
-            });
-
-            // if any generic values were ignored, zero them out
-            Object.keys(genericAttributes).forEach(function(key){
-                if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
-                    attributesObj[key] = '';
-                }
-            })
-        }
-
-        eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
-    });
+    // $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
+    //     findActions($(this));
+    // });
+    // $(document).off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
+    //     findActions($(this));
+    //     setStatus($(this));
+    // });
+    // $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
+    //     getActionAttributes($(this));
+    // });
+    // $(document).off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
+    //     e.preventDefault();
+    //     var $form = $(this).parents('form');
+    //     var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
+    //     var storedAttributes = $form.find('#sub-action-attribute-preview').html();
+    //     var genericAttributes = eventServicePanel.actions[actionKey].attributes;
+    //
+    //     var attributesObj = Object.assign({}, genericAttributes);
+    //
+    //     if (storedAttributes.length) {
+    //         storedAttributes = JSON.parse(storedAttributes);
+    //
+    //         // overwrite any generic values with saved values
+    //         Object.keys(storedAttributes).forEach(function(key,val){
+    //             attributesObj[key] = val;
+    //         });
+    //
+    //         // if any generic values were ignored, zero them out
+    //         Object.keys(genericAttributes).forEach(function(key){
+    //             if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
+    //                 attributesObj[key] = '';
+    //             }
+    //         })
+    //     }
+    //
+    //     eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
+    // });
 
     /* ---------------------------------- *
      * Display Event Subscription History *

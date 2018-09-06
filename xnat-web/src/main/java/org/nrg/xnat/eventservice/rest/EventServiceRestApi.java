@@ -147,16 +147,14 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription/{id}", method = PUT)
     @ApiOperation(value = "Update an existing Subscription for (project)")
     public ResponseEntity<Void> updateSubscription(final @PathVariable long id,
-                                                   final @RequestBody Subscription subscription,
+                                                   final @RequestBody SubscriptionUpdate update,
                                                    final @PathVariable String project)
             throws NrgServiceRuntimeException, SubscriptionValidationException, NotFoundException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkProjectSubscriptionAccess(subscription, project, userI);
-        final Subscription toUpdate =
-                subscription.id() != null && subscription.id() == id
-                        ? subscription
-                        : subscription.toBuilder().id(id).actAsEventUser(false).build();
-        eventService.updateSubscription(toUpdate);
+        final Subscription toUpdate = eventService.getSubscription(id);
+        Subscription updated = toUpdate.update(update);
+        checkProjectSubscriptionAccess(updated, project, userI);
+        eventService.updateSubscription(updated);
         return ResponseEntity.ok().build();
     }
 

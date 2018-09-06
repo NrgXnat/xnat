@@ -127,7 +127,11 @@ public class EventServiceImpl implements EventService {
         Subscription updated = subscriptionService.update(subscription);
         if(updated != null){
             log.debug("Reactivating updated subscription: " + subscription.id());
-            updated = subscriptionService.activate(updated);
+            if(updated.active()) {
+                updated = subscriptionService.activate(updated);
+            } else {
+                updated = subscriptionService.deactivate(updated);
+            }
         }
         return updated;
     }

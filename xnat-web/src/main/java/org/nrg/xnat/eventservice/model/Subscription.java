@@ -2,16 +2,14 @@ package org.nrg.xnat.eventservice.model;
 
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import reactor.bus.registry.Registration;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Date;
 import java.util.Map;
 
 
@@ -31,6 +29,10 @@ public abstract class Subscription {
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
     @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
     @Nullable @JsonIgnore @JsonProperty("registration") public abstract Registration registration();
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd hh:mm:ss")
+    @Nullable @JsonProperty("created") public abstract Date created();
 
 
     public static Builder builder() {
@@ -177,6 +179,8 @@ public abstract class Subscription {
         public abstract Builder validationMessage(String validationMessage);
 
         public abstract Builder registration(Registration registration);
+
+        public abstract Builder created(Date created);
 
         public abstract Subscription build();
     }

@@ -506,6 +506,7 @@ public class EventSubscriptionEntityServiceImpl
                                    null :
                                    loadReactorRegistration(entity.getRegistration())
                            )
+                           .created(entity.getCreated())
                            .build();
     }
 

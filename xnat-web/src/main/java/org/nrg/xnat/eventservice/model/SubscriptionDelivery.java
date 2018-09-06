@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class SubscriptionDelivery {
 
     @JsonProperty("id") public abstract Long id();

@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERING_FAULT;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZATION_FAULT;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZED;
@@ -410,26 +411,32 @@ public class EventServiceImpl implements EventService {
                             subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
                         }
 
-                        //Filter on data object (if filter and object exist)
-                        if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {
-                            // ** Attempt to filter event if serialization was successful ** //
-                            if(Strings.isNullOrEmpty(jsonObject)){
-                                log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getType());
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
-                                return;
-                            } else {
-                                String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
-                                List<String> filterResult = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
-                                String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
-                                if (filterResult.isEmpty()) {
-                                    log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
-                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                        try {
+                            //Filter on data object (if filter and object exist)
+                            if (subscription.eventFilter() != null && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
+                                // ** Attempt to filter event if serialization was successful ** //
+                                if (Strings.isNullOrEmpty(jsonObject)) {
+                                    log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getType());
+                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
                                     return;
                                 } else {
-                                    log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + jsonFilter);
-                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                    String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+                                    List<String> filterResult = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
+                                    String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
+                                    if (filterResult.isEmpty()) {
+                                        log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
+                                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                                        return;
+                                    } else {
+                                        log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + jsonFilter);
+                                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                    }
                                 }
                             }
+                        } catch (Throwable e){
+                            log.error("Aborting Event Service object filtering. Exception: " + e.getMessage());
+                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERING_FAULT, new Date(), e.getMessage());
+                            return;
                         }
                         try {
                             // ** Extract triggering event details and save to delivery entity ** //

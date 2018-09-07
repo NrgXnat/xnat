@@ -53,7 +53,7 @@ public class DisplaySearch implements TableSearchI {
     private static final int QUERY_MODE_VAL_BYID = 1;
     private static final int QUERY_MODE_VAL_NONE = 2;
     public static final String REGEX_REPLACE_WITH_UNDERSCORE = "[" + Pattern.quote(".!#$%&'()*+-;<=>?\\\"\\\\^`{|}~") + "]";
-    public static final String REGEX_REMOVE_CHARS = Pattern.quote("/@[]");
+    public static final String REGEX_REMOVE_CHARS = "[" + Pattern.quote("/@[]") + "]";
     private SchemaElement rootElement = null;
     private String display = "default";
     private final List<String[]> additionalViews = new ArrayList<>();

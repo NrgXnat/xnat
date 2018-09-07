@@ -103,12 +103,12 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/data/projects?format=json');
     }
 
-    function getEventActionsUrl(projectId,xsiType){
-        var path = (xsiType) ?
-            '/xapi/events/actions?xnattype='+xsiType :
+    function getEventActionsUrl(projectId,eventType){
+        var path = (eventType) ?
+            '/xapi/events/actionsbyevent?event-type='+eventType :
             '/xapi/events/allactions';
 
-        if (xsiType && projectId) path += '&project='+projectId;
+        if (eventType && projectId) path += '&project='+projectId;
         return rootUrl(path);
     }
 
@@ -481,17 +481,22 @@ var XNAT = getObject(XNAT || {});
     function findActions($element){
         var $form = $element.parents('form');
         var project = $form.find('select[name=project-id]').find('option:selected').val();
-        var xsiType = $form.find('select[name=event-type]').find('option:selected').data('xsitype');
+        var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
+        var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type');
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
         var actionSelector = $form.find('select[name=action-key]');
-        var url = getEventActionsUrl();
+        var url;
 
         if (project && actionSelector) {
-            url = getEventActionsUrl(project,xsiType)
+            url = getEventActionsUrl(project,eventType);
         }
         else if (actionSelector) {
-            url = getEventActionsUrl(false,xsiType)
+            url = getEventActionsUrl(false,eventType);
         }
+        else {
+            url = getEventActionsUrl();
+        }
+
 
         XNAT.xhr.get({
             url: url,
@@ -887,7 +892,7 @@ var XNAT = getObject(XNAT || {});
         XNAT.ui.dialog.open({
             title: 'Confirm Deletion',
             width: 350,
-            content: '<p>Are you sure you want to permanently delete the <strong>'+ escapeHTML(subscription.name) +'</strong> event subscription? This operation cannot be undone. Alternately, you can just disable it.</p>',
+            content: '<p>Are you sure you want to permanently delete the <strong>'+ escapeHTML(subscription.name) +'</strong> event subscription? This will also delete all event history items associated with this event. This operation cannot be undone. Alternately, you can just disable it.</p>',
             buttons: [
                 {
                     label: 'Confirm Delete',
@@ -895,6 +900,7 @@ var XNAT = getObject(XNAT || {});
                     close: true,
                     action: function(){
                         eventServicePanel.deleteSubscription(subscription.id);
+                        eventServicePanel.historyTable.refresh();
                     }
                 },
                 {
@@ -932,44 +938,6 @@ var XNAT = getObject(XNAT || {});
         // console.log(e);
         XNAT.admin.eventServicePanel.modifySubscription('Create');
     });
-
-    // $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
-    //     findActions($(this));
-    // });
-    // $(document).off('change','select[name=event-type]').on('change','select[name=event-type]', function(){
-    //     findActions($(this));
-    //     setStatus($(this));
-    // });
-    // $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
-    //     getActionAttributes($(this));
-    // });
-    // $(document).off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
-    //     e.preventDefault();
-    //     var $form = $(this).parents('form');
-    //     var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
-    //     var storedAttributes = $form.find('#sub-action-attribute-preview').html();
-    //     var genericAttributes = eventServicePanel.actions[actionKey].attributes;
-    //
-    //     var attributesObj = Object.assign({}, genericAttributes);
-    //
-    //     if (storedAttributes.length) {
-    //         storedAttributes = JSON.parse(storedAttributes);
-    //
-    //         // overwrite any generic values with saved values
-    //         Object.keys(storedAttributes).forEach(function(key,val){
-    //             attributesObj[key] = val;
-    //         });
-    //
-    //         // if any generic values were ignored, zero them out
-    //         Object.keys(genericAttributes).forEach(function(key){
-    //             if (storedAttributes[key] === undefined || storedAttributes[key].length === 0) {
-    //                 attributesObj[key] = '';
-    //             }
-    //         })
-    //     }
-    //
-    //     eventServicePanel.enterAttributesDialog(attributesObj,genericAttributes,eventServicePanel.actions[actionKey]['display-name']);
-    // });
 
     /* ---------------------------------- *
      * Display Event Subscription History *
@@ -1019,6 +987,124 @@ var XNAT = getObject(XNAT || {});
                 errorHandler(e,'Could Not Get History');
             }
         })
+    };
+
+    function StringIndexOfFilter() {
+        "use strict";
+
+        this.getFilterRegex = function (filterText) {
+            return filterText;
+        };
+    }
+
+    var getFilterRegex = function (filterText) {
+        return new StringIndexOfFilter().getFilterRegex(filterText);
+    };
+
+    var addColumnFilters = function ($datatable, dataTableColumns) {
+        var filterHeaderRowId = "filterHeaderRow";
+        var datatableId = $datatable.prop('id');
+        $datatable.find('thead').append('<tr id="' + filterHeaderRowId + '" class="filter">');
+
+        dataTableColumns.forEach(function(column){
+            if (column.mData) {
+                var inputId = filterHeaderRowId + "Input" + i;
+                jq("#" + filterHeaderRowId).append('<th class="noPointer"><input type="text" id="' + inputId + '" name="' + inputId + '" placeholder="Filter..." class="filter_init datatable-filter" /></th>');
+            } else {
+                jq("#" + filterHeaderRowId).append('<th class="noPointer"/>');
+            }
+        });
+
+        var asInitVals = [];
+
+        $datatable.find('thead input').each(function (i) {
+            asInitVals[i] = this.value;
+        });
+
+        $datatable.on('focus','.datatable-filter', function () {
+            if ($(this).hasClass("filter_init")) {
+                $(this).removeClass("filter_init");
+                $(this).val("");
+            }
+        });
+
+        $datatable.on('blur','.datatable-filter', function () {
+            if (this.value === "") {
+                $(this).addClass("filter_init");
+                $(this).val( asInitVals[$datatable.find('thead input').index(this)] );
+            }
+        });
+
+        $datatable.on('keyup','.datatable-filter', function () {
+            /* Filter on the column (the index) of this element, +1 to account for the row expander column */
+            var columnIndexOfThisFilter = $datatable.find('thead input').index(this);
+            $datatable.fnFilter(this.value, columnIndexOfThisFilter, false);
+        });
+
+        // we can't turn off filtering entirely on the table cause then our individual column filters won't work
+        // so just hide the global (all-column) filter
+        $("#" + datatableId + "_filter").css("display", "none");
+    };
+
+    historyTable.datatable = function(data, $datatable){
+        var datatableOptions = {
+            aaData: data,
+            aoColumns: [
+                {
+                    sTitle: '<b>Event Subscription</b>',
+                    sClass: 'left',
+                    sWidth: '200px',
+                    mData: function(source){
+                        var message = '<a class="view-history" href="#!" data-id="'+source.id+'" style="font-weight: bold">'+ source.subscription.name+'</a>';
+                        if (source.trigger) {
+                            message = message+ '<br>Trigger: '+source.trigger.label;
+                        }
+                        return message;
+                    }
+                },
+                {
+                    sTitle: '<b>Event Type</b>',
+                    mData: function(source){
+                        return (source.trigger) ? source.trigger['event-name'] : 'Unknown';
+                    },
+                    sWidth: '120px'
+                },
+                {
+                    sTitle: '<b>Run As User</b>',
+                    mData: function(source){
+                        return source.user
+                    },
+                    sWidth: '120px'
+                },
+                {
+                    sTitle: '<b>Project</b>',
+                    mData: function(source){
+                        return source.project
+                    },
+                    sWidth: '150px'
+                },
+                {
+                    sTitle: '<b>Date</b>',
+                    mData: function(source){
+                        var timestamp = 0, dateString;
+                        if (source.status.length > 0){
+                            timestamp = source.status[0]['timestamp'].replace(/-/g,'/'); // include date format hack for Safari
+                            timestamp = new Date(timestamp);
+                            dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+
+                        } else {
+                            dateString = 'N/A';
+                        }
+                        return dateString
+                    },
+                    sWidth: '150px'
+                }
+            ]
+        };
+
+        $datatable.dataTable(datatableOptions);
+
+        addColumnFilters($datatable,datatableOptions.aoColumns);
     };
 
     historyTable.table = function(data){
@@ -1237,20 +1323,32 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+    $(document).off('click','a.v0ew-history').on('click','a.view-history',function(e){
+        e.preventDefault();
+        var historyEntry = $(this).data('id');
+        if (historyEntry) historyTable.viewHistory(historyEntry);
+    });
+
     historyTable.init = historyTable.refresh = function(container){
         var $container = $$(container || '#history-table-container'), _historyTable;
 
         historyTable.getHistory().done(function(data){
             if (data.length){
-                _historyTable = XNAT.spawner.spawn({
-                    historyTable: historyTable.table(data)
-                });
-                _historyTable.done(function(){
-                    $container.empty().append(
-                        spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site')
-                    );
-                    this.render($container, 20);
-                });
+
+                $container.empty().append(spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site'))
+                $container.append('<table class="xnat-table data-table compact" id="event-history-table" style="width: 100%"></table>');
+                var $datatable = $(document).find('#event-history-table');
+                historyTable.datatable(data,$datatable);
+
+                // _historyTable = XNAT.spawner.spawn({
+                //     historyTable: historyTable.table(data)
+                // });
+                // _historyTable.done(function(){
+                //     $container.empty().append(
+                //         spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site')
+                //     );
+                //     this.render($container, 20);
+                // });
             } else {
                 $container.empty().append(spawn('p','No event history to display'));
             }

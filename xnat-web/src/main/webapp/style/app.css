@@ -3215,6 +3215,41 @@ th.sort:hover {
     border-bottom: 1px solid #ccc;
 }
 
+/* override datatable.css */
+.dataTables_length {
+    margin-bottom: 1em;
+}
+
+.paginate_disabled_previous, .paginate_enabled_previous,
+.paginate_disabled_next, .paginate_enabled_next {
+    background: none;
+}
+.paginate_disabled_previous:before, .paginate_enabled_previous:before,
+.paginate_disabled_next:after, .paginate_enabled_next:after {
+    font-family: "FontAwesome";
+    content: "\f053";
+    display: inline-block;
+    margin: 0 4px;
+    width: 1em;
+}
+.paginate_disabled_next:after, .paginate_enabled_next:after {
+    content: "\f054";
+}
+.paginate_disabled_previous:before, .paginate_disabled_next:before {
+    color: #f0f0f0;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 3px 7px;
+}
+table.dataTable thead input,
+table.data-table thead input {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+
 /* container for data tables in report page panels */
 .panel-table-container {
     overflow-x: auto;

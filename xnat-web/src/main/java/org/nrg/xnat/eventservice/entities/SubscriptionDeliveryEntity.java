@@ -15,6 +15,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     public SubscriptionDeliveryEntity() {}
 
     private UUID eventUUID;
+    private String eventType;
     private SubscriptionEntity subscription;
     private String actionUserLogin;
     private String projectId;
@@ -23,10 +24,10 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private List<TimedEventStatusEntity> timedEventStatuses = Lists.newArrayList();
     private TimedEventStatusEntity.Status status;
 
-    public SubscriptionDeliveryEntity(SubscriptionEntity subscription, UUID eventUUID, String actionUserLogin,
+    public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
                                       String projectId, String actionInputs) {
         this.subscription = subscription;
-        this.eventUUID = eventUUID;
+        this.eventType = eventType;
         this.actionUserLogin = actionUserLogin;
         this.projectId = projectId;
         this.actionInputs = actionInputs;
@@ -38,6 +39,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void setEventUUID(UUID eventUUID) {
         this.eventUUID = eventUUID;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)

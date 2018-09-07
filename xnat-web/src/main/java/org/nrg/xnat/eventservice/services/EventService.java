@@ -7,18 +7,24 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.ActionProvider;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.Listener;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import reactor.bus.Event;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public interface EventService {
     
     List<SimpleEvent> getEvents() throws Exception;
     List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception;
-    SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;
+    //SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;
     SimpleEvent getEvent(String eventId, Boolean loadDetails) throws Exception;
 
     @Deprecated

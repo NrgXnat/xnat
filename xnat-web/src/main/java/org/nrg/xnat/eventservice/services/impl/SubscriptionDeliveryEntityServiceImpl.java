@@ -48,7 +48,7 @@ public class SubscriptionDeliveryEntityServiceImpl
                        String actionInputs) {
         try {
 
-            SubscriptionDeliveryEntity delivery = new SubscriptionDeliveryEntity(subscription, event.getEventUUID(), actionUserLogin, projectId, actionInputs);
+            SubscriptionDeliveryEntity delivery = new SubscriptionDeliveryEntity(subscription, event.getType(), actionUserLogin, projectId, actionInputs);
             if (delivery != null) {
                 log.debug("Created new SubscriptionDeliveryEntity for subscription: {} and eventUUID {}", subscription.getName(), event.getEventUUID());
                 super.create(delivery);
@@ -130,9 +130,13 @@ public class SubscriptionDeliveryEntityServiceImpl
                 .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
                 .build();
         try{
-            subscriptionDelivery = subscriptionDelivery.toBuilder()
-                    .event(eventService.getEvent(entity.getEventUUID(), true))
-                    .build();
+            if(!Strings.isNullOrEmpty(entity.getEventType())) {
+                subscriptionDelivery = subscriptionDelivery.toBuilder()
+                                                           .event(eventService.getEvent(entity.getEventType(), false))
+                                                           .build();
+            }else {
+                log.error("EventType not stored is subscription delivery history table. Skipping creation of event for display.");
+            }
         } catch (Exception e) {
             log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
         }

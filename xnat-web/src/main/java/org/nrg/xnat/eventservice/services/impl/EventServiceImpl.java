@@ -51,7 +51,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
@@ -253,33 +252,34 @@ public class EventServiceImpl implements EventService {
     public List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception {
         List<SimpleEvent> events = new ArrayList();
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
-            SimpleEvent simpleEvent = getEvent(e.getEventUUID(), loadDetails);
+            // TODO: This is a stupid way to get all the events
+            SimpleEvent simpleEvent = getEvent(e.getType(), loadDetails);
             events.add(simpleEvent);
         }
         return events;
     }
 
 
-    @Override
-    public SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception {
-         for(EventServiceEvent e :componentManager.getInstalledEvents()){
-            if(e.getEventUUID().equals(uuid)){
-                SimpleEvent simpleEvent = toPojo(e);
-                if(loadDetails){
-                    Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
-                    if(eventFilterNodes != null && eventFilterNodes.size()>0){
-                        simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
-                    }
-                    List<EventPropertyNode> eventPropertyNodes = getEventPropertyNodes(simpleEvent.id());
-                    if(eventPropertyNodes != null && !eventPropertyNodes.isEmpty()){
-                        simpleEvent = simpleEvent.toBuilder().eventProperties(eventPropertyNodes).build();
-                    }
-                }
-                return simpleEvent;
-            }
-        }
-        return null;
-    }
+//    @Override
+//    public SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception {
+//         for(EventServiceEvent e :componentManager.getInstalledEvents()){
+//            if(e.getEventUUID().equals(uuid)){
+//                SimpleEvent simpleEvent = toPojo(e);
+//                if(loadDetails){
+//                    Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
+//                    if(eventFilterNodes != null && eventFilterNodes.size()>0){
+//                        simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
+//                    }
+//                    List<EventPropertyNode> eventPropertyNodes = getEventPropertyNodes(simpleEvent.id());
+//                    if(eventPropertyNodes != null && !eventPropertyNodes.isEmpty()){
+//                        simpleEvent = simpleEvent.toBuilder().eventProperties(eventPropertyNodes).build();
+//                    }
+//                }
+//                return simpleEvent;
+//            }
+//        }
+//        return null;
+//    }
 
     @Override
     public SimpleEvent getEvent(@Nonnull final String eventId, Boolean loadDetails) throws Exception {
@@ -409,6 +409,7 @@ public class EventServiceImpl implements EventService {
                             log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass().getName());
                             log.error(e.getMessage());
                             subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
+                            return;
                         }
 
                         try {

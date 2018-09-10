@@ -31,7 +31,8 @@ public abstract class Subscription {
     @Nullable @JsonIgnore @JsonProperty("registration") public abstract Registration registration();
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
-            pattern = "yyyy-MM-dd hh:mm:ss")
+            pattern = "yyyy-MM-dd HH:mm:ss z",
+            timezone = "UTC")
     @Nullable @JsonProperty("created") public abstract Date created();
 
 

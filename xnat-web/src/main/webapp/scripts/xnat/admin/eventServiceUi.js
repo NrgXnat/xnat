@@ -81,6 +81,7 @@ var XNAT = getObject(XNAT || {});
     var eventServicePanel,
         undefined,
         rootUrl = XNAT.url.rootUrl,
+        restUrl = XNAT.url.restUrl,
         csrfUrl = XNAT.url.csrfUrl;
 
     XNAT.admin =
@@ -100,7 +101,7 @@ var XNAT = getObject(XNAT || {});
     eventServicePanel.actions = {};
 
     function getProjectListUrl(){
-        return rootUrl('/data/projects?format=json');
+        return restUrl('/data/projects?format=json');
     }
 
     function getEventActionsUrl(projectId,eventType){
@@ -109,13 +110,13 @@ var XNAT = getObject(XNAT || {});
             '/xapi/events/allactions';
 
         if (eventType && projectId) path += '&project='+projectId;
-        return rootUrl(path);
+        return restUrl(path);
     }
 
     function getEventSubscriptionUrl(id){
         id = id || false;
         var path = (id) ? '/xapi/events/subscription/'+id : '/xapi/events/subscriptions';
-        return rootUrl(path);
+        return restUrl(path);
     }
 
     function setEventSubscriptionUrl(id,appended){
@@ -145,7 +146,7 @@ var XNAT = getObject(XNAT || {});
         callback = isFunction(callback) ? callback : function(){};
 
         return XNAT.xhr.getJSON({
-            url: XNAT.url.rootUrl('/xapi/events/events'),
+            url: XNAT.url.restUrl('/xapi/events/events'),
             success: function(data){
                 if (data) {
                     return data;
@@ -963,7 +964,7 @@ var XNAT = getObject(XNAT || {});
         if (sub) params.push('subscriptionid='+sub);
         var appended = (params.length) ? '?'+params.join('&') : '';
 
-        return XNAT.url.rootUrl('/xapi/events/delivered'+appended);
+        return XNAT.url.restUrl('/xapi/events/delivered'+appended);
     }
 
     historyTable.getHistory = function(opts,callback){

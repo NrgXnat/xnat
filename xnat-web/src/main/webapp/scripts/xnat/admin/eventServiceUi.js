@@ -1048,6 +1048,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     historyTable.datatable = function(data, $datatable){
+        var dataLengthToDisplay = 100;
         var datatableOptions = {
             aaData: data,
             aoColumns: [
@@ -1102,7 +1103,14 @@ var XNAT = getObject(XNAT || {});
                     },
                     sWidth: '150px'
                 }
-            ]
+            ],
+            iDisplayLength: dataLengthToDisplay,
+            fnDrawCallback: function(){
+                console.log('drawn');
+                if (data.length < dataLengthToDisplay) {
+                    $(document).find('.dataTables_paginate').addClass('hidden');
+                }
+            }
         };
 
         $datatable.dataTable(datatableOptions);

@@ -3241,6 +3241,15 @@ th.sort:hover {
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     padding: 3px 7px;
 }
+.dataTables_wrapper .dataTables_paginate,
+.dataTables_wrapper .dataTables_info {
+    display: inline-block;
+    padding-top: 1em;
+    width: 50%
+}
+.dataTables_wrapper .dataTables_paginate {
+    text-align: right;
+}
 table.dataTable thead input,
 table.data-table thead input {
     -webkit-box-sizing: border-box;
@@ -3248,7 +3257,6 @@ table.data-table thead input {
     box-sizing: border-box;
     width: 100%;
 }
-
 
 /* container for data tables in report page panels */
 .panel-table-container {

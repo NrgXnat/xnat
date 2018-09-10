@@ -989,18 +989,18 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
-
-    function StringIndexOfFilter() {
-        "use strict";
-
-        this.getFilterRegex = function (filterText) {
-            return filterText;
-        };
-    }
-
-    var getFilterRegex = function (filterText) {
-        return new StringIndexOfFilter().getFilterRegex(filterText);
-    };
+    //
+    // function StringIndexOfFilter() {
+    //     "use strict";
+    //
+    //     this.getFilterRegex = function (filterText) {
+    //         return filterText;
+    //     };
+    // }
+    //
+    // var getFilterRegex = function (filterText) {
+    //     return new StringIndexOfFilter().getFilterRegex(filterText);
+    // };
 
     var addColumnFilters = function ($datatable, dataTableColumns) {
         var filterHeaderRowId = "filterHeaderRow";
@@ -1090,8 +1090,10 @@ var XNAT = getObject(XNAT || {});
                         var timestamp = 0, dateString;
                         if (source.status.length > 0){
                             timestamp = source.status[0]['timestamp'].replace(/-/g,'/'); // include date format hack for Safari
+                            if (timestamp.indexOf('UTC') <0) timestamp = timestamp.trim()+' UTC';
                             timestamp = new Date(timestamp);
-                            dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+                            dateString = timestamp.toLocaleString();
+                            // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
 
                         } else {
                             dateString = 'N/A';

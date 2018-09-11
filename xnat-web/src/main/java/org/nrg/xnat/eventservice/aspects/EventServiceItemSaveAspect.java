@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.aspects;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -20,7 +21,11 @@ import org.nrg.xdat.om.XnatResource;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.events.*;
+import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
+import org.nrg.xnat.eventservice.events.ProjectEvent;
+import org.nrg.xnat.eventservice.events.ResourceEvent;
+import org.nrg.xnat.eventservice.events.ScanEvent;
+import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubjectEvent;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
@@ -109,6 +114,11 @@ public class EventServiceItemSaveAspect {
                 String project = (String)(item.getProperty("project"));
                 if((project == null || project.isEmpty() && item.getParent() != null)) {
                     project = (String)(item.getParent().getProperty("project"));
+                    if(project == null && item.getParent() != null &&
+                            !Strings.isNullOrEmpty(item.getParent().getXSIType()) && item.getParent().getXSIType().contentEquals("xnat:projectData") &&
+                            item.getParent().getProperty("id") != null) {
+                        project = (String) (item.getParent()).getProperty("id");
+                    }
                 }
                 eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI) resource, userLogin, ResourceEvent.Status.CREATED, project));
             }

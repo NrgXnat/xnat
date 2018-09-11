@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -43,7 +44,12 @@ public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusE
         if (wfsEvent.getWorkflow() instanceof WrkWorkflowdata) {
             try {
                 final String project = wfsEvent.getExternalId();
+                if(Strings.isNullOrEmpty(project) && project.contentEquals("ADMIN")){
+                    return;
+                }
+
                 final UserI user = Users.getUser(wfsEvent.getUserId());
+
                 eventService.triggerEvent(new WorkflowStatusChangeEvent(wfsEvent, user.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, project));
             } catch (UserNotFoundException e) {
                 log.warn("The specified user was not found: {}", wfsEvent.getUserId());

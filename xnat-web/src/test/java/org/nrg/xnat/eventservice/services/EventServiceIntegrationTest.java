@@ -975,6 +975,7 @@ public class EventServiceIntegrationTest {
         session.setModality("MR");
         session.setProject(projectId1);
         session.setSessionType("xnat:imageSessionData");
+        session.setId("SESSION_ID");
 
         XnatImagescandata scan = new XnatImagescandata();
         scan.setImageSessionData(session);

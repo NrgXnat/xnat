@@ -394,7 +394,7 @@ public class EventServiceImpl implements EventService {
                                     log.debug("Serializing event object as unknown object type.");
                                     jsonObject = mapper.writeValueAsString(eventPayloadObject);
                                 } else {
-                                    log.debug("Could not serialize event object in: " + eventPayloadObject.toString());
+                                    log.debug("Could not serialize event object in: " + esEvent.getType());
                                 }
                             } catch (JsonProcessingException e) {
                                 log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);

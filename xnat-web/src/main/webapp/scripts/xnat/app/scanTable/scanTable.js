@@ -70,7 +70,9 @@ var XNAT = getObject(XNAT);
 
     function loadSnapshotImageNoBlocking(scanID) {
         var element = $("#" + "scan" + scanID + "snapshot");
-        element[0].src = element.data("xnat-src");
+        if (element && element.data('xnat-src')) {
+            element[0].src = element.data("xnat-src");
+        }
         return true;
     }
 

@@ -485,7 +485,7 @@ var XNAT = getObject(XNAT);
                 title: false,
                 content: '' +
                 '<div class="warning" style="font-size:14px;">' +
-                'User session ended: ' + (new Date(END)).toLocaleString() +
+                'User session ended: ' + (new Date(NOW)).toLocaleString() +
                 '</div>',
                 // padding: 30,
                 okAction: function(){
@@ -709,4 +709,3 @@ var XNAT = getObject(XNAT);
 
 
 }));
-

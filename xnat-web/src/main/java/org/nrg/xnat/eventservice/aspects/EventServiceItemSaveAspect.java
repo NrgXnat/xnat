@@ -112,7 +112,7 @@ public class EventServiceItemSaveAspect {
                 log.debug("Resource Data Save" + " : xsiType:" + item.getXSIType());
                 XnatResourceI resource = item instanceof XnatResourceI ? (XnatResourceI) item : new XnatResource(item);
                 String project = (String)(item.getProperty("project"));
-                if((project == null || project.isEmpty() && item.getParent() != null)) {
+                if((project == null || project.isEmpty()) && item.getParent() != null) {
                     project = (String)(item.getParent().getProperty("project"));
                     if(project == null && item.getParent() != null &&
                             !Strings.isNullOrEmpty(item.getParent().getXSIType()) && item.getParent().getXSIType().contentEquals("xnat:projectData") &&

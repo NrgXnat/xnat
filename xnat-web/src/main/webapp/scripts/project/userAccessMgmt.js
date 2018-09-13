@@ -701,7 +701,7 @@ var XNAT = getObject(XNAT || {});
             // nuke: true,
             buttons: [
                 {
-                    label: 'Invite Users',
+                    label: 'Add Users',
                     close: false,
                     isDefault: true,
                     action: function(obj){
@@ -711,14 +711,14 @@ var XNAT = getObject(XNAT || {});
                             XNAT.ui.dialog.confirm({
                                 title: 'Success!',
                                 content: "You have added "+usersToAdd.length+" users to this project. Do you want to send confirmation emails to each user?",
-                                okLabel: "Invite and Send Emails",
+                                okLabel: "Add and Send Email",
                                 okAction: function(){
                                     usersToAdd.forEach(function(user){
                                         XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: true, notificationMessage: user.login + ' added to project.' });
                                     });
                                     XNAT.ui.dialog.closeAll(true);
                                 },
-                                cancelLabel: "Invite Only",
+                                cancelLabel: "Add Only",
                                 cancelAction: function(){
                                     usersToAdd.forEach(function(user){
                                         XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: false,  notificationMessage: user.login + ' added to project.' });

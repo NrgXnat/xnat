@@ -694,7 +694,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 			height: 400,
 			width: 730,
 			okClose: false,
-			okLabel: 'Invite Users',
+			okLabel: 'Add Users',
 			okAction: function(obj){
                 var listObj = obj.$modal.find('table'),
                     selections = findUsersToAdd(listObj);

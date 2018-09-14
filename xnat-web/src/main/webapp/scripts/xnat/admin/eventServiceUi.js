@@ -242,7 +242,10 @@ var XNAT = getObject(XNAT || {});
         }
         function eventNiceName(subscription){
             var eventId = subscription['event-filter']['event-type'];
-            return eventServicePanel.events[eventId]['display-name'] + ': ' + titleCase(subscription['event-filter']['status']);
+            if (eventServicePanel.events[eventId]) {
+                return eventServicePanel.events[eventId]['display-name'] + ': ' + titleCase(subscription['event-filter']['status']);
+            }
+            else return 'Unknown event: '+eventId;
         }
         function actionNiceName(actionKey){
             return (eventServicePanel.actions[actionKey]) ?
@@ -980,6 +983,8 @@ var XNAT = getObject(XNAT || {});
                         historyData[entry.id] = entry;
                     });
 
+                    data = data.sort(function(a,b){ return (a.id < b.id) ? 1 : -1 });
+
                     return data;
                 }
                 callback.apply(this, arguments);
@@ -989,18 +994,6 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
-    //
-    // function StringIndexOfFilter() {
-    //     "use strict";
-    //
-    //     this.getFilterRegex = function (filterText) {
-    //         return filterText;
-    //     };
-    // }
-    //
-    // var getFilterRegex = function (filterText) {
-    //     return new StringIndexOfFilter().getFilterRegex(filterText);
-    // };
 
     var addColumnFilters = function ($datatable, dataTableColumns) {
         var filterHeaderRowId = "filterHeaderRow";
@@ -1053,11 +1046,19 @@ var XNAT = getObject(XNAT || {});
             aaData: data,
             aoColumns: [
                 {
+                    sTitle: '<b>ID</b>',
+                    sClass: 'left',
+                    sWidth: '80px',
+                    mData: function(source){
+                        return source.id
+                    }
+                },
+                {
                     sTitle: '<b>Event Subscription</b>',
                     sClass: 'left',
                     sWidth: '200px',
                     mData: function(source){
-                        var message = '<a class="view-history" href="#!" data-id="'+source.id+'" style="font-weight: bold">'+ source.subscription.name+'</a>';
+                        var message = '<a class="view-event-history" href="#!" data-id="'+source.id+'" style="font-weight: bold">'+ source.subscription.name+'</a>';
                         if (source.trigger) {
                             message = message+ '<br>Trigger: '+source.trigger.label;
                         }
@@ -1110,157 +1111,13 @@ var XNAT = getObject(XNAT || {});
                 if (data.length < dataLengthToDisplay) {
                     $(document).find('.dataTables_paginate').addClass('hidden');
                 }
-            }
+            },
+            aaSorting: [[ 0, "desc" ]]
         };
 
         $datatable.dataTable(datatableOptions);
 
         addColumnFilters($datatable,datatableOptions.aoColumns);
-    };
-
-    historyTable.table = function(data){
-
-        var $dataRows = [];
-
-        return {
-            kind: 'table.dataTable',
-            name: 'event-subscription-history',
-            id: 'event-subscription-history',
-            data: data,
-            table: {
-                classes: 'highlight hidden',
-                on: [
-                    ['click', 'a.view-history', viewHistoryDialog ]
-                ]
-            },
-            trs: function(tr,data){
-                tr.id = data.id;
-                addDataAttrs(tr, {filter: '0' });
-            },
-            sortable: 'SUBSCRIPTION,EVENT,user,PROJECT,DATE',
-            filter: 'SUBSCRIPTION,EVENT,user,PROJECT',
-            items: {
-                // by convention, name 'custom' columns with ALL CAPS
-                // 'custom' columns do not correspond directly with
-                // a data item
-                SUBSCRIPTION: {
-                    label: 'Event Subscription',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        var message = [ spawn('a.view-history',{ href: '#!', data: { id: this.id }, style: { 'font-weight': 'bold' }}, this.subscription.name) ];
-                        if (this.trigger) {
-                            message.push( spawn('span', { style: { display: 'block' }}, 'Trigger: '+this.trigger.label) )
-                        }
-                        return spawn('!', message);
-                    }
-                },
-                EVENT: {
-                    label: 'Event Type',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return (this.trigger) ? this.trigger['event-name'] : 'Unknown';
-                    }
-                },
-                user: {
-                    label: 'Run As User',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return this.user;
-                    }
-                },
-                PROJECT: {
-                    label: 'Project',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return this.project;
-                    }
-                },
-                DATE: {
-                    label: 'Date',
-                    th: { className: 'left' },
-                    td: { className: 'left mono'},
-                    filter: function(table){
-                        var MIN = 60*1000;
-                        var HOUR = MIN*60;
-                        var X8HRS = HOUR*8;
-                        var X24HRS = HOUR*24;
-                        var X7DAYS = X24HRS*7;
-                        var X30DAYS = X24HRS*30;
-                        return spawn('div.center', [XNAT.ui.select.menu({
-                            value: 0,
-                            options: {
-                                all: {
-                                    label: 'All',
-                                    value: 0,
-                                    selected: true
-                                },
-                                lastHour: {
-                                    label: 'Last Hour',
-                                    value: HOUR
-                                },
-                                last8hours: {
-                                    label: 'Last 8 Hrs',
-                                    value: X8HRS
-                                },
-                                last24hours: {
-                                    label: 'Last 24 Hrs',
-                                    value: X24HRS
-                                },
-                                lastWeek: {
-                                    label: 'Last Week',
-                                    value: X7DAYS
-                                },
-                                last30days: {
-                                    label: 'Last 30 days',
-                                    value: X30DAYS
-                                }
-                            },
-                            element: {
-                                id: 'filter-select-container-timestamp',
-                                on: {
-                                    change: function(){
-                                        var FILTERCLASS = 'filter-timestamp';
-                                        var selectedValue = parseInt(this.value, 10);
-                                        var currentTime = Date.now();
-                                        $dataRows = $dataRows.length ? $dataRows : $$(table).find('tbody').find('tr');
-                                        if (selectedValue === 0) {
-                                            $dataRows.removeClass(FILTERCLASS);
-                                        }
-                                        else {
-                                            $dataRows.addClass(FILTERCLASS).filter(function(){
-                                                var timestamp = this.querySelector('input.subscription-timestamp');
-                                                var subscriptionLaunch = +(timestamp.value);
-                                                return selectedValue === subscriptionLaunch-1 || selectedValue > (currentTime - subscriptionLaunch);
-                                            }).removeClass(FILTERCLASS);
-                                        }
-                                    }
-                                }
-                            }
-                        }).element])
-                    },
-                    apply: function(){
-                        var timestamp = 0, dateString;
-                        if (this.status.length > 0){
-                            timestamp = this.status[0]['timestamp'].replace(/-/g,'/'); // include date format hack for Safari
-                            timestamp = new Date(timestamp);
-                            dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
-
-                        } else {
-                            dateString = 'N/A';
-                        }
-                        return spawn('!',[
-                            spawn('span', dateString ),
-                            spawn('input.hidden.subscription-timestamp.filtering|type=hidden', { value: timestamp } )
-                        ])
-                    }
-                }
-            }
-
-        }
     };
 
     historyTable.viewHistory = function(id){
@@ -1334,7 +1191,7 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-    $(document).off('click','a.v0ew-history').on('click','a.view-history',function(e){
+    $(document).off('click','a.view-event-history').on('click','a.view-event-history',function(e){
         e.preventDefault();
         var historyEntry = $(this).data('id');
         if (historyEntry) historyTable.viewHistory(historyEntry);
@@ -1351,15 +1208,6 @@ var XNAT = getObject(XNAT || {});
                 var $datatable = $(document).find('#event-history-table');
                 historyTable.datatable(data,$datatable);
 
-                // _historyTable = XNAT.spawner.spawn({
-                //     historyTable: historyTable.table(data)
-                // });
-                // _historyTable.done(function(){
-                //     $container.empty().append(
-                //         spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site')
-                //     );
-                //     this.render($container, 20);
-                // });
             } else {
                 $container.empty().append(spawn('p','No event history to display'));
             }

@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -27,8 +28,8 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -38,12 +39,13 @@ import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
-import org.nrg.xft.exception.*;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.ItemNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
 import org.slf4j.event.Level;
@@ -74,7 +76,7 @@ import java.util.regex.Pattern;
 
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
-import static org.nrg.xdat.security.PermissionCriteria.*;
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 @SuppressWarnings("Duplicates")
@@ -96,7 +98,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _missingElements = new HashMap<>();
         _userChecks = new ConcurrentHashMap<>();
         if (_helper.tableExists("xnat_projectdata")) {
-            updateTotalCounts();
+            resetTotalCounts();
         }
     }
 
@@ -141,41 +143,33 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     /**
-     * {@inheritDoc}
+     * Gets the specified project if the user has any access to it. Returns null otherwise.
+     *
+     * @param groupId The ID or alias of the project to retrieve.
+     *
+     * @return The project object if the user can access it, null otherwise.
      */
     @Override
-    public Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user) {
-        if (user == null) {
-            return Collections.emptyMap();
+    public UserGroupI get(final String groupId) {
+        if (StringUtils.isBlank(groupId)) {
+            throw new IllegalArgumentException("Can not request a group with a blank group ID");
         }
 
-        final String username = user.getUsername();
-        final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE);
-        log.debug("Retrieving browseable element displays for user {} through cache ID {}", username, cacheId);
-
-        // Check whether the element types are cached and, if so, return that.
-        if (has(cacheId)) {
-            // Here we can just return the value directly as a map, because we know
-            // there's something cached and that what's cached is not a string.
-            @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(super.<String, ElementDisplay>getCachedMap(cacheId), getGuestBrowseableElementDisplays());
-            log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
-            return browseables;
+        // Check that the group is cached and, if so, return it.
+        log.trace("Retrieving group through cache ID {}", groupId);
+        final UserGroupI cachedGroup = getCachedGroup(groupId);
+        if (cachedGroup != null) {
+            log.debug("Found cached group entry for cache ID '{}'", groupId);
+            return cachedGroup;
         }
 
-        if (!user.isGuest()) {
-            log.debug("No cache entry found for user '{}' readable counts by ID '{}', initializing entry", username, cacheId);
-            final List<String> projects = getUserProjects(username);
-            for (final String project : projects) {
-                final String      projectCacheId = getCacheIdForProject(project);
-                final Set<String> projectUsers   = has(projectCacheId) ? new HashSet<>(super.<String>getCachedSet(projectCacheId)) : new HashSet<String>();
-                projectUsers.add(username);
-                cacheObject(projectCacheId, projectUsers);
-            }
+        try {
+            log.trace("Initializing group entry for cache ID '{}'", groupId);
+            return initGroup(groupId);
+        } catch (ItemNotFoundException e) {
+            log.info("Can't find a group with the group ID '{}', returning null", groupId);
+            return null;
         }
-
-        @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(updateBrowseableElementDisplays(user, cacheId), getGuestBrowseableElementDisplays());
-        log.info("Found an entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
-        return browseables;
     }
 
     /**
@@ -189,17 +183,49 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
         final String username = user.getUsername();
         final String cacheId  = getCacheIdForUserElements(username, READABLE);
-        log.debug("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
-        if (has(cacheId)) {
-            // Here we can just return the value directly as a map, because we know there's something cached
-            // and that what's cached is not a string.
-            log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
-            return getCachedMap(cacheId);
+        log.trace("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
+        final Map<String, Long> cachedReadableCounts = getCachedMap(cacheId);
+        if (cachedReadableCounts != null) {
+            log.debug("Found cached readable counts entry for user '{}' with cache ID '{}' containing {} entries", username, cacheId, cachedReadableCounts.size());
+            return cachedReadableCounts;
         }
 
-        return updateReadableCounts(user, cacheId);
+        return initReadableCountsForUser(cacheId, user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
+
+        final Map<String, ElementDisplay> guestBrowseableElementDisplays = getGuestBrowseableElementDisplays();
+        if (user.isGuest()) {
+            log.debug("Got a request for browseable element displays for the guest user, returning {} entries", guestBrowseableElementDisplays.size());
+            return guestBrowseableElementDisplays;
+        }
+
+        final String username = user.getUsername();
+        final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE);
+
+        // Check whether the element types are cached and, if so, return that.
+        log.trace("Retrieving browseable element displays for user {} through cache ID {}", username, cacheId);
+        final Map<String, ElementDisplay> cachedUserEntry = getCachedMap(cacheId);
+        if (cachedUserEntry != null) {
+            @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(cachedUserEntry, guestBrowseableElementDisplays);
+            log.debug("Found a cached entry for user '{}' browseable element displays under cache ID '{}' with {} entries", username, cacheId, browseables.size());
+            return browseables;
+        }
+
+        log.trace("Initializing browseable element displays for user '{}' with cache ID '{}'", username, cacheId);
+        @SuppressWarnings("unchecked") final Map<String, ElementDisplay> browseables = buildImmutableMap(initBrowseableElementDisplaysForUser(cacheId, user), guestBrowseableElementDisplays);
+        log.debug("Initialized browseable element displays for user '{}' with cache ID '{}' with {} entries (including guest browseable element displays)", username, cacheId, browseables.size());
+        return browseables;
     }
 
     /**
@@ -251,15 +277,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final String cacheId  = getCacheIdForActionElements(username, action);
 
         // Check whether the action elements are cached and, if so, return that.
-        if (has(cacheId)) {
-            // Here we can just return the value directly as a list, because we know there's something cached
-            // and that what's cached is not a string.
-            final List<ElementDisplay> actions = getCachedList(cacheId);
-            log.debug("Found a cache entry for user '{}' action '{}' elements by ID '{}' with {} entries", username, action, cacheId, actions.size());
-            return actions;
+        final List<ElementDisplay> cachedActions = getCachedList(cacheId);
+        if (cachedActions != null) {
+            log.debug("Found a cache entry for user '{}' action '{}' elements by ID '{}' with {} entries", username, action, cacheId, cachedActions.size());
+            return cachedActions;
         }
 
-        return updateActionElementDisplays(user, action);
+        return initActionElementDisplays(username, action);
     }
 
     /**
@@ -307,8 +331,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             for (final UserGroupI group : userGroups.values()) {
                 final List<PermissionCriteriaI> permissions = group.getPermissionsByDataType(dataType);
                 if (permissions != null) {
-                    if (log.isInfoEnabled()) {
-                        log.info("Searched for permission criteria for user {} on type {} in group {}: {}", username, dataType, group.getId(), dumpCriteriaList(permissions));
+                    if (log.isTraceEnabled()) {
+                        log.trace("Searched for permission criteria for user {} on type {} in group {}: {}", username, dataType, group.getId(), dumpCriteriaList(permissions));
+                    } else {
+                        log.debug("Searched for permission criteria for user {} on type {} in group {}: {} permissions found", username, dataType, group.getId(), permissions.size());
                     }
                     criteria.addAll(permissions);
                 } else {
@@ -320,9 +346,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 try {
                     final List<PermissionCriteriaI> permissions = getPermissionCriteria(getGuest().getUsername(), dataType);
                     if (permissions != null) {
-                        if (log.isInfoEnabled()) {
-                            log.info("Searched for permission criteria from guest for user {} on type {}: {}", username, dataType, dumpCriteriaList(permissions));
-                        }
                         criteria.addAll(permissions);
                     } else {
                         log.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", dataType);
@@ -332,8 +355,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 }
             }
 
-            if (log.isInfoEnabled()) {
-                log.info("Retrieved permission criteria for user {} on the data type {}: {}", username, dataType, dumpCriteriaList(criteria));
+            if (log.isTraceEnabled()) {
+                log.trace("Retrieved permission criteria for user {} on the data type {}: {}", username, dataType, dumpCriteriaList(criteria));
+            } else {
+                log.debug("Retrieved permission criteria for user {} on the data type {}: {} criteria found", username, dataType, criteria.size());
             }
 
             return ImmutableList.copyOf(criteria);
@@ -346,48 +371,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public Map<String, Long> getTotalCounts() {
         if (_totalCounts.isEmpty()) {
-            updateTotalCounts();
+            resetTotalCounts();
         }
 
         return ImmutableMap.copyOf(_totalCounts);
-    }
-
-    /**
-     * Finds all user element cache IDs for the specified user and evicts them from the cache.
-     *
-     * @param username The username to be cleared.
-     */
-    @Override
-    public void clearUserCache(final String username) {
-        final List<String> cacheIds = getCacheIdsForUserElements(username);
-        if (log.isDebugEnabled()) {
-            log.debug("Clearing caches for user '{}': {}", username, StringUtils.join(cacheIds, ", "));
-        }
-        evict(cacheIds);
-    }
-
-    /**
-     * Gets the specified project if the user has any access to it. Returns null otherwise.
-     *
-     * @param groupId The ID or alias of the project to retrieve.
-     *
-     * @return The project object if the user can access it, null otherwise.
-     */
-    @Override
-    public UserGroupI get(final String groupId) {
-        if (StringUtils.isBlank(groupId)) {
-            return null;
-        }
-
-        // Check that the group is cached and, if so, return it.
-        if (has(groupId)) {
-            // Here we can just return the value directly as a group, because we know there's something cached
-            // and that what's cached is not a string.
-            log.trace("Found a cache entry for group {}", groupId);
-            return getCachedGroup(groupId);
-        }
-
-        return cacheGroup(groupId);
     }
 
     @Nonnull
@@ -396,10 +383,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.info("Getting projects with {} access for user {}", access, username);
         final String cacheId = getCacheIdForUserProjectAccess(username, access);
 
-        if (has(cacheId)) {
-            log.debug("Found a cache entry for user '{}' '{}' access with ID: {}", username, access, cacheId);
-            return getCachedList(cacheId);
+        final List<String> cachedUserProjects = getCachedList(cacheId);
+        if (cachedUserProjects != null) {
+            log.debug("Found a cache entry for user '{}' '{}' access with ID '{}' and {} elements", username, access, cacheId, cachedUserProjects.size());
+            return cachedUserProjects;
         }
+
         return updateUserProjectAccess(username, access, cacheId);
     }
 
@@ -409,20 +398,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Nonnull
     @Override
     public List<UserGroupI> getGroupsForTag(final String tag) {
+        // Get the group IDs associated with the tag.
         log.info("Getting groups for tag {}", tag);
-        final String cacheId = getCacheIdForTag(tag);
-
-        // Check whether this tag is already cached.
-        final List<String> groupIds;
-        if (has(cacheId)) {
-            // If it's cached, we can just return the list.
-            groupIds = getTagGroups(cacheId);
-            log.info("Found {} groups already cached for tag {}", groupIds.size(), tag);
-        } else {
-            groupIds = initializeTag(tag);
-            log.info("Initialized {} groups for tag {}: {}", groupIds.size(), tag, StringUtils.join(groupIds, ", "));
-        }
-
+        final List<String> groupIds = getTagGroups(tag);
         return getUserGroupList(groupIds);
     }
 
@@ -433,17 +411,18 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final Map<String, UserGroupI> groups   = new HashMap<>();
         for (final String groupId : groupIds) {
             final UserGroupI group = get(groupId);
-            if (group == null) {
-                log.info("Found non-existent group for ID {}, ignoring", groupId);
-            } else {
-                log.debug("Adding group {} to groups for user {}", groupId, username);
+            if (group != null) {
+                log.trace("Adding group {} to groups for user {}", groupId, username);
                 groups.put(groupId, group);
+            } else {
+                log.info("User '{}' is associated with the group ID '{}', but I couldn't find that actual group", username, groupId);
             }
         }
         return ImmutableMap.copyOf(groups);
     }
 
     @Override
+    @Nullable
     public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
         final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, checkUser(username).addValue("tag", tag), new ResultSetExtractor<String>() {
             @Override
@@ -456,8 +435,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public List<String> getUserIdsForGroup(final String groupId) {
-        final UserGroupI group = get(groupId);
-        return group != null ? ImmutableList.copyOf(group.getUsernames()) : Collections.<String>emptyList();
+        final UserGroupI userGroup = get(groupId);
+        if (userGroup == null) {
+            return Collections.emptyList();
+        }
+        return ImmutableList.copyOf(userGroup.getUsernames());
     }
 
     @Override
@@ -489,6 +471,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             log.warn("Someone requested the cache entry last updated time for user {} but that user wasn't found", username);
             return new Date();
         }
+    }
+
+    /**
+     * Finds all user element cache IDs for the specified user and evicts them from the cache.
+     *
+     * @param username The username to be cleared.
+     */
+    @Override
+    public void clearUserCache(final String username) {
+        final List<String> cacheIds = getCacheIdsForUserElements(username);
+        if (log.isDebugEnabled()) {
+            log.debug("Clearing caches for user '{}': {}", username, StringUtils.join(cacheIds, ", "));
+        }
+        evict(cacheIds);
     }
 
     @Override
@@ -529,7 +525,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             stopWatch.lap("Found {} group IDs to run through, initializing cache with these as user {}", groupIds.size(), adminUser.getUsername());
             for (final String groupId : groupIds) {
-                stopWatch.lap("Creating queue entry for group {}", groupId);
+                stopWatch.lap(Level.DEBUG, "Creating queue entry for group {}", groupId);
                 XDAT.sendJmsRequest(_jmsTemplate, new InitializeGroupRequest(groupId));
             }
         } finally {
@@ -542,8 +538,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
         }
 
-        getGuest();
-        updateGuestBrowseableElementDisplays();
+        resetGuestBrowseableElementDisplays();
 
         return new AsyncResult<>(_initialized = true);
     }
@@ -592,26 +587,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return status;
     }
 
-    /**
-     * This method retrieves the group with the specified group ID and puts it in the cache. This method
-     * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
-     * cache initialization and shouldn't be used for routine access.
-     *
-     * @param groupId The ID or alias of the group to retrieve.
-     *
-     * @return The group object for the specified ID if it exists, null otherwise.
-     */
-    @Override
-    public UserGroupI cacheGroup(final String groupId) {
-        log.debug("Initializing group {}", groupId);
-        try {
-            return cacheGroup(new UserGroup(groupId, _template));
-        } catch (ItemNotFoundException e) {
-            log.info("Someone tried to get the user group {}, but a group with that ID doesn't exist.", groupId);
-            return null;
-        }
-    }
-
     @Override
     public void registerListener(final Listener listener) {
         _listener = listener;
@@ -656,10 +631,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final String owner : getProjectOwners(id)) {
                         updateUserProjectAccess(owner);
                     }
-                    final boolean created = !cacheGroups(getGroups(xsiType, id)).isEmpty();
-                    updateUserReadableCounts(Lists.transform(getCacheIdsForUserElements(), FUNCTION_CACHE_IDS_TO_USERNAMES));
-                    updateActionElementDisplays(Lists.transform(getCacheIdsForActions(), FUNCTION_CACHE_IDS_TO_USERNAMES));
-                    updateTotalCounts();
+                    final boolean created = !initGroups(getGroups(xsiType, id)).isEmpty();
+                    initReadableCountsForUsers(Lists.transform(getCacheIdsForUserElements(), FUNCTION_CACHE_IDS_TO_USERNAMES));
+                    initActionElementDisplaysForUsers(Lists.transform(getCacheIdsForActions(), FUNCTION_CACHE_IDS_TO_USERNAMES));
+                    resetTotalCounts();
                     return created;
 
                 case UPDATE:
@@ -670,10 +645,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                             // Update existing user element displays
                             clearAllUserProjectAccess();
                             final List<String> cacheIds = getCacheIdsForActions();
-                            final boolean      updated  = !cacheGroups(getGroups(xsiType, id)).isEmpty();
+                            final boolean      updated  = !initGroups(getGroups(xsiType, id)).isEmpty();
                             cacheIds.addAll(getCacheIdsForUserElements());
-                            updateGuestBrowseableElementDisplays();
-                            updateUserReadableCounts(Sets.newHashSet(Iterables.filter(Lists.transform(cacheIds, FUNCTION_CACHE_IDS_TO_USERNAMES), Predicates.notNull())));
+                            resetGuestBrowseableElementDisplays();
+                            initReadableCountsForUsers(Sets.newHashSet(Iterables.filter(Lists.transform(cacheIds, FUNCTION_CACHE_IDS_TO_USERNAMES), Predicates.notNull())));
                             return updated;
                         } else {
                             log.warn("The project {}'s accessibility setting was updated to an invalid value: {}. Must be one of private, protected, or public.", id, accessibility);
@@ -686,18 +661,16 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     final String cacheId = getCacheIdForProject(id);
                     evict(cacheId);
                     for (final String accessCacheId : getAllUserProjectAccessCacheIds()) {
-                        if (has(accessCacheId)) {
-                            final List<String> projectIds = getCachedList(accessCacheId);
-                            if (projectIds.contains(id)) {
-                                final List<String> updated = new ArrayList<>(projectIds);
-                                updated.remove(id);
-                                cacheObject(accessCacheId, updated, true);
-                            }
+                        final List<String> projectIds = getCachedList(accessCacheId);
+                        if (projectIds != null && projectIds.contains(id)) {
+                            final List<String> updated = new ArrayList<>(projectIds);
+                            updated.remove(id);
+                            forceCacheObject(accessCacheId, updated);
                         }
                     }
-                    updateGuestBrowseableElementDisplays();
-                    updateUserReadableCounts(this.<String>getCachedSet(cacheId));
-                    updateTotalCounts();
+                    resetGuestBrowseableElementDisplays();
+                    initReadableCountsForUsers(this.<String>getCachedSet(cacheId));
+                    resetTotalCounts();
                     return true;
 
                 default:
@@ -718,7 +691,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         switch (action) {
             case CREATE:
                 projectIds.add(_template.queryForObject(QUERY_GET_SUBJECT_PROJECT, new MapSqlParameterSource("subjectId", event.getId()), String.class));
-                updateTotalCounts();
+                resetTotalCounts();
                 break;
 
             case SHARE:
@@ -733,7 +706,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             case XftItemEventI.DELETE:
                 projectIds.add((String) event.getProperties().get("target"));
                 handleGroupRelatedEvents(event);
-                updateTotalCounts();
+                resetTotalCounts();
                 break;
 
             default:
@@ -744,7 +717,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
         final Set<String> users = getProjectUsers(projectIds);
         for (final String username : users) {
-            updateUserReadableCounts(username);
+            initReadableCountsForUser(username);
         }
         return true;
     }
@@ -764,7 +737,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
                     }
-                    return !cacheGroups(groups).isEmpty();
+                    return !initGroups(groups).isEmpty();
 
                 case UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
@@ -776,30 +749,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(Groups.USERS));
                     }
-                    return !cacheGroups(groups).isEmpty();
+                    return !initGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
                     if (StringUtils.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME, xsiType)) {
-                        final String cacheId = getCacheIdForTag(id);
-                        if (has(cacheId)) {
-                            // If it's cached, we can just return the list.
-                            final List<String> groupIds = getTagGroups(cacheId);
+                        final List<String> groupIds = getTagGroups(id);
+                        if (CollectionUtils.isNotEmpty(groupIds)) {
                             log.info("Found {} groups cached for deleted project {}", groupIds.size(), id);
                             for (final String groupId : groupIds) {
-                                final UserGroupI group = get(groupId);
-                                if (group != null) {
-                                    usernames.addAll(group.getUsernames());
-                                }
-                                evict(groupId);
+                                evictGroup(groupId, usernames);
                             }
                         }
                     } else {
-                        final UserGroupI group = get(id);
-                        if (group != null) {
-                            usernames.addAll(group.getUsernames());
-                        }
-                        evict(id);
-                        return true;
+                        evictGroup(id, usernames);
                     }
                     break;
 
@@ -811,8 +773,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         } finally {
             for (final String username : usernames) {
                 try {
-                    updateUserGroupIds(username);
-                    updateUserReadableCounts(username);
+                    final String cacheId = getCacheIdForUserGroups(username);
+                    initUserGroupIds(cacheId, username);
+                    initReadableCountsForUser(username);
                 } catch (UserNotFoundException e) {
                     log.warn("While handling action {} for type {} ID {}, I couldn't find a user with username {}.", action, xsiType, id, username);
                 }
@@ -823,7 +786,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private boolean handleElementSecurityEvents(final XftItemEventI event) {
         log.debug("Handling {} event for '{}' IDs {}. Updating guest browseable element displays...", event.getAction(), event.getXsiType(), event.getIds());
-        final Map<String, ElementDisplay> displays = updateGuestBrowseableElementDisplays();
+        final Map<String, ElementDisplay> displays = resetGuestBrowseableElementDisplays();
 
         if (log.isTraceEnabled()) {
             log.trace("Got back {} browseable element displays for guest user after refresh: {}", displays.size(), StringUtils.join(displays.keySet(), ", "));
@@ -901,16 +864,16 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             } else {
                 log.debug("Updating guest browseable element displays: guest has the event XSI type '{}' and item was moved from public project {} to non-public project {}.", xsiType, origin, target);
             }
-            updateGuestBrowseableElementDisplays();
+            resetGuestBrowseableElementDisplays();
         } else {
             log.debug("Not updating guest browseable element displays: guest {} '{}' and {}",
                       hasEventXsiType ? "already has the event XSI type " : "doesn't have the event XSI type",
                       xsiType,
                       isTargetProjectPublic ? "target project is public" : "target project is not public");
         }
-        updateUserReadableCounts(hasOriginProject ? getProjectUsers(target) : getProjectUsers(target, origin));
+        initReadableCountsForUsers(hasOriginProject ? getProjectUsers(target) : getProjectUsers(target, origin));
         if (StringUtils.equalsAny(action, CREATE, XftItemEventI.DELETE)) {
-            updateTotalCounts();
+            resetTotalCounts();
         }
         return true;
     }
@@ -960,6 +923,18 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableList.copyOf(projectIds);
     }
 
+    private List<String> getProjectOwners(final String projectId) {
+        return _template.queryForList(QUERY_PROJECT_OWNERS, new MapSqlParameterSource("projectId", projectId), String.class);
+    }
+
+    private Long getUserReadableProjectCount(final UserI user) {
+        return _template.queryForObject(QUERY_USER_READABLE_PROJECT_COUNT, new MapSqlParameterSource("username", user.getUsername()), Long.class);
+    }
+
+    private Long getUserReadableWorkflowCount(final UserI user) {
+        return _template.queryForObject(QUERY_USER_READABLE_WORKFLOW_COUNT, new MapSqlParameterSource("username", user.getUsername()), Long.class);
+    }
+
     private List<String> getAllUserProjectAccessCacheIds() {
         //noinspection unchecked
         return Lists.newArrayList(Iterables.filter(Lists.transform((List<Object>) Iterables.filter(getEhCache().getKeys(), Predicates.instanceOf(String.class)), new Function<Object, String>() {
@@ -976,26 +951,110 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }));
     }
 
+    @Nonnull
+    private Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
+        if (StringUtils.isBlank(username)) {
+            return Collections.emptyMap();
+        }
+        final String                            cacheId                     = getCacheIdForUserElementAccessManagers(username);
+        final Map<String, ElementAccessManager> cachedElementAccessManagers = getCachedMap(cacheId);
+        if (cachedElementAccessManagers != null) {
+            log.debug("Found a cache entry for user '{}' element access managers by ID '{}' with {} entries", username, cacheId, cachedElementAccessManagers.size());
+            return cachedElementAccessManagers;
+        }
+        return initElementAccessManagersForUser(cacheId, username);
+    }
+
+    private Map<String, ElementDisplay> getGuestBrowseableElementDisplays() {
+        final Map<String, ElementDisplay> guestBrowseableElementDisplays = getCachedMap(GUEST_CACHE_ID);
+        if (guestBrowseableElementDisplays != null) {
+            return guestBrowseableElementDisplays;
+        }
+        return resetBrowseableElementDisplays(_guest);
+    }
+
     private void clearAllUserProjectAccess() {
         for (final String cacheId : getAllUserProjectAccessCacheIds()) {
             evict(cacheId);
         }
     }
 
-    private synchronized List<String> initializeTag(final String tag) {
+    /**
+     * This method retrieves the group with the specified group ID and puts it in the cache. This method
+     * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
+     * cache initialization and shouldn't be used for routine access.
+     *
+     * @param groupId The ID or alias of the group to retrieve.
+     *
+     * @return The group object for the specified ID if it exists, null otherwise.
+     */
+    @CacheLock(true)
+    private UserGroupI initGroup(@CacheId final String groupId) throws ItemNotFoundException {
+        return initGroupImpl(groupId, new UserGroup(groupId, _template));
+    }
+
+    @CacheLock(true)
+    private UserGroupI initGroup(@CacheId final String groupId, final UserGroupI group) {
+        return initGroupImpl(groupId, group);
+    }
+
+    private UserGroupI initGroupImpl(final String groupId, final UserGroupI group) {
+        log.info("Initializing cache entry for group '{}'", groupId);
+        cacheObject(groupId, group);
+        log.debug("Retrieved and cached the group for the ID {}", groupId);
+        return group;
+    }
+
+    @CacheLock(true)
+    private Map<String, Long> initReadableCountsForUser(final String cacheId, final UserI user) {
+        log.info("Initializing readable counts for user '{}' with cache entry '{}'", user.getUsername(), cacheId);
+        final String username = user.getUsername();
+        try {
+            if (!user.isGuest()) {
+                initProjectMember(cacheId, username);
+            }
+
+            final Map<String, Long> readableCounts = new HashMap<>();
+            readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, getUserReadableProjectCount(user));
+            readableCounts.put(WrkWorkflowdata.SCHEMA_ELEMENT_NAME, getUserReadableWorkflowCount(user));
+            readableCounts.putAll(getUserAccessibleSubjectsAndExperiments(user));
+
+            if (log.isDebugEnabled()) {
+                log.debug("Caching the following readable element counts for user '{}' with cache ID '{}': '{}'", username, cacheId, getDisplayForReadableCounts(readableCounts));
+            }
+
+            cacheObject(cacheId, readableCounts);
+            return ImmutableMap.copyOf(readableCounts);
+        } catch (DataAccessException e) {
+            log.error("An error occurred in the SQL for retrieving readable counts for the  user {}", username, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    @CacheLock(true)
+    private void initProjectMember(final String cacheId, final String username) {
+        log.debug("Initializing cached project entries for user '{}' with cache ID '{}', initializing entry", username, cacheId);
+        final List<String> projects = getUserProjects(username);
+        for (final String project : projects) {
+            final String      projectCacheId = getCacheIdForProject(project);
+            final Set<String> cachedSet      = getCachedSet(projectCacheId);
+            final Set<String> projectUsers   = new HashSet<>();
+            projectUsers.add(username);
+            if (cachedSet != null) {
+                projectUsers.addAll(cachedSet);
+            }
+            forceCacheObject(projectCacheId, projectUsers);
+        }
+    }
+
+    @CacheLock(true)
+    private synchronized List<String> initTag(final String cacheId, final String tag) {
         // If there's a blank tag...
         if (StringUtils.isBlank(tag)) {
-            log.info("Requested to initialize a blank tag, but that's not a thing.");
-            return Collections.emptyList();
+            throw new IllegalArgumentException("Can not request a blank tag, that's not a thing.");
         }
 
-        final String cacheId = getCacheIdForTag(tag);
-
-        // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
-        if (has(cacheId)) {
-            log.info("Got a request to initialize the tag {} but that is already in the cache", tag);
-            return getTagGroups(cacheId);
-        }
+        log.info("Initializing cache entry for tag '{}' with cache ID '{}'", tag, cacheId);
 
         // Then retrieve and cache the groups if found or cache DOES_NOT_EXIST if the tag isn't found.
         final List<String> groups = getGroupIdsForProject(tag);
@@ -1011,76 +1070,49 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
-    private synchronized List<UserGroupI> cacheGroups(final List<UserGroupI> groups) {
-        log.debug("Caching {} groups", groups.size());
-        for (final UserGroupI group : groups) {
-            if (group != null) {
-                cacheGroup(group);
-            }
-        }
-        return groups;
-    }
-
-    private synchronized UserGroupI cacheGroup(final UserGroupI group) {
-        final String groupId = group.getId();
-        cacheObject(groupId, group);
-        log.debug("Retrieved and cached the group for the ID {}", groupId);
-        return group;
-    }
-
-    private @Nonnull Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
-        if (StringUtils.isBlank(username)) {
-            return Collections.emptyMap();
-        }
-        final String cacheId = getCacheIdForUserElementAccessManagers(username);
-        if (has(cacheId)) {
-            log.debug("Found a cache entry for user '{}' element access managers by ID '{}'", username, cacheId);
-            return getCachedMap(cacheId);
-        }
-        return updateElementAccessManagers(username, cacheId);
-    }
-
-    private void updateGuestElementAccessManagers() {
-        updateElementAccessManagers(GUEST_USERNAME, getCacheIdForUserElementAccessManagers(GUEST_USERNAME));
-    }
-
-    private Map<String, ElementAccessManager> updateElementAccessManagers(final String username, final String cacheId) {
+    @CacheLock(true)
+    private Map<String, ElementAccessManager> initElementAccessManagersForUser(final String cacheId, final String username) {
+        log.info("Initializing element access managers cache entry for user '{}' with cache ID '{}'", username, cacheId);
         final Map<String, ElementAccessManager> managers = ElementAccessManager.initialize(_template, QUERY_USER_PERMISSIONS, new MapSqlParameterSource("username", username));
-        log.debug("Found {} element access managers for user '{}', caching with ID {}: {}", managers.size(), username, cacheId, managers.isEmpty() ? "N/A" : StringUtils.join(managers.keySet(), ", "));
 
+        log.trace("Found {} element access managers for user '{}'", managers.size());
         cacheObject(cacheId, managers);
 
         return managers;
     }
 
-    private Map<String, ElementDisplay> updateBrowseableElementDisplays(final UserI user, final String cacheId) {
-        final String            username = user.getUsername();
-        final Map<String, Long> counts   = updateReadableCounts(user);
+    @CacheLock(true)
+    private Map<String, ElementDisplay> initBrowseableElementDisplaysForUser(final String cacheId, final UserI user) {
+        final String username = user.getUsername();
+
+        log.info("Initializing browseable element displays cache entry for user '{}' with cache ID '{}'", username, cacheId);
+        final Map<String, Long> counts = getReadableCounts(user);
         log.debug("Found {} readable counts for user {}: {}", counts.size(), username, counts);
 
         try {
-            final Map<String, ElementDisplay> browseable            = new HashMap<>();
-            final List<ElementDisplay>        actionElementDisplays = updateActionElementDisplays(user, SecurityManager.READ);
-            if (log.isDebugEnabled()) {
-                log.debug("Found {} readable action element displays for user {}: {}", actionElementDisplays.size(), username, StringUtils.join(Lists.transform(actionElementDisplays, FUNCTION_ELEMENT_DISPLAY_TO_STRING), ", "));
+            final Map<String, ElementDisplay> browseableElements    = new HashMap<>();
+            final List<ElementDisplay>        actionElementDisplays = initActionElementDisplays(user.getUsername(), SecurityManager.READ);
+            if (log.isTraceEnabled()) {
+                log.trace("Found {} readable action element displays for user {}: {}", actionElementDisplays.size(), username, StringUtils.join(Lists.transform(actionElementDisplays, FUNCTION_ELEMENT_DISPLAY_TO_STRING), ", "));
             }
+
             for (final ElementDisplay elementDisplay : actionElementDisplays) {
                 final String elementName = elementDisplay.getElementName();
-                log.debug("Evaluating element display {}", elementName);
+                log.trace("Evaluating element display {}", elementName);
                 final boolean isBrowseableElement = ElementSecurity.IsBrowseableElement(elementName);
                 final boolean countsContainsKey   = counts.containsKey(elementName);
                 final boolean hasOneOrMoreElement = countsContainsKey && counts.get(elementName) > 0;
                 if (isBrowseableElement && countsContainsKey && hasOneOrMoreElement) {
-                    log.debug("Adding element display {} to cache entry {}", elementName, cacheId);
-                    browseable.put(elementName, elementDisplay);
-                } else {
-                    log.debug("Did not add element display {}: {}, {}", elementName, isBrowseableElement ? "browseable" : "not browseable", countsContainsKey ? "counts contains key" : "counts does not contain key", hasOneOrMoreElement ? "counts has one or more elements of this type" : "counts does not have any elements of this type");
+                    log.debug("Adding element display {} to cache entry {} for user {}", elementName, cacheId, username);
+                    browseableElements.put(elementName, elementDisplay);
+                } else if (log.isTraceEnabled()){
+                    log.trace("Did not add element display {} for user {}: {}, {}", elementName, username, isBrowseableElement ? "browseable" : "not browseable", countsContainsKey ? "counts contains key" : "counts does not contain key", hasOneOrMoreElement ? "counts has one or more elements of this type" : "counts does not have any elements of this type");
                 }
             }
 
-            log.info("Adding {} element displays to cache entry {}", browseable.size(), cacheId);
-            cacheObject(cacheId, browseable);
-            return browseable;
+            log.info("Adding {} element displays to cache entry {}", browseableElements.size(), cacheId);
+            cacheObject(cacheId, browseableElements);
+            return browseableElements;
         } catch (ElementNotFoundException e) {
             if (!_missingElements.containsKey(e.ELEMENT)) {
                 log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now. This warning will only be displayed once. Set logging level to DEBUG to see a message each time this occurs for each element, along with a count of the number of times the element was referenced.", e.ELEMENT);
@@ -1088,9 +1120,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             } else {
                 final long count = _missingElements.get(e.ELEMENT) + 1;
                 _missingElements.put(e.ELEMENT, count);
-                if (log.isDebugEnabled()) {
-                    log.debug("Element '{}' not found. This element has been referenced {} times.", e.ELEMENT, count);
-                }
+                log.debug("Element '{}' not found. This element has been referenced {} times.", e.ELEMENT, count);
             }
         } catch (XFTInitException e) {
             log.error("There was an error initializing or accessing XFT", e);
@@ -1102,31 +1132,17 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return Collections.emptyMap();
     }
 
-    private void updateTotalCounts() {
-        _totalCounts.clear();
-        final Long projectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_projectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectCount);
-        final Long subjectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_subjectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectCount);
-        final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
-        for (final Map<String, Object> elementCount : elementCounts) {
-            _totalCounts.put((String) elementCount.get("element_name"), (Long) elementCount.get("count"));
-        }
+    @CacheLock(true)
+    private List<String> initUserGroupIds(final String cacheId, final String username) throws UserNotFoundException {
+        log.info("Initializing user group IDs cache entry for user '{}' with cache ID '{}'", username, cacheId);
+        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
+        log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
+        cacheObject(cacheId, groupIds);
+        return ImmutableList.copyOf(groupIds);
     }
 
-    private void updateActionElementDisplays(final Collection<String> users) {
-        for (final String username : users) {
-            for (final String action : ALL_ACTIONS) {
-                updateActionElementDisplays(username, action);
-            }
-        }
-    }
-
-    private List<ElementDisplay> updateActionElementDisplays(final UserI user, final String action) {
-        return ImmutableList.copyOf(updateActionElementDisplays(user.getUsername(), action));
-    }
-
-    private List<ElementDisplay> updateActionElementDisplays(final String username, final String action) {
+    private List<ElementDisplay> initActionElementDisplays(final String username, final String action) {
+        log.info("Initializing action element displays cache entry for user '{}' action '{}'", username, action);
         final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
         try {
             final List<ElementSecurity> securities = ElementSecurity.GetSecureElements();
@@ -1196,31 +1212,43 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableList.copyOf(elementDisplays.get(action));
     }
 
-    private List<String> updateUserGroupIds(final String username) throws UserNotFoundException {
-        final String       cacheId  = getCacheIdForUserGroups(username);
-        final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
-        cacheObject(cacheId, groupIds);
-        return ImmutableList.copyOf(groupIds);
-    }
-
-    private void updateUserReadableCounts(final Collection<String> usernames) {
-        for (final String username : usernames) {
-            updateUserReadableCounts(username);
+    private void initReadableCountsForUsers(@Nullable final Collection<String> usernames) {
+        if (CollectionUtils.isNotEmpty(usernames)) {
+            log.info("Initializing readable counts cache entry for {} users: {}", usernames.size(), usernames);
+            for (final String username : usernames) {
+                initReadableCountsForUser(username);
+            }
+        } else {
+            log.info("Request to initialize readable counts cache entry for users but the list of users is null or empty");
         }
     }
 
-    private void updateUserReadableCounts(final String username) {
+    private void initActionElementDisplaysForUsers(@Nullable final Collection<String> usernames) {
+        if (CollectionUtils.isNotEmpty(usernames)) {
+            log.info("Initializing action element displays cache entry for {} users: {}", usernames.size(), usernames);
+            for (final String username : usernames) {
+                for (final String action : ALL_ACTIONS) {
+                    initActionElementDisplays(username, action);
+                }
+            }
+        } else {
+            log.info("Request to initialize action element displays cache entry for users but the list of users is null or empty");
+        }
+    }
+
+    private void initReadableCountsForUser(final String username) {
         final String cacheId = getCacheIdForUserElements(username, READABLE);
         log.debug("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
 
         // Check whether the user has readable counts and browseable elements cached. We only need to refresh
         // for those who have them cached.
-        if (has(cacheId)) {
+        final Map<String, Long> cachedReadableCounts = getCachedMap(cacheId);
+        if (cachedReadableCounts != null) {
             try {
                 log.debug("Found a cache entry for user '{}' readable counts by ID '{}', updating cache entry", username, cacheId);
                 final XDATUser user = new XDATUser(username);
-                updateReadableCounts(user, cacheId);
-                updateBrowseableElementDisplays(user, getCacheIdForUserElements(username, BROWSEABLE));
+                initReadableCountsForUser(cacheId, user);
+                initBrowseableElementDisplaysForUser(getCacheIdForUserElements(username, BROWSEABLE), user);
             } catch (UserNotFoundException e) {
                 log.warn("Got a user not found exception for username '{}', which is weird because this user has a cache entry.", username, e);
             } catch (UserInitException e) {
@@ -1231,87 +1259,50 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
-    private Map<String, Long> updateReadableCounts(final UserI user) {
-        return ImmutableMap.copyOf(updateReadableCounts(user, getCacheIdForUserElements(user.getUsername(), READABLE)));
-    }
-
-    private Map<String, Long> updateReadableCounts(final UserI user, final String cacheId) {
-        final String username = user.getUsername();
-        try {
-            try {
-
-                final Map<String, Long> readableCounts = new HashMap<>();
-                readableCounts.putAll(getUserReadableCount(user, "xnat:projectData", "xnat:projectData/ID"));
-                readableCounts.putAll(getUserReadableCount(user, "wrk:workflowData", "wrk:workflowData/ID"));
-                readableCounts.putAll(getUserReadableCount(user, "xnat:subjectData", "xnat:subjectData/ID"));
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Caching the following readable element counts for user {} with cache ID {}: {}", username, cacheId, getDisplayForReadableCounts(readableCounts));
-                }
-                cacheObject(cacheId, readableCounts);
-                return ImmutableMap.copyOf(readableCounts);
-            } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
-                //not a member of anything
-                log.info("USER: {} doesn't have access to any project data.", username);
+    private synchronized List<UserGroupI> initGroups(final List<UserGroupI> groups) {
+        log.debug("Caching {} groups", groups.size());
+        return Lists.transform(groups, new Function<UserGroupI, UserGroupI>() {
+            @Override
+            public UserGroupI apply(final UserGroupI group) {
+                return initGroup(group.getId(), group);
             }
-        } catch (SQLException e) {
-            log.error("An error occurred in the SQL for retrieving readable counts for the  user {}", username, e);
-        } catch (DBPoolException e) {
-            log.error("A database error occurred when trying to retrieve readable counts for the  user {}", username, e);
-        } catch (Exception e) {
-            log.error("An unknown error occurred when trying to retrieve readable counts for the  user {}", username, e);
-        }
-
-        log.info("No readable elements found for user {}", username);
-        return Collections.emptyMap();
+        });
     }
 
-    private Map<String, ElementDisplay> getGuestBrowseableElementDisplays() {
-        if (has(GUEST_CACHE_ID)) {
-            return getCachedMap(GUEST_CACHE_ID);
+    private void resetTotalCounts() {
+        _totalCounts.clear();
+        final Long projectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_projectData", EmptySqlParameterSource.INSTANCE, Long.class);
+        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectCount);
+        final Long subjectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_subjectData", EmptySqlParameterSource.INSTANCE, Long.class);
+        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectCount);
+        final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
+        for (final Map<String, Object> elementCount : elementCounts) {
+            _totalCounts.put((String) elementCount.get("element_name"), (Long) elementCount.get("count"));
         }
-        return ImmutableMap.copyOf(updateGuestBrowseableElementDisplays());
     }
 
-    private Map<String, ElementDisplay> updateGuestBrowseableElementDisplays() {
+    private Map<String, ElementDisplay> resetGuestBrowseableElementDisplays() {
+        return resetBrowseableElementDisplays(getGuest());
+    }
+
+    private Map<String, ElementDisplay> resetBrowseableElementDisplays(final XDATUser user) {
         log.debug("Updating guest browseable element displays, clearing local cache, updating element access managers, and updating browseable element displays");
-        _guest.clearLocalCache();
-        updateGuestElementAccessManagers();
-        return ImmutableMap.copyOf(updateBrowseableElementDisplays(_guest, GUEST_CACHE_ID));
+        user.clearLocalCache();
+        final String username = user.getUsername();
+        initElementAccessManagersForUser(getCacheIdForUserElementAccessManagers(username), username);
+        return ImmutableMap.copyOf(initBrowseableElementDisplaysForUser(getCacheIdForUserElements(username, BROWSEABLE), user));
     }
 
-    private List<String> getProjectOwners(final String projectId) {
-        return _template.queryForList(QUERY_PROJECT_OWNERS, new MapSqlParameterSource("projectId", projectId), String.class);
-    }
-
-    private Map<String, Long> getUserReadableCount(final UserI user, final String dataType, final String dataTypeIdField) throws Exception {
-        final Map<String, Long> readableCounts = new HashMap<>();
-
-        final QueryOrganizer organizer = new QueryOrganizer(dataType, user, ViewManager.ALL);
-        organizer.addField(dataTypeIdField);
-
-        final String dataTypeQuery      = organizer.buildQuery();
-        final String dataTypeCountQuery = "SELECT COUNT(*) AS data_type_count FROM (" + dataTypeQuery + ") SEARCH";
-        final Long   count              = _template.queryForObject(dataTypeCountQuery, EmptySqlParameterSource.INSTANCE, Long.class);
-        log.debug("Executed count query for data type '{}' on ID field '{}' and found {} instances: \"{}\"", dataType, dataTypeIdField, count, dataTypeCountQuery);
-        readableCounts.put(dataType, count);
-
-        // Experiment types are updated when the subject is updated.
-        if (StringUtils.equalsIgnoreCase(dataType, XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-            final String subquery = StringUtils.replaceEach(dataTypeQuery,
-                                                            new String[]{organizer.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
-                                                            REPLACEMENT_LIST);
-
-            final String            elementCountQuery = "SELECT element_name, COUNT(*) AS element_count FROM (" + subquery + ") SEARCH LEFT JOIN xnat_experimentData expt ON search.id = expt.id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id GROUP BY element_name";
-            final Map<String, Long> results           = _template.query(elementCountQuery, EmptySqlParameterSource.INSTANCE, ELEMENT_COUNT_EXTRACTOR);
-            if (log.isDebugEnabled()) {
-                final int size = results.size();
-                log.debug("Executed element count query and found {} elements: {}\nQuery: \"{}\"", size, size > 0 ? results : "N/A", elementCountQuery);
-            }
-            readableCounts.putAll(results);
+    private Map<String, Long> getUserAccessibleSubjectsAndExperiments(final UserI user) {
+        final List<String> accessibleProjectIds = _template.queryForList(QUERY_USER_ACCESSIBLE_PROJECT_LIST, new MapSqlParameterSource("username", user.getUsername()), String.class);
+        if (accessibleProjectIds.isEmpty()) {
+            return Collections.emptyMap();
         }
-
-        return readableCounts;
+        final MapSqlParameterSource parameters                 = new MapSqlParameterSource("projectIds", accessibleProjectIds);
+        final Map<String, Long>     accessibleExperimentCounts = _template.query(QUERY_USER_ACCESSIBLE_EXPERIMENT_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
+        final Long                  accessibleSubjectCount     = _template.queryForObject(QUERY_USER_ACCESSIBLE_SUBJECT_COUNT, parameters, Long.class);
+        accessibleExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, accessibleSubjectCount);
+        return accessibleExperimentCounts;
     }
 
     private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
@@ -1324,7 +1315,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             case XdatElementSecurity.SCHEMA_ELEMENT_NAME:
                 final List<String> groupIds = getGroupIdsForDataType(id);
-                return cacheGroups(Lists.transform(groupIds, new Function<String, UserGroupI>() {
+                return initGroups(Lists.transform(groupIds, new Function<String, UserGroupI>() {
                     @Override
                     public UserGroupI apply(final String groupId) {
                         try {
@@ -1348,26 +1339,16 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private List<String> getUserProjects(final String username) {
-        final Set<String> projects = new HashSet<>();
-        projects.addAll(_template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class));
-        projects.addAll(Permissions.getAllPublicProjects(_template));
-        projects.addAll(Permissions.getAllProtectedProjects(_template));
-        return new ArrayList<>(projects);
+        return ImmutableList.<String>builder().addAll(_template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class))
+                                              .addAll(Permissions.getAllPublicProjects(_template))
+                                              .addAll(Permissions.getAllProtectedProjects(_template)).build();
     }
 
     private int initializeTags() {
         final List<String> tags = _template.queryForList(QUERY_ALL_TAGS, EmptySqlParameterSource.INSTANCE, String.class);
         for (final String tag : tags) {
-            final String cacheId = getCacheIdForTag(tag);
-            if (has(cacheId)) {
-                log.info("Found tag {} but that is already in the cache", tag);
-                continue;
-            }
-
-            log.debug("Initializing tag {}", tag);
-            initializeTag(tag);
+            getTagGroups(tag);
         }
-
         final int size = tags.size();
         log.info("Completed initialization of {} tags", size);
         return size;
@@ -1381,19 +1362,42 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return projectIds.isEmpty() ? Collections.<String>emptySet() : new HashSet<>(_template.queryForList(QUERY_GET_USERS_FOR_PROJECTS, new MapSqlParameterSource("projectIds", projectIds), String.class));
     }
 
-    private List<String> getTagGroups(final String cacheId) {
-        return getCachedList(cacheId);
+    private List<String> getTagGroups(final String tag) {
+        final String       cacheId  = getCacheIdForTag(tag);
+        final List<String> groupIds = getCachedList(cacheId);
+        if (groupIds != null) {
+            // If it's cached, we can just return the list.
+            log.info("Found {} groups cached for tag '{}'", groupIds.size(), tag);
+            return groupIds;
+        }
+
+        return initTag(getCacheIdForTag(tag), tag);
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
-        final String cacheId = getCacheIdForUserGroups(username);
-        if (has(cacheId)) {
-            final List<String> cachedList = getCachedList(cacheId);
-            log.info("Found cached groups list for user '{}' with cache ID '{}': {}", username, cacheId, StringUtils.join(cachedList, ", "));
+        final String       cacheId    = getCacheIdForUserGroups(username);
+        final List<String> cachedList = getCachedList(cacheId);
+        if (cachedList != null) {
+            if (log.isTraceEnabled()) {
+                log.trace("Found cached groups list for user '{}' with cache ID '{}': {}", username, cacheId, StringUtils.join(cachedList, ", "));
+            } else {
+                log.info("Found cached groups list for user '{}' with cache ID '{}' with {} entries", username, cacheId, cachedList.size());
+            }
             return cachedList;
         }
+        return initUserGroupIds(cacheId, username);
+    }
 
-        return updateUserGroupIds(username);
+    private void evictGroup(final String groupId, final Set<String> usernames) {
+        final UserGroupI group = get(groupId);
+        if (group != null) {
+            final List<String> groupUsernames = group.getUsernames();
+            log.debug("Found group for ID '{}' with {} associated users", groupId, groupUsernames.size());
+            usernames.addAll(groupUsernames);
+            evict(groupId);
+        } else {
+            log.info("Requested to evict group with ID '{}', but I couldn't find that actual group", groupId);
+        }
     }
 
     /**
@@ -1421,7 +1425,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return parameters;
     }
 
-    private UserI getGuest() {
+    private XDATUser getGuest() {
         if (_guest == null) {
             log.debug("No guest user initialized, trying to retrieve now.");
             try {
@@ -1450,9 +1454,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return ImmutableList.copyOf(Iterables.filter(Iterables.transform(Iterables.filter(groupIds, String.class), new Function<String, UserGroupI>() {
-            @Nullable
             @Override
-            public UserGroupI apply(@Nullable final String groupId) {
+            public UserGroupI apply(final String groupId) {
                 return get(groupId);
             }
         }), Predicates.notNull()));
@@ -1559,145 +1562,204 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     };
 
-    private static final DateFormat DATE_FORMAT      = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
-    private static final String[]   REPLACEMENT_LIST = {"id", "xnat_experimentData", "xnat_experimentData_share", "sharing_share_xnat_experimentda_id"};
+    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
 
-    private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
-                                                                   "FROM xdat_user_groupid xug " +
-                                                                   "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
-                                                                   "WHERE xu.login = :username " +
-                                                                   "ORDER BY groupid";
-    private static final String QUERY_GET_GROUP_FOR_USER_AND_TAG = "SELECT id " +
-                                                                   "FROM xdat_usergroup xug " +
-                                                                   "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
-                                                                   "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
-                                                                   "WHERE xu.login = :username AND tag = :tag " +
-                                                                   "ORDER BY groupid";
-    private static final String QUERY_GET_GROUPS_FOR_DATATYPE    = "SELECT DISTINCT usergroup.id AS group_name " +
-                                                                   "FROM xdat_usergroup usergroup " +
-                                                                   "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                   "WHERE " +
-                                                                   "  xea.element_name = :dataType " +
-                                                                   "ORDER BY group_name";
-    private static final String QUERY_ALL_GROUPS                 = "SELECT id FROM xdat_usergroup";
-    private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
-    private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
+    private static final String       QUERY_GET_GROUPS_FOR_USER              = "SELECT groupid " +
+                                                                               "FROM xdat_user_groupid xug " +
+                                                                               "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
+                                                                               "WHERE xu.login = :username " +
+                                                                               "ORDER BY groupid";
+    private static final String       QUERY_GET_GROUP_FOR_USER_AND_TAG       = "SELECT id " +
+                                                                               "FROM xdat_usergroup xug " +
+                                                                               "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
+                                                                               "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                                               "WHERE xu.login = :username AND tag = :tag " +
+                                                                               "ORDER BY groupid";
+    private static final String       QUERY_GET_GROUPS_FOR_DATATYPE          = "SELECT DISTINCT usergroup.id AS group_name " +
+                                                                               "FROM xdat_usergroup usergroup " +
+                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                               "WHERE " +
+                                                                               "  xea.element_name = :dataType " +
+                                                                               "ORDER BY group_name";
+    private static final String       QUERY_ALL_GROUPS                       = "SELECT id FROM xdat_usergroup";
+    private static final String       QUERY_ALL_TAGS                         = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
+    private static final String       QUERY_GET_GROUPS_FOR_TAG               = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
     @SuppressWarnings("unused")
-    private static final String QUERY_GET_ALL_GROUPS_FOR_TAG     = "SELECT DISTINCT " +
-                                                                   "  login, " +
-                                                                   "  groupid " +
-                                                                   "FROM xdat_user u " +
-                                                                   "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
-                                                                   "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
-                                                                   "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                   "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
-                                                                   "  GROUP BY login, groupid " +
-                                                                   "ORDER BY login";
-    private static final String QUERY_CHECK_USER_EXISTS          = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
-    private static final String QUERY_GET_EXPERIMENT_PROJECT     = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
-    private static final String QUERY_GET_SUBJECT_PROJECT        = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
-    private static final String QUERY_GET_USERS_FOR_PROJECTS     = "SELECT DISTINCT login " +
-                                                                   "FROM xdat_user u " +
-                                                                   "  LEFT JOIN xdat_user_groupid gid ON u.xdat_user_id = gid.groups_groupid_xdat_user_xdat_user_id " +
-                                                                   "  LEFT JOIN xdat_usergroup g ON gid.groupid = g.id " +
-                                                                   "  LEFT JOIN xdat_element_access xea ON g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE tag IN (:projectIds) OR (tag IS NULL AND field_value = '*') " +
-                                                                   "ORDER BY login";
-    private static final String QUERY_GET_PROJECTS_FOR_USER      = "SELECT DISTINCT " +
-                                                                   "  g.tag AS project " +
-                                                                   "FROM xdat_usergroup g " +
-                                                                   "  LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
-                                                                   "  LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                                   "WHERE g.tag IS NOT NULL AND " +
-                                                                   "      u.login = :username";
-    private static final String QUERY_PROJECT_OWNERS             = "SELECT DISTINCT u.login AS owner " +
-                                                                   "FROM xdat_user                     u " +
-                                                                   "  LEFT JOIN xdat_user_groupid      map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                   "  LEFT JOIN xdat_usergroup         g ON map.groupid = g.id " +
-                                                                   "  LEFT JOIN xdat_element_access    xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping     xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE " +
-                                                                   "  xfm.field_value != '*' AND " +
-                                                                   "  xea.element_name = 'xnat:projectData' AND " +
-                                                                   "  xfm.delete_element = 1 AND " +
-                                                                   "  g.id LIKE '%_owner' AND " +
-                                                                   "  g.tag = :projectId " +
-                                                                   "ORDER BY owner";
-    private static final String QUERY_GROUP_DATATYPE_PERMISSIONS = "SELECT " +
-                                                                   "  xea.element_name    AS element_name, " +
-                                                                   "  xeamd.status        AS active_status, " +
-                                                                   "  xfms.method         AS method, " +
-                                                                   "  xfm.field           AS field, " +
-                                                                   "  xfm.field_value     AS field_value, " +
-                                                                   "  xfm.comparison_type AS comparison_type, " +
-                                                                   "  xfm.read_element    AS read_element, " +
-                                                                   "  xfm.edit_element    AS edit_element, " +
-                                                                   "  xfm.create_element  AS create_element, " +
-                                                                   "  xfm.delete_element  AS delete_element, " +
-                                                                   "  xfm.active_element  AS active_element " +
-                                                                   "FROM xdat_usergroup usergroup " +
-                                                                   "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                   "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE " +
-                                                                   "  usergroup.id = :groupId AND " +
-                                                                   "  element_name = :dataType " +
-                                                                   "ORDER BY element_name, field";
-    private static final String QUERY_USER_PERMISSIONS           = "SELECT " +
-                                                                   "  xea.element_name    AS element_name, " +
-                                                                   "  xeamd.status        AS active_status, " +
-                                                                   "  xfms.method         AS method, " +
-                                                                   "  xfm.field           AS field, " +
-                                                                   "  xfm.field_value     AS field_value, " +
-                                                                   "  xfm.comparison_type AS comparison_type, " +
-                                                                   "  xfm.read_element    AS read_element, " +
-                                                                   "  xfm.edit_element    AS edit_element, " +
-                                                                   "  xfm.create_element  AS create_element, " +
-                                                                   "  xfm.delete_element  AS delete_element, " +
-                                                                   "  xfm.active_element  AS active_element " +
-                                                                   "FROM xdat_user u " +
-                                                                   "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
-                                                                   "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE " +
-                                                                   "  u.login = :username";
-    private static final String QUERY_USER_PROJECTS              = "SELECT " +
-                                                                   "  DISTINCT xfm.field_value AS project " +
-                                                                   "FROM xdat_user u " +
-                                                                   "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                   "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                                   "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                   "WHERE " +
-                                                                   "  xfm.field_value != '*' AND " +
-                                                                   "  xea.element_name = 'xnat:projectData' AND " +
-                                                                   "  xfm.%s = 1 AND " +
-                                                                   "  u.login IN (:usernames) " +
-                                                                   "ORDER BY project";
-    private static final String QUERY_OWNED_PROJECTS             = String.format(QUERY_USER_PROJECTS, "delete_element");
-    private static final String QUERY_EDITABLE_PROJECTS          = String.format(QUERY_USER_PROJECTS, "edit_element");
-    private static final String QUERY_READABLE_PROJECTS          = String.format(QUERY_USER_PROJECTS, "read_element");
-
-
-    private static final String       GUEST_USERNAME                 = "guest";
-    private static final String       ACTION_PREFIX                  = "action";
-    private static final String       TAG_PREFIX                     = "tag";
-    private static final String       PROJECT_PREFIX                 = "project";
-    private static final String       USER_ELEMENT_PREFIX            = "user";
-    private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX = "eam";
-    private static final String       GROUPS_ELEMENT_PREFIX          = "groups";
+    private static final String       QUERY_GET_ALL_GROUPS_FOR_TAG           = "SELECT DISTINCT " +
+                                                                               "  login, " +
+                                                                               "  groupid " +
+                                                                               "FROM xdat_user u " +
+                                                                               "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
+                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
+                                                                               "  GROUP BY login, groupid " +
+                                                                               "ORDER BY login";
+    private static final String       QUERY_CHECK_USER_EXISTS                = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+    private static final String       QUERY_GET_EXPERIMENT_PROJECT           = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
+    private static final String       QUERY_GET_SUBJECT_PROJECT              = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
+    private static final String       QUERY_GET_USERS_FOR_PROJECTS           = "SELECT DISTINCT login " +
+                                                                               "FROM xdat_user u " +
+                                                                               "  LEFT JOIN xdat_user_groupid gid ON u.xdat_user_id = gid.groups_groupid_xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_usergroup g ON gid.groupid = g.id " +
+                                                                               "  LEFT JOIN xdat_element_access xea ON g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE tag IN (:projectIds) OR (tag IS NULL AND field_value = '*') " +
+                                                                               "ORDER BY login";
+    private static final String       QUERY_GET_PROJECTS_FOR_USER            = "SELECT DISTINCT " +
+                                                                               "  g.tag AS project " +
+                                                                               "FROM xdat_usergroup g " +
+                                                                               "  LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
+                                                                               "  LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                                               "WHERE g.tag IS NOT NULL AND " +
+                                                                               "      u.login = :username";
+    private static final String       QUERY_PROJECT_OWNERS                   = "SELECT DISTINCT u.login AS owner " +
+                                                                               "FROM xdat_user                     u " +
+                                                                               "  LEFT JOIN xdat_user_groupid      map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_usergroup         g ON map.groupid = g.id " +
+                                                                               "  LEFT JOIN xdat_element_access    xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping     xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE " +
+                                                                               "  xfm.field_value != '*' AND " +
+                                                                               "  xea.element_name = 'xnat:projectData' AND " +
+                                                                               "  xfm.delete_element = 1 AND " +
+                                                                               "  g.id LIKE '%_owner' AND " +
+                                                                               "  g.tag = :projectId " +
+                                                                               "ORDER BY owner";
     @SuppressWarnings("unused")
-    private static final String       GUEST_ACTION_READ              = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
-    private static final List<String> ALL_ACTIONS                    = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
+    private static final String       QUERY_GROUP_DATATYPE_PERMISSIONS       = "SELECT " +
+                                                                               "  xea.element_name    AS element_name, " +
+                                                                               "  xeamd.status        AS active_status, " +
+                                                                               "  xfms.method         AS method, " +
+                                                                               "  xfm.field           AS field, " +
+                                                                               "  xfm.field_value     AS field_value, " +
+                                                                               "  xfm.comparison_type AS comparison_type, " +
+                                                                               "  xfm.read_element    AS read_element, " +
+                                                                               "  xfm.edit_element    AS edit_element, " +
+                                                                               "  xfm.create_element  AS create_element, " +
+                                                                               "  xfm.delete_element  AS delete_element, " +
+                                                                               "  xfm.active_element  AS active_element " +
+                                                                               "FROM xdat_usergroup usergroup " +
+                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE " +
+                                                                               "  usergroup.id = :groupId AND " +
+                                                                               "  element_name = :dataType " +
+                                                                               "ORDER BY element_name, field";
+    private static final String       QUERY_USER_PERMISSIONS                 = "SELECT " +
+                                                                               "  xea.element_name    AS element_name, " +
+                                                                               "  xeamd.status        AS active_status, " +
+                                                                               "  xfms.method         AS method, " +
+                                                                               "  xfm.field           AS field, " +
+                                                                               "  xfm.field_value     AS field_value, " +
+                                                                               "  xfm.comparison_type AS comparison_type, " +
+                                                                               "  xfm.read_element    AS read_element, " +
+                                                                               "  xfm.edit_element    AS edit_element, " +
+                                                                               "  xfm.create_element  AS create_element, " +
+                                                                               "  xfm.delete_element  AS delete_element, " +
+                                                                               "  xfm.active_element  AS active_element " +
+                                                                               "FROM xdat_user u " +
+                                                                               "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE " +
+                                                                               "  u.login = :username";
+    private static final String       QUERY_USER_PROJECTS                    = "SELECT " +
+                                                                               "  DISTINCT xfm.field_value AS project " +
+                                                                               "FROM xdat_user u " +
+                                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
+                                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE " +
+                                                                               "  xfm.field_value != '*' AND " +
+                                                                               "  xea.element_name = 'xnat:projectData' AND " +
+                                                                               "  xfm.%s = 1 AND " +
+                                                                               "  u.login IN (:usernames) " +
+                                                                               "ORDER BY project";
+    private static final String       QUERY_OWNED_PROJECTS                   = String.format(QUERY_USER_PROJECTS, "delete_element");
+    private static final String       QUERY_EDITABLE_PROJECTS                = String.format(QUERY_USER_PROJECTS, "edit_element");
+    private static final String       QUERY_READABLE_PROJECTS                = String.format(QUERY_USER_PROJECTS, "read_element");
+    private static final String       QUERY_USER_READABLE_PROJECT_MAP        = "SELECT DISTINCT " +
+                                                                               "  fm.field_value AS project, " +
+                                                                               "  CASE " +
+                                                                               "    WHEN ug.id IS NOT NULL THEN ug.displayname " +
+                                                                               "    WHEN fm.active_element = 1 THEN 'public' " +
+                                                                               "    ELSE 'protected' " +
+                                                                               "  END AS access " +
+                                                                               "FROM " +
+                                                                               "  xdat_user u " +
+                                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                                               "  LEFT JOIN xdat_usergroup ug ON map.groupid = ug.id " +
+                                                                               "  LEFT JOIN xdat_element_access ea ON (ug.xdat_usergroup_id = ea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = ea.xdat_user_xdat_user_id) " +
+                                                                               "  LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                               "  LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id = fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                               "WHERE " +
+                                                                               "  fm.field_value != '*' AND " +
+                                                                               "  ea.element_name = 'xnat:projectData' AND " +
+                                                                               "  fm.read_element = 1 AND " +
+                                                                               "  u.login IN ('guest', :username) " +
+                                                                               "ORDER BY " +
+                                                                               "  project";
+    private static final String       QUERY_USER_READABLE_PROJECT_COUNT      = "SELECT COUNT(*) AS data_type_count FROM (" + QUERY_USER_READABLE_PROJECT_MAP + ") SEARCH";
+    private static final String       QUERY_USER_READABLE_WORKFLOW_COUNT     = "SELECT COUNT(*) FROM wrk_workflowData wrk_workflowData";
+    private static final String       QUERY_USER_ACCESSIBLE_PROJECT_LIST     = "SELECT project FROM (" + QUERY_USER_READABLE_PROJECT_MAP + ") READABLE WHERE access != 'protected'";
+    private static final String       QUERY_USER_ACCESSIBLE_SUBJECT_COUNT    = "SELECT  " +
+                                                                               "  COUNT(*) " +
+                                                                               "FROM  " +
+                                                                               "  (SELECT SEARCH.*  " +
+                                                                               "   FROM  " +
+                                                                               "     (SELECT DISTINCT ON (subjectId) *  " +
+                                                                               "      FROM  " +
+                                                                               "        (SELECT xnat_subjectData.id AS subjectId, xnat_subjectData.project AS subjectProject, sharedSubjects.project AS sharedProject  " +
+                                                                               "         FROM  " +
+                                                                               "           xnat_subjectData xnat_subjectData  " +
+                                                                               "           LEFT JOIN xnat_projectParticipant sharedSubjects ON xnat_subjectData.id = sharedSubjects.subject_id) SECURITY  " +
+                                                                               "      WHERE  " +
+                                                                               "        subjectProject IN (:projectIds) OR  " +
+                                                                               "        sharedProject IN (:projectIds)) SECURITY  " +
+                                                                               "     LEFT JOIN xnat_subjectData SEARCH ON SECURITY.subjectId = SEARCH.id) xnat_subjectData";
+    private static final String       QUERY_USER_ACCESSIBLE_EXPERIMENT_COUNT = "SELECT " +
+                                                                               "  element_name, " +
+                                                                               "  COUNT(*) AS element_count " +
+                                                                               "FROM " +
+                                                                               "  (SELECT xnat_experimentData.id AS id " +
+                                                                               "   FROM " +
+                                                                               "     (SELECT SEARCH.* " +
+                                                                               "      FROM " +
+                                                                               "        (SELECT DISTINCT ON (id) * " +
+                                                                               "         FROM " +
+                                                                               "           (SELECT xnat_experimentData.id AS id, xnat_experimentData.project AS experimentProject, sharedExperiments.project AS experimentSharedProject " +
+                                                                               "            FROM " +
+                                                                               "              xnat_experimentData xnat_experimentData " +
+                                                                               "              LEFT JOIN xnat_experimentData_share sharedExperiments ON xnat_experimentData.id = sharedExperiments.sharing_share_xnat_experimentda_id) SECURITY " +
+                                                                               "         WHERE " +
+                                                                               "           experimentProject IN (:projectIds) OR " +
+                                                                               "           experimentSharedProject IN (:projectIds)) SECURITY " +
+                                                                               "        LEFT JOIN xnat_experimentData SEARCH ON SECURITY.id = SEARCH.id) xnat_experimentData) SEARCH " +
+                                                                               "  LEFT JOIN xnat_experimentData expt ON search.id = expt.id " +
+                                                                               "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
+                                                                               "GROUP BY " +
+                                                                               "  element_name";
+    private static final String       GUEST_USERNAME                         = "guest";
+    private static final String       ACTION_PREFIX                          = "action";
+    private static final String       TAG_PREFIX                             = "tag";
+    private static final String       PROJECT_PREFIX                         = "project";
+    private static final String       USER_ELEMENT_PREFIX                    = "user";
+    private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX         = "eam";
+    private static final String       GROUPS_ELEMENT_PREFIX                  = "groups";
+    @SuppressWarnings("unused")
+    private static final String       GUEST_ACTION_READ                      = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
+    private static final List<String> ALL_ACTIONS                            = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
 
     private static final Pattern      REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTION_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):(?<remainder>.*)$");
     private static final Pattern      REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");

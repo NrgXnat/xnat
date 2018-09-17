@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Slf4j
 public class InitializeGroupRequest implements Serializable {
     public InitializeGroupRequest(final String groupId) {
-        log.info("Creating initialize request for group {}", groupId);
+        log.debug("Creating initialize request for group {}", groupId);
         _groupId = groupId;
     }
 

@@ -11,25 +11,6 @@ import java.util.List;
  */
 public interface UserProjectCache extends UserItemCache<XnatProjectdata> {
     /**
-     * Indicates whether the specified project ID or alias is already cached.
-     *
-     * @param idOrAlias The ID or alias of the project to check.
-     *
-     * @return Returns true if the ID or alias is mapped to an project cache entry, false otherwise.
-     */
-    boolean has(final String idOrAlias);
-
-    /**
-     * Indicates whether permissions for the specified user in the specified project ID or alias is already cached.
-     *
-     * @param user      The user object for the user requesting the project.
-     * @param idOrAlias The ID or alias of the project to check.
-     *
-     * @return Returns true if the user is mapped to a cache entry for the cached project ID or alias, false otherwise.
-     */
-    boolean has(final UserI user, final String idOrAlias);
-
-    /**
      * Indicates whether the specified user can delete the project identified by the specified ID or alias. Note that this returns false if
      * the project can't be found by the specified ID or alias or the username can't be located.
      *
@@ -98,9 +79,6 @@ public interface UserProjectCache extends UserItemCache<XnatProjectdata> {
      * when operations may cause a race condition before a cache entry can be updated.
      *
      * @param idOrAlias The ID or alias of the entry to clear.
-     *
-     * @return Returns true if the entry was successfully cleared, false if not (probably means entry wasn't
-     * found, which may be fine.)
      */
-    boolean clearProjectCacheEntry(final String idOrAlias);
+    void clearProjectCacheEntry(final String idOrAlias);
 }

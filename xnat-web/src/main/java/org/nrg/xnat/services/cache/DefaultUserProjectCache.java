@@ -186,32 +186,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Indicates whether permissions for the specified user in the specified project ID or alias is already cached.
-     *
-     * @param user      The user object for the user requesting the project.
-     * @param idOrAlias The ID or alias of the project to check.
-     *
-     * @return Returns true if the user is mapped to a cache entry for the cached project ID or alias, false otherwise.
-     */
-    @Override
-    public boolean has(final UserI user, final String idOrAlias) {
-        // If it's not in the alias map, we don't know about it.
-        if (!_aliasMapping.containsKey(idOrAlias)) {
-            return false;
-        }
-
-        final String userId    = user.getUsername();
-        final String projectId = getCanonicalProjectId(idOrAlias);
-        if (StringUtils.isBlank(projectId)) {
-            log.info("User '{}' is checking whether cache entry exists for project ID or alias '{}' but that doesn't seem to be a valid project ID or alias, returning false", userId, idOrAlias);
-            return false;
-        }
-
-        final ProjectCache projectCache = getProjectCache(idOrAlias);
-        return projectCache != null && projectCache.hasUser(userId);
-    }
-
-    /**
      * Indicates whether the specified user can delete the project identified by the specified ID or alias. Note that this returns false if
      * the project can't be found by the specified ID or alias or the username can't be located.
      *
@@ -349,8 +323,8 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     @Override
-    public boolean clearProjectCacheEntry(final String idOrAlias) {
-        return evictProjectCache(idOrAlias);
+    public void clearProjectCacheEntry(final String idOrAlias) {
+        evictProjectCache(idOrAlias);
     }
 
     @Override
@@ -789,9 +763,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return null;
         }
 
-        if (has(projectId)) {
+        final ProjectCache cachedProjectCache = getCachedProjectCache(projectId);
+        if (cachedProjectCache != null) {
             log.info("Found cache entry for project ID '{}', this was probably initialized by another thread.", projectId);
-            return getCachedProjectCache(projectId);
+            return cachedProjectCache;
         }
 
         log.info("Locking and initializing project cache for ID '{}'", projectId);
@@ -827,15 +802,13 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         initializeProjectCache(projectId);
     }
 
-    private boolean evictProjectCache(final String projectId) {
+    private void evictProjectCache(final String projectId) {
         final ProjectCache projectCache = getCachedProjectCache(projectId);
         if (projectCache == null || projectCache.getProject() == null) {
             log.info("No cache found for the project '{}', nothing much to be done.", projectId);
-            return false;
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
             evict(projectId);
-            return true;
         }
     }
 

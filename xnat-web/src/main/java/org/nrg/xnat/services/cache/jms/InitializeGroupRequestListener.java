@@ -42,7 +42,7 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
         final int totalNumberOfGroups = _groupIds.size();
         try {
             stopWatch.lap("Starting to process group '{}', this is #{} of {} total", groupId, _processed.size() + 1, totalNumberOfGroups);
-            final UserGroupI group = _cache.cacheGroup(groupId);
+            final UserGroupI group = _cache.get(groupId);
             if (group == null) {
                 stopWatch.lap("Group '{}' not found on initialization, nothing cached", groupId);
             } else {
@@ -108,7 +108,11 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
 
     public void setGroupIds(final List<String> groupIds) {
         _groupIds.addAll(groupIds);
-        log.info("Added {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
+        if (log.isTraceEnabled()) {
+            log.trace("Added {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
+        } else {
+            log.debug("Added {} group IDs to the listener: {}", _groupIds.size());
+        }
     }
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());

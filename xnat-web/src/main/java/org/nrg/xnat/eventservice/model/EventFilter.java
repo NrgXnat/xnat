@@ -85,7 +85,7 @@ public abstract class EventFilter {
         return this.toBuilder()
                           .name(update.name() != null ? update.name() : name())
                           .eventType(update.eventType() != null ? update.eventType() : eventType())
-                          .projectIds(update.projectIds() != null ? update.projectIds() : projectIds())
+                          .projectIds(update.projectIds())
                           .status(update.status() != null ? update.status() : status())
                           .jsonPathFilter(update.jsonPathFilter() != null ? update.jsonPathFilter() : jsonPathFilter())
                           .nodeFilters(update.nodeFilters() != null ? update.nodeFilters() : nodeFilters())

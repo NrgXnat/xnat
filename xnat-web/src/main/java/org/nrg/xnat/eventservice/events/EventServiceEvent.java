@@ -37,4 +37,6 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     Enum getCurrentStatus();
     //Get the projectId of the current triggered event (returns null if no Project association)
     String getProjectId();
+
+    String toString();
 }

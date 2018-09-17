@@ -127,6 +127,16 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
         }
     }
 
+    @Override
+    public String toString() {
+        return "CombinedEventServiceEvent{" +
+                "eventUser='" + eventUser + '\'' +
+                ", object=" + object.getClass().getSimpleName() +
+                ", eventCreatedTimestamp=" + eventCreatedTimestamp.toString() +
+                ", status=" + status.toString() +
+                ", projectId='" + projectId + '\'' +
+                '}';
+    }
 
     public static EventServiceEvent createFromResource(org.springframework.core.io.Resource resource)
             throws IOException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException {

@@ -10,9 +10,12 @@
 
 package org.nrg.xft.generators;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -27,7 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SQLUpdateGenerator {
     private static final Logger logger = LoggerFactory.getLogger(SQLUpdateGenerator.class);
@@ -65,7 +69,7 @@ public class SQLUpdateGenerator {
     /**
      * 2 lists of statements: 0=required, 1=optional (to be commented out).
      * @return A list of two lists, the first a list of required statements, the second a list of optional statements.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public static List[] GetSQLCreate() throws Exception {
         List<String> creates = new ArrayList<>();
@@ -186,52 +190,35 @@ public class SQLUpdateGenerator {
 
         List<String> matched = new ArrayList<>();
         try {
-            String s = "ALTER TABLE " + e.getSQLName() + " ";
-            Iterator iter = e.getAllFieldsWAddIns(false, true).iterator();
-            TypeConverter converter = new TypeConverter(new PGSQLMapping(e.getWrapped().getSchemaPrefix()));
-            while (iter.hasNext()) {
-                GenericWrapperField field = (GenericWrapperField) iter.next();
+            final String prefix = "ALTER TABLE " + e.getSQLName() + " ";
+            final TypeConverter converter = new TypeConverter(new PGSQLMapping(e.getWrapped().getSchemaPrefix()));
+            for (final Object object : e.getAllFieldsWAddIns(false, true)) {
+                final GenericWrapperField field = (GenericWrapperField) object;
                 if (field.isReference()) {
                     if ((field.isMultiple() && field.getRelationType().equalsIgnoreCase("single") && field.getXMLType().getFullForeignType().equalsIgnoreCase(e.getFullXMLName())) || (!field.isMultiple())) {
                         try {
-                            XFTReferenceI ref = field.getXFTReference();
+                            final XFTReferenceI ref = field.getXFTReference();
                             if (!ref.isManyToMany()) {
-                                for (XFTRelationSpecification spec : ((XFTSuperiorReference) ref).getKeyRelations()) {
+                                for (final XFTRelationSpecification spec : ((XFTSuperiorReference) ref).getKeyRelations()) {
+                                    final GenericWrapperField localKey = spec.getLocalKey();
+                                    final boolean             required = localKey != null && localKey.isRequired();
                                     if (!lowerCaseColumns.contains(spec.getLocalCol().toLowerCase())) {
-                                        if (XFT.VERBOSE)
+                                        if (XFT.VERBOSE) {
                                         	logger.error("WARNING: Database column " + e.getSQLName() + "." + spec.getLocalCol() + " is missing. Execute update sql.");
-                                        if (spec.getLocalKey() != null) {
-                                            if (spec.getLocalKey().getAutoIncrement().equalsIgnoreCase("true")) {
-                                                if (spec.getLocalKey().isRequired()) {
-                                                    statements.add(s + " ADD COLUMN " + spec.getLocalCol() + " serial NOT NULL");
-                                                } else {
-                                                    statements.add(s + " ADD COLUMN " + spec.getLocalCol() + " serial");
-                                                }
-
+                                        }
+                                        if (localKey != null) {
+                                            if (localKey.getAutoIncrement().equalsIgnoreCase("true")) {
+                                                statements.add(prefix + " ADD COLUMN " + spec.getLocalCol() + " serial" + (required ? " NOT NULL" : ""));
                                             } else {
-                                                String temp = s + " ADD COLUMN " + spec.getLocalCol();
-                                                if (spec.getForeignKey() != null) {
-                                                    temp += " " + spec.getForeignKey().getType(converter);
-                                                } else {
-                                                    temp += " " + converter.convert(spec.getSchemaType().getFullLocalType());
+                                                final StringBuilder statement         = new StringBuilder(prefix).append(" ADD COLUMN ").append(spec.getLocalCol());
+                                                if (!setTypeAndDefaultValue(statement, spec, converter)) {
+                                                    logger.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
                                                 }
-
-                                                if (spec.getLocalKey().isRequired()) {
-                                                    temp += " NOT NULL ";
-                                                }
-
-                                                statements.add(temp + ";");
+                                                statement.append(";\n");
+                                                statements.add(statement.toString());
                                             }
-
                                         } else {
-                                            String temp = s + " ADD COLUMN " + spec.getLocalCol();
-                                            if (spec.getForeignKey() != null) {
-                                                temp += " " + spec.getForeignKey().getType(converter);
-                                            } else {
-                                                temp += " " + converter.convert(spec.getSchemaType().getFullLocalType());
-                                            }
-
-                                            statements.add(temp + ";");
+                                            statements.add(prefix + " ADD COLUMN " + spec.getLocalCol() + (spec.getForeignKey() != null ? " " + spec.getForeignKey().getType(converter) : converter.convert(spec.getSchemaType().getFullLocalType())) + ";");
                                         }
                                     } else if (!e.getName().endsWith("_history")) {
                                         String fieldSQLName = spec.getLocalCol();
@@ -239,14 +226,9 @@ public class SQLUpdateGenerator {
                                         int index = lowerCaseColumns.indexOf(fieldSQLName.toLowerCase());
                                         String t = columnTypes.get(index);
                                         String req = columnRequireds.get(index);
-                                        boolean exptR = false;
                                         String exptType;
-                                        if (spec.getLocalKey() != null) {
-                                            if (spec.getLocalKey().getAutoIncrement().equalsIgnoreCase("true")) {
-                                                if (spec.getLocalKey().isRequired()) {
-                                                    exptR = true;
-                                                }
-
+                                        if (localKey != null) {
+                                            if (localKey.getAutoIncrement().equalsIgnoreCase("true")) {
                                                 exptType = t;
                                             } else {
                                                 if (spec.getForeignKey() != null) {
@@ -254,20 +236,13 @@ public class SQLUpdateGenerator {
                                                 } else {
                                                     exptType = converter.convert(spec.getSchemaType().getFullLocalType());
                                                 }
-
-                                                if (spec.getLocalKey().isRequired()) {
-                                                    exptR = true;
-                                                }
-
                                             }
-
                                         } else {
                                             if (spec.getForeignKey() != null) {
                                                 exptType = spec.getForeignKey().getType(converter);
                                             } else {
                                                 exptType = converter.convert(spec.getSchemaType().getFullLocalType());
                                             }
-
                                         }
 
                                         if (exptType.contains("("))
@@ -278,58 +253,40 @@ public class SQLUpdateGenerator {
                                             logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " type mis-match ('" + exptType + "'!='" + t + "'). Unable to resolve.");
                                         }
 
-                                        if (exptR) {
-                                            if (req.equals("false")) {
-//                                                if (XFT.VERBOSE)System.out.println("WARNING: Database column " + e.getSQLName() +"." + fieldSQLName+" is now required. Uncomment line in update sql to fix.");
-//                                                String temp ="\n--Database column " + e.getSQLName() +"." + fieldSQLName+" is now required.\n";
-//                                                temp += "--" + s + " ALTER COLUMN " +  fieldSQLName  + " SET NOT NULL";
-//                                                stmts.add(temp +";");
-                                            }
-                                        } else {
-                                            if (req.equals("true")) {
-                                            	logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required. Execute update sql.");
-                                                String temp = "\n--Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required.\n";
-                                                temp += s + " ALTER COLUMN " + fieldSQLName + " DROP NOT NULL";
-                                                statements.add(temp + ";");
-                                            }
+                                        if (!required && req.equals("true")) {
+                                            logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required. Execute update sql.");
+                                            statements.add("\n--Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required.\nALTER COLUMN " + fieldSQLName + " DROP NOT NULL;");
                                         }
                                     }
 
                                 }
                             }
                         } catch (Exception ex) {
-                            ex.printStackTrace();
+                            logger.error("An exception occurred trying to process the reference field {}", field.getName(), ex);
                         }
                     }
                 } else {
                     if (GenericWrapperField.IsLeafNode(field.getWrapped())) {
-                        String fieldSQLName = field.getSQLName().toLowerCase();
+                        final String fieldSQLName = field.getSQLName().toLowerCase();
+                        final boolean required    = field.isRequired();
                         if (!lowerCaseColumns.contains(fieldSQLName)) {
-                            if (XFT.VERBOSE)
-                            	logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is missing. Execute update sql.");
-                            String temp = s + " ADD COLUMN " + fieldSQLName;
-                            if (field.getAutoIncrement().equalsIgnoreCase("true")) {
-                                temp += " serial";
-                                if (field.isRequired()) {
-                                    temp += " NOT NULL ";
-                                }
-                                //						if (addedSequence)
-                                //						{
-                                //							sb.append("DEFAULT nextval('").append(sequenceName).append("'::text) ");
-                                //						}
-                                //sb.append(" serial").append(" DEFAULT nextval('" + input.getSQLName() + "_" + field.getSQLName() + "_seq') ");
-                                //sb = (new StringBuffer()).append("CREATE SEQUENCE " + input.getSQLName() + "_" + field.getSQLName() + "_seq;\n\n").append(sb.toString());
-                            } else {
-                                if (!field.getType(converter).equals("")) {
-                                    temp += " " + field.getType(converter);
-                                } else {
-                                    temp += " " + converter.convert(e.getWrapped().getSchemaPrefix() + ":string", 50) + "(255) ";
-                                }
-                                if (field.isRequired()) {
-                                    temp += " NOT NULL ";
-                                }
+                            if (XFT.VERBOSE) {
+                                logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is missing. Execute update sql.");
                             }
-                            statements.add(temp + ";");
+                            final StringBuilder statement = new StringBuilder(prefix);
+                            statement.append(" ADD COLUMN ").append(fieldSQLName);
+                            if (field.getAutoIncrement().equalsIgnoreCase("true")) {
+                                statement.append(" serial");
+                                if (required) {
+                                    statement.append(" NOT NULL ");
+                                }
+                            } else {
+                                if (!setTypeAndDefaultValue(statement, field, converter)) {
+                                    logger.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
+                                }
+                                statement.append(";\n");
+                                statements.add(statement.toString());
+                            }
                         } else if (!e.getName().endsWith("_history")) {
                             matched.add(fieldSQLName);
                             int index = lowerCaseColumns.indexOf(fieldSQLName);
@@ -340,7 +297,7 @@ public class SQLUpdateGenerator {
                             if (!field.getType(converter).equals("")) {
                                 exptType = field.getType(converter);
                             } else {
-                                exptType = converter.convert(e.getWrapped().getSchemaPrefix() + ":string", 50);
+                                exptType = converter.convert("xs:string", 50);
                             }
 
                             if (exptType.contains("("))
@@ -435,12 +392,12 @@ public class SQLUpdateGenerator {
                                 }
                             }
 
-                            if (field.isRequired()) {
+                            if (required) {
                                 if (req.equals("false")) {
                                     if (XFT.VERBOSE)
                                         System.out.println("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is now required. Uncomment line in update sql to fix.");
                                     String temp = "\n--Database column " + e.getSQLName() + "." + fieldSQLName + " is now required.\n";
-                                    temp += "--" + s + " ALTER COLUMN " + fieldSQLName + " SET NOT NULL";
+                                    temp += "--" + prefix + " ALTER COLUMN " + fieldSQLName + " SET NOT NULL";
                                     optional.add(temp + ";");
                                 }
                             } else {
@@ -448,7 +405,7 @@ public class SQLUpdateGenerator {
                                     if (XFT.VERBOSE)
                                         System.out.println("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required. Execute update sql.");
                                     String temp = "\n--Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required.\n";
-                                    temp += s + " ALTER COLUMN " + fieldSQLName + " DROP NOT NULL";
+                                    temp += prefix + " ALTER COLUMN " + fieldSQLName + " DROP NOT NULL";
                                     statements.add(temp + ";");
                                 }
                             }
@@ -467,7 +424,7 @@ public class SQLUpdateGenerator {
                             if (XFT.VERBOSE) {
                                 System.out.println("WARNING: Required database column " + e.getSQLName() + "." + fieldSQLName + " is no longer valid. Execute update sql.");
                             }
-                            statements.add(s + " ALTER COLUMN " + fieldSQLName + " DROP NOT NULL;");
+                            statements.add(prefix + " ALTER COLUMN " + fieldSQLName + " DROP NOT NULL;");
                         }
                     }
                 }
@@ -481,6 +438,23 @@ public class SQLUpdateGenerator {
         return new List[]{statements,optional};
     }
 
+    public static boolean setTypeAndDefaultValue(final StringBuilder statement, final XFTRelationSpecification relation, final TypeConverter converter) {
+        final GenericWrapperField foreignKey   = relation.getForeignKey();
+        final GenericWrapperField localKey     = relation.getLocalKey();
+        final String              columnType   = foreignKey != null ? foreignKey.getType(converter) : converter.convert(relation.getSchemaType().getFullLocalType());
+        final String              javaType     = foreignKey != null ? foreignKey.getType(XFTItem.JAVA_CONVERTER) : XFTItem.JAVA_CONVERTER.convert(relation.getSchemaType().getFullLocalType());
+        final boolean             required     = localKey != null && localKey.isRequired();
+        final String              defaultValue = localKey != null ? localKey.getDefaultValue() : relation.getForeignKey().getDefaultValue();
+        return setTypeAndDefaultValue(statement, columnType, javaType, required, defaultValue);
+    }
+
+    public static boolean setTypeAndDefaultValue(final StringBuilder statement, final GenericWrapperField field, final TypeConverter converter) {
+        final String  columnType   = StringUtils.defaultIfBlank(field.getType(converter), converter.convert("xs:string", 50) + "(255)");
+        final String  javaType     = StringUtils.defaultIfBlank(field.getType(XFTItem.JAVA_CONVERTER), XFTItem.JAVA_CONVERTER.convert("xs:string", 50) + "(255)");
+        final boolean required     = field.isRequired();
+        final String  defaultValue = field.getDefaultValue();
+        return setTypeAndDefaultValue(statement, columnType, javaType, required, defaultValue);
+    }
 
     public static void main(String args[]) {
         if (args.length == 2) {
@@ -493,6 +467,48 @@ public class SQLUpdateGenerator {
         } else {
             System.out.println("Arguments: <Schema File location>");
         }
+    }
+
+    private static boolean setTypeAndDefaultValue(final StringBuilder statement, final String columnType, final String javaType, final boolean required, final String defaultValue) {
+        statement.append(" ").append(columnType);
+        if (required) {
+            statement.append(" NOT NULL ");
+            if (defaultValue != null) {
+                statement.append("DEFAULT ");
+                switch (javaType) {
+                    case "java.lang.Boolean":
+                        statement.append(BooleanUtils.toInteger(BooleanUtils.toBoolean(StringUtils.defaultIfBlank(defaultValue, "false"))));
+                        break;
+
+                    case "java.lang.Double":
+                    case "java.lang.Integer":
+                    case "java.lang.Long":
+                        statement.append(StringUtils.defaultIfEmpty(defaultValue, "0"));
+                        break;
+
+                    case "java.lang.String":
+                        statement.append("'").append(defaultValue).append("'");
+                        break;
+
+                    case "java.util.Date":
+                        // If there's a value
+                        final boolean hasDefaultValue = StringUtils.isNotBlank(defaultValue);
+                        if (hasDefaultValue) {
+                            // And that value is NOT a function call (denoted by not having the '(' or ')' characters), then
+                            // insert the value as a string.
+                            if (!StringUtils.containsAny(defaultValue, "()")) {
+                                statement.append("'").append(defaultValue).append("'");
+                            } else {
+                                statement.append(defaultValue);
+                            }
+                        } else {
+                            statement.append("now()");
+                        }
+                        break;
+                }
+            }
+        }
+        return !(required && defaultValue == null);
     }
 }
 

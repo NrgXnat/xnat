@@ -142,7 +142,7 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         throw new RuntimeException("Found parameter " + parameterIndex + " annotated with @" + annotation.getSimpleName() + " for the method " + joinPoint.getSignature().getName() + " but the annotated parameter is not a String, List of strings, or a map containing a key named " + singular + " or " + plural + ".");
     }
 
-    protected static int getAnnotatedParameterIndex(final Method method, final Class<? extends Annotation> annotation) {
+    public static int getAnnotatedParameterIndex(final Method method, final Class<? extends Annotation> annotation) {
         final Annotation[][] annotations = method.getParameterAnnotations();
         for (int parameterIndex = 0; parameterIndex < annotations.length; parameterIndex++) {
             final Annotation[] parameterAnnotations = annotations[parameterIndex];

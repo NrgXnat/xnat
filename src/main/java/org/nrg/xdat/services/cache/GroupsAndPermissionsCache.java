@@ -61,13 +61,16 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     }
 
     /**
-     * Get the browseable element displays for the indicated user.
-     * 
-     * @param user The user to retrieve browseable element displays for.
-     *             
-     * @return The browseable element displays for the indicated user.
+     * Gets the specified group if it exists. If the group is stored in the cache, the cached group is returned. If
+     * not, this tries to retrieve the group from the system. If the group exists, it's cached and returned. Otherwise
+     * null is returned.
+     *
+     * @param groupId The ID of the group to retrieve.
+     *
+     * @return The group object if it exists, null otherwise.
      */
-    Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
+    @Nullable
+    UserGroupI get(final String groupId);
 
     /**
      * Get the readable counts for the indicated user.
@@ -77,6 +80,15 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return The readable counts for the indicated user.
      */
     Map<String, Long> getReadableCounts(final UserI user);
+
+    /**
+     * Get the browseable element displays for the indicated user.
+     *
+     * @param user The user to retrieve browseable element displays for.
+     *
+     * @return The browseable element displays for the indicated user.
+     */
+    Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
 
     /**
      * Get the searchable element displays for the indicated user.
@@ -123,37 +135,6 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return A map of data types with the number of instances of each data type.
      */
     Map<String, Long> getTotalCounts();
-
-    /**
-     * Clears all cache entries for the indicated user.
-     *
-     * @param username The name of the user whose cache should be cleared.
-     */
-    void clearUserCache(final String username);
-
-    /**
-     * Indicates whether a group with the specified ID is already cached. Note that this doesn't check whether the
-     * group exists on the system, just whether it exists in the cache. Even calls for group IDs that don't exist
-     * on the system may return true: if the non-existent group has already been requested and found to not exist,
-     * a string is cached that indicates that the group doesn't exist.
-     *
-     * @param groupId The ID of the group to check.
-     *
-     * @return Returns true if the group exists in the cache, false otherwise.
-     */
-    boolean has(final String groupId);
-
-    /**
-     * Gets the specified group if it exists. If the group is stored in the cache, the cached group is returned. If
-     * not, this tries to retrieve the group from the system. If the group exists, it's cached and returned. Otherwise
-     * null is returned.
-     *
-     * @param groupId The ID of the group to retrieve.
-     *
-     * @return The group object if it exists, null otherwise.
-     */
-    @Nullable
-    UserGroupI get(final String groupId);
 
     /**
      * Gets the projects for which the user has the indicated permission. Returns an empty list if the user doesn't
@@ -228,13 +209,9 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     Date getUserLastUpdateTime(final String username);
 
     /**
-     * This method retrieves the group with the specified group ID and puts it in the cache. This method
-     * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
-     * cache initialization and shouldn't be used for routine access.
+     * Clears all cache entries for the indicated user.
      *
-     * @param groupId The ID or alias of the group to retrieve.
-     *
-     * @return The group object for the specified ID if it exists, null otherwise.
+     * @param username The name of the user whose cache should be cleared.
      */
-    UserGroupI cacheGroup(String groupId);
+    void clearUserCache(final String username);
 }

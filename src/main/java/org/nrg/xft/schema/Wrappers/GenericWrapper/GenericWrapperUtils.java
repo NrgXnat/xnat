@@ -10,6 +10,7 @@
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -21,6 +22,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.generators.TextFunctionGenerator;
 import org.nrg.xft.references.*;
 import org.nrg.xft.schema.XFTManager;
@@ -55,7 +57,7 @@ public class GenericWrapperUtils {
      * @return Returns the CREATE TABLE SQL statement as a StringBuffer
      */
 	public static StringBuffer GetCreateStatement(GenericWrapperElement input) {
-        StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         try {
             if (input.getSchema().getDbType().equalsIgnoreCase("MYSQL")) {
                 Iterator iter = input.getAllFieldsWAddIns(false, false)
@@ -157,26 +159,12 @@ public class GenericWrapperUtils {
                                 sb.append("\n, ");
                             }
                             count++;
-                            sb.append(field.getSQLName()).append(" ");
-                            if (!field.getType(converter).equals("")) {
-                                sb.append(field.getType(converter)).append(" ");
-                            } else {
-                                sb.append(
-                                        converter.convert(input.getWrapped()
-                                                .getSchemaPrefix()
-                                                + ":string", 255)).append(
-                                        "(255) ");
-                            }
-                            if (field.isRequired()) {
-                                sb.append(" NOT NULL ");
-                            }
-
-                            if (field.getAutoIncrement().equalsIgnoreCase(
-                                    "true")) {
+                            sb.append(field.getSQLName());
+                            SQLUpdateGenerator.setTypeAndDefaultValue(sb, field, converter);
+                            if (field.getAutoIncrement().equalsIgnoreCase("true")) {
                                 sb.append(" AUTO_INCREMENT ");
                             }
                         }
-
                     }
                 }
 
@@ -300,29 +288,8 @@ public class GenericWrapperUtils {
                                                 // key.getSQLName() +
                                                 // "_seq;\n\n").append(sb.toString());
                                             } else {
-                                                if (spec.getForeignKey() != null) {
-                                                    sb
-                                                            .append(
-                                                                    spec
-                                                                            .getForeignKey()
-                                                                            .getType(
-                                                                                    converter))
-                                                            .append(" ");
-                                                } else {
-                                                    sb
-                                                            .append(
-                                                                    converter
-                                                                            .convert(spec
-                                                                                    .getSchemaType()
-                                                                                    .getFullLocalType()))
-                                                            .append(" ");
-                                                }
-                                                if (spec.getLocalKey()
-                                                        .isRequired()) {
-                                                    sb.append(" NOT NULL ");
-                                                }
+                                                SQLUpdateGenerator.setTypeAndDefaultValue(sb, spec, converter);
                                             }
-
                                         } else {
                                             if (spec.getForeignKey() != null) {
                                                 sb
@@ -358,14 +325,14 @@ public class GenericWrapperUtils {
                             }
                             count++;
                             sb.append(field.getSQLName()).append(" ");
-                            if (field.getAutoIncrement().equalsIgnoreCase(
-                                    "true")) {
-                            	if(field.getType(converter).equalsIgnoreCase("BIGINT")){
-                            		sb.append(" bigserial").append(" ");
-                            	} else {
-                            		sb.append(" serial").append(" ");
-                            	}
-                                if (field.isRequired()) {
+                            final boolean required = field.isRequired();
+                            if (field.getAutoIncrement().equalsIgnoreCase("true")) {
+                                if (field.getType(converter).equalsIgnoreCase("BIGINT")) {
+                                    sb.append(" bigserial").append(" ");
+                                } else {
+                                    sb.append(" serial").append(" ");
+                                }
+                                if (required) {
                                     sb.append(" NOT NULL ");
                                 }
                                 //								if (addedSequence)
@@ -382,22 +349,8 @@ public class GenericWrapperUtils {
                                 // field.getSQLName() +
                                 // "_seq;\n\n").append(sb.toString());
                             } else {
-                                if (!field.getType(converter).equals("")) {
-                                    sb.append(field.getType(converter)).append(
-                                            " ");
-                                } else {
-                                    sb.append(
-                                            converter.convert(input
-                                                    .getWrapped()
-                                                    .getSchemaPrefix()
-                                                    + ":string", 255)).append(
-                                            "(255) ");
-                                }
-                                if (field.isRequired()) {
-                                    sb.append(" NOT NULL ");
-                                }
+                                SQLUpdateGenerator.setTypeAndDefaultValue(sb, field, converter);
                             }
-
                         }
                     }
                 }
@@ -496,7 +449,7 @@ public class GenericWrapperUtils {
         } catch (ElementNotFoundException e) {
             logger.error("", e);
         }
-        return sb;
+        return new StringBuffer(sb.toString());
     }
 
     /**
@@ -532,8 +485,8 @@ public class GenericWrapperUtils {
             count++;
             sb.append(field.getLocalSqlName()).append(" ");
             sb.append(
-                    converter.convert((String) field.getXmlType()
-                            .getFullLocalType())).append(" NOT NULL ");
+                    converter.convert(field.getXmlType()
+                                           .getFullLocalType())).append(" NOT NULL ");
 
         }
 

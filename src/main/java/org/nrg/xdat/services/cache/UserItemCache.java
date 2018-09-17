@@ -7,25 +7,6 @@ import java.util.List;
 
 public interface UserItemCache<T extends ItemI> extends XnatCache {
     /**
-     * Indicates whether the specified item ID or alias is already cached.
-     *
-     * @param idOrAlias The ID or alias of the item to check.
-     *
-     * @return Returns true if the ID or alias is mapped to an item cache entry, false otherwise.
-     */
-    boolean has(final String idOrAlias);
-
-    /**
-     * Indicates whether permissions for the specified user in the specified item ID or alias is already cached.
-     *
-     * @param user      The user object for the user requesting the item.
-     * @param idOrAlias The ID or alias of the item to check.
-     *
-     * @return Returns true if the user is mapped to a cache entry for the cached item ID or alias, false otherwise.
-     */
-    boolean has(final UserI user, final String idOrAlias);
-
-    /**
      * Indicates whether the specified user can delete the item identified by the specified ID or alias. Note that this returns false if
      * the item can't be found by the specified ID or alias or the username can't be located.
      *

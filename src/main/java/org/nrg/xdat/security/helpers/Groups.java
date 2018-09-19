@@ -30,6 +30,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,19 +39,20 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Groups {
-    public final static String  ALL_DATA_ADMIN_GROUP   = "ALL_DATA_ADMIN";
-    public final static String  ALL_DATA_ACCESS_GROUP  = "ALL_DATA_ACCESS";
-    public final static String  OWNER_GROUP            = "owner";
-    public final static String  OWNER_NAME             = "Owners";
-    public final static String  MEMBER_GROUP           = "member";
-    public final static String  MEMBER_NAME            = "Members";
-    public final static String  COLLABORATOR_GROUP     = "collaborator";
-    public final static String  COLLABORATOR_NAME      = "Collaborators";
-    public static final String  USERS                  = "users";
-    public static final String  OPERATION_ADD_USERS    = "addUsers";
-    public static final String  OPERATION_REMOVE_USERS = "removeUsers";
-    public static final String  REMOVED                = "removedGroups";
-    public static final Pattern REGEX_PROJECT_GROUP    = Pattern.compile("(?<project>.*)_(?<access>owner|member|collaborator)");
+    public static final String       ALL_DATA_ADMIN_GROUP   = "ALL_DATA_ADMIN";
+    public static final String       ALL_DATA_ACCESS_GROUP  = "ALL_DATA_ACCESS";
+    public static final List<String> ALL_DATA_GROUPS        = Arrays.asList(Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP);
+    public static final String       OWNER_GROUP            = "owner";
+    public static final String       OWNER_NAME             = "Owners";
+    public static final String       MEMBER_GROUP           = "member";
+    public static final String       MEMBER_NAME            = "Members";
+    public static final String       COLLABORATOR_GROUP     = "collaborator";
+    public static final String       COLLABORATOR_NAME      = "Collaborators";
+    public static final String       USERS                  = "users";
+    public static final String       OPERATION_ADD_USERS    = "addUsers";
+    public static final String       OPERATION_REMOVE_USERS = "removeUsers";
+    public static final String       REMOVED                = "removedGroups";
+    public static final Pattern      REGEX_PROJECT_GROUP    = Pattern.compile("(?<project>.*)_(?<access>owner|member|collaborator)");
 
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a

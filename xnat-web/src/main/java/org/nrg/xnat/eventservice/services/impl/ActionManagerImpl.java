@@ -194,7 +194,7 @@ public class ActionManagerImpl implements ActionManager {
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
                         EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
-                                subscription.name(), "Event Service Action Called", subscription.actionKey()));
+                                subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_"), "Event Service Action Called", subscription.actionKey()));
                 WorkflowUtils.save(workflow, workflow.buildEvent());
                 log.debug("Created workflow " + workflow.getId());
                 return workflow;
@@ -202,7 +202,7 @@ public class ActionManagerImpl implements ActionManager {
             else {
                 log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.name() + ".");
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             log.error("Failed to create workflow entry for " + esEvent.getType() + "\n" + e.getMessage());
         }
         return null;

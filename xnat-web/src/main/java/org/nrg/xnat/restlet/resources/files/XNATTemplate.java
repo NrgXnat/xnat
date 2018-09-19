@@ -9,7 +9,12 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.*;
@@ -29,10 +34,14 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class XNATTemplate extends SecureResource {
-    final org.apache.log4j.Logger logger = org.apache.log4j.Logger
+    final               org.apache.log4j.Logger logger                              = org.apache.log4j.Logger
             .getLogger(XNATTemplate.class);
 
     XnatProjectdata proj = null;
@@ -352,8 +361,7 @@ public class XNATTemplate extends SecureResource {
         }
     }
 
-    public boolean insertCatalog(XnatResourcecatalog catResource)
-            throws Exception {
+    public boolean insertCatalog(XnatResourcecatalog catResource) throws Exception {
         final XnatExperimentdata assessed = assesseds.size() == 1 ? assesseds.get(0) : null;
 
         final UserI user = getUser();
@@ -383,704 +391,248 @@ public class XNATTemplate extends SecureResource {
         return true;
     }
 
-    public void checkResourceIDs(ArrayList<String> resourceIDs) throws Exception {
-        if (resourceIDs != null) {
-            for (String resourceID : resourceIDs) {
-                if (resourceID != null) {
-                    if (resourceID.contains("'")) {
-                        throw new Exception("Possible SQL Injection attempt. ' is not allowed in resource labels: " + resourceID);
-                    } else {
-                        if (PoolDBUtils.HackCheck(resourceID)) {
-                            throw new Exception("Possible SQL Injection attempt: " + resourceID);
-                        }
-                    }
-                }
-            }
+    public void checkResourceIDs(final List<String> resourceIds) throws Exception {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            return;
+        }
+        if (Iterables.any(resourceIds, CONTAINS_QUOTE)) {
+            throw new Exception("Possible SQL Injection attempt. The \"'\" character is not allowed in resource labels: " + StringUtils.join(Iterables.filter(resourceIds, CONTAINS_QUOTE), ", "));
+        }
+        if (Iterables.any(resourceIds, HACK_CHECK)) {
+            throw new Exception("Possible SQL Injection attempt: " + StringUtils.join(Iterables.filter(resourceIds, CONTAINS_QUOTE), ", "));
         }
     }
 
-    public XFTTable loadCatalogs(ArrayList<String> resourceIDs,
-                                 boolean includeURI, boolean allowAll) throws Exception {
-        checkResourceIDs(resourceIDs);
+    public XFTTable loadCatalogs(final List<String> resourceIds, final boolean includeURI, final boolean allowAll) throws Exception {
+        checkResourceIDs(resourceIds);
 
         final StringBuilder query = new StringBuilder();
-        String starterFields = "SELECT xnat_abstractresource_id,abst.label,xme.element_name ";
+        final boolean hasResourceIds = resourceIds != null && !resourceIds.isEmpty();
+        final boolean isInResource = StringUtils.equalsIgnoreCase(type, "in");
 
-        if (recons.size() > 0) {
-            security = this.assesseds.get(0);
+        if (!recons.isEmpty()) {
+            security = assesseds.get(0);
             parent = recons.get(0);
-            if (type != null && type.equals("in")) {
+            final List<Integer> reconIds = Lists.transform(recons, new Function<XnatReconstructedimagedata, Integer>() {
+                @Override
+                public Integer apply(final XnatReconstructedimagedata recon) {
+                    return recon.getXnatReconstructedimagedataId();
+                }
+            });
+            if (isInResource) {
                 xmlPath = "xnat:reconstructedImageData/in/file";
-                query.append(starterFields);
-                query.append(", 'reconstructions'::TEXT AS category, recon.id::TEXT AS cat_id");
-                query.append(", recon.type::TEXT AS cat_desc");
+                query.append(STARTER_FIELDS);
+                query.append(", 'reconstructions'::TEXT AS category, recon.id::TEXT AS cat_id, recon.type::TEXT AS cat_desc");
                 if (includeURI) {
-                    query.append(",'/experiments/' || recon.image_session_id");
-                    query.append(" || '/reconstructions/' || recon.id || '/in'");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || recon.image_session_id || '/reconstructions/' || recon.id || '/in' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM recon_in_resource map ");
-                query.append(" LEFT JOIN xnat_reconstructedimagedata recon ON map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=recon.xnat_reconstructedimagedata_id ");
-                query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" WHERE (");
-                int sC = 0;
-                for (XnatReconstructedimagedata recon : recons) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=");
-                    query.append(recon.getXnatReconstructedimagedataId());
-                }
-                query.append(") ");
-                if (resourceIDs != null && resourceIDs.size() > 0) {
-                    int c = 0;
-                    query.append(" AND ( ");
-                    for (String resourceID : resourceIDs) {
-                        if (c++ > 0) {
-                            query.append(" OR ");
-                        }
-                        if (StringUtils.isNumeric(resourceID)) {
-                            query.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                            query.append(resourceID);
-                            query.append(" OR abst.label='");
-                            query.append(resourceID);
-                            query.append("')");
-                        } else if (resourceID.equalsIgnoreCase("NULL")) {
-                            query.append(" abst.label IS NULL");
-                        } else {
-                            query.append(" abst.label='");
-                            query.append(resourceID);
-                            query.append("'");
-                        }
-                    }
-                    query.append(")");
+                query.append(" FROM recon_in_resource map LEFT JOIN xnat_reconstructedimagedata recon ON map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=recon.xnat_reconstructedimagedata_id LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id IN ('");
+                query.append(StringUtils.join(reconIds, "', '"));
+                query.append("') ");
+                if (hasResourceIds) {
+                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             } else {
                 xmlPath = "xnat:reconstructedImageData/out/file";
-                query.append(starterFields);
-                query.append(", 'reconstructions'::TEXT AS category, recon.id::TEXT AS cat_id");
-                query.append(", recon.type::TEXT AS cat_desc");
+                query.append(STARTER_FIELDS);
+                query.append(", 'reconstructions'::TEXT AS category, recon.id::TEXT AS cat_id, recon.type::TEXT AS cat_desc");
                 if (includeURI) {
-                    query.append(",'/experiments/' || recon.image_session_id");
-                    query.append(" || '/reconstructions/' || recon.id || '/out'");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || recon.image_session_id || '/reconstructions/' || recon.id || '/out' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM recon_out_resource map ");
-                query.append(" LEFT JOIN xnat_reconstructedimagedata recon ON map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=recon.xnat_reconstructedimagedata_id ");
-                query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-
-                query.append(" WHERE (");
-                int sC = 0;
-                for (XnatReconstructedimagedata recon : recons) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=");
-                    query.append(recon.getXnatReconstructedimagedataId());
-                }
-                query.append(") ");
-
-                if (resourceIDs != null && resourceIDs.size() > 0) {
-                    int c = 0;
-                    query.append(" AND ( ");
-                    for (String resourceID : resourceIDs) {
-                        if (c++ > 0) {
-                            query.append(" OR ");
-                        }
-                        if (StringUtils
-                                .isNumeric(resourceID)) {
-                            query
-                                    .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                            query.append(resourceID);
-                            query.append(" OR abst.label='");
-                            query.append(resourceID);
-                            query.append("')");
-                        } else if (resourceID.equalsIgnoreCase("NULL")) {
-                            query.append(" abst.label IS NULL");
-                        } else {
-                            query.append(" abst.label='");
-                            query.append(resourceID);
-                            query.append("'");
-                        }
-                    }
-                    query.append(")");
+                query.append(" FROM recon_out_resource map LEFT JOIN xnat_reconstructedimagedata recon ON map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=recon.xnat_reconstructedimagedata_id LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id IN ('");
+                query.append(StringUtils.join(reconIds, "', '"));
+                query.append("') ");
+                if (hasResourceIds) {
+                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             }
-        } else if (scans.size() > 0) {
-            security = this.assesseds.get(0);
+        } else if (!scans.isEmpty()) {
+            security = assesseds.get(0);
             parent = scans.get(0);
+            final List<Integer> scanIds = Lists.transform(scans, new Function<XnatImagescandata, Integer>() {
+                @Override
+                public Integer apply(final XnatImagescandata scan) {
+                    return scan.getXnatImagescandataId();
+                }
+            });
             xmlPath = "xnat:imageScanData/file";
-            query.append(starterFields);
-            query.append(", 'scans'::TEXT AS category, scan.id::TEXT AS cat_id");
-            query.append(", scan.type::TEXT AS cat_desc");
+            query.append(STARTER_FIELDS);
+            query.append(", 'scans'::TEXT AS category, scan.id::TEXT AS cat_id, scan.type::TEXT AS cat_desc");
             if (includeURI) {
-                query.append(",'/experiments/' || scan.image_session_id");
-                query.append(" || '/scans/' || scan.id");
-                query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                query.append(",'/experiments/' || scan.image_session_id || '/scans/' || scan.id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
             }
-            query.append(" FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-            query.append(" LEFT JOIN xnat_imagescandata scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id");
-            query.append(" WHERE (");
-            int sC = 0;
-            for (XnatImagescandata scan : scans) {
-                if (sC++ > 0) {
-                    query.append(" OR ");
-                }
-                query.append("xnat_imagescandata_xnat_imagescandata_id=");
-                query.append(scan.getXnatImagescandataId());
-            }
+            query.append(" FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imagescandata scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id WHERE xnat_imagescandata_xnat_imagescandata_id IN (");
+            query.append(StringUtils.join(scanIds, "', '"));
             query.append(") ");
-            if (resourceIDs != null && resourceIDs.size() > 0) {
-                int c = 0;
-                query.append(" AND ( ");
-                for (String resourceID : resourceIDs) {
-                    if (c++ > 0) {
-                        query.append(" OR ");
-                    }
-                    if (StringUtils
-                            .isNumeric(resourceID)) {
-                        query.append(" (abst.xnat_abstractresource_id=");
-                        query.append(resourceID);
-                        query.append(" OR abst.label='");
-                        query.append(resourceID);
-                        query.append("')");
-                    } else if (resourceID.equalsIgnoreCase("NULL")) {
-                        query.append(" abst.label IS NULL");
-                    } else {
-                        query.append(" abst.label='");
-                        query.append(resourceID);
-                        query.append("'");
-                    }
-                }
-                query.append(")");
+            if (hasResourceIds) {
+                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
             }
-        } else if (expts.size() > 0) {
-            security = this.expts.get(0);
-            parent = this.expts.get(0);
-            if (assesseds.size() > 0) {
-                security = this.assesseds.get(0);
-                if (type != null && type.equals("in")) {
+        } else if (!expts.isEmpty()) {
+            security = expts.get(0);
+            parent = expts.get(0);
+            final List<String> experimentIds = Lists.transform(expts, new Function<XnatExperimentdata, String>() {
+                @Override
+                public String apply(final XnatExperimentdata experiment) {
+                    return experiment.getId();
+                }
+            });
+            if (!assesseds.isEmpty()) {
+                security = assesseds.get(0);
+                if (isInResource) {
                     xmlPath = "xnat:imageAssessorData/in/file";
-                    query.append(starterFields);
-                    query.append(", 'assessors'::TEXT AS category, expt.id::TEXT AS cat_id");
-                    query.append(", COALESCE(xes.singular,xmeexpt.element_name)::TEXT AS cat_desc");
+                    query.append(STARTER_FIELDS);
+                    query.append(", 'assessors'::TEXT AS category, expt.id::TEXT AS cat_id, COALESCE(xes.singular,xmeexpt.element_name)::TEXT AS cat_desc");
                     if (includeURI) {
-                        query.append(",'/experiments/' || xiad.imagesession_id");
-                        query.append(" || '/assessors/' || expt.id || '/in'");
-                        query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                        query.append(",'/experiments/' || xiad.imagesession_id || '/assessors/' || expt.id || '/in' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                     }
-                    query.append(" FROM img_assessor_in_resource map ");
-                    query.append(" LEFT JOIN xnat_experimentdata expt ON map.xnat_imageassessordata_id=expt.id ");
+                    query.append(" FROM img_assessor_in_resource map LEFT JOIN xnat_experimentdata expt ON map.xnat_imageassessordata_id=expt.id ");
                     if (includeURI) {
                         query.append(" LEFT JOIN xnat_imageassessordata xiad ON expt.id=xiad.id ");
                     }
-                    query.append(" LEFT JOIN xdat_meta_element xmeexpt ON expt.extension=xmeexpt.xdat_meta_element_id ");
-                    query.append(" LEFT JOIN xdat_element_security xes ON xmeexpt.element_name=xes.element_name ");
-                    query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                    query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                    query.append(" WHERE (");
-                    int sC = 0;
-                    for (XnatExperimentdata expt : expts) {
-                        if (sC++ > 0) {
-                            query.append(" OR ");
-                        }
-                        query.append("map.xnat_imageassessordata_id='");
-                        query.append(expt.getId());
-                        query.append("'");
-                    }
-                    query.append(") ");
-                    if (resourceIDs != null && resourceIDs.size() > 0) {
-                        int c = 0;
-                        query.append(" AND ( ");
-                        for (String resourceID : resourceIDs) {
-                            if (c++ > 0) {
-                                query.append(" OR ");
-                            }
-                            if (StringUtils
-                                    .isNumeric(resourceID)) {
-                                query
-                                        .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                                query.append(resourceID);
-                                query.append(" OR abst.label='");
-                                query.append(resourceID);
-                                query.append("')");
-                            } else if (resourceID.equalsIgnoreCase("NULL")) {
-                                query.append(" abst.label IS NULL");
-                            } else {
-                                query.append(" abst.label='");
-                                query.append(resourceID);
-                                query.append("'");
-                            }
-                        }
-                        query.append(")");
+                    query.append(" LEFT JOIN xdat_meta_element xmeexpt ON expt.extension=xmeexpt.xdat_meta_element_id LEFT JOIN xdat_element_security xes ON xmeexpt.element_name=xes.element_name LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE map.xnat_imageassessordata_id IN ('");
+                    query.append(StringUtils.join(experimentIds, "', '"));
+                    query.append("') ");
+                    if (hasResourceIds) {
+                        query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                     }
                 } else {
                     xmlPath = "xnat:imageAssessorData/out/file";
-                    query.append(starterFields);
-                    query.append(", 'assessors'::TEXT AS category, expt.id::TEXT AS cat_id");
-                    query.append(", COALESCE(xes.singular,xmeexpt.element_name)::TEXT AS cat_desc");
+                    query.append(STARTER_FIELDS);
+                    query.append(", 'assessors'::TEXT AS category, expt.id::TEXT AS cat_id, COALESCE(xes.singular,xmeexpt.element_name)::TEXT AS cat_desc");
                     if (includeURI) {
-                        query.append(",'/experiments/' || xiad.imagesession_id");
-                        query.append(" || '/assessors/' || expt.id || '/out'");
-                        query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                        query.append(",'/experiments/' || xiad.imagesession_id || '/assessors/' || expt.id || '/out' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                     }
-                    query.append(" FROM img_assessor_out_resource map ");
-                    query.append(" LEFT JOIN xnat_experimentdata expt ON map.xnat_imageassessordata_id=expt.id ");
+                    query.append(" FROM img_assessor_out_resource map LEFT JOIN xnat_experimentdata expt ON map.xnat_imageassessordata_id=expt.id ");
                     if (includeURI) {
                         query.append(" LEFT JOIN xnat_imageassessordata xiad ON expt.id=xiad.id ");
                     }
-                    query.append(" LEFT JOIN xdat_meta_element xmeexpt ON expt.extension=xmeexpt.xdat_meta_element_id ");
-                    query.append(" LEFT JOIN xdat_element_security xes ON xmeexpt.element_name=xes.element_name ");
-                    query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                    query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                    query.append(" WHERE (");
-                    int sC = 0;
-                    for (XnatExperimentdata expt : expts) {
-                        if (sC++ > 0) {
-                            query.append(" OR ");
-                        }
-                        query.append("map.xnat_imageassessordata_id='");
-                        query.append(expt.getId());
-                        query.append("'");
-                    }
-                    query.append(") ");
-                    if (resourceIDs != null && resourceIDs.size() > 0) {
-                        int c = 0;
-                        query.append(" AND ( ");
-                        for (String resourceID : resourceIDs) {
-                            if (c++ > 0) {
-                                query.append(" OR ");
-                            }
-                            if (StringUtils
-                                    .isNumeric(resourceID)) {
-                                query
-                                        .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                                query.append(resourceID);
-                                query.append(" OR abst.label='");
-                                query.append(resourceID);
-                                query.append("')");
-                            } else if (resourceID.equalsIgnoreCase("NULL")) {
-                                query.append(" abst.label IS NULL");
-                            } else {
-                                query.append(" abst.label='");
-                                query.append(resourceID);
-                                query.append("'");
-                            }
-                        }
-                        query.append(")");
+                    query.append(" LEFT JOIN xdat_meta_element xmeexpt ON expt.extension=xmeexpt.xdat_meta_element_id LEFT JOIN xdat_element_security xes ON xmeexpt.element_name=xes.element_name LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE map.xnat_imageassessordata_id IN ('");
+                    query.append(StringUtils.join(experimentIds, "', '"));
+                    query.append("') ");
+                    if (hasResourceIds) {
+                        query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                     }
                 }
-
-            } else if ((allowAll) && (this.isQueryVariableTrue("all") || resourceIDs != null)) {
+            } else if (allowAll && (isQueryVariableTrue("all") || resourceIds != null)) {
                 xmlPath = "xnat:experimentData/resources/resource";
-                String exptsString = "";
-                int expCounter = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (expCounter++ > 0) {
-                        exptsString+=", ";
-                    }
-                    exptsString+="'";
-                    exptsString+=expt.getId();
-                    exptsString+="'";
-
-                }
-                String assessorIdsUserCanAccessSelect="( SELECT * FROM xnat_imageassessordata WHERE id IN (SELECT id " +
-                        " FROM   (SELECT xea.element_name, " +
-                        "                xfm.field, " +
-                        "                xfm.field_value " +
-                        "         FROM   xdat_user u " +
-                        "                JOIN xdat_user_groupid map " +
-                        "                  ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                        "                JOIN xdat_usergroup gp " +
-                        "                  ON map.groupid = gp.id " +
-                        "                JOIN xdat_element_access xea " +
-                        "                  ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                        "                JOIN xdat_field_mapping_set xfms " +
-                        "                  ON " +
-                        " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                        " JOIN xdat_field_mapping xfm " +
-                        "   ON " +
-                        " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                        " AND read_element = 1 " +
-                        " AND field_value != '' " +
-                        " AND field != '' " +
-                        " WHERE  u.login = 'guest' " +
-                        "  UNION " +
-                        "  SELECT xea.element_name, " +
-                        "         xfm.field, " +
-                        "         xfm.field_value " +
-                        "  FROM   xdat_user_groupid map " +
-                        "         JOIN xdat_usergroup gp " +
-                        "           ON map.groupid = gp.id " +
-                        "         JOIN xdat_element_access xea " +
-                        "           ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                        "         JOIN xdat_field_mapping_set xfms " +
-                        "           ON " +
-                        " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                        " JOIN xdat_field_mapping xfm " +
-                        "   ON " +
-                        " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                        " AND read_element = 1 " +
-                        " AND field_value != '' " +
-                        " AND field != '' " +
-                        " WHERE  map.groups_groupid_xdat_user_xdat_user_id = " +getUser().getID()+ " " +
-                        " OR xfm.field_value IN (SELECT proj.id " +
-                        "         FROM   xnat_projectdata proj " +
-                        "         JOIN (SELECT field_value, " +
-                        "                        read_element AS " +
-                        "                                                        project_read " +
-                        "                                FROM   xdat_element_access " +
-                        "                                ea " +
-                        "                                LEFT JOIN xdat_field_mapping_set fms " +
-                        "                                ON ea.xdat_element_access_id = " +
-                        "                                fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                        "                                LEFT JOIN xdat_user u " +
-                        "                                ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
-                        "                                LEFT JOIN xdat_field_mapping fm " +
-                        "                                ON fms.xdat_field_mapping_set_id = " +
-                        "                                fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                        "                                WHERE  login = 'guest' " +
-                        "                                AND read_element = 1 " +
-                        "                                AND element_name = 'xnat:projectData')project_read " +
-                        " ON proj.id = project_read.field_value " +
-                        " JOIN (SELECT field_value, " +
-                        "       read_element AS subject_read " +
-                        "               FROM   xdat_element_access ea " +
-                        "               LEFT JOIN xdat_field_mapping_set fms " +
-                        "               ON ea.xdat_element_access_id = " +
-                        "               fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                        "               LEFT JOIN xdat_user u " +
-                        "               ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
-                        "               LEFT JOIN xdat_field_mapping fm " +
-                        "               ON fms.xdat_field_mapping_set_id = " +
-                        "               fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                        "               WHERE  login = 'guest' " +
-                        "               AND read_element = 1 " +
-                        "               AND field = 'xnat:subjectData/project')subject_read " +
-                        " ON proj.id = subject_read.field_value)) perms " +
-                        " INNER JOIN (SELECT iad.id, " +
-                        "                    element_name " +
-                        "                    || '/project' AS field, " +
-                        "                    expt.project, " +
-                        "                    expt.label " +
-                        "             FROM   xnat_imageassessordata iad " +
-                        "                    LEFT JOIN xnat_experimentdata expt " +
-                        "                           ON iad.id = expt.id " +
-                        "                    LEFT JOIN xdat_meta_element xme " +
-                        "                           ON expt.extension = xme.xdat_meta_element_id " +
-                        "             WHERE  iad.imagesession_id IN ( " +
-                        exptsString +
-                        " ) " +
-                        "             UNION " +
-                        "             SELECT expt.id, " +
-                        "                    xme.element_name " +
-                        "                    || '/sharing/share/project', " +
-                        "                    shr.project, " +
-                        "                    shr.label " +
-                        "             FROM   xnat_experimentdata_share shr " +
-                        "                    LEFT JOIN xnat_experimentdata expt " +
-                        "                           ON expt.id = shr.sharing_share_xnat_experimentda_id " +
-                        "                    LEFT JOIN xdat_meta_element xme " +
-                        "                           ON expt.extension = xme.xdat_meta_element_id) expts " +
-                        "         ON perms.field = expts.field " +
-                        "            AND perms.field_value = expts.project " +
-                        " ORDER  BY element_name) )";
+                final Map<String, String> variables = new HashMap<>();
+                variables.put("username", getUser().getUsername());
+                variables.put("sessionIds", StringUtils.join(experimentIds, "', '"));
+                final String userAccessibleAccessorIds = StringSubstitutor.replace(USER_ACCESSIBLE_ASSESSOR_IDS, variables);
                 // resources
 
-                query.append("SELECT * FROM (");
-                query.append(starterFields);
-                query.append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id,''::TEXT AS cat_desc");
+                query.append("SELECT * FROM (").append(STARTER_FIELDS).append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id,''::TEXT AS cat_desc");
                 if (includeURI) {
-                    query.append(",'/experiments/' || res_map.xnat_experimentdata_id");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || res_map.xnat_experimentdata_id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_experimentdata_resource res_map");
-                query.append(" JOIN xnat_abstractresource abst ON res_map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" WHERE (");
-                int sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("res_map.xnat_experimentdata_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
+                query.append(" FROM xnat_experimentdata_resource res_map JOIN xnat_abstractresource abst ON res_map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE res_map.xnat_experimentdata_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("') ");
                 query.append("  UNION ");
-                query.append(starterFields);
+                query.append(STARTER_FIELDS);
                 query.append(", 'scans'::TEXT,isd.id,isd.type");
                 if (includeURI) {
-                    query.append(",'/experiments/' || isd.image_session_id");
-                    query.append(" || '/scans/' || isd.id");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || isd.image_session_id || '/scans/' || isd.id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_imagescanData isd  ");
-                query.append(" JOIN xnat_abstractresource abst ON isd.xnat_imagescandata_id=abst.xnat_imagescandata_xnat_imagescandata_id");
-                query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" WHERE (");
-                sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("isd.image_session_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
-                query.append(" UNION ");
-                query.append(starterFields);
+                query.append(" FROM xnat_imagescanData isd JOIN xnat_abstractresource abst ON isd.xnat_imagescandata_id=abst.xnat_imagescandata_xnat_imagescandata_id JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE isd.image_session_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("') UNION ");
+                query.append(STARTER_FIELDS);
                 query.append(", 'reconstructions'::TEXT,recon.id,recon.type");
                 if (includeURI) {
-                    query.append(",'/experiments/' || recon.image_session_id");
-                    query.append(" || '/reconstructions/' || recon.id || '/out'");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || recon.image_session_id || '/reconstructions/' || recon.id || '/out' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_reconstructedimagedata recon");
-                query.append(" JOIN recon_out_resource map ON recon.xnat_reconstructedimagedata_id=map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id");
-                query.append(" JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" WHERE (");
-                sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("image_session_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
-                query.append(" UNION ");
-                query.append(starterFields);
+                query.append(" FROM xnat_reconstructedimagedata recon JOIN recon_out_resource map ON recon.xnat_reconstructedimagedata_id=map.xnat_reconstructedimagedata_xnat_reconstructedimagedata_id JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE image_session_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("') UNION ");
+                query.append(STARTER_FIELDS);
                 query.append(", 'assessors'::TEXT,iad.id,xes.singular");
                 if (includeURI) {
-                    query.append(",'/experiments/' || iad.imagesession_id");
-                    query.append(" || '/assessors/' || iad.id || '/out'");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || iad.imagesession_id || '/assessors/' || iad.id || '/out' || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM "+assessorIdsUserCanAccessSelect+" iad");
-                query.append(" JOIN img_assessor_out_resource map ON iad.id=map.xnat_imageassessordata_id");
-                query.append(" JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" LEFT JOIN xdat_element_security xes ON xme.element_name=xes.element_name");
-                query.append(" WHERE (");
-                sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("iad.imagesession_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
-                query.append(" UNION ");
-                query.append(starterFields);
+                query.append(" FROM ").append(userAccessibleAccessorIds).append(" iad JOIN img_assessor_out_resource map ON iad.id=map.xnat_imageassessordata_id JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id LEFT JOIN xdat_element_security xes ON xme.element_name=xes.element_name WHERE iad.imagesession_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("') UNION ");
+                query.append(STARTER_FIELDS);
                 query.append(", 'assessors'::TEXT,iad.id,xes.singular");
                 if (includeURI) {
-                    query.append(",'/experiments/' || iad.imagesession_id");
-                    query.append(" || '/assessors/' || iad.id");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || iad.imagesession_id || '/assessors/' || iad.id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM "+assessorIdsUserCanAccessSelect+" iad");
-                query.append(" JOIN xnat_experimentdata_resource map ON iad.id=map.xnat_experimentdata_id");
-                query.append(" JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" LEFT JOIN xdat_element_security xes ON xme.element_name=xes.element_name");
-                query.append(" WHERE (");
-                sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("iad.imagesession_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
-                query.append(") all_resources");
+                query.append(" FROM ").append(userAccessibleAccessorIds).append(" iad JOIN xnat_experimentdata_resource map ON iad.id=map.xnat_experimentdata_id JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id LEFT JOIN xdat_element_security xes ON xme.element_name=xes.element_name WHERE iad.imagesession_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("')) all_resources");
 
-                if (resourceIDs != null && resourceIDs.size() > 0) {
-                    int c = 0;
-                    query.append(" WHERE ");
-                    for (String resourceID : resourceIDs) {
-                        if (c++ > 0) {
-                            query.append(" OR ");
-                        }
-                        if (StringUtils
-                                .isNumeric(resourceID)) {
-                            query.append(" (xnat_abstractresource_id=");
-                            query.append(resourceID);
-                            query.append(" OR label='");
-                            query.append(resourceID);
-                            query.append("')");
-                        } else if (resourceID.equalsIgnoreCase("NULL")) {
-                            query.append(" label IS NULL");
-                        } else {
-                            query.append(" label='");
-                            query.append(resourceID);
-                            query.append("'");
-                        }
-                    }
+                if (hasResourceIds) {
+                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             } else {
                 xmlPath = "xnat:experimentData/resources/resource";
                 // resources
-                query.append(starterFields);
-                query.append(", 'resources'::TEXT AS category, expt.id::TEXT AS cat_id");
-                query.append(", ' '::TEXT AS cat_desc");
+                query.append(STARTER_FIELDS);
+                query.append(", 'resources'::TEXT AS category, expt.id::TEXT AS cat_id, ' '::TEXT AS cat_desc");
                 if (includeURI) {
-                    query.append(",'/experiments/' || map.xnat_experimentdata_id");
-                    query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                    query.append(",'/experiments/' || map.xnat_experimentdata_id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_experimentdata_resource map ");
-                query.append(" LEFT JOIN xnat_experimentdata expt ON map.xnat_experimentdata_id=expt.id ");
-                query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-                query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-                query.append(" WHERE (");
-                int sC = 0;
-                for (XnatExperimentdata expt : expts) {
-                    if (sC++ > 0) {
-                        query.append(" OR ");
-                    }
-                    query.append("xnat_experimentdata_id='");
-                    query.append(expt.getId());
-                    query.append("'");
-                }
-                query.append(") ");
-                if (resourceIDs != null && resourceIDs.size() > 0) {
-                    int c = 0;
-                    query.append(" AND ( ");
-                    for (String resourceID : resourceIDs) {
-                        if (c++ > 0) {
-                            query.append(" OR ");
-                        }
-                        if (StringUtils
-                                .isNumeric(resourceID)) {
-                            query
-                                    .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                            query.append(resourceID);
-                            query.append(" OR abst.label='");
-                            query.append(resourceID);
-                            query.append("')");
-                        } else if (resourceID.equalsIgnoreCase("NULL")) {
-                            query.append(" abst.label IS NULL");
-                        } else {
-                            query.append(" abst.label='");
-                            query.append(resourceID);
-                            query.append("'");
-                        }
-                    }
-                    query.append(")");
+                query.append(" FROM xnat_experimentdata_resource map LEFT JOIN xnat_experimentdata expt ON map.xnat_experimentdata_id=expt.id LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_experimentdata_id IN ('");
+                query.append(StringUtils.join(experimentIds, "', '"));
+                query.append("') ");
+                if (hasResourceIds) {
+                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             }
         } else if (sub != null) {
-            security = this.sub;
-            parent = this.sub;
+            security = sub;
+            parent = sub;
             xmlPath = "xnat:subjectData/resources/resource";
             // resources
-            query.append(starterFields);
-            query
-                    .append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id");
-            query.append(", ' '::TEXT AS cat_desc");
+            query.append(STARTER_FIELDS);
+            query.append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id, ' '::TEXT AS cat_desc");
             if (includeURI) {
-                query.append(",'/projects/' || sub.project");
-                query.append(" || '/subjects/' || sub.id");
-                query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                query.append(",'/projects/' || sub.project || '/subjects/' || sub.id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
             }
-            query.append(" FROM xnat_subjectdata_resource map ");
-            query.append(" LEFT JOIN xnat_subjectdata sub ON map.xnat_subjectdata_id=sub.id");
-            query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-            query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-            query.append(" WHERE xnat_subjectdata_id='");
+            query.append(" FROM xnat_subjectdata_resource map LEFT JOIN xnat_subjectdata sub ON map.xnat_subjectdata_id=sub.id LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_subjectdata_id='");
             query.append(sub.getId());
             query.append("'");
-            if (resourceIDs != null && resourceIDs.size() > 0) {
-                int c = 0;
-                query.append(" AND ( ");
-                for (String resourceID : resourceIDs) {
-                    if (c++ > 0) {
-                        query.append(" OR ");
-                    }
-                    if (StringUtils
-                            .isNumeric(resourceID)) {
-                        query
-                                .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                        query.append(resourceID);
-                        query.append(" OR abst.label='");
-                        query.append(resourceID);
-                        query.append("')");
-                    } else if (resourceID.equalsIgnoreCase("NULL")) {
-                        query.append(" abst.label IS NULL");
-                    } else {
-                        query.append(" abst.label='");
-                        query.append(resourceID);
-                        query.append("'");
-                    }
-                }
-                query.append(")");
+            if (hasResourceIds) {
+                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
             }
         } else if (proj != null) {
-            security = this.proj;
-            parent = this.proj;
+            security = proj;
+            parent = proj;
             xmlPath = "xnat:projectData/resources/resource";
             // resources
-            query.append(starterFields);
-            query
-                    .append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id");
-            query.append(", ' '::TEXT AS cat_desc");
+            query.append(STARTER_FIELDS);
+            query.append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id, ' '::TEXT AS cat_desc");
             if (includeURI) {
-                query.append(",'/projects/' || map.xnat_projectdata_id");
-                query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
+                query.append(",'/projects/' || map.xnat_projectdata_id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
             }
-            query.append(" FROM xnat_projectdata_resource map ");
-            query.append(" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
-            query.append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-            query.append(" WHERE xnat_projectdata_id='");
+            query.append(" FROM xnat_projectdata_resource map LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_projectdata_id='");
             query.append(proj.getId());
             query.append("'");
-            if (resourceIDs != null && resourceIDs.size() > 0) {
-                int c = 0;
-                query.append(" AND ( ");
-                for (String resourceID : resourceIDs) {
-                    if (c++ > 0) {
-                        query.append(" OR ");
-                    }
-                    if (StringUtils
-                            .isNumeric(resourceID)) {
-                        query
-                                .append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
-                        query.append(resourceID);
-                        query.append(" OR abst.label='");
-                        query.append(resourceID);
-                        query.append("')");
-                    } else if (resourceID.equalsIgnoreCase("NULL")) {
-                        query.append(" abst.label IS NULL");
-                    } else {
-                        query.append(" abst.label='");
-                        query.append(resourceID);
-                        query.append("'");
-                    }
-                }
-                query.append(")");
+            if (hasResourceIds) {
+                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
             }
         } else {
-            query.append(starterFields);
-            query
-                    .append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id");
-            query.append(", ' '::TEXT AS cat_desc");
-            query.append(" FROM xnat_abstractresource abst");
-            query
-                    .append(" LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
-            query.append(" WHERE xnat_abstractresource_id IS NULL");
+            query.append(STARTER_FIELDS);
+            query.append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id, ' '::TEXT AS cat_desc FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_abstractresource_id IS NULL");
         }
 
         return XFTTable.Execute(query.toString(), getUser().getDBName(), userName);
+    }
+
+    protected String getResourceIdsWhereClause(final List<String> resourceIds) {
+        return StringUtils.join(Lists.transform(resourceIds, new Function<String, String>() {
+            @Override
+            public String apply(final String resourceId) {
+                if (StringUtils.isNumeric(resourceId)) {
+                    return " (map.xnat_abstractresource_xnat_abstractresource_id=" + resourceId + " OR abst.label='" + resourceId + "')";
+                }
+                if (resourceId.equalsIgnoreCase("NULL")) {
+                    return " abst.label IS NULL";
+                }
+                return " abst.label='" + resourceId + "'";
+            }
+        }), " OR ");
     }
 
     protected void setCatalogAttributes(final UserI user, final XnatResourcecatalog catalog) throws Exception {
@@ -1117,5 +669,119 @@ public class XNATTemplate extends SecureResource {
             }
         }
     }
+
+    private static final Predicate<String> CONTAINS_QUOTE = new Predicate<String>() {
+        @Override
+        public boolean apply(final String resourceId) {
+            return StringUtils.contains(resourceId, "'");
+        }
+    };
+
+    private static final Predicate<String> HACK_CHECK = new Predicate<String>() {
+        @Override
+        public boolean apply(final String resourceId) {
+            return PoolDBUtils.HackCheck(resourceId);
+        }
+    };
+    private static final String STARTER_FIELDS = "SELECT xnat_abstractresource_id, abst.label, xme.element_name ";
+    public static final  String            USER_ACCESSIBLE_ASSESSOR_IDS = "( SELECT * FROM xnat_imageassessordata WHERE id IN (SELECT id " +
+                                                              " FROM   (SELECT xea.element_name, " +
+                                                              "                xfm.field, " +
+                                                              "                xfm.field_value " +
+                                                              "         FROM   xdat_user u " +
+                                                              "                JOIN xdat_user_groupid map " +
+                                                              "                  ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                              "                JOIN xdat_usergroup gp " +
+                                                              "                  ON map.groupid = gp.id " +
+                                                              "                JOIN xdat_element_access xea " +
+                                                              "                  ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                              "                JOIN xdat_field_mapping_set xfms " +
+                                                              "                  ON " +
+                                                              " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              " JOIN xdat_field_mapping xfm " +
+                                                              "   ON " +
+                                                              " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              " AND read_element = 1 " +
+                                                              " AND field_value != '' " +
+                                                              " AND field != '' " +
+                                                              " WHERE  u.login = 'guest' " +
+                                                              "  UNION " +
+                                                              "  SELECT xea.element_name, " +
+                                                              "         xfm.field, " +
+                                                              "         xfm.field_value " +
+                                                              "  FROM   xdat_user_groupid map " +
+                                                              "         JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "         JOIN xdat_usergroup gp " +
+                                                              "           ON map.groupid = gp.id " +
+                                                              "         JOIN xdat_element_access xea " +
+                                                              "           ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                              "         JOIN xdat_field_mapping_set xfms " +
+                                                              "           ON " +
+                                                              " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              " JOIN xdat_field_mapping xfm " +
+                                                              "   ON " +
+                                                              " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              " AND read_element = 1 " +
+                                                              " AND field_value != '' " +
+                                                              " AND field != '' " +
+                                                              " WHERE u.login = '${username}' " +
+                                                              " OR xfm.field_value IN (SELECT proj.id " +
+                                                              "         FROM   xnat_projectdata proj " +
+                                                              "         JOIN (SELECT field_value, " +
+                                                              "                        read_element AS project_read " +
+                                                              "                                FROM   xdat_element_access " +
+                                                              "                                ea " +
+                                                              "                                LEFT JOIN xdat_field_mapping_set fms " +
+                                                              "                                ON ea.xdat_element_access_id = " +
+                                                              "                                fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "                                LEFT JOIN xdat_user u " +
+                                                              "                                ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "                                LEFT JOIN xdat_field_mapping fm " +
+                                                              "                                ON fms.xdat_field_mapping_set_id = " +
+                                                              "                                fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              "                                WHERE  login = 'guest' " +
+                                                              "                                AND read_element = 1 " +
+                                                              "                                AND element_name = 'xnat:projectData')project_read " +
+                                                              " ON proj.id = project_read.field_value " +
+                                                              " JOIN (SELECT field_value, " +
+                                                              "       read_element AS subject_read " +
+                                                              "               FROM   xdat_element_access ea " +
+                                                              "               LEFT JOIN xdat_field_mapping_set fms " +
+                                                              "               ON ea.xdat_element_access_id = " +
+                                                              "               fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "               LEFT JOIN xdat_user u " +
+                                                              "               ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "               LEFT JOIN xdat_field_mapping fm " +
+                                                              "               ON fms.xdat_field_mapping_set_id = " +
+                                                              "               fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              "               WHERE  login = 'guest' " +
+                                                              "               AND read_element = 1 " +
+                                                              "               AND field = 'xnat:subjectData/project')subject_read " +
+                                                              " ON proj.id = subject_read.field_value)) perms " +
+                                                              " INNER JOIN (SELECT iad.id, " +
+                                                              "                    element_name " +
+                                                              "                    || '/project' AS field, " +
+                                                              "                    expt.project, " +
+                                                              "                    expt.label " +
+                                                              "             FROM   xnat_imageassessordata iad " +
+                                                              "                    LEFT JOIN xnat_experimentdata expt " +
+                                                              "                           ON iad.id = expt.id " +
+                                                              "                    LEFT JOIN xdat_meta_element xme " +
+                                                              "                           ON expt.extension = xme.xdat_meta_element_id " +
+                                                              "             WHERE  iad.imagesession_id IN ('${sessionIds}') " +
+                                                              "             UNION " +
+                                                              "             SELECT expt.id, " +
+                                                              "                    xme.element_name " +
+                                                              "                    || '/sharing/share/project', " +
+                                                              "                    shr.project, " +
+                                                              "                    shr.label " +
+                                                              "             FROM   xnat_experimentdata_share shr " +
+                                                              "                    LEFT JOIN xnat_experimentdata expt " +
+                                                              "                           ON expt.id = shr.sharing_share_xnat_experimentda_id " +
+                                                              "                    LEFT JOIN xdat_meta_element xme " +
+                                                              "                           ON expt.extension = xme.xdat_meta_element_id) expts " +
+                                                              "         ON perms.field = expts.field " +
+                                                              "            AND perms.field_value IN (expts.project, '*') " +
+                                                              " ORDER  BY element_name) )";
 }
 

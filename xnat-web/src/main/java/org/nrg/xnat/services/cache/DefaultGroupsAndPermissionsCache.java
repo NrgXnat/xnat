@@ -30,7 +30,6 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.*;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -54,6 +53,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -77,6 +77,7 @@ import java.util.regex.Pattern;
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 @SuppressWarnings("Duplicates")
@@ -323,9 +324,44 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 }
             }
 
-            final Map<String, UserGroupI> userGroups = getGroupsForUser(username);
+            final Map<String, UserGroupI> userGroups = getMutableGroupsForUser(username);
             if (log.isDebugEnabled()) {
                 log.debug("Found {} user groups for the user {}", userGroups.size(), username, userGroups.isEmpty() ? "" : ": " + Joiner.on(", ").join(userGroups.keySet()));
+            }
+            final Set<String> groups = userGroups.keySet();
+            if (CollectionUtils.containsAny(groups, ALL_DATA_GROUPS)) {
+                if (groups.contains(ALL_DATA_ADMIN_GROUP)) {
+                    _template.query(QUERY_GET_ALL_MEMBER_GROUPS, new RowCallbackHandler() {
+                        @Override
+                        public void processRow(final ResultSet resultSet) throws SQLException {
+                            final String projectId = resultSet.getString("project_id");
+                            final String groupId   = resultSet.getString("group_id");
+
+                            // If the user is a collaborator on a project, we're going to upgrade them to member,
+                            // so remove that collaborator nonsense, this is the big time.
+                            userGroups.remove(projectId + "_collaborator");
+
+                            // If the user is already a member of owner of a project, then don't bother: they already have
+                            // sufficient access to the project.
+                            if (!userGroups.containsKey(projectId + "_owner") && !userGroups.containsKey(projectId + "_member")) {
+                                userGroups.put(groupId, get(groupId));
+                            }
+                        }
+                    });
+                } else if (userGroups.containsKey(ALL_DATA_ACCESS_GROUP)) {
+                    _template.query(QUERY_GET_ALL_COLLAB_GROUPS, new RowCallbackHandler() {
+                        @Override
+                        public void processRow(final ResultSet resultSet) throws SQLException {
+                            final String projectId = resultSet.getString("project_id");
+                            final String groupId   = resultSet.getString("group_id");
+
+                            // If the user has no group membership, then add as a collaborator.
+                            if (!CollectionUtils.containsAny(groups, Arrays.asList(groupId, projectId + "_member", projectId + "_owner"))) {
+                                userGroups.put(groupId, get(groupId));
+                            }
+                        }
+                    });
+                }
             }
 
             for (final UserGroupI group : userGroups.values()) {
@@ -407,18 +443,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Nonnull
     @Override
     public Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException {
-        final List<String>            groupIds = getGroupIdsForUser(username);
-        final Map<String, UserGroupI> groups   = new HashMap<>();
-        for (final String groupId : groupIds) {
-            final UserGroupI group = get(groupId);
-            if (group != null) {
-                log.trace("Adding group {} to groups for user {}", groupId, username);
-                groups.put(groupId, group);
-            } else {
-                log.info("User '{}' is associated with the group ID '{}', but I couldn't find that actual group", username, groupId);
-            }
-        }
-        return ImmutableMap.copyOf(groups);
+        return ImmutableMap.copyOf(getMutableGroupsForUser(username));
     }
 
     @Override
@@ -744,10 +769,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
                     }
-                    // Check if the update was removing users. If so, get the usernames from the event properties, as they're not longer in the group.
-                    if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), Groups.OPERATION_REMOVE_USERS)) {
+                    if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), OPERATION_REMOVE_USERS)) {
                         //noinspection unchecked
-                        usernames.addAll((Collection<? extends String>) properties.get(Groups.USERS));
+                        usernames.addAll((Collection<? extends String>) properties.get(USERS));
                     }
                     return !initGroups(groups).isEmpty();
 
@@ -952,6 +976,22 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     @Nonnull
+    private Map<String, UserGroupI> getMutableGroupsForUser(final String username) throws UserNotFoundException {
+        final List<String>            groupIds = getGroupIdsForUser(username);
+        final Map<String, UserGroupI> groups   = new HashMap<>();
+        for (final String groupId : groupIds) {
+            final UserGroupI group = get(groupId);
+            if (group != null) {
+                log.trace("Adding group {} to groups for user {}", groupId, username);
+                groups.put(groupId, group);
+            } else {
+                log.info("User '{}' is associated with the group ID '{}', but I couldn't find that actual group", username, groupId);
+            }
+        }
+        return groups;
+    }
+
+    @Nonnull
     private Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
         if (StringUtils.isBlank(username)) {
             return Collections.emptyMap();
@@ -1105,7 +1145,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 if (isBrowseableElement && countsContainsKey && hasOneOrMoreElement) {
                     log.debug("Adding element display {} to cache entry {} for user {}", elementName, cacheId, username);
                     browseableElements.put(elementName, elementDisplay);
-                } else if (log.isTraceEnabled()){
+                } else if (log.isTraceEnabled()) {
                     log.trace("Did not add element display {} for user {}: {}, {}", elementName, username, isBrowseableElement ? "browseable" : "not browseable", countsContainsKey ? "counts contains key" : "counts does not contain key", hasOneOrMoreElement ? "counts has one or more elements of this type" : "counts does not have any elements of this type");
                 }
             }
@@ -1598,6 +1638,24 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                                "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
                                                                                "  GROUP BY login, groupid " +
                                                                                "ORDER BY login";
+    private static final String       QUERY_GET_ALL_MEMBER_GROUPS            = "SELECT " +
+                                                                               "  tag AS project_id, " +
+                                                                               "  id AS group_id " +
+                                                                               "FROM " +
+                                                                               "  xdat_usergroup " +
+                                                                               "WHERE " +
+                                                                               "  tag IS NOT NULL AND " +
+                                                                               "  id LIKE '%_member' " +
+                                                                               "ORDER BY project_id, group_id";
+    private static final String       QUERY_GET_ALL_COLLAB_GROUPS            = "SELECT " +
+                                                                               "  tag AS project_id, " +
+                                                                               "  id AS group_id " +
+                                                                               "FROM " +
+                                                                               "  xdat_usergroup " +
+                                                                               "WHERE " +
+                                                                               "  tag IS NOT NULL AND " +
+                                                                               "  id LIKE '%_collaborator' " +
+                                                                               "ORDER BY project_id, group_id";
     private static final String       QUERY_CHECK_USER_EXISTS                = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
     private static final String       QUERY_GET_EXPERIMENT_PROJECT           = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
     private static final String       QUERY_GET_SUBJECT_PROJECT              = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";

@@ -4,6 +4,7 @@ import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nonnull;
@@ -173,6 +174,13 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException;
 
     /**
+     * Refreshes the user's group list.
+     *
+     * @param username The user whose group list should be refreshed.
+     */
+    void refreshGroupsForUser(final String username) throws UserNotFoundException;
+
+    /**
      * Returns the group with the submitted tag for the user.
      *
      * @param username The name of the user.
@@ -189,6 +197,14 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return A list of all user IDs associated with the group.
      */
     List<String> getUserIdsForGroup(String groupId);
+
+    /**
+     * Refreshes the user's group list.
+     *
+     * @param groupId The group whose list of users should be refreshed.
+     */
+    void refreshGroup(final String groupId) throws ItemNotFoundException;
+
 
     /**
      * Returns the timestamp for the most recently updated group associated with the indicated user.

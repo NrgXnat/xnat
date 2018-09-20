@@ -705,9 +705,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected void refreshGroups() {
-        // getGroups() returns immutable list, so just call this to make sure groups field is initialized, then
-        // reference that. This is OK to do internally.
-        getGroups();
+        try {
+            getGroupsAndPermissionsCache().refreshGroupsForUser(getUsername());
+        } catch (UserNotFoundException ignored) {
+            // The user exists because here we are.
+        }
     }
 
     public boolean isSiteAdmin() {

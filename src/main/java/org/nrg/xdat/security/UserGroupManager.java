@@ -64,7 +64,6 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Accessors(prefix = "_")
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
-
     @Autowired
     public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         _cache = cache;
@@ -211,12 +210,12 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public void reloadGroupForUser(final UserI user, final String groupId) {
-        ((XDATUser) user).refreshGroups();
+        reloadGroupsForUser(user);
     }
 
     @Override
     public void reloadGroupsForUser(final UserI user) {
-        ((XDATUser) user).getGroups();
+        ((XDATUser) user).refreshGroups();
     }
 
     @SuppressWarnings("Duplicates")

@@ -446,6 +446,17 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableMap.copyOf(getMutableGroupsForUser(username));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void refreshGroupsForUser(final String username) throws UserNotFoundException {
+        initUserGroupIds(getCacheIdForUserGroups(username), username);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Nullable
     public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
@@ -458,6 +469,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return StringUtils.isNotBlank(groupId) ? get(groupId) : null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getUserIdsForGroup(final String groupId) {
         final UserGroupI userGroup = get(groupId);
@@ -465,6 +479,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return Collections.emptyList();
         }
         return ImmutableList.copyOf(userGroup.getUsernames());
+    }
+
+    @Override
+    public void refreshGroup(final String groupId) throws ItemNotFoundException {
+        final UserGroupI group = initGroup(groupId);
+        for (final String username : group.getUsernames()) {
+            try {
+                if (!getGroupIdsForUser(username).contains(groupId)) {
+                    refreshGroupsForUser(username);
+                }
+            } catch (UserNotFoundException ignored) {
+                //
+            }
+        }
     }
 
     @Override
@@ -1172,6 +1200,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return Collections.emptyMap();
     }
 
+    @Nonnull
     @CacheLock(true)
     private List<String> initUserGroupIds(final String cacheId, final String username) throws UserNotFoundException {
         log.info("Initializing user group IDs cache entry for user '{}' with cache ID '{}'", username, cacheId);

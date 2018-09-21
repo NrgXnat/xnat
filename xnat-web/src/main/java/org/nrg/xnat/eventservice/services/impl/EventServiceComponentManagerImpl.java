@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -21,12 +22,9 @@ import org.nrg.xnat.eventservice.model.xnat.Scan;
 import org.nrg.xnat.eventservice.model.xnat.Session;
 import org.nrg.xnat.eventservice.model.xnat.Subject;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
@@ -38,9 +36,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class EventServiceComponentManagerImpl implements EventServiceComponentManager {
-    private static final Logger log = LoggerFactory.getLogger(EventService.class);
     private static final String EVENT_RESOURCE_PATTERN ="classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
 
     private List<EventServiceListener> installedListeners;

@@ -5,10 +5,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.eventservice.model.EventFilter;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
@@ -23,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+@Slf4j
 @Entity
 public class EventServiceFilterEntity {
 
@@ -42,8 +41,6 @@ public class EventServiceFilterEntity {
     private static final TypeReference<HashMap<String, JsonPathFilterNode>>
             TYPE_REF_MAP_STRING_FILTER_NODE = new TypeReference<HashMap<String, JsonPathFilterNode>>() {
     };
-
-    private static final Logger log = LoggerFactory.getLogger(EventServiceFilterEntity.class);
 
     @Override
     public String toString() {

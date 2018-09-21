@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -10,8 +11,6 @@ import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.services.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
@@ -20,10 +19,10 @@ import reactor.fn.Consumer;
 
 import static reactor.bus.selector.Selectors.type;
 
+@Slf4j
 @Service
 @SuppressWarnings("unused")
 public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusEvent>> {
-    private static final Logger log = LoggerFactory.getLogger(WorkflowStatusTapListener.class);
 
     private final EventService eventService;
     private final ObjectMapper mapper;

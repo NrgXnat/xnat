@@ -1,16 +1,15 @@
 package org.nrg.xnat.eventservice.initialization.tasks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class InitializeSubscriptions extends AbstractInitializingTask {
-    private static final Logger log = LoggerFactory.getLogger(InitializeSubscriptions.class);
 
     private final EventService eventService;
 

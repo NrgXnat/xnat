@@ -2,19 +2,18 @@ package org.nrg.xnat.eventservice.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @JsonInclude(Include.NON_NULL)
 public class XnatFile extends XnatModelObject {
-    private static final Logger log = LoggerFactory.getLogger(XnatFile.class);
     private String name;
     private String path;
     private List<String> tags;

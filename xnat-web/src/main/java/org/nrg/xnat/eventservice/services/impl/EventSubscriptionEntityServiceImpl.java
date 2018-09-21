@@ -11,6 +11,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -33,8 +34,6 @@ import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -57,13 +56,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @Transactional
 public class EventSubscriptionEntityServiceImpl
         extends AbstractHibernateEntityService<SubscriptionEntity, EventSubscriptionEntityDao>
         implements EventSubscriptionEntityService {
 
-    private static final Logger log = LoggerFactory.getLogger(EventSubscriptionEntityService.class);
     private EventBus eventBus;
     private ContextService contextService;
     private ActionManager actionManager;

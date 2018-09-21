@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.events;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.text.IsEmptyString;
 import org.junit.After;
 import org.junit.Before;
@@ -12,8 +13,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.config.EventServiceTestConfig;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.test.context.ContextConfiguration;
@@ -27,11 +26,11 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = EventServiceTestConfig.class)
 public class TestInstalledEvents {
-    private static final Logger log = LoggerFactory.getLogger(TestInstalledEvents.class);
 
     private static final String EVENT_RESOURCE_PATTERN ="classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
     private UserI mockUser;

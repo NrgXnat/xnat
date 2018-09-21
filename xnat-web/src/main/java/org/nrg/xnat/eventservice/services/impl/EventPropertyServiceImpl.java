@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -28,8 +29,6 @@ import org.nrg.xnat.eventservice.model.xnat.Subject;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventPropertyService;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,9 +45,9 @@ import static com.fasterxml.jackson.databind.node.JsonNodeType.BOOLEAN;
 import static com.fasterxml.jackson.databind.node.JsonNodeType.NUMBER;
 import static com.fasterxml.jackson.databind.node.JsonNodeType.STRING;
 
+@Slf4j
 @Service
 public class EventPropertyServiceImpl implements EventPropertyService {
-    private static final Logger log = LoggerFactory.getLogger(EventPropertyService.class);
 
     private EventServiceComponentManager componentManager;
     private ObjectMapper mapper;

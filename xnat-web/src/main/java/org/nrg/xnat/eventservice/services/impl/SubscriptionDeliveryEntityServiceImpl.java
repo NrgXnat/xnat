@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.services.impl;
 
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
@@ -12,8 +13,6 @@ import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -27,13 +26,13 @@ import java.util.stream.Collectors;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_DETECTED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_TRIGGERED;
 
+@Slf4j
 @Service
 @Transactional
 public class SubscriptionDeliveryEntityServiceImpl
         extends AbstractHibernateEntityService<SubscriptionDeliveryEntity, SubscriptionDeliveryEntityDao>
         implements SubscriptionDeliveryEntityService {
 
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionDeliveryEntityService.class);
     private EventService eventService;
     private EventSubscriptionEntityService eventSubscriptionEntityService;
 

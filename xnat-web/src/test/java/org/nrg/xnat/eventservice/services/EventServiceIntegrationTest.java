@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,12 +71,11 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 import static reactor.bus.selector.Selectors.type;
 
-
+@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = EventServiceTestConfig.class)
 public class EventServiceIntegrationTest {
-    private static final Logger log = LoggerFactory.getLogger(EventServiceIntegrationTest.class);
 
     private static final String EVENT_RESOURCE_PATTERN ="classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
 

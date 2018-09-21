@@ -2,16 +2,13 @@ package org.nrg.xnat.eventservice.actions;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import org.nrg.xnat.eventservice.services.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+@Slf4j
 public abstract class MultiActionProvider implements EventServiceActionProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
     @Override
     public String getName() {

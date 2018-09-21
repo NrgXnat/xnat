@@ -2,22 +2,19 @@ package org.nrg.xnat.eventservice.actions;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
-import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public abstract class SingleActionProvider implements  EventServiceActionProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
     public abstract Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user);
 

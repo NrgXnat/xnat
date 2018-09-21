@@ -1,23 +1,21 @@
 package org.nrg.xnat.eventservice.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
 public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<WorkflowStatusChangeEvent, WorkflowStatusEvent> {
-    private static final Logger log = LoggerFactory.getLogger(WorkflowStatusChangeEvent.class);
-
 
     public enum Status {CHANGED}
 

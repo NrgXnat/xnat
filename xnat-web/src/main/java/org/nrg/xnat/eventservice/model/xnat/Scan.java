@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -16,14 +17,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
@@ -45,8 +45,6 @@ public class Scan extends XnatModelObject {
     @JsonProperty("series-description") private String seriesDescription;
     @JsonProperty("start-time") private Object startTime;
     private String uid;
-
-    private static final Logger log = LoggerFactory.getLogger(Scan.class);
 
     public Scan() {}
 

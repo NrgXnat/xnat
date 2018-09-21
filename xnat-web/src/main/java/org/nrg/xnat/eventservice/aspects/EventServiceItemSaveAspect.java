@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.aspects;
 
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -29,19 +30,17 @@ import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubjectEvent;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Aspect
 @Component
 public class EventServiceItemSaveAspect {
 
-    private static final Logger log = LoggerFactory.getLogger(EventServiceItemSaveAspect.class);
     private EventService eventService;
     private XnatObjectIntrospectionService xnatObjectIntrospectionService;
 

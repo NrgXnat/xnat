@@ -1,15 +1,15 @@
 package org.nrg.xnat.eventservice.listeners;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.services.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 
 import java.util.Date;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class TestListener implements EventServiceListener<EventServiceEvent> {
 
@@ -17,8 +17,6 @@ public class TestListener implements EventServiceListener<EventServiceEvent> {
     Date eventDetectedTimestamp = null;
 
     EventService eventService;
-
-    private static final Logger log = LoggerFactory.getLogger(TestListener.class);
 
     @Override
     public String getType() { return this.getClass().getCanonicalName(); }

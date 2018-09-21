@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
@@ -21,8 +22,6 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptAssessorURI;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
@@ -42,8 +42,6 @@ public class Assessor extends XnatModelObject {
     @JsonProperty("session-id") private String sessionId;
     @JsonProperty("props") private Map props;
     private String directory;
-
-    private static final Logger log = LoggerFactory.getLogger(Assessor.class);
 
     public Assessor() {}
 

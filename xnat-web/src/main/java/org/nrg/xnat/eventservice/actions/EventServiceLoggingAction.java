@@ -2,23 +2,20 @@ package org.nrg.xnat.eventservice.actions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class EventServiceLoggingAction extends SingleActionProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
     private String displayName = "Logging Action";
     private String description = "Simple action for EventService Event that logs event detection.";

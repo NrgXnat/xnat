@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
@@ -10,10 +11,12 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.services.ActionManager;
+import org.nrg.xnat.eventservice.services.EventPropertyService;
+import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.nrg.xnat.utils.WorkflowUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -28,11 +31,10 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.A
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.RESOLVING_ATTRIBUTES;
 
+@Slf4j
 @Service
 @EnableAsync
 public class ActionManagerImpl implements ActionManager {
-
-    private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
     private final EventServiceComponentManager componentManager;
     private final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;

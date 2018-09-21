@@ -4,6 +4,7 @@ package org.nrg.xnat.eventservice.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -26,8 +27,6 @@ import org.nrg.xnat.eventservice.model.SubscriptionCreator;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,10 +51,10 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
+@Slf4j
 @Api(description = "API for the XNAT Event Service")
 @XapiRestController
 public class EventServiceRestApi extends AbstractXapiRestController {
-    private static final Logger log = LoggerFactory.getLogger(EventServiceRestApi.class);
 
     private static final String ID_REGEX = "\\d+";
     private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";

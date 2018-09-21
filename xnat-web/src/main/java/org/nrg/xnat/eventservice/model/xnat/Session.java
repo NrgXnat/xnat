@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
@@ -23,14 +24,13 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
@@ -41,8 +41,6 @@ public class Session extends XnatModelObject {
     @JsonProperty("subject-id") private String subjectId;
     private String directory;
     @JsonProperty("modality") private String modality;
-
-    private static final Logger log = LoggerFactory.getLogger(Session.class);
 
     public Session() {}
 

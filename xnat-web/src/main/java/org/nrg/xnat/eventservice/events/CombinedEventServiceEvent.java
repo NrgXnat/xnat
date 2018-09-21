@@ -1,11 +1,10 @@
 package org.nrg.xnat.eventservice.events;
 
 import com.google.common.reflect.TypeToken;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.services.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -20,6 +19,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 // ** Extend this class to implement a Reactor Event and Listener in one class ** //
+@Slf4j
 @Service
 public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent, EventObjectT>
         implements EventServiceEvent<EventObjectT>, EventServiceListener<EventT> {
@@ -33,7 +33,6 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     Enum status = null;
     String projectId = null;
 
-    private static final Logger log = LoggerFactory.getLogger(CombinedEventServiceEvent.class);
     private final TypeToken<EventObjectT> eventObjectTTypeToken = new TypeToken<EventObjectT>(getClass()) { };
 
 

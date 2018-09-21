@@ -1,12 +1,11 @@
 package org.nrg.xnat.eventservice.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.model.XnatExperimentdataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -17,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospectionService {
 
-    private static final Logger log = LoggerFactory.getLogger(XnatObjectIntrospectionService.class);
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Autowired

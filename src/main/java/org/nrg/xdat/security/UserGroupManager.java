@@ -57,6 +57,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 @Service
@@ -179,7 +180,7 @@ public class UserGroupManager implements UserGroupServiceI {
     public void removeUserFromGroup(final UserI user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) {
         try {
             removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
-            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, Collections.singleton(user.getUsername())));
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, OPERATION_REMOVE_USERS, USERS, Collections.singleton(user.getUsername())));
         } catch (Exception e) {
             log.error("Tried and failed to remove the user '{}' from group '{}': {}", user.getUsername(), groupId);
         }
@@ -205,7 +206,7 @@ public class UserGroupManager implements UserGroupServiceI {
         if (!failed.isEmpty()) {
             log.error("Tried and failed to remove the following users from group '{}': {}", groupId, StringUtils.join(failed, ", "));
         }
-        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, Groups.OPERATION_REMOVE_USERS, Groups.USERS, new HashSet<>(CollectionUtils.subtract(usernames, failed))));
+        XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, OPERATION_REMOVE_USERS, USERS, new HashSet<>(CollectionUtils.subtract(usernames, failed))));
     }
 
     @Override
@@ -258,7 +259,7 @@ public class UserGroupManager implements UserGroupServiceI {
                 }
             }
             if (users != null) {
-                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE, ImmutableMap.of(OPERATION, Groups.OPERATION_ADD_USERS, Groups.USERS, added));
+                XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE, ImmutableMap.of(OPERATION, OPERATION_ADD_USERS, USERS, added));
             } else {
                 XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.CREATE);
             }
@@ -267,12 +268,12 @@ public class UserGroupManager implements UserGroupServiceI {
             PersistentWorkflowUtils.complete(workflow, event);
 
             try {
-                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
+                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), XdatUsergroup.SCHEMA_ELEMENT_NAME);
             } catch (Exception e) {
                 log.error("", e);
             }
 
-            return Groups.getGroup(groupId);
+            return getGroup(groupId);
         } catch (Exception e) {
             log.error("An error occurred while creating the group " + groupId, e);
             try {
@@ -333,11 +334,11 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
             try {
-                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), Groups.getGroupDatatype());
+                PoolDBUtils.ClearCache(null, authenticatedUser.getUsername(), XdatUsergroup.SCHEMA_ELEMENT_NAME);
             } catch (Exception e) {
                 log.error("", e);
             }
-            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), UPDATE);
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), UPDATE);
         } catch (Exception e1) {
             PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
             log.error("", e1);
@@ -355,14 +356,14 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public UserGroupI addUserToGroup(final String groupId, final UserI newUser, final UserI currentUser, final EventMetaI ci) throws Exception {
-        final UserGroupI userGroup = Groups.getGroup(groupId);
+        final UserGroupI userGroup = getGroup(groupId);
         addUserToGroup(userGroup, currentUser, newUser, ci, true);
         return userGroup;
     }
 
     @Override
     public UserGroupI addUsersToGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
-        final UserGroupI userGroup = Groups.getGroup(groupId);
+        final UserGroupI userGroup = getGroup(groupId);
         for (final UserI user : users) {
             addUserToGroup(userGroup, currentUser, user, eventMeta, true);
         }
@@ -425,13 +426,13 @@ public class UserGroupManager implements UserGroupServiceI {
             final XdatUsergroup tmp = XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(group.getPK(), user, false);
             assert tmp != null;
             SaveItemHelper.authorizedDelete(tmp.getItem(), user, ci);
-            XDAT.triggerXftItemEvent(Groups.getGroupDatatype(), group.getId(), DELETE);
+            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), DELETE);
         } catch (Throwable e) {
             log.error("", e);
         }
 
         try {
-            PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
+            PoolDBUtils.ClearCache(null, user.getUsername(), XdatUsergroup.SCHEMA_ELEMENT_NAME);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -491,7 +492,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
         SaveItemHelper.authorizedSave(xdatGroup, user, false, true, meta);
         XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, xdatGroup.getId(), UPDATE);
-        Groups.reloadGroupsForUser(user);
+        reloadGroupsForUser(user);
     }
 
     public void validateGroupByTag(XdatUsergroup tempGroup, String tag) throws InvalidValueException {
@@ -535,13 +536,13 @@ public class UserGroupManager implements UserGroupServiceI {
 
         if (StringUtils.isNotBlank(groupTag)) {
             //remove from existing groups
-            for (final UserGroupI existing : Groups.getGroupsForUser(user).values()) {
+            for (final UserGroupI existing : getGroupsForUser(user).values()) {
                 final String existingId = existing.getId();
                 if (StringUtils.equals(existing.getTag(), groupTag)) {
                     if (StringUtils.equals(existingId, groupId)) {
                         return;
                     }
-                    if (Groups.isMember(user, existingId)) {
+                    if (isMember(user, existingId)) {
                         groupIdsToRemove.add(existingId);
                     }
                 }
@@ -563,10 +564,10 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         final Map<String, Object> properties = new HashMap<>();
-        properties.put(OPERATION, Groups.OPERATION_ADD_USERS);
-        properties.put(Groups.USERS, Collections.singleton(user.getUsername()));
+        properties.put(OPERATION, OPERATION_ADD_USERS);
+        properties.put(USERS, Collections.singleton(user.getUsername()));
         if (!groupIdsToRemove.isEmpty()) {
-            properties.put(Groups.REMOVED, groupIdsToRemove);
+            properties.put(REMOVED, groupIdsToRemove);
         }
         if (triggerEvent) {
             XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, properties);

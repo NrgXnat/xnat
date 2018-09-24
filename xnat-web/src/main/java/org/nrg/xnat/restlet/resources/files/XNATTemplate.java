@@ -13,6 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xdat.XDAT;
@@ -39,11 +40,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+@Slf4j
 public class XNATTemplate extends SecureResource {
-    final               org.apache.log4j.Logger logger                              = org.apache.log4j.Logger
-            .getLogger(XNATTemplate.class);
-
     XnatProjectdata proj = null;
     XnatSubjectdata sub  = null;
 
@@ -410,6 +410,7 @@ public class XNATTemplate extends SecureResource {
         final boolean hasResourceIds = resourceIds != null && !resourceIds.isEmpty();
         final boolean isInResource = StringUtils.equalsIgnoreCase(type, "in");
 
+        final UserI user = getUser();
         if (!recons.isEmpty()) {
             security = assesseds.get(0);
             parent = recons.get(0);
@@ -430,7 +431,7 @@ public class XNATTemplate extends SecureResource {
                 query.append(StringUtils.join(reconIds, "', '"));
                 query.append("') ");
                 if (hasResourceIds) {
-                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                    query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             } else {
                 xmlPath = "xnat:reconstructedImageData/out/file";
@@ -443,7 +444,7 @@ public class XNATTemplate extends SecureResource {
                 query.append(StringUtils.join(reconIds, "', '"));
                 query.append("') ");
                 if (hasResourceIds) {
-                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                    query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             }
         } else if (!scans.isEmpty()) {
@@ -461,11 +462,11 @@ public class XNATTemplate extends SecureResource {
             if (includeURI) {
                 query.append(",'/experiments/' || scan.image_session_id || '/scans/' || scan.id || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
             }
-            query.append(" FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imagescandata scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id WHERE xnat_imagescandata_xnat_imagescandata_id IN (");
+            query.append(" FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imagescandata scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id WHERE xnat_imagescandata_xnat_imagescandata_id IN ('");
             query.append(StringUtils.join(scanIds, "', '"));
-            query.append(") ");
+            query.append("') ");
             if (hasResourceIds) {
-                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                query.append(" AND (").append(getResourceIdsWhereClause(resourceIds, "abst.xnat_abstractresource_id")).append(")");
             }
         } else if (!expts.isEmpty()) {
             security = expts.get(0);
@@ -493,7 +494,7 @@ public class XNATTemplate extends SecureResource {
                     query.append(StringUtils.join(experimentIds, "', '"));
                     query.append("') ");
                     if (hasResourceIds) {
-                        query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                        query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
                     }
                 } else {
                     xmlPath = "xnat:imageAssessorData/out/file";
@@ -510,13 +511,13 @@ public class XNATTemplate extends SecureResource {
                     query.append(StringUtils.join(experimentIds, "', '"));
                     query.append("') ");
                     if (hasResourceIds) {
-                        query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                        query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
                     }
                 }
             } else if (allowAll && (isQueryVariableTrue("all") || resourceIds != null)) {
                 xmlPath = "xnat:experimentData/resources/resource";
                 final Map<String, String> variables = new HashMap<>();
-                variables.put("username", getUser().getUsername());
+                variables.put("username", user.getUsername());
                 variables.put("sessionIds", StringUtils.join(experimentIds, "', '"));
                 final String userAccessibleAccessorIds = StringSubstitutor.replace(USER_ACCESSIBLE_ASSESSOR_IDS, variables);
                 // resources
@@ -563,7 +564,7 @@ public class XNATTemplate extends SecureResource {
                 query.append("')) all_resources");
 
                 if (hasResourceIds) {
-                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                    query.append(" WHERE (").append(getResourceIdsWhereClause(resourceIds, "xnat_abstractresource_id", "label")).append(")");
                 }
             } else {
                 xmlPath = "xnat:experimentData/resources/resource";
@@ -577,7 +578,7 @@ public class XNATTemplate extends SecureResource {
                 query.append(StringUtils.join(experimentIds, "', '"));
                 query.append("') ");
                 if (hasResourceIds) {
-                    query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                    query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
                 }
             }
         } else if (sub != null) {
@@ -594,7 +595,7 @@ public class XNATTemplate extends SecureResource {
             query.append(sub.getId());
             query.append("'");
             if (hasResourceIds) {
-                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
             }
         } else if (proj != null) {
             security = proj;
@@ -610,29 +611,59 @@ public class XNATTemplate extends SecureResource {
             query.append(proj.getId());
             query.append("'");
             if (hasResourceIds) {
-                query.append(" AND ( ").append(getResourceIdsWhereClause(resourceIds)).append(")");
+                query.append(" AND (").append(getResourceIdsWhereClause(resourceIds)).append(")");
             }
         } else {
             query.append(STARTER_FIELDS);
             query.append(", 'resources'::TEXT AS category, NULL::TEXT AS cat_id, ' '::TEXT AS cat_desc FROM xnat_abstractresource abst LEFT JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id WHERE xnat_abstractresource_id IS NULL");
         }
 
-        return XFTTable.Execute(query.toString(), getUser().getDBName(), userName);
+        final String completedQuery = query.toString();
+        log.debug("Loading catalog for user '{}' using query: {}", user.getUsername(), completedQuery);
+        return XFTTable.Execute(completedQuery, user.getDBName(), userName);
     }
 
     protected String getResourceIdsWhereClause(final List<String> resourceIds) {
-        return StringUtils.join(Lists.transform(resourceIds, new Function<String, String>() {
+        return getResourceIdsWhereClause(resourceIds, "map.xnat_abstractresource_xnat_abstractresource_id", "abst.label");
+    }
+
+    protected String getResourceIdsWhereClause(final List<String> resourceIds, final String idKey) {
+        return getResourceIdsWhereClause(resourceIds, idKey, "abst.label");
+    }
+
+    protected String getResourceIdsWhereClause(final List<String> resourceIds, final String idKey, final String labelKey) {
+        final List<String> numerics = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
             @Override
-            public String apply(final String resourceId) {
-                if (StringUtils.isNumeric(resourceId)) {
-                    return " (map.xnat_abstractresource_xnat_abstractresource_id=" + resourceId + " OR abst.label='" + resourceId + "')";
-                }
-                if (resourceId.equalsIgnoreCase("NULL")) {
-                    return " abst.label IS NULL";
-                }
-                return " abst.label='" + resourceId + "'";
+            public boolean apply(@Nullable final String resourceId) {
+                return StringUtils.isNumeric(resourceId);
             }
-        }), " OR ");
+        }));
+        final List<String>  texts    = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable final String resourceId) {
+                return !StringUtils.equalsIgnoreCase("NULL", resourceId);
+            }
+        }));
+        final boolean hasNull = resourceIds.size() > texts.size();
+        final StringBuilder whereClause = new StringBuilder();
+        final boolean hasNumerics = !numerics.isEmpty();
+        final boolean hasTexts = !texts.isEmpty();
+        if (hasNumerics) {
+            whereClause.append(idKey).append(" IN (").append(StringUtils.join(numerics, ", ")).append(")");
+        }
+        if (hasNumerics && hasTexts) {
+            whereClause.append(" OR ");
+        }
+        if (hasTexts) {
+            whereClause.append(labelKey).append(" IN ('").append(StringUtils.join(numerics, "', '")).append("')");
+        }
+        if ((hasNumerics || hasTexts) && hasNull) {
+            whereClause.append(" OR ");
+        }
+        if (hasNull) {
+            whereClause.append(labelKey).append(" IS NULL");
+        }
+        return whereClause.toString();
     }
 
     protected void setCatalogAttributes(final UserI user, final XnatResourcecatalog catalog) throws Exception {
@@ -784,4 +815,3 @@ public class XNATTemplate extends SecureResource {
                                                               "            AND perms.field_value IN (expts.project, '*') " +
                                                               " ORDER  BY element_name) )";
 }
-

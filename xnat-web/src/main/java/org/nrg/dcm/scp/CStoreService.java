@@ -129,7 +129,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
         UID.RTTreatmentSummaryRecordStorage,
         UID.RTIonPlanStorage,
         UID.RTIonBeamsTreatmentRecordStorage,
-        UID.EnhancedColorMRImageStorage, // Support for enhanced DICOM color images
+        UID.EnhancedMRColorImageStorage, // Support for enhanced DICOM color images
         UID.SiemensCSANonImageStorage, // Siemens proprietary; we get this sometimes
         PhilipsPrivateCXImageStorage, // Philips proprietary. Thanks, Philips.
         PhilipsPrivateVolumeStorage, PhilipsPrivate3DObjectStorage,

@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class XNATTemplate extends SecureResource {
@@ -632,30 +631,34 @@ public class XNATTemplate extends SecureResource {
     }
 
     protected String getResourceIdsWhereClause(final List<String> resourceIds, final String idKey, final String labelKey) {
-        final List<String> numerics = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
+        // Numeric resource IDs are those that contain only digits.
+        final List<String> numericIds = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
             @Override
             public boolean apply(@Nullable final String resourceId) {
                 return StringUtils.isNumeric(resourceId);
             }
         }));
-        final List<String>  texts    = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
+        // Text resource IDs are those that are not the literal value "NULL". This includes the numeric resource IDs.
+        final List<String> textIds = Lists.newArrayList(Iterables.filter(resourceIds, new Predicate<String>() {
             @Override
             public boolean apply(@Nullable final String resourceId) {
                 return !StringUtils.equalsIgnoreCase("NULL", resourceId);
             }
         }));
-        final boolean hasNull = resourceIds.size() > texts.size();
+        // We can detect the literal value "NULL" implicitly, because it would have been filtered out of the text resource IDs.
+        final boolean hasNull = resourceIds.size() > textIds.size();
+        final boolean hasNumerics = !numericIds.isEmpty();
+        final boolean hasTexts = !textIds.isEmpty();
+
         final StringBuilder whereClause = new StringBuilder();
-        final boolean hasNumerics = !numerics.isEmpty();
-        final boolean hasTexts = !texts.isEmpty();
         if (hasNumerics) {
-            whereClause.append(idKey).append(" IN (").append(StringUtils.join(numerics, ", ")).append(")");
+            whereClause.append(idKey).append(" IN (").append(StringUtils.join(numericIds, ", ")).append(")");
         }
         if (hasNumerics && hasTexts) {
             whereClause.append(" OR ");
         }
         if (hasTexts) {
-            whereClause.append(labelKey).append(" IN ('").append(StringUtils.join(numerics, "', '")).append("')");
+            whereClause.append(labelKey).append(" IN ('").append(StringUtils.join(textIds, "', '")).append("')");
         }
         if ((hasNumerics || hasTexts) && hasNull) {
             whereClause.append(" OR ");

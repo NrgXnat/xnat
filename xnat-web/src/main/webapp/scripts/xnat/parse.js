@@ -288,6 +288,13 @@ var XNAT = getObject(XNAT);
 
         var obj = this;
 
+        // skip if string is *only* '$?' since this will end up
+        // returning the current page's content (bad)
+        if ((val + '').trim() === '$?') {
+            // --- RETURN --- //
+            return undef;
+        }
+
         // lookup value using XHR?
         // $? */path/to/data  <-- ALWAYS load fresh data
         // $? ~/path/to/data

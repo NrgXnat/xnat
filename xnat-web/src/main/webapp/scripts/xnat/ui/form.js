@@ -223,7 +223,7 @@ var XNAT = getObject(XNAT);
                     input.title.split(':')[0].trim() ||
                     input.id;
             if (name) {
-                obj[name] = (isPlainObject(data)) ? data[name] || '' : data;
+                obj[name] = (isPlainObject(data)) ? firstDefined(data[name], '') : data;
                 parseInputValue(input, obj);
                 // setValue(input, data[name]);
             }

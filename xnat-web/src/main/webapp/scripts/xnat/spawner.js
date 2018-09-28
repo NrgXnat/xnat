@@ -243,7 +243,7 @@ var XNAT = getObject(XNAT);
                 if (prop.action) {
                     prop.action = spawnerUrl(prop.action)
                 }
-                if (prop.load && !/^([#!?][?])/.test(prop.load)) {
+                if (isString(prop.load) && !/^([#!?][?])/.test(prop.load)) {
                     prop.load = spawnerUrl(prop.load)
                 }
 

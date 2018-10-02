@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -17,14 +18,13 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
+@Slf4j
 public class ProjectDownloadAction extends SecureAction {
     public ProjectDownloadAction() {
         _parameterized = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
@@ -32,7 +32,7 @@ public class ProjectDownloadAction extends SecureAction {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(final RunData data, final Context context) throws Exception {
         final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
 
         if (projectId.contains("\\") || projectId.contains("'")) {
@@ -51,8 +51,8 @@ public class ProjectDownloadAction extends SecureAction {
 
         if (!Permissions.getAllProjectIds(_parameterized).contains(projectId)) {
             final Exception e = new Exception("Unknown project: " + projectId);
-            logger.error("", e);
-            this.error(e, data);
+            log.error("The specified download project '{}' is not a valid project ID", projectId);
+            error(e, data);
             return;
         }
 
@@ -74,7 +74,6 @@ public class ProjectDownloadAction extends SecureAction {
         data.setScreenTemplate("XDATScreen_download_sessions.vm");
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(ProjectDownloadAction.class);
     private static final String QUERY_IMG_SESSION_IDS = "SELECT DISTINCT isd.id FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xnat_experimentData_meta_data meta ON expt.experimentData_info=meta.meta_data_id LEFT JOIN xnat_experimentData_share proj ON expt.id=proj.sharing_share_xnat_experimentda_id WHERE (proj.project=:projectId OR expt.project=:projectId) AND (meta.status='active' OR meta.status='locked');";
 
     private final NamedParameterJdbcTemplate _parameterized;

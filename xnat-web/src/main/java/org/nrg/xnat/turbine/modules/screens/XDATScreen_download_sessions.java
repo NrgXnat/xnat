@@ -13,6 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -35,6 +36,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 @SuppressWarnings("unused")
+@Slf4j
 public class XDATScreen_download_sessions extends SecureScreen {
 
     public XDATScreen_download_sessions() {
@@ -97,11 +99,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
 
                 context.put("projectIds", projectIds);
                 context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
-                context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_MAPPER));
-                context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, RECON_ROW_MAPPER));
+                context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
+                context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
                 context.put("assessors", Lists.transform(_parameterized.query(Groups.hasAllDataAccess(user) || Permissions.isProjectPublic(projectId) ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS, parameters, ASSESSOR_ROW_MAPPER), ASSESSOR_DESCRIPTION_FUNCTION));
-                context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_ROW_MAPPER));
-                context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SESSION_RESOURCE_ROW_MAPPER));
+                context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
             }
         } catch (InsufficientPrivilegesException e) {
             data.setMessage(e.getMessage());
@@ -172,14 +174,15 @@ public class XDATScreen_download_sessions extends SecureScreen {
      */
     private static final String QUERY_GET_SESSION_ASSESSORS = "SELECT element_name, Count(*) AS count " +
                                                               "FROM (SELECT xea.element_name AS element_name, xfm.field, xfm.field_value " +
-                                                              "      FROM xdat_field_mapping xfm " +
-                                                              "             LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
-                                                              "             LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
-                                                              "             LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id " +
-                                                              "             LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id " +
-                                                              "             LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id " +
+                                                              "      FROM xdat_usergroup g " +
+                                                              "          LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
+                                                              "          LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "          LEFT JOIN xdat_element_access xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                              "          LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "          LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
                                                               "      WHERE xfm.read_element = 1 AND " +
-                                                              "            xu.login IN ('guest', :userId)) perms " +
+                                                              "            g.tag IN (:projectIds) AND " +
+                                                              "            u.login IN ('guest', :userId)) perms " +
                                                               "       INNER JOIN (SELECT iad.id, element_name || '/project' AS field, expt.project, expt.label " +
                                                               "                   FROM xnat_imageassessordata iad " +
                                                               "                          LEFT JOIN xnat_experimentdata expt ON iad.id = expt.id " +
@@ -205,8 +208,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                                     "             JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element = 1 " +
                                                                     "      WHERE u.login = 'guest' OR " +
                                                                     "            xfm.field_value = '*') perms " +
-                                                                    "       INNER JOIN (SELECT iad.id, element_name " +
-                                                                    "                                    || '/project' AS field, expt.project, expt.label " +
+                                                                    "       INNER JOIN (SELECT iad.id, element_name || '/project' AS field, expt.project, expt.label " +
                                                                     "                   FROM xnat_imageassessordata iad " +
                                                                     "                          LEFT JOIN xnat_experimentdata expt ON iad.id = expt.id " +
                                                                     "                          LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
@@ -245,13 +247,37 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                               "WHERE expt_res.xnat_experimentdata_id IN (:sessionIds) " +
                                                               "GROUP BY label";
 
-    private static final RowMapper<List<String>>              ASSESSOR_ROW_MAPPER           = new RowMapper<List<String>>() {
+    private static class AttributeAndCountRowMapper implements RowMapper<List<String>> {
+        AttributeAndCountRowMapper(final String attribute) {
+            _attribute = attribute;
+        }
+
+        @Override
+        public List<String> mapRow(final ResultSet result, final int index) throws SQLException {
+            final List<String> item = new ArrayList<>();
+            item.add(result.getString(_attribute));
+            item.add(Integer.toString(result.getInt("count")));
+            log.debug("Processed row {} with {}: {} and count {}", index, _attribute, item.get(0), item.get(1));
+            return item;
+        }
+
+        private final String _attribute;
+    }
+
+    private static final RowMapper<List<String>> ASSESSOR_ROW_MAPPER                         = new AttributeAndCountRowMapper("element_name");
+    private static final RowMapper<List<String>> SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER = new AttributeAndCountRowMapper("label");
+    private static final RowMapper<List<String>> SCAN_ROW_AND_RECON_ROW_MAPPER               = new AttributeAndCountRowMapper("type");
+
+    private static final RowMapper<List<String>>              SESSION_SUMMARY_ROW_MAPPER    = new RowMapper<List<String>>() {
         @Override
         public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final ArrayList<String> assessor = new ArrayList<>();
-            assessor.add(result.getString("element_name"));
-            assessor.add(Integer.toString(result.getInt("count")));
-            return assessor;
+            final List<String> summaries = new ArrayList<>();
+            summaries.add(result.getString("id"));
+            summaries.add(result.getString("ids"));
+            summaries.add(result.getString("modality"));
+            summaries.add(result.getString("subject"));
+            summaries.add(result.getString("project"));
+            return summaries;
         }
     };
     private static final Function<List<String>, List<String>> ASSESSOR_DESCRIPTION_FUNCTION = new Function<List<String>, List<String>>() {
@@ -263,54 +289,6 @@ public class XDATScreen_download_sessions extends SecureScreen {
             }
             assessor.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
             return assessor;
-        }
-    };
-    private static final RowMapper<List<String>>              SCAN_FORMAT_ROW_MAPPER        = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> formats = new ArrayList<>();
-            formats.add(result.getString("label"));
-            formats.add(Integer.toString(result.getInt("count")));
-            return formats;
-        }
-    };
-    private static final RowMapper<List<String>>              SESSION_RESOURCE_ROW_MAPPER   = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> resources = new ArrayList<>();
-            resources.add(result.getString("label"));
-            resources.add(Integer.toString(result.getInt("count")));
-            return resources;
-        }
-    };
-    private static final RowMapper<List<String>>              RECON_ROW_MAPPER              = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> reconstructions = new ArrayList<>();
-            reconstructions.add(result.getString("type"));
-            reconstructions.add(Integer.toString(result.getInt("count")));
-            return reconstructions;
-        }
-    };
-    private static final RowMapper<List<String>>              SCAN_ROW_MAPPER               = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> scans = new ArrayList<>();
-            scans.add(result.getString("type"));
-            scans.add(Integer.toString(result.getInt("count")));
-            return scans;
-        }
-    };
-    private static final RowMapper<List<String>>              SESSION_SUMMARY_ROW_MAPPER    = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> summaries = new ArrayList<>();
-            summaries.add(result.getString("id"));
-            summaries.add(result.getString("ids"));
-            summaries.add(result.getString("modality"));
-            summaries.add(result.getString("subject"));
-            summaries.add(result.getString("project"));
-            return summaries;
         }
     };
 

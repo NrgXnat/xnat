@@ -209,6 +209,7 @@ public class XnatProviderManager extends ProviderManager {
                 log.warn("The provider ID {} is enabled, but the provider is not a visible provider", providerId);
                 continue;
             }
+            log.debug("Added provider ID {} to the list of visible enabled authentication providers. Name: \"{}\", auth method: {}, is auto-enabled: {}, is auto-verified: {} ", provider.getProviderId(), provider.getName(), provider.getAuthMethod(), provider.isAutoEnabled(), provider.isAutoVerified());
             visibleEnabledProviders.put(provider.getProviderId(), provider);
         }
         return visibleEnabledProviders;

@@ -1006,6 +1006,12 @@ public class DefaultCatalogService implements CatalogService {
                 //ScanType from the database would have \\ and hence it needs to be replaced by single underscore.
                 scanType = scanType.replace("\\\\", "_");
                 scanType = scanType.replace("/", "_");
+                
+                // Fix for BANNER-66
+                scanType = scanType.replace("(", "_");
+                scanType = scanType.replace(")", "_"); 
+                scanType = scanType.replace(" ", "_");
+                
                 if(scan.get("resource") != null) {
                     final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
                     //Fix for BANNER-33

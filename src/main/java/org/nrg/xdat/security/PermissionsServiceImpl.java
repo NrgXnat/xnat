@@ -22,7 +22,6 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
-import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.helpers.Roles;
@@ -458,7 +457,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         for (final PermissionCriteriaI criterion : criteria) {
             ((UserGroup) group).addPermission(criterion.getElementName(), criterion, authenticatedUser);
         }
-        _eventService.triggerEvent(builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
     }
 
     @Override

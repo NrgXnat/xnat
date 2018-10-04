@@ -12,6 +12,8 @@ package org.nrg.xdat.security;
 import com.google.common.base.Function;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -32,6 +34,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 @Slf4j
 public class UserGroup implements UserGroupI {
     /**
@@ -139,47 +142,56 @@ public class UserGroup implements UserGroupI {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public List<List<Object>> getPermissionItems(String login) throws Exception {
-        if (!_permissionItemsByLogin.containsKey(login)) {
-            final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
+    public List<List<Object>> getPermissionItems(final String username) throws Exception {
+        if (!_permissionItemsByLogin.containsKey(username)) {
+            final Map<String, ElementAccessManager> accessManagers = getAccessManagers();
+            if (accessManagers == null) {
+                log.warn("The element access managers are not initialized for the group '{}'. This prevents retrieval of permissions for data types. Returning an empty set of permission items.", getId());
+                return Collections.emptyList();
+            }
 
-            Collections.sort(elements, elements.get(0).getComparator());
+            log.debug("No cached permission items found for username '{}' and tag '{}', initializing", username, tag);
 
-            for (ElementSecurity es : elements) {
-                final List<PermissionItem> permissionItems = (this.getTag() == null) ? es.getPermissionItems(login) : es.getPermissionItemsForTag(this.getTag());
+            final String tag = getTag();
+            for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
+                final List<PermissionItem> permissionItems = elementSecurity.getPermissionItems(StringUtils.defaultIfBlank(tag, username));
                 boolean                    isAuthenticated = true;
                 boolean                    wasSet          = false;
-                for (PermissionItem pi : permissionItems) {
-                    final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
-                    if (eam != null) {
-                        final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(), pi.getValue());
-                        if (pc != null) {
-                            pi.set(pc);
+                for (final PermissionItem permissionItem : permissionItems) {
+                    final ElementAccessManager accessManager = accessManagers.get(elementSecurity.getElementName());
+                    if (accessManager != null) {
+                        final PermissionCriteriaI criteria = accessManager.getMatchingPermissions(permissionItem.getFullFieldName(), permissionItem.getValue());
+                        if (criteria != null) {
+                            permissionItem.set(criteria);
                         }
                     }
-                    if (!pi.isAuthenticated()) {
+                    if (!permissionItem.isAuthenticated()) {
                         isAuthenticated = false;
                     }
-                    if (pi.wasSet()) {
+                    if (permissionItem.wasSet()) {
                         wasSet = true;
                     }
                 }
 
                 final List<Object> elementManager = new ArrayList<>();
-                elementManager.add(es.getElementName());
+                elementManager.add(elementSecurity.getElementName());
                 elementManager.add(permissionItems);
-                elementManager.add(es.getSchemaElement().getSQLName());
+                elementManager.add(elementSecurity.getSchemaElement().getSQLName());
                 elementManager.add((isAuthenticated) ? Boolean.TRUE : Boolean.FALSE);
                 elementManager.add((wasSet) ? Boolean.TRUE : Boolean.FALSE);
-                elementManager.add(es);
+                elementManager.add(elementSecurity);
 
-                if (permissionItems.size() > 0) {
-                    _permissionItemsByLogin.put(login, elementManager);
+                if (!permissionItems.isEmpty()) {
+                    _permissionItemsByLogin.put(username, elementManager);
+                    log.debug("Added {} permission items for the user '{}' for data type '{}'", permissionItems.size(), username, elementSecurity.getElementName());
+                } else {
+                    log.debug("No permission items found for the user '{}' and data type '{}'", username, elementSecurity.getElementName());
                 }
             }
+            log.debug("Added permission items for {} data types for the user '{}'", _permissionItemsByLogin.get(username).size(), username);
         }
 
-        return ImmutableList.copyOf(_permissionItemsByLogin.get(login));
+        return ImmutableList.copyOf(_permissionItemsByLogin.get(username));
     }
 
     @Override
@@ -304,11 +316,7 @@ public class UserGroup implements UserGroupI {
      * @return The associated {@link XdatUsergroup}.
      */
     public XdatUsergroup getUserGroupImpl() {
-        if (xdatGroup == null) {
-            return XdatUsergroup.getXdatUsergroupsById(id, Users.getAdminUser(), true);
-        } else {
-            return xdatGroup;
-        }
+        return ObjectUtils.defaultIfNull(xdatGroup, getSavedUserGroupImpl(Users.getAdminUser()));
     }
 
     public void refresh(final NamedParameterJdbcTemplate template) {
@@ -565,18 +573,19 @@ public class UserGroup implements UserGroupI {
         }
     }
 
-    private XdatUsergroup getSavedUserGroupImpl(UserI user) {
+    private XdatUsergroup getSavedUserGroupImpl(final UserI user) {
         if (xdatGroup == null) {
-            xdatGroup = XdatUsergroup.getXdatUsergroupsById(id, user, true);
-
-            if (xdatGroup == null) {
-                xdatGroup = new XdatUsergroup(user);
-                xdatGroup.setId(getId());
-                xdatGroup.setTag(getTag());
-                xdatGroup.setDisplayname(getDisplayname());
-            }
+            xdatGroup = ObjectUtils.defaultIfNull(XdatUsergroup.getXdatUsergroupsById(id, user, true), buildNewUserGroupImpl(user));
         }
         return xdatGroup;
+    }
+
+    private XdatUsergroup buildNewUserGroupImpl(final UserI user) {
+        final XdatUsergroup group = new XdatUsergroup(user);
+        group.setId(getId());
+        group.setTag(getTag());
+        group.setDisplayname(getDisplayname());
+        return group;
     }
 
     private GroupFeatureService getGroupFeatureService() {

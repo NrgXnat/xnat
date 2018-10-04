@@ -28,7 +28,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
@@ -466,11 +465,10 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public void save(UserGroupI group, UserI user, EventMetaI meta) throws Exception {
-        if (((UserGroup) group).getUserGroupImpl() == null) {
+        final XdatUsergroup xdatGroup = ((UserGroup) group).getUserGroupImpl();
+        if (xdatGroup == null) {
             return;
         }
-
-        XdatUsergroup xdatGroup = ((UserGroup) group).getUserGroupImpl();
 
         if (!Roles.isSiteAdmin(user)) {
             String firstValue = null;
@@ -599,7 +597,7 @@ public class UserGroupManager implements UserGroupServiceI {
         return values;
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
     private boolean setPermissions(XdatUsergroup impl, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, UserI user, boolean includesModification, EventMetaI c) {
         try {
 

@@ -1115,15 +1115,6 @@ registrationOptions:
                 If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
                 receives an email notification when a user registers.
-        autoEnableLdapUsers:
-            kind: panel.input.switchbox
-            name: autoEnableLdapUsers
-            label: Auto Enable LDAP Users
-            onText: Auto-enable
-            offText: Do Not Auto-enable
-            description: If true, LDAP accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
-               projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
-               receives an email notification when a user registers.
         autoEnablePar:
             kind: panel.input.switchbox
             name: par

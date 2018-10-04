@@ -790,17 +790,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
                     }
+                    log.debug("Handling create group event with ID '{}' for users: {}", id);
                     return !initGroups(groups).isEmpty();
 
                 case UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
+                        evict(group.getId());
                     }
                     if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), OPERATION_REMOVE_USERS)) {
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(USERS));
                     }
+                    log.debug("Handling update group event with ID '{}' for users: {}", id);
                     return !initGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
@@ -1330,12 +1333,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private synchronized List<UserGroupI> initGroups(final List<UserGroupI> groups) {
         log.debug("Caching {} groups", groups.size());
-        return Lists.transform(groups, new Function<UserGroupI, UserGroupI>() {
-            @Override
-            public UserGroupI apply(final UserGroupI group) {
-                return initGroup(group.getId(), group);
-            }
-        });
+        return Lists.transform(groups, new InitGroupFunction(this));
     }
 
     private void resetTotalCounts() {
@@ -1617,6 +1615,21 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
+    private static class InitGroupFunction implements Function<UserGroupI, UserGroupI> {
+        InitGroupFunction(final DefaultGroupsAndPermissionsCache cache) {
+            _cache = cache;
+        }
+
+        @Override
+        public UserGroupI apply(final UserGroupI incoming) {
+            log.error("I'm applying the thing for the group {}", incoming.getId());
+            return _cache.initGroup(incoming.getId(), incoming);
+
+        }
+
+        private final DefaultGroupsAndPermissionsCache _cache;
+    }
+
     private static final ResultSetExtractor<Map<String, Long>> ELEMENT_COUNT_EXTRACTOR = new ResultSetExtractor<Map<String, Long>>() {
         @Override
         public Map<String, Long> extractData(final ResultSet results) throws SQLException, DataAccessException {
@@ -1859,7 +1872,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return elementDisplay.getElementName();
         }
     };
-    private static final Function<ElementSecurity, String> FUNCTION_ELEMENT_SECURITY_TO_STRING = new Function<ElementSecurity, String>() {
+    private static final Function<ElementSecurity, String>                  FUNCTION_ELEMENT_SECURITY_TO_STRING = new Function<ElementSecurity, String>() {
         @Override
         public String apply(final ElementSecurity security) {
             try {
@@ -1870,7 +1883,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
         }
     };
-    private static final Function<String, String>          FUNCTION_CACHE_IDS_TO_USERNAMES     = new Function<String, String>() {
+    private static final Function<String, String>                           FUNCTION_CACHE_IDS_TO_USERNAMES     = new Function<String, String>() {
         @Nullable
         @Override
         public String apply(@Nullable final String cacheId) {

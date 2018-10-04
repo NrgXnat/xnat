@@ -736,7 +736,7 @@ var XNAT = getObject(XNAT);
 
         var usernameEsc = data.username = escapeHtml(data.username || '');
 
-        var _load = data ? serverRoot + '/xapi/users/profile/' + data.username : false;
+        var _load = data ? XNAT.url.restUrl('/xapi/users/profile/' + data.username) : false;
 
         var doEdit = _load && data.username;
 
@@ -825,8 +825,8 @@ var XNAT = getObject(XNAT);
             validate: true,
             method: doEdit ? 'PUT' : 'POST',
             contentType: 'json',
-            load: doEdit ? _load : '',
-            refresh: false,
+            load: doEdit ? '$? *' + _load : '',
+            refresh: true,
             reload: true,
             action: '~/xapi/users' + (doEdit ? ('/' + data.username) : ''),
             element: {

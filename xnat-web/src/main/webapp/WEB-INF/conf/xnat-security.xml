@@ -21,6 +21,8 @@
 
     <security:http auto-config="false" use-expressions="true" entry-point-ref="loginUrlAuthenticationEntryPoint">
         <security:csrf disabled="true"/>
+<!--                        Uncomment to enable CORS                        -->
+<!--    <security:cors configuration-source-ref="corsConfigurationSource"/> -->
         <security:custom-filter position="CHANNEL_FILTER" ref="channelProcessingFilter"/>
         <security:custom-filter before="FORM_LOGIN_FILTER" ref="customAuthenticationFilter"/>
         <security:custom-filter after="BASIC_AUTH_FILTER" ref="customBasicAuthenticationFilter"/>
@@ -35,5 +37,46 @@
             <security:hsts disabled="true"/>
         </security:headers>
     </security:http>
+    
+<!--                                Uncomment to enable CORS                             -->
+<!-- 
+    <bean id="corsConfigurationSource" class="org.springframework.web.cors.UrlBasedCorsConfigurationSource">
+        <property name="corsConfigurations">
+            <map>
+                <entry key="/**" value-ref="xnatCorsConfiguration"/>
+            </map>
+         </property>
+    </bean>
 
+    <bean id="xnatCorsConfiguration" class="org.springframework.web.cors.CorsConfiguration">
+        <property name="allowedOrigins" value="http://sample.origin.com"/>
+        <property name="allowCredentials" value="true"/>
+        <property name="maxAge" value="3600"/>
+        <property name="allowedMethods">
+            <list>
+               <value>POST</value>
+               <value>GET</value>
+               <value>PUT</value>
+               <value>OPTIONS</value>
+               <value>DELETE</value>
+            </list>
+        </property>
+        <property name="allowedHeaders">
+            <list>
+               <value>Vary</value>
+               <value>User-Agent</value>
+               <value>Connection</value>
+               <value>Accept-Language</value>
+               <value>Host</value>
+               <value>Access-Control-Request-Method</value>
+               <value>Origin</value>
+               <value>Content-Type</value>
+               <value>Accept</value>
+               <value>X-Requested-With</value>
+               <value>Authorization</value>
+               <value>Access-Control-Request-Headers</value>
+            </list>
+        </property>
+    </bean> -->
+    
 </beans>

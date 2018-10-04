@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.security.ElementSecurity;
@@ -19,9 +20,10 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xnat.services.velocity.context.PostAddProjectContextPopulatorService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
-
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -35,6 +37,7 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
 	 */
+	
 	public String getElementName() {
 	    return "xnat:projectData";
 	}
@@ -87,6 +90,15 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
+            
+            // Add custom content into the velocity context.
+            // Define new objects of type PostAddProjectContextPopulator to have them injected here.
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBean(PostAddProjectContextPopulatorService.class).getContextPopulators();
+             if(null != contextPopulators) {
+                 for (PostAddProjectContextPopulator p : contextPopulators) {
+                     context.put(p.getName(), p.getObject());
+                 }
+             }
                         
 			if (item.getProperty("ID")==null)
 			{

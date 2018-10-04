@@ -12,12 +12,7 @@ package org.nrg.xnat.initialization;
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
@@ -43,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import org.apache.log4j.PropertyConfigurator;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
@@ -62,7 +56,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         // Now initialize everything else.
         context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
         context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
-
+        
         context.addListener(XnatSessionEventPublisher.class);
         context.addListener(AxisHTTPSessionListener.class);
 

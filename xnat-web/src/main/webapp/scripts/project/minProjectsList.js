@@ -50,6 +50,7 @@ function MinProjectsList(_div, _options){
 
         if (projList.options.accessible != undefined) {
             params.push("accessible=true");
+            params.push("traditional=true");
         }
 
         var url = XNAT.url.restUrl('/data/projects', params);

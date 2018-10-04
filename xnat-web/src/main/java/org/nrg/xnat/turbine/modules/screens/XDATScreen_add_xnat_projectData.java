@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.security.ElementSecurity;
@@ -19,12 +20,14 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xnat.services.velocity.context.PostAddProjectContextPopulatorService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
-
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
+
 
 public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_add_xnat_projectData.class);
@@ -42,8 +45,8 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
+	@SuppressWarnings("rawtypes")
 	public void finalProcessing(RunData data, Context context) {
-
         Hashtable hash = XNATUtils.getInvestigatorsForCreate(getElementName(),data);
         context.put("investigators",hash);
         context.put("arc",ArcSpecManager.GetInstance());
@@ -76,13 +79,23 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
                     logger.error("",e);
                 }
             }
-            
+
             context.put("root", root);
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
-	    context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
-		    
+            context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
+            
+           
+            // Add custom content into the velocity context.
+            // Define new objects of type PostAddProjectContextPopulator to have them injected here.
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBean(PostAddProjectContextPopulatorService.class).getContextPopulators();
+             if(null != contextPopulators) {
+                 for (PostAddProjectContextPopulator p : contextPopulators) {
+                     context.put(p.getName(), p.getObject());
+                 }
+             }
+
 			if (item.getProperty("ID")!=null)
 			{
                 ArcProject p = ArcSpecManager.GetInstance().getProjectArc(item.getStringProperty("ID"));
@@ -94,5 +107,4 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
 			logger.error("",e);
 		}
 	}
-
 }

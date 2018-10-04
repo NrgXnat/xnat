@@ -307,7 +307,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 return expired.get(0);
             }
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
-            _log.error(e.getMessage(), e);
+            _log.debug(e.getMessage(), e);
         }
         return false;
     }

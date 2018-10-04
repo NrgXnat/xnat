@@ -23,6 +23,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -93,6 +94,10 @@ public abstract class SearchA extends SecureAction {
 
                 if (search==null) {
                     throw new SearchTimeoutException("Session Expired: The previously performed search has timed out.");
+                }
+
+                if(Permissions.getReadableProjects(user).size()<=0){
+                    throw new IllegalAccessException("The user is trying to search for data, but does not have access to any projects.");
                 }
 
 				if (hasSuperSearchVariables(data)) {

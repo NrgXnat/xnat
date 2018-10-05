@@ -10,10 +10,12 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
@@ -95,8 +97,10 @@ public abstract class SearchA extends SecureAction {
                 if (search==null) {
                     throw new SearchTimeoutException("Session Expired: The previously performed search has timed out.");
                 }
-
-                if(Permissions.getReadableProjects(user).size()<=0){
+                List<String> readableProjects = Permissions.getReadableProjects(user);
+                List<String> protectedProjects = Permissions.getAllProtectedProjects(XDAT.getJdbcTemplate());
+                Collection<String> readableExcludingProtected = CollectionUtils.subtract(readableProjects,protectedProjects);
+                if(readableExcludingProtected.size()<=0){//Projects user can see, excluding those whose data they cannot see
                     throw new IllegalAccessException("The user is trying to search for data, but does not have access to any projects.");
                 }
 

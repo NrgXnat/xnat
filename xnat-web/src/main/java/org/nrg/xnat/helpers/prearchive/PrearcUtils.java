@@ -155,8 +155,8 @@ public class PrearcUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<String> getProjects(final UserI user, String requestedProject) throws Exception {
-        ArrayList<String> projects = new ArrayList<>();
+    public static List<String> getProjects(final UserI user, String requestedProject) {
+        final List<String> projects = new ArrayList<>();
         if (requestedProject != null) {
             if (requestedProject.contains(",")) {
                 String[] projectIds = StringUtils.split(requestedProject, ',');
@@ -174,8 +174,6 @@ public class PrearcUtils {
             }
         } else {
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            assert userHelperService != null;
-
             for (final List<String> row : userHelperService.getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
                 if (projects.contains(id))

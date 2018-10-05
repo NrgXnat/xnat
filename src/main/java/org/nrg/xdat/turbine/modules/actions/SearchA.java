@@ -40,6 +40,8 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static org.nrg.xdat.security.helpers.Permissions.getUserProjectAccess;
+
 /**
  * @author Tim
  *
@@ -97,11 +99,20 @@ public abstract class SearchA extends SecureAction {
                 if (search==null) {
                     throw new SearchTimeoutException("Session Expired: The previously performed search has timed out.");
                 }
+
                 List<String> readableProjects = Permissions.getReadableProjects(user);
                 List<String> protectedProjects = Permissions.getAllProtectedProjects(XDAT.getJdbcTemplate());
                 Collection<String> readableExcludingProtected = CollectionUtils.subtract(readableProjects,protectedProjects);
-                if(readableExcludingProtected.size()<=0){//Projects user can see, excluding those whose data they cannot see
-                    throw new IllegalAccessException("The user is trying to search for data, but does not have access to any projects.");
+                if(readableExcludingProtected.size()<=0){//Projects user can see, excluding those that they might only be seeing because they are protected
+                    boolean hasExplicitAccessToAtLeastOneProtectedProject = false;
+                    for(String protectedProject: protectedProjects){
+                        if(StringUtils.isNotBlank(getUserProjectAccess(user, protectedProject))){
+                            hasExplicitAccessToAtLeastOneProtectedProject = true;
+                        }
+                    }
+                    if(!hasExplicitAccessToAtLeastOneProtectedProject) {
+                        throw new IllegalAccessException("The user is trying to search for data, but does not have access to any projects.");
+                    }
                 }
 
 				if (hasSuperSearchVariables(data)) {

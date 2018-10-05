@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.SecurityManager.EDIT;
 import static org.nrg.xft.event.XftItemEvent.builder;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
@@ -467,17 +468,32 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserReadableProjects(final UserI user) {
-        return _cache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
+        return getUserReadableProjects(user.getUsername());
+    }
+
+    @Override
+    public List<String> getUserReadableProjects(final String username) {
+        return _cache.getProjectsForUser(username, SecurityManager.READ);
     }
 
     @Override
     public List<String> getUserEditableProjects(final UserI user) {
-        return ((XDATUser) user).getEditableProjects();
+        return getUserEditableProjects(user.getUsername());
+    }
+
+    @Override
+    public List<String> getUserEditableProjects(final String username) {
+        return _cache.getProjectsForUser(username, EDIT);
     }
 
     @Override
     public List<String> getUserOwnedProjects(final UserI user) {
-        return _cache.getProjectsForUser(user.getUsername(), SecurityManager.DELETE);
+        return getUserOwnedProjects(user.getUsername());
+    }
+
+    @Override
+    public List<String> getUserOwnedProjects(final String username) {
+        return _cache.getProjectsForUser(username, SecurityManager.DELETE);
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {

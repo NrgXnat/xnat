@@ -870,16 +870,28 @@ public class Permissions {
 
     @SuppressWarnings("unused")
     public static List<String> getOwnedProjects(final UserI user) {
-        return getPermissionsService().getUserOwnedProjects(user);
+        return getOwnedProjects(user.getUsername());
+    }
+
+    public static List<String> getOwnedProjects(final String username) {
+        return getPermissionsService().getUserOwnedProjects(username);
     }
 
     @SuppressWarnings("unused")
     public static List<String> getEditableProjects(final UserI user) {
-        return getPermissionsService().getUserEditableProjects(user);
+        return getEditableProjects(user.getUsername());
+    }
+
+    public static List<String> getEditableProjects(final String username) {
+        return getPermissionsService().getUserEditableProjects(username);
     }
 
     public static List<String> getReadableProjects(final UserI user) {
-        return getPermissionsService().getUserReadableProjects(user);
+        return getReadableProjects(user.getUsername());
+    }
+
+    public static List<String> getReadableProjects(final String username) {
+        return getPermissionsService().getUserReadableProjects(username);
     }
 
     private static NamedParameterJdbcTemplate getTemplate(final NamedParameterJdbcTemplate template) {

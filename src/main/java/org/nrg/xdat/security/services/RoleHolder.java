@@ -64,6 +64,10 @@ public class RoleHolder {
         return _roleService.isSiteAdmin(user);
     }
 
+    public boolean isSiteAdmin(final String username) {
+        return _roleService.isSiteAdmin(username);
+    }
+
     public Collection<String> getRoles(final UserI user) {
         return _roleService.getRoles(user);
     }

@@ -56,6 +56,10 @@ public class Roles {
         return getRoleService().isSiteAdmin(user);
     }
 
+    public static boolean isSiteAdmin(final String username) {
+        return getRoleService().isSiteAdmin(username);
+    }
+
     public static Collection<String> getRoles(UserI user) {
         return getRoleService().getRoles(user);
     }

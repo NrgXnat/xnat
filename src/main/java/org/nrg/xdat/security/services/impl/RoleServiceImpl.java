@@ -65,7 +65,12 @@ public class RoleServiceImpl implements RoleServiceI {
 
     @Override
     public boolean isSiteAdmin(final UserI user) {
-        return hasUsernameAndRole(user.getUsername(), UserRole.ROLE_ADMINISTRATOR);
+        return isSiteAdmin(user.getUsername());
+    }
+
+    @Override
+    public boolean isSiteAdmin(final String username) {
+        return hasUsernameAndRole(username, UserRole.ROLE_ADMINISTRATOR);
     }
 
     @Override

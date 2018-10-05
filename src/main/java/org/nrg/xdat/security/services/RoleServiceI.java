@@ -26,5 +26,7 @@ public interface RoleServiceI {
 
     boolean isSiteAdmin(final UserI user);
 
+    boolean isSiteAdmin(String username);
+
     boolean isNonExpiring(final UserI user);
 }

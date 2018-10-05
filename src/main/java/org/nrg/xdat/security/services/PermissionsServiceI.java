@@ -419,6 +419,8 @@ public interface PermissionsServiceI {
     @SuppressWarnings("unused")
     List<String> getUserReadableProjects(UserI user);
 
+    List<String> getUserReadableProjects(String username);
+
     /**
      * Gets a list of IDs of the projects that a user can edit.
      *
@@ -427,6 +429,8 @@ public interface PermissionsServiceI {
      * @return A list of the IDs of the projects that the specified user can edit.
      */
     List<String> getUserEditableProjects(UserI user);
+
+    List<String> getUserEditableProjects(String username);
 
     /**
      * Gets a list of IDs of the projects that a user owns (i.e. which the user can delete)
@@ -437,4 +441,6 @@ public interface PermissionsServiceI {
      */
     @SuppressWarnings("unused")
     List<String> getUserOwnedProjects(UserI user);
+
+    List<String> getUserOwnedProjects(String username);
 }

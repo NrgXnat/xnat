@@ -168,7 +168,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
     }
     
     //FilteredExptListHandlerI allows additional experiment list handlers to be added via modules
-    interface FilteredExptListHandlerI {
+    public interface FilteredExptListHandlerI {
     	boolean canHandle(SecureResource resource);
     	XFTTable build(ExperimentListResource resource,Hashtable<String,Object> params) throws Exception;
     }

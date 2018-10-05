@@ -117,6 +117,9 @@
         </td>
     </tr>
 
+   ## Add custom details
+   #addCustomScreens("xnat:projectData" "edit/details")
+    
     <tr>
         <th>
             <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>
@@ -139,7 +142,6 @@
         </td>
     </tr>
 
-    #addCustomScreens($om.getXSIType() "edit/details")
     #set($pathInfo = $arcP.getPaths())
 
     <input type="hidden" name="arc:project/current_arc" value="arc001">

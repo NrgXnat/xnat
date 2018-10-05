@@ -643,7 +643,7 @@ csrf:
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
             kind: panel.input.switchbox
-            name: csrfEmailAlert
+            name: csrfEmailAlert 
             label: CSRF Email Alert
             onText: Enabled
             offText: Disabled

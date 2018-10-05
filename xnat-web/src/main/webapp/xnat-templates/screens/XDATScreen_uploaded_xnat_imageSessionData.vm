@@ -104,7 +104,7 @@ dd.valMessage 	{	width:630px;	}
 //		_html+='</div>';
 
 
-		var _html='<select id class="scanActionSelect" data-scan-id="' + scanId + '">';
+		var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
 		 _html+='<option value="">Actions</option>';
 		 _html+='<option value="files">Review File Details</option>';
 		 _html+='<option value="download">Download Files</option>';

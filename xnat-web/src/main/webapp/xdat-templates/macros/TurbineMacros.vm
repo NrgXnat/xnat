@@ -159,6 +159,24 @@
   #end
 #end
 
+#macro (xdatStringBoxWSizeClass $name $item $defaultValue $vr $size $classes)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658</span>
+  #end
+#end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
+    $item.getProperty($name)
+    #else
+    <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$item.getStringProperty($name)"/>
+    #end
+  #else
+  <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$defaultValue"/>
+  #end
+#end
+
 #macro (xdatTextArea $name $item $defaultValue $vr $rows $cols)
 <!-- macro: xdatTextArea -->
   #if ($vr)

@@ -532,6 +532,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             }
 
             try {
+                preArchive(user,src,params,existing);
+                
                 processing("validating loaded data");
                 validateSession();
 
@@ -852,6 +854,10 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     public interface PostArchiveAction {
         Boolean execute(UserI user, XnatImagesessiondata src, Map<String, Object> params);
     }
+    
+	public interface PreArchiveAction {
+		public Boolean execute(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing) throws ServerException,ClientException;
+	}
 
     private void postArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params) {
 
@@ -875,6 +881,22 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             throw new RuntimeException(exception);
         }
     }
+    
+    private void preArchive(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing){
+		List<Class<?>> classes;
+	     try {
+	    	 classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.preArchive");
+
+	    	 if(classes!=null && classes.size()>0){
+				 for(Class<?> clazz: classes){
+					 PreArchiveAction action=(PreArchiveAction)clazz.newInstance();
+					 action.execute(user,src,params,existing);
+				 }
+			 }
+	     } catch (Exception exception) {
+	         throw new RuntimeException(exception);
+	     }
+	}
 
     public void validateSession() throws ServerException {
         try {

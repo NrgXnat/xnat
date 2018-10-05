@@ -773,8 +773,8 @@ public class FileList extends XNATCatalogTemplate {
                 final String parentPath = catResource.getCatalogFile(rootArchivePath).getParent();
 
                 if (cat != null) {
-                    if (filePath == null || filePath.equals("")) {
-                        table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
+                    if (filepath == null || filepath.equals("")) {
+                        addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
                     } else {
                         ArrayList<CatEntryI> entries = new ArrayList<>();
 
@@ -867,7 +867,7 @@ public class FileList extends XNATCatalogTemplate {
                                 row.add(subFile);
                             }
                             row.add(checksums ? CatalogUtils.getHash(subFile) : "");
-                            table.rows().add(row.toArray());
+                            table.insertRow(row.toArray());
                         }
                     }
                 }
@@ -989,7 +989,7 @@ public class FileList extends XNATCatalogTemplate {
                 String baseURI = getBaseURI();
 
                 if (cat != null) {
-                    table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
+                    addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
                 }
             } else {
 
@@ -1053,8 +1053,8 @@ public class FileList extends XNATCatalogTemplate {
 
 
     				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
-    				if(filePath.endsWith("/")){
-    					table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
+    				if(filepath.endsWith("/")){
+    					addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
     				}else{
                         getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                         return new StringRepresentation("");
@@ -1111,7 +1111,7 @@ public class FileList extends XNATCatalogTemplate {
                                 // Populate table rows and add the row to the table
                                 while (entries.hasMoreElements()) {
                                     ZipEntry zE = entries.nextElement();
-                                    t.rows().add(new Object[]{zE.getName(), zE.getSize()});
+                                    t.insertRow(new Object[]{zE.getName(), zE.getSize()});
                                 }
                                 zF.close();
 
@@ -1158,7 +1158,7 @@ public class FileList extends XNATCatalogTemplate {
                         row[5] = resource.getFormat();
                         row[6] = resource.getContent();
                         row[7] = resource.getXnatAbstractresourceId();
-                        table.rows().add(row);
+                        table.insertRow(row);
                     }
                 }
             } else {
@@ -1280,5 +1280,12 @@ public class FileList extends XNATCatalogTemplate {
     private FileRepresentation setFileRepresentation(File f, MediaType mt) {
         setResponseHeader("Cache-Control", "must-revalidate");
         return representFile(f, mt);
+    }
+    
+    private XFTTable addTableRows(XFTTable t,List<Object []>rows) {
+        for(Object [] row : rows) {
+            t.insertRow(row);
+        }
+        return t;
     }
 }

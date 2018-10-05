@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class PostAddProjectContextPopulatorService{
 	
-	@Autowired
+	@Autowired(required=false)
 	private List<PostAddProjectContextPopulator> contextPopulators;
 	
 	public List<PostAddProjectContextPopulator> getContextPopulators() { 

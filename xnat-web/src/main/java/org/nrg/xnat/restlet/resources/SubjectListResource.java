@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -24,7 +27,9 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Hashtable;
+import java.util.List;
 
 public class SubjectListResource extends QueryOrganizerResource {
 	public SubjectListResource(Context context, Request request, Response response) {
@@ -63,6 +68,14 @@ public class SubjectListResource extends QueryOrganizerResource {
 		XFTTable table;
 		try {
 			final UserI user = getUser();
+
+			List<String> readableProjects = Permissions.getReadableProjects(user);
+           	List<String> protectedProjects = Permissions.getAllProtectedProjects(XDAT.getJdbcTemplate());
+			Collection<String> readableExcludingProtected = CollectionUtils.subtract(readableProjects,protectedProjects);
+			if(readableExcludingProtected.size()<=0){//Projects user can see, excluding those whose data they cannot see
+				throw new IllegalAccessException("The user is trying to search for data, but does not have access to any projects.");
+			}
+
 			QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user, ViewManager.ALL);
 
 			this.populateQuery(qo);

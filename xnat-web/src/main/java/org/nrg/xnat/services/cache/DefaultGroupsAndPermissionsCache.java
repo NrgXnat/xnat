@@ -585,7 +585,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             if (stopWatch.isStarted()) {
                 stopWatch.stop();
             }
-            log.info("Total time to queue {} groups was {} ms", groupIds.size(), FORMATTER.format(stopWatch.getTime()));
+            log.info("Total time to queue {} groups was {} ms", groupIds.size(), NUMBER_FORMAT.format(stopWatch.getTime()));
             if (log.isInfoEnabled()) {
                 log.info(stopWatch.toTable());
             }
@@ -1402,16 +1402,14 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     /**
      * Retrieves a list of projects where the specified user is a member. This differs from {@link #getUserReadableProjects(String)} in that it
-     * includes neither protected and public projects nor projects to which the user has read access due to all data access privileges.
+     * includes neither public projects nor projects to which the user has read access due to all data access privileges.
      *
      * @param username The username to retrieve projects for.
      *
      * @return A list of projects for which the specified user is a member.
      */
     private List<String> getUserProjects(final String username) {
-        return Lists.newArrayList(Iterables.concat(_template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class),
-                                                   Permissions.getAllPublicProjects(_template),
-                                                   Permissions.getAllProtectedProjects(_template)));
+        return _template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class);
     }
 
     /**
@@ -1423,7 +1421,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      * @return A list of projects to which the specified user has read access.
      */
     private List<String> getUserReadableProjects(final String username) {
-        return getProjectsByAccessQuery(username, QUERY_READABLE_PROJECTS, false);
+        return Lists.newArrayList(Iterables.concat(getProjectsByAccessQuery(username, QUERY_READABLE_PROJECTS, false), Permissions.getAllPublicProjects(_template)));
     }
 
     private List<String> getUserEditableProjects(final String username) {
@@ -1436,11 +1434,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private List<String> getProjectsByAccessQuery(final String username, final String query, final boolean requireAdminAccess) {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username);
-        final boolean               useAllData = hasAllDataAdmin(username) || (hasAllDataAccess(username) && !requireAdminAccess);
-        return useAllData ? _template.queryForList(QUERY_ALL_DATA_ACCESS_PROJECTS, parameters, String.class)
-                          : Lists.newArrayList(Iterables.concat(_template.queryForList(query, parameters, String.class),
-                                                                Permissions.getAllPublicProjects(_template),
-                                                                Permissions.getAllProtectedProjects(_template)));
+        return hasAllDataAdmin(username) || (hasAllDataAccess(username) && !requireAdminAccess)
+               ? _template.queryForList(QUERY_ALL_DATA_ACCESS_PROJECTS, parameters, String.class)
+               : _template.queryForList(query, parameters, String.class);
     }
 
     /**
@@ -1698,7 +1694,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     };
 
-    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final DateFormat   DATE_FORMAT   = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
 
     private static final String       QUERY_GET_GROUPS_FOR_USER            = "SELECT groupid " +
                                                                              "FROM xdat_user_groupid xug " +
@@ -1790,27 +1787,25 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                              "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
                                                                              "WHERE " +
                                                                              "  u.login = :username";
-    private static final String       QUERY_USER_PROJECTS                  = "SELECT " +
-                                                                             "  DISTINCT f.field_value AS project, " +
-                                                                             "  CASE " +
-                                                                             "    WHEN g.id IS NOT NULL THEN g.displayname " +
-                                                                             "    WHEN f.active_element = 1 THEN 'public' " +
-                                                                             "    ELSE 'protected' " +
-                                                                             "  END AS access " +
-                                                                             "FROM xdat_user u " +
-                                                                             "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                             "  LEFT JOIN xdat_usergroup g on map.groupid = g.id " +
-                                                                             "  LEFT JOIN xdat_element_access a on (g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
-                                                                             "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                             "  LEFT JOIN xdat_field_mapping f ON s.xdat_field_mapping_set_id = f.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                             "WHERE " +
-                                                                             "  f.field_value != '*' AND " +
-                                                                             "  a.element_name = 'xnat:projectData' AND " +
-                                                                             "  f.%s = 1 AND " +
-                                                                             "  u.login IN ('guest', :username)";
-    private static final String       QUERY_OWNED_PROJECTS                 = "SELECT project FROM (" + String.format(QUERY_USER_PROJECTS, "delete_element") + ") projects";
-    private static final String       QUERY_EDITABLE_PROJECTS              = "SELECT project FROM (" + String.format(QUERY_USER_PROJECTS, "edit_element") + ") projects";
-    private static final String       QUERY_READABLE_PROJECTS              = "SELECT project FROM (" + String.format(QUERY_USER_PROJECTS, "read_element") + ") projects";
+    private static final String       QUERY_ACCESSIBLE_DATA_PROJECTS       = "SELECT  " +
+                                                                             "  project  " +
+                                                                             "FROM  " +
+                                                                             "  (SELECT DISTINCT f.field_value AS project  " +
+                                                                             "   FROM  " +
+                                                                             "     xdat_user u  " +
+                                                                             "     LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id  " +
+                                                                             "     LEFT JOIN xdat_usergroup g ON map.groupid = g.id  " +
+                                                                             "     LEFT JOIN xdat_element_access a ON (g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id)  " +
+                                                                             "     LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id  " +
+                                                                             "     LEFT JOIN xdat_field_mapping f ON s.xdat_field_mapping_set_id = f.xdat_field_mapping_set_xdat_field_mapping_set_id  " +
+                                                                             "   WHERE  " +
+                                                                             "     f.field_value != '*' AND  " +
+                                                                             "     a.element_name = 'xnat:subjectData' AND  " +
+                                                                             "     f.%s = 1 AND  " +
+                                                                             "     u.login IN ('guest', :username)) projects";
+    private static final String       QUERY_OWNED_PROJECTS                 = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "delete_element");
+    private static final String       QUERY_EDITABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "edit_element");
+    private static final String       QUERY_READABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "read_element");
     private static final String       QUERY_HAS_ALL_DATA_PRIVILEGES        = "SELECT  " +
                                                                              "  EXISTS(SELECT TRUE  " +
                                                                              "         FROM  " +
@@ -1877,10 +1872,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String       GUEST_ACTION_READ                    = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
     private static final List<String> ALL_ACTIONS                          = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
 
-    private static final Pattern      REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTION_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):(?<remainder>.*)$");
-    private static final Pattern      REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
-    private static final NumberFormat FORMATTER                          = NumberFormat.getNumberInstance(Locale.getDefault());
-    private static final String       GUEST_CACHE_ID                     = getCacheIdForUserElements(GUEST_USERNAME, BROWSEABLE);
+    private static final Pattern REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTION_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):(?<remainder>.*)$");
+    private static final Pattern REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
+    private static final String  GUEST_CACHE_ID                     = getCacheIdForUserElements(GUEST_USERNAME, BROWSEABLE);
 
     private static final Function<ElementDisplay, String>  FUNCTION_ELEMENT_DISPLAY_TO_STRING  = new Function<ElementDisplay, String>() {
         @Override

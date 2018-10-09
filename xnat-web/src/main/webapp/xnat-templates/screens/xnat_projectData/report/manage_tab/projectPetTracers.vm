@@ -1,3 +1,4 @@
+#if($siteConfig.uiAllowPetTracerConfiguration != "false")
 <h3>PET Tracers</h3>
 <div>
     <table id="project_pet_tracers_table">
@@ -128,3 +129,4 @@
     projectPETTracersGet.get();
 </script>
 </div>
+#end

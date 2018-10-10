@@ -141,6 +141,36 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             log.error("unable to parse supplied destination flag", e1);
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e1);
         }
+
+        continueProcessingData = true;
+        try {
+            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
+            Collection<ArchiveProcessor> processors = processorsMap.values();
+            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
+            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(1);
+            if(processorInstances!=null){
+                for(ArchiveProcessorInstance processorInstance: processorInstances) {
+                    Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
+                    ArchiveProcessor processor = processorsMap.get(processorClass);
+
+                    if (processor.accept(dicom, null, getMizer(), processorInstance, getParameters())) {
+                        if(!processor.process(dicom, null, getMizer(), processorInstance, getParameters())){
+                            continueProcessingData = false;
+                            break;
+                        }
+                    }
+
+                }
+            }
+        } catch (Throwable e) {
+            //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.
+            //We may be okay just passing an empty list in this case, but since I wasn't sure, I didn't want to change how it works now where if there's a problem importing part of a zip, the whole import fails.
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        }
+        if(!continueProcessingData){
+            return new ArrayList<>();
+        }
+
         final String             projectId     = project != null ? (String) project.getProps().get("id") : null;
         final SeriesImportFilter siteFilter    = getFilterService().getSeriesImportFilter();
         final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getFilterService().getSeriesImportFilter(projectId) : null;
@@ -272,7 +302,7 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
             Collection<ArchiveProcessor> processors = processorsMap.values();
             //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(1);
+            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(2);
             if(processorInstances!=null){
                 for(ArchiveProcessorInstance processorInstance: processorInstances) {
                     Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
@@ -287,18 +317,6 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
 
                 }
             }
-
-
-
-//            for(ArchiveProcessor processor: processors) {
-//                if (processor.accept(dicom, dicom, session, getMizer())) {
-//                    if(!processor.process(dicom, dicom, session, getMizer())){
-//                        continueProcessingData = false;
-//                        break;
-//                    }
-//                }
-//            }
-
 
         } catch (Throwable e) {
             //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.

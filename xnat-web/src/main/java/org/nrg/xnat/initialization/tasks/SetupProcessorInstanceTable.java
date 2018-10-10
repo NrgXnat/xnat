@@ -59,9 +59,9 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
         if(processorChanges==0){
             //The processor instances table is new. Add default processor instances.
             ArchiveProcessorInstance defaultSiteAnonProcessor = new ArchiveProcessorInstance();
-            defaultSiteAnonProcessor.setLocation(1);
+            defaultSiteAnonProcessor.setLocation(2);
             defaultSiteAnonProcessor.setLabel("Site Anonymization");
-            defaultSiteAnonProcessor.setPriority(1);
+            defaultSiteAnonProcessor.setPriority(10);
             defaultSiteAnonProcessor.setProcessorClass("org.nrg.xnat.processors.MizerArchiveProcessor");
             defaultSiteAnonProcessor.setScope("site");
             defaultSiteAnonProcessor.setParameters(new HashMap<String, String>());
@@ -70,9 +70,9 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
             _archiveProcessorInstanceService.create(defaultSiteAnonProcessor);
 
             ArchiveProcessorInstance defaultRemappingProcessor = new ArchiveProcessorInstance();
-            defaultRemappingProcessor.setLocation(0);
+            defaultRemappingProcessor.setLocation(1);
             defaultRemappingProcessor.setLabel("Remapping");
-            defaultRemappingProcessor.setPriority(1);
+            defaultRemappingProcessor.setPriority(10);
             defaultRemappingProcessor.setProcessorClass("org.nrg.xnat.processors.StudyRemappingArchiveProcessor");
             defaultRemappingProcessor.setScope("site");
             defaultRemappingProcessor.setParameters(new HashMap<String, String>());

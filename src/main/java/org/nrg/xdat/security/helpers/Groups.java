@@ -175,6 +175,10 @@ public class Groups {
         return isSiteAdmin(user) || isDataAdmin(user) || isDataAccess(user);
     }
 
+    public static boolean hasAllDataAdmin(final UserI user) {
+        return isSiteAdmin(user) || isDataAdmin(user);
+    }
+
     /**
      * Get a UserGroupI by the group ID.
      *

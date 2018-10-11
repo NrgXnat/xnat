@@ -20,7 +20,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -37,7 +36,9 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
 import static lombok.AccessLevel.PROTECTED;
 import static org.restlet.data.Method.GET;
@@ -54,21 +55,26 @@ public final class PrearcSessionListResource extends SecureResource {
         _permissions = XDAT.getContextService().getBean(PermissionsServiceImpl.class);
 
         // Project is explicit in the request
-        _requestedProject = (String) getParameter(request, PROJECT_ATTR);
+        _project = (String) getParameter(request, PROJECT_ATTR);
+        _projectRequest = StringUtils.isNotBlank(getProject());
 
         // UID to search on
         _tag = getQueryVariable("tag");
-        _isAllAccess = Groups.isDataAdmin(getUser()) || Roles.isSiteAdmin(getUser().getUsername());
+        _tagRequest = StringUtils.isNotBlank(getTag());
 
-        if (request.getMethod() == Method.PUT && !_isAllAccess) {
+        final UserI user = getUser();
+        _dataAdmin = Groups.hasAllDataAdmin(user);
+        _dataAccess = Groups.hasAllDataAccess(user);
+
+        if (request.getMethod() == Method.PUT && !isDataAdmin()) {
             throw new ClientException(CLIENT_ERROR_FORBIDDEN, "Only site or data administrators can request a rebuild of the prearchive.");
         }
         if (request.getMethod() == GET) {
-            if (StringUtils.isNotBlank(_tag) && !_isAllAccess) {
-                throw new ClientException(CLIENT_ERROR_FORBIDDEN, "Only site or data administrators can query by tag");
+            if (isTagRequest() && !isDataAccess()) {
+                throw new ClientException(CLIENT_ERROR_FORBIDDEN, "Only site or data administrators and reviewers can query by tag");
             }
-            if (StringUtils.isNotBlank(_requestedProject) && !_isAllAccess && !Permissions.canReadProject(getUser(), _requestedProject)) {
-                throw new ClientException(CLIENT_ERROR_FORBIDDEN, "The current user does not have access to the requested project: " + _requestedProject);
+            if (isProjectRequest() && !isDataAccess() && !Permissions.canReadProject(user, getProject())) {
+                throw new ClientException(CLIENT_ERROR_FORBIDDEN, "The current user does not have access to the requested project: " + getProject());
             }
         }
 
@@ -89,7 +95,7 @@ public final class PrearcSessionListResource extends SecureResource {
         try {
             PrearcDatabase.refresh(true);
         } catch (Exception e) {
-            logger.error("Unable to refresh sessions", e);
+            log.error("Unable to refresh sessions", e);
             getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
         }
     }
@@ -102,7 +108,6 @@ public final class PrearcSessionListResource extends SecureResource {
     @Override
     public Representation represent(final Variant variant) {
         final MediaType mediaType = overrideVariant(variant);
-        final UserI user = getUser();
 
         try {
             final XFTTable table;
@@ -114,8 +119,11 @@ public final class PrearcSessionListResource extends SecureResource {
                     }
                 })));
             } else {
-                final String[] projects = StringUtils.isNotBlank(getRequestedProject()) ? getRequestedProject().split("\\s*,\\s*") : getPermissions().getUserReadableProjects(user.getUsername()).toArray(new String[0]);
-                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(projects));
+                final List<String> projects = new ArrayList<>(StringUtils.isNotBlank(getProject()) ? Arrays.asList(getProject().split("\\s*,\\s*")) : getPermissions().getUserReadableProjects(getUser().getUsername()));
+                if (isDataAccess()) {
+                    projects.add(null);
+                }
+                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(projects.toArray(new String[0])));
             }
 
             return representTable(table, mediaType, new Hashtable<String, Object>());
@@ -128,8 +136,11 @@ public final class PrearcSessionListResource extends SecureResource {
 
     private static final String PROJECT_ATTR = "PROJECT_ID";
 
-    private final PermissionsServiceImpl    _permissions;
-    private final String                    _requestedProject;
-    private final String                    _tag;
-    private final boolean                   _isAllAccess;
+    private final PermissionsServiceImpl _permissions;
+    private final String                 _project;
+    private final boolean                _projectRequest;
+    private final String                 _tag;
+    private final boolean                _tagRequest;
+    private final boolean                _dataAdmin;
+    private final boolean                _dataAccess;
 }

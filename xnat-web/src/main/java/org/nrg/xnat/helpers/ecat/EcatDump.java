@@ -16,7 +16,9 @@ import com.google.common.collect.Sets;
 import org.dcm4che2.data.ElementDictionary;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.model.*;
+import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -452,7 +454,7 @@ public final class EcatDump extends SecureResource {
 
         List<File> findMatchingFile(final Env env, final List<XnatResourcecatalogI> resources, final CatFilterWithPath filter, final int enough) {
         	final List<File> files = Lists.newArrayList();
-            for (XnatResourcecatalogI resource : resources) {
+            for (XnatResourceI resource : resources) {
                 final String eUrl = resource.getUri();
                 String prePath=ArcSpecManager.GetInstance().getGlobalPrearchivePath();
                 if (eUrl.contains(EcatDump.imageType)) {

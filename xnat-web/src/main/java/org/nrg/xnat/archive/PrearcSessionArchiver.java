@@ -427,7 +427,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             if (!overrideExceptions) {
                 if (StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())) {
                     if (!StringUtils.equals(existing.getUid(), src.getUid())) {
-                    	if(!this.getUidModSetting(existing.getProject())){
+                    	SessionMergingConfigMapper mapper=new SessionMergingConfigMapper();
+                    	if(!mapper.getUidModSetting(existing.getProject())){
                     		failed(UID_MOD);
                     		throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
                     	}
@@ -1008,20 +1009,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
     
-    	public boolean getUidModSetting(String project)   {
-            
-            ConfigService configService = XDAT.getConfigService();
-          
-            SessionMergingConfigMapper sessionMergingConfigMapper = new SessionMergingConfigMapper();
-            // check project config
-            Configuration config =configService.getConfig("sessionmerging", "script", XnatProjectdata.getProjectInfoIdFromStringId(project));
-            if (config != null && config.getStatus().equals("enabled")) {
-                return Boolean.parseBoolean(sessionMergingConfigMapper.getSessionMergingConfigMap(config).get("sessionmerging_uid_mod"));
-            }
-            // if nothing there, check site config
-            return XDAT.getBoolSiteConfigurationProperty("sessionmerging_uid_mod",false);
-           
-        }
 
     private DicomFilterService getDicomFilterService() {
         if (_filterService == null) {

@@ -9,8 +9,11 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.nrg.config.entities.Configuration;
+import org.nrg.config.services.ConfigService;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatProjectdata;
 
 public class SessionMergingConfigMapper {
 	 private  final ObjectMapper MAPPER = new ObjectMapper(new JsonFactory());
@@ -40,5 +43,19 @@ public class SessionMergingConfigMapper {
 	        map.put("enabled", "false");
 	        map.put("sessionmerging_uid_mod", "");
 	        return map;
+	    }
+	    
+	    public boolean getUidModSetting(String project)   {
+	        
+	        ConfigService configService = XDAT.getConfigService();
+	      
+	        // check project config
+	        Configuration config =configService.getConfig("sessionmerging", "script", XnatProjectdata.getProjectInfoIdFromStringId(project));
+	        if (config != null && config.getStatus().equals("enabled")) {
+	            return Boolean.parseBoolean(this.getSessionMergingConfigMap(config).get("sessionmerging_uid_mod"));
+	        }
+	        // if nothing there, check site config
+	        return XDAT.getBoolSiteConfigurationProperty("sessionmerging_uid_mod",false);
+	       
 	    }
 }

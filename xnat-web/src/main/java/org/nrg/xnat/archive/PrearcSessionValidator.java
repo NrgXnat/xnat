@@ -75,6 +75,8 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 					SessionMergingConfigMapper mapper=new SessionMergingConfigMapper();
 					if(!mapper.getUidModSetting(existing.getProject())){
 						conflict(5,UID_MOD);
+					}else{
+						conflict(19,"StudyInstanceUIDs do not match. Continue to override.");
 					}
 				}
 			}

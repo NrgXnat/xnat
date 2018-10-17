@@ -80,6 +80,8 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 public class PrearcSessionArchiver extends StatusProducer implements Callable<String>, StatusProducerI {
 
     public static final String MERGED = "Merged";
+    
+    public static final String MERGED_UID = "Merged UIDs";
 
     private static final String TRIGGER_PIPELINES = "triggerPipelines";
 
@@ -508,16 +510,26 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             final PersistentWorkflowI workflow;
             final EventMetaI c;
 
+            PersistentWorkflowI workflow2 = null;
+			final EventMetaI c2;
+
             try {
                 String justification = (String) params.get(EventUtils.EVENT_REASON);
                 if (justification == null) {
                     justification = "standard upload";
                 }
-                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, src.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String) params.get(EventUtils.EVENT_TYPE), EventUtils.TYPE.WEB_SERVICE), (existing == null) ? EventUtils.TRANSFER : MERGED, justification, (String) params.get(EventUtils.EVENT_COMMENT)));
+                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing==null)?src.getItem():existing.getItem()),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), (existing==null)?EventUtils.TRANSFER:MERGED, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
                 assert workflow != null;
-                workflow.setStepDescription("Validating");
+			    workflow.setStepDescription("Validating");
                 c = workflow.buildEvent();
-
+                
+				if(existing!=null){
+					if(!StringUtils.equals(existing.getUid(),src.getUid())){
+						workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), MERGED_UID, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
+						workflow2.setStepDescription("Validating");
+						c2=workflow2.buildEvent();
+					}
+				}
             } catch (JustificationAbsent e2) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, e2);
             } catch (EventRequirementAbsent e2) {
@@ -644,6 +656,10 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 try {
                     workflow.setStepDescription(PersistentWorkflowUtils.COMPLETE);
                     WorkflowUtils.complete(workflow, workflow.buildEvent());
+					if(workflow2!=null){
+						workflow2.setStepDescription(PersistentWorkflowUtils.COMPLETE);
+						WorkflowUtils.complete(workflow2, workflow2.buildEvent());
+					}
 
                 } catch (Exception e1) {
                     logger.error("", e1);

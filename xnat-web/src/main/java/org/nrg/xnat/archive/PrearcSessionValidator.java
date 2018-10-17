@@ -73,7 +73,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 			if(StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())){
 				if(!StringUtils.equals(existing.getUid(), src.getUid())){
 					SessionMergingConfigMapper mapper=new SessionMergingConfigMapper();
-					if(mapper.getUidModSetting(existing.getProject())){
+					if(!mapper.getUidModSetting(existing.getProject())){
 						conflict(5,UID_MOD);
 					}
 				}

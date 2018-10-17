@@ -202,13 +202,11 @@ public final class DicomSummaryHeaderDump {
         	 int i=0;
         	 DicomSummary consolidated=new DicomSummary();
         	 for (DicomSummary dicomSummary : dsummary) {
-				if(i!=0){
-					if (StringUtils.contains(val, dicomSummary.getValue())!=true && StringUtils.isNotBlank(dicomSummary.getValue())){
-						if("".equals(val)){
-							val=dicomSummary.getValue();
-						}else{
-							val=val+", "+dicomSummary.getValue();;
-						}
+				if (StringUtils.contains(val, dicomSummary.getValue())!=true && StringUtils.isNotBlank(dicomSummary.getValue())){
+					if("".equals(val)){
+						val=dicomSummary.getValue();
+					}else{
+						val=val+", "+dicomSummary.getValue();;
 					}
 				}
 				if (i== dsummary.size()-1){

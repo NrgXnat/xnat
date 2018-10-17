@@ -609,16 +609,19 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                     }
                 };
 
-                ListenerUtils.addListeners(this, new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                        prearcSession,
-                        src,
-                        src.getPrearchivepath(),
-                        arcSessionDir,
-                        existing,
-                        arcSessionDir.getAbsolutePath(),
-                        allowSessionMerge,
-                        overrideExceptions || overwriteFiles,
-                        saveImpl, user, workflow.buildEvent())).call();
+				MergePrearcToArchiveSession mergePrearcToArchiveSession= new MergePrearcToArchiveSession(src.getPrearchivePath(),
+						 this.prearcSession,
+						 src,
+						 src.getPrearchivepath(),
+						 arcSessionDir,
+						 existing,
+						 arcSessionDir.getAbsolutePath(),
+						 allowSessionMerge, 
+						 (overrideExceptions)?overrideExceptions:overwriteFiles,
+						 saveImpl,user,workflow.buildEvent());
+				
+				ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
+				XnatImagesessiondata merged=mergePrearcToArchiveSession.getMerged();
 
                 FileUtils.DeleteFile(new File(this.prearcSession.getSessionDir().getAbsolutePath() + ".xml"));
                 FileUtils.DeleteFile(this.prearcSession.getSessionDir());
@@ -642,12 +645,12 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                     logger.error("", e1);
                 }
 
-                postArchive(user, src, params);
+                postArchive(user, merged, params);
 
                 String triggerPipelines = (String) params.get(TRIGGER_PIPELINES);
                 //if triggerPipelines!=false
                 if ((BooleanUtils.isNotFalse(BooleanUtils.toBooleanObject(triggerPipelines)))) {
-                    TriggerPipelines tp = new TriggerPipelines(src, false, user, waitFor);
+                    TriggerPipelines tp = new TriggerPipelines(merged, false, user, waitFor);
                     tp.call();
                 }
             } catch (ServerException | ClientException e) {

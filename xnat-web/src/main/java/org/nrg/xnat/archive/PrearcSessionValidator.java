@@ -75,10 +75,6 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 				}
 			}
 			
-			//check if the XSI types match
-			if(!StringUtils.equals(existing.getXSIType(), src.getXSIType())){
-				fail(19,MODALITY_MOD);
-			}
 			
 			for(final XnatImagescandataI newScan : src.getScans_scan()){
 				XnatImagescandataI match=MergeUtils.getMatchingScanById(newScan.getId(), existing.getScans_scan());//match by ID

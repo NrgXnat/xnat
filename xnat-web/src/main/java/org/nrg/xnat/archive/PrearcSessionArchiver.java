@@ -410,12 +410,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PROJ_MOD, new Exception());
             }
 
-            //check if the XSI types match
-            if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
-                failed(MODALITY_MOD);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, MODALITY_MOD, new Exception());
-            }
-
             if (!StringUtils.equals(existing.getSubjectId(), src.getSubjectId())) {
                 String subjectId = existing.getLabel();
                 String newError = SUBJECT_MOD + ": " + subjectId + " Already Exists for another Subject";

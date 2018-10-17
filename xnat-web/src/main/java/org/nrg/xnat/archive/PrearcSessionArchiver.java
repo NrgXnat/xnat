@@ -15,6 +15,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.config.entities.Configuration;
+import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.config.services.ConfigService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.status.StatusProducer;
@@ -45,6 +48,7 @@ import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
+import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.status.ListenerUtils;
@@ -57,6 +61,9 @@ import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+
+
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -420,8 +427,10 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             if (!overrideExceptions) {
                 if (StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())) {
                     if (!StringUtils.equals(existing.getUid(), src.getUid())) {
-                        failed(UID_MOD);
-                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
+                    	if(!this.getUidModSetting(existing.getProject())){
+                    		failed(UID_MOD);
+                    		throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
+                    	}
                     }
                 }
             }
@@ -998,6 +1007,21 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         failed(msg);
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
+    
+    	public boolean getUidModSetting(String project)   {
+            
+            ConfigService configService = XDAT.getConfigService();
+          
+            SessionMergingConfigMapper sessionMergingConfigMapper = new SessionMergingConfigMapper();
+            // check project config
+            Configuration config =configService.getConfig("sessionmerging", "script", XnatProjectdata.getProjectInfoIdFromStringId(project));
+            if (config != null && config.getStatus().equals("enabled")) {
+                return Boolean.parseBoolean(sessionMergingConfigMapper.getSessionMergingConfigMap(config).get("sessionmerging_uid_mod"));
+            }
+            // if nothing there, check site config
+            return XDAT.getBoolSiteConfigurationProperty("sessionmerging_uid_mod",false);
+           
+        }
 
     private DicomFilterService getDicomFilterService() {
         if (_filterService == null) {

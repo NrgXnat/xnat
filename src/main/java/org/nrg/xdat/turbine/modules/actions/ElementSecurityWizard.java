@@ -257,7 +257,7 @@ public class ElementSecurityWizard extends AdminAction {
 			if(saved){
 				ElementSecurity.refresh();
 				ElementSecurity es=ElementSecurity.GetElementSecurity(found.getStringProperty("element_name"));
-				es.initExistingPermissions(TurbineUtils.getUser(data).getLogin());
+				es.initExistingPermissions();
 				Groups.reloadGroupsForUser(TurbineUtils.getUser(data));
 			}
 			

@@ -13,15 +13,18 @@ package org.nrg.xdat.security;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.beans.XnatDataModelBean;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
+import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.framework.services.ContextService;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
@@ -33,12 +36,10 @@ import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -60,11 +61,14 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -73,7 +77,7 @@ import static org.nrg.xft.event.XftItemEventI.CREATE;
 /**
  * @author Tim
  */
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "RedundantThrows", "unused"})
 @Slf4j
 public class ElementSecurity extends ItemWrapper {
     public static final String SCHEMA_ELEMENT_NAME = "xdat:element_security";
@@ -113,64 +117,59 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static List<String> registerNewTypes() throws Exception {
-        @SuppressWarnings("unchecked") final Map<String, ElementSecurity> elements = GetElementSecurities();
-
-        final List<String> newTypes = new ArrayList<>();
-
-        final UserI admin = Users.getAdminUser();
-        assert admin != null;
+        final Map<String, ElementSecurity> elements    = GetElementSecurities();
+        final List<String>                 newTypes    = new ArrayList<>();
+        final JdbcTemplate                 template    = XDAT.getContextService().getBean(JdbcTemplate.class);
+        final XnatPluginBeanManager        beanManager = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
 
         for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
             for (final String securedElements : dataModelDefinition.getSecuredElements()) {
-                if ((StringUtils.isNotBlank(securedElements)) && !elements.containsKey(securedElements)) {
-                    if (GenericWrapperElement.GetFieldForXMLPath(securedElements + "/project") != null) {
-                        final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(securedElements);
-                        elementSecurity.initExistingPermissions(admin.getUsername());
-                        newTypes.add(elementSecurity.getElementName());
-                    }
+                if (StringUtils.isNotBlank(securedElements) && !elements.containsKey(securedElements) && GenericWrapperElement.GetFieldForXMLPath(securedElements + "/project") != null) {
+                    final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(securedElements);
+                    elementSecurity.initExistingPermissions();
+                    newTypes.add(elementSecurity.getElementName());
                 }
             }
         }
 
-        final XnatPluginBeanManager beanManager = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
-        for (final String pluginId : beanManager.getPluginIds()) {
-            final XnatPluginBean plugin = beanManager.getPlugin(pluginId);
+        for (final XnatPluginBean plugin : beanManager.getPluginBeans().values()) {
             for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
-                if (!elements.containsKey(bean.getType()) && bean.isSecured()) {
-                    if (GenericWrapperElement.GetFieldForXMLPath(bean.getType() + "/project") != null) {
-                        final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(bean.getType());
-                        elementSecurity.initExistingPermissions(admin.getUsername());
-                        newTypes.add(elementSecurity.getElementName());
+                final String beanType = bean.getType();
+                if (!elements.containsKey(beanType) && bean.isSecured() && GenericWrapperElement.GetFieldForXMLPath(beanType + "/project") != null) {
+                    final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(beanType);
+                    elementSecurity.initExistingPermissions();
+                    newTypes.add(elementSecurity.getElementName());
 
-                        final boolean hasSingular = StringUtils.isNotBlank(bean.getSingular());
-                        final boolean hasPlural   = StringUtils.isNotBlank(bean.getPlural());
-                        final boolean hasCode     = StringUtils.isNotBlank(bean.getCode());
-                        if (hasSingular || hasPlural || hasCode) {
-                            elementSecurity.setCode(StringUtils.defaultIfBlank(bean.getCode(), ""));
-                            elementSecurity.setSingular(StringUtils.defaultIfBlank(bean.getSingular(), ""));
-                            elementSecurity.setPlural(StringUtils.defaultIfBlank(bean.getPlural(), ""));
-                            final StringBuilder query = new StringBuilder("update xdat_element_security set ");
-                            if (hasSingular) {
-                                query.append("singular = '").append(bean.getSingular()).append("'");
-                            }
-                            if (hasSingular && hasPlural) {
+                    final String  singular    = StringUtils.defaultIfBlank(bean.getSingular(), "");
+                    final String  plural      = StringUtils.defaultIfBlank(bean.getPlural(), "");
+                    final String  code        = StringUtils.defaultIfBlank(bean.getCode(), "");
+                    final boolean hasSingular = StringUtils.isNotBlank(singular);
+                    final boolean hasPlural   = StringUtils.isNotBlank(plural);
+                    final boolean hasCode     = StringUtils.isNotBlank(code);
+                    if (hasSingular || hasPlural || hasCode) {
+                        elementSecurity.setSingular(singular);
+                        elementSecurity.setPlural(plural);
+                        elementSecurity.setCode(code);
+                        final StringBuilder query = new StringBuilder("update xdat_element_security set ");
+                        if (hasSingular) {
+                            query.append("singular = '").append(singular).append("'");
+                        }
+                        if (hasSingular && hasPlural) {
+                            query.append(", ");
+                        }
+                        if (hasPlural) {
+                            query.append("plural = '").append(plural).append("'");
+                        }
+                        if (hasCode) {
+                            if (hasSingular || hasPlural) {
                                 query.append(", ");
                             }
-                            if (hasPlural) {
-                                query.append("plural = '").append(bean.getPlural()).append("'");
-                            }
-                            if (hasCode) {
-                                if (hasSingular || hasPlural) {
-                                    query.append(", ");
-                                }
-                                query.append("code = '").append(bean.getCode()).append("'");
-                            }
-                            query.append(" where element_name = '").append(bean.getType()).append("'");
-
-                            final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
-                            final int          results  = template.update(query.toString());
-                            log.info("Updated {} rows with the query: {}", results, query.toString());
+                            query.append("code = '").append(code).append("'");
                         }
+                        query.append(" where element_name = '").append(beanType).append("'");
+
+                        final int results = template.update(query.toString());
+                        log.info("Updated {} rows with the query: {}", results, query.toString());
                     }
                 }
             }
@@ -666,7 +665,7 @@ public class ElementSecurity extends ItemWrapper {
 
     public class ElementActionGroup {
         public String                   group   = "";
-        public ArrayList<ElementAction> actions = new ArrayList<ElementAction>();
+        public ArrayList<ElementAction> actions = new ArrayList<>();
 
         public String getGroup() {
             return group;
@@ -678,7 +677,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public ArrayList<ElementActionGroup> getElementActionsByGroupings() {
-        ArrayList<ElementActionGroup> al = new ArrayList<ElementActionGroup>();
+        ArrayList<ElementActionGroup> al = new ArrayList<>();
 
         for (ElementAction ea : this.elementActions) {
             if (ea.getGrouping() != null && !ea.getGrouping().equals("")) {
@@ -789,7 +788,7 @@ public class ElementSecurity extends ItemWrapper {
                 }
                 final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldName);
 
-                Hashtable hash = null;
+                final Hashtable hash;
                 if (field.isReference()) {
                     SchemaElementI se = SchemaElement.GetElement(field.getReferenceElementName().getFullForeignType());
                     hash = GetDistinctIdValuesFor(se.getFullXMLName(), "default", login);
@@ -825,11 +824,7 @@ public class ElementSecurity extends ItemWrapper {
         ElementDisplay ed           = se.getDisplay();
         DisplayField   idField      = ed.getDisplayField(ed.getValueField());
         DisplayField   displayField = ed.getDisplayField(ed.getDisplayField());
-        if (idField != null && displayField != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return idField != null && displayField != null;
     }
 
     /**
@@ -842,7 +837,7 @@ public class ElementSecurity extends ItemWrapper {
      */
     public static Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception {
         //Hashtable hash1 = (Hashtable)elementDistinctIds.get(elementName); REMOVED TO PREVENT CACHING
-        Hashtable<String, Hashtable<String, String>> hash1 = new Hashtable<String, Hashtable<String, String>>();
+        Hashtable<String, Hashtable<String, String>> hash1 = new Hashtable<>();
         SchemaElement                                se    = SchemaElement.GetElement(elementName);
         ElementDisplay                               ed    = se.getDisplay();
 //		if (hash1 == null)
@@ -851,7 +846,7 @@ public class ElementSecurity extends ItemWrapper {
 //			elementDistinctIds.put(elementName,hash1);
 //		}
 
-        Hashtable hash2 = (Hashtable) hash1.get(fieldName);
+        Hashtable hash2 = hash1.get(fieldName);
         if (hash2 == null) {
             if (fieldName.equalsIgnoreCase("default")) {
                 Hashtable newHash               = new Hashtable();
@@ -1191,7 +1186,7 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static ArrayList GetNonXDATElementNames() throws Exception {
-        ArrayList<String>           al  = new ArrayList<String>();
+        ArrayList<String>           al  = new ArrayList<>();
         Collection<ElementSecurity> ess = GetElementSecurities().values();
         for (ElementSecurity es : ess) {
             if (!es.getElementName().startsWith("xdat")) {
@@ -1204,7 +1199,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public static String GetFinalSecurityField(String s) {
-        GenericWrapperField f = null;
+        GenericWrapperField f;
         try {
             f = GenericWrapperElement.GetFieldForXMLPath(s);
             if (f != null) {
@@ -1212,9 +1207,7 @@ public class ElementSecurity extends ItemWrapper {
                     XFTReferenceI ref = f.getXFTReference();
                     if (!ref.isManyToMany()) {
                         XFTSuperiorReference sup  = (XFTSuperiorReference) ref;
-                        Iterator             iter = sup.getKeyRelations().iterator();
-                        while (iter.hasNext()) {
-                            XFTRelationSpecification spec = (XFTRelationSpecification) iter.next();
+                        for (final XFTRelationSpecification spec : sup.getKeyRelations()) {
                             s = s.substring(0, s.lastIndexOf(XFT.PATH_SEPARATOR) + 1) + spec.getLocalCol();
                             break;
                         }
@@ -1233,18 +1226,13 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public String getSecurityFields() {
-        if (this.primarySecurityFields.size() == 0) {
+        if (primarySecurityFields.size() == 0) {
             return "";
-        } else if (this.primarySecurityFields.size() == 1) {
-            return this.primarySecurityFields.get(0).toString();
-        } else {
-            String   s    = "";
-            Iterator iter = this.primarySecurityFields.iterator();
-            while (iter.hasNext()) {
-                s += " " + (String) iter.next();
-            }
-            return s;
         }
+        if (primarySecurityFields.size() == 1) {
+            return primarySecurityFields.get(0);
+        }
+        return StringUtils.join(primarySecurityFields, " ");
     }
 
     List<String> fields = null;
@@ -1264,7 +1252,7 @@ public class ElementSecurity extends ItemWrapper {
     public void initPSF(String field, EventMetaI meta) {
         try {
             String   query = "SELECT primary_security_field FROM xdat_primary_security_field WHERE primary_security_field = '" + field + "';";
-            XFTTable t     = XFTTable.Execute(query, this.getDBName(), null);
+            XFTTable t     = XFTTable.Execute(query, getDBName(), null);
             if (t.size() == 0) {
                 XdatPrimarySecurityField psf = new XdatPrimarySecurityField(this.getUser());
                 psf.setPrimarySecurityField(field);
@@ -1276,8 +1264,12 @@ public class ElementSecurity extends ItemWrapper {
         }
     }
 
-    //method added to facilitate the adding of permissions once you've created a new data type.  It loads a vm to build the requisite SQL.
-    public void initExistingPermissions(final String userName) {
+    /**
+     * Initializes permissions on existing objects when new data types are added to the system. The SQL is loaded from the
+     * META-INF/xnat/scripts/new-data-type-permissions.sql and META-INF/xnat/scripts/new-data-type-public-perms.sql
+     * resources.
+     */
+    public void initExistingPermissions() {
         final String elementName;
         try {
             elementName = getElementName();
@@ -1286,80 +1278,25 @@ public class ElementSecurity extends ItemWrapper {
             return;
         }
 
-        try (final InputStream is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm")) {
-            if (is != null) {
-                final List<String> statements = new ArrayList<>();
-                final Scanner      scanner    = new Scanner(is).useDelimiter(";");
-                while (scanner.hasNext()) {
-                    final String query = scanner.next();
-                    if (StringUtils.isNotBlank(query)) {
-                        statements.add(query.replace("$!element_name", elementName).replace("$element_name", elementName));
-                    }
-                }
+        final NamedParameterJdbcTemplate template = XDAT.getNamedParameterJdbcTemplate();
+        final String                     script   = !Permissions.getAllPublicProjects(template).isEmpty() ? NEW_DATA_TYPE_PUBLIC_PERMS : NEW_DATA_TYPE_PERMISSIONS;
 
-                final JdbcTemplate template   = XDAT.getJdbcTemplate();
-                final List<String> publicProjects = Permissions.getAllPublicProjects(template);
-                if (!publicProjects.isEmpty()) {
-                    statements.add(QUERY_INSERT_ELEMENT_ACCESS.replace("$!element_name", elementName).replace("$element_name", elementName));
-                    statements.add(QUERY_INSERT_FIELD_MAPPING_SET.replace("$!element_name", elementName).replace("$element_name", elementName));
-                    statements.add(QUERY_INSERT_FIELD_MAPPINGS.replace("$!element_name", elementName).replace("$element_name", elementName));
-                }
-                if (log.isInfoEnabled()) {
-                    log.info("Creating permissions for new data type '{}'. Generated SQL is:\n{}    ", elementName, StringUtils.join(statements, "\n    "));
-                }
-                final int[] results = template.batchUpdate(statements.toArray(new String[0]));
-                log.info("Got {} query results: {}", results.length, StringUtils.join(results, ", "));
-            }
-        } catch (IOException e) {
-            log.error("Got an I/O exception trying to open the \"/screens/new_dataType_permissions.vm\" template", e);
+        if (log.isInfoEnabled()) {
+            log.info("Creating permissions for new data type '{}'. Generated SQL is:\n{}", elementName, script);
         }
+
+        final String output = getDatabaseHelper().executeScript(script, "elementName", elementName);
+        log.info(output);
 
         try {
             updateElementAccessAndFieldMapMetaData();
             XDAT.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, elementName, CREATE);
-            PoolDBUtils.ClearCache(getDBName(), userName, Groups.getGroupDatatype());
+            log.info("Executing clear groups cache query: {}", CLEAR_GROUPS_ITEM_CACHE);
+            template.update(CLEAR_GROUPS_ITEM_CACHE, EmptySqlParameterSource.INSTANCE);
         } catch (Exception e) {
             log.error("", e);
         }
     }
-
-    private static final String QUERY_INSERT_ELEMENT_ACCESS    = "INSERT INTO xdat_element_access (element_name, xdat_user_xdat_user_id) " +
-                                                                 "  SELECT " +
-                                                                 "    '$!element_name' AS element_name, " +
-                                                                 "    xdat_user_id " +
-                                                                 "  FROM xdat_user u " +
-                                                                 "    LEFT JOIN xdat_element_access ea ON u.xdat_user_id = ea.xdat_user_xdat_user_id AND ea.element_name = '$!element_name' " +
-                                                                 "  WHERE " +
-                                                                 "    ea.element_name IS NULL AND " +
-                                                                 "    u.login = 'guest';";
-    private static final String QUERY_INSERT_FIELD_MAPPING_SET = "INSERT INTO xdat_field_mapping_set (method, permissions_allow_set_xdat_elem_xdat_element_access_id) " +
-                                                                 "  SELECT " +
-                                                                 "    'OR' AS method, " +
-                                                                 "    xdat_element_access_id " +
-                                                                 "  FROM xdat_element_access ea " +
-                                                                 "    LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                 "  WHERE ea.element_name = '$!element_name' AND fms.method IS NULL;";
-    private static final String QUERY_INSERT_FIELD_MAPPINGS    = "INSERT INTO xdat_field_mapping (field, field_value, create_element, read_element, edit_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id) " +
-                                                                 "  WITH public_projects AS ( " +
-                                                                 "      SELECT xfm.field_value AS project " +
-                                                                 "      FROM xdat_field_mapping xfm " +
-                                                                 "        LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
-                                                                 "        LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
-                                                                 "        LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id " +
-                                                                 "        LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id " +
-                                                                 "        LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id " +
-                                                                 "      WHERE xu.login = 'guest' AND " +
-                                                                 "            xea.element_name = 'xnat:projectData' AND " +
-                                                                 "            xfm.read_element = 1 AND " +
-                                                                 "            xfm.active_element = 1 " +
-                                                                 "  ) " +
-                                                                 "  SELECT " +
-                                                                 "    '$!element_name/project', project, 0, 1, 0, 0, 1, 'equals', xdat_element_access_id " +
-                                                                 "  FROM public_projects, xdat_element_access ea " +
-                                                                 "    LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                 "    LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id = fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                 "  WHERE " +
-                                                                 "    ea.element_name = '$!element_name';";
 
     static void updateElementAccessAndFieldMapMetaData() {
         try {
@@ -1696,8 +1633,32 @@ public class ElementSecurity extends ItemWrapper {
         return defaultValue;
     }
 
+    private static DatabaseHelper getDatabaseHelper() {
+        if (_databaseHelper == null) {
+            final ContextService context = XDAT.getContextService();
+            _databaseHelper = new DatabaseHelper(context.getBean(DataSource.class), context.getBean(TransactionTemplate.class));
+        }
+        return _databaseHelper;
+    }
+
+    private static String initializeNewDataTypePermissionsSql(final String script) {
+        final String target = "classpath:META-INF/xnat/scripts/" + script;
+        try {
+            return IOUtils.toString(BasicXnatResourceLocator.getResource(target).getInputStream(), Charset.defaultCharset());
+        } catch (IOException e) {
+            log.error("Unable to load the resource \"{}\"", target, e);
+            return "";
+        }
+    }
+
+    private static final String NEW_DATA_TYPE_PERMISSIONS  = initializeNewDataTypePermissionsSql("new-data-type-permissions.sql");
+    private static final String NEW_DATA_TYPE_PUBLIC_PERMS = NEW_DATA_TYPE_PERMISSIONS + "\n\n" + initializeNewDataTypePermissionsSql("new-data-type-public-perms.sql");
+    private static final String CLEAR_GROUPS_ITEM_CACHE    = "DELETE FROM xs_item_cache WHERE elementname = '" + Groups.getGroupDatatype() + "'";
+
     private static final Map<String, ElementSecurity> elements = new HashMap<>();
     private static final Object                       lock     = new Object();
+
+    private static DatabaseHelper _databaseHelper;
 
     private final List<String>                           primarySecurityFields = new ArrayList<>();
     private final List<ElementAction>                    elementActions        = new ArrayList<>();
@@ -1706,4 +1667,3 @@ public class ElementSecurity extends ItemWrapper {
     private String elementName        = null;
     private String listingActionsJson = null;
 }
-

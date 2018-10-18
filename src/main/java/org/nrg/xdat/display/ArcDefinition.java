@@ -128,6 +128,15 @@ public class ArcDefinition {
     }
 
     /**
+     * Copy of the member list.
+     *
+     * @return A list of the members of the archive definition.
+     */
+    public List<String> getMemberList() {
+        return new ArrayList<>(members);
+    }
+
+    /**
      * Adds the indicated member.
      *
      * @param elementName The element name to add.

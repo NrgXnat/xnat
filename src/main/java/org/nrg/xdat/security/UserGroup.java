@@ -10,6 +10,8 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -32,6 +34,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -141,7 +144,6 @@ public class UserGroup implements UserGroupI {
      * @throws Exception When an error occurs.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public List<List<Object>> getPermissionItems(final String username) throws Exception {
         if (!_permissionItemsByLogin.containsKey(username)) {
             final Map<String, ElementAccessManager> accessManagers = getAccessManagers();
@@ -348,7 +350,8 @@ public class UserGroup implements UserGroupI {
 
     public void initializeAccessManagers(final NamedParameterJdbcTemplate template) {
         _accessManagers.clear();
-        _accessManagers.putAll(ElementAccessManager.initialize(template, QUERY_ELEMENT_ACCESS, new MapSqlParameterSource("xdatUsergroupId", pk)));
+        final Map<String, ElementAccessManager> accessManagers = ElementAccessManager.initialize(template, QUERY_ELEMENT_ACCESS, new MapSqlParameterSource("xdatUsergroupId", pk));
+        _accessManagers.putAll(accessManagers);
     }
 
     public void initializeFeatures() {
@@ -366,18 +369,19 @@ public class UserGroup implements UserGroupI {
         }
     }
 
-    public void addPermission(String elementName, PermissionCriteriaI pc, UserI authenticatedUser) throws Exception {
-        XdatUsergroup xdatGroup = getSavedUserGroupImpl(authenticatedUser);
-
-        XdatElementAccess xea = null;
-        for (XdatElementAccess temp : xdatGroup.getElementAccess()) {
-            if (temp.getElementName().equals(elementName)) {
-                xea = temp;
-                break;
+    public void addPermission(final String elementName, final PermissionCriteriaI pc, final UserI authenticatedUser) throws Exception {
+        final XdatUsergroup xdatGroup = getSavedUserGroupImpl(authenticatedUser);
+        final Optional<XdatElementAccess> accessCandidate = Iterables.tryFind(xdatGroup.getElementAccess(), new Predicate<XdatElementAccess>() {
+            @Override
+            public boolean apply(@Nullable final XdatElementAccess access) {
+                return access != null && access.getElementName().equals(elementName);
             }
-        }
+        });
 
-        if (xea == null) {
+        final XdatElementAccess xea;
+        if (accessCandidate.isPresent()) {
+            xea = accessCandidate.get();
+        } else {
             xea = new XdatElementAccess(authenticatedUser);
             xea.setElementName(elementName);
             xdatGroup.setElementAccess(xea);
@@ -385,7 +389,7 @@ public class UserGroup implements UserGroupI {
 
         final XdatFieldMappingSet       fieldMappingSet;
         final List<XdatFieldMappingSet> set = xea.getPermissions_allowSet();
-        if (set.size() == 0) {
+        if (set.isEmpty()) {
             fieldMappingSet = new XdatFieldMappingSet(authenticatedUser);
             fieldMappingSet.setMethod("OR");
             xea.setPermissions_allowSet(fieldMappingSet);
@@ -393,17 +397,17 @@ public class UserGroup implements UserGroupI {
             fieldMappingSet = set.get(0);
         }
 
-
-        XdatFieldMapping xfm = null;
-
-        for (XdatFieldMapping t : fieldMappingSet.getAllow()) {
-            if (t.getField().equals(pc.getField()) && t.getFieldValue().equals(pc.getFieldValue())) {
-                xfm = t;
-                break;
+        final XdatFieldMapping xfm;
+        final Optional<XdatFieldMapping> mappingCandidate = Iterables.tryFind(fieldMappingSet.getAllow(), new Predicate<XdatFieldMapping>() {
+            @Override
+            public boolean apply(@Nullable final XdatFieldMapping mapping) {
+                return mapping != null && mapping.getField().equals(pc.getField()) && mapping.getFieldValue().equals(pc.getFieldValue());
             }
-        }
+        });
 
-        if (xfm == null) {
+        if (mappingCandidate.isPresent()) {
+            xfm = mappingCandidate.get();
+        } else {
             xfm = new XdatFieldMapping(authenticatedUser);
             xfm.setField(pc.getField());
             xfm.setFieldValue((String) pc.getFieldValue());
@@ -420,10 +424,26 @@ public class UserGroup implements UserGroupI {
 
     public Map<String, List<PermissionCriteriaI>> getAllPermissions() {
         if (_permissionCriteriaByDataType.isEmpty()) {
-            for (final ElementAccessManager manager : getAccessManagers().values()) {
-                for (final PermissionSetI permissions : manager.getPermissionSets()) {
+            final Collection<ElementAccessManager> values = getAccessManagers().values();
+            for (final ElementAccessManager manager : values) {
+                final List<PermissionSetI> permissionSets = manager.getPermissionSets();
+                for (final PermissionSetI permissions : permissionSets) {
                     if (permissions.isActive()) {
-                        addPermissionCriteria(permissions.getAllCriteria());
+                        final List<PermissionCriteriaI> allCriteria = permissions.getAllCriteria();
+//                        final String formatted = StringUtils.join(Lists.transform(allCriteria, new Function<PermissionCriteriaI, String>() {
+//                            @Override
+//                            public String apply(final PermissionCriteriaI criteria) {
+//                                return StringUtils.join(Arrays.asList("Field: " + criteria.getField(),
+//                                                                      "Field value: " + criteria.getFieldValue(),
+//                                                                      "Read: " + criteria.getRead(),
+//                                                                      "Activate: " + criteria.getActivate(),
+//                                                                      "Edit: " + criteria.getEdit(),
+//                                                                      "Create: " + criteria.getCreate(),
+//                                                                      "Delete: " + criteria.getDelete()), ", ");
+//                            }
+//                        }), "\n");
+//                        ADHOC.debug("Group {}: found active permission set with {} criteria\n{}", getId(), allCriteria.size(), formatted);
+                        addPermissionCriteria(allCriteria);
                     }
                 }
             }
@@ -474,6 +494,9 @@ public class UserGroup implements UserGroupI {
         final String elementName = criterion.getElementName();
         _permissionCriteriaByDataType.put(elementName, criterion);
         _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(elementName, criterion.getField()), criterion);
+        if (log.isTraceEnabled()) {
+            log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", getTag(), getId(), elementName, criterion.getField(), criterion.getFieldValue(), criterion.getRead(), criterion.getActivate(), criterion.getEdit(), criterion.getCreate(), criterion.getDelete());
+        }
     }
 
     /**
@@ -627,12 +650,12 @@ public class UserGroup implements UserGroupI {
                                                             "  usergroup.xdat_usergroup_id = :xdatUsergroupId " +
                                                             "ORDER BY element_name, field";
 
-    private String              id          = null;
-    private Integer             pk          = null;
-    private String              tag         = null;
-    private String              displayName = null;
-    private XdatUsergroup       xdatGroup   = null;
-    private GroupFeatureService _groupFeatureService;
+    private              String              id          = null;
+    private              Integer             pk          = null;
+    private              String              tag         = null;
+    private              String              displayName = null;
+    private              XdatUsergroup       xdatGroup   = null;
+    private              GroupFeatureService _groupFeatureService;
 
     private final Map<String, ElementAccessManager>     _accessManagers                       = new HashMap<>();
     private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());

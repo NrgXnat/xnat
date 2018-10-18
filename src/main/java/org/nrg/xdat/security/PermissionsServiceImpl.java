@@ -82,12 +82,17 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
-        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
+        final String fullXMLName = root.getFullXMLName();
+        if (!ElementSecurity.IsSecureElement(fullXMLName, SecurityManager.READ)) {
             return null;
         }
 
+        final boolean isProjectData = StringUtils.equalsIgnoreCase("xnat:projectData", fullXMLName);
         final CriteriaCollection collection = new CriteriaCollection("OR");
-        for (final PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+        for (final PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
+            if (isProjectData && log.isTraceEnabled()) {
+                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
+            }
             if (criteria.getRead()) {
                 collection.add(DisplayCriteria.buildCriteria(root, criteria));
             }

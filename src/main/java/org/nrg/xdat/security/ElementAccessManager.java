@@ -39,6 +39,7 @@ import static org.nrg.xdat.security.PermissionCriteria.READ_ELEMENT;
 /**
  * @author Tim
  */
+@SuppressWarnings({"unused", "RedundantThrows"})
 @Slf4j
 public class ElementAccessManager {
     public static Map<String, ElementAccessManager> initialize(final NamedParameterJdbcTemplate template, final String query, final SqlParameterSource parameters) {
@@ -71,8 +72,8 @@ public class ElementAccessManager {
         log.info("Creating element access manager for element {}", elementName);
 
         final PermissionSet permissionSet = new PermissionSet(getElement(), propertySets);
-        if (log.isTraceEnabled()) {
-            logPermissionSet(permissionSet, index++);
+        if (log.isDebugEnabled()) {
+            logPermissionSet(permissionSet, "properties");
         }
         sets.add(permissionSet);
     }
@@ -82,7 +83,6 @@ public class ElementAccessManager {
         setElementName(elementName);
         log.info("Creating element access manager for element {}", elementName);
 
-        index = 1;
         // Each sub item is ElementAccess
         for (final ItemI sub : item.getChildItems(XFT.PREFIX + ":element_access.permissions.allow_set")) {
             // Each permission set has:
@@ -100,8 +100,8 @@ public class ElementAccessManager {
             // 	authorized      true (?)
             // One or more permission sets
             final PermissionSet permissionSet = new PermissionSet(getElement(), sub);
-            if (log.isTraceEnabled()) {
-                logPermissionSet(permissionSet, index++);
+            if (log.isDebugEnabled()) {
+                logPermissionSet(permissionSet, "item");
             }
             sets.add(permissionSet);
         }
@@ -271,13 +271,13 @@ public class ElementAccessManager {
                         xftCriteria.put(action, coll);
                     }
                 } catch (XFTInitException e) {
-                    log.error("", e);
-                } catch (FieldNotFoundException e) {
-                    log.error("", e);
+                    log.error("An error occurred accessing XFT while trying to get XFT criteria on element '{}' for action '{}'", getSchemaElementName(), action, e);
                 } catch (ElementNotFoundException e) {
-                    log.error("", e);
+                    log.error("Couldn't find the element {} while trying to get XFT criteria on element '{}' for action '{}'", e.ELEMENT, getSchemaElementName(), action, e);
+                } catch (FieldNotFoundException e) {
+                    log.error("Couldn't find the field {} while trying to get XFT criteria on element '{}' for action '{}'", e.FIELD, getSchemaElementName(), action, e);
                 } catch (Exception e) {
-                    log.error("", e);
+                    log.error("An unexpected error occurred while trying to get XFT criteria on element '{}' for action '{}'", getSchemaElementName(), action, e);
                 }
             }
 
@@ -301,16 +301,16 @@ public class ElementAccessManager {
 
                         xdatCriteria.put(action, coll);
                     }
-                } catch (FieldEmptyException e) {
-                    log.error("", e);
                 } catch (XFTInitException e) {
-                    log.error("", e);
-                } catch (FieldNotFoundException e) {
-                    log.error("", e);
+                    log.error("An error occurred accessing XFT while trying to get XDAT criteria on element '{}' for action '{}'", getSchemaElementName(), action, e);
                 } catch (ElementNotFoundException e) {
-                    log.error("", e);
+                    log.error("Couldn't find the element {} while trying to get XDAT criteria on element '{}' for action '{}'", e.ELEMENT, getSchemaElementName(), action, e);
+                } catch (FieldEmptyException e) {
+                    log.error("The field {} was empty while trying to get XDAT criteria on element '{}' for action '{}'", e.FIELD, getSchemaElementName(), action, e);
+                } catch (FieldNotFoundException e) {
+                    log.error("Couldn't find the field {} while trying to get XDAT criteria on element '{}' for action '{}'", e.FIELD, getSchemaElementName(), action, e);
                 } catch (Exception e) {
-                    log.error("", e);
+                    log.error("An unexpected error occurred while trying to get XDAT criteria on element '{}' for action '{}'", getSchemaElementName(), action, e);
                 }
             }
 
@@ -328,35 +328,11 @@ public class ElementAccessManager {
         return criteria;
     }
 
-    private static void logPermissionSet(final PermissionSet permissionSet, final int index) {
-        final StringBuilder builder = new StringBuilder("Permission set ").append(index).append(":\n");
-        builder.append(" * Method: ").append(permissionSet.getMethod()).append("\n");
-        builder.append(" * Permission criteria: ").append("\n");
+    private void logPermissionSet(final PermissionSet permissionSet, final String initMethod) {
+        final String method = permissionSet.getMethod();
         for (final PermissionCriteriaI criteria : permissionSet.getPermCriteria()) {
-            builder.append("   * Element:     ").append(criteria.getElementName()).append("\n");
-            builder.append("   * Field:       ").append(criteria.getField()).append("\n");
-            builder.append("   * Field value: ").append(criteria.getFieldValue()).append("\n");
-            builder.append("   * RECDA:       ").append(criteria.getRead()).append(" ").append(criteria.getEdit()).append(" ").append(criteria.getCreate()).append(" ").append(criteria.getDelete()).append(" ").append(criteria.getActivate()).append("\n");
+            log.debug("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", elementName, method, criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete(), initMethod);
         }
-        final List<PermissionSetI> permissionSets = permissionSet.getPermSets();
-        if (permissionSets == null || permissionSets.isEmpty()) {
-            builder.append(" * No embedded permission sets found.").append("\n");
-        } else {
-            builder.append(" * Embedded permission sets:").append("\n");
-            int embeddedIndex = 1;
-            for (final PermissionSetI embedded : permissionSets) {
-                builder.append("  * Embedded permission set ").append(embeddedIndex++).append("\n");
-                builder.append("    * Method: ").append(embedded.getMethod()).append("\n");
-                builder.append("    * Permission criteria: ");
-                for (final PermissionCriteriaI criteria : embedded.getPermCriteria()) {
-                    builder.append("    *** Element:     ").append(criteria.getElementName()).append("\n");
-                    builder.append("      * Field:       ").append(criteria.getField()).append("\n");
-                    builder.append("      * Field value: ").append(criteria.getFieldValue()).append("\n");
-                    builder.append("      * RECDA:       ").append(criteria.getRead()).append(" ").append(criteria.getEdit()).append(" ").append(criteria.getCreate()).append(" ").append(criteria.getDelete()).append(" ").append(criteria.getActivate()).append("\n");
-                }
-            }
-        }
-        log.trace(builder.toString());
     }
 
     private final List<PermissionSetI>            sets         = new ArrayList<>();
@@ -367,7 +343,5 @@ public class ElementAccessManager {
     private SchemaElement   se          = null;
     private ElementDisplay  ed          = null;
     private ElementSecurity es          = null;
-
-    private int index;
 }
 

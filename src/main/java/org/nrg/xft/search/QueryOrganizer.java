@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.display.*;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
@@ -113,7 +114,8 @@ public class QueryOrganizer implements QueryOrganizerI{
     {
         xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 
-        if (XftStringUtils.GetRootElementName(xmlPath).equalsIgnoreCase(this.getRootElement().getFullXMLName()))
+        final String rootElementName = getRootElement().getFullXMLName();
+        if (XftStringUtils.GetRootElementName(xmlPath).equalsIgnoreCase(rootElementName))
         {
             boolean found = false;
             for(String tField: fields)
@@ -132,7 +134,8 @@ public class QueryOrganizer implements QueryOrganizerI{
             SchemaElementI foreign = XftStringUtils.GetRootElement(xmlPath);
 
             assert foreign != null;
-            ArrayList al = (ArrayList)externalFields.get(foreign.getFullXMLName());
+            final String foreignFullXMLName = foreign.getFullXMLName();
+            ArrayList    al          = (ArrayList)externalFields.get(foreignFullXMLName);
 
             if (al == null)
             {
@@ -153,7 +156,10 @@ public class QueryOrganizer implements QueryOrganizerI{
             if (! found)
             {
                 al.add(xmlPath);
-                externalFields.put(foreign.getFullXMLName(),al);
+                if (rootElementName.equals("xnat:projectData")) {
+                    log.debug("Adding foreign element '{}' to project from XMLPath '{}'", foreignFullXMLName, xmlPath, new Exception());
+                }
+                externalFields.put(foreignFullXMLName, al);
             }
         }
 
@@ -656,22 +662,36 @@ public class QueryOrganizer implements QueryOrganizerI{
                     securityQO = new QueryOrganizer(rootElement,null,ViewManager.ALL);
                     for (final Object o1 : coll.getSchemaFields()) {
                         Object[]     o = (Object[]) o1;
-                        String       s = (String) o[0];
-                        SchemaFieldI f = (SchemaFieldI) o[1];
-                        if (f == null) {
-                            f = GenericWrapperElement.GetFieldForXMLPath(s);
+                        String       path = (String) o[0];
+                        SchemaFieldI field = (SchemaFieldI) o[1];
+                        final boolean hasSchemaField;
+                        if (field == null) {
+                            field = GenericWrapperElement.GetFieldForXMLPath(path);
+                            hasSchemaField = false;
+                        } else {
+                            hasSchemaField = true;
                         }
-                        String fieldName = s.substring(s.lastIndexOf("/") + 1);
-                        assert f != null;
-                        String id = f.getId();
-                        if (!id.equalsIgnoreCase(fieldName)) {
-                            if (f.isReference()) {
-                                GenericWrapperElement foreign = (GenericWrapperElement) f.getReferenceElement();
-                                GenericWrapperField   sf      = foreign.getAllPrimaryKeys().get(0);
-                                s = sf.getXMLPathString(s);
+                        String fieldName = path.substring(path.lastIndexOf("/") + 1);
+                        assert field != null;
+                        String id = field.getId();
+                        if (log.isTraceEnabled()) {
+                            if (hasSchemaField) {
+                                log.trace("There was a schema field for type '{}' with ID '{}' and parent type '{}'", path, id, figureItOut(field));
+                            } else {
+                                log.trace("There was no schema field for type '{}', retrieved the field by XMLPath with ID '{}' and name '{}'", path, id, figureItOut(field));
                             }
                         }
-                        securityQO.addField(s);
+                        if (!id.equalsIgnoreCase(fieldName)) {
+                            log.debug("The ID '{}' does not match the name '{}', checking for reference", id, fieldName);
+                            if (field.isReference()) {
+                                final GenericWrapperElement foreign = (GenericWrapperElement) field.getReferenceElement();
+                                final GenericWrapperField   foreignPK      = foreign.getAllPrimaryKeys().get(0);
+                                log.debug("Field '{}' is a reference! The element is '{}', with primary key field '{}' and a parent '{}'", id, foreign.getXMLName(), foreignPK.getXMLPathString(), foreignPK.getParentElement().getFullXMLName());
+                                path = foreignPK.getXMLPathString(path);
+                            }
+                        }
+                        log.info("Adding field '{}' to the query", path);
+                        securityQO.addField(path);
                     }
 
                     Iterator keys = rootElement.getAllPrimaryKeys().iterator();
@@ -737,6 +757,16 @@ public class QueryOrganizer implements QueryOrganizerI{
         }
 
         return sql_name;
+    }
+
+    private String figureItOut(final SchemaFieldI field) {
+        if (field instanceof GenericWrapperField) {
+            return ((GenericWrapperField) field).getWrapped().getParentElement().getName();
+        }
+        if (field instanceof SchemaField) {
+            return ((SchemaField) field).getWrapped().getParentElement().getFullXMLName();
+        }
+        return "";
     }
 
     protected void addFieldToJoin(String[] layers) throws Exception

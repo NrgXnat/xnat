@@ -78,6 +78,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -1165,8 +1166,8 @@ public class DefaultCatalogService implements CatalogService {
             parameters.addValue("sessionIds", sessionIds);
             parameters.addValue("projectId", projectId);
 
-            final List<String> scanTypesWithNullRemoved   = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
-            final List<String> scanFormatsWithNullRemoved = Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+            final List<String> scanTypesWithNullRemoved   = cleanupScanTypes(scanTypes);
+            final List<String> scanFormatsWithNullRemoved = cleanupScanFormats(scanFormats);
 
             parameters.addValue("scanTypes", scanTypesWithNullRemoved);
             parameters.addValue("scanFormats", scanFormatsWithNullRemoved);
@@ -1218,6 +1219,30 @@ public class DefaultCatalogService implements CatalogService {
 
         return sessionMap;
     }
+    
+    // Clean up scan formats before we search for them in the database
+    private List<String> cleanupScanFormats(List<String> scanFormats){
+        // Remove null
+        return Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+    }
+    
+    // Clean up scan types before we search for them in the database
+    private List<String> cleanupScanTypes(List<String> scanTypes){
+        // First remove null values
+        final List<String> types      = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
+        
+        final List<String> cleanTypes = new ArrayList<String>(); 
+        for (String type : types) {
+            //A \ in scantype is stored in the database as \\
+            //We will use what the database expects to query it
+            if (type.contains("\\")) {
+                cleanTypes.add(type.replace("\\", "\\\\"));
+            }else {
+                cleanTypes.add(type);
+             }
+        }
+        return cleanTypes;
+    }
 
     private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, final boolean withSize) {
         Long totalSize              = 0L;
@@ -1237,8 +1262,8 @@ public class DefaultCatalogService implements CatalogService {
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
 
-            final List<String> scanTypesWithNullRemoved   = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
-            final List<String> scanFormatsWithNullRemoved = Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+            final List<String> scanTypesWithNullRemoved = cleanupScanTypes(scanTypes);
+            final List<String> scanFormatsWithNullRemoved = cleanupScanFormats(scanFormats);
 
             parameters.addValue("scanTypes", scanTypesWithNullRemoved);
             parameters.addValue("scanFormats", scanFormatsWithNullRemoved);
@@ -1255,12 +1280,40 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry    = new CatEntryBean();
                 final String       scanId   = (String) scan.get("scan_id");
+                      String       scanType = (String) scan.get("scan_type");
                 final Long         scanSize = (Long) scan.get("size");
                 final String       resource = URLEncoder.encode(StringUtils.defaultIfBlank((String) scan.get("resource"), "NULL"), "UTF-8");
-                entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                
+                if (options.isSimplified()) {
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                }else {
+                    // Include Series Description in the folder name for "Non Simplified" Download
+                
+                    // ScanType may have characters not conformant to naming conventions on the OS
+                    // InvalidPathException should take care of that
+                    if (null == scanType) {
+                        entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    }else {
+                        
+                        // First clean up the scan type string so we don't break the download
+                        // Replace \,/,(,), and spaces with underscores
+                        scanType = scanType.replaceAll("[\\\\/() ]", "_"); 
+                        String path = null;
+                        try {
+                            path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);
+                        }catch(InvalidPathException ipe) {
+                            path=getPath(options, project, subject, label, "scans", scanId, "resources", resource);
+                        }
+                        if (null != path) { 
+                            entry.setName(path);
+                        }
+                    }
+                }
+                
                 entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
+                
                 if (scanSize != null) {
                     totalSize += scanSize;
                 } else {
@@ -1480,6 +1533,7 @@ public class DefaultCatalogService implements CatalogService {
                                                                          "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT    = "SELECT " +
                                                                          "  scan.id   AS scan_id, " +
+                                                                         "  scan.type AS scan_type, " +
                                                                          "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
                                                                          "  res.file_size AS size " +
                                                                          "FROM xnat_imagescandata scan " +

@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_CALLED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_FAILED;
@@ -77,9 +78,8 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getAllActions(){
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            List<Action> providerActions = provider.getAllActions();
-            if(providerActions != null)
-                actions.addAll(providerActions);
+            Optional.ofNullable(provider.getAllActions()).ifPresent(actions::addAll);
+
         }
         return actions;
     }
@@ -88,9 +88,8 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActions(UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            List<Action> providerActions = provider.getActions(null, null, user);
-            if(providerActions != null)
-                actions.addAll(providerActions);
+            Optional.ofNullable(provider.getActions(null, null, user)).ifPresent(actions::addAll);
+
         }
         return actions;
     }
@@ -99,7 +98,7 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActions(String xnatType, UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            actions.addAll(provider.getActions(null, xnatType, user));
+            Optional.ofNullable(provider.getActions(null, xnatType, user)).ifPresent(actions::addAll);
         }
         return actions;
     }
@@ -108,7 +107,7 @@ public class ActionManagerImpl implements ActionManager {
     public List<Action> getActions(String projectId, String xnatType, UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            actions.addAll(provider.getActions(projectId, xnatType, user));
+            Optional.ofNullable(provider.getActions(projectId, xnatType, user)).ifPresent(actions::addAll);
         }
         return actions;
     }
@@ -154,22 +153,22 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    public boolean validateAction(String actionKey, String projectId, String xnatType, UserI user) {
+    public boolean validateAction(String actionKey, String projectId, UserI user) {
         EventServiceActionProvider provider = getActionProviderByKey(actionKey);
-        if(!provider.isActionAvailable(actionKey, projectId, xnatType, user)) {
-            log.error("Action:{} validation failed for ProjectId:{}, XnatType:{}, User:{}", actionKey, projectId, xnatType, user.getLogin());
+        if(!provider.isActionAvailable(actionKey, projectId, user)) {
+            log.error("Action:{} validation failed for ProjectId:{}, User:{}", actionKey, projectId, user.getLogin());
             return false;
         }
         return true;
     }
 
     @Override
-    public boolean validateAction(String actionKey, List<String> projectIds, String xnatType, UserI user) {
+    public boolean validateAction(String actionKey, List<String> projectIds, UserI user) {
         if(projectIds == null || projectIds.isEmpty()){
-          return validateAction(actionKey, "", xnatType, user);
+          return validateAction(actionKey, "", user);
         } else {
             for (String projectId : projectIds) {
-                if (!validateAction(actionKey, projectId, xnatType, user)) {
+                if (!validateAction(actionKey, projectId, user)) {
                     return false;
                 }
             }

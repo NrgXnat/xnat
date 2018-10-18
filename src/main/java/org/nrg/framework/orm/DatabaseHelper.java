@@ -9,41 +9,69 @@
 
 package org.nrg.framework.orm;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.postgresql.util.PGInterval;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.JdbcAccessor;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
-import java.util.Date;
+import java.util.*;
 import java.util.concurrent.Callable;
 
+@Getter
+@Accessors(prefix = "_")
+@Slf4j
 @SuppressWarnings("WeakerAccess")
 public class DatabaseHelper {
     public DatabaseHelper(final DataSource dataSource) {
-        this(dataSource, null);
+        this(dataSource, null, null, null);
     }
 
     public DatabaseHelper(final JdbcTemplate template) {
-        this(template, null);
+        this(template.getDataSource(), template, null, null);
+    }
+
+    public DatabaseHelper(final NamedParameterJdbcTemplate parameterized) {
+        this(((JdbcAccessor) parameterized.getJdbcOperations()).getDataSource(), null, parameterized, null);
     }
 
     public DatabaseHelper(final DataSource dataSource, final TransactionTemplate transactionTemplate) {
-        _template = new JdbcTemplate(dataSource);
-        _transactionTemplate = transactionTemplate;
+        this(dataSource, null, null, transactionTemplate);
     }
 
     public DatabaseHelper(final JdbcTemplate template, final TransactionTemplate transactionTemplate) {
-        _template = template;
+        this(template.getDataSource(), template, null, transactionTemplate);
+    }
+
+    public DatabaseHelper(final NamedParameterJdbcTemplate template, final TransactionTemplate transactionTemplate) {
+        this(((JdbcAccessor) template.getJdbcOperations()).getDataSource(), null, template, transactionTemplate);
+    }
+
+    private DatabaseHelper(@Nonnull final DataSource dataSource, final JdbcTemplate template, final NamedParameterJdbcTemplate parameterized, final TransactionTemplate transactionTemplate) {
+        _jdbcTemplate = ObjectUtils.defaultIfNull(template, new JdbcTemplate(dataSource));
+        _parameterizedTemplate = ObjectUtils.defaultIfNull(parameterized, new NamedParameterJdbcTemplate(dataSource));
         _transactionTemplate = transactionTemplate;
     }
 
@@ -64,17 +92,6 @@ public class DatabaseHelper {
 
     public static int convertPGIntervalToIntSeconds(final String interval) {
         return (int) convertPGIntervalToSeconds(interval);
-    }
-
-
-    /**
-     * Gets the database helper's JDBC template to allow database transactions outside of the helper's standard
-     * functions.
-     *
-     * @return The internal JDBC template.
-     */
-    public JdbcTemplate getJdbcTemplate() {
-        return _template;
     }
 
     /**
@@ -101,7 +118,7 @@ public class DatabaseHelper {
      * @throws SQLException If an error occurs while accessing the database.
      */
     public boolean tableExists(final String schema, final String table) throws SQLException {
-        try (final Connection connection = _template.getDataSource().getConnection();
+        try (final Connection connection = _jdbcTemplate.getDataSource().getConnection();
              final ResultSet results = connection.getMetaData().getTables("catalog", schema, table, new String[]{"TABLE"})) {
             if (results.next()) {
                 return true;
@@ -123,7 +140,7 @@ public class DatabaseHelper {
      */
     @Nullable
     public String columnExists(final String table, final String column) throws SQLException {
-        try (final Connection connection = _template.getDataSource().getConnection();
+        try (final Connection connection = _jdbcTemplate.getDataSource().getConnection();
              final ResultSet results = connection.getMetaData().getColumns("catalog", null, table, column)) {
             // We should only find a single result. If we find that (i.e. next() returns true), then return the type.
             if (results.next()) {
@@ -164,7 +181,7 @@ public class DatabaseHelper {
         if (!StringUtils.equals(type, dataType)) {
             executeTransaction(new SetColumnDataType(table, column, dataType), true);
         } else {
-            _log.info("Not updating datatype for column {} in the table {}, the datatype is already {}.", column, table, dataType);
+            log.info("Not updating datatype for column {} in the table {}, the datatype is already {}.", column, table, dataType);
         }
     }
 
@@ -207,7 +224,7 @@ public class DatabaseHelper {
                 }
             });
         } else if (executeWithoutTransactionManager) {
-            _log.warn("No transaction template found in the application context, so I'm performing the requested operation without transactional protection.");
+            log.warn("No transaction template found in the application context, so I'm performing the requested operation without transactional protection.");
             try {
                 return callable.call();
             } catch (Exception e) {
@@ -216,6 +233,83 @@ public class DatabaseHelper {
         } else {
             return logMessage("No transaction template found in the application context, will not perform the requested operation without transactional protection.");
         }
+    }
+
+    /**
+     * Executes the submitted SQL script within a transaction. The script can have multiple lines including comments. The returned string is a
+     * JSON-serialized list of pairs. Each row contains a pair consisting of the number of rows affected by a statement in the script and the
+     * statement itself.
+     *
+     * @param script The SQL script to be executed.
+     *
+     * @return A serialized list of all executed statements along with the number of database rows affected by the statement.
+     */
+    @SuppressWarnings("unused")
+    public String executeScript(final String script) {
+        return executeScript(script, Collections.<String, Object>emptyMap());
+    }
+
+    /**
+     * Executes the submitted SQL script within a transaction. The script can have multiple lines including comments. The returned string is a
+     * JSON-serialized list of pairs. Each row contains a pair consisting of the number of rows affected by a statement in the script and the
+     * statement itself. The name and value parameters are passed to the template for script execution.
+     *
+     * @param script The SQL script to be executed.
+     * @param name   The name of the parameter to be passed onto the template for script execution.
+     * @param value  The value of the parameter to be passed onto the template for script execution.
+     *
+     * @return A serialized list of all executed statements along with the number of database rows affected by the statement.
+     */
+    public String executeScript(final String script, final String name, final Object value) {
+        return executeScript(script, ImmutableMap.of(name, value));
+    }
+
+    /**
+     * Executes the submitted SQL script within a transaction. The script can have multiple lines including comments. The returned string is a
+     * JSON-serialized list of pairs. Each row contains a pair consisting of the number of rows affected by a statement in the script and the
+     * statement itself. The parameters map is passed to the template for script execution.
+     *
+     * @param script     The SQL script to be executed.
+     * @param parameters The parameters to be passed onto the template for script execution.
+     *
+     * @return A serialized list of all executed statements along with the number of database rows affected by the statement.
+     */
+    public String executeScript(final String script, final Map<String, Object> parameters) {
+        return executeTransaction(new CallableScript(_parameterizedTemplate, script, parameters));
+    }
+
+    public static List<String> convertSqlScriptToStatements(final String script) {
+        return Lists.transform(Arrays.asList(StringUtils.split(script, ";")), new Function<String, String>() {
+            @Override
+            public String apply(final String incoming) {
+                return incoming.trim().replaceAll("--.*\n", "").replaceAll("\\s*\n\\s*", " ");
+            }
+        });
+    }
+
+    // TODO: Convert this to return the List<Pair<Integer,String>> rather than String. The catch is that the executeTransaction() method can be genericized without affecting the returned logMessage() values.
+    private static class CallableScript implements Callable<String> {
+        CallableScript(final NamedParameterJdbcTemplate template, final String script, final Map<String, Object> parameters) {
+            _template = template;
+            _statements = convertSqlScriptToStatements(script);
+            _parameters = parameters != null && !parameters.isEmpty() ? new MapSqlParameterSource(parameters) : EmptySqlParameterSource.INSTANCE;
+        }
+
+        @Override
+        public String call() throws Exception {
+            final List<Pair<Integer, String>> results = new ArrayList<>();
+            for (final String statement : _statements) {
+                final int affected = _template.update(statement, _parameters);
+                log.debug("{} rows affected by query: {}", affected, statement);
+                results.add(Pair.of(affected, statement));
+            }
+            return MAPPER.writeValueAsString(results);
+        }
+
+        private static final ObjectMapper               MAPPER = new ObjectMapper();
+        private final        NamedParameterJdbcTemplate _template;
+        private final        List<String>               _statements;
+        private final        SqlParameterSource         _parameters;
     }
 
     private class SetColumnDataType implements Callable<String> {
@@ -228,17 +322,17 @@ public class DatabaseHelper {
         @Override
         public String call() throws Exception {
             // Add the new column with the suffix "_new" and a timestamp.
-            final String tempColumnName = _column + "_new_" + Long.toString(new Date().getTime());
-            _template.execute("ALTER TABLE " + _table + " ADD COLUMN " + tempColumnName + " " + _dataType);
+            final String tempColumnName = _column + "_new_" + new Date().getTime();
+            _jdbcTemplate.execute("ALTER TABLE " + _table + " ADD COLUMN " + tempColumnName + " " + _dataType);
 
             // Copy all values from the existing column into the new column
-            _template.execute("UPDATE " + _table + " SET " + tempColumnName + " = " + _column);
+            _jdbcTemplate.execute("UPDATE " + _table + " SET " + tempColumnName + " = " + _column);
 
             // Drop the old column
-            _template.execute("ALTER TABLE " + _table + " DROP COLUMN " + _column);
+            _jdbcTemplate.execute("ALTER TABLE " + _table + " DROP COLUMN " + _column);
 
             // Move the new column to the same name as the old.
-            _template.execute("ALTER TABLE " + _table + " RENAME " + tempColumnName + " TO " + _column);
+            _jdbcTemplate.execute("ALTER TABLE " + _table + " RENAME " + tempColumnName + " TO " + _column);
             return null;
         }
 
@@ -248,22 +342,22 @@ public class DatabaseHelper {
         private final String _dataType;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private String logMessage(final String message) {
         return logMessage(message, null);
     }
 
     private String logMessage(final String message, final Exception e) {
         if (e != null) {
-            _log.error(message, e);
+            log.error(message, e);
             return message + "\n" + "Exception type: " + e.getClass().getName() + "\n" + e.getMessage();
         } else {
-            _log.warn(message);
+            log.warn(message);
             return message;
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(DatabaseHelper.class);
-
-    private final JdbcTemplate        _template;
-    private final TransactionTemplate _transactionTemplate;
+    private final JdbcTemplate               _jdbcTemplate;
+    private final NamedParameterJdbcTemplate _parameterizedTemplate;
+    private final TransactionTemplate        _transactionTemplate;
 }

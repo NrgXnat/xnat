@@ -10,21 +10,21 @@
 package org.nrg.framework.orm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.postgresql.util.PGInterval;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.JdbcAccessor;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -33,18 +33,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.util.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Getter
 @Accessors(prefix = "_")
 @Slf4j
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused", "BooleanMethodIsAlwaysInverted", "UnusedReturnValue"})
 public class DatabaseHelper {
+
     public DatabaseHelper(final DataSource dataSource) {
         this(dataSource, null, null, null);
     }
@@ -95,6 +95,19 @@ public class DatabaseHelper {
     }
 
     /**
+     * Checks whether the indicated tables exist in the database.
+     *
+     * @param tables The tables for which to test.
+     *
+     * @return Returns true if all of the specified tables exist, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean tablesExist(final String... tables) throws SQLException {
+        return tablesExistInSchema(null, tables);
+    }
+
+    /**
      * Checks whether the indicated table exists in the database.
      *
      * @param table The table for which to test.
@@ -104,7 +117,7 @@ public class DatabaseHelper {
      * @throws SQLException If an error occurs while accessing the database.
      */
     public boolean tableExists(final String table) throws SQLException {
-        return tableExists(null, table);
+        return tablesExistInSchema(null, table);
     }
 
     /**
@@ -118,13 +131,33 @@ public class DatabaseHelper {
      * @throws SQLException If an error occurs while accessing the database.
      */
     public boolean tableExists(final String schema, final String table) throws SQLException {
-        try (final Connection connection = _jdbcTemplate.getDataSource().getConnection();
-             final ResultSet results = connection.getMetaData().getTables("catalog", schema, table, new String[]{"TABLE"})) {
-            if (results.next()) {
-                return true;
+        return tablesExistInSchema(schema, table);
+    }
+
+    /**
+     * Checks whether the indicated table exists in the specified schema.
+     *
+     * @param schema The schema to look in.
+     * @param tables The table for which to test.
+     *
+     * @return Returns true if all of the specified tables exist in the schema, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean tablesExistInSchema(final String schema, final String... tables) throws SQLException {
+        try (final Connection connection = _jdbcTemplate.getDataSource().getConnection()) {
+            for (final String table : tables) {
+                try (final ResultSet results = connection.getMetaData().getTables("catalog", schema, table, SEARCHABLE_TABLE_TYPES)) {
+                    // As soon as we find one that doesn't exist...
+                    if (!results.next()) {
+                        // The exist fails, so return false.
+                        return false;
+                    }
+                }
             }
+            // If we made it this far, all of the specified tables exist, return true.
+            return true;
         }
-        return false;
     }
 
     /**
@@ -244,7 +277,6 @@ public class DatabaseHelper {
      *
      * @return A serialized list of all executed statements along with the number of database rows affected by the statement.
      */
-    @SuppressWarnings("unused")
     public String executeScript(final String script) {
         return executeScript(script, Collections.<String, Object>emptyMap());
     }
@@ -278,38 +310,40 @@ public class DatabaseHelper {
         return executeTransaction(new CallableScript(_parameterizedTemplate, script, parameters));
     }
 
-    public static List<String> convertSqlScriptToStatements(final String script) {
-        return Lists.transform(Arrays.asList(StringUtils.split(script, ";")), new Function<String, String>() {
-            @Override
-            public String apply(final String incoming) {
-                return incoming.trim().replaceAll("--.*\n", "").replaceAll("\\s*\n\\s*", " ");
-            }
-        });
+    public <T> T callFunction(final String function, final Class<? extends T> returnType) {
+        return callFunction(function, EmptySqlParameterSource.INSTANCE, returnType);
+    }
+
+    public <T> T callFunction(final String function, final SqlParameterSource parameters, final Class<? extends T> returnType) {
+        final SimpleJdbcCall call = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
+        //noinspection unchecked
+        return (T) call.execute(parameters);
     }
 
     // TODO: Convert this to return the List<Pair<Integer,String>> rather than String. The catch is that the executeTransaction() method can be genericized without affecting the returned logMessage() values.
     private static class CallableScript implements Callable<String> {
         CallableScript(final NamedParameterJdbcTemplate template, final String script, final Map<String, Object> parameters) {
             _template = template;
-            _statements = convertSqlScriptToStatements(script);
+            _script = script;
             _parameters = parameters != null && !parameters.isEmpty() ? new MapSqlParameterSource(parameters) : EmptySqlParameterSource.INSTANCE;
         }
 
         @Override
         public String call() throws Exception {
-            final List<Pair<Integer, String>> results = new ArrayList<>();
-            for (final String statement : _statements) {
-                final int affected = _template.update(statement, _parameters);
-                log.debug("{} rows affected by query: {}", affected, statement);
-                results.add(Pair.of(affected, statement));
-            }
-            return MAPPER.writeValueAsString(results);
+            return MAPPER.writeValueAsString(_template.execute(_script, _parameters, CALLBACK));
         }
 
-        private static final ObjectMapper               MAPPER = new ObjectMapper();
-        private final        NamedParameterJdbcTemplate _template;
-        private final        List<String>               _statements;
-        private final        SqlParameterSource         _parameters;
+        private static final PreparedStatementCallback<Boolean> CALLBACK = new PreparedStatementCallback<Boolean>() {
+            @Override
+            public Boolean doInPreparedStatement(final PreparedStatement statement) throws SQLException, DataAccessException {
+                return statement.execute();
+            }
+        };
+        private static final ObjectMapper                       MAPPER   = new ObjectMapper();
+
+        private final NamedParameterJdbcTemplate _template;
+        private final String                     _script;
+        private final SqlParameterSource         _parameters;
     }
 
     private class SetColumnDataType implements Callable<String> {
@@ -356,6 +390,8 @@ public class DatabaseHelper {
             return message;
         }
     }
+
+    private static final String[] SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEWS"};
 
     private final JdbcTemplate               _jdbcTemplate;
     private final NamedParameterJdbcTemplate _parameterizedTemplate;

@@ -33,7 +33,6 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.*;
@@ -62,7 +61,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Nullable;
@@ -1278,21 +1277,16 @@ public class ElementSecurity extends ItemWrapper {
             return;
         }
 
-        final NamedParameterJdbcTemplate template = XDAT.getNamedParameterJdbcTemplate();
-        final String                     script   = !Permissions.getAllPublicProjects(template).isEmpty() ? NEW_DATA_TYPE_PUBLIC_PERMS : NEW_DATA_TYPE_PERMISSIONS;
-
-        if (log.isInfoEnabled()) {
-            log.info("Creating permissions for new data type '{}'. Generated SQL is:\n{}", elementName, script);
+        final boolean result = getDatabaseHelper().callFunction("create_new_data_type_permissions", new MapSqlParameterSource("elementName", elementName), Boolean.class);
+        if (!result) {
+            log.warn("Got result of false from create_new_data_type_permissions function call. Please check other logs to determine if there's an error.");
         }
-
-        final String output = getDatabaseHelper().executeScript(script, "elementName", elementName);
-        log.info(output);
 
         try {
             updateElementAccessAndFieldMapMetaData();
             XDAT.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, elementName, CREATE);
             log.info("Executing clear groups cache query: {}", CLEAR_GROUPS_ITEM_CACHE);
-            template.update(CLEAR_GROUPS_ITEM_CACHE, EmptySqlParameterSource.INSTANCE);
+            XDAT.getNamedParameterJdbcTemplate().update(CLEAR_GROUPS_ITEM_CACHE, EmptySqlParameterSource.INSTANCE);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -1651,8 +1645,6 @@ public class ElementSecurity extends ItemWrapper {
         }
     }
 
-    private static final String NEW_DATA_TYPE_PERMISSIONS  = initializeNewDataTypePermissionsSql("new-data-type-permissions.sql");
-    private static final String NEW_DATA_TYPE_PUBLIC_PERMS = NEW_DATA_TYPE_PERMISSIONS + "\n\n" + initializeNewDataTypePermissionsSql("new-data-type-public-perms.sql");
     private static final String CLEAR_GROUPS_ITEM_CACHE    = "DELETE FROM xs_item_cache WHERE elementname = '" + Groups.getGroupDatatype() + "'";
 
     private static final Map<String, ElementSecurity> elements = new HashMap<>();

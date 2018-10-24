@@ -14,8 +14,10 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.postgresql.util.PGInterval;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,6 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.sql.*;
 import java.util.Collections;
 import java.util.Date;
@@ -316,8 +320,30 @@ public class DatabaseHelper {
 
     public <T> T callFunction(final String function, final SqlParameterSource parameters, final Class<? extends T> returnType) {
         final SimpleJdbcCall call = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
-        //noinspection unchecked
-        return (T) call.execute(parameters);
+        final Map<String, Object> payload = call.execute(parameters);
+        if (payload.containsKey("returnvalue")) {
+            //noinspection unchecked
+            return (T) payload.get("returnvalue");
+        }
+        return null;
+    }
+
+    /**
+     * Checks whether the tables and views specified by the <b>tableSpecs</b> parameter(s) exist in the database. If one or more of the
+     * specified tables and/or views does not exist, a script is loaded from the specified URL and executed.
+     *
+     * @param scriptUrl  The location for the script to load if any tables or views are found not to exist.
+     * @param tableSpecs The tables and views to check for existence.
+     *
+     * @throws SQLException When an error occurs running the script.
+     * @throws IOException  When an error occurs loading the script.
+     */
+    public void checkForTablesAndViewsInit(final String scriptUrl, final String... tableSpecs) throws SQLException, IOException {
+        if (!tablesExist(tableSpecs)) {
+            final String script = IOUtils.toString(BasicXnatResourceLocator.getResource(scriptUrl).getInputStream(), Charset.defaultCharset());
+            log.info("Initializing tables/functions for patterns '{}' with SQL: {}", StringUtils.join(tableSpecs, ", "), script);
+            executeScript(script);
+        }
     }
 
     // TODO: Convert this to return the List<Pair<Integer,String>> rather than String. The catch is that the executeTransaction() method can be genericized without affecting the returned logMessage() values.
@@ -339,7 +365,8 @@ public class DatabaseHelper {
                 return statement.execute();
             }
         };
-        private static final ObjectMapper                       MAPPER   = new ObjectMapper();
+
+        private static final ObjectMapper MAPPER = new ObjectMapper();
 
         private final NamedParameterJdbcTemplate _template;
         private final String                     _script;

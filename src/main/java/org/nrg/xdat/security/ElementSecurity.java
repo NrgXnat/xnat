@@ -116,10 +116,14 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static List<String> registerNewTypes() throws Exception {
-        final Map<String, ElementSecurity> elements    = GetElementSecurities();
-        final List<String>                 newTypes    = new ArrayList<>();
-        final JdbcTemplate                 template    = XDAT.getContextService().getBean(JdbcTemplate.class);
-        final XnatPluginBeanManager        beanManager = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
+        final Map<String, ElementSecurity> elements            = GetElementSecurities();
+        final List<String>                 newTypes            = new ArrayList<>();
+        final JdbcTemplate                 template            = XDAT.getContextService().getBean(JdbcTemplate.class);
+        final TransactionTemplate          transactionTemplate = XDAT.getContextService().getBean(TransactionTemplate.class);
+        final XnatPluginBeanManager        beanManager         = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
+        final DatabaseHelper               helper              = new DatabaseHelper(template, transactionTemplate);
+
+        helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", "data_type_views_%");
 
         for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
             for (final String securedElements : dataModelDefinition.getSecuredElements()) {
@@ -705,10 +709,12 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @param ea
+     * Adds the submitted {@link ElementAction element action} to this security object.
+     *
+     * @param action The action to be added to this security object.
      */
-    public void addElementAction(ElementAction ea) {
-        elementActions.add(ea);
+    public void addElementAction(ElementAction action) {
+        elementActions.add(action);
     }
 
     /**
@@ -770,44 +776,45 @@ public class ElementSecurity extends ItemWrapper {
         return tempItems;
     }
 
-    private ArrayList permissionItems = null;
+    private List<PermissionItem> permissionItems = null;
 
     /**
      * @return Returns a list of the PermissionsItems for the user
      *
      * @throws Exception When something goes wrong.
      */
-    public List<PermissionItem> getPermissionItems(String login) throws Exception {
+    public List<PermissionItem> getPermissionItems(final String login) throws Exception {
         if (permissionItems == null) {
-            permissionItems = new ArrayList();
+            permissionItems = new ArrayList<>();
 
-            for (String fieldName : getPrimarySecurityFields()) {
-                if (!fieldName.startsWith(this.getElementName())) {
-                    fieldName = this.getElementName() + XFT.PATH_SEPARATOR + fieldName;
-                }
-                final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldName);
+            for (final String fieldName : getPrimarySecurityFields()) {
+                final String qualifiedFieldName = fieldName.startsWith(getElementName()) ? fieldName : getElementName() + XFT.PATH_SEPARATOR + fieldName;
+                final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(qualifiedFieldName);
+                if (field != null) {
+                    final Hashtable hash;
+                    if (field.isReference()) {
+                        SchemaElementI se = SchemaElement.GetElement(field.getReferenceElementName().getFullForeignType());
+                        hash = GetDistinctIdValuesFor(se.getFullXMLName(), "default", login);
+                    } else {
+                        hash = GetDistinctIdValuesFor(field.getParentElement().getFullXMLName(), qualifiedFieldName, login);
+                    }
 
-                final Hashtable hash;
-                if (field.isReference()) {
-                    SchemaElementI se = SchemaElement.GetElement(field.getReferenceElementName().getFullForeignType());
-                    hash = GetDistinctIdValuesFor(se.getFullXMLName(), "default", login);
+                    Enumeration enumer = hash.keys();
+                    while (enumer.hasMoreElements()) {
+                        final Object id      = enumer.nextElement();
+                        final String display = (String) hash.get(id);
+
+                        final PermissionItem permissionItem = new PermissionItem();
+                        permissionItem.setFullFieldName(qualifiedFieldName);
+                        permissionItem.setDisplayName(display);
+                        permissionItem.setValue(id);
+                        permissionItems.add(permissionItem);
+                    }
                 } else {
-                    hash = GetDistinctIdValuesFor(field.getParentElement().getFullXMLName(), fieldName, login);
-                }
-
-                Enumeration enumer = hash.keys();
-                while (enumer.hasMoreElements()) {
-                    Object         id      = enumer.nextElement();
-                    String         display = (String) hash.get(id);
-                    PermissionItem pi      = new PermissionItem();
-                    pi.setFullFieldName(fieldName);
-                    pi.setDisplayName(display);
-                    pi.setValue(id);
-                    permissionItems.add(pi);
+                    log.warn("Couldn't retrieve a field object for the fully qualified field name '{}'", qualifiedFieldName);
                 }
             }
 
-            permissionItems.trimToSize();
             Collections.sort(permissionItems, PermissionItem.GetComparator());
         }
         return permissionItems;
@@ -827,14 +834,15 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @param elementName
-     * @param fieldName
+     * @param elementName The element name to retrieve ID values for.
+     * @param fieldName   The field name to search on.
+     * @param login       The user retrieving the ID values.
      *
      * @return Returns a hastable of the distinct id values for the supplied information
      *
      * @throws Exception When something goes wrong.
      */
-    public static Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception {
+    public static Hashtable GetDistinctIdValuesFor(final String elementName, final String fieldName, final String login) throws Exception {
         //Hashtable hash1 = (Hashtable)elementDistinctIds.get(elementName); REMOVED TO PREVENT CACHING
         Hashtable<String, Hashtable<String, String>> hash1 = new Hashtable<>();
         SchemaElement                                se    = SchemaElement.GetElement(elementName);
@@ -848,7 +856,7 @@ public class ElementSecurity extends ItemWrapper {
         Hashtable hash2 = hash1.get(fieldName);
         if (hash2 == null) {
             if (fieldName.equalsIgnoreCase("default")) {
-                Hashtable newHash               = new Hashtable();
+                final Hashtable<String, String> newHash               = new Hashtable<>();
                 boolean   hasDefinedIdValuePair = false;
                 if (ed != null) {
                     DisplayField idField      = ed.getDisplayField(ed.getValueField());
@@ -868,27 +876,21 @@ public class ElementSecurity extends ItemWrapper {
                 }
 
                 if (!hasDefinedIdValuePair) {
-                    Iterator iter = se.getAllPrimaryKeys().iterator();
-
-                    String query = "SELECT DISTINCT ON (";
-                    String cols  = "";
-
-                    int counter = 0;
-                    while (iter.hasNext()) {
-                        SchemaField sf = (SchemaField) iter.next();
-                        if (counter == 0) {
-                            cols += sf.getSQLName();
-                        } else {
-                            cols += ", " + sf.getSQLName();
+                    final StringBuilder query = new StringBuilder("SELECT DISTINCT ON (");
+                    final String cols = StringUtils.join(Lists.transform(se.getAllPrimaryKeys(), new Function<Object, String>() {
+                        @Nullable
+                        @Override
+                        public String apply(final Object object) {
+                            return ((SchemaField) object).getSQLName();
                         }
-                    }
+                    }), ", ");
 
-                    query += cols + ") " + cols + " FROM " + se.getSQLName();
+                    query.append(cols).append(") ").append(cols).append(" FROM ").append(se.getSQLName());
 
-                    XFTTable table = TableSearch.Execute(query, se.getDbName(), login);
+                    final XFTTable table = TableSearch.Execute(query.toString(), se.getDbName(), login);
                     table.resetRowCursor();
                     while (table.hasMoreRows()) {
-                        Object[] row = table.nextRow();
+                        final Object[] row = table.nextRow();
                         newHash.put(row[0].toString(), row[0].toString());
                     }
                     hash1.put(fieldName, newHash);
@@ -896,23 +898,23 @@ public class ElementSecurity extends ItemWrapper {
                 }
 
             } else {
-                Hashtable newHash = new Hashtable();
+                final Hashtable<String, String> newHash = new Hashtable<>();
 
                 GenericWrapperField f  = GenericWrapperElement.GetFieldForXMLPath(fieldName);
                 ArrayList           al = f.getPossibleValues();
                 if (al.size() > 0) {
-                    Iterator pvs = al.iterator();
-                    while (pvs.hasNext()) {
-                        String s = (String) pvs.next();
+                    for (final Object o : al) {
+                        String s = (String) o;
                         newHash.put(s, s);
                     }
                     hash1.put(fieldName, newHash);
                     hash2 = newHash;
 
                 } else {
-                    if (f.getBaseElement() == null || f.getBaseElement() == "") {
+                    final String baseElement = f.getBaseElement();
+                    if (StringUtils.isBlank(baseElement)) {
                         GenericWrapperElement parent  = f.getParentElement().getGenericXFTElement();
-                        String                xmlPath = null;
+                        final String                xmlPath;
                         if (se.getGenericXFTElement().instanceOf(parent.getFullXMLName())) {
                             xmlPath = f.getXMLPathString(se.getFullXMLName());
                         } else {
@@ -935,8 +937,7 @@ public class ElementSecurity extends ItemWrapper {
                         hash1.put(fieldName, newHash);
                         hash2 = newHash;
                     } else {
-                        String                foreignTable = f.getBaseElement();
-                        GenericWrapperElement foreign      = GenericWrapperElement.GetElement(foreignTable);
+                        GenericWrapperElement foreign      = GenericWrapperElement.GetElement(baseElement);
                         String                foreignCol   = f.getBaseCol();
                         String                query        = "SELECT DISTINCT " + foreignCol + " FROM " + foreign.getSQLName();
                         XFTTable              table        = TableSearch.Execute(query, se.getDbName(), login);
@@ -1205,7 +1206,7 @@ public class ElementSecurity extends ItemWrapper {
                 if (f.isReference()) {
                     XFTReferenceI ref = f.getXFTReference();
                     if (!ref.isManyToMany()) {
-                        XFTSuperiorReference sup  = (XFTSuperiorReference) ref;
+                        XFTSuperiorReference sup = (XFTSuperiorReference) ref;
                         for (final XFTRelationSpecification spec : sup.getKeyRelations()) {
                             s = s.substring(0, s.lastIndexOf(XFT.PATH_SEPARATOR) + 1) + spec.getLocalCol();
                             break;
@@ -1645,7 +1646,7 @@ public class ElementSecurity extends ItemWrapper {
         }
     }
 
-    private static final String CLEAR_GROUPS_ITEM_CACHE    = "DELETE FROM xs_item_cache WHERE elementname = '" + Groups.getGroupDatatype() + "'";
+    private static final String CLEAR_GROUPS_ITEM_CACHE = "DELETE FROM xs_item_cache WHERE elementname = '" + Groups.getGroupDatatype() + "'";
 
     private static final Map<String, ElementSecurity> elements = new HashMap<>();
     private static final Object                       lock     = new Object();

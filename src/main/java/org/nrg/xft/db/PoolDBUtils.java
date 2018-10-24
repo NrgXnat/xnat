@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.*;
 import java.util.Date;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -372,7 +372,9 @@ public class PoolDBUtils {
 			}
 
 		} catch (SQLException e) {
-			logger.error(query);
+            if (!StringUtils.containsAny(e.getMessage(), "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
+                logger.error(query);
+            }
 			throw e;
 		} catch (DBPoolException e) {
 			logger.error(query);
@@ -437,8 +439,10 @@ public class PoolDBUtils {
 
 			//logger.debug("AFTER XFTTable");
 		}catch (SQLException e) {
-			logger.error(query);
-		   throw e;
+            if (!StringUtils.containsAny(e.getMessage(), "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")) {
+                logger.error(query);
+            }
+            throw e;
 	   } catch (DBPoolException e) {
 			logger.error(query);
 		   throw e;
@@ -890,6 +894,10 @@ public class PoolDBUtils {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
 				return null;
+			} else if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
+				// Just rethrow and let someone else handle it. This is probably because the system is initializing
+				// and, if it's not, plenty else will go wrong to indicate the problem.
+				throw e;
 			} else {
 				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
 				throw e;

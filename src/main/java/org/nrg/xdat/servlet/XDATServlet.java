@@ -15,6 +15,7 @@ import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.framework.utilities.OrderedPropertiesLookup;
@@ -32,7 +33,6 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
-import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -116,7 +116,8 @@ public class XDATServlet extends HttpServlet {
      * @throws Exception When an error occurs.
      */
     private boolean updateDatabase(String conf) throws Exception {
-        final Long userCount = getUserCount();
+        final DatabaseHelper db        = new DatabaseHelper(XDAT.getDataSource());
+        final Integer        userCount = !db.tablesExist("xdat_user") ? null : db.getJdbcTemplate().queryForObject("SELECT COUNT(*) FROM xdat_user", Integer.class);
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         final Properties prop = new Properties();
@@ -190,15 +191,6 @@ public class XDATServlet extends HttpServlet {
             _isDatabasePopulateOrUpdateCompleted = true;
             (new DelayedSequenceChecker()).start();
             return false;
-        }
-    }
-
-    private Long getUserCount() throws Exception {
-        try {
-            return (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
-        } catch (SQLException e) {
-            // xdat_user table doesn't exist
-            return null;
         }
     }
 

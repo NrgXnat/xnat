@@ -20,6 +20,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.meta;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -471,19 +472,27 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         if (!Roles.isSiteAdmin(user)) {
-            String firstValue = null;
-            for (XdatElementAccess ea : xdatGroup.getElementAccess()) {
-                List<String> values = getPermissionValues(ea.getPermissions_allowSet().get(0));
-                firstValue = values.get(0);
-                if (firstValue != null) {
-                    break;
+            final String tag;
+            final List<XdatElementAccess> access = xdatGroup.getElementAccess();
+            // If there's no element access set up, we'll use the tag: this is a new group and access will be added.
+            if (access.isEmpty()) {
+                tag = xdatGroup.getTag();
+            } else {
+                // If access IS set up, extract from there rather than trusting the tag.
+                String value = null;
+                for (final XdatElementAccess ea : access) {
+                    value = getPermissionValues(ea.getPermissions_allowSet().get(0)).get(0);
+                    if (StringUtils.isNotBlank(value)) {
+                        break;
+                    }
                 }
+                tag = value;
             }
 
-            validateGroupByTag(xdatGroup, firstValue);
+            validateGroupByTag(xdatGroup, tag);
 
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            if (!userHelperService.isOwner(firstValue)) {
+            if (!userHelperService.isOwner(tag)) {
                 throw new InvalidValueException();
             }
         }

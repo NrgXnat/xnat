@@ -779,14 +779,10 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 		}
 		return null;
 	}
-    
-    public boolean instanceOf(String xsiType){
-        if(this.getPrimaryElements().indexOf(xsiType)>-1){
-            return true;
-        }else{
-            return false;
-        }
-    }
+
+	public boolean instanceOf(final String xsiType) {
+		return Arrays.asList(getPrimaryElements().split("\\.\\[[A-z0-9_]+]")).contains(xsiType);
+	}
     
     /**
      * Get GenericWrapperField (of any fields inluding AddIns) where the name 

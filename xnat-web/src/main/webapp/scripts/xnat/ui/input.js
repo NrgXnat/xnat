@@ -44,9 +44,9 @@ var XNAT = getObject(XNAT);
         }
         var val = '';
         try {
-            val = eval((lookup||'').trim()) || ''
+            val = eval((lookup || '').trim()) || ''
         }
-        catch (e) {
+        catch(e) {
             val = '';
             console.log(e);
         }
@@ -54,7 +54,7 @@ var XNAT = getObject(XNAT);
         return val;
     }
 
-    function endsWith(inputStr, endStr) {
+    function endsWith(inputStr, endStr){
         return inputStr.lastIndexOf(endStr) === inputStr.length - endStr.length;
     }
 
@@ -65,9 +65,9 @@ var XNAT = getObject(XNAT);
             $el.changeVal(val);
         }
         else {
-            if ($el.val() !== val){
-            $el.val(val).trigger('change');
-        }
+            if ($el.val() !== val) {
+                $el.val(val).trigger('change');
+            }
         }
         return $el;
     }
@@ -241,7 +241,7 @@ var XNAT = getObject(XNAT);
         }
 
         // bring 'element' properties into 'config'
-        config = extend(true, {}, config||{}, config.element||{});
+        config = extend(true, {}, config || {}, config.element || {});
 
         // don't pass 'element' into spawn() function
         delete config.element;
@@ -261,7 +261,7 @@ var XNAT = getObject(XNAT);
 
         if (!isHidden) {
 
-            if (!/switchbox/i.test(config.kind||'')) {
+            if (!/switchbox/i.test(config.kind || '')) {
                 if (config.label) {
                     labelText = spawn('span.label-text', config.label);
                     delete config.label;
@@ -394,7 +394,7 @@ var XNAT = getObject(XNAT);
             data: {},
             $: { addClass: className }
         });
-        config.data.validate = opts.validation||opts.validate;
+        config.data.validate = opts.validation || opts.validate;
         if (!config.data.validate) delete config.data.validate;
         delete config.validation; // don't pass these to the spawn() function
         delete config.validate;   // ^^
@@ -478,16 +478,17 @@ var XNAT = getObject(XNAT);
 
         config = cloneObject(config);
 
-        if (!config.url) {
-            throw new Error("The 'url' property is required.")
-        }
+        console.log('upload');
+
+        // if (!config.url) {
+        //     throw new Error("The 'url' property is required.")
+        // }
 
         // submission method defaults to 'POST'
         config.method = config.method || 'POST';
         config.contentType = config.contentType || config.enctype || 'multipart/form-data';
 
         config.form = extend(true, {
-            method: config.method,
             action: config.action ? XNAT.url.rootUrl(config.action) : '#!',
             attr: {
                 'content-type': config.contentType,
@@ -495,34 +496,49 @@ var XNAT = getObject(XNAT);
             }
         }, config.form);
 
+        if (/put/i.test(config.form.method)) {
+            delete config.form.method;
+        }
+
         var fileTypes = config.fileTypes ? config.fileTypes.split(/[,\s]+/) : null;
 
         config.input = extend(true, {
             id: config.id || config.name || '',
             name: config.name || config.id || '',
-            accept: config.accept || fileTypes
+            accept: config.accept || fileTypes,
+            attr: {}
         }, config.input);
+
+        if (config.multiple) {
+            config.input.attr.multiple = "multiple";
+            config.input.multiple = config.multiple;
+        }
 
         config.button = extend(true, {
             html: 'Upload'
         }, config.button);
 
         // adding 'ignore' class to prevent submitting with parent form
-        var fileInput = spawn('input.ignore|type=file|multiple', config.input);
-        var uploadBtn = spawn('button.upload.btn.btn-sm|type=button', config.button);
-        var fileForm  = spawn('form.file-upload.ignore', config.form, [fileInput, uploadBtn]);
+        var fileInput = spawn('input.file-upload-input.ignore|type=file', config.input);
+        var uploadBtn = spawn('button.upload.btn.btn1.btn-sm|type=button', config.button);
+        var fileForm = spawn('form.file-upload-form.ignore', config.form, [fileInput, uploadBtn]);
 
-        var paramName = config.name || config.param || 'fileUpload';
+        var paramName = config.name || config.input.name || config.param || 'fileUpload';
 
-        var URL = XNAT.url.rootUrl(config.url || config.action);
+        var URL = config.url || fileForm.getAttribute('data-url') || fileForm.getAttribute('action');
 
         // function called when 'Upload' button is clicked
         function doUpload(e){
             e.preventDefault();
+            if (!fileInput.files || !fileInput.files.length) {
+                XNAT.dialog.message('Error', 'No files selected.');
+                return false;
+            }
+            var waitDialog = XNAT.dialog.static('<div class="message waiting">Uploading...</div>').open();
             var formData = new FormData();
             var XHR = new XMLHttpRequest();
             forEach(fileInput.files, function(file){
-                if (fileTypes){
+                if (fileTypes) {
                     // check each extension and only add
                     // matching files to the list
                     forEach(fileTypes, function(type){
@@ -536,7 +552,7 @@ var XNAT = getObject(XNAT);
                 }
             });
             XHR.open(config.method, URL, true);
-            XHR.setRequestHeader('Content-Type', config.contentType);
+            // XHR.setRequestHeader('Content-Type', config.contentType);
             XHR.onload = function(){
                 if (XHR.status !== 200) {
                     console.error(XHR.statusText);
@@ -552,8 +568,14 @@ var XNAT = getObject(XNAT);
 
                     });
                 }
+                else {
+                    waitDialog.close().destroy();
+                    XNAT.ui.banner.top(3000, 'Upload complete.', 'success');
+                }
             };
-            XHR.send(formData);
+            window.setTimeout(function(){
+                XHR.send(formData);
+            }, 0);
         }
 
         $(uploadBtn).on('click', doUpload);
@@ -701,8 +723,8 @@ var XNAT = getObject(XNAT);
             chkbox,
             // proxy,
             ['span.switchbox-outer', [['span.switchbox-inner']]],
-            ['span.switchbox-on', config.onText||''],
-            ['span.switchbox-off', config.offText||''],
+            ['span.switchbox-on', config.onText || ''],
+            ['span.switchbox-off', config.offText || ''],
             ''
         ];
 

@@ -110,6 +110,8 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      */
     List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
 
+    List<ElementDisplay> getActionElementDisplays(String username, String action);
+
     /**
      * Get the permission criteria for the indicated user.
      *

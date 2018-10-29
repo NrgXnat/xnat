@@ -585,7 +585,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             if (stopWatch.isStarted()) {
                 stopWatch.stop();
             }
-            log.info("Total time to queue {} groups was {} ms", groupIds.size(), FORMATTER.format(stopWatch.getTime()));
+            log.info("Total time to queue {} groups was {} ms", groupIds.size(), NUMBER_FORMAT.format(stopWatch.getTime()));
             if (log.isInfoEnabled()) {
                 log.info(stopWatch.toTable());
             }
@@ -790,17 +790,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
                     }
+                    log.debug("Handling create group event with ID '{}' for users: {}", id);
                     return !initGroups(groups).isEmpty();
 
                 case UPDATE:
                     log.debug("The {} object {} was updated, caching updated instance", xsiType, id);
                     for (final UserGroupI group : groups) {
                         usernames.addAll(group.getUsernames());
+                        evict(group.getId());
                     }
                     if (properties.containsKey(OPERATION) && StringUtils.equals((String) properties.get(OPERATION), OPERATION_REMOVE_USERS)) {
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(USERS));
                     }
+                    log.debug("Handling update group event with ID '{}' for users: {}", id);
                     return !initGroups(groups).isEmpty();
 
                 case XftItemEventI.DELETE:
@@ -956,31 +959,26 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private synchronized List<String> updateUserProjectAccess(final String username, final String access, final String cacheId) {
-        final String query;
+        final List<String> projectIds;
         switch (access) {
             case SecurityManager.READ:
-                query = QUERY_READABLE_PROJECTS;
+                projectIds = getUserReadableProjects(username);
                 break;
             case SecurityManager.EDIT:
-                query = QUERY_EDITABLE_PROJECTS;
+                projectIds = getUserEditableProjects(username);
                 break;
             case SecurityManager.DELETE:
-                query = QUERY_OWNED_PROJECTS;
+                projectIds = getUserOwnedProjects(username);
                 break;
             default:
                 throw new RuntimeException("Unknown access level '" + access + "'. Must be one of " + SecurityManager.READ + ", " + SecurityManager.EDIT + ", or " + SecurityManager.DELETE + ".");
         }
-        final List<String> projectIds = _template.queryForList(query, new MapSqlParameterSource("usernames", Arrays.asList("guest", username)), String.class);
         cacheObject(cacheId, projectIds);
         return ImmutableList.copyOf(projectIds);
     }
 
     private List<String> getProjectOwners(final String projectId) {
         return _template.queryForList(QUERY_PROJECT_OWNERS, new MapSqlParameterSource("projectId", projectId), String.class);
-    }
-
-    private Long getUserReadableProjectCount(final UserI user) {
-        return _template.queryForObject(QUERY_USER_READABLE_PROJECT_COUNT, new MapSqlParameterSource("username", user.getUsername()), Long.class);
     }
 
     private Long getUserReadableWorkflowCount(final UserI user) {
@@ -1082,10 +1080,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 initProjectMember(cacheId, username);
             }
 
-            final Map<String, Long> readableCounts = new HashMap<>();
-            readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, getUserReadableProjectCount(user));
+            final Map<String, Long> readableCounts   = new HashMap<>();
+            final List<String>      readableProjects = getUserReadableProjects(username);
+            readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, (long) readableProjects.size());
             readableCounts.put(WrkWorkflowdata.SCHEMA_ELEMENT_NAME, getUserReadableWorkflowCount(user));
-            readableCounts.putAll(getUserAccessibleSubjectsAndExperiments(user));
+            readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects));
 
             if (log.isDebugEnabled()) {
                 log.debug("Caching the following readable element counts for user '{}' with cache ID '{}': '{}'", username, cacheId, getDisplayForReadableCounts(readableCounts));
@@ -1330,12 +1329,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private synchronized List<UserGroupI> initGroups(final List<UserGroupI> groups) {
         log.debug("Caching {} groups", groups.size());
-        return Lists.transform(groups, new Function<UserGroupI, UserGroupI>() {
-            @Override
-            public UserGroupI apply(final UserGroupI group) {
-                return initGroup(group.getId(), group);
-            }
-        });
+        return Lists.transform(groups, new InitGroupFunction(this));
     }
 
     private void resetTotalCounts() {
@@ -1362,16 +1356,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableMap.copyOf(initBrowseableElementDisplaysForUser(getCacheIdForUserElements(username, BROWSEABLE), user));
     }
 
-    private Map<String, Long> getUserAccessibleSubjectsAndExperiments(final UserI user) {
-        final List<String> accessibleProjectIds = _template.queryForList(QUERY_USER_ACCESSIBLE_PROJECT_LIST, new MapSqlParameterSource("username", user.getUsername()), String.class);
-        if (accessibleProjectIds.isEmpty()) {
+    private Map<String, Long> getUserReadableSubjectsAndExperiments(final List<String> readableProjectIds) {
+        if (readableProjectIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        final MapSqlParameterSource parameters                 = new MapSqlParameterSource("projectIds", accessibleProjectIds);
-        final Map<String, Long>     accessibleExperimentCounts = _template.query(QUERY_USER_ACCESSIBLE_EXPERIMENT_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
-        final Long                  accessibleSubjectCount     = _template.queryForObject(QUERY_USER_ACCESSIBLE_SUBJECT_COUNT, parameters, Long.class);
-        accessibleExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, accessibleSubjectCount);
-        return accessibleExperimentCounts;
+        final MapSqlParameterSource parameters               = new MapSqlParameterSource("projectIds", readableProjectIds);
+        final Map<String, Long>     readableExperimentCounts = _template.query(QUERY_USER_READABLE_EXPERIMENT_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
+        final Long                  readableSubjectCount     = _template.queryForObject(QUERY_USER_READABLE_SUBJECT_COUNT, parameters, Long.class);
+        readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, readableSubjectCount);
+        return readableExperimentCounts;
     }
 
     private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
@@ -1407,10 +1400,65 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return _template.queryForList(QUERY_GET_GROUPS_FOR_TAG, new MapSqlParameterSource("tag", projectId), String.class);
     }
 
+    /**
+     * Retrieves a list of projects where the specified user is a member. This differs from {@link #getUserReadableProjects(String)} in that it
+     * includes neither public projects nor projects to which the user has read access due to all data access privileges.
+     *
+     * @param username The username to retrieve projects for.
+     *
+     * @return A list of projects for which the specified user is a member.
+     */
     private List<String> getUserProjects(final String username) {
-        return ImmutableList.<String>builder().addAll(_template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class))
-                                              .addAll(Permissions.getAllPublicProjects(_template))
-                                              .addAll(Permissions.getAllProtectedProjects(_template)).build();
+        return _template.queryForList(QUERY_GET_PROJECTS_FOR_USER, new MapSqlParameterSource("username", username), String.class);
+    }
+
+    /**
+     * Retrieves a list of projects where the specified user has read access. This differs from {@link #getUserProjects(String)} in that it
+     * includes protected and public projects and projects to which the user has read access due to all data access privileges.
+     *
+     * @param username The username to retrieve projects for.
+     *
+     * @return A list of projects to which the specified user has read access.
+     */
+    private List<String> getUserReadableProjects(final String username) {
+        return Lists.newArrayList(Iterables.concat(getProjectsByAccessQuery(username, QUERY_READABLE_PROJECTS, false), Permissions.getAllPublicProjects(_template)));
+    }
+
+    private List<String> getUserEditableProjects(final String username) {
+        return getProjectsByAccessQuery(username, QUERY_EDITABLE_PROJECTS, true);
+    }
+
+    private List<String> getUserOwnedProjects(final String username) {
+        return getProjectsByAccessQuery(username, QUERY_OWNED_PROJECTS, true);
+    }
+
+    private List<String> getProjectsByAccessQuery(final String username, final String query, final boolean requireAdminAccess) {
+        final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username);
+        return hasAllDataAdmin(username) || (hasAllDataAccess(username) && !requireAdminAccess)
+               ? _template.queryForList(QUERY_ALL_DATA_ACCESS_PROJECTS, parameters, String.class)
+               : _template.queryForList(query, parameters, String.class);
+    }
+
+    /**
+     * Cheap test to see if the user is in a group that has data read access on all projects.
+     *
+     * @param username The username to be checked.
+     *
+     * @return Returns true if the user has all-data-access, false otherwise.
+     */
+    private boolean hasAllDataAccess(final String username) {
+        return _template.queryForObject(QUERY_HAS_ALL_DATA_ACCESS, new MapSqlParameterSource("username", username), Boolean.class);
+    }
+
+    /**
+     * Cheap test to see if the user is in a group that has data admin access on all projects.
+     *
+     * @param username The username to be checked.
+     *
+     * @return Returns true if the user has all-data-admin, false otherwise.
+     */
+    private boolean hasAllDataAdmin(final String username) {
+        return _template.queryForObject(QUERY_HAS_ALL_DATA_ADMIN, new MapSqlParameterSource("username", username), Boolean.class);
     }
 
     private int initializeTags() {
@@ -1617,6 +1665,21 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
+    private static class InitGroupFunction implements Function<UserGroupI, UserGroupI> {
+        InitGroupFunction(final DefaultGroupsAndPermissionsCache cache) {
+            _cache = cache;
+        }
+
+        @Override
+        public UserGroupI apply(final UserGroupI incoming) {
+            log.error("I'm applying the thing for the group {}", incoming.getId());
+            return _cache.initGroup(incoming.getId(), incoming);
+
+        }
+
+        private final DefaultGroupsAndPermissionsCache _cache;
+    }
+
     private static final ResultSetExtractor<Map<String, Long>> ELEMENT_COUNT_EXTRACTOR = new ResultSetExtractor<Map<String, Long>>() {
         @Override
         public Map<String, Long> extractData(final ResultSet results) throws SQLException, DataAccessException {
@@ -1631,227 +1694,187 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     };
 
-    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final DateFormat   DATE_FORMAT   = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
 
-    private static final String       QUERY_GET_GROUPS_FOR_USER              = "SELECT groupid " +
-                                                                               "FROM xdat_user_groupid xug " +
-                                                                               "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
-                                                                               "WHERE xu.login = :username " +
-                                                                               "ORDER BY groupid";
-    private static final String       QUERY_GET_GROUP_FOR_USER_AND_TAG       = "SELECT id " +
-                                                                               "FROM xdat_usergroup xug " +
-                                                                               "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
-                                                                               "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
-                                                                               "WHERE xu.login = :username AND tag = :tag " +
-                                                                               "ORDER BY groupid";
-    private static final String       QUERY_GET_GROUPS_FOR_DATATYPE          = "SELECT DISTINCT usergroup.id AS group_name " +
-                                                                               "FROM xdat_usergroup usergroup " +
-                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                               "WHERE " +
-                                                                               "  xea.element_name = :dataType " +
-                                                                               "ORDER BY group_name";
-    private static final String       QUERY_ALL_GROUPS                       = "SELECT id FROM xdat_usergroup";
-    private static final String       QUERY_ALL_TAGS                         = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
-    private static final String       QUERY_GET_GROUPS_FOR_TAG               = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
+    private static final String       QUERY_GET_GROUPS_FOR_USER            = "SELECT groupid " +
+                                                                             "FROM xdat_user_groupid xug " +
+                                                                             "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
+                                                                             "WHERE xu.login = :username " +
+                                                                             "ORDER BY groupid";
+    private static final String       QUERY_GET_GROUP_FOR_USER_AND_TAG     = "SELECT id " +
+                                                                             "FROM xdat_usergroup xug " +
+                                                                             "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
+                                                                             "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                                             "WHERE xu.login = :username AND tag = :tag " +
+                                                                             "ORDER BY groupid";
+    private static final String       QUERY_GET_GROUPS_FOR_DATATYPE        = "SELECT DISTINCT usergroup.id AS group_name " +
+                                                                             "FROM xdat_usergroup usergroup " +
+                                                                             "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                             "WHERE " +
+                                                                             "  xea.element_name = :dataType " +
+                                                                             "ORDER BY group_name";
+    private static final String       QUERY_ALL_GROUPS                     = "SELECT id FROM xdat_usergroup";
+    private static final String       QUERY_ALL_TAGS                       = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
+    private static final String       QUERY_GET_GROUPS_FOR_TAG             = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
+    private static final String       QUERY_GET_ALL_MEMBER_GROUPS          = "SELECT " +
+                                                                             "  tag AS project_id, " +
+                                                                             "  id AS group_id " +
+                                                                             "FROM " +
+                                                                             "  xdat_usergroup " +
+                                                                             "WHERE " +
+                                                                             "  tag IS NOT NULL AND " +
+                                                                             "  id LIKE '%_member' " +
+                                                                             "ORDER BY project_id, group_id";
+    private static final String       QUERY_GET_ALL_COLLAB_GROUPS          = "SELECT " +
+                                                                             "  tag AS project_id, " +
+                                                                             "  id AS group_id " +
+                                                                             "FROM " +
+                                                                             "  xdat_usergroup " +
+                                                                             "WHERE " +
+                                                                             "  tag IS NOT NULL AND " +
+                                                                             "  id LIKE '%_collaborator' " +
+                                                                             "ORDER BY project_id, group_id";
+    private static final String       QUERY_CHECK_USER_EXISTS              = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+    private static final String       QUERY_GET_EXPERIMENT_PROJECT         = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
+    private static final String       QUERY_GET_SUBJECT_PROJECT            = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
+    private static final String       QUERY_GET_USERS_FOR_PROJECTS         = "SELECT DISTINCT login " +
+                                                                             "FROM xdat_user u " +
+                                                                             "  LEFT JOIN xdat_user_groupid gid ON u.xdat_user_id = gid.groups_groupid_xdat_user_xdat_user_id " +
+                                                                             "  LEFT JOIN xdat_usergroup g ON gid.groupid = g.id " +
+                                                                             "  LEFT JOIN xdat_element_access xea ON g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                             "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                             "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                             "WHERE tag IN (:projectIds) OR (tag IS NULL AND field_value = '*') " +
+                                                                             "ORDER BY login";
+    private static final String       QUERY_GET_PROJECTS_FOR_USER          = "SELECT DISTINCT " +
+                                                                             "  g.tag AS project " +
+                                                                             "FROM xdat_usergroup g " +
+                                                                             "  LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
+                                                                             "  LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                                             "WHERE g.tag IS NOT NULL AND " +
+                                                                             "      u.login = :username";
+    private static final String       QUERY_PROJECT_OWNERS                 = "SELECT DISTINCT u.login AS owner " +
+                                                                             "FROM xdat_user                     u " +
+                                                                             "  LEFT JOIN xdat_user_groupid      map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                                                                             "  LEFT JOIN xdat_usergroup         g ON map.groupid = g.id " +
+                                                                             "  LEFT JOIN xdat_element_access    xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
+                                                                             "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                             "  LEFT JOIN xdat_field_mapping     xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                             "WHERE " +
+                                                                             "  xfm.field_value != '*' AND " +
+                                                                             "  xea.element_name = 'xnat:projectData' AND " +
+                                                                             "  xfm.delete_element = 1 AND " +
+                                                                             "  g.id LIKE '%_owner' AND " +
+                                                                             "  g.tag = :projectId " +
+                                                                             "ORDER BY owner";
+    private static final String       QUERY_USER_PERMISSIONS               = "SELECT " +
+                                                                             "  xea.element_name    AS element_name, " +
+                                                                             "  xeamd.status        AS active_status, " +
+                                                                             "  xfms.method         AS method, " +
+                                                                             "  xfm.field           AS field, " +
+                                                                             "  xfm.field_value     AS field_value, " +
+                                                                             "  xfm.comparison_type AS comparison_type, " +
+                                                                             "  xfm.read_element    AS read_element, " +
+                                                                             "  xfm.edit_element    AS edit_element, " +
+                                                                             "  xfm.create_element  AS create_element, " +
+                                                                             "  xfm.delete_element  AS delete_element, " +
+                                                                             "  xfm.active_element  AS active_element " +
+                                                                             "FROM xdat_user u " +
+                                                                             "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
+                                                                             "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
+                                                                             "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                             "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                             "WHERE " +
+                                                                             "  u.login = :username";
+    private static final String       QUERY_ACCESSIBLE_DATA_PROJECTS       = "SELECT  " +
+                                                                             "  project  " +
+                                                                             "FROM  " +
+                                                                             "  (SELECT DISTINCT f.field_value AS project  " +
+                                                                             "   FROM  " +
+                                                                             "     xdat_user u  " +
+                                                                             "     LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id  " +
+                                                                             "     LEFT JOIN xdat_usergroup g ON map.groupid = g.id  " +
+                                                                             "     LEFT JOIN xdat_element_access a ON (g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id)  " +
+                                                                             "     LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id  " +
+                                                                             "     LEFT JOIN xdat_field_mapping f ON s.xdat_field_mapping_set_id = f.xdat_field_mapping_set_xdat_field_mapping_set_id  " +
+                                                                             "   WHERE  " +
+                                                                             "     f.field_value != '*' AND  " +
+                                                                             "     a.element_name = 'xnat:subjectData' AND  " +
+                                                                             "     f.%s = 1 AND  " +
+                                                                             "     u.login IN ('guest', :username)) projects";
+    private static final String       QUERY_OWNED_PROJECTS                 = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "delete_element");
+    private static final String       QUERY_EDITABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "edit_element");
+    private static final String       QUERY_READABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "read_element");
+    private static final String       QUERY_HAS_ALL_DATA_PRIVILEGES        = "SELECT  " +
+                                                                             "  EXISTS(SELECT TRUE  " +
+                                                                             "         FROM  " +
+                                                                             "           xdat_user u  " +
+                                                                             "           LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id  " +
+                                                                             "           LEFT JOIN xdat_usergroup ug ON map.groupid = ug.id  " +
+                                                                             "           LEFT JOIN xdat_element_access ea ON (ug.xdat_usergroup_id = ea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = ea.xdat_user_xdat_user_id)  " +
+                                                                             "           LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id  " +
+                                                                             "           LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id = fm.xdat_field_mapping_set_xdat_field_mapping_set_id  " +
+                                                                             "         WHERE  " +
+                                                                             "           fm.field_value = '*' AND  " +
+                                                                             "           ea.element_name = 'xnat:projectData' AND  " +
+                                                                             "           fm.%s = 1 AND  " +
+                                                                             "           u.login = :username)";
+    private static final String       QUERY_HAS_ALL_DATA_ACCESS            = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "read_element");
+    private static final String       QUERY_HAS_ALL_DATA_ADMIN             = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "edit_element");
+    private static final String       QUERY_ALL_DATA_ACCESS_PROJECTS       = "SELECT id AS project FROM xnat_projectdata ORDER BY project";
+    private static final String       QUERY_USER_READABLE_WORKFLOW_COUNT   = "SELECT COUNT(*) FROM wrk_workflowData wrk_workflowData";
+    private static final String       QUERY_USER_READABLE_SUBJECT_COUNT    = "SELECT  " +
+                                                                             "  COUNT(*) " +
+                                                                             "FROM  " +
+                                                                             "  (SELECT SEARCH.*  " +
+                                                                             "   FROM  " +
+                                                                             "     (SELECT DISTINCT ON (subjectId) *  " +
+                                                                             "      FROM  " +
+                                                                             "        (SELECT xnat_subjectData.id AS subjectId, xnat_subjectData.project AS subjectProject, sharedSubjects.project AS sharedProject  " +
+                                                                             "         FROM  " +
+                                                                             "           xnat_subjectData xnat_subjectData  " +
+                                                                             "           LEFT JOIN xnat_projectParticipant sharedSubjects ON xnat_subjectData.id = sharedSubjects.subject_id) SECURITY  " +
+                                                                             "      WHERE  " +
+                                                                             "        subjectProject IN (:projectIds) OR  " +
+                                                                             "        sharedProject IN (:projectIds)) SECURITY  " +
+                                                                             "     LEFT JOIN xnat_subjectData SEARCH ON SECURITY.subjectId = SEARCH.id) xnat_subjectData";
+    private static final String       QUERY_USER_READABLE_EXPERIMENT_COUNT = "SELECT " +
+                                                                             "  element_name, " +
+                                                                             "  COUNT(*) AS element_count " +
+                                                                             "FROM " +
+                                                                             "  (SELECT xnat_experimentData.id AS id " +
+                                                                             "   FROM " +
+                                                                             "     (SELECT SEARCH.* " +
+                                                                             "      FROM " +
+                                                                             "        (SELECT DISTINCT ON (id) * " +
+                                                                             "         FROM " +
+                                                                             "           (SELECT xnat_experimentData.id AS id, xnat_experimentData.project AS experimentProject, sharedExperiments.project AS experimentSharedProject " +
+                                                                             "            FROM " +
+                                                                             "              xnat_experimentData xnat_experimentData " +
+                                                                             "              LEFT JOIN xnat_experimentData_share sharedExperiments ON xnat_experimentData.id = sharedExperiments.sharing_share_xnat_experimentda_id) SECURITY " +
+                                                                             "         WHERE " +
+                                                                             "           experimentProject IN (:projectIds) OR " +
+                                                                             "           experimentSharedProject IN (:projectIds)) SECURITY " +
+                                                                             "        LEFT JOIN xnat_experimentData SEARCH ON SECURITY.id = SEARCH.id) xnat_experimentData) SEARCH " +
+                                                                             "  LEFT JOIN xnat_experimentData expt ON search.id = expt.id " +
+                                                                             "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
+                                                                             "GROUP BY " +
+                                                                             "  element_name";
+    private static final String       GUEST_USERNAME                       = "guest";
+    private static final String       ACTION_PREFIX                        = "action";
+    private static final String       TAG_PREFIX                           = "tag";
+    private static final String       PROJECT_PREFIX                       = "project";
+    private static final String       USER_ELEMENT_PREFIX                  = "user";
+    private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX       = "eam";
+    private static final String       GROUPS_ELEMENT_PREFIX                = "groups";
     @SuppressWarnings("unused")
-    private static final String       QUERY_GET_ALL_GROUPS_FOR_TAG           = "SELECT DISTINCT " +
-                                                                               "  login, " +
-                                                                               "  groupid " +
-                                                                               "FROM xdat_user u " +
-                                                                               "  LEFT JOIN xdat_user_groupid xug ON u.xdat_user_id = xug.groups_groupid_xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_usergroup usergroup ON xug.groupid = usergroup.id " +
-                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE tag = :tag OR (tag IS NULL AND field_value = '*') " +
-                                                                               "  GROUP BY login, groupid " +
-                                                                               "ORDER BY login";
-    private static final String       QUERY_GET_ALL_MEMBER_GROUPS            = "SELECT " +
-                                                                               "  tag AS project_id, " +
-                                                                               "  id AS group_id " +
-                                                                               "FROM " +
-                                                                               "  xdat_usergroup " +
-                                                                               "WHERE " +
-                                                                               "  tag IS NOT NULL AND " +
-                                                                               "  id LIKE '%_member' " +
-                                                                               "ORDER BY project_id, group_id";
-    private static final String       QUERY_GET_ALL_COLLAB_GROUPS            = "SELECT " +
-                                                                               "  tag AS project_id, " +
-                                                                               "  id AS group_id " +
-                                                                               "FROM " +
-                                                                               "  xdat_usergroup " +
-                                                                               "WHERE " +
-                                                                               "  tag IS NOT NULL AND " +
-                                                                               "  id LIKE '%_collaborator' " +
-                                                                               "ORDER BY project_id, group_id";
-    private static final String       QUERY_CHECK_USER_EXISTS                = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
-    private static final String       QUERY_GET_EXPERIMENT_PROJECT           = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
-    private static final String       QUERY_GET_SUBJECT_PROJECT              = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
-    private static final String       QUERY_GET_USERS_FOR_PROJECTS           = "SELECT DISTINCT login " +
-                                                                               "FROM xdat_user u " +
-                                                                               "  LEFT JOIN xdat_user_groupid gid ON u.xdat_user_id = gid.groups_groupid_xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_usergroup g ON gid.groupid = g.id " +
-                                                                               "  LEFT JOIN xdat_element_access xea ON g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE tag IN (:projectIds) OR (tag IS NULL AND field_value = '*') " +
-                                                                               "ORDER BY login";
-    private static final String       QUERY_GET_PROJECTS_FOR_USER            = "SELECT DISTINCT " +
-                                                                               "  g.tag AS project " +
-                                                                               "FROM xdat_usergroup g " +
-                                                                               "  LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
-                                                                               "  LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                                               "WHERE g.tag IS NOT NULL AND " +
-                                                                               "      u.login = :username";
-    private static final String       QUERY_PROJECT_OWNERS                   = "SELECT DISTINCT u.login AS owner " +
-                                                                               "FROM xdat_user                     u " +
-                                                                               "  LEFT JOIN xdat_user_groupid      map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_usergroup         g ON map.groupid = g.id " +
-                                                                               "  LEFT JOIN xdat_element_access    xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping     xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE " +
-                                                                               "  xfm.field_value != '*' AND " +
-                                                                               "  xea.element_name = 'xnat:projectData' AND " +
-                                                                               "  xfm.delete_element = 1 AND " +
-                                                                               "  g.id LIKE '%_owner' AND " +
-                                                                               "  g.tag = :projectId " +
-                                                                               "ORDER BY owner";
-    @SuppressWarnings("unused")
-    private static final String       QUERY_GROUP_DATATYPE_PERMISSIONS       = "SELECT " +
-                                                                               "  xea.element_name    AS element_name, " +
-                                                                               "  xeamd.status        AS active_status, " +
-                                                                               "  xfms.method         AS method, " +
-                                                                               "  xfm.field           AS field, " +
-                                                                               "  xfm.field_value     AS field_value, " +
-                                                                               "  xfm.comparison_type AS comparison_type, " +
-                                                                               "  xfm.read_element    AS read_element, " +
-                                                                               "  xfm.edit_element    AS edit_element, " +
-                                                                               "  xfm.create_element  AS create_element, " +
-                                                                               "  xfm.delete_element  AS delete_element, " +
-                                                                               "  xfm.active_element  AS active_element " +
-                                                                               "FROM xdat_usergroup usergroup " +
-                                                                               "  LEFT JOIN xdat_element_access xea ON usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE " +
-                                                                               "  usergroup.id = :groupId AND " +
-                                                                               "  element_name = :dataType " +
-                                                                               "ORDER BY element_name, field";
-    private static final String       QUERY_USER_PERMISSIONS                 = "SELECT " +
-                                                                               "  xea.element_name    AS element_name, " +
-                                                                               "  xeamd.status        AS active_status, " +
-                                                                               "  xfms.method         AS method, " +
-                                                                               "  xfm.field           AS field, " +
-                                                                               "  xfm.field_value     AS field_value, " +
-                                                                               "  xfm.comparison_type AS comparison_type, " +
-                                                                               "  xfm.read_element    AS read_element, " +
-                                                                               "  xfm.edit_element    AS edit_element, " +
-                                                                               "  xfm.create_element  AS create_element, " +
-                                                                               "  xfm.delete_element  AS delete_element, " +
-                                                                               "  xfm.active_element  AS active_element " +
-                                                                               "FROM xdat_user u " +
-                                                                               "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE " +
-                                                                               "  u.login = :username";
-    private static final String       QUERY_USER_PROJECTS                    = "SELECT " +
-                                                                               "  DISTINCT xfm.field_value AS project " +
-                                                                               "FROM xdat_user u " +
-                                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE " +
-                                                                               "  xfm.field_value != '*' AND " +
-                                                                               "  xea.element_name = 'xnat:projectData' AND " +
-                                                                               "  xfm.%s = 1 AND " +
-                                                                               "  u.login IN (:usernames) " +
-                                                                               "ORDER BY project";
-    private static final String       QUERY_OWNED_PROJECTS                   = String.format(QUERY_USER_PROJECTS, "delete_element");
-    private static final String       QUERY_EDITABLE_PROJECTS                = String.format(QUERY_USER_PROJECTS, "edit_element");
-    private static final String       QUERY_READABLE_PROJECTS                = String.format(QUERY_USER_PROJECTS, "read_element");
-    private static final String       QUERY_USER_READABLE_PROJECT_MAP        = "SELECT DISTINCT " +
-                                                                               "  fm.field_value AS project, " +
-                                                                               "  CASE " +
-                                                                               "    WHEN ug.id IS NOT NULL THEN ug.displayname " +
-                                                                               "    WHEN fm.active_element = 1 THEN 'public' " +
-                                                                               "    ELSE 'protected' " +
-                                                                               "  END AS access " +
-                                                                               "FROM " +
-                                                                               "  xdat_user u " +
-                                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                               "  LEFT JOIN xdat_usergroup ug ON map.groupid = ug.id " +
-                                                                               "  LEFT JOIN xdat_element_access ea ON (ug.xdat_usergroup_id = ea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = ea.xdat_user_xdat_user_id) " +
-                                                                               "  LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                               "  LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id = fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                               "WHERE " +
-                                                                               "  fm.field_value != '*' AND " +
-                                                                               "  ea.element_name = 'xnat:projectData' AND " +
-                                                                               "  fm.read_element = 1 AND " +
-                                                                               "  u.login IN ('guest', :username) " +
-                                                                               "ORDER BY " +
-                                                                               "  project";
-    private static final String       QUERY_USER_READABLE_PROJECT_COUNT      = "SELECT COUNT(*) AS data_type_count FROM (" + QUERY_USER_READABLE_PROJECT_MAP + ") SEARCH";
-    private static final String       QUERY_USER_READABLE_WORKFLOW_COUNT     = "SELECT COUNT(*) FROM wrk_workflowData wrk_workflowData";
-    private static final String       QUERY_USER_ACCESSIBLE_PROJECT_LIST     = "SELECT project FROM (" + QUERY_USER_READABLE_PROJECT_MAP + ") READABLE WHERE access != 'protected'";
-    private static final String       QUERY_USER_ACCESSIBLE_SUBJECT_COUNT    = "SELECT  " +
-                                                                               "  COUNT(*) " +
-                                                                               "FROM  " +
-                                                                               "  (SELECT SEARCH.*  " +
-                                                                               "   FROM  " +
-                                                                               "     (SELECT DISTINCT ON (subjectId) *  " +
-                                                                               "      FROM  " +
-                                                                               "        (SELECT xnat_subjectData.id AS subjectId, xnat_subjectData.project AS subjectProject, sharedSubjects.project AS sharedProject  " +
-                                                                               "         FROM  " +
-                                                                               "           xnat_subjectData xnat_subjectData  " +
-                                                                               "           LEFT JOIN xnat_projectParticipant sharedSubjects ON xnat_subjectData.id = sharedSubjects.subject_id) SECURITY  " +
-                                                                               "      WHERE  " +
-                                                                               "        subjectProject IN (:projectIds) OR  " +
-                                                                               "        sharedProject IN (:projectIds)) SECURITY  " +
-                                                                               "     LEFT JOIN xnat_subjectData SEARCH ON SECURITY.subjectId = SEARCH.id) xnat_subjectData";
-    private static final String       QUERY_USER_ACCESSIBLE_EXPERIMENT_COUNT = "SELECT " +
-                                                                               "  element_name, " +
-                                                                               "  COUNT(*) AS element_count " +
-                                                                               "FROM " +
-                                                                               "  (SELECT xnat_experimentData.id AS id " +
-                                                                               "   FROM " +
-                                                                               "     (SELECT SEARCH.* " +
-                                                                               "      FROM " +
-                                                                               "        (SELECT DISTINCT ON (id) * " +
-                                                                               "         FROM " +
-                                                                               "           (SELECT xnat_experimentData.id AS id, xnat_experimentData.project AS experimentProject, sharedExperiments.project AS experimentSharedProject " +
-                                                                               "            FROM " +
-                                                                               "              xnat_experimentData xnat_experimentData " +
-                                                                               "              LEFT JOIN xnat_experimentData_share sharedExperiments ON xnat_experimentData.id = sharedExperiments.sharing_share_xnat_experimentda_id) SECURITY " +
-                                                                               "         WHERE " +
-                                                                               "           experimentProject IN (:projectIds) OR " +
-                                                                               "           experimentSharedProject IN (:projectIds)) SECURITY " +
-                                                                               "        LEFT JOIN xnat_experimentData SEARCH ON SECURITY.id = SEARCH.id) xnat_experimentData) SEARCH " +
-                                                                               "  LEFT JOIN xnat_experimentData expt ON search.id = expt.id " +
-                                                                               "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
-                                                                               "GROUP BY " +
-                                                                               "  element_name";
-    private static final String       GUEST_USERNAME                         = "guest";
-    private static final String       ACTION_PREFIX                          = "action";
-    private static final String       TAG_PREFIX                             = "tag";
-    private static final String       PROJECT_PREFIX                         = "project";
-    private static final String       USER_ELEMENT_PREFIX                    = "user";
-    private static final String       ELEMENT_ACCESS_MANAGERS_PREFIX         = "eam";
-    private static final String       GROUPS_ELEMENT_PREFIX                  = "groups";
-    @SuppressWarnings("unused")
-    private static final String       GUEST_ACTION_READ                      = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
-    private static final List<String> ALL_ACTIONS                            = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
+    private static final String       GUEST_ACTION_READ                    = getCacheIdForActionElements(GUEST_USERNAME, SecurityManager.READ);
+    private static final List<String> ALL_ACTIONS                          = Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.CREATE);
 
-    private static final Pattern      REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTION_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):(?<remainder>.*)$");
-    private static final Pattern      REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
-    private static final NumberFormat FORMATTER                          = NumberFormat.getNumberInstance(Locale.getDefault());
-    private static final String       GUEST_CACHE_ID                     = getCacheIdForUserElements("guest", BROWSEABLE);
+    private static final Pattern REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTION_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):(?<remainder>.*)$");
+    private static final Pattern REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
+    private static final String  GUEST_CACHE_ID                     = getCacheIdForUserElements(GUEST_USERNAME, BROWSEABLE);
 
     private static final Function<ElementDisplay, String>  FUNCTION_ELEMENT_DISPLAY_TO_STRING  = new Function<ElementDisplay, String>() {
         @Override

@@ -173,21 +173,22 @@ public class XDATScreen_download_sessions extends SecureScreen {
      * </ul>
      */
     private static final String QUERY_GET_SESSION_ASSESSORS = "SELECT element_name, Count(*) AS count " +
-                                                              "FROM (SELECT xea.element_name AS element_name, xfm.field, xfm.field_value " +
+                                                              "FROM (SELECT a.element_name AS element_name, m.field, m.field_value " +
                                                               "      FROM xdat_usergroup g " +
-                                                              "          LEFT JOIN xdat_user_groupid gid ON g.id = gid.groupid " +
-                                                              "          LEFT JOIN xdat_user u ON gid.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                              "          LEFT JOIN xdat_element_access xea ON (g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                              "          LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                              "          LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                              "      WHERE xfm.read_element = 1 AND " +
-                                                              "            g.tag IN (:projectIds) AND " +
-                                                              "            u.login IN ('guest', :userId)) perms " +
-                                                              "       INNER JOIN (SELECT iad.id, element_name || '/project' AS field, expt.project, expt.label " +
-                                                              "                   FROM xnat_imageassessordata iad " +
-                                                              "                          LEFT JOIN xnat_experimentdata expt ON iad.id = expt.id " +
-                                                              "                          LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
-                                                              "                   WHERE iad.imagesession_id IN (:sessionIds)) expts ON perms.field = expts.field AND perms.field_value = expts.project " +
+                                                              "           LEFT JOIN xdat_user_groupid i ON g.id = i.groupid " +
+                                                              "           LEFT JOIN xdat_user u ON i.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "           LEFT JOIN xdat_element_access a ON (g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
+                                                              "           LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "           LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              "      WHERE m.read_element = 1 " +
+                                                              "        AND a.element_name != 'xnat:projectData' " +
+                                                              "        AND g.tag IN (:projectIds) " +
+                                                              "        AND u.login IN ('guest', :userId)) perms " +
+                                                              "     INNER JOIN (SELECT a.id, element_name || '/project' AS field, e.project, e.label " +
+                                                              "                 FROM xnat_imageassessordata a " +
+                                                              "                      LEFT JOIN xnat_experimentdata e ON a.id = e.id " +
+                                                              "                      LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
+                                                              "                 WHERE a.imagesession_id IN (:sessionIds)) expts ON perms.field = expts.field AND perms.field_value = expts.project " +
                                                               "GROUP BY element_name " +
                                                               "ORDER BY element_name";
 
@@ -199,20 +200,20 @@ public class XDATScreen_download_sessions extends SecureScreen {
      * </ul>
      */
     private static final String QUERY_GET_SESSION_ASSESSORS_ADMIN = "SELECT element_name, Count(*) AS count " +
-                                                                    "FROM (SELECT xea.element_name, xfm.field, xfm.field_value " +
+                                                                    "FROM (SELECT DISTINCT element_name, m.field, m.field_value " +
                                                                     "      FROM xdat_user u " +
-                                                                    "             JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                                    "             JOIN xdat_usergroup gp ON map.groupid = gp.id " +
-                                                                    "             JOIN xdat_element_access xea ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
-                                                                    "             JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                    "             JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element = 1 " +
-                                                                    "      WHERE u.login = 'guest' OR " +
-                                                                    "            xfm.field_value = '*') perms " +
-                                                                    "       INNER JOIN (SELECT iad.id, element_name || '/project' AS field, expt.project, expt.label " +
-                                                                    "                   FROM xnat_imageassessordata iad " +
-                                                                    "                          LEFT JOIN xnat_experimentdata expt ON iad.id = expt.id " +
-                                                                    "                          LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
-                                                                    "                   WHERE iad.imagesession_id IN (:sessionIds)) expts ON perms.field = expts.field AND perms.field_value IN (expts.project, '*') " +
+                                                                    "           JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
+                                                                    "           JOIN xdat_usergroup g ON i.groupid = g.id " +
+                                                                    "           JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id " +
+                                                                    "           JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                    "           JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element = 1 " +
+                                                                    "      WHERE u.login = 'guest' " +
+                                                                    "         OR m.field_value = '*') perms " +
+                                                                    "     INNER JOIN (SELECT a.id, element_name || '/project' AS field, e.project, e.label " +
+                                                                    "                 FROM xnat_imageassessordata a " +
+                                                                    "                      LEFT JOIN xnat_experimentdata e ON a.id = e.id " +
+                                                                    "                      LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
+                                                                    "                 WHERE a.imagesession_id IN (:sessionIds)) expts ON perms.field = expts.field AND perms.field_value IN (expts.project, '*') " +
                                                                     "GROUP BY element_name " +
                                                                     "ORDER BY element_name";
 

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.TypeConverter.JavaMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
@@ -34,13 +35,12 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Map;
 
+@Slf4j
 public abstract class QueryOrganizerResource extends SecureResource {
-
 	public QueryOrganizerResource(Context context, Request _request, Response _response) {
 		super(context, _request, _response);
 	}
 
-	
 	public CriteriaCollection processStringQuery(String xmlPath, String values){
 		ArrayList<String> al=XftStringUtils.CommaDelimitedStringToArrayList(values);
 		CriteriaCollection cc= new CriteriaCollection("OR");
@@ -144,11 +144,11 @@ public abstract class QueryOrganizerResource extends SecureResource {
                     break;
             }
 		} catch (XFTInitException e) {
-			logger.error("An error occurred during XFT initialization",e);
+			log.error("An error occurred during XFT initialization",e);
 		} catch (ElementNotFoundException e) {
-			logger.error("Couldn't find an element in the xPath " + xPath,e);
+			log.error("Couldn't find an element in the xPath {}", xPath,e);
 		} catch (FieldNotFoundException e) {
-			logger.error("Couldn't find the field specified by the xPath " + xPath,e);
+			log.error("Couldn't find the field specified by the xPath {}", xPath,e);
 		}
 		return cc;
 	}
@@ -158,28 +158,30 @@ public abstract class QueryOrganizerResource extends SecureResource {
 	public ArrayList<String> columns=null;
 	
 	public void populateQuery(QueryOrganizer qo){
-		if(hasQueryVariable("columns") && !getQueryVariable("columns").equals("DEFAULT")){ 
+		final String queryVariable = getQueryVariable("columns");
+		final GenericWrapperElement rootElement = qo.getRootElement();
+		if(StringUtils.isNotBlank(queryVariable) && !queryVariable.equals("DEFAULT")){
 			try {
-				columns=XftStringUtils.CommaDelimitedStringToArrayList(URLDecoder.decode(getQueryVariable("columns"), "UTF-8"));
+				this.columns =XftStringUtils.CommaDelimitedStringToArrayList(URLDecoder.decode(queryVariable, "UTF-8"));
 			} catch (UnsupportedEncodingException e) {
-				logger.error("",e);
-				columns=getDefaultFields(qo.getRootElement());
+				log.error("",e);
+				this.columns =getDefaultFields(rootElement);
 			}
 		}else{
-			columns=getDefaultFields(qo.getRootElement());
+			this.columns =getDefaultFields(rootElement);
 		}
 		
-		for(String key: columns){
+		for(String key: this.columns){
 			try {
 				if(key.contains("/")){
 					qo.addField(key);
 				}else if(this.fieldMapping.containsKey(key)){
 					qo.addField(this.fieldMapping.get(key));
 				}else{
-					System.out.println("Unknown Alias: "+ key);
+					log.error("Unknown alias \"{}\" processing query for root element: {}", key, rootElement.getName());
 				}
 			} catch (ElementNotFoundException e) {
-				logger.error("",e);
+				log.error("",e);
 			}
 		}
 		
@@ -216,19 +218,19 @@ public abstract class QueryOrganizerResource extends SecureResource {
 			}
 			
 			if(hasBodyVariable("columns")){
-				columns=XftStringUtils.CommaDelimitedStringToArrayList(getBodyVariable("columns"));
-				for(String col:columns){
+				this.columns =XftStringUtils.CommaDelimitedStringToArrayList(getBodyVariable("columns"));
+				for(String col: this.columns){
 					if(col.contains("/")){
 						try {
 							qo.addField(col);
 						} catch (ElementNotFoundException e) {
-							logger.error("",e);
+							log.error("",e);
 						}
 					}else if(this.fieldMapping.containsKey(col)){
 						try {
 							qo.addField(this.fieldMapping.get(col));
 						} catch (ElementNotFoundException e) {
-							logger.error("",e);
+							log.error("",e);
 						}
 					}
 				}
@@ -323,13 +325,13 @@ public abstract class QueryOrganizerResource extends SecureResource {
 						rootElementName=ge;
 					}
 				} catch (ElementNotFoundException e) {
-					logger.error("",e);
+					log.error("",e);
 				}
 			}
 			
 			return rootElementName.getXSIType();
 		} catch (Throwable e) {
-			logger.error("",e);
+			log.error("",e);
 			return this.getDefaultElementName();
 		}
 	}
@@ -354,7 +356,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 				return null;				
 			}
 		} catch (Exception e) {
-			logger.error("",e);
+			log.error("",e);
 			return null;
 		}
 	}

@@ -50,29 +50,44 @@ var XNAT = getObject(XNAT);
     $(function(){
 
         var $doc = $(document);
+        var $win = $(window);
+
+        $win.on('pageshow', function(e){
+            if (e.originalEvent.persisted) {
+                console.log('reloading...');
+                if (window.location.reload) {
+                    window.location.reload();
+                }
+                else {
+                    window.location.href = window.location.href + '#!';
+                }
+            }
+        });
 
         // prevent default click triggers on '#' links
         $doc.on('click', '[href^="#"], [href^="@!"]', function(e){
             e.preventDefault();
         });
 
-        // display 'wait' dialog for elements with a [data-wait] attribute
-        $doc.on('click', 'a[data-wait]', function(e){
-            var msg = $(this).data('wait') || 'Please wait...';
-            XNAT.dialog.static.wait(msg);
-        });
-
-
         // display 'wait' dialog when requesting data download
-        function downloadWaitMsg(msg){
+        function showWaitMessage(msg){
             return XNAT.dialog.static.wait(msg || 'Preparing data for download...');
         }
-        $('#actionsMenu').on('click', 'a[title="Download Images"]', function(e){
-            downloadWaitMsg()
+
+        // display 'wait' dialog for elements with a [data-wait] attribute
+        $doc.on('click', 'a[data-wait]', function(e){
+            var msg = this.getAttribute('data-wait') || 'Please wait...';
+            console.log('waiting...');
+            showWaitMessage(msg);
         });
-        $('#search_tabs').on('click', 'a.yuimenuitemlabel', function(e){
+        
+        $doc.on('click', '#actionsMenu a[title="Download Images"]', function(e){
+             showWaitMessage()
+        });
+
+        $doc.on('click', '#search_tabs a.yuimenuitemlabel', function(e){
             if (this.textContent === 'Download') {
-                downloadWaitMsg();
+                showWaitMessage();
             }
         });
 

@@ -155,8 +155,8 @@ public class PrearcUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<String> getProjects(final UserI user, String requestedProject) throws Exception {
-        ArrayList<String> projects = new ArrayList<>();
+    public static List<String> getProjects(final UserI user, String requestedProject) {
+        final List<String> projects = new ArrayList<>();
         if (requestedProject != null) {
             if (requestedProject.contains(",")) {
                 String[] projectIds = StringUtils.split(requestedProject, ',');
@@ -174,8 +174,6 @@ public class PrearcUtils {
             }
         } else {
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            assert userHelperService != null;
-
             for (final List<String> row : userHelperService.getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
                 if (projects.contains(id))
@@ -231,16 +229,15 @@ public class PrearcUtils {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
                 prearcPath = prearchRootPref;
             } else {
-                throw new InsufficientPrivilegesException(user.getUsername());
+                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, COMMON);
             }
         } else {
             //Refactored to remove unnecessary database hits.  It only needs to hit the xnat_projectdata table if the query is using a project alias rather than a project id.  TO
             ArcProject p = ArcSpecManager.GetInstance().getProjectArc(project);
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            assert userHelperService != null;
             if (p != null) {
-                if (user != null && !userHelperService.hasEditAccessToSessionDataByTag(project)) {
-                    throw new InvalidPermissionException("user " + user.getUsername() + " does not have create permissions for project " + project);
+                if (!userHelperService.hasEditAccessToSessionDataByTag(project)) {
+                    throw new InvalidPermissionException(user.getUsername(), "edit", XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
                 }
                 String arcSpecPathForProject = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
                 String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
@@ -269,8 +266,8 @@ public class PrearcUtils {
                 //check to see if it used a project alias
                 XnatProjectdata proj = XnatProjectdata.getProjectByIDorAlias(project, user, false);
                 if (proj != null) {
-                    if (user != null && !userHelperService.hasEditAccessToSessionDataByTag(project)) {
-                        throw new InvalidPermissionException("user " + user.getUsername() + " does not have create permissions for project " + project);
+                    if (!userHelperService.hasEditAccessToSessionDataByTag(project)) {
+                        throw new InvalidPermissionException(user.getUsername(), "edit", XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
                     }
                     String arcSpecPathForProject = proj.getPrearchivePath();
                     String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");

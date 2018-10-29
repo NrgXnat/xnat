@@ -2259,7 +2259,7 @@ public final class PrearcDatabase {
     }
 
     public static ArrayList<ArrayList<Object>> buildRows(final UserI user, final String requestedProject) throws Exception {
-        final ArrayList<String> projects = PrearcUtils.getProjects(user, requestedProject);
+        final List<String> projects = PrearcUtils.getProjects(user, requestedProject);
 
         final String[] _proj = new String[projects.size()];
 

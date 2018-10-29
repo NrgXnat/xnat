@@ -1,4 +1,5 @@
 #* @vtlvariable name="elementManager" type="java.util.List" *#
+#* @vtlvariable name="elementSecurity" type="org.nrg.xdat.security.ElementSecurity" *#
 #* @vtlvariable name="allElements" type="java.util.List" *#
 #* @vtlvariable name="usedNames" type="java.util.Collection" *#
 #* @vtlvariable name="ug" type="org.nrg.xdat.security.UserGroup" *#
@@ -180,11 +181,14 @@ $page.setVlinkColor($ui.vlink)
 		<th><label><INPUT type="checkbox" class='edit' data-related="imageSession" /><b>Create/Edit</b></label></th>
 		<th><label><INPUT type="checkbox" class='delete' data-related="imageSession" /><b>Delete</b></label></th>
 	</tr>
+    #set($inserted = 0)
 	#foreach ($elementManager in $allElements)
 		#set($elementName = $elementManager.get(0))
 		#set($permissionCount = $permissionCount + 1)
 		#set($elementSQLName = $elementManager.get(2))
-		#if($elementManager.get(5).getSchemaElement().instanceOf("xnat:imageSessionData"))
+        #set($elementSecurity = $elementManager.get(5))
+		#if($elementSecurity.getSchemaElement().instanceOf("xnat:imageSessionData"))
+            #set($inserted = $inserted + 1)
             #set($pi="")
             #set($permList = $ug.getPermissionsByDataTypeAndField("${elementName}","${elementName}/project"))
             #if($permList.size()>0)
@@ -196,14 +200,17 @@ $page.setVlinkColor($ui.vlink)
 			#end
 			<tr class="body highlight">
 				#set($fieldId="${elementSQLName}_R")
-    			<td>$elementManager.get(5).getPlural()</td>
+    			<td>$elementSecurity.getPlural()</td>
     			<td title="Read" class="checkbox"><label><INPUT type="checkbox" class='read imageSession' id="$fieldId" value="1" name="${elementName}_${elementName}/project_$!{pValue}_R" #if($pi.getRead())CHECKED #end /></label></td>
     			<td title="Edit" class="checkbox"><label><INPUT type="checkbox" class='edit imageSession' value="1" name="${elementName}_${elementName}/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end data-check="#${fieldId}" /></label></td>
     			<td title="Delete" class="checkbox"><label><INPUT type="checkbox" class='delete imageSession' value="1" name="${elementName}_${elementName}/project_$!{pValue}_D" #if($pi.getDelete())CHECKED #end data-check="#${fieldId}" /></label></td>
     		</tr>
 		#end
 	#end
-	
+    #if($inserted == 0)
+        <tr class="body"><td>(none)</td><td> &ndash; </td><td> &ndash; </td><td> &ndash; </td></tr>
+    #end
+
 	## render image assessors
 	<tr class='header'>
 		<th>Image Assessments</th>
@@ -211,11 +218,14 @@ $page.setVlinkColor($ui.vlink)
 		<th><label><INPUT type="checkbox" class='edit' data-related="imageAssessor" /> <b>Create/Edit</b> </label></th>
 		<th><label><INPUT type="checkbox" class='delete' data-related="imageAssessor" /> <b>Delete</b> </label></th>
 	</tr>
+    #set($inserted = 0)
 	#foreach ($elementManager in $allElements)
 		#set($elementName = $elementManager.get(0))
 		#set($permissionCount = $permissionCount + 1)
 		#set($elementSQLName = $elementManager.get(2))
-		#if($elementManager.get(5).getSchemaElement().instanceOf("xnat:imageAssessorData"))
+        #set($elementSecurity = $elementManager.get(5))
+        #if($elementSecurity.getSchemaElement().instanceOf("xnat:imageAssessorData"))
+            #set($inserted = $inserted + 1)
             #set($pi="")
             #set($permList = $ug.getPermissionsByDataTypeAndField("${elementName}","${elementName}/project"))
             #if($permList.size()>0)
@@ -225,7 +235,7 @@ $page.setVlinkColor($ui.vlink)
 				<input type="hidden" value="1" name="${elementName}_${elementName}/project_$!{pValue}_wasSet"/>
 			#end
 			<tr class='body highlight'>
-    			<td>$elementManager.get(5).getPlural()</td>
+    			<td>$elementSecurity.getPlural()</td>
 				#set($fieldId="${elementSQLName}_R")
     			<td title="Read" class="checkbox"><label><INPUT type="checkbox" class='read imageAssessor' id="$fieldId" value="1" name="${elementName}_${elementName}/project_$!{pValue}_R" #if($pi.getRead())CHECKED #end /></label></td>
 				<td title="Edit" class="checkbox"><label><INPUT type="checkbox" class='edit imageAssessor' value="1" name="${elementName}_${elementName}/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end data-check="#${fieldId}" /></label></td>
@@ -233,7 +243,10 @@ $page.setVlinkColor($ui.vlink)
     		</tr>
 		#end
 	#end
-	
+    #if($inserted == 0)
+        <tr class="body"><td>(none)</td><td> &ndash; </td><td> &ndash; </td><td> &ndash; </td></tr>
+    #end
+
 	## render other subject Assessors
 	<tr class='header'>
 		<th>Other Assessments</th>
@@ -241,11 +254,14 @@ $page.setVlinkColor($ui.vlink)
 		<th><label><INPUT type="checkbox" class='edit' data-related="other" /> <b>Create/Edit</b> </label></th>
 		<th><label><INPUT type="checkbox" class='delete' data-related="other" /> <b>Delete</b> </label></th>
 	</tr>
+    #set($inserted = 0)
     #foreach ($elementManager in $allElements)
 		#set($elementName = $elementManager.get(0))
 		#set($permissionCount = $permissionCount + 1)
 		#set($elementSQLName = $elementManager.get(2))
-		#if( !$elementManager.get(5).getSchemaElement().instanceOf("xnat:imageSessionData") && $elementManager.get(5).getSchemaElement().instanceOf("xnat:subjectAssessorData"))
+        #set($elementSecurity = $elementManager.get(5))
+        #if( !$elementSecurity.getSchemaElement().instanceOf("xnat:imageSessionData") && $elementSecurity.getSchemaElement().instanceOf("xnat:subjectAssessorData"))
+            #set($inserted = $inserted + 1)
     		#set($pi="")
     		#set($pi=$ug.getRootPermissionObject("${elementName}","${elementName}/project","$ug.getTag()"))		
 			#if($pi!="" && ($pi.getRead() || $pi.getCreate() || $pi.getEdit() || $pi.getDelete()))
@@ -253,13 +269,16 @@ $page.setVlinkColor($ui.vlink)
 			#end
 			<tr class='body highlight'>
 				#set($fieldId="${elementSQLName}_R")
-    			<td>$elementManager.get(5).getPlural()</td>
+    			<td>$elementSecurity.getPlural()</td>
     			<td title="Read" class="checkbox"><label><INPUT class='read other' id="$fieldId" type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_R" #if($pi.getRead())CHECKED #end /></label></td>
 				<td title="Edit" class="checkbox"><label><INPUT class='edit other' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end data-check="#${fieldId}" /></label></td>
     			<td title="Delete" class="checkbox"><label><INPUT class='delete other' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_D" #if($pi.getDelete())CHECKED #end data-check="#${fieldId}" /></label></td>
     		</tr>
         #end
 	#end
+    #if($inserted == 0)
+        <tr class="body"><td>(none)</td><td> &ndash; </td><td> &ndash; </td><td> &ndash; </td></tr>
+    #end
 </table>
 <!-- END xdat:userGroup -->
 		</TD>
@@ -282,22 +301,6 @@ $page.setVlinkColor($ui.vlink)
         _addValidation("xdat:userGroup/displayName",{box:document.getElementById("xdat:userGroup/displayName"),validate:function(_box){
             return (! XNAT.app.usedNames.contains(this.box.value));
         }},"This Display Name is already in use.");
-
-        // make sure each section has a 'body'
-        // otherwise put in some filler
-        jq('tr.header').each(function(){
-            var __this = jq(this);
-            if (!__this.next('tr').hasClass('body')){
-                __this.after(
-                        '<tr class="body">' +
-                        '<td>(none)</td>' +
-                        '<td> &ndash; </td>' +
-                        '<td> &ndash; </td>' +
-                        '<td> &ndash; </td>' +
-                        '</tr>'
-                );
-            }
-        })
 
         function toggleRelatedPermissions( ckbox, perms, type ){
             perms = '.' + perms; // read/edit/delete

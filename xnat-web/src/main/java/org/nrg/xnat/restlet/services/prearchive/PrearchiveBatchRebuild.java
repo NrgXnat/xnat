@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.services.prearchive;
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -64,13 +65,16 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
                     PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, sessionData, sessionDir, "Rebuild");
                     XDAT.sendJmsRequest(request);
                 }
+            } catch (IllegalArgumentException e) {
+				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
+            } catch (InvalidPermissionException e) {
+				getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e);
             } catch (Exception exception) {
                 logger.error("Error when setting prearchive session status to QUEUED", exception);
-                this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,exception);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,exception);
             }
         }
 
-		
 		final Response response = getResponse();
 		try {
 			response.setEntity(updatedStatusRepresentation(ss,overrideVariant(getPreferredVariant())));

@@ -9,17 +9,21 @@
 
 
 package org.nrg.xdat.om.base.auto;
-import java.util.ArrayList;
-import java.util.Hashtable;
 
+import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatFieldMappingSetI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
+import org.nrg.xft.utils.SaveItemHelper;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 /**
  * @author XDAT
@@ -196,6 +200,33 @@ public abstract class AutoXdatFieldMappingSet extends org.nrg.xdat.base.BaseElem
 		setProperty(SCHEMA_ELEMENT_NAME + "/xdat_field_mapping_set_id",v);
 		_XdatFieldMappingSetId=null;
 		} catch (Exception e1) {logger.error(e1);}
+	}
+
+	public boolean addFieldMapping(final XdatFieldMapping fieldMapping, final XdatElementAccess elementAccess, final UserI authenticated, final boolean activateChanges, final EventMetaI ci) throws Exception {
+		setAllow(fieldMapping);
+
+		final boolean hasFieldMappingSetId = getXdatFieldMappingSetId() != null;
+		final boolean hasElementAccessId   = elementAccess.getXdatElementAccessId() != null;
+		if (hasElementAccessId && !hasFieldMappingSetId) {
+			setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", elementAccess.getXdatElementAccessId());
+			if (activateChanges) {
+				SaveItemHelper.authorizedSave(this, authenticated, true, false, true, false, ci);
+				activate(authenticated);
+			} else {
+				SaveItemHelper.authorizedSave(this, authenticated, true, false, false, false, ci);
+			}
+			return false;
+		}
+		if (hasFieldMappingSetId) {
+			fieldMapping.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", getXdatFieldMappingSetId());
+		}
+		if (activateChanges) {
+			SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, true, false, ci);
+			elementAccess.activate(authenticated);
+		} else {
+			SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, false, false, ci);
+		}
+		return !hasFieldMappingSetId;
 	}
 
 	public static ArrayList<org.nrg.xdat.om.XdatFieldMappingSet> getAllXdatFieldMappingSets(org.nrg.xft.security.UserI user,boolean preLoad)

@@ -9,42 +9,24 @@
 
 package org.nrg.xft.db;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
+import com.google.common.util.concurrent.AtomicDouble;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.*;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.search.TableSearch;
@@ -53,20 +35,29 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XftStringUtils;
-import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Slf4j
 public class DBAction {
-    private static Hashtable    sequences = new Hashtable();
+    private static final Map<String, String> SEQUENCES = new HashMap<>();
+    private static       AtomicDouble        VERSION   = new AtomicDouble();
 
-    private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
-    private static final String QUERY_CREATE_SEQUENCE = "CREATE SEQUENCE %s_id_seq";
-    private static final String QUERY_SET_ID_DEFAULT = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
-    private static final String QUERY_SET_ID_NOT_NULL = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
-    private static final String QUERY_SET_SEQUENCE_OWNER = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
-    private static final String QUERY_GET_SEQUENCE_START = "SELECT (MAX(id) + 1) AS value FROM %s";
-    private static final String QUERY_SET_SEQUENCE_VALUE = "SELECT setval('%s_id_seq', %d) AS value";
+    private static final Pattern REGEX_EXTRACT_POSTGRESQL_VERSION = Pattern.compile("^PostgreSQL (?<version>[\\d.]+) .*$");
+    private static final String  QUERY_FIND_SEQLESS_TABLES        = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
+    private static final String  QUERY_CREATE_SEQUENCE            = "CREATE SEQUENCE %s_id_seq";
+    private static final String  QUERY_SET_ID_DEFAULT             = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
+    private static final String  QUERY_SET_ID_NOT_NULL            = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
+    private static final String  QUERY_SET_SEQUENCE_OWNER         = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
+    private static final String  QUERY_GET_SEQUENCE_START         = "SELECT (MAX(id) + 1) AS value FROM %s";
+    private static final String  QUERY_SET_SEQUENCE_VALUE         = "SELECT setval('%s_id_seq', %d) AS value";
 
     /**
      * This method is used to insert/update an item into the database.
@@ -1780,7 +1771,7 @@ public class DBAction {
 
 
     public static String getSequenceName(GenericWrapperElement e) {
-        if (sequences.get(e.getSQLName().toLowerCase()) == null) {
+        if (SEQUENCES.get(e.getSQLName().toLowerCase()) == null) {
             String col_name;
 
             GenericWrapperField key = e.getAllPrimaryKeys().get(0);
@@ -1813,11 +1804,11 @@ public class DBAction {
             }
 
             if (col_name != null) {
-                sequences.put(e.getSQLName().toLowerCase(), col_name);
+                SEQUENCES.put(e.getSQLName().toLowerCase(), col_name);
             }
         }
 
-        return (String) sequences.get(e.getSQLName().toLowerCase());
+        return SEQUENCES.get(e.getSQLName().toLowerCase());
     }
 
     public static String getSequenceName(String table, String key, String dbName) {
@@ -3136,7 +3127,18 @@ public class DBAction {
     public static void AdjustSequences() {
         long startTime = Calendar.getInstance().getTimeInMillis();
         try {
-            XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, PoolDBUtils.getDefaultDBName(), null);
+            final String defaultDBName = PoolDBUtils.getDefaultDBName();
+            if (VERSION.get() == 0.0) {
+                final String  version = (String) PoolDBUtils.ReturnStatisticQuery("SELECT version()", "version", defaultDBName, null);
+                final Matcher matcher = REGEX_EXTRACT_POSTGRESQL_VERSION.matcher(version);
+                if (matcher.matches()) {
+                    final String extracted = matcher.group("version");
+                    log.info("Extracted PostgreSQL version '{}' from full version string '{}'", extracted, version);
+                    VERSION.set(Float.parseFloat(extracted));
+                }
+            }
+
+            XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, defaultDBName, null);
             if (tables.size() > 0) {
                 for (Object table : tables.convertColumnToArrayList("table_name")) {
                     try {
@@ -3150,14 +3152,14 @@ public class DBAction {
                         for (String query : queries) {
                             log.error(" *** {}", query);
                         }
-                        PoolDBUtils.ExecuteBatch(queries, PoolDBUtils.getDefaultDBName(), null);
-                        Long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", PoolDBUtils.getDefaultDBName(), null);
+                        PoolDBUtils.ExecuteBatch(queries, defaultDBName, null);
+                        Long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", defaultDBName, null);
                         if (start == null) {
                             start = 1L;
                         }
                         log.error("Ran the query {} and got the value {}", String.format(QUERY_GET_SEQUENCE_START, table), start);
                         log.error("Now preparing to run the query: {}", String.format(QUERY_SET_SEQUENCE_VALUE, table, start));
-                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", PoolDBUtils.getDefaultDBName(), null);
+                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", defaultDBName, null);
                     } catch (Exception e) {
                         log.error("", e);
                     }
@@ -3204,11 +3206,30 @@ public class DBAction {
     //the logic ends up changing the sequence to aggressively when the row count is 1.  I tried to fix it, but it introduced lots of bugs.
     //so, this small issue is tolerable.  If you mess with it, test installing a new server, and creating some stuff.
     private static void adjustSequence(String sequenceName, String column, String table, String dbName) throws Exception {
-        Object numRows = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null);
-        Object nextValue = PoolDBUtils.ReturnStatisticQuery("SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName, "LAST_COUNT", dbName, null);
-        if (numRows == null) {
-            numRows = 0;
+        final Object numRows = ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0);
+        final String sequenceQuery;
+        if (VERSION.floatValue() >= 10.0) {
+            final String[] atoms = StringUtils.split(sequenceName, ".");
+            final String   schema;
+            final String   sequence;
+            switch (atoms.length) {
+                case 0:
+                    throw new SQLException("Invalid sequence name, empty!");
+
+                case 1:
+                    schema = "public";
+                    sequence = atoms[0];
+                    break;
+
+                default:
+                    schema = atoms[0];
+                    sequence = atoms[1];
+            }
+            sequenceQuery = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT FROM pg_sequences WHERE schemaname = '" + schema + "' AND sequencename = '" + sequence + "'";
+        } else {
+            sequenceQuery = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName;
         }
+        final Object nextValue = PoolDBUtils.ReturnStatisticQuery(sequenceQuery, "LAST_COUNT", dbName, null);
 
         if (nextValue == null) {
             log.info("Adjusting missing sequence ({})", table);

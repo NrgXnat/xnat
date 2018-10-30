@@ -18,6 +18,8 @@ import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
@@ -40,6 +42,9 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -61,8 +66,9 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
     @Autowired
-    public PermissionsServiceImpl(final NrgEventService eventService) {
+    public PermissionsServiceImpl(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {
         _eventService = eventService;
+        _template = template;
     }
 
     @Autowired
@@ -87,8 +93,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return null;
         }
 
-        final boolean isProjectData = StringUtils.equalsIgnoreCase("xnat:projectData", fullXMLName);
-        final CriteriaCollection collection = new CriteriaCollection("OR");
+        final boolean            isProjectData = StringUtils.equalsIgnoreCase("xnat:projectData", fullXMLName);
+        final CriteriaCollection collection    = new CriteriaCollection("OR");
         for (final PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
             if (isProjectData && log.isTraceEnabled()) {
                 log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
@@ -562,29 +568,54 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return false;
     }
 
-    private boolean setAccessibilityInternal(final boolean triggerEvent, String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
+    private boolean setAccessibilityInternal(final boolean triggerEvent, final String projectId, final String accessibility, final boolean forceInit, final UserI authenticatedUser, final EventMetaI ci) throws Exception {
         final List<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
         final UserI                 guest           = Users.getGuest();
 
+        if (securedElements.isEmpty()) {
+            log.error("Setting access level for project {} to {}, but there are no secured elements to set. Most likely bad things are going to happen.", projectId, accessibility, securedElements.size());
+        } else {
+            log.info("Setting access level for project {} to {}, along with {} secured elements", projectId, accessibility, securedElements.size());
+        }
+
         if (StringUtils.equals("public", accessibility)) {
-            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
+            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, true, true, ci);
             for (final ElementSecurity securedElement : securedElements) {
                 final String elementName = securedElement.getElementName();
-                if (securedElement.hasField(elementName + "/project") && securedElement.hasField(elementName + "/sharing/share/project")) {
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", tag, false, true, false, false, true, true, ci);
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, true, false, false, false, true, ci);
+                log.debug("Preparing to set permissions for secured element '{}' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                if (securedElement.hasField(elementName + "/project")) {
+                    log.debug("Setting permissions for secured element field '{}/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", projectId, false, true, false, false, true, true, ci);
+                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
+                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to public", elementName, elementName + "/project", projectId);
+                }
+                if (securedElement.hasField(elementName + "/sharing/share/project")) {
+                    log.debug("Setting permissions for secured element field '{}/sharing/share/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", projectId, false, true, false, false, false, true, ci);
+                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
+                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to public", elementName, elementName + "/sharing/share/project", projectId);
                 }
             }
         } else {
             // Main diff between protected and private is that the project ID is readable by guest in protected, so set that once and apply privileges.
             // Other than that, nothing else is readable by guest in protected or private.
             final boolean readableByGuest = StringUtils.equals("protected", accessibility);
-            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, readableByGuest, false, false, false, readableByGuest, ci);
+            log.debug("The project {} will {}be readable by guest users", projectId, readableByGuest ? "" : "not ");
+            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, readableByGuest, false, false, false, readableByGuest, ci);
             for (final ElementSecurity securedElement : securedElements) {
                 final String elementName = securedElement.getElementName();
-                if (securedElement.hasField(elementName + "/project") && securedElement.hasField(elementName + "/sharing/share/project")) {
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", tag, false, false, false, false, false, true, ci);
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                log.debug("Preparing to set permissions for secured element '{}' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                if (securedElement.hasField(elementName + "/project")) {
+                    log.debug("Setting permissions for secured element field '{}/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", projectId, false, false, false, false, false, true, ci);
+                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
+                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to {}", elementName, elementName + "/project", projectId, accessibility);
+                }
+                if (securedElement.hasField(elementName + "/sharing/share/project")) {
+                    log.debug("Setting permissions for secured element field '{}/sharing/share/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", projectId, false, false, false, false, false, true, ci);
+                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
+                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to {}", elementName, elementName + "/sharing/share/project", projectId, accessibility);
                 }
             }
         }
@@ -594,7 +625,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         Users.getGuest(true);
 
         if (triggerEvent) {
-            _eventService.triggerEvent(builder().xsiType("xnat:projectData").id(tag).action(UPDATE).property("accessibility", accessibility).build());
+            _eventService.triggerEvent(builder().xsiType("xnat:projectData").id(projectId).action(UPDATE).property("accessibility", accessibility).build());
         }
 
         return true;
@@ -602,20 +633,19 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     private void setPermissionsInternal(final boolean triggerEvent, final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
         try {
-            final Optional<XdatElementAccess> optional = FluentIterable.from(((XDATUser) affected).getElementAccess()).firstMatch(new Predicate<XdatElementAccess>() {
-                @Override
-                public boolean apply(@Nullable final XdatElementAccess elementAccess) {
-                    return elementAccess != null && StringUtils.equals(elementName, elementAccess.getElementName());
-                }
-            });
+            final XDATUser user = (XDATUser) affected;
+            final Long elementAccessId = getUserElementAccessForProject(user);
 
             final XdatElementAccess elementAccess;
-            if (optional.isPresent()) {
-                elementAccess = optional.get();
+            if (elementAccessId != null) {
+                elementAccess = XdatElementAccess.getXdatElementAccesssByXdatElementAccessId(elementAccessId, user, true);
+                if (elementAccess == null) {
+                    throw new NrgServiceException(NrgServiceError.UnknownEntity, "Found the element access ID value '" + elementAccessId + "' but was not able to retrieve a corresponding XdatElementAccess object");
+                }
             } else {
                 elementAccess = new XdatElementAccess(authenticated);
                 elementAccess.setElementName(elementName);
-                elementAccess.setProperty("xdat_user_xdat_user_id", affected.getID());
+                elementAccess.setProperty("xdat_user_xdat_user_id", user.getID());
             }
 
             final boolean isAccessible = create || read || edit || delete || activate;
@@ -649,34 +679,11 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             fieldMapping.setDeleteElement(delete);
             fieldMapping.setActiveElement(activate);
             fieldMapping.setComparisonType("equals");
-            fieldMappingSet.setAllow(fieldMapping);
 
-            if (fieldMappingSet.getXdatFieldMappingSetId() != null) {
-                fieldMapping.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fieldMappingSet.getXdatFieldMappingSetId());
-
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, true, false, ci);
-                    fieldMapping.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, false, false, ci);
-                }
-            } else if (elementAccess.getXdatElementAccessId() != null) {
-                fieldMappingSet.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", elementAccess.getXdatElementAccessId());
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, true, false, ci);
-                    fieldMappingSet.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, false, false, ci);
-                }
-            } else {
-                if (activateChanges) {
-                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, true, false, ci);
-                    elementAccess.activate(authenticated);
-                } else {
-                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, false, false, ci);
-                }
-                ((XDATUser) affected).setElementAccess(elementAccess);
+            if (fieldMappingSet.addFieldMapping(fieldMapping, elementAccess, authenticated, activateChanges, ci)) {
+                user.setElementAccess(elementAccess);
             }
+
             if (triggerEvent) {
                 _eventService.triggerEvent(builder().xsiType(elementName).id(fieldValue).action(UPDATE).build());
             }
@@ -690,6 +697,15 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             log.error("Invalid value specified: {}", affected.getID(), e);
         } catch (Exception e) {
             log.error("", e);
+        }
+    }
+
+    private Long getUserElementAccessForProject(final UserI user) {
+        try {
+            return _template.queryForObject(QUERY_USER_ELEMENT_ACCESS, new MapSqlParameterSource("elementName", "xnat:projectData").addValue("criteria", "u.login").addValue("identifier", user.getUsername()), Long.class);
+        } catch (EmptyResultDataAccessException e) {
+            log.debug("Found no xnat:projectData elements configured for user {}", user.getUsername());
+            return null;
         }
     }
 
@@ -797,6 +813,14 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final EventMetaI _ci;
     }
 
+    private static final String QUERY_USER_ELEMENT_ACCESS    = "SELECT xdat_element_access_id " +
+                                                               "FROM " +
+                                                               "  xdat_element_access a " +
+                                                               "  LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                               "  LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id " +
+                                                               "WHERE " +
+                                                               "  a.element_name = :elementName AND " +
+                                                               "  :criteria = :identifier";
     private static final String QUERY_USER_READABLE_ELEMENTS = "SELECT " +
                                                                "  xea.element_name, " +
                                                                "  xfm.field, " +
@@ -813,7 +837,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                "  u.login IN ('guest', '%s')";
     private static final String GUEST_USERNAME               = "guest";
 
-    private final NrgEventService _eventService;
+    private final NrgEventService            _eventService;
+    private final NamedParameterJdbcTemplate _template;
 
     private GroupsAndPermissionsCache _cache;
     private UserI                     _guest;

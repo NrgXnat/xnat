@@ -31,8 +31,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                 "org.nrg.xnat.services.validation"})
 public class XnatServicesConfig {
     @Bean
-    public PermissionsServiceI permissionsService(final NrgEventService eventService) {
-        return new PermissionsServiceImpl(eventService);
+    public PermissionsServiceI permissionsService(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {
+        return new PermissionsServiceImpl(eventService, template);
     }
 
     @Bean

@@ -506,6 +506,11 @@ window.xmodal = getObject(window.xmodal);
             ]);
         });
 
+        if (this.classes || this.addClass) {
+            this.mask$.addClass(this.classes || this.addClass);
+            this.dialog$.addClass(this.classes || this.addClass);
+        }
+
         // save a reference to this instance
         // (unless it's 'protected')
         if (this.protected === true) {
@@ -913,8 +918,8 @@ window.xmodal = getObject(window.xmodal);
     // toggle visibility of the dialog
     Dialog.fn.toggle = function(method){
         this.ready(function(){
-            if (!method && this.isOpen) {
-                method = this.hideMethod || 'hide';
+            if (this.isOpen) {
+                method = method || this.hideMethod || 'hide';
             }
             else {
                 method = this.showMethod || 'show';
@@ -1013,6 +1018,13 @@ window.xmodal = getObject(window.xmodal);
     // global function to hide ANY dialog
     dialog.hide = function(dlg){
         return dialog.toggle(dlg, 'hide');
+    };
+
+    // global function to hide ALL dialogs
+    dialog.hideAll = function(){
+        forOwn(dialog.dialogs, function(uid, dlg){
+            dlg.toggle('hide');
+        });
     };
 
 
@@ -1384,6 +1396,7 @@ window.xmodal = getObject(window.xmodal);
             mask: true,
             padding: '0',
             top: '80px',
+            classes: 'static',
             content: message || spawn('div.message.md', 'Please wait...')
         };
         return dialog.init(extend(true, cfg, opts));
@@ -1396,6 +1409,8 @@ window.xmodal = getObject(window.xmodal);
 
     dialog.static.wait = function(message, opts){
         var msg = message || ' Please wait...';
+        opts = getObject(opts);
+        opts.classes = 'wait static';
         return dialog.static(spawn('div.message.waiting.md', msg), opts).open();
     };
 

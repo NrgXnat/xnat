@@ -42,7 +42,6 @@ var XNAT = getObject(XNAT);
         if (/^remove/i.test(cookiesParam)) {
             XNAT.cookie.removeAll({ path: cookiePath });
         }
-
     })();
 
 
@@ -52,16 +51,31 @@ var XNAT = getObject(XNAT);
         var $doc = $(document);
         var $win = $(window);
 
-        $win.on('pageshow', function(e){
-            if (e.originalEvent.persisted) {
-                console.log('reloading...');
-                if (window.location.reload) {
-                    window.location.reload();
-                }
-                else {
-                    window.location.href = window.location.href + '#!';
-                }
+        var waitMsgDialog = (function(){
+            var dialogId = randomID('waitx', false);
+            var dialogCfg = {
+                uid: dialogId,
+                id: dialogId,
+                classes: 'wait static',
+                content: ''
+            };
+            XNAT.dialog.static('', dialogCfg);
+            return dialogId;
+        })();
+
+        function hideWaitMessage(uid){
+            var ID = uid || waitMsgDialog;
+            if (XNAT.dialog.dialogs[ID]) {
+                XNAT.dialog.dialogs[ID].hide();
             }
+        }
+
+        $win.on('pageshow', function(e){
+            hideWaitMessage();
+        });
+
+        $win.on('pagehide', function(e){
+            hideWaitMessage();
         });
 
         // prevent default click triggers on '#' links
@@ -71,7 +85,8 @@ var XNAT = getObject(XNAT);
 
         // display 'wait' dialog when requesting data download
         function showWaitMessage(msg){
-            return XNAT.dialog.static.wait(msg || 'Preparing data for download...');
+            var content = spawn('div.message.waiting.md', msg || 'Please wait...');
+            return XNAT.dialog.dialogs[waitMsgDialog].update(content).open();
         }
 
         // display 'wait' dialog for elements with a [data-wait] attribute
@@ -80,14 +95,14 @@ var XNAT = getObject(XNAT);
             console.log('waiting...');
             showWaitMessage(msg);
         });
-        
+
         $doc.on('click', '#actionsMenu a[title="Download Images"]', function(e){
-             showWaitMessage()
+             showWaitMessage('Preparing data for download...')
         });
 
         $doc.on('click', '#search_tabs a.yuimenuitemlabel', function(e){
             if (this.textContent === 'Download') {
-                showWaitMessage();
+                showWaitMessage('Preparing data for download...');
             }
         });
 

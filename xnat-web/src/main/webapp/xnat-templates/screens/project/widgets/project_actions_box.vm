@@ -42,8 +42,7 @@
                     "popup","$!popup")">Download XML</a>
             </li>
             <li class="yuimenuitem">
-                <a class="yuimenuitemlabel" href="$link.setAction("ProjectDownloadAction").addPathInfo(
-                    'project',$project.getId())">Download Images</a>
+                <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</a>
             </li>
         </ul>
     </DIV>

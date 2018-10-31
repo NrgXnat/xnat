@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -301,9 +302,13 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle) {
-        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE, new HashMap<String, Object>() {{
-            put("aeTitle", aeTitle);
-        }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+        try {
+            return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE, new HashMap<String, Object>() {{
+                put("aeTitle", aeTitle);
+            }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {

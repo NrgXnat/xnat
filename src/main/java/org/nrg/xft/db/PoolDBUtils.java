@@ -535,7 +535,7 @@ public class PoolDBUtils {
 		return rowCount;
 	}
 
-    private static boolean ITEM_CACHE_EXISTS = false;
+	private static boolean ITEM_CACHE_EXISTS = false;
     private static final Object ITEM_CACHE_MUTEX = new Object();
 
 	/**
@@ -927,6 +927,13 @@ public class PoolDBUtils {
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+			} else if (message.matches(EXPR_TABLE_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_DROP_TABLE_QUERY.matcher(query);
+				if (matcher.find()) {
+					logger.debug("Got an exception that the table \"{}\" does not exist, but that's probably OK: it's trying to drop that table. This occurs during a race condition trying to drop a materialized view twice.", matcher.group("table"));
+				} else {
+					logger.error("Got an exception indicating that the table \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group("table"), query);
+				}
 			} else {
 				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
 				throw e;
@@ -1001,8 +1008,14 @@ public class PoolDBUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(PoolDBUtils.class);
 
-	private static final String  EXPR_COLUMN_NOT_FOUND      = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
-	private static final Pattern PATTERN_COLUMN_NOT_FOUND   = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final String  EXPR_COLUMN_NOT_FOUND    = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final String  EXPR_TABLE_NAME          = "(?<table>_[A-z0-9_]+_[\\d]+)";
+	private static final String  EXPR_DROP_TABLE_QUERY    = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
+	private static final Pattern PATTERN_DROP_TABLE_QUERY = Pattern.compile(EXPR_DROP_TABLE_QUERY);
+	private static final String  EXPR_TABLE_NOT_FOUND     = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
+	private static final Pattern PATTERN_TABLE_NOT_FOUND  = Pattern.compile(EXPR_TABLE_NOT_FOUND);
+
 	private static final String  EXPR_RELATION_NOT_FOUND    = "relation \"(?<relation>[a-z_]+)\" does not exist";
 	private static final Pattern PATTERN_RELATION_NOT_FOUND = Pattern.compile(EXPR_RELATION_NOT_FOUND);
 	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";

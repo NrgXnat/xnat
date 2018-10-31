@@ -9,7 +9,6 @@
 
 package org.nrg.xft.db;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,16 +40,11 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Slf4j
 public class DBAction {
     private static final Map<String, String> SEQUENCES = new HashMap<>();
-    private static       AtomicDouble        VERSION   = new AtomicDouble();
-
-    private static final Pattern REGEX_EXTRACT_POSTGRESQL_VERSION = Pattern.compile("^PostgreSQL (?<version>[\\d.]+) .*$");
     private static final String  QUERY_FIND_SEQLESS_TABLES        = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
     private static final String  QUERY_CREATE_SEQUENCE            = "CREATE SEQUENCE %s_id_seq";
     private static final String  QUERY_SET_ID_DEFAULT             = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
@@ -76,7 +70,6 @@ public class DBAction {
      * @return updated XFTItem
      */
     public static boolean StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, SecurityManagerI securityManager, EventMetaI c) throws Exception {
-        long totalStartTime = Calendar.getInstance().getTimeInMillis();
         long localStartTime = Calendar.getInstance().getTimeInMillis();
         DBItemCache cache = new DBItemCache(user, c);
         item = StoreItem(item, user, checkForDuplicates, new ArrayList(), quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -3128,17 +3121,7 @@ public class DBAction {
         long startTime = Calendar.getInstance().getTimeInMillis();
         try {
             final String defaultDBName = PoolDBUtils.getDefaultDBName();
-            if (VERSION.get() == 0.0) {
-                final String  version = (String) PoolDBUtils.ReturnStatisticQuery("SELECT version()", "version", defaultDBName, null);
-                final Matcher matcher = REGEX_EXTRACT_POSTGRESQL_VERSION.matcher(version);
-                if (matcher.matches()) {
-                    final String extracted = matcher.group("version");
-                    log.info("Extracted PostgreSQL version '{}' from full version string '{}'", extracted, version);
-                    VERSION.set(Float.parseFloat(extracted));
-                }
-            }
-
-            XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, defaultDBName, null);
+            final XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, defaultDBName, null);
             if (tables.size() > 0) {
                 for (Object table : tables.convertColumnToArrayList("table_name")) {
                     try {
@@ -3206,41 +3189,15 @@ public class DBAction {
     //the logic ends up changing the sequence to aggressively when the row count is 1.  I tried to fix it, but it introduced lots of bugs.
     //so, this small issue is tolerable.  If you mess with it, test installing a new server, and creating some stuff.
     private static void adjustSequence(String sequenceName, String column, String table, String dbName) throws Exception {
-        final Object numRows = ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0);
-        final String sequenceQuery;
-        if (VERSION.floatValue() >= 10.0) {
-            final String[] atoms = StringUtils.split(sequenceName, ".");
-            final String   schema;
-            final String   sequence;
-            switch (atoms.length) {
-                case 0:
-                    throw new SQLException("Invalid sequence name, empty!");
-
-                case 1:
-                    schema = "public";
-                    sequence = atoms[0];
-                    break;
-
-                default:
-                    schema = atoms[0];
-                    sequence = atoms[1];
-            }
-            sequenceQuery = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT FROM pg_sequences WHERE schemaname = '" + schema + "' AND sequencename = '" + sequence + "'";
-        } else {
-            sequenceQuery = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName;
-        }
-        final Object nextValue = PoolDBUtils.ReturnStatisticQuery(sequenceQuery, "LAST_COUNT", dbName, null);
+        final int    numRows   = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0)).intValue();
+        final Number nextValue = (Number) PoolDBUtils.ReturnStatisticQuery("SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName, "LAST_COUNT", dbName, null);
 
         if (nextValue == null) {
             log.info("Adjusting missing sequence ({})", table);
-            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (((Number) numRows).intValue() + 1) + ")", dbName, null);
-        } else {
-            Number i1 = (Number) numRows;
-            Number i2 = (Number) nextValue;
-            if (i1.intValue() >= i2.intValue()) {
-                log.info("Adjusting invalid sequence ({}) from {} to {} ({} max_row)", table, i2, i1.intValue() + 1, i1);
-                PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (i1.intValue() + 1) + ")", dbName, null);
-            }
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
+        } else if (numRows >= nextValue.intValue()) {
+            log.info("Adjusting invalid sequence ({}) from {} to {} ({} max_row)", table, nextValue, numRows + 1, numRows);
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
         }
     }
 

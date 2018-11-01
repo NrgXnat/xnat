@@ -580,11 +580,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected List<ElementDisplay> getBrowseableCreateableElementDisplays() {
         try {
+            final String username = getUsername();
             final List<ElementDisplay> elementDisplays = Lists.newArrayList(Iterables.filter(getCreateableElementDisplays(), new Predicate<ElementDisplay>() {
                 @Override
-                public boolean apply(@Nullable final ElementDisplay elementDisplay) {
+                public boolean apply(final ElementDisplay elementDisplay) {
                     try {
-                        return elementDisplay != null && ElementSecurity.IsBrowseableElement(elementDisplay.getElementName());
+                        final String  elementName  = elementDisplay.getElementName();
+                        final boolean isBrowseable = ElementSecurity.IsBrowseableElement(elementName);
+                        log.trace("Element {} is creatable {} browseable for user {}", elementName, isBrowseable ? "and is" : "but is not", username);
+                        return isBrowseable;
                     } catch (Exception e) {
                         return false;
                     }

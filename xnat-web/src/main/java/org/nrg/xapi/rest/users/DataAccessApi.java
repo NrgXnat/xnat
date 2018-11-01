@@ -53,7 +53,9 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class DataAccessApi extends AbstractXapiRestController {
     public static final String BROWSEABLE                = "browseable";
     public static final String BROWSEABLE_CREATEABLE     = "browseableCreateable";
+    public static final String BROWSEABLE_CREATABLE      = "browseableCreatable";
     public static final String CREATEABLE                = "createable";
+    public static final String CREATABLE                 = "creatable";
     public static final String READABLE                  = "readable";
     public static final String SEARCHABLE                = "searchable";
     public static final String SEARCHABLE_BY_DESC        = "searchableByDesc";
@@ -211,27 +213,29 @@ public class DataAccessApi extends AbstractXapiRestController {
 
         final List<ElementDisplay> displays;
         switch (display) {
-            case "browseable":
+            case BROWSEABLE:
                 displays = helper.getBrowseableElementDisplays();
                 break;
 
-            case "browseableCreateable":
+            case BROWSEABLE_CREATEABLE:
+            case BROWSEABLE_CREATABLE:
                 displays = helper.getBrowseableCreateableElementDisplays();
                 break;
 
-            case "createable":
+            case CREATEABLE:
+            case CREATABLE:
                 displays = helper.getCreateableElementDisplays();
                 break;
 
-            case "searchable":
+            case SEARCHABLE:
                 displays = helper.getSearchableElementDisplays();
                 break;
 
-            case "searchableByDesc":
+            case SEARCHABLE_BY_DESC:
                 displays = helper.getSearchableElementDisplaysByDesc();
                 break;
 
-            case "searchableByPluralDesc":
+            case SEARCHABLE_BY_PLURAL_DESC:
                 displays = helper.getSearchableElementDisplaysByPluralDesc();
                 break;
 
@@ -246,7 +250,7 @@ public class DataAccessApi extends AbstractXapiRestController {
                 try {
                     return elementDisplay != null ? new ElementDisplayModel(elementDisplay) : null;
                 } catch (Exception e) {
-                    log.warn("An exception occurred trying to transform the element display \"" + elementDisplay.getElementName() + "\"", e);
+                    log.warn("An exception occurred trying to transform the element display \"{}\"", elementDisplay.getElementName(), e);
                     return null;
                 }
             }

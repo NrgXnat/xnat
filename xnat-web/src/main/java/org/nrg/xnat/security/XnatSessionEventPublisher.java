@@ -13,8 +13,12 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.security.UserI;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -35,6 +39,7 @@ import javax.servlet.http.HttpSessionListener;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToIntSeconds;
@@ -73,7 +78,6 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     @Override
     public void sessionDestroyed(final HttpSessionEvent event) {
         final String sessionId = event.getSession().getId();
-        final Date   today     = Calendar.getInstance(TimeZone.getDefault()).getTime();
 
         try {
             final Object contextCandidate = event.getSession().getAttribute(SPRING_SECURITY_CONTEXT_KEY);
@@ -83,16 +87,18 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
                 if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
                     final Object userCandidate = authentication.getPrincipal();
                     if (userCandidate instanceof UserI) {
-                        final String userId = ((UserI) userCandidate).getID().toString();
-                        if (StringUtils.isBlank(userId)) {
+                        final Integer userId = ((UserI) userCandidate).getID();
+                        if (userId == null) {
                             log.info("Got a session destroyed event for an empty user ID");
-                        } else if (StringUtils.equals("guest", userId)) {
+                        } else if (ObjectUtils.compare(getGuestUserId(), userId) == 0) {
                             log.debug("Got a session destroyed event for the guest user");
-                        } else {
+                        } else{
                             //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
-                            final int count = getTemplate().update(UPDATE_QUERY, new MapSqlParameterSource(PARAM_SESSION_ID, sessionId).addValue(PARAM_TIMESTAMP, today.getTime()).addValue(PARAM_USER_ID, userId));
+                            final int count = getTemplate().update(UPDATE_QUERY, new MapSqlParameterSource(PARAM_SESSION_ID, sessionId).addValue(PARAM_TIMESTAMP, new Timestamp(_calendar.getTimeInMillis())).addValue(PARAM_USER_ID, userId));
                             log.debug("Got a session destroyed event for user ID {}, updated {} rows in xdat_user_login to record this.", userId, count);
                         }
+                    } else if (userCandidate instanceof String) {
+                        log.info("Got a session destroyed event for string principal: {}", userCandidate);
                     }
                 }
             }
@@ -112,6 +118,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
         _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
         _cache = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(GroupsAndPermissionsCache.class);
+        _calendar = Calendar.getInstance(TimeZone.getDefault());
     }
 
     @Override
@@ -148,6 +155,17 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         return _preferences != null && StringUtils.isNotBlank(_preferences.getSessionTimeout()) ? convertPGIntervalToIntSeconds(_preferences.getSessionTimeout()) : 900;
     }
 
+    private Integer getGuestUserId() {
+        if (_guestUserId == null) {
+            try {
+                _guestUserId = Users.getGuest().getID();
+            } catch (UserNotFoundException | UserInitException e) {
+                log.warn("An error occurred retrieving the guest user", e);
+            }
+        }
+        return _guestUserId;
+    }
+
     private static final String UPDATE_QUERY     = "UPDATE xdat_user_login SET logout_date = :timestamp WHERE logout_date IS NULL AND session_id = :sessionId AND user_xdat_user_id = :userId";
     private static final String PARAM_SESSION_ID = "sessionId";
     private static final String PARAM_TIMESTAMP  = "timestamp";
@@ -156,4 +174,6 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     private SiteConfigPreferences      _preferences;
     private NamedParameterJdbcTemplate _template;
     private GroupsAndPermissionsCache  _cache;
+    private Integer                    _guestUserId;
+    private Calendar                   _calendar;
 }

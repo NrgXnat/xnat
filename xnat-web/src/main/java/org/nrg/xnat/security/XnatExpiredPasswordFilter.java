@@ -26,6 +26,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.validation.DateValidation;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.crypto.codec.Base64;
@@ -49,6 +50,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue", "SqlResolve"})
 @Slf4j
 public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
+
     @Autowired
     public XnatExpiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
         super();
@@ -290,9 +292,14 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 parameters.addValue("date", new SimpleDateFormat("MM/dd/yyyy").format(new Date(Long.parseLong(_expirationSetting))));
             }
 
-            final Boolean queried = _jdbcTemplate.queryForObject(query, parameters, Boolean.class);
-            session.setAttribute("expired", queried);
-            return queried;
+            try {
+                final Boolean queried = _jdbcTemplate.queryForObject(query, parameters, Boolean.class);
+                session.setAttribute("expired", queried);
+                return queried;
+            } catch (EmptyResultDataAccessException e) {
+                log.debug("No results found for user '{}' and auth method {} running query: ", username, AUTH_DEFAULT, query);
+                return false;
+            }
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
             log.error("An error occurred while checking whether the password has expired for user " + username, e);
         }
@@ -316,7 +323,12 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
     }
 
     private boolean isUserNonExpiring(final String username) {
-        return _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_user_role WHERE username = :username AND role = :role AND enabled = 't'", new MapSqlParameterSource("username", username).addValue("role", UserRole.ROLE_NON_EXPIRING), Boolean.class);
+        try {
+            return _jdbcTemplate.queryForObject(QUERY_USER_ROLE_ENABLE, new MapSqlParameterSource("username", username).addValue("role", UserRole.ROLE_NON_EXPIRING), Boolean.class);
+        } catch (EmptyResultDataAccessException e) {
+            log.debug("No results found for user '{}' and role {} running query: ", username, UserRole.ROLE_NON_EXPIRING, QUERY_USER_ROLE_ENABLE);
+            return false;
+        }
     }
 
     private void checkUserChangePassword(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -361,6 +373,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
     private static final String AUTH_DEFAULT                   = "localdb";
     private static final String QUERY_BY_INTERVAL              = "SELECT now() - password_updated > :interval::INTERVAL AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
     private static final String QUERY_BY_DATE                  = "SELECT to_date(:date, 'MM/DD/YYYY') BETWEEN password_updated AND now() AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
+    private static final String QUERY_USER_ROLE_ENABLE         = "SELECT exists(SELECT id FROM xhbm_user_role WHERE username = :username AND role = :role AND enabled = 't')";
 
     private String changePasswordPath        = "";
     private String changePasswordDestination = "";

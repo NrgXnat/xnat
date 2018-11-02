@@ -1,10 +1,7 @@
 package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -239,6 +236,18 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         if (map != null) {
             log.trace("Found cached map containing {} items for cache ID '{}'", map.size(), cacheId);
             return ImmutableMap.copyOf(map);
+        }
+        log.trace("Got a request for cached map '{}', but when I retrieved the entry it was null.", cacheId);
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    protected <K, V> ImmutableListMultimap<K, V> getCachedListMultimap(final String cacheId) {
+        final ListMultimap<K, V> map = getCachedObject(cacheId, ListMultimap.class);
+        if (map != null) {
+            log.trace("Found cached map containing {} items for cache ID '{}'", map.size(), cacheId);
+            return ImmutableListMultimap.copyOf(map);
         }
         log.trace("Got a request for cached map '{}', but when I retrieved the entry it was null.", cacheId);
         return null;

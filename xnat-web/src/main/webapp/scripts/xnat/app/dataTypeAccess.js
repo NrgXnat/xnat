@@ -39,13 +39,13 @@ var XNAT = getObject(XNAT);
         // (window.isLoginPage !== undef ?  !window.isLoginPage : false) ||  // login page test seems unreliable
         !dataTypeAccess.skipPages.test(window.location.href);
 
-    // save the url with the site context prepended using XNAT.url.rootUrl()
-    dataTypeAccess.url = XNAT.url.rootUrl('/xapi/access/displays');
-
     // setup a url for /xapi/access/displays requests
-    function dataTypeAccessUrl(part){
-        return dataTypeAccess.url + (part ? ('/' + part) : '')
+    function dataTypeAccessUrl(part, cacheParam){
+        return XNAT.url.restUrl('/xapi/access/displays' + (part ? ('/' + part) : ''), {}, cacheParam);
     }
+
+    // save the url with the site context prepended using XNAT.url.restUrl()
+    dataTypeAccess.url = dataTypeAccessUrl('', false);
 
     // add above function to the global object
     dataTypeAccess.setUrl = dataTypeAccessUrl;
@@ -130,6 +130,8 @@ var XNAT = getObject(XNAT);
     // save existing values or an empty object to 'accessDisplays'
     userData.setValue('accessDisplays', userData.data.accessDisplays || {});
 
+    var getFreshData = dataTypeAccess.needsUpdate || false;
+
     // initialize the 'loading' dialog...
     var cacheLoadingMessage = XNAT.dialog.init({
         width: 300,
@@ -139,12 +141,14 @@ var XNAT = getObject(XNAT);
         mask: false,
         padding: 0,
         top: '80px',
-        content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>'
+        content: '<div class="message waiting md">&nbsp; Refreshing data type cache...</div>',
+        beforeShow: function(){
+            // if this is false it should suppress the display of the dialog.
+            return getFreshData;
+        }
     });
 
     dataTypeAccess.reqCount = 0;
-
-    var getFreshData = dataTypeAccess.needsUpdate || false;
 
     if (getFreshData && window.loadDataTypes) {
         window.setTimeout(function(){

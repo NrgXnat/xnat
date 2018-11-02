@@ -24,7 +24,7 @@
     var displayProjectList = function($parent, projectData){
         if (!projectData.length) return;
         function projectListItem(val, len){
-            var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
+            var URL = XNAT.url.restUrl('/data/projects/' + this.id);
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
             var TEXT = (val ? escapeHtml(val) : '<i><i>&ndash;</i></i>');
             var linkText = spawn('a.truncate', {
@@ -165,7 +165,7 @@
         url: restUrl('/data/projects', ['format=json', 'favorite=true']),
         success: function(data){
             var FAVORITES = data.ResultSet.Result.map(function(item){
-                var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
+                var URL = XNAT.url.restUrl('/data/projects/' + item.id);
                 return {
                     // sorry for the confusing naming
                     name: item.secondary_id,
@@ -184,7 +184,7 @@
     });
 
     function dataTypeUrl(name){
-        return XNAT.url.rootUrl('/app/template/Search.vm/node/d.' + name);
+        return XNAT.url.restUrl('/app/template/Search.vm/node/d.' + name);
     }
 
     function dataTypeItem(type){
@@ -269,7 +269,7 @@
             if (data.ResultSet.Result.length){
                 data.ResultSet.Result.sort(compareSearches);
                 STORED = data.ResultSet.Result.map(function(item){
-                    var URL = XNAT.url.rootUrl('/app/template/Search.vm/node/ss.'+item.id);
+                    var URL = XNAT.url.restUrl('/app/template/Search.vm/node/ss.'+item.id);
                     return {
                         name: item.brief_description,
                         item: spawn('a',{

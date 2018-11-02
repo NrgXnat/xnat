@@ -1393,20 +1393,22 @@ public class DefaultCatalogService implements CatalogService {
 
         // Limit the resource URIs to those associated with the current session.
         final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("projectId", project);
         parameters.addValue("sessionId", sessionId);
         parameters.addValue("assessorTypes", assessorTypes);
         final List<Map<String, Object>> resources = _parameterized.queryForList(QUERY_SESSION_ASSESSORS, parameters);
 
         try {
             for (final Map<String, Object> resource : resources) {
-                final CatEntryBean entry         = new CatEntryBean();
-                final String       resourceLabel = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
-                final String       assessorLabel = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
-                final String       sessionLabel  = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
-                final String       proj          = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
-                final Long         scanSize      = (Long) resource.get("size");
+                final CatEntryBean entry            = new CatEntryBean();
+                final String       resourceLabel    = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
+                final String       assessorLabel    = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
+                final String       sessionLabel     = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
+                final boolean      isSharedResource = Boolean.parseBoolean(resource.get("is_shared").toString());
+                final String       resourceProject  = resource.get("project").toString();
+                final Long         scanSize         = (Long) resource.get("size");
                 try {
-                    if (Permissions.canReadProject(user, proj) && Permissions.canRead(user, resource.get("xsi").toString() + "/project", proj)) {
+                    if (Permissions.canReadProject(user, resourceProject) && Permissions.canRead(user, resource.get("xsi").toString() + (isSharedResource ? "/sharing/share/project" : "/project"), resourceProject)) {
                         entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
                         entry.setUri(StringSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
                         log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
@@ -1513,68 +1515,114 @@ public class DefaultCatalogService implements CatalogService {
     private static final Map<String, String> SCAN_FORMAT_CLAUSES            = ImmutableMap.of(KEY_NO_NULLS, CLAUSE_SCAN_FORMATS, KEY_WITH_NULLS, CLAUSE_SCAN_FORMATS_WITH_NULLS, KEY_NULL_ONLY, CLAUSE_NULL_SCAN_FORMATS);
     private static final Map<String, String> SCAN_TYPE_CLAUSES              = ImmutableMap.of(KEY_NO_NULLS, CLAUSE_SCAN_TYPES, KEY_WITH_NULLS, CLAUSE_SCAN_TYPES_WITH_NULLS, KEY_NULL_ONLY, CLAUSE_NULL_SCAN_TYPES);
 
-    private static final String QUERY_FIND_SCANS_BY_SESSION            = "SELECT DISTINCT image_session_id " +
-                                                                         "FROM xnat_imagescandata scan " +
-                                                                         "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                         "WHERE " +
-                                                                         "  image_session_id IN (:sessionIds) AND " +
-                                                                         "  ${scanTypesClause} AND " +
-                                                                         "  ${scanFormatsClause}";
-    private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id " +
-                                                                         "FROM xnat_imagescandata scan " +
-                                                                         "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                         "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
-                                                                         "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
-                                                                         "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
-                                                                         "WHERE " +
-                                                                         "  expt.id IN (:sessionIds) AND " +
-                                                                         "  (share.project = :projectId OR expt.project = :projectId) AND " +
-                                                                         "  ${scanTypesClause} AND " +
-                                                                         "  ${scanFormatsClause}";
-    private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT    = "SELECT " +
-                                                                         "  scan.id   AS scan_id, " +
-                                                                         "  scan.type AS scan_type, " +
-                                                                         "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
-                                                                         "  res.file_size AS size " +
-                                                                         "FROM xnat_imagescandata scan " +
-                                                                         "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                         "WHERE " +
-                                                                         "  scan.image_session_id = :sessionId AND " +
-                                                                         "  ${scanTypesClause} AND " +
-                                                                         "  ${scanFormatsClause} " +
-                                                                         "ORDER BY scan_id";
-    private static final String QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID  = "SELECT " +
-                                                                         "  xme.element_name " +
-                                                                         "FROM xnat_experimentData expt " +
-                                                                         "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
-                                                                         "WHERE expt.id = :id";
-    private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource, " +
-                                                                         "  res.file_size AS size " +
-                                                                         "FROM xnat_abstractresource res " +
-                                                                         "  LEFT JOIN xnat_experimentdata_resource exptRes " +
-                                                                         "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
-                                                                         "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
-                                                                         "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
-    private static final String QUERY_SESSION_ASSESSORS                = "SELECT " +
-                                                                         "  abstract.xnat_abstractresource_id AS resource_id, " +
-                                                                         "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-                                                                         "  assessor.id AS assessor_id, " +
-                                                                         "  assessor.label AS assessor_label, " +
-                                                                         "  session.id AS session_id, " +
-                                                                         "  session.label AS session_label, " +
-                                                                         "  assessor.project AS project, " +
-                                                                         "  xme.element_name AS xsi, " +
-                                                                         "  abstract.file_size AS size " +
-                                                                         "FROM xnat_abstractresource abstract " +
-                                                                         "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-                                                                         "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-                                                                         "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-                                                                         "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-                                                                         "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-                                                                         "WHERE " +
-                                                                         "  xme.element_name IN (:assessorTypes) AND " +
-                                                                         "  session.id = :sessionId";
-    private static final String QUERY_VERIFY_OBJECT_EXISTS             = "SELECT NOT EXISTS(SELECT TRUE FROM ${TABLE} WHERE ${PK} = :id) AS exists";
+    private static final String QUERY_FIND_SCANS_BY_SESSION               = "SELECT DISTINCT image_session_id " +
+            "FROM xnat_imagescandata scan " +
+            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "WHERE " +
+            "  image_session_id IN (:sessionIds) AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause}";
+    private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT    = "SELECT DISTINCT scan.image_session_id AS session_id " +
+            "FROM xnat_imagescandata scan " +
+            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
+            "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
+            "WHERE " +
+            "  expt.id IN (:sessionIds) AND " +
+            "  (share.project = :projectId OR expt.project = :projectId) AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause}";
+    private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT       = "SELECT " +
+            "  scan.id   AS scan_id, " +
+            "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
+            "  res.file_size AS size " +
+            "FROM xnat_imagescandata scan " +
+            "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "WHERE " +
+            "  scan.image_session_id = :sessionId AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause} " +
+            "ORDER BY scan_id";
+    private static final String QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID     = "SELECT " +
+            "  xme.element_name " +
+            "FROM xnat_experimentData expt " +
+            "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
+            "WHERE expt.id = :id";
+    private static final String QUERY_SESSION_RESOURCES                   = "SELECT res.label resource, " +
+            "  res.file_size AS size " +
+            "FROM xnat_abstractresource res " +
+            "  LEFT JOIN xnat_experimentdata_resource exptRes " +
+            "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
+            "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
+    private static final String QUERY_SESSION_ASSESSORS                   = "SELECT " +
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  coalesce(share.label, assessor.label) AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  :projectId AS project, " +
+            "  CASE WHEN share.project = :projectId THEN TRUE ELSE FALSE END AS is_shared, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  :projectId IN (share.project, assessor.project) AND " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId";
+    @SuppressWarnings("unused")
+    private static final String QUERY_SESSION_ASSESSORS_WITH_ALL_PROJECTS = "SELECT " +
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  assessor.label AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  assessor.project AS project, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId " +
+            "UNION " +
+            "SELECT " +
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  share.label AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  share.project AS project, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  share.label IS NOT NULL AND " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId ";
 
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
 

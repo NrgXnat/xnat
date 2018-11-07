@@ -91,10 +91,12 @@
                                     <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
                                 #end
                                 #if($item.getStatus()!="obsolete")
-                                    #if ($data.getSession().getAttribute("userHelper").canDelete($item))
-                                        <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
-                                            <i class="fa fa-trash"></i>
-                                        </a>
+                                    #if(!($item.isQuarantine() && $siteConfig.uiHideScanDeleteIfQuarantined))
+                                        #if ($data.getSession().getAttribute("userHelper").canDelete($item))
+                                            <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        #end
                                     #end
                                 #end
                             </span>

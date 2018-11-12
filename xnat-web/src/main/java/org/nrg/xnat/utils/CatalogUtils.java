@@ -50,6 +50,7 @@ import java.net.URLDecoder;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
 import java.security.MessageDigest;
@@ -307,9 +308,10 @@ public class CatalogUtils {
      * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
      * @param populateStats         updates file count & size for catRes in XNAT db
      * @param checksums             computes/updates checksums
-     * @return true if the cat was modified (and needs to be saved).
+     * @return new Object[] { modified, audit_summary }     modified: true if cat modified and needs save
+     *                                                      audit_summary: audit hashmap
      */
-    public static boolean refreshCatalog(XnatResourcecatalog catRes, final File catFile, final CatCatalogBean cat,
+    public static Object[] refreshCatalog(XnatResourcecatalog catRes, final File catFile, final CatCatalogBean cat,
                                          final UserI user, final Number event_id,
                                          final boolean addUnreferencedFiles, final boolean removeMissingFiles,
                                          final boolean populateStats, final boolean checksums) {
@@ -321,6 +323,12 @@ public class CatalogUtils {
         boolean modified = false;
         final int event_id_int = Integer.parseInt(event_id.toString());
 
+        //Needed for audit summary
+        final AtomicInteger added = new AtomicInteger(0);
+        final AtomicInteger modded = new AtomicInteger(0);
+
+        //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
+        //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
         final HashMap<String, Object[]> catalog_map = buildCatalogMap(cat);
 
         final AtomicInteger rtn = new AtomicInteger(0);
@@ -356,7 +364,6 @@ public class CatalogUtils {
                         //map_entry[1] is the catalog or entryset
                         //map_entry[2] is a bool for existing on filesystem
                         Object[] map_entry = catalog_map.get(relative);
-
                         CatEntryI entry = (CatEntryI) map_entry[0];
                         String cat_id = ((CatCatalogBean)map_entry[1]).getId();
                         map_entry[2] = true; //mark that file exists
@@ -395,6 +402,7 @@ public class CatalogUtils {
                                 ((CatEntryBean) entry).setModifiedtime(now);
                                 entry.setModifiedeventid(event_id_int);
                                 mod = true;
+                                modded.getAndIncrement();
                             }
                         }
 
@@ -403,7 +411,6 @@ public class CatalogUtils {
                             size.addAndGet(attrs.size());
                             count.getAndIncrement();
                         }
-
                     } else {
                         if (addUnreferencedFiles) {
                             CatEntryBean newEntry = populateAndAddCatEntry(cat,relative,f.getName(),info);
@@ -422,6 +429,8 @@ public class CatalogUtils {
                                 size.addAndGet(attrs.size());
                                 count.getAndIncrement();
                             }
+
+                            added.getAndIncrement();
                         }
                     }
 
@@ -456,10 +465,11 @@ public class CatalogUtils {
         int rtn_val = rtn.get();
         if (rtn_val == -1) {
             //multiple catalog files
-            return false;
+            return new Object[] {false, null};
         }
         modified = rtn_val == 1;
 
+        int nremoved = 0;
         //this used to be run as part of formalizeCatalog
         if (removeMissingFiles) {
             for (Object[] map_entry : catalog_map.values()) {
@@ -471,9 +481,21 @@ public class CatalogUtils {
                     //logger.info("Removing "+((CatEntryBean)map_entry[0]).getName());
                     ((CatCatalogBean)map_entry[1]).getEntries_entry().remove(map_entry[0]);
                     modified = true;
+                    nremoved++;
                 }
             }
         }
+
+        //Add to audit_summary
+        Map<String, Map<String, Integer>> audit_summary = new HashMap<>();
+        if (nremoved > 0)
+            addAuditEntry(audit_summary, event_id_int, now, ChangeSummaryBuilderA.REMOVED, nremoved);
+        int nmod = modded.get();
+        if (nmod > 0)
+            addAuditEntry(audit_summary, event_id_int, now, ChangeSummaryBuilderA.MODIFIED, nmod);
+        int nadded = added.get();
+        if (nadded > 0)
+            addAuditEntry(audit_summary, event_id_int, now, ChangeSummaryBuilderA.ADDED, nadded);
 
         //Update resource with new file count & size
         // This is going to implicitly removeMissingFiles, since file count & size attributes are computed
@@ -493,8 +515,7 @@ public class CatalogUtils {
                 modified = true;
             }
         }
-
-        return modified;
+        return new Object[]{ modified, audit_summary};
     }
 
     private static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat) {
@@ -978,7 +999,7 @@ public class CatalogUtils {
         return path.append(name).toString();
     }
 
-    public static void refreshAuditSummary(CatCatalogI cat) {
+    public static CatCatalogMetafieldI getAuditField(CatCatalogI cat) {
         CatCatalogMetafieldI field = null;
         for (CatCatalogMetafieldI mf : cat.getMetafields_metafield()) {
             if ("AUDIT".equals(mf.getName())) {
@@ -995,9 +1016,22 @@ public class CatalogUtils {
             } catch (Exception ignored) {
             }
         }
+        return field;
+    }
 
-
-        field.setMetafield(convertAuditToString(buildAuditSummary(cat)));
+    public static void refreshAuditSummary(CatCatalogI cat, Map<String, Map<String, Integer>> audit_summary) {
+        CatCatalogMetafieldI field = getAuditField(cat);
+        if (audit_summary == null) {
+            //rebuild from each catalog entry
+            audit_summary = buildAuditSummary(cat);
+            field.setMetafield(convertAuditToString(audit_summary));
+        } else {
+            String prev_audit = StringUtils.defaultIfBlank(field.getMetafield(),"");
+            if (!prev_audit.isEmpty()) {
+                prev_audit+="|";
+            }
+            field.setMetafield( prev_audit + convertAuditToString(audit_summary));
+        }
     }
 
     public static Map<String, Map<String, Integer>> retrieveAuditySummary(CatCatalogI cat) {
@@ -1044,6 +1078,11 @@ public class CatalogUtils {
     }
 
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums) throws Exception {
+        writeCatalogToFile(xml, dest, calculateChecksums, null);
+    }
+
+    public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums,
+                                          Map<String, Map<String, Integer>> audit_summary) throws Exception {
         if (calculateChecksums) {
             CatalogUtils.calculateResourceChecksums(xml, dest);
         }
@@ -1054,7 +1093,7 @@ public class CatalogUtils {
             }
         }
 
-        refreshAuditSummary(xml);
+        refreshAuditSummary(xml, audit_summary);
 
         try (final FileOutputStream fos = new FileOutputStream(dest)) {
             final FileLock fl = fos.getChannel().lock();
@@ -1450,13 +1489,7 @@ public class CatalogUtils {
         final CatEntryBean e = (CatEntryBean) getEntryByURI(cat, dest);
 
         if (e == null) {
-            final CatEntryBean newEntry = new CatEntryBean();
-            newEntry.setUri(dest);
-            newEntry.setName(f.getName());
-
-            configureEntry(newEntry, info, false);
-
-            cat.addEntries_entry(newEntry);
+            populateAndAddCatEntry(cat,dest,f.getName(),info);
         } else {
             if (ci != null) {
                 if (ci.getUser() != null)
@@ -1477,8 +1510,8 @@ public class CatalogUtils {
             sb.append(entry.getKey()).append("=");
             int counter2 = 0;
             for (Map.Entry<String, Integer> sub : entry.getValue().entrySet()) {
-                sb.append(sub.getKey()).append(":").append(sub.getValue());
                 if (counter2++ > 0) sb.append(";");
+                sb.append(sub.getKey()).append(":").append(sub.getValue());
             }
 
         }
@@ -1517,7 +1550,7 @@ public class CatalogUtils {
             addAuditEntry(summary, entry.getCreatedeventid(), entry.getCreatedtime(), ChangeSummaryBuilderA.ADDED, 1);
 
             if (entry.getModifiedtime() != null) {
-                addAuditEntry(summary, entry.getModifiedeventid(), entry.getModifiedtime(), ChangeSummaryBuilderA.REMOVED, 1);
+                addAuditEntry(summary, entry.getModifiedeventid(), entry.getModifiedtime(), ChangeSummaryBuilderA.MODIFIED, 1);
             }
         }
     }
@@ -1538,6 +1571,9 @@ public class CatalogUtils {
     }
 
     /**
+     *
+     * THIS HAS BEEN DEPRECATED BY refreshCatalog
+     *
      * Reviews the catalog directory and adds any files that aren't already referenced in the catalog.
      *
      * @param catFile  path to catalog xml file
@@ -1546,8 +1582,8 @@ public class CatalogUtils {
      * @param event_id event id for transaction
      * @return true if the cat was modified (and needs to be saved).
      */
-    @SuppressWarnings("unchecked")
     @Deprecated
+    @SuppressWarnings("unchecked")
     public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, final UserI user, final Number event_id) {
         //list of all files in the catalog folder
         final Collection<File> files = org.apache.commons.io.FileUtils.listFiles(catFile.getParentFile(), null, true);

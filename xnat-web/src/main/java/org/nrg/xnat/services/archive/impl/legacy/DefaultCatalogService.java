@@ -231,7 +231,6 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
         _log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
-
         startTime=Calendar.getInstance().getTimeInMillis();
         refreshResourceCatalog(user, parentUri);
         _log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
@@ -732,12 +731,15 @@ public class DefaultCatalogService implements CatalogService {
             final File catFile = CatalogUtils.getCatalogFile(projectPath, catRes);
             
             if (cat != null) {
-                boolean modified = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
+                Object[] refresh_info = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
                         addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+                boolean modified = (boolean) refresh_info[0];
+                Map<String, Map<String, Integer>> audit_summary = (Map<String, Map<String, Integer>>) refresh_info[1];
+
                 if (modified) {
                     try {
-                        //checksums computed in CatalogUtils.refreshCatalog
-                        CatalogUtils.writeCatalogToFile(cat, catFile, false);
+                        //checksums and audit_summary computed in CatalogUtils.refreshCatalog
+                        CatalogUtils.writeCatalogToFile(cat, catFile, false, audit_summary);
                         if (populateStats) {
                             resource.save(user, false, false, now);
                         }

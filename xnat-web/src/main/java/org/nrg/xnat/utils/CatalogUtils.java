@@ -186,7 +186,7 @@ public class CatalogUtils {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         } catch (NoSuchAlgorithmException e) {
-            logger.error("This shouldn't happen, did java stop supporting MD5?", e);
+            logger.error("Unsupported hashing algorithm " + hash_type, e);
         }
         return digest;
     }

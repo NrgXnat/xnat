@@ -1812,7 +1812,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
             window.viewer.refreshCatalogs("add_file");
             this.cancel();
             // CNDA-497: Filtered out <pre> text, which is sent on successful completion (i.e. no message)
-            if (response.responseText && !response.responseText.match(/^<pre.*?><\/pre>$/)) {
+            if (response.responseText && !response.responseText.toLowerCase().match(/^<pre.*?><\/pre>$/)) {
                 try {
                     var parsedResponse = YAHOO.lang.JSON.parse(response.responseText);
                     if (parsedResponse.duplicates) {

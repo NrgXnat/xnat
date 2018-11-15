@@ -14,8 +14,11 @@ import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xnat.archive.operations.ProcessorGradualDicomImportOperation;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
+import org.nrg.xnat.processors.MizerArchiveProcessor;
+import org.nrg.xnat.processors.StudyRemappingArchiveProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +35,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Adds users from /old xdat_user table to new user authentication table if they are not already there. New local
- * database users now get added to both automatically, but this is necessary so that those who upgrade from an earlier
- * version still have their users be able to log in. Password expiry times are also added so that pre-existing users
- * still have their passwords expire.
- */
 @SuppressWarnings("SqlDialectInspection")
 @Component
 public class SetupProcessorInstanceTable extends AbstractInitializingTask {
@@ -55,14 +52,15 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
 
     @Override
     protected void callImpl() throws InitializingTaskException {
-        final Long processorChanges = _template.queryForObject("SELECT COUNT(*) FROM xhbm_archive_processor_instance_aud", Long.class);
+
+        final Long processorChanges = _template.queryForObject("SELECT COUNT(*) FROM xhbm_archive_processor_instance_aud WHERE processor_class='"+MizerArchiveProcessor.class.getCanonicalName()+"' OR processor_class='"+StudyRemappingArchiveProcessor.class.getCanonicalName()+"'", Long.class);
         if(processorChanges==0){
             //The processor instances table is new. Add default processor instances.
             ArchiveProcessorInstance defaultSiteAnonProcessor = new ArchiveProcessorInstance();
-            defaultSiteAnonProcessor.setLocation(2);
+            defaultSiteAnonProcessor.setLocation(ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE);
             defaultSiteAnonProcessor.setLabel("Site Anonymization");
             defaultSiteAnonProcessor.setPriority(10);
-            defaultSiteAnonProcessor.setProcessorClass("org.nrg.xnat.processors.MizerArchiveProcessor");
+            defaultSiteAnonProcessor.setProcessorClass(MizerArchiveProcessor.class.getCanonicalName());
             defaultSiteAnonProcessor.setScope("site");
             defaultSiteAnonProcessor.setParameters(new HashMap<String, String>());
             defaultSiteAnonProcessor.setScpBlacklist(new HashSet<String>());
@@ -70,10 +68,10 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
             _archiveProcessorInstanceService.create(defaultSiteAnonProcessor);
 
             ArchiveProcessorInstance defaultRemappingProcessor = new ArchiveProcessorInstance();
-            defaultRemappingProcessor.setLocation(1);
+            defaultRemappingProcessor.setLocation(ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED);
             defaultRemappingProcessor.setLabel("Remapping");
             defaultRemappingProcessor.setPriority(10);
-            defaultRemappingProcessor.setProcessorClass("org.nrg.xnat.processors.StudyRemappingArchiveProcessor");
+            defaultRemappingProcessor.setProcessorClass(StudyRemappingArchiveProcessor.class.getCanonicalName());
             defaultRemappingProcessor.setScope("site");
             defaultRemappingProcessor.setParameters(new HashMap<String, String>());
             defaultRemappingProcessor.setScpBlacklist(new HashSet<String>());

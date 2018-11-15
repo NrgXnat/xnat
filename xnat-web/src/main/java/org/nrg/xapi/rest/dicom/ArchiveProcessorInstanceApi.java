@@ -121,7 +121,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             existingProcessor.setPriority(processor.getPriority());
             isDirty = true;
         }
-        if (processor.getLocation()!=existingProcessor.getLocation()) {
+        if (StringUtils.isNotBlank(processor.getLocation()) && !StringUtils.equals(processor.getLocation(), existingProcessor.getLocation())) {
             existingProcessor.setLocation(processor.getLocation());
             isDirty = true;
         }

@@ -37,7 +37,7 @@ public class ArchiveProcessorInstanceSummary {
     @Override
     public int hashCode() {
         int result = label != null ? label.hashCode() : 0;
-        result = 31 * result + location;
+        result = 31 * result + (location != null ? location.hashCode() : 0);
         result = 31 * result + priority;
         result = 31 * result + (processorClass != null ? processorClass.hashCode() : 0);
         return result;
@@ -51,11 +51,11 @@ public class ArchiveProcessorInstanceSummary {
         this.label = label;
     }
 
-    public int getLocation() {
+    public String getLocation() {
         return location;
     }
 
-    public void setLocation(int location) {
+    public void setLocation(String location) {
         this.location = location;
     }
 
@@ -76,7 +76,7 @@ public class ArchiveProcessorInstanceSummary {
     }
 
     private String label;
-    private int location;
+    private String location;
     private int priority;
     private String processorClass;
 }

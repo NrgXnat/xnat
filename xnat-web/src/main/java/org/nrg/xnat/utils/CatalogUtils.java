@@ -12,7 +12,6 @@ package org.nrg.xnat.utils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.twmacinta.util.MD5;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -33,7 +32,6 @@ import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
-import org.nrg.xnat.restlet.files.utils.RestFileUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +39,12 @@ import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.atomic.*;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.channels.FileLock;
@@ -48,6 +52,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
+import java.security.MessageDigest;
 
 /**
  * @author timo
@@ -135,12 +140,55 @@ public class CatalogUtils {
      */
     @Nonnull
     public static String getHash(final File file) {
-        try {
-            return MD5.asHex(MD5.getHash(file));
-        } catch (IOException e) {
-            logger.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
-            return "";
+        //try {
+        //    return MD5.asHex(MD5.getHash(file));
+        //} catch (IOException e) {
+        //    logger.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
+        //    return "";
+        //}
+        //faster to use java's MD5 than FastMD5 (com.twmacinta.util.MD5) library
+        return getFileHash(file.getAbsolutePath(), file.length());
+    }
+
+    /**
+     * Speed up getHash using java7, allow for use of other hashing algorithms
+     */
+    @Nonnull
+    private static String getFileHash(String filepath, long size) {
+        return getFileHash(filepath, size, "MD5");
+    }
+
+    @Nonnull
+    private static String getFileHash(String filepath, long size, String hash_type) {
+        String digest = "";
+        int buf_size;
+        if (size < 512) {
+            buf_size = 512;
+        } else if (size > 65536) {
+            buf_size = 65536;
+        } else {
+            buf_size = (int) size;
         }
+        try {
+            //read into buffer and update md5
+            MessageDigest md5 = MessageDigest.getInstance(hash_type);
+            RandomAccessFile store = new RandomAccessFile(filepath, "r");
+            FileChannel channel = store.getChannel();
+            ByteBuffer buffer = ByteBuffer.allocate(buf_size);
+            channel.read(buffer);
+            buffer.flip();
+            md5.update(buffer);
+            channel.close();
+            store.close();
+
+            //compute hex
+            digest = org.apache.commons.codec.binary.Hex.encodeHexString(md5.digest());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("Unsupported hashing algorithm " + hash_type, e);
+        }
+        return digest;
     }
 
     public static List<Object[]> getEntryDetails(CatCatalogI cat, String parentPath, String uriPath, XnatResource _resource, boolean includeFile, final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
@@ -243,6 +291,229 @@ public class CatalogUtils {
             }
         }
         return entries;
+    }
+
+
+    /**
+     * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
+     *  removes any that have been deleted, computes checksums, and updates catalog stats.
+     *
+     * @param catRes                catalog resource
+     * @param catFile               path to catalog xml file
+     * @param cat                   content of catalog xml file
+     * @param user                  user for transaction
+     * @param event_id              event id for transaction
+     * @param addUnreferencedFiles  adds files not referenced in catalog
+     * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
+     * @param populateStats         updates file count & size for catRes in XNAT db
+     * @param checksums             computes/updates checksums
+     * @return true if the cat was modified (and needs to be saved).
+     */
+    public static boolean refreshCatalog(XnatResourcecatalog catRes, final File catFile, final CatCatalogBean cat,
+                                         final UserI user, final Number event_id,
+                                         final boolean addUnreferencedFiles, final boolean removeMissingFiles,
+                                         final boolean populateStats, final boolean checksums) {
+
+        final AtomicLong size = new AtomicLong(0);
+        final AtomicInteger count = new AtomicInteger(0);
+        final URI catFolderURI = catFile.getParentFile().toURI();
+        final Date now = Calendar.getInstance().getTime();
+        boolean modified = false;
+        final int event_id_int = Integer.parseInt(event_id.toString());
+
+        final HashMap<String, Object[]> catalog_map = buildCatalogMap(cat);
+
+        final AtomicInteger rtn = new AtomicInteger(0);
+        final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null,
+                null, null, user, now, now, event_id);
+
+        try {
+            Files.walkFileTree(catFile.getParentFile().toPath(), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    boolean mod = false;
+                    File f = file.toFile();
+
+                    if (f.equals(catFile)) {
+                        //don't add the catalog xml to its own list
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    //verify that there is only one catalog xml in this directory
+                    //fail if more then one is present -- otherwise they will be merged.
+                    if (f.getName().endsWith(".xml") && isCatalogFile(f)) {
+                        logger.error("Multiple catalog files - not refreshing");
+                        rtn.set(-1);
+                        return FileVisitResult.TERMINATE;
+                    }
+
+                    //check if file exists in catalog already
+                    final String full_path = f.getAbsolutePath();
+                    final String relative = catFolderURI.relativize(f.toURI()).getPath();
+
+                    if (catalog_map.containsKey(relative)) {
+                        //map_entry[0] is the catalog entry
+                        //map_entry[1] is the catalog or entryset
+                        //map_entry[2] is a bool for existing on filesystem
+                        Object[] map_entry = catalog_map.get(relative);
+
+                        CatEntryI entry = (CatEntryI) map_entry[0];
+                        String cat_id = ((CatCatalogBean)map_entry[1]).getId();
+                        map_entry[2] = true; //mark that file exists
+
+                        //logic mimics CatalogUtils.formalizeCatalog(cat, catFile.getParent(), user, now, checksums, removeMissingFiles);
+                        //older catalog files might have missing entries?
+                        if (entry.getCreatedby() == null && user != null) {
+                            entry.setCreatedby(user.getUsername());
+                            mod = true;
+                        }
+                        if (entry.getCreatedtime() == null) {
+                            ((CatEntryBean) entry).setCreatedtime(now);
+                            mod = true;
+                        }
+                        if (entry.getCreatedeventid() == null && event_id != null) {
+                            ((CatEntryBean) entry).setCreatedeventid(event_id.toString());
+                            mod = true;
+                        }
+                        if (StringUtils.isEmpty(entry.getId())) {
+                            entry.setId(cat_id + "/" + f.getName());
+                            mod = true;
+                        }
+                        // CatDcmentryBeans fail to set format correctly because it's not in their xml
+                        if (entry.getClass().equals(CatDcmentryBean.class)) {
+                            entry.setFormat("DICOM");
+                            mod = true;
+                        }
+
+                        //this used to be run as part of writeCatalogFile
+                        //however, that code didn't update checksums if they'd changed
+                        if (checksums) {
+                            String digest = getFileHash(full_path, attrs.size());
+                            if (!StringUtils.isEmpty(digest) && !digest.equals(entry.getDigest())) {
+                                entry.setDigest(digest);
+                                if (user != null) entry.setModifiedby(user.getUsername());
+                                ((CatEntryBean) entry).setModifiedtime(now);
+                                entry.setModifiedeventid(event_id_int);
+                                mod = true;
+                            }
+                        }
+
+                        //this used to be run as populateStats
+                        if (populateStats) {
+                            size.addAndGet(attrs.size());
+                            count.getAndIncrement();
+                        }
+
+                    } else {
+                        if (addUnreferencedFiles) {
+                            CatEntryBean newEntry = populateAndAddCatEntry(cat,relative,f.getName(),info);
+
+                            //this used to be run as part of writeCatalogFile
+                            if (checksums) {
+                                newEntry.setDigest(getFileHash(full_path, attrs.size()));
+                            }
+
+                            mod = true;
+
+                            //this used to be run as populateStats
+                            //this conditional has to be inside the "addUnreferencedFiles" conditional so that the stats
+                            //don't go out of sync with the catalog (if files aren't added, they shouldn't be counted)
+                            if (populateStats) {
+                                size.addAndGet(attrs.size());
+                                count.getAndIncrement();
+                            }
+                        }
+                    }
+
+                    //if we traverse any file and modify its entry, set rtn=1
+                    //if no file entries are modified during the whole walk, rtn will remain 0
+                    if (mod) rtn.set(1);
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException e) {
+                    // Skip dirs that can't be traversed
+                    logger.error("Skipped: " + file + " (" + e.getMessage() + ")", e);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException e) {
+                    // Ignore and log errors traversing a dir
+                    if (e != null) {
+                        logger.error("Error traversing: " + dir + " (" + e.getMessage() + ")",e);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new AssertionError("Files.walkFileTree shouldn't throw IOException since we modified " +
+                    "SimpleFileVisitor not to do so");
+        }
+
+        int rtn_val = rtn.get();
+        if (rtn_val == -1) {
+            //multiple catalog files
+            return false;
+        }
+        modified = rtn_val == 1;
+
+        //this used to be run as part of formalizeCatalog
+        if (removeMissingFiles) {
+            for (Object[] map_entry : catalog_map.values()) {
+                //map_entry[0] is the catalog entry
+                //map_entry[1] is the catalog or entryset
+                //map_entry[2] is a bool for existing on filesystem
+                if (!(boolean)map_entry[2]) {
+                    //File wasn't visited
+                    //logger.info("Removing "+((CatEntryBean)map_entry[0]).getName());
+                    ((CatCatalogBean)map_entry[1]).getEntries_entry().remove(map_entry[0]);
+                    modified = true;
+                }
+            }
+        }
+
+        //Update resource with new file count & size
+        // This is going to implicitly removeMissingFiles, since file count & size attributes are computed
+        // while walking the file tree. If removeMissingFiles isn't specified, file count & size
+        // won't match the catalog xml. This has always been the case, since you can't compute file size for
+        // a non-existent file. It used to implicitly addUnreferencedFiles, too (see populateStats method).
+        if (populateStats) {
+            Integer c = count.get();
+            Long s = size.get();
+            if (!c.equals(catRes.getFileCount())) {
+                catRes.setFileCount(c);
+                modified = true;
+            }
+
+            if (!s.equals(catRes.getFileSize())) {
+                catRes.setFileSize(s);
+                modified = true;
+            }
+        }
+
+        return modified;
+    }
+
+    private static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat) {
+        HashMap<String, Object[]> catalog_map = new HashMap<String, Object[]>();
+        for (CatCatalogI subset : cat.getSets_entryset()) {
+            catalog_map.putAll(buildCatalogMap(subset));
+        }
+
+        List<CatEntryI> entries = cat.getEntries_entry();
+        for (int i = 0; i< entries.size(); i++) {
+            CatEntryI entry = entries.get(i);
+            //map_entry[0] is the catalog entry
+            //map_entry[1] is the catalog or entryset containing the above catalog entry
+            //map_entry[2] is a bool for existing on filesystem
+            Object[] map_entry = new Object[] {entry, cat, false};
+            catalog_map.put(entry.getUri(),map_entry);
+        }
+
+        return catalog_map;
     }
 
     public interface CatEntryFilterI {
@@ -379,6 +650,10 @@ public class CatalogUtils {
         }
 
         return all;
+    }
+
+    public static boolean checkEntryByURI(String content, String uri) {
+        return StringUtils.contains(content,"URI=\"" + uri + "\"");
     }
 
     public static CatEntryI getEntryByURI(CatCatalogI cat, String name) {
@@ -608,24 +883,23 @@ public class CatalogUtils {
 
                 @SuppressWarnings("unchecked")
                 final List<File> files = zipper.extract(is, destinationDir.getAbsolutePath(), overwrite, ci);
+                try {
+                    String content= org.apache.commons.io.FileUtils.readFileToString(catFile);
 
-                for (final File f : files) {
-                    if (!f.isDirectory()) {
-                        final String relative = destinationDir.toURI().relativize(f.toURI()).getPath();
+                    for (final File f : files) {
+                        if (!f.isDirectory()) {
+                            //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
+                            final String relative = destinationDir.toURI().relativize(f.toURI()).getPath();
 
-                        final CatEntryI e = getEntryByURI(cat, relative);
-
-                        if (e == null) {
-                            final CatEntryBean newEntry = new CatEntryBean();
-                            newEntry.setUri(relative);
-                            newEntry.setName(f.getName());
-
-                            configureEntry(newEntry, info, false);
-
-                            cat.addEntries_entry(newEntry);
+                            if (!checkEntryByURI(content,relative)) {
+                                populateAndAddCatEntry(cat,relative,f.getName(),info);
+                            }
                         }
                     }
+                } catch (IOException e) {
+                    logger.error(e.getMessage(),e);
                 }
+
                 if (!overwrite) {
                     duplicates.addAll(zipper.getDuplicates());
                 }
@@ -1162,6 +1436,16 @@ public class CatalogUtils {
         return modified;
     }
 
+    private static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String fname, XnatResourceInfo info) {
+        CatEntryBean newEntry = new CatEntryBean();
+        newEntry.setUri(uri);
+        newEntry.setName(fname);
+        newEntry.setId(cat.getId() + "/" + fname);
+        configureEntry(newEntry, info, false);
+        cat.addEntries_entry(newEntry);
+        return newEntry;
+    }
+
     private static void updateEntry(CatCatalogBean cat, String dest, File f, XnatResourceInfo info, EventMetaI ci) {
         final CatEntryBean e = (CatEntryBean) getEntryByURI(cat, dest);
 
@@ -1263,7 +1547,8 @@ public class CatalogUtils {
      * @return true if the cat was modified (and needs to be saved).
      */
     @SuppressWarnings("unchecked")
-    public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, UserI user, Number event_id) {
+    @Deprecated
+    public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, final UserI user, final Number event_id) {
         //list of all files in the catalog folder
         final Collection<File> files = org.apache.commons.io.FileUtils.listFiles(catFile.getParentFile(), null, true);
 
@@ -1284,33 +1569,23 @@ public class CatalogUtils {
 
         boolean modified = false;
 
-        for (final File f : files) {
-            if (!f.equals(catFile)) {//don't add the catalog xml to its own list
-                //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
-                final String relative = catFolderURI.relativize(f.toURI()).getPath();
+        try {
+            String content= org.apache.commons.io.FileUtils.readFileToString(catFile);
+            final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null, null, null, user, now, now, event_id);
+            for (final File f : files) {
+                if (!f.equals(catFile)) {//don't add the catalog xml to its own list
+                    //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
+                    final String relative = catFolderURI.relativize(f.toURI()).getPath();
 
-                //
-                final CatEntryI e = getEntryByURI(cat, relative);
-
-                if (e == null) {
-                    final CatEntryBean newEntry = new CatEntryBean();
-                    newEntry.setUri(relative);
-                    newEntry.setName(f.getName());
-
-                    //create basic resource info to specify file properties at creation.
-                    final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null, null, null, user, now, now, event_id);
-                    configureEntry(newEntry, info, false);
-
-                    try {
-                        cat.addEntries_entry(newEntry);
+                    if (!checkEntryByURI(content,relative)) {
+                        populateAndAddCatEntry((CatCatalogBean) cat,relative,f.getName(),info);
                         modified = true;
-                    } catch (Exception exception) {
-                        //this shouldn't happen
-                        logger.error("Something very weird occurred when adding catalog entries", exception);
                     }
-                }
 
+                }
             }
+        } catch (IOException e) {
+            logger.error(e.getMessage(),e);
         }
 
         return modified;

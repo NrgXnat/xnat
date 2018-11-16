@@ -3,7 +3,7 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
@@ -210,7 +210,8 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        final Collection<File> missing = Lists.newArrayList();
+        long startTime=Calendar.getInstance().getTimeInMillis();
+    	final Collection<File> missing = Lists.newArrayList();
         for (final File source : resources) {
             if (!source.exists()) {
                 missing.add(source);
@@ -221,7 +222,6 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
-
         final File destination = new File(catalog.getUri()).getParentFile();
         for (final File source : resources) {
             if (source.isDirectory()) {
@@ -230,9 +230,12 @@ public class DefaultCatalogService implements CatalogService {
                 FileUtils.copyFileToDirectory(source, destination);
             }
         }
+        _log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
 
+        startTime=Calendar.getInstance().getTimeInMillis();
         refreshResourceCatalog(user, parentUri);
-
+        _log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
+        
         return catalog;
     }
 
@@ -720,44 +723,31 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
-        if (resource instanceof XnatResourcecatalog) {
+        long startTime=Calendar.getInstance().getTimeInMillis();
+
+    	if (resource instanceof XnatResourcecatalog) {
             final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
 
             final CatCatalogBean cat = CatalogUtils.getCatalog(projectPath, catRes);
             final File catFile = CatalogUtils.getCatalogFile(projectPath, catRes);
-
+            
             if (cat != null) {
-                boolean modified = false;
-
-                if (addUnreferencedFiles) {//check for files in the proper resource directory, but not referenced from the existing xml
-                    if (CatalogUtils.addUnreferencedFiles(catFile, cat, user, now.getEventId())) {
-                        modified = true;
-                    }
-                }
-
-                if (CatalogUtils.formalizeCatalog(cat, catFile.getParent(), user, now, checksums, removeMissingFiles)) {
-                    modified = true;
-                }
-
+                boolean modified = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
+                        addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
                 if (modified) {
                     try {
-                        CatalogUtils.writeCatalogToFile(cat, catFile, checksums);
+                        //checksums computed in CatalogUtils.refreshCatalog
+                        CatalogUtils.writeCatalogToFile(cat, catFile, false);
+                        if (populateStats) {
+                            resource.save(user, false, false, now);
+                        }
                     } catch (Exception e) {
                         throw new ServerException("An error occurred writing the catalog file " + catFile.getAbsolutePath(), e);
                     }
                 }
 
-                // populate (or repopulate) the file stats --- THIS SHOULD BE DONE AFTER modifications to the catalog xml
-                if (populateStats || modified) {
-                    if (CatalogUtils.populateStats(resource, projectPath) || modified) {
-                        try {
-                            resource.save(user, false, false, now);
-                        } catch (Exception e) {
-                            throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
-                        }
-                    }
-                }
-
+            }  else{
+            	_log.error("Unable to load Catalog file");
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {
@@ -768,7 +758,7 @@ public class DefaultCatalogService implements CatalogService {
                 }
             }
         }
-
+        _log.info("refreshResourceCatalog runtime: "+(Calendar.getInstance().getTimeInMillis() - startTime)+"ms");
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {

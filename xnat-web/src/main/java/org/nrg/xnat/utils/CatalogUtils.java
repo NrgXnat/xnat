@@ -361,12 +361,12 @@ public class CatalogUtils {
 
                     if (catalog_map.containsKey(relative)) {
                         //map_entry[0] is the catalog entry
-                        //map_entry[1] is the catalog or entryset
-                        //map_entry[2] is a bool for existing on filesystem
+                        //map_entry[1] is the catalog or entryset containing the above catalog entry
+                        //map_entry[2] is id prefix based on the catalog + entryset containing the entry
+                        //map_entry[3] is a bool for existing on filesystem
                         Object[] map_entry = catalog_map.get(relative);
-                        CatEntryI entry = (CatEntryI) map_entry[0];
-                        String cat_id = ((CatCatalogBean)map_entry[1]).getId();
-                        map_entry[2] = true; //mark that file exists
+                        CatEntryBean entry = (CatEntryBean) map_entry[0];
+                        map_entry[3] = true; //mark that file exists
 
                         //logic mimics CatalogUtils.formalizeCatalog(cat, catFile.getParent(), user, now, checksums, removeMissingFiles);
                         //older catalog files might have missing entries?
@@ -375,15 +375,15 @@ public class CatalogUtils {
                             mod = true;
                         }
                         if (entry.getCreatedtime() == null) {
-                            ((CatEntryBean) entry).setCreatedtime(now);
+                            entry.setCreatedtime(now);
                             mod = true;
                         }
                         if (entry.getCreatedeventid() == null && event_id != null) {
-                            ((CatEntryBean) entry).setCreatedeventid(event_id.toString());
+                            entry.setCreatedeventid(event_id.toString());
                             mod = true;
                         }
                         if (StringUtils.isEmpty(entry.getId())) {
-                            entry.setId(cat_id + "/" + f.getName());
+                            entry.setId(map_entry[2] + "/" + f.getName());
                             mod = true;
                         }
                         // CatDcmentryBeans fail to set format correctly because it's not in their xml
@@ -399,7 +399,7 @@ public class CatalogUtils {
                             if (!StringUtils.isEmpty(digest) && !digest.equals(entry.getDigest())) {
                                 entry.setDigest(digest);
                                 if (user != null) entry.setModifiedby(user.getUsername());
-                                ((CatEntryBean) entry).setModifiedtime(now);
+                                entry.setModifiedtime(now);
                                 entry.setModifiedeventid(event_id_int);
                                 mod = true;
                                 modded.getAndIncrement();
@@ -474,9 +474,10 @@ public class CatalogUtils {
         if (removeMissingFiles) {
             for (Object[] map_entry : catalog_map.values()) {
                 //map_entry[0] is the catalog entry
-                //map_entry[1] is the catalog or entryset
-                //map_entry[2] is a bool for existing on filesystem
-                if (!(boolean)map_entry[2]) {
+                //map_entry[1] is the catalog or entryset containing the above catalog entry
+                //map_entry[2] is id prefix based on the catalog + entryset containing the entry
+                //map_entry[3] is a bool for existing on filesystem
+                if (!(boolean)map_entry[3]) {
                     //File wasn't visited
                     //logger.info("Removing "+((CatEntryBean)map_entry[0]).getName());
                     ((CatCatalogBean)map_entry[1]).getEntries_entry().remove(map_entry[0]);
@@ -519,9 +520,13 @@ public class CatalogUtils {
     }
 
     private static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat) {
+        return buildCatalogMap(cat, "");
+    }
+
+    private static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String id_prefix) {
         HashMap<String, Object[]> catalog_map = new HashMap<String, Object[]>();
         for (CatCatalogI subset : cat.getSets_entryset()) {
-            catalog_map.putAll(buildCatalogMap(subset));
+            catalog_map.putAll(buildCatalogMap(subset, cat.getId() + "/"));
         }
 
         List<CatEntryI> entries = cat.getEntries_entry();
@@ -529,8 +534,9 @@ public class CatalogUtils {
             CatEntryI entry = entries.get(i);
             //map_entry[0] is the catalog entry
             //map_entry[1] is the catalog or entryset containing the above catalog entry
-            //map_entry[2] is a bool for existing on filesystem
-            Object[] map_entry = new Object[] {entry, cat, false};
+            //map_entry[2] is id prefix based on the catalog + entryset containing the entry
+            //map_entry[3] is a bool for existing on filesystem
+            Object[] map_entry = new Object[] {entry, cat, id_prefix + cat.getId(), false};
             catalog_map.put(entry.getUri(),map_entry);
         }
 

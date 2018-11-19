@@ -25,6 +25,7 @@ import reactor.bus.EventBus;
 import javax.annotation.Nonnull;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.framework.utilities.ExceptionUtils.getStackTraceDisplay;
 
 /**
  * The Class NrgEventService.
@@ -167,7 +168,7 @@ public class NrgEventService {
     }
 
     private void triggerEventInternal(@Nonnull final Event event, final String description, final Boolean notifyClassListeners) {
-        final Object data = event.getData();
+        final Object   data = event.getData();
         final Class<?> dataClass;
         if (data != null && EventI.class.isAssignableFrom(data.getClass())) {
             dataClass = data.getClass();
@@ -176,22 +177,18 @@ public class NrgEventService {
         }
 
         if (log.isTraceEnabled()) {
-            final StringBuilder stackTraceDisplay = new StringBuilder();
-            final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            for (int index = 2; index < stackTrace.length; index++) {
-                final StackTraceElement element = stackTrace[index];
-                final String            className = element.getClassName();
-                if (className.startsWith("org.nrg")) {
-                    stackTraceDisplay.append("    at ").append(className).append(".").append(element.getMethodName()).append("(), line ").append(element.getLineNumber()).append("\n");
-                }
-            }
+            final String stackTraceDisplay = getStackTraceDisplay("^org\\.nrg\\.*$");
             log.trace("Triggering '{}' event: {}\n{}", StringUtils.isNotBlank(description) ? description : dataClass.getName(), ObjectUtils.defaultIfNull(data, event), stackTraceDisplay);
         } else {
             log.debug("Triggering '{}' event: {}", StringUtils.isNotBlank(description) ? description : dataClass.getName(), ObjectUtils.defaultIfNull(data, event));
         }
 
-        getEventBus().notify(StringUtils.isNotBlank(description) ? description : dataClass, event);
-        if (BooleanUtils.toBooleanDefaultIfNull(notifyClassListeners, false)) {
+        if (StringUtils.isNotBlank(description)) {
+            getEventBus().notify(description, event);
+            if (BooleanUtils.toBooleanDefaultIfNull(notifyClassListeners, false)) {
+                getEventBus().notify(dataClass, Event.wrap(data));
+            }
+        } else {
             getEventBus().notify(dataClass, event);
         }
     }
@@ -210,13 +207,18 @@ public class NrgEventService {
             } else {
                 getEventBus().send(classToSend, event);
             }
-        } else if (!hasReplyTo) {
-            getEventBus().send(description, event);
         } else {
-            getEventBus().send(description, event, replyTo);
-        }
-        if (notifyClassListeners) {
-            getEventBus().send(classToSend, event, replyTo);
+            if (!hasReplyTo) {
+                getEventBus().send(description, event);
+                if (notifyClassListeners) {
+                    getEventBus().send(classToSend, Event.wrap(event.getData()));
+                }
+            } else {
+                getEventBus().send(description, event, replyTo);
+                if (notifyClassListeners) {
+                    getEventBus().send(classToSend, Event.wrap(event.getData()), replyTo);
+                }
+            }
         }
     }
 

@@ -53,7 +53,7 @@ public class MizerArchiveProcessor extends AbstractArchiveProcessor {
                 return false;
             }
             else if (DefaultAnonUtils.getService().isSiteWideScriptEnabled()){
-                return processorConfiguredForDataComingInToThisScpReceiver(instance, aeParameters);
+                return processorConfiguredForDataComingInToThisScpReceiverAndProject(sessionData, instance, aeParameters);
             }
             else {
                 return false;

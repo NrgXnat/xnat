@@ -109,6 +109,10 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             existingProcessor.setScope(processor.getScope());
             isDirty = true;
         }
+        if (processor.getProjectIdsList()!=null && !processor.getProjectIdsList().equals(existingProcessor.getProjectIdsList())) {
+            existingProcessor.setProjectIdsList(processor.getProjectIdsList());
+            isDirty = true;
+        }
         if (processor.getScpWhitelist()!=null && !processor.getScpWhitelist().equals(existingProcessor.getScpWhitelist())) {
             existingProcessor.setScpWhitelist(processor.getScpWhitelist());
             isDirty = true;

@@ -149,7 +149,11 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
 
         continueProcessingData = true;
         try {
-            iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, null);
+            final SessionData tempSession = new SessionData();
+            tempSession.setProject(project == null ? null : project.getId());
+            tempSession.setSubject("");
+            tempSession.setFolderName("");
+            iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, tempSession);
 //            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
 //            Collection<ArchiveProcessor> processors = processorsMap.values();
 //            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
@@ -412,14 +416,14 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
         Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
         Collection<ArchiveProcessor> processors = processorsMap.values();
         //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-        List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ);
+        List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(location);
         if(processorInstances!=null){
             for(ArchiveProcessorInstance processorInstance: processorInstances) {
                 Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
                 ArchiveProcessor processor = processorsMap.get(processorClass);
 
-                if (processor.accept(dicom, null, getMizer(), processorInstance, getParameters())) {
-                    if(!processor.process(dicom, null, getMizer(), processorInstance, getParameters())){
+                if (processor.accept(dicom, session, getMizer(), processorInstance, getParameters())) {
+                    if(!processor.process(dicom, session, getMizer(), processorInstance, getParameters())){
                         continueProcessingData = false;
                         break;
                     }

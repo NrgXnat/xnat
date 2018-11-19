@@ -9,6 +9,7 @@ import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -107,6 +108,15 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.scpBlacklist = scpBlacklist;
     }
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    public List<String> getProjectIdsList() {
+        return projectIdsList;
+    }
+
+    public void setProjectIdsList(List<String> projectIdsList) {
+        this.projectIdsList = projectIdsList;
+    }
+
     private String label;
 
     private String scope;
@@ -117,6 +127,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
     private int priority;
     private Map<String, String> parameters;
     private String processorClass;
+    private List<String> projectIdsList;
 
     public static final String SITE_SCOPE="site";
 }

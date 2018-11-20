@@ -20,7 +20,6 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.meta;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -375,13 +374,7 @@ public class UserGroupManager implements UserGroupServiceI {
         return _template.query(ALL_GROUPS_QUERY, new RowMapper<UserGroupI>() {
             @Override
             public UserGroupI mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
-                final UserGroup group = new UserGroup();
-                group.setPK(resultSet.getInt("xdat_usergroup_id"));
-                group.setId(resultSet.getString("id"));
-                group.setDisplayname(resultSet.getString("displayname"));
-                group.setTag(resultSet.getString("tag"));
-                group.refresh(_template);
-                return group;
+                return getCache().get(resultSet.getString("id"));
             }
         });
     }

@@ -1500,6 +1500,14 @@ public class TurbineUtils {
         }
     }
 
+    public boolean isNullObject(final Object object) {
+        return object == null;
+    }
+
+    public boolean isBlankString(final String string) {
+        return StringUtils.isBlank(string);
+    }
+
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     private static final Comparator<Properties> PROPERTIES_COMPARATOR = new Comparator<Properties>() {

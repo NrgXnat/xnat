@@ -18,7 +18,6 @@ import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
@@ -36,7 +35,6 @@ public class XDATScreen_report_xdat_user extends AdminReport {
             context.put("allRoles", Roles.getRoles());
             context.put("userObject", user);
             context.put("userObjectHelper", UserHelper.getUserHelperService(user));
-            context.put("allGroups", Groups.getAllGroups());
 
             // Does the user have any failed login attempts?
             context.put("hasFailedLoginAttempts", Lists.newArrayList(Iterables.filter(XDAT.getXdatUserAuthService().getUsersByXdatUsername(user.getUsername()), new Predicate<XdatUserAuth>() {
@@ -53,4 +51,3 @@ public class XDATScreen_report_xdat_user extends AdminReport {
         }
     }
 }
-

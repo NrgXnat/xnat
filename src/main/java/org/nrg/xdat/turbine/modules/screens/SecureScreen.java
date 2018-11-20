@@ -22,11 +22,13 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.ThemeConfig;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.XFTTable;
@@ -226,7 +228,29 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      *
      * @throws Exception When something goes wrong.
      */
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(final RunData data) throws Exception {
+        return isAuthorizedInternal(data);
+    }
+
+    protected boolean isAuthorizedAdmin(final RunData data) throws Exception {
+        if (isAuthorizedInternal(data) && Roles.isSiteAdmin(XDAT.getUserDetails())) {
+            return true;
+        }
+        recordUnauthorizedAccess(data);
+        return false;
+    }
+
+    /**
+     * Provided so that this class can check authorization without calling isAuthorized() and getting subclass
+     * implementation of isAuthorized() and likely ending up with a stack overflow.
+     *
+     * @param data The request data.
+     *
+     * @return Returns true if the user is authorized, false otherwise.
+     *
+     * @throws Exception When an error occurs.
+     */
+    private boolean isAuthorizedInternal(final RunData data) throws Exception {
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             logger.debug("isAuthorized() Login Required:true");
             TurbineVelocity.getContext(data).put("logout", "true");
@@ -377,6 +401,14 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             }
         }
         return tabs;
+    }
+
+    protected void recordUnauthorizedAccess(final RunData data) throws IOException {
+        data.setMessage("Unauthorized access.  Please login to gain access to this page.");
+        logAccess(data, "Unauthorized access.");
+        logger.error("Unauthorized Access to an Admin Screen (prevented).");
+        AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Screen (" + data.getScreen() + ") prevented.");
+        data.getResponse().sendError(HttpServletResponse.SC_FORBIDDEN);
     }
 
     public static void addProps(File file, List<Properties> screens, List<String> _defaultScreens, final String path) throws FileNotFoundException {

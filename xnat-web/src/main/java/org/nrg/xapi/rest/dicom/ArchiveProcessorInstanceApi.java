@@ -22,6 +22,7 @@ import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xnat.archive.operations.ProcessorGradualDicomImportOperation;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.ArchiveProcessorInstanceSummary;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
@@ -77,8 +78,13 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         else if(!processorNames().contains(processor.getProcessorClass())){
             throw new XapiException(HttpStatus.BAD_REQUEST, "The provided processor class does not exist.");
         }
-        if (!StringUtils.equals(ArchiveProcessorInstance.SITE_SCOPE,processor.getScope())) {
-            _log.error("User {} tried to create site processor instance with non-site scope.", getSessionUser().getUsername());
+//        if (!StringUtils.equals(ArchiveProcessorInstance.SITE_SCOPE,processor.getScope())) {
+//            _log.error("User {} tried to create site processor instance with non-site scope.", getSessionUser().getUsername());
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+        List<String> projects = processor.getProjectIdsList();
+        if (StringUtils.equals(processor.getLocation(),ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects!=null && !projects.isEmpty()){
+            _log.error("User {} tried to create processor based on project before project is set.", getSessionUser().getUsername());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         ArchiveProcessorInstance created = _service.create(processor);
@@ -126,6 +132,11 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             isDirty = true;
         }
         if (StringUtils.isNotBlank(processor.getLocation()) && !StringUtils.equals(processor.getLocation(), existingProcessor.getLocation())) {
+            List<String> projects = existingProcessor.getProjectIdsList();//Will have already been updated if necessary
+            if (StringUtils.equals(processor.getLocation(),ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects!=null && !projects.isEmpty()){
+                _log.error("User {} tried to create processor based on project before project is set.", getSessionUser().getUsername());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
             existingProcessor.setLocation(processor.getLocation());
             isDirty = true;
         }

@@ -418,15 +418,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public List<String> getProjectsForUser(final String username, final String access) {
         log.info("Getting projects with {} access for user {}", access, username);
-        final String cacheId = getCacheIdForUserProjectAccess(username, access);
+        switch (access) {
+            case SecurityManager.READ:
+                return getUserReadableProjects(username);
 
-        final List<String> cachedUserProjects = getCachedList(cacheId);
-        if (cachedUserProjects != null) {
-            log.debug("Found a cache entry for user '{}' '{}' access with ID '{}' and {} elements", username, access, cacheId, cachedUserProjects.size());
-            return cachedUserProjects;
+            case SecurityManager.EDIT:
+                return getUserEditableProjects(username);
+
+            case SecurityManager.DELETE:
+                return getUserOwnedProjects(username);
+
+            default:
+                throw new IllegalArgumentException("Invalid access level '" + access + "', valid values are: '" + SecurityManager.READ + "', '" + SecurityManager.EDIT + "', and '" + SecurityManager.DELETE + "'.");
         }
-
-        return updateUserProjectAccess(username, access, cacheId);
     }
 
     /**
@@ -683,7 +687,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 case CREATE:
                     log.debug("New project created with ID {}, caching new instance", xsiType, id);
                     for (final String owner : getProjectOwners(id)) {
-                        updateUserProjectAccess(owner);
                         if (!Iterables.any(getActionElementDisplays(owner).get(SecurityManager.CREATE), CONTAINS_MR_SESSION)) {
                             initActionElementDisplays(owner, true);
                         }
@@ -693,10 +696,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     final String access = Permissions.getProjectAccess(_template, id);
                     if (StringUtils.isNotBlank(access)) {
                         switch (access) {
-                            case "private":
-                                clearAllDataUserProjectAccess();
-                                break;
-
                             case "public":
                                 if (!Iterables.any(getActionElementDisplays(GUEST_USERNAME).get(SecurityManager.READ), CONTAINS_MR_SESSION)) {
                                     initActionElementDisplays(GUEST_USERNAME, true);
@@ -757,19 +756,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return false;
-    }
-
-    private void clearAllDataUserProjectAccess() {
-        for (final String groupId : ALL_DATA_GROUPS) {
-            final UserGroupI group = get(groupId);
-            if (group != null) {
-                for (final String user : group.getUsernames()) {
-                    for (final String projectAction : ACTIONS) {
-                        evict(getCacheIdForUserProjectAccess(user, projectAction));
-                    }
-                }
-            }
-        }
     }
 
     private boolean updateProjectRelatedCaches(final String xsiType, final String id, final boolean affectsOtherDataTypes) throws ItemNotFoundException {
@@ -1003,39 +989,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             final Object objectValue = element.getObjectValue();
             log.debug("Got a {} event for cache {} on ID {} with value of type {}", event, cache.getName(), element.getObjectKey(), objectValue != null ? objectValue.getClass().getName() : "<null>");
         }
-    }
-
-    @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-    private synchronized List<String> updateUserProjectAccess(final String username) {
-        final List<String> projectIds = new ArrayList<>();
-        for (final String access : Arrays.asList(SecurityManager.READ, SecurityManager.EDIT, SecurityManager.DELETE)) {
-            projectIds.addAll(updateUserProjectAccess(username, access));
-        }
-        return projectIds;
-    }
-
-    @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-    private synchronized List<String> updateUserProjectAccess(final String username, final String access) {
-        return updateUserProjectAccess(username, access, getCacheIdForUserProjectAccess(username, access));
-    }
-
-    private synchronized List<String> updateUserProjectAccess(final String username, final String access, final String cacheId) {
-        final List<String> projectIds;
-        switch (access) {
-            case SecurityManager.READ:
-                projectIds = getUserReadableProjects(username);
-                break;
-            case SecurityManager.EDIT:
-                projectIds = getUserEditableProjects(username);
-                break;
-            case SecurityManager.DELETE:
-                projectIds = getUserOwnedProjects(username);
-                break;
-            default:
-                throw new RuntimeException("Unknown access level '" + access + "'. Must be one of " + SecurityManager.READ + ", " + SecurityManager.EDIT + ", or " + SecurityManager.DELETE + ".");
-        }
-        cacheObject(cacheId, projectIds);
-        return ImmutableList.copyOf(projectIds);
     }
 
     private List<String> getProjectOwners(final String projectId) {
@@ -1496,7 +1449,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      * @return A list of projects to which the specified user has read access.
      */
     private List<String> getUserReadableProjects(final String username) {
-        return Lists.newArrayList(Iterables.concat(getProjectsByAccessQuery(username, QUERY_READABLE_PROJECTS, false), Permissions.getAllPublicProjects(_template)));
+        return getProjectsByAccessQuery(username, QUERY_READABLE_PROJECTS, false);
     }
 
     private List<String> getUserEditableProjects(final String username) {
@@ -1726,10 +1679,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private static String getCacheIdForUserGroups(final String username) {
         return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, GROUPS_ELEMENT_PREFIX);
-    }
-
-    private static String getCacheIdForUserProjectAccess(final String username, final String access) {
-        return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, XnatProjectdata.SCHEMA_ELEMENT_NAME, access);
     }
 
     private static String getCacheIdForUserElements(final String username, final String elementType) {

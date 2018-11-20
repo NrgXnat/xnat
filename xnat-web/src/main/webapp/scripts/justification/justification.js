@@ -50,6 +50,17 @@ XNAT.app.ConfirmWJustification=function(_yuioptions){
 			tr.appendChild(td1);
 			tb.appendChild(tr);
 		}
+		
+		//form checkbox  (optional)
+		if(this.yuioptions.checkbox!=undefined){
+			tr=document.createElement("tr");
+			td1=document.createElement("td");
+			td1.colSpan="2";
+			td1.innerHTML=this.yuioptions.checkbox;
+			
+			tr.appendChild(td1);
+			tb.appendChild(tr);
+		}
 
 		//justification
 		tr=document.createElement("tr");

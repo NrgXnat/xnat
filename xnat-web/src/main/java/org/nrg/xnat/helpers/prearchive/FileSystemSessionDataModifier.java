@@ -16,6 +16,7 @@ import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -126,29 +127,39 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                     if (configuration != null) {
                         final String anonScript = configuration.getContents();
                         final XnatAttrDef[] params = {new XnatAttrDef.Constant("project", newProject)};
+                        final MizerService mizerService = XDAT.getContextService().getBeanSafely(MizerService.class);
+                        if (mizerService == null) {
+                            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
+                        }
+                        final MizerContextWithScript context = new MizerContextWithScript();
+                        try {
+                            context.setScriptId(configuration.getId());
+                            context.setScript(anonScript);
+                            context.setElement("project", newProject);
+                            context.setElement("subject", subject);
+                            context.setElement("session", session);
+
+                            if( ! mizerService.setContext( context)) {
+                                throw new RuntimeException("Failed to set mizer service context: " + context);
+                            }
+                        }
+                        catch( MizerException e) {
+                            throw new RuntimeException(e);
+                        }
                         final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
-                                new Function<DicomObject, DicomObject>() {
-                                    public DicomObject apply(final DicomObject o) {
-                                        try {
-                                            final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                                            if (service == null) {
-                                                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
-                                            }
-                                            final MizerContextWithScript context = new MizerContextWithScript();
-                                            context.setScriptId(configuration.getId());
-                                            context.setScript(anonScript);
-                                            context.setElement("project", newProject);
-                                            context.setElement("subject", subject);
-                                            context.setElement("session", session);
-                                            service.anonymize(DicomObjectFactory.newInstance(o), context);
-                                        }
-                                        catch ( MizerException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                        return o;
+                            new Function<DicomObject, DicomObject>() {
+                                public DicomObject apply(final DicomObject o) {
+                                    try {
+                                        mizerService.anonymize(DicomObjectFactory.newInstance(o), context);
                                     }
-                                });
+                                    catch ( MizerException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return o;
+                                }
+                            });
                         doc = db.call();
+                        mizerService.removeContext( context);
                     } else {
                         doc = PrearcTableBuilder.parseSession(xml);
                         doc.setProject(newProject);

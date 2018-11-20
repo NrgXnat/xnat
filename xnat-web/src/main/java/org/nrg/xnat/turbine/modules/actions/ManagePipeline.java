@@ -75,6 +75,9 @@ public class ManagePipeline extends SecureAction {
                 doDeletefromproject(data);
             } else if (task.equalsIgnoreCase("projectpipeline")) {
                 doAddpipeline(data, context);
+            } else if (task.equalsIgnoreCase("launch")) {
+                doLaunchpipeline(data, context);
+                return;
             }
         }
     }
@@ -421,33 +424,35 @@ public class ManagePipeline extends SecureAction {
 
     private Parameters extractParameters(RunData data) {
         Parameters parameters = Parameters.Factory.newInstance();
-	    int totalParams = TurbineUtils.GetPassedInteger("param_cnt",data);
-        for (int i = 0; i < totalParams; i++) {
+        int totalParams = TurbineUtils.GetPassedInteger("param_cnt",data);
+	    for (int i = 0; i < totalParams; i++) {
 			String name = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("param[" + i + "].name",data));
-			int rowcount = TurbineUtils.GetPassedInteger("param[" + i + "].name.rowcount", data);
-            ArrayList<String> formvalues = new ArrayList<>();
-            for (int j = 0; j < rowcount; j++) {
-                String formfieldname = "param[" + i + "][" + j + "].value";
-                if (TurbineUtils.HasPassedParameter(formfieldname, data)) //formvalues.add(data.getParameters().get(formfieldname));
-				   formvalues.add(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(formfieldname,data)));
-            }
+			if(name != null) {
+				int rowcount = TurbineUtils.GetPassedInteger("param[" + i + "].name.rowcount", data);
+				ArrayList<String> formvalues = new ArrayList<>();
+				for (int j = 0; j < rowcount; j++) {
+					String formfieldname = "param[" + i + "][" + j + "].value";
+					if (TurbineUtils.HasPassedParameter(formfieldname, data)) //formvalues.add(data.getParameters().get(formfieldname));
+						formvalues.add(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(formfieldname,data)));
+				}
 
-            if (formvalues.size() > 0) {
-                ParameterData param = parameters.addNewParameter();
-                param.setName(name);
-                if (formvalues.size() == 1) {
-                    Values values = param.addNewValues();
-                    values.setUnique(formvalues.get(0));
-                } else {
-                    Values values = param.addNewValues();
-                    for (String value : formvalues) {
-                        values.addList(value);
-                    }
-                }
-            }
-        }
-        return parameters;
-    }
+				if (formvalues.size() > 0) {
+					ParameterData param = parameters.addNewParameter();
+					param.setName(name);
+					if (formvalues.size() == 1) {
+						Values values = param.addNewValues();
+						values.setUnique(formvalues.get(0));
+					} else {
+						Values values = param.addNewValues();
+						for (String value : formvalues) {
+							values.addList(value);
+						}
+					}
+				}
+			}
+		}
+	    return parameters;
+	}
 
 
     private String saveParameters(String rootpath, String fileName, Parameters parameters) throws Exception {

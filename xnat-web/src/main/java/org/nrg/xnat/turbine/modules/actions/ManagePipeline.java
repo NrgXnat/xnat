@@ -391,6 +391,14 @@ public class ManagePipeline extends SecureAction {
             xnatPipelineLauncher.setLabel(exptLabel);
             xnatPipelineLauncher.setExternalId(project);
             xnatPipelineLauncher.setDataType(item.getXSIType());
+            
+            boolean wait_for = false;
+            String wait_forStr = (String)TurbineUtils.GetPassedParameter("wait_for",data);
+            wait_forStr=(wait_forStr==null)?(String)TurbineUtils.GetPassedParameter("waitFor",data):wait_forStr;
+            if (wait_forStr != null){
+                wait_for = wait_forStr.equalsIgnoreCase("true");
+            }
+            xnatPipelineLauncher.setWaitFor(wait_for);
 
             boolean runPipelineInProcess = data.getParameters().containsKey("run_pipeline_in_process") ? data.getParameters().getBoolean("run_pipeline_in_process") : XnatPipelineLauncher.DEFAULT_RUN_PIPELINE_IN_PROCESS;
             xnatPipelineLauncher.setRunPipelineInProcess(runPipelineInProcess);
@@ -411,15 +419,26 @@ public class ManagePipeline extends SecureAction {
             xnatPipelineLauncher.setBuildDir(buildDir);
             String paramFilePath = saveParameters(buildDir + File.separator + exptLabel, paramFileName, parameters);
             xnatPipelineLauncher.setParameterFile(paramFilePath);
-        if (launch_now) {
-		    	xnatPipelineLauncher.launch(null);
-        } else {
-		    	xnatPipelineLauncher.launch();
-        }
-
-            // TODO: We need to get status back for in-process pipeline launching and use that for when runPipelineInProcess is true.
-            data.setMessage(runPipelineInProcess ? "<p><b>The requested pipeline has completed.</b></p>" : "<p><b>The pipeline has been scheduled.  Status email will be sent upon its completion.</b></p>");
-            data.setScreenTemplate("ClosePage.vm");
+            boolean success=false;
+            
+            if (launch_now) {
+                success=xnatPipelineLauncher.launch(null);
+            } else {
+                success=xnatPipelineLauncher.launch();
+            }
+    
+            if(wait_for){
+                if(success){
+                    data.setStatusCode(200);
+                }else{
+                    data.setStatusCode(500);
+                }
+            }else{
+                // TODO: We need to get status back for in-process pipeline launching and use that for when runPipelineInProcess is true.
+                data.setMessage(runPipelineInProcess ? "<p><b>The requested pipeline has completed.</b></p>" : "<p><b>The pipeline has been scheduled.  Status email will be sent upon its completion.</b></p>");
+                data.setScreenTemplate("ClosePage.vm");
+                data.setStatusCode(500);
+            }
         }
 
     private Parameters extractParameters(RunData data) {

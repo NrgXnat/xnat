@@ -1033,10 +1033,11 @@ public class CatalogUtils {
             field.setMetafield(convertAuditToString(audit_summary));
         } else {
             String prev_audit = StringUtils.defaultIfBlank(field.getMetafield(),"");
-            if (!prev_audit.isEmpty()) {
+            String cur_audit = convertAuditToString(audit_summary);
+            if (!prev_audit.isEmpty() && !cur_audit.isEmpty()) {
                 prev_audit+="|";
             }
-            field.setMetafield( prev_audit + convertAuditToString(audit_summary));
+            field.setMetafield(prev_audit + cur_audit);
         }
     }
 

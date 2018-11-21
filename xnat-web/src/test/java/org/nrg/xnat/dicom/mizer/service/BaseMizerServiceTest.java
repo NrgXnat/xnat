@@ -43,7 +43,12 @@ public class BaseMizerServiceTest extends BaseMizerTest {
 
     @Test
     public void serviceHasMultipleHandlers() {
-        Collection<Mizer> mizers = service.getMizers();
+        Collection<Mizer> mizers = null;
+        try {
+            mizers = service.getMizers();
+        } catch (MizerException e) {
+            fail("Unexpected exception: " + e);
+        }
         assertEquals(2, mizers.size());
     }
 

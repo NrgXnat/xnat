@@ -2,6 +2,8 @@
 .idea
 *.iml
 *.log
+*.md5
+*.sha256
 src/generated
 gradle.properties
 /out

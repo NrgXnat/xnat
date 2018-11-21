@@ -12,6 +12,7 @@ package org.nrg.xnat.helpers.merge;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.dicomtools.exceptions.AttributeException;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
@@ -59,23 +60,15 @@ public abstract class AnonymizerA implements Callable<Boolean> {
      */
     abstract List<File> getFilesToAnonymize() throws IOException;
 
-    public void setNext(final AnonymizerA anonymizer) {
-        _next = anonymizer;
-    }
-
-    public void anonymize(final File file) throws AttributeException, IOException, MizerException {
-        final Configuration script = getScript();
-        if (script != null) {
-            if (isEnabled()) {
-                //noinspection deprecation
+    private void anonymize(List<File> files, String projectName, String subject, String label, long id, String script, boolean record) throws MizerException {
+        if( script != null) {
+            if( isEnabled()) {
 
                 final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                service.anonymize( file, getProjectName(), getSubject(), getLabel(), true, script.getId(), script.getContents());
+                service.anonymize( files, getProjectName(), getSubject(), getLabel(), id, script, record);
 
-                if (_next != null) {
-                    _next.anonymize(file);
-                }
-            } else {
+            }
+            else {
                 // anonymization is disabled.
                 if (_log.isDebugEnabled()) {
                     _log.debug("Anonymization is disabled for the script {}, nothing to do.", script.toString());
@@ -85,6 +78,7 @@ public abstract class AnonymizerA implements Callable<Boolean> {
             // this project does not have an anon script
             _log.debug("No anon script found for project {}, nothing to do.", getProjectName());
         }
+
     }
 
     @Override
@@ -103,13 +97,10 @@ public abstract class AnonymizerA implements Callable<Boolean> {
             return false;
         }
         _log.debug("Found {} files to be anonymized.", files.size());
-        for (final File file : files) {
-            _log.debug("Anonymizing file {}.", file.getPath());
-            anonymize(file);
-        }
+        Configuration script = getScript();
+        anonymize( files, getProjectName(), getSubject(), getLabel(), script.getId(), script.getContents(), true);
         return true;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(AnonymizerA.class);
-    private AnonymizerA _next;
 }

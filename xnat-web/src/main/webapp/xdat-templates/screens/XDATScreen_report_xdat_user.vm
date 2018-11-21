@@ -1,7 +1,18 @@
-#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
-#* @vtlvariable name="userObject" type="org.nrg.xdat.security.XDATUser" *#
-#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="allRoles" type="java.util.Collection<org.nrg.xdat.security.services.RoleRepositoryServiceI.RoleDefinitionI>" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="hasFailedLoginAttempts" type="java.lang.Boolean" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XdatUser" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="userObject" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="userObjectHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 $page.setTitle("XDAT")
 $page.setLinkColor($ui.alink)
@@ -11,10 +22,15 @@ $page.setVlinkColor($ui.vlink)
 <div class="error">$data.message</div><br>
 #end
 
-#set ($USERNAME = "$!userObject.getUsername()")
+#if ($turbineUtils.isNullObject($project))
+    #set ($contextProjectId = "")
+#else
+    #set ($contextProjectId = $project.id)
+#end
+#set ($username = "$!userObject.getUsername()")
 <script>
-    window.editUser = '${USERNAME}';
-    console.log('window.editUser: "${USERNAME}"')
+    window.editUser = '${username}';
+    console.log('window.editUser: "${username}"')
 </script>
 
 #parse("/screens/LoadProjectsJS.vm")
@@ -39,16 +55,16 @@ $page.setVlinkColor($ui.vlink)
 
                         ##<!-- details tab -->
                             <div id="tab1">
-                                #parse($turbineUtils.getTemplateName("details","xdat:user",$!project))
+                                #parse($turbineUtils.getTemplateName("details", "xdat:user", $contextProjectId))
                             </div>
 
                         ##<!-- stored searches tab -->
                             <div id="tab2">
-                                #parse($turbineUtils.getTemplateName("stored_searches","xdat:user",$!project))
+                                #parse($turbineUtils.getTemplateName("stored_searches", "xdat:user", $contextProjectId))
                             </div>
 
                         ##<!-- inject additional tabs -->
-                            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+                            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(), "report/tabs"))
                                 <div id="$tab.getProperty("divName")">
                                     #set($path = "screens/${tab.getProperty('path')}")
                                     <p>#parse($path)</p>
@@ -71,12 +87,12 @@ $page.setVlinkColor($ui.vlink)
                                         },
                                         failure: function(response){
                                             closeModalPanel("resetting");
-                                            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+                                            xmodal.message('User Validation', 'Failed to reset user $username: ' + response);
                                         }
                                     };
 
-                                    openModalPanel("resetting", "Resetting failed user login attempts for user $userObject.getUsername()...");
-                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                    openModalPanel("resetting", "Resetting failed user login attempts for user $username...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$username/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
                                 }
 
                                 function clearEmailRequests(){
@@ -88,12 +104,12 @@ $page.setVlinkColor($ui.vlink)
                                         },
                                         failure: function(response){
                                             closeModalPanel("resetting");
-                                            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+                                            xmodal.message('User Validation', 'Failed to reset user $username: ' + response);
                                         }
                                     };
 
-                                    openModalPanel("resetting", "Resetting email requests for user $userObject.getUsername()...");
-                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                    openModalPanel("resetting", "Resetting email requests for user $username...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$username/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
                                 }
 
                                 function summaryIndexChanged(){

@@ -586,7 +586,7 @@ public final class DicomDump extends SecureResource {
         }
     };
 
-    public Representation represent(final Variant variant) {
+    public Representation represent(final Variant variant) throws ResourceException{
         final MediaType mt = overrideVariant(variant);
         try {
         	//need extra param
@@ -606,16 +606,16 @@ public final class DicomDump extends SecureResource {
             return this.representTable(t, mt, new Hashtable<String, Object>());
         } catch (FileNotFoundException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (IOException e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (ClientException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (Throwable e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         }
     }
 }

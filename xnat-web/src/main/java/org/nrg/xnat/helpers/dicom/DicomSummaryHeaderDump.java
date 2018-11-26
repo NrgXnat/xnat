@@ -151,12 +151,16 @@ public final class DicomSummaryHeaderDump {
         // If this element has nested tags it doesn't have a value and trying to 
         // extract one using dcm4che will result in an UnsupportedOperationException 
         // so check first.
-        if (!e.hasDicomObjects()) {
-            value = e.getValueAsString(null, maxLen);	
+        try {
+            if (!e.hasDicomObjects()) {
+                value = e.getValueAsString(null, maxLen);	
+            }
+            else {
+                value = "";
+            } 
+        }catch(UnsupportedOperationException usex) {
+            value = "UnsupportedBinarySequence";
         }
-        else {
-            value = "";
-        } 
 
         String vr = e.vr().toString();
         String desc = o.nameOf(e.tag());
@@ -259,7 +263,11 @@ public final class DicomSummaryHeaderDump {
 	
 	        for (Iterator<DicomElement> it = header.iterator(); it.hasNext();) {
 	            DicomElement e = it.next();
-	            write( t, header, formatParams, e);
+	            try {
+		            write( t, header, formatParams, e);
+	            }catch(Exception ex){
+	                logger.error("Error reading dicom tag,"+ e.tag(),ex);
+	            }
 	        }
         }
         XFTTable newt=reformat(t);

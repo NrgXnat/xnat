@@ -420,7 +420,7 @@ public class FileList extends XNATCatalogTemplate {
             try {
                 final UserI user = getUser();
                 if (Permissions.canDelete(user,security)) {
-                    if (!((security).getItem().isActive() || (security).getItem().isQuarantine())) {
+                    if ((!((resource).getItem().isActive() || (resource).getItem().isQuarantine())) || (resource).getItem().isLocked()) {
                         //cannot modify it if it isn't active
                         throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, new Exception());
                     }

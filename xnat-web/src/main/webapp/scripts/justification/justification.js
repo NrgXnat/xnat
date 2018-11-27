@@ -101,6 +101,10 @@ XNAT.app.ConfirmWJustification=function(_yuioptions){
                     xmodal.message('Project Validation', 'Please enter a justification.');
 					return;
 				}
+				if(this.selector.event_reason.indexOf('#')>-1){
+					xmodal.message('Project Validation', 'Please remove the # character from the justification.');
+					return;
+				}
 				this.cancel();
 				this.selector.onResponse.fire();
 			}},isDefault:true},

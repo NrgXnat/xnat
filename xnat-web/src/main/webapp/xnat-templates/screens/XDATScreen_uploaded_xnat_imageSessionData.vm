@@ -103,16 +103,17 @@ dd.valMessage 	{	width:630px;	}
 //		_html+='</ul>';
 //		_html+='</div>';
 
-
-		var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
-		 _html+='<option value="">Actions</option>';
-		 _html+='<option value="files">Review File Details</option>';
-		 _html+='<option value="download">Download Files</option>';
-		 _html+='<option value="dicom">Review DICOM Tags</option>';
-		 _html+='</select>';
-		 
-		 
-		_html+='&nbsp;&nbsp;&nbsp;<div id="scan' + scanId + 'Files" style="display:inline;"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load();return false;" style="text-decoration:underline">Show Counts</a></div>';
+		#if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowPrearchiveFileActions","true")))
+			#if($!om.getProperty("UID"))
+				var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
+					_html+='<option value="">Actions</option>';
+					_html+='<option value="files">Review File Details</option>';
+					_html+='<option value="download">Download Files</option>';
+					_html+='<option value="dicom">Review DICOM Tags</option>';
+					_html+='</select>';
+					_html+='&nbsp;&nbsp;&nbsp;<div id="scan' + scanId + 'Files" style="display:inline;"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load();return false;" style="text-decoration:underline">Show Counts</a></div>';
+			#end
+		#end
 		_html+='</div>';
 		$(scan1).html(_html);
 	});

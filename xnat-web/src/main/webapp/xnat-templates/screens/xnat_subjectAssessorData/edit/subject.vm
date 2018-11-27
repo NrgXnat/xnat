@@ -5,9 +5,11 @@
    <div id="subject_placeholder">$!om.getSubjectData().getLabel() </div><input type="hidden" id="$om.getXSIType()/subject_id" name="$om.getXSIType()/subject_id" value="$!om.getSubjectId()"/>
   </td>
   <td>
-   <a onclick="modifySubject();">
-       <i class="fa fa-edit" title="Edit Subject"></i>
-   </a>
+  #if($turbineUtils.getBooleanConfigValue("$!project", "session-edit", "allow-subject-change", true, true))
+      <a onclick="modifySubject();">
+          <i class="fa fa-edit" title="Edit Subject"></i>
+      </a>
+  #end
   </td>
  </tr>
 </table>

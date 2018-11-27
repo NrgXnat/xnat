@@ -45,7 +45,8 @@
                 </div>
             </td>
         </tr>
-
+        
+        #if($turbineUtils.toBoolean($siteConfig.getProperty("email.project_access_requests_to_admin","true")))
         <tr>
             <th>Project Access Requests</th>
         </tr>
@@ -59,7 +60,8 @@
                 </div>
             </td>
         </tr>
-
+        #end
+        
         <tr>
             <th>Transfers</th>
         </tr>

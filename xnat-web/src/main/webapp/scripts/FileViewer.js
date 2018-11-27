@@ -628,7 +628,7 @@ function FileViewer(_obj){
                 xmodal.message({
                     title: _this.obj.objectId + ' Refreshed',
                     content: 'The aggregate file count and size values have been updated for your ' +
-                             _this.obj.objectType + '. Click OK to reload the page.',
+                    ((_this.obj.objectType==undefined)?"item":_this.obj.objectType) + '. Click OK to reload the page.',
                     action: function() { window.location.reload() }
                 });
             },

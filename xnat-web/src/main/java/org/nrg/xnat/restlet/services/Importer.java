@@ -450,13 +450,13 @@ public class Importer extends SecureResource {
 
 	public FileWriterWrapperI retrievePrestoreFile(final String src) throws ClientException{
 
-		Map<String,Object> map=new UriParser("/user/cache/resources/{XNAME}/files/{FILE}",Template.MODE_EQUALS).readUri(src);
+		Map<String,Object> map=new UriParser("/user/cache/resources/{XNAME}/files/",Template.MODE_STARTS_WITH).readUri(src);
 
-		if(!map.containsKey("XNAME") || !map.containsKey("FILE")){
+		if(!map.containsKey("XNAME") || !map.containsKey("_REMAINDER")){
 			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,"src uri is invalid.",new Exception());
 		}
 
-		File f=org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String)map.get("XNAME"), (String)map.get("FILE"));
+		File f=org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String)map.get("XNAME"), (String)map.get("_REMAINDER"));
 
 		if(f.exists()){
 			return new StoredFile(f,true);

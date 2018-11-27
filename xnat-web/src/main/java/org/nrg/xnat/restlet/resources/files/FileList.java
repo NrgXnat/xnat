@@ -775,7 +775,7 @@ public class FileList extends XNATCatalogTemplate {
 
                 if (cat != null) {
                     if (filepath == null || filepath.equals("")) {
-                        addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
+                        table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
                     } else {
                         ArrayList<CatEntryI> entries = new ArrayList<>();
 
@@ -990,7 +990,7 @@ public class FileList extends XNATCatalogTemplate {
                 String baseURI = getBaseURI();
 
                 if (cat != null) {
-                    addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
+                	table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
                 }
             } else {
 
@@ -1055,7 +1055,7 @@ public class FileList extends XNATCatalogTemplate {
 
     				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
     				if(filepath.endsWith("/")){
-    					addTableRows(table, CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
+    					table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
     				}else{
                         getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                         return new StringRepresentation("");
@@ -1281,12 +1281,5 @@ public class FileList extends XNATCatalogTemplate {
     private FileRepresentation setFileRepresentation(File f, MediaType mt) {
         setResponseHeader("Cache-Control", "must-revalidate");
         return representFile(f, mt);
-    }
-    
-    private XFTTable addTableRows(XFTTable t,List<Object []>rows) {
-        for(Object [] row : rows) {
-            t.insertRow(row);
-        }
-        return t;
     }
 }

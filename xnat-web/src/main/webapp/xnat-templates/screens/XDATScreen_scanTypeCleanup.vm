@@ -7,7 +7,7 @@ $page.setVlinkColor($ui.vlink)
 #set($days = [ 1..31 ])
 #set($years = [ $!turbineUtils.getYear()..1900])
 #if ($data.getParameters().getString("popup"))
-    #set ($popup = $data.getParameters().getString("popup") )
+	#set ($popup = "true")
 #else
     #set ($popup = "false")
 #end

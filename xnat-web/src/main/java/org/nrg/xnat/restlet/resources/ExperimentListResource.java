@@ -158,8 +158,8 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 	        }
 	
 	        for (Class<?> clazz : classes) {
-	            if (clazz.isInstance(FilteredExptListHandlerI.class)) {
-	            	handlers.add((FilteredExptListHandlerI)clazz.newInstance());
+	            if (FilteredExptListHandlerI.class.isAssignableFrom(clazz)) {
+	                handlers.add((FilteredExptListHandlerI)clazz.newInstance());
 	            }
 	        }
     	}

@@ -1,4 +1,4 @@
-#if($siteConfig.uiAllowPetTracerConfiguration != "false")
+#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowPetTracerConfiguration","true")))
 <h3>PET Tracers</h3>
 <div>
     <table id="project_pet_tracers_table">

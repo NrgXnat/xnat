@@ -1,3 +1,4 @@
+#if($turbineUtils.toBoolean($siteConfig.getProperty("uiScannerTypeMappingConfig","true")))
 <h3>Define Scan Type Mapping Settings</h3>
 <div>
     <table id="scan_type_mapping_table">
@@ -17,3 +18,4 @@
     window.scan_type_mapping=(new RadioSettingsManager(document.getElementById('scan_type_mapping_container'),{'URI':serverRoot+'/REST/projects/$project.getId()/scan_type_mapping/','radio_ids':['yes_scan_type_mapping','no_scan_type_mapping'],'current_value':'$stm','button':'project_scan_type_mapping_save'}));
 </script>
 </div>
+#end

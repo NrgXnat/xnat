@@ -46,6 +46,7 @@ $page.setVlinkColor($ui.vlink)
         #access-description { max-width: 74%; }
     </style>
 
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("security.allow-non-private-projects","true")))
     ## this div will eventually be created by Spawner
     <div id="project-accessibility" class="container">
         <div class="withColor containerTitle">Step 2: Define ${PROJECT_DISPLAY_NAME} Accessibility</div>
@@ -75,7 +76,10 @@ $page.setVlinkColor($ui.vlink)
             </div>
         </div>
     </div>
-
+	#else
+		<input type="hidden" id="private_access" name="accessibility" value="private"/>
+	#end
+	
     #set ($guest=$om.getPublicAccessibility())
 
     <script>

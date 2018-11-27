@@ -199,7 +199,17 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setName(sessionLabel);
                 initialize.setProject(project == null ? null : project.getId());
                 initialize.setVisit(visit);
-                initialize.setScan_date(dicom.getDate(Tag.StudyDate));
+                Date studyDate=dicom.getDate(Tag.StudyDate);
+                try {
+        			Date d2=dicom.getDate(Tag.StudyTime);
+        			if(d2!=null){
+        				studyDate.setHours(d2.getHours());
+        				studyDate.setMinutes(d2.getMinutes());
+        				studyDate.setSeconds(d2.getSeconds());
+        			}
+        		} catch (Exception e1) {
+        		}
+                initialize.setScan_date(studyDate);
                 initialize.setTag(studyInstanceUID);
                 initialize.setTimestamp(timestamp.getName());
                 initialize.setStatus(PrearcUtils.PrearcStatus.RECEIVING);

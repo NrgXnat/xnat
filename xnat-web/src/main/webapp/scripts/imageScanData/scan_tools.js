@@ -48,10 +48,19 @@ function populateScanQualitySelector(server,project,sel,offset,assigned) {
                                     {
                                         success: function (resp) {
                                             var rs = JSON.parse(resp.responseText);
-                                            var key = Object.keys(rs)[0];
-                                            var choices = rs[key];
-                                            window.scanQualityLabels[key] = choices;
-                                            setScanQualityOptions(sel, choices, offset, assigned);
+                                            try{
+                                                var key = Object.keys(rs)[0];
+                                                var choices = rs[key];
+                                                window.scanQualityLabels[key] = choices;
+                                                setScanQualityOptions(sel, choices, offset, assigned);
+                                            }catch(e){
+                                                if (project) {
+                                                    populateScanQualitySelector(server, undefined, sel, offset, assigned);
+                                                } else {
+                                                    setScanQualityOptions(sel, [], offset, assigned);
+                                                }
+                                            }
+
                                         },
                                         failure: function () {
                                             if (project) {

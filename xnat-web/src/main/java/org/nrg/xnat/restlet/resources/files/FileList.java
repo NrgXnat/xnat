@@ -366,6 +366,7 @@ public class FileList extends XNATCatalogTemplate {
                             if (!overwrite && duplicates.size() > 0) {
                                 getResponse().setStatus(Status.SUCCESS_OK);
                                 getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, new JSONObject(ImmutableMap.of("duplicates", duplicates))));
+                                isNew=false;
                             }else{
                                 getResponse().setStatus(Status.SUCCESS_OK);
                                 getResponse().setEntity(new StringRepresentation("", MediaType.TEXT_PLAIN));

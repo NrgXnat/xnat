@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.5-SNAPSHOT</version>
+    <version>1.7.5</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,8 +64,8 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.7.4</xnat.version>
-        <xnatdev.version>1.7.5-SNAPSHOT</xnatdev.version>
+        <xnat.version>1.7.5</xnat.version>
+        <xnatdev.version>1.7.5</xnatdev.version>
         <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
@@ -473,22 +473,22 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_pipeline</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_tools</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>1.7.3</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>client</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
@@ -503,12 +503,12 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>imagingtools</artifactId>
-                <version>1.7.3</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>pipeline-client</artifactId>
-                <version>1.7.3</version>
+                <version>1.7.5</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

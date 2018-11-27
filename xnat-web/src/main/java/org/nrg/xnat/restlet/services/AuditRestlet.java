@@ -45,7 +45,16 @@ public class AuditRestlet extends SecureResource {
 		xsiType=this.filepath.substring(0, filepath.indexOf("/"));
 		key=this.filepath.substring(filepath.indexOf("/")+1);
 		
+		if(xsiType!=null && !xsiType.matches("[a-zA-z0-9:\\.]*")){
+			respondToException(new Exception("Invalid value"),Status.CLIENT_ERROR_BAD_REQUEST);
+			return;
+		}
 
+		if(key!=null && !key.matches("[a-zA-z0-9_\\.]*")){
+			respondToException(new Exception("Invalid value"),Status.CLIENT_ERROR_BAD_REQUEST);
+			return;
+		}
+		
 		List<String> ids=XftStringUtils.DelimitedStringToArrayList(key, ",");
 		
 		try {

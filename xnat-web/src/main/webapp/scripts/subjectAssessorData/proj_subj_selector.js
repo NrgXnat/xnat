@@ -36,7 +36,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
         YAHOO.util.Connect.asyncRequest('GET',
             serverRoot +
                 '/REST/projects?XNAT_CSRF=' + window.csrfToken +
-                '&format=json&timestamp=' + (new Date()).getTime() + params,
+                '&format=json&sortBy=secondary_ID&timestamp=' + (new Date()).getTime() + params,
             this.initCallback, null, this);
     };
 

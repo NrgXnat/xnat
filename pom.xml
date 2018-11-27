@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.5.3</version>
+    <version>1.7.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -65,33 +65,33 @@
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.7.5</xnat.version>
-        <xnat.previous.version>1.7.5.2</xnat.previous.version>
-        <xnat-web.version>${project.version}</xnat-web.version>
+        <xnatdev.version>1.7.6-SNAPSHOT</xnatdev.version>
+        <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${project.version}</xnat-data-models.version>
+        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${project.version}</xdat.version>
-        <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.previous.version}</nrg.framework.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
+        <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
+        <nrg.config.version>${xnatdev.version}</nrg.config.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.5</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
+        <nrg.mizer.version>1.0.6-SNAPSHOT</nrg.mizer.version>
+        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0.3</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.5</nrg.dicom-edit6.version>
+        <nrg.dicom-edit4.version>1.0.4-SNAPSHOT</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0.6-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnat.previous.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.3</nrg.ecat.version>
-        <nrg.extattr.version>4.2.4</nrg.extattr.version>
+        <nrg.extattr.version>4.2.5-SNAPSHOT</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
@@ -302,7 +302,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnat.previous.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>
@@ -438,7 +438,7 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -473,22 +473,22 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_pipeline</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_tools</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>client</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
@@ -503,12 +503,12 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>imagingtools</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>pipeline-client</artifactId>
-                <version>1.7.5</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

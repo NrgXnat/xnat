@@ -55,7 +55,11 @@ XNAT.app.shared_projects.push({id:"$pp.getProperty("project")",
      name:"$pp.getProjectDisplayID()",
      label:"$!pp.getProperty("label")",
      group:"$!pp.getProperty("group")",
-     expts:$om.getAssessmentCount($pp.getProperty("project"))});
+     expts:#if($om.getAssessmentCount($pp.getProperty("project")))
+$om.getAssessmentCount($pp.getProperty("project"))
+#else
+0
+#end});
 #end
 
    var dataSource = new YAHOO.util.DataSource(XNAT.app.shared_projects);

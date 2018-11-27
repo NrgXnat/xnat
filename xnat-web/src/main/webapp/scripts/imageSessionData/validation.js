@@ -109,7 +109,7 @@ function validateDate(){
 
 function getValueById(id){
 	var box=document.getElementById(id);
-	if(box==null){ return undefined; }
+	if(box==null){ return null; }
 	
 	if(box.value==undefined){
 		if(box.selectedIndex!=undefined){

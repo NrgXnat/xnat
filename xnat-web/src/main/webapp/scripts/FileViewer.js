@@ -1152,9 +1152,9 @@ function UploadFileForm(_obj){
 							coll_select.options[coll_select.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 						}
 	   	  			}
-						if(coll_select.options.length==0){
-							coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
-						}
+					//	if(coll_select.options.length==0){
+					//		coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
+					//	}
 	   	  		}else{
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
@@ -1269,9 +1269,9 @@ function UploadFileForm(_obj){
 					input.options[input.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 				}
 			}
-				if(input.options.length==0){
-					input.options[input.options.length]=new Option("NO LABEL","");
-				}
+			//	if(input.options.length==0){
+			//		input.options[input.options.length]=new Option("NO LABEL","");
+			//	}
    	  }
    	  
 //   	  div.appendChild(document.createElement("br"));

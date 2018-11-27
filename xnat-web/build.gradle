@@ -15,7 +15,7 @@ import io.swagger.models.License
 
 buildscript {
     ext {
-        vXnat = "1.7.5-SNAPSHOT"
+        vXnat = "1.7.5"
     }
     repositories {
         mavenLocal()
@@ -43,7 +43,7 @@ buildscript {
         classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
+        classpath "org.nrg.xnat:xnat-data-models:1.7.5"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
         classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
@@ -240,9 +240,9 @@ dependencies {
     implementation "org.nrg:pipelineBuild"
     implementation "org.nrg:pipelineWorkflow"
     implementation "org.nrg:pipelineXNAT"
-    implementation "org.nrg.xnat.pipeline:client"
-    implementation "org.nrg.xnat.pipeline:xnat_pipeline"
-    implementation "org.nrg.xnat.pipeline:xnat_tools"
+    implementation "org.nrg.xnat.pipeline:pipeline-client"
+    implementation "org.nrg.xnat.pipeline:xnat-pipeline"
+    implementation "org.nrg.xnat.pipeline:xnat-tools"
 
     implementation "dcm4che:dcm4che-core"
     implementation "dcm4che:dcm4che-image"

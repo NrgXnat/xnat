@@ -31,8 +31,7 @@ function FileViewer(_obj){
 	this.init=function(refreshCatalog){
 		if(this.loading==0){
 			this.loading=1;
-			this.resetCounts();
-            if (refreshCatalog) {
+            if (refreshCatalog && XNAT.app.autoRefreshCatalog)) {
                 this.catalogRefresh();
             } else {
                 this.resetCounts();
@@ -342,7 +341,7 @@ function FileViewer(_obj){
     			this.obj.categories["misc"].cats.push(catalogs[catC]);
     		}
     	}
-    	
+    	this.showCounts();
     	this.loading=3;
     	
     	if(this.requestRender){
@@ -364,6 +363,74 @@ function FileViewer(_obj){
            scans=null;
        }
     };
+    
+    this.showCounts=function(){
+           var scans,sCount,sSize;
+           
+           var scan_counts=new Object();
+           var scan_resources=new Array();
+           
+           //iterate over known categories
+           for(var catC=0;catC<this.obj.categories.ids.length;catC++)
+           {
+               var catName=this.obj.categories.ids[catC];
+               scans=this.obj.categories[catName];
+               for(var sC=0;sC<scans.length;sC++){
+                   var dest=document.getElementById(catName + "_" + scans[sC].id + "_stats");
+                   if(dest!=null && dest !=undefined){
+                       sCount=0;
+                       sSize=0;
+                       dest.innerHTML="";
+                       for(var scSC=0;scSC<scans[sC].cats.length;scSC++){
+                           dest.innerHTML+=scans[sC].cats[scSC].label
+                           dest.innerHTML+=" (";
+                           dest.innerHTML+=scans[sC].cats[scSC].file_count;
+                           dest.innerHTML+=" files, "
+                           dest.innerHTML+=size_format(scans[sC].cats[scSC].file_size)
+                           dest.innerHTML+=") ";
+                           
+                           if(catName=="scans"){
+                               if(scan_counts[scans[sC].cats[scSC].label]==undefined){
+                                   scan_counts[scans[sC].cats[scSC].label]=new Object();
+                                   scan_counts[scans[sC].cats[scSC].label].label=scans[sC].cats[scSC].label;
+                                   scan_counts[scans[sC].cats[scSC].label].count=0;
+                                   scan_counts[scans[sC].cats[scSC].label].size=0;
+                                   scan_resources.push(scans[sC].cats[scSC].label);
+                               }
+                               scan_counts[scans[sC].cats[scSC].label].count+=parseInt(scans[sC].cats[scSC].file_count);
+                               scan_counts[scans[sC].cats[scSC].label].size+=parseInt(scans[sC].cats[scSC].file_size);
+                           }
+                       }
+                   }
+               }
+
+               var dest=document.getElementById("total_dicom_files");
+               if(dest!=null && dest !=undefined){
+                   dest.innerHTML="Totals: ";
+                   for(var sC2=0;sC2<scan_resources.length;sC2++){
+                       dest.innerHTML+=scan_counts[scan_resources[sC2]].label+" (";
+                       dest.innerHTML+=scan_counts[scan_resources[sC2]].count;
+                       dest.innerHTML+=" files, ";
+                       dest.innerHTML+=size_format(scan_counts[scan_resources[sC2]].size);
+                       dest.innerHTML+=") ";
+                   }
+               }
+            
+               //iterate over misc catalogs
+               for(var scSC=0;scSC<this.obj.categories.misc.cats.length;scSC++){
+                   var tempCat=this.obj.categories.misc.cats[scSC];
+                   var dest=document.getElementById(tempCat.category + "_" + tempCat.label + "_stats");
+                   if(dest!=null && dest !=undefined){
+                       dest.innerHTML="";
+                       dest.innerHTML+=tempCat.file_count;
+                       dest.innerHTML+=" files, ";
+                       dest.innerHTML+=size_format(tempCat.file_size);
+                   }
+               }
+               
+               scans=null;
+           }
+   }
    
    this.refreshCatalogs=function(msg_id){
 		closeModalPanel(msg_id);

@@ -1449,6 +1449,18 @@ public class CatalogUtils {
                         logger.error("Failed to save updates to abstract resource: " + res.getXnatAbstractresourceId(), exception);
                     }
                 }
+            }else{
+                if(!XDAT.getBoolSiteConfigurationProperty("uiShowCachedFileCounts", false)){
+                    res.setFileCount(res.getCount(proj.getRootArchivePath()));
+                    res.setFileSize(res.getSize(proj.getRootArchivePath()));
+                }else{
+                    if (res.getFileCount() == null) {
+                        res.setFileCount(res.getCount(proj.getRootArchivePath()));
+                    }
+                    if (res.getFileSize() == null) {
+                        res.setFileSize(res.getSize(proj.getRootArchivePath()));
+                    }
+                }
             }
 
             _new[6] = res.getFileCount();

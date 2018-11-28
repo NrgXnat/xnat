@@ -308,7 +308,7 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
     this.validateSettings = function() {
         for (var index = 0; index < this.controls.length; index++) {
             var control = this.controls[index];
-            if (control.type == 'text') {
+            if (control.type == 'text' && !$(control).hasClass("optional")) {
                 if (!control.value) {
                     return false;
                 }

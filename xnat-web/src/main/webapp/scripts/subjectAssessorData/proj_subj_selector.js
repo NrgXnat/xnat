@@ -409,7 +409,7 @@ function verifyExptId(obj) {
                         }
                     }
 
-                    if (match != null) {
+                    if (match != null && match.ID !=undefined)) {
 
                         document.getElementById(elementName + "/ID").value = match.ID;
                         document.getElementById(elementName + "/label").verified = true;

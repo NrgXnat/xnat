@@ -76,7 +76,7 @@ XNAT.app.pResources={
 			temp_html+="<option value='in'>inputs dir (in)</option>";
 			temp_html+="</select></div>";
 		}
-		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.label'>Resource Folder</div> <input class='pResourceField' required='true' data-required-msg='<b>Resource Folder</b> is required.' data-prop-name='label' size='10' type='text' id='pResource.label' required=true placeholder='ex. DICOM' data-regex='^[a-zA-Z0-9_-]+$' /></div>";
+		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.label'>Resource Folder</div> <input class='pResourceField' required='true' data-required-msg='<b>Resource Folder</b> is required.' data-prop-name='Resource Folder' size='10' type='text' id='pResource.label' required=true placeholder='ex. DICOM' data-regex='^[a-zA-Z0-9_-]+$' /></div>";
 		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.subdir'>Sub-folder (optional)</div> <input class='pResourceField' data-prop-name='subdir' type='text' id='pResource.subdir' placeholder='(optional) ex. data/sub/dir' size='24' data-regex='^[a-zA-Z0-9_\\-\\/]+$'/></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='overwrite' type='checkbox' id='pResource.overwrite'/> <label for='pResource.overwrite'>Allow overwrite</label></div>";
 		temp_html+=" </div>";

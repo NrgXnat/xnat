@@ -31,7 +31,7 @@ function FileViewer(_obj){
 	this.init=function(refreshCatalog){
 		if(this.loading==0){
 			this.loading=1;
-            if (refreshCatalog && XNAT.app.autoRefreshCatalog)) {
+            if (refreshCatalog && XNAT.app.autoRefreshCatalog) {
                 this.catalogRefresh();
             } else {
                 this.resetCounts();

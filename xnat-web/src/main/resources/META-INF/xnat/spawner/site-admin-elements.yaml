@@ -285,8 +285,8 @@ showCachedFileCounts:
     onText: Enabled
     offText: Disabled
     description: >
-    Should this site display cached file counts (when available) on the Image Session Report pages?  
-    This can improve page performance, but conceal file system changes.
+        Should this site display cached file counts (when available) on the Image Session Report pages?
+        This can improve page performance, but conceal file system changes.
 showPrearchiveFileActions:
     kind: pannel.input.switchbox
     name: uiShowPrearchiveFileActions
@@ -294,8 +294,8 @@ showPrearchiveFileActions:
     onText: Enabled
     offText: Disabled
     description: >
-    Should the prearchive File Actions dropdown be available in the scan section of the prearchive page? 
-    This is a useful feature, but can be disabled for backwards compatibility.
+        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
+        This is a useful feature, but can be disabled for backwards compatibility.
 #checksumsPropertyChangedListener:
 #    kind: panel.input.text
 #    id: checksumsPropertyChangedListener

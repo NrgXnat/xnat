@@ -8,6 +8,8 @@
  */
 function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _defaultProject, _defaultSubject) {
 
+    this.onProjectChange=new YAHOO.util.CustomEvent("project-change",this);
+    this.onSubjectChange=new YAHOO.util.CustomEvent("subject-change",this);
     this.projectSelect = _proj_select;
     this.subjSelect = _subj_select;
     this.submitButton = _submit_button;
@@ -97,6 +99,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
                     this.manager.projID = this.options[this.selectedIndex].value;
                     this.manager.loadSubjects();
                     this.manager.loadExpts();
+                    this.manager.onProjectChange.fire({newProject:this.options[this.selectedIndex].value});
                 }
             };
 
@@ -196,6 +199,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
                 this.subjBox.style.color = "red";
         }
 
+        this.subjBox.manager = this;
         this.subjBox.submitButton = this.submitButton;
         if (eval("window.confirmValues") != undefined) {
             this.subjBox.onchange = function () {
@@ -203,6 +207,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
                     this.style.color = this.options[this.selectedIndex].style.color;
                 confirmValues(false);
                 checkSubmitButton(this.selectedIndex, this.submitButton);
+                this.manager.onSubjectChange.fire({newSubject:this.options[this.selectedIndex].value});
             };
 
             confirmValues(false);
@@ -213,6 +218,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
                 if (YAHOO.env.ua.gecko > 0)
                     this.style.color = this.options[this.selectedIndex].style.color;
                 checkSubmitButton(this.selectedIndex, this.submitButton);
+                this.manager.onSubjectChange.fire({newSubject:this.options[this.selectedIndex].value});
             }
         }
     };

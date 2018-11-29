@@ -1,4 +1,4 @@
-#if($turbineUtils.toBoolean($siteConfig.getProperty("uiScannerTypeMappingConfig","true")))
+#if($siteConfig.uiShowScanTypeMapping)
 <h3>Define Scan Type Mapping Settings</h3>
 <div>
     <table id="scan_type_mapping_table">

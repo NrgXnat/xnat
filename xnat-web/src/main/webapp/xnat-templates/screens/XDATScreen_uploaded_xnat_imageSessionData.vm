@@ -103,7 +103,7 @@ dd.valMessage 	{	width:630px;	}
 //		_html+='</ul>';
 //		_html+='</div>';
 
-		#if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowPrearchiveFileActions","true")))
+		#if($siteConfig.uiShowPrearchiveFileActions)
 			#if($!om.getProperty("UID"))
 				var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
 					_html+='<option value="">Actions</option>';

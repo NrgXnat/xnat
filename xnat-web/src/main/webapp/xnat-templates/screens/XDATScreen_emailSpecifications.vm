@@ -46,7 +46,7 @@
             </td>
         </tr>
         
-        #if($turbineUtils.toBoolean($siteConfig.getProperty("email.project_access_requests_to_admin","true")))
+        #if($siteConfig.emailProjectAccessRequestToAdmin)
         <tr>
             <th>Project Access Requests</th>
         </tr>

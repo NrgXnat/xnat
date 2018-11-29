@@ -5,7 +5,7 @@
    <div id="label_placeholder">$!om.getLabel()</div><input type="hidden" id="$om.getXSIType()/label" name="$om.getXSIType()/label" value="$!om.getLabel()"/>
   </td>
   <td>
-  #if($turbineUtils.getBooleanConfigValue("$!project", "session-edit", "allow-label-change", true, true))
+  #if($siteConfig.uiExptAllowLabelChange)
       <a onclick="modifyLabel()">
           <i class="fa fa-edit" title="Edit Label"></i>
       </a>

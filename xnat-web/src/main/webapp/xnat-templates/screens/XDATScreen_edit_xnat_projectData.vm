@@ -46,7 +46,7 @@ $page.setVlinkColor($ui.vlink)
         #access-description { max-width: 74%; }
     </style>
 
-    #if(siteConfig.securityAllowNonPrivateProjects)
+    #if($siteConfig.securityAllowNonPrivateProjects)
     ## this div will eventually be created by Spawner
     <div id="project-accessibility" class="container">
         <div class="withColor containerTitle">Step 2: Define ${PROJECT_DISPLAY_NAME} Accessibility</div>

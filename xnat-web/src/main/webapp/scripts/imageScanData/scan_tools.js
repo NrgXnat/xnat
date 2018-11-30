@@ -1159,9 +1159,10 @@ function scanListingEditor(_tbody,_scanSet,_options){
 				}
 				td.appendChild(scan.qual_input);
 				tr.appendChild(td);
+				
+	            scan.qual_input.id=elementName + scanXPath(modality, scanTypeTable) + "/quality";
+	            scan.qual_input.name=elementName + scanXPath(modality, scanTypeTable) + "/quality";
 			}
-            scan.qual_input.id=elementName + scanXPath(modality, scanTypeTable) + "/quality";
-            scan.qual_input.name=elementName + scanXPath(modality, scanTypeTable) + "/quality";
 
 			//nte
 			td= document.createElement("td");

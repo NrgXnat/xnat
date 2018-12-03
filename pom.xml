@@ -43,13 +43,12 @@
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
-              <plugin>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <quiet>true</quiet>
-                    <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
-            </plugin> 
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
@@ -276,6 +275,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Unit testing dependencies -->

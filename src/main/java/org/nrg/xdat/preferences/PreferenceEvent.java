@@ -32,6 +32,7 @@ public class PreferenceEvent extends StructuredEvent {
         this(entityId.getScope(), entityId.getEntityId(), ImmutableMap.of(preferenceName, value));
     }
 
+    @SuppressWarnings("unused")
     public PreferenceEvent(final EntityId entityId, final Map<String, String> preferences) {
         this(entityId.getScope(), entityId.getEntityId(), preferences);
     }

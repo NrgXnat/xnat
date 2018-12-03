@@ -40,10 +40,12 @@ public interface GroupsAndPermissionsCache extends XnatCache {
         Date getStart();
 
         /**
-         * Accessor for time/date cache initialization was completed.
+         * Accessor for time/date cache initialization was completed. This returns null
+         * if initialization has not yet completed.
          *
          * @return The completion time/date.
          */
+        @Nullable
         Date getCompleted();
 
         /**

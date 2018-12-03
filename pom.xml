@@ -90,15 +90,16 @@
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.3</nrg.ecat.version>
+        <nrg.ecat.version>1.0.4</nrg.ecat.version>
         <nrg.extattr.version>4.2.5-SNAPSHOT</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
+        <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
 
-        <spring-framework.version>4.3.17.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.6.RELEASE</spring-security.version>
+        <spring-framework.version>4.3.20.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.10.RELEASE</spring-security.version>
         <spring-ldap.version>2.3.2.RELEASE</spring-ldap.version>
         <swagger.version>2.7.0</swagger.version>
         <native-json.version>0.5</native-json.version>
@@ -106,8 +107,8 @@
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.9.8</ant.version>
         <antlr3.version>3.5.2</antlr3.version>
-        <antlr4.version>4.5.3</antlr4.version>
-        <hsqldb.version>2.3.4</hsqldb.version>
+        <antlr4.version>4.7.1</antlr4.version>
+        <hsqldb.version>2.4.1</hsqldb.version>
         <aopalliance.version>1.0</aopalliance.version>
         <aspectj.version>1.8.10</aspectj.version>
         <avalon.version>4.3</avalon.version>
@@ -128,7 +129,7 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.7</commons-lang3.version>
+        <commons-lang3.version>3.8.1</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>
@@ -145,8 +146,8 @@
         <http-builder.version>0.7.1</http-builder.version>
         <guava.version>20.0</guava.version>
         <gson.version>2.8.1</gson.version>
-        <h2.version>1.4.191</h2.version>
-        <eclipse-jgit.version>4.5.3.201708160445-r</eclipse-jgit.version>
+        <h2.version>1.4.197</h2.version>
+        <eclipse-jgit.version>4.5.4.201711221230-r</eclipse-jgit.version>
 
         <!-- Eventually upgrade to these versions. Staying with more moderate version in xnat_builder_1_7dev -->
         <!-- hibernate.version>5.0.3.Final</hibernate.version>
@@ -163,8 +164,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.2</lombok.version>
-        <lombok.checksum>f13db210efa2092a58bb7befce58ffa502e5fefc5e1099f45007074008756bc0</lombok.checksum>
+        <lombok.version>1.18.4</lombok.version>
+        <lombok.checksum>39f3922deb679b1852af519eb227157ef2dd0a21eec3542c8ce1b45f2df39742</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -202,10 +203,10 @@
         <easymock.version>1.2_Java1.3</easymock.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
+        <org.postgresql.version>9.4.1212.jre7</org.postgresql.version>
         <log4jdbc.version>0.2.0</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>
-        <reflections.version>0.9.10</reflections.version>
+        <reflections.version>0.9.11</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
@@ -220,7 +221,7 @@
         <io-projectreactor.version>2.0.7.RELEASE</io-projectreactor.version>
         <velocity-tools.version>2.0</velocity-tools.version>
         <velocity.version>1.7</velocity.version>
-        <wizard.version>1.1</wizard.version>
+        <wizard.version>1.2.1</wizard.version>
         <xalan.version>2.7.2</xalan.version>
         <xbean.version>3.17</xbean.version>
         <xml-apis.version>1.4.01</xml-apis.version>
@@ -230,8 +231,8 @@
 
         <!-- Gradle plugin versions -->
         <gradle-git.version>0.12.0-rc2</gradle-git.version>
-        <gradle-tomcat.version>2.3</gradle-tomcat.version>
-        <gradle-cargo.version>2.2.3</gradle-cargo.version>
+        <gradle-tomcat.version>2.5</gradle-tomcat.version>
+        <gradle-cargo.version>2.3</gradle-cargo.version>
         <gradle-dependency-management.version>1.0.6.RELEASE</gradle-dependency-management.version>
         <gradle-lombok.version>1.14</gradle-lombok.version>
         <tomcat-embed.version>7.0.82</tomcat-embed.version>
@@ -239,19 +240,19 @@
         <!-- Maven plugin versions -->
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
         <jacoco-maven-plugin.version>${jacoco.version}</jacoco-maven-plugin.version>
-        <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-        <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
+        <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
+        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
-        <copy-rename-maven-plugin.version>1.0</copy-rename-maven-plugin.version>
-        <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
-        <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
-        <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-        <maven-resources-plugin.version>3.0.1</maven-resources-plugin.version>
-        <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+        <copy-rename-maven-plugin.version>1.0.1</copy-rename-maven-plugin.version>
+        <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
+        <maven-jarsigner-plugin.version>3.0.0</maven-jarsigner-plugin.version>
+        <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+        <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
+        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-        <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-        <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
-        <javadoc-coverage.version>1.1.0</javadoc-coverage.version>
+        <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
+        <maven-war-plugin.version>3.2.2</maven-war-plugin.version>
+        <javadoc-coverage.version>1.1.1</javadoc-coverage.version>
     </properties>
 
     <dependencyManagement>
@@ -438,7 +439,7 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${nrg.plexiviewer.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>

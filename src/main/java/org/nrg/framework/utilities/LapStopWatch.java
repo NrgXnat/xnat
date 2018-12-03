@@ -128,7 +128,8 @@ public class LapStopWatch extends StopWatch {
      * Adds a lap time to the list with an accompanying message. This can be used to record,
      * e.g. which particular object or operation corresponds to a particular lap time.
      *
-     * @param message The message to store with the lap time.
+     * @param message   The message to store with the lap time.
+     * @param arguments Arguments for resolving the lap message.
      *
      * @see #lap()
      */
@@ -136,6 +137,16 @@ public class LapStopWatch extends StopWatch {
         lap(level, message, arguments);
     }
 
+    /**
+     * Adds a lap time to the list with an accompanying message. This can be used to record,
+     * e.g. which particular object or operation corresponds to a particular lap time.
+     *
+     * @param level     The level at which the lap message should be logged.
+     * @param message   The message to store with the lap time.
+     * @param arguments Arguments for resolving the lap message.
+     *
+     * @see #lap()
+     */
     public void lap(final Level level, final String message, final Object... arguments) {
         final long overallTime;
         if (isStopped() || isSuspended()) {

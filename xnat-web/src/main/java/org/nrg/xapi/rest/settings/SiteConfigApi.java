@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 
@@ -65,7 +66,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         final String username = getSessionUser().getUsername();
         if (!_appInfo.isInitialized()) {
             log.info("The site is being initialized by user {}. Setting default values from context.", username);
-            if (!_preferences.containsKey("siteUrl") || StringUtils.isBlank(_preferences.getSiteUrl())) {
+            if (!_preferences.containsKey(SITE_URL) || StringUtils.isBlank(_preferences.getSiteUrl())) {
                 _preferences.setSiteUrl(XnatHttpUtils.getServerRoot(request));
             }
         } else {

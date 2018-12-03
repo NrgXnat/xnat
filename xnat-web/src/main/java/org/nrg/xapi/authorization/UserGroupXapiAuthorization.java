@@ -24,9 +24,10 @@ public class UserGroupXapiAuthorization extends AbstractXapiAuthorization {
         final List<String> groupsToAdd = getGroups(getJoinPoint());
         for (final String group : groupsToAdd) {
             try {
-                final String project = StringUtils.substringBeforeLast(group, "_");
-                final String end     = StringUtils.substringAfterLast(group, "_");
-                if (!(StringUtils.equalsAny(end, "owner", "member", "collaborator")) || !Permissions.isProjectOwner(user, project)) {
+                int indexOfEndOfProject = group.lastIndexOf("_");
+                String proj = group.substring(0,indexOfEndOfProject);
+                String end = group.substring(indexOfEndOfProject+1);
+                if (!StringUtils.equalsAny(end, "owner", "member", "collaborator") || !Permissions.isProjectOwner(user, proj)) {
                     return false;
                 }
             } catch (Exception e) {

@@ -607,10 +607,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         status.put("processedCount", Integer.toString(processedCount));
         status.put("processed", StringUtils.join(processed, ", "));
 
-        if (unprocessed.isEmpty()) {
-            final Date   completed = _listener.getCompleted();
-            final String duration  = DurationFormatUtils.formatPeriodISO(start.getTime(), completed.getTime());
+        final Date completed = _listener.getCompleted();
 
+        if (unprocessed.isEmpty() && completed != null) {
+            final String duration = DurationFormatUtils.formatPeriodISO(start.getTime(), completed.getTime());
             status.put("completed", DATE_FORMAT.format(completed));
             status.put("duration", duration);
             status.put("message", "Cache initialization is complete. Processed " + processedCount + " groups in " + duration);
@@ -625,7 +625,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         status.put("unprocessed", StringUtils.join(unprocessed, ", "));
         status.put("current", DATE_FORMAT.format(now));
         status.put("duration", duration);
-        status.put("message", "Cache initialization is on-going, with " + processedCount + " groups processed and " + unprocessedCount + " groups remaining, time elapsed so far is " + duration);
+        status.put("message", unprocessed.isEmpty()
+                              ? "Cache initialization is on-going, with " + processedCount + " groups processed and no groups remaining, time elapsed so far is " + duration
+                              : "Cache initialization is on-going, with " + processedCount + " groups processed and " + unprocessedCount + " groups remaining, time elapsed so far is " + duration);
+
         return status;
     }
 

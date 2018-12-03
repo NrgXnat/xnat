@@ -56,6 +56,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xnat.utils.FileUtils.nodeToList;
 
 @Component
@@ -160,7 +161,7 @@ public class XnatAppInfo {
                             public Object mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
                                 addFoundStringPreference(resultSet, "siteId", "site_id");
                                 addFoundStringPreference(resultSet, "adminEmail", "site_admin_email");
-                                addFoundStringPreference(resultSet, "siteUrl", "site_url");
+                                addFoundStringPreference(resultSet, SITE_URL, "site_url");
                                 addFoundStringPreference(resultSet, "smtp_host", "smtp_host");
                                 addFoundStringPreference(resultSet, "archivePath", "archivepath");
                                 addFoundStringPreference(resultSet, "prearchivePath", "prearchivepath");

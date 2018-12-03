@@ -109,7 +109,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             root = System.getProperty("java.io.tmpdir");
             subfolder = "xnat";
         }
-        final String prefix = "xnat_" + Long.toString(System.nanoTime());
+        final String prefix = "xnat_" + System.nanoTime();
         try {
             final Path path = Paths.get(root, subfolder);
             path.toFile().mkdirs();

@@ -1,8 +1,6 @@
 package org.nrg.xapi.authorization;
 
-import org.h2.util.StringUtils;
-import org.nrg.xdat.security.UserGroupI;
-import org.nrg.xdat.security.helpers.Groups;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
@@ -11,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Checks whether user can access the system user list.
@@ -25,14 +22,13 @@ public class UserGroupXapiAuthorization extends AbstractXapiAuthorization {
         if(Roles.isSiteAdmin(user)){
             return true;
         }
-        final Map<String, UserGroupI> groupsForUser = Groups.getGroupsForUser(user);
         final List<String> groupsToAdd = getGroups(getJoinPoint());
         for (final String group : groupsToAdd) {
             try {
                 int indexOfEndOfProject = group.lastIndexOf("_");
                 String proj = group.substring(0,indexOfEndOfProject);
                 String end = group.substring(indexOfEndOfProject+1);
-                if(!(StringUtils.equals(end,"owner")||StringUtils.equals(end,"member")||StringUtils.equals(end,"collaborator")) || !Permissions.isProjectOwner(user, proj)){
+                if (!StringUtils.equalsAny(end, "owner", "member", "collaborator") || !Permissions.isProjectOwner(user, proj)) {
                     return false;
                 }
             } catch (Exception e) {

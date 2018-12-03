@@ -106,6 +106,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
@@ -934,7 +935,7 @@ public abstract class SecureResource extends Resource {
             if (StringUtils.startsWithIgnoreCase(reference.toString(), processingUrl)) {
                 return reference;
             }
-            final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
+            final String siteUrlProperty = XDAT.getSiteConfigurationProperty(SITE_URL);
             try {
             	final String path = reference.getPath();
             	final String remainingPart = reference.getRemainingPart(false,false);

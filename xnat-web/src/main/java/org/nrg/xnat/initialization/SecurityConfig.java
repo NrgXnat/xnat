@@ -32,6 +32,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.ConfigAttribute;
@@ -69,10 +70,12 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
 
+import javax.servlet.SessionCookieConfig;
 import javax.sql.DataSource;
 import java.util.*;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
 
 @Configuration
 @EnableWebSecurity
@@ -265,6 +268,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
+        // Set whether session cookie should be set to secure only based on the site URL. This can only be done during application start-up, so
+        // changing to the site URL to use https won't change the secure setting until the application has been restarted. Cookies should ALWAYS
+        // be http-only so we can just set that now and be done with it.
+        final String  siteUrl  = _template.queryForObject(QUERY_SITE_URL, EmptySqlParameterSource.INSTANCE, String.class);
+        final boolean isSecure = StringUtils.startsWithIgnoreCase(siteUrl, "https");
+        log.info("Found site URL '{}' (empty string indicates uninitialized site URL), setting session cookie configuration set to {}", siteUrl, isSecure);
+
+        final SessionCookieConfig config = XnatWebAppInitializer.getServletContext().getSessionCookieConfig();
+        config.setSecure(isSecure);
+        config.setHttpOnly(true);
+
+
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
 
@@ -274,6 +289,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint, eventPublisher()));
 
         http.sessionManagement()
+            .sessionCreationPolicy(IF_REQUIRED)
             .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
             .maximumSessions(_preferences.getConcurrentMaxSessions())
             .maxSessionsPreventsLogin(true)
@@ -332,6 +348,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         }
         return expanded;
     }
+
+    private static final String QUERY_SITE_URL = "SELECT coalesce(value, '') FROM xhbm_preference p LEFT JOIN xhbm_tool t ON p.tool = t.id WHERE t.tool_id = 'siteConfig' AND p.name = 'siteUrl'";
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;

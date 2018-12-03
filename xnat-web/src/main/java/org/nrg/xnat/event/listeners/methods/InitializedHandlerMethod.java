@@ -19,52 +19,27 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.INITIALIZED;
+
 @Component
 @Slf4j
 public class InitializedHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public InitializedHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final SiteConfigPreferences preferences) {
-        super(primaryAdminUserProvider, "initialized");
+        super(primaryAdminUserProvider, INITIALIZED);
         _preferences = preferences;
     }
 
     @Override
     protected void handlePreferenceImpl(final String preference, final String value) {
-        if (StringUtils.equals("initialized", preference)) {
+        if (StringUtils.equals(INITIALIZED, preference)) {
             initialize();
         }
     }
 
     private void initialize() {
-        final String adminEmail = _preferences.getAdminEmail();
-        final String archivePath = _preferences.getArchivePath();
-        final String buildPath = _preferences.getBuildPath();
-        final String cachePath = _preferences.getCachePath();
-        final boolean enableCsrfToken = _preferences.getEnableCsrfToken();
-        final String ftpPath = _preferences.getFtpPath();
-        final String pipelinePath = _preferences.getPipelinePath();
-        final String prearchivePath = _preferences.getPrearchivePath();
-        final boolean requireLogin = _preferences.getRequireLogin();
-        final String siteId = _preferences.getSiteId();
-        final String siteUrl = _preferences.getSiteUrl();
-        final boolean userRegistration = _preferences.getUserRegistration();
-
         // TODO: We may actually need to put a null check in here and make this a Future that circles back once everything is properly initialized.
-        final StringBuilder buffer = new StringBuilder("Preparing to complete system initialization with the final property settings of:").append(System.lineSeparator());
-        buffer.append(" * adminEmail: ").append(adminEmail).append(System.lineSeparator());
-        buffer.append(" * archivePath: ").append(archivePath).append(System.lineSeparator());
-        buffer.append(" * buildPath: ").append(buildPath).append(System.lineSeparator());
-        buffer.append(" * cachePath: ").append(cachePath).append(System.lineSeparator());
-        buffer.append(" * enableCsrfToken: ").append(enableCsrfToken).append(System.lineSeparator());
-        buffer.append(" * ftpPath: ").append(ftpPath).append(System.lineSeparator());
-        buffer.append(" * pipelinePath: ").append(pipelinePath).append(System.lineSeparator());
-        buffer.append(" * prearchivePath: ").append(prearchivePath).append(System.lineSeparator());
-        buffer.append(" * requireLogin: ").append(requireLogin).append(System.lineSeparator());
-        buffer.append(" * siteId: ").append(siteId).append(System.lineSeparator());
-        buffer.append(" * siteUrl: ").append(siteUrl).append(System.lineSeparator());
-        buffer.append(" * userRegistration: ").append(userRegistration).append(System.lineSeparator());
-
-        log.info(buffer.toString());
+        log.info(LOG_FORMAT, _preferences.getAdminEmail(), _preferences.getArchivePath(), _preferences.getBuildPath(), _preferences.getCachePath(), _preferences.getEnableCsrfToken(), _preferences.getFtpPath(), _preferences.getPipelinePath(), _preferences.getPrearchivePath(), _preferences.getRequireLogin(), _preferences.getSiteId(), _preferences.getSiteUrl(), _preferences.getUserRegistration());
 
         // In the case where the application hasn't yet been initialized, this operation should mean that the system is
         // being initialized from the set-up page. In that case, we need to propagate a few properties to the arc-spec
@@ -75,5 +50,8 @@ public class InitializedHandlerMethod extends AbstractXnatPreferenceHandlerMetho
             throw new NrgServiceRuntimeException(new InitializationException(e));
         }
     }
+
+    private static final String LOG_FORMAT = "Preparing to complete system initialization with the final property settings of:\n* adminEmail: {}\\n * archivePath: {}\\n * buildPath: {}\\n * cachePath: {}\\n * enableCsrfToken: {}\\n * ftpPath: {}\\n * pipelinePath: {}\\n * prearchivePath: {}\\n * requireLogin: {}\\n * siteId: {}\\n * siteUrl: {}\\n * userRegistration: {}";
+
     private final SiteConfigPreferences _preferences;
 }

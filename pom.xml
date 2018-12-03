@@ -1631,7 +1631,7 @@
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
-                <version>3.0.2</version>
+                <version>3.0.1</version>
                 <optional>true</optional>
             </dependency>
             <dependency>
@@ -1946,7 +1946,7 @@
                     </executions>
                     <configuration>
                         <quiet>true</quiet>
-                        <additionalparam>-Xdoclint:none</additionalparam>
+                        <additionalOptions>-Xdoclint:none</additionalOptions>
                     </configuration>
                 </plugin>
                 <plugin>

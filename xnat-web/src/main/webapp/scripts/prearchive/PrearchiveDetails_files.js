@@ -54,6 +54,7 @@ XNAT.app.fileCounter={
 			var fileDiv=document.getElementById("scan"+this.scans[sc]+"Files");
 			if(fileDiv!=null && fileDiv!=undefined && fileDiv.innerHTML.startsWith("Load")){
 				fileDiv.innerHTML="0 files";
+			}
 		}
    },
 	handleFailure:function(o){

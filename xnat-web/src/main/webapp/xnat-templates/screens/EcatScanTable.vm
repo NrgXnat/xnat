@@ -1,5 +1,62 @@
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("/ScreenOnly.vm")
+<style type="text/css">
+
+div.content-wrapper {
+    min-width: 300px;
+    max-width: 100%;
+    margin: 0 10px;
+    position: relative;
+    top: 0; bottom: 10px; left: 0; right: 0;
+    font-family: Helvetica, Arial, sans-serif
+}
+
+.mono {
+    font-family: Courier, monospace;
+    font-size: 13px;
+}
+
+.dump {
+    border-collapse: collapse;
+}
+
+.dump .info {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.dump thead {
+    border-bottom: 1px solid #a0a0a0;
+}
+
+.dump th {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.dump td {
+    padding: 3px 8px;
+    vertical-align: top;
+}
+
+.dump td.tag,
+.dump td.desc {
+    white-space: nowrap;
+}
+
+.dump tbody tr:hover {
+    background: #e5f2ff;
+}
+
+.dump .center {
+    text-align: center;
+}
+
+.dump .left {
+    text-align: left;
+}
+
+</style>
 <div class="content-wrapper">
     <table align="center" class="dump">
         <thead>

@@ -7,86 +7,33 @@
  * Released under the Simplified BSD.
  */
 
-import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
-import com.github.zhurlik.SwaggerTask
-import io.swagger.models.Contact
-import io.swagger.models.Info
-import io.swagger.models.License
-
-buildscript {
-    ext {
-        vXnat = "1.7.6-SNAPSHOT"
-    }
-    repositories {
-        mavenLocal()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        mavenCentral()
-        jcenter()
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
-            name "XNAT Release Repository"
-        }
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
-            name "XNAT Snapshot Repository"
-        }
-    }
-    dependencies {
-        gradleApi()
-        classpath "com.bmuschko:gradle-cargo-plugin:2.3"
-        classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
-        classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
-        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:1.14"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
-        classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:${vXnat}"
-        classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
-    }
+plugins {
+    id "eclipse"
+    id "groovy"
+    id "idea"
+    id "jacoco"
+    id "java"
+    id "maven"
+    id "maven-publish"
+    id "war"
+    id "com.bmuschko.cargo" version "2.4"
+    id "com.bmuschko.tomcat" version "2.5"
+    id "com.palantir.git-version" version "0.12.0-rc2"
+    id "io.franzbecker.gradle-lombok" version "1.14"
+    id "io.spring.dependency-management" version "1.0.6.RELEASE"
 }
 
 group "org.nrg.xnat"
-version = vXnat
-
-apply plugin: "com.bmuschko.cargo"
-apply plugin: "com.bmuschko.tomcat"
-apply plugin: "com.github.zhurlik.swagger"
-apply plugin: "com.palantir.git-version"
-apply plugin: "eclipse"
-apply plugin: "groovy"
-apply plugin: "idea"
-apply plugin: "io.franzbecker.gradle-lombok"
-apply plugin: "io.spring.dependency-management"
-apply plugin: "jacoco"
-apply plugin: "java"
-apply plugin: "maven"
-apply plugin: "maven-publish"
-apply plugin: "war"
+version = "1.7.6-SNAPSHOT"
 
 repositories {
     mavenLocal()
-    maven {
-        url "https://www.dcm4che.org/maven2/"
-        name "dcm4che Maven Repository"
-    }
-    maven {
-        url "http://maven.imagej.net/content/groups/public"
-        name "ImageJ Maven Repository"
-    }
+    maven { url "https://www.dcm4che.org/maven2/" }
+    maven { url "http://maven.imagej.net/content/groups/public" }
     jcenter()
     mavenCentral()
-    maven {
-        url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
-        name "XNAT Release Repository"
-    }
-    maven {
-        url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
-        name "XNAT Snapshot Repository"
-    }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
 }
 
 sourceCompatibility = 1.7
@@ -202,7 +149,12 @@ configurations {
 }
 
 dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnat}"
+    mavenBom "org.nrg:parent:${project.version}"
+}
+
+lombok {
+    version = dependencyManagement.importedProperties["lombok.version"] as String
+    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
 }
 
 dependencies {
@@ -360,8 +312,6 @@ dependencies {
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
 
-    compileOnly "org.projectlombok:lombok"
-
     providedCompile "javax.servlet:javax.servlet-api"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
@@ -377,11 +327,6 @@ dependencies {
     testCompile "org.assertj:assertj-core"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
-}
-
-lombok {
-    version = dependencyManagement.importedProperties["lombok.version"] as String
-    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
 }
 
 tomcatRun.contextPath = "/"
@@ -496,42 +441,6 @@ jacocoTestReport {
     }
 }
 
-task swagger(type: SwaggerTask, dependsOn: classes) {
-
-    // any dirs with classes
-    classesDirs = [
-            file("${buildDir}/classes/java/main")
-    ]
-
-    apiSources = [
-            new ApiSource(
-                    springmvc: true,
-                    locations: ["org.nrg.xapi.rest"],
-                    schemes: ["http", "https"],
-                    host: "xnat.org",
-                    basePath: "/xapi",
-                    info: new Info(
-                            title: "XNAT REST API",
-                            version: "${version}",
-                            description: "REST API for the XNAT server",
-                            contact: new Contact(
-                                    email: "info@xnat.org",
-                                    name: "XNAT",
-                                    url: "http://www.xnat.org"
-                            ),
-                            license: new License(
-                                    url: "https://opensource.org/licenses/BSD-2-Clause",
-                                    name: "Simplified 2-Clause BSD"
-                            )
-                    ),
-                    outputPath: file("${buildDir}/docs").path,
-                    outputFormats: "json,yaml",
-                    swaggerDirectory: file("${buildDir}/docs").path,
-                    swaggerFileName: "${project.group}.${project.name}-${project.version}-swagger"
-            )
-    ]
-}
-
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadoc")
@@ -545,7 +454,7 @@ task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar) { // TODO: Issues with both coverage report and Swagger JSON generation, removing until we spend time on them and they're useful. , dependsOn: [javadocCoverageReport, swagger]) {
+task javadocJar(type: Jar) {
     classifier "javadoc"
     from javadoc.destinationDir
 }

@@ -21,7 +21,7 @@ public interface DicomInboxImportRequestService extends BaseHibernateService<Dic
 
     void complete(final DicomInboxImportRequest request);
 
-    void complete(final DicomInboxImportRequest request, final String message);
+    void complete(final DicomInboxImportRequest request, final String message, final String... parameters);
 
-    void fail(final DicomInboxImportRequest request, final String message);
+    void fail(final DicomInboxImportRequest request, final String message, final String... parameters);
 }

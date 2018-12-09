@@ -19,6 +19,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,19 +73,23 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
     }
 
     @Override
-    public void complete(final DicomInboxImportRequest request, final String message) {
+    public void complete(final DicomInboxImportRequest request, final String message, final String... parameters) {
         request.setStatus(Completed);
-        request.setResolution(StringUtils.defaultIfBlank(message, ""));
+        request.setResolution(format(message, parameters));
         update(request);
     }
 
     @Override
-    public void fail(final DicomInboxImportRequest request, final String message) {
+    public void fail(final DicomInboxImportRequest request, final String message, final String... parameters) {
         if (StringUtils.isBlank(message)) {
             throw new NrgServiceRuntimeException("No message set for failure of request, you must provide a reason for failures!");
         }
         request.setStatus(Failed);
-        request.setResolution(message);
+        request.setResolution(format(message, parameters));
         update(request);
+    }
+
+    private static String format(final String message, final String... parameters) {
+        return StringUtils.isBlank(message) ? "" : parameters.length == 0 ? message : MessageFormatter.arrayFormat(message, parameters).getMessage();
     }
 }

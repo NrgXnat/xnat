@@ -70,7 +70,7 @@ public final class DicomInboxImportRequestListener {
         if (log.isDebugEnabled()) {
             log.debug("Processing inbox import request for path {} requested by user {} with parameters {}", sessionPath, username, request.getParameters());
         } else {
-            log.info("Processing inbox import request for path {} requested by user {}", sessionPath, username, request.getParameters());
+            log.info("Processing inbox import request for path {} requested by user {}", sessionPath, username);
         }
 
         try {
@@ -181,7 +181,7 @@ public final class DicomInboxImportRequestListener {
                 log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
                 _service.setToProcessed(_request);
             } catch (IOException e) {
-                _service.fail(_request, "An error occurred reading data while processing the session located at " + _request.getSessionPath() + ":\n" + e.getMessage());
+                _service.fail(_request, "An error occurred reading data while processing the session located at {}:\n{}", _request.getSessionPath(), e.getMessage());
             }
             return new ArrayList<>(_fileUris);
         }
@@ -205,15 +205,15 @@ public final class DicomInboxImportRequestListener {
                     importer.setNamer(getNamer());
                 }
                 _fileUris.addAll(importer.call());
-            } catch (ClientException | ServerException | IOException e) {
-                log.warn("An error occurred importing the file " + file.toString() + " while processing the inbox session located at " + _sessionPath.getAbsolutePath(), e);
+            } catch (ClientException | ServerException e) {
+                log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file.toString(), _sessionPath.getAbsolutePath(), e);
             }
             return FileVisitResult.CONTINUE;
         }
 
         @Override
         public FileVisitResult visitFileFailed(final Path file, final IOException exception) {
-            log.warn("An error occurred importing the file " + file.toString() + " while processing the inbox session located at " + _sessionPath.getAbsolutePath(), exception);
+            log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file.toString(), _sessionPath.getAbsolutePath(), exception);
             return FileVisitResult.CONTINUE;
         }
 

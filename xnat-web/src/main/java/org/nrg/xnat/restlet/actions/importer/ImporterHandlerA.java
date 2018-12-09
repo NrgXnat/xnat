@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-@SuppressWarnings({"rawtypes", "unchecked", "deprecation"})
+@SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class ImporterHandlerA extends StatusProducer implements Callable<List<String>> {
     public ImporterHandlerA(final Object listenerControl, final UserI u) {
         super((listenerControl == null) ? u : listenerControl);
@@ -97,12 +97,12 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
                         if (!clazz.isAnnotationPresent(ImporterHandler.class)) {
                             continue;
                         }
-                        ImporterHandler anno = clazz.getAnnotation(ImporterHandler.class);
-                        if (anno != null && !IMPORTERS.containsKey(anno.handler())) {
+                        final ImporterHandler annotation = clazz.getAnnotation(ImporterHandler.class);
+                        if (annotation != null && !IMPORTERS.containsKey(annotation.handler())) {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Found ImporterHandler: " + clazz.getName());
                             }
-                            IMPORTERS.put(anno.handler(), (Class<? extends ImporterHandlerA>) clazz);
+                            IMPORTERS.put(annotation.handler(), (Class<? extends ImporterHandlerA>) clazz);
                         }
                     }
                 }

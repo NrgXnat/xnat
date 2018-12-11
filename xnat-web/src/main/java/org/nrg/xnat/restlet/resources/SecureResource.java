@@ -78,7 +78,6 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.restlet.util.SecureResourceParameterMapper;
-import org.nrg.xnat.services.mapping.SecureResourceParameterMapperService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -815,7 +814,7 @@ public abstract class SecureResource extends Resource {
                     
                     // Add custom parameter mappings here
                     // Define new classes of type SecureResourceParameterMapper to have them picked up here
-                    List<SecureResourceParameterMapper> mappers = XDAT.getContextService().getBean(SecureResourceParameterMapperService.class).getParameterMappers();
+                    Collection<SecureResourceParameterMapper> mappers = XDAT.getContextService().getBeansOfType(SecureResourceParameterMapper.class).values();
                     for(SecureResourceParameterMapper m : mappers) {
                         params = m.mapParams(params, dataType); 
                     }

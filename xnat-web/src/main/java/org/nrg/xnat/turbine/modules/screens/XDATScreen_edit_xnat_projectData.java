@@ -21,7 +21,6 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xnat.services.velocity.context.PostAddProjectContextPopulatorService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
@@ -91,12 +90,10 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             
             // Add custom content into the velocity context.
             // Define new objects of type PostAddProjectContextPopulator to have them injected here.
-            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBean(PostAddProjectContextPopulatorService.class).getContextPopulators();
-             if(null != contextPopulators) {
-                 for (PostAddProjectContextPopulator p : contextPopulators) {
-                     context.put(p.getName(), p.getObject());
-                 }
-             }
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
+            for (PostAddProjectContextPopulator p : contextPopulators) {
+                context.put(p.getName(), p.getObject());
+            }
                         
 			if (StringUtils.isBlank(id)) {
 			    context.put("page_title","New " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase());

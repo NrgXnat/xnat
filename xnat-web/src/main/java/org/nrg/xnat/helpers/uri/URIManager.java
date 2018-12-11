@@ -23,7 +23,6 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.nrg.xnat.services.uri.ManageableURIContainerService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -113,8 +112,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.PREARC, "/prearchive", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
         
         // Register Plugin URIS
-        List<ManageableXnatURIContainer> uriContainers = XDAT.getContextService().getBean(ManageableURIContainerService.class).getManageableURIs();
-        for(ManageableXnatURIContainer uriContainer : uriContainers) {
+        for(ManageableXnatURIContainer uriContainer : this.getUriContainers()) {
         	add(uriContainer.getTemplateType(), uriContainer.getTemplate(), uriContainer.getMode(), uriContainer.getUri());
         }
     }
@@ -214,6 +212,10 @@ public class URIManager {
 
     private void add(final TEMPLATE_TYPE type, final String template, final int MODE, final Class<? extends URIManager.DataURIA> clazz) {
         TEMPLATES.put(type, new TemplateInfo<>(template, MODE, clazz));
+    }
+    
+    private Collection<ManageableXnatURIContainer> getUriContainers(){
+        return XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
     }
 
 }

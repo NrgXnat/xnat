@@ -21,7 +21,6 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.helpers.uri.URIManager.DataURIA;
-import org.nrg.xnat.services.uri.ManageableURIContainerService;
 import org.restlet.util.Template;
 import org.restlet.util.Variable;
 
@@ -90,7 +89,7 @@ public final class UriParserUtils {
             }
         }else {
         	// Parse Custom Plugin URIs
-        	List<ManageableXnatURIContainer> containers = XDAT.getContextService().getBean(ManageableURIContainerService.class).getManageableURIs();
+        	Collection<ManageableXnatURIContainer> containers = XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
         	for (ManageableXnatURIContainer uriContainer : containers) {
         		if(dataUri.startsWith(uriContainer.getBaseTemplate())) {
         			if(dataUri.equals(uriContainer.getBaseTemplate())) {

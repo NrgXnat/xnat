@@ -108,7 +108,7 @@
         <ant.version>1.9.8</ant.version>
         <antlr3.version>3.5.2</antlr3.version>
         <antlr4.version>4.7.1</antlr4.version>
-        <hsqldb.version>2.4.1</hsqldb.version>
+        <hsqldb.version>2.3.6</hsqldb.version>
         <aopalliance.version>1.0</aopalliance.version>
         <aspectj.version>1.8.10</aspectj.version>
         <avalon.version>4.3</avalon.version>

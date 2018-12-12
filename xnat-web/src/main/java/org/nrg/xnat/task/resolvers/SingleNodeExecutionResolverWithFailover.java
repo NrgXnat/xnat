@@ -86,7 +86,7 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 			return true;
 		}	
 		final String[]           nodeList     = nodeListPref.getValue().replaceAll(" ", "").split(",");
-		final int                waitMin      = (nodeWaitPref != null && nodeWaitPref.getValue() != null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
+        final int                waitMin      = (nodeWaitPref != null && StringUtils.isNotEmpty(nodeWaitPref.getValue())) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
 		final List<XnatNodeInfo> nodeInfoList = _xnatNodeInfoService.getAll();
 		final List<XnatTaskInfo> taskInfoList = _xnatTaskInfoService.getXnatTaskInfoListByTaskIdAndNode(taskId);
 		final long               currentTime  = System.currentTimeMillis();

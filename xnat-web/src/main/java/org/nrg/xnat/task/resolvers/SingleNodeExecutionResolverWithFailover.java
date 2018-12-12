@@ -11,6 +11,7 @@ package org.nrg.xnat.task.resolvers;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.task.XnatTaskExecutionResolver;
 import org.nrg.framework.task.XnatTaskExecutionResolverI;

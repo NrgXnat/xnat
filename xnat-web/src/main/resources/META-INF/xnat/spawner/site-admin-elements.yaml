@@ -296,6 +296,14 @@ uiShowPrearchiveFileActions:
     description: >
         Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
         This is a useful feature, but can be disabled for backwards compatibility.
+        
+triagePath:
+    kind: panel.input.text
+    name: triagePath
+    label: Quarantine Location
+    validation: required onblur
+    description: "Location of XNAT Quarantine."
+    
 #checksumsPropertyChangedListener:
 #    kind: panel.input.text
 #    id: checksumsPropertyChangedListener
@@ -1359,6 +1367,7 @@ fileSystem:
         ${ftpPath}
         ${buildPath}
         ${pipelinePath}
+        ${triagePath}
         ${zipExtensions}
         ${checksums}
         ${uiShowCachedFileCounts}

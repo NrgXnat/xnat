@@ -29,7 +29,7 @@ import java.util.Map;
 
 public class URIManager {
     private final static Logger logger = LoggerFactory.getLogger(URIManager.class);
-
+    
     public enum TEMPLATE_TYPE {ARC, PREARC, CACHE, TRIAGE}
 
     public static final String XNAME               = "XNAME";
@@ -59,7 +59,6 @@ public class URIManager {
 
     private URIManager() {
         add(TEMPLATE_TYPE.CACHE, "/user/cache/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, URIManager.UserCacheURI.class);
-
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}", Template.MODE_EQUALS, ProjSubjExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}", Template.MODE_EQUALS, ProjSubjURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}", Template.MODE_EQUALS, ProjSubjExptURI.class);
@@ -111,9 +110,11 @@ public class URIManager {
         add(TEMPLATE_TYPE.PREARC, "/prearchive/projects/{" + URIManager.PROJECT_ID + "}", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
         add(TEMPLATE_TYPE.PREARC, "/prearchive", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
         
+        add(TEMPLATE_TYPE.TRIAGE,"/services/triage/projects/{" + URIManager.PROJECT_ID + "}/resources/{" + XNAME + "}",Template.MODE_STARTS_WITH,URIManager.TriageURI.class);
+        
         // Register Plugin URIS
         for(ManageableXnatURIContainer uriContainer : this.getUriContainers()) {
-        	add(uriContainer.getTemplateType(), uriContainer.getTemplate(), uriContainer.getMode(), uriContainer.getUri());
+            add(uriContainer.getTemplateType(), uriContainer.getTemplate(), uriContainer.getMode(), uriContainer.getUri());
         }
     }
 
@@ -160,6 +161,13 @@ public class URIManager {
 
         public String getUri() {
             return uri;
+        }
+    }
+    
+    public static class TriageURI extends DataURIA  {
+        
+        public TriageURI(Map<String, Object> props, String uri) {
+            super(props,uri);
         }
     }
 

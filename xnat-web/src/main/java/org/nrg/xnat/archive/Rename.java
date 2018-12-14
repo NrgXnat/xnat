@@ -103,7 +103,7 @@ public class Rename  implements Callable<File>{
 	 */
 	public File call() throws FieldNotFoundException, ProcessingInProgress, DuplicateLabelException, IllegalAccessException, LabelConflictException, FolderConflictException, InvalidArchiveStructure, URISyntaxException,Exception{
 		final File newSessionDir = item instanceof XnatSubjectdata
-								   ? FileUtils.getFile(project.getRootArchivePath(), project.getCurrentArc(), "subjects", newLabel)
+								   ? new File(new File(project.getRootArchivePath(), "subjects"), newLabel)
 								   : new File(new File(project.getRootArchivePath(), project.getCurrentArc()), newLabel);
 
 		try {

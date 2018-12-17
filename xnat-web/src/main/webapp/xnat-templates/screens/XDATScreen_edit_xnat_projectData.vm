@@ -1,3 +1,4 @@
+<!-- BEGIN xnat-templates/screens/XDATScreen_edit_xnat_projectData.vm -->
 $page.setTitle("XDAT")
 $page.setLinkColor($ui.alink)
 $page.setVlinkColor($ui.vlink)
@@ -169,3 +170,4 @@ $page.setVlinkColor($ui.vlink)
     }
 
 </script>
+<!-- END xnat-templates/screens/XDATScreen_edit_xnat_projectData.vm -->

@@ -810,6 +810,13 @@ XNAT.app.abu.updateModalAction = function(){
 					var subdir = resourceConfigs[i].subdir;
 					subdir = (typeof subdir !== 'undefined' && subdir.length > 0) ? "/" + subdir : subdir;
 					abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
+					
+					if(resourceConfigs[i].triage){ // If resource has been configured to upload to the project's quarantine. 
+						$("#triageMessage").css('display', 'block');
+					}else{
+						$("#triageMessage").css('display', 'none');
+					}
+					
 					XNAT.app.abu.populateEventHandlerSelect();
 					return;
 				}
@@ -818,7 +825,6 @@ XNAT.app.abu.updateModalAction = function(){
 	}
 	XNAT.app.abu.populateEventHandlerSelect();
 }
-
 XNAT.app.abu.updateOptionsCheckboxes = function(selectVal) {
 	// First set default values that will take effect if there is no event handlers (e.g. configured resource uploads with no scripts);
 	$("#extractRequestBoxDiv").show();
@@ -850,7 +856,6 @@ XNAT.app.abu.updateOptionsCheckboxes = function(selectVal) {
 			} else {
 				$("#extractRequestBox").attr('checked',true);
 			}
-
 			if (typeof uploaderConfig.showCloseWindowOption !== 'undefined') {
 				if (uploaderConfig.showCloseWindowOption) {
 					$("#closeBoxDiv").show();
@@ -1412,6 +1417,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		configObj.showEmailOption = true;
 		configObj.emailOptionChecked = false;
 
+
 		// best to leave these undefined, I think
 		//configObj.parameters = [  ];
 		//configObj.contexts = [ 'xnat:projectData','xnat:subjectAssessorData','xnat:imageAssessorData','xnat:imageSessionData','xnat:imageScanData','xnat:subjectData' ];
@@ -1476,8 +1482,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 				 ((configObj.showExtractOption) ? ' checked' : '') + '> <b> Show <i>extract compressed files</i> option?</b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_extractOptionChecked" name="ULC_RB_EXTRACTCHECKED" value="extractOptionChecked"' +
 				 ((configObj.extractOptionChecked) ? ' checked' : '') + '> <b> <i>Extract compressed files</i> option checked?</b> </div>';
-
-
+	
 	configHtml+='<div style="margin-left:20px;width:100%;margin-top:10px;"><input type="checkbox" id="ULC_RB_showCloseWindowOption" name="ULC_RB_SHOWCLOSE" value="showCloseWindowOption"' +
 				 ((configObj.showCloseWindowOption) ? ' checked' : '') + '> <b> Show <i>close window upon submit</i> option?</b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_closeWindowOptionChecked" name="ULC_RB_CLOSECHECKED" value="closeWindowOptionChecked"' +

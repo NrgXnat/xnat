@@ -148,12 +148,12 @@ XNAT.app.crUploader={
 				if($(this).val()!=""){
 					var desc=$("#cruSel option:selected").attr("data-message");
 					if(desc!=null && desc!=undefined){
-						$('#cruMsg').html(desc);
+						$('#cruMsg').html(desc + triageMessage);
 					}else{
-						$('#cruMsg').html("");
+						$('#cruMsg').html("" + triageMessage);
 					}
 				}else{
-					$('#cruMsg').html("");
+					$('#cruMsg').html("" + triageMessage);
 				}
 			});
 		}

@@ -278,8 +278,8 @@ checksums:
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
         overhead to the archive process.
-showCachedFileCounts:
-    kind: pannel.input.switchbox
+uiShowCachedFileCounts:
+    kind: panel.input.switchbox
     name: uiShowCachedFileCounts
     label: Show cached file counts?
     onText: Enabled
@@ -287,8 +287,8 @@ showCachedFileCounts:
     description: >
         Should this site display cached file counts (when available) on the Image Session Report pages?
         This can improve page performance, but conceal file system changes.
-showPrearchiveFileActions:
-    kind: pannel.input.switchbox
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
     name: uiShowPrearchiveFileActions
     label: Show preachive file actions?
     onText: Enabled
@@ -312,13 +312,13 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-#        ${processingUrl}
         ${siteDescriptionType}
         ${siteLogo}
         ${siteLoginLanding}
-#        ${siteLandingLayout}
         ${siteHome}
-#        ${siteHomeLayout}
+#       ${siteLandingLayout}
+#       ${processingUrl}
+#       ${siteHomeLayout}
 
 adminInfo:
     kind: panel.form
@@ -661,7 +661,7 @@ csrf:
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
             kind: panel.input.switchbox
-            name: csrfEmailAlert 
+            name: csrfEmailAlert
             label: CSRF Email Alert
             onText: Enabled
             offText: Disabled
@@ -1361,6 +1361,8 @@ fileSystem:
         ${pipelinePath}
         ${zipExtensions}
         ${checksums}
+        ${uiShowCachedFileCounts}
+        ${uiShowPrearchiveFileActions}
 #        ${checksumsPropertyChangedListener}
 
 #automationSettings:
@@ -1633,8 +1635,6 @@ dataStorage:
         ${buildPath}
         ${pipelinePath}
         ${cachePath}
-        ${showCachedFileCounts}
-        ${showPrearchiveFileActions}
 #        ${zipExtensions}
 #        ${checksums}
 #        ${checksumsPropertyChangedListener}

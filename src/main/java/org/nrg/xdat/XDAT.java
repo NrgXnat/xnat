@@ -9,7 +9,10 @@
 
 package org.nrg.xdat;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -67,6 +70,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.slf4j.Logger;
 import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -86,6 +90,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import static org.nrg.xdat.security.helpers.Users.*;
 
@@ -948,30 +953,98 @@ public class XDAT implements Initializable, Configurable{
 		return localhostIPs;
 	}
 
-	private static void logShortStackTrace(final String message, final int depth) {
-		logShortStackTrace(message, null, depth);
+	public static void logShortStackTrace(final String message, final int depth) {
+		logShortStackTrace(log, message, null, depth);
 	}
 
 	@SuppressWarnings("SameParameterValue")
-	private static void logShortStackTrace(final String message, final Map<String, ?> properties, final int depth) {
-		final StringBuilder           buffer     = new StringBuilder(message).append("\n");
-		if (properties != null) {
-			buffer.append("Properties: ").append(properties.toString()).append("\n");
-		}
-		final AtomicInteger start = new AtomicInteger(0);
-        final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        for (final StackTraceElement element : stackTrace) {
-            if (StringUtils.equals(element.getMethodName(), "logShortStackTrace")) {
-                start.incrementAndGet();
-                continue;
-            }
-            start.incrementAndGet();
-            break;
+	public static void logShortStackTrace(final String message, final Map<String, ?> properties, final int depth) {
+        logShortStackTrace(log, message, properties, depth);
+    }
+
+	public static void logShortStackTrace(final Logger logger, final String message, final Map<String, ?> properties, final int depth) {
+        final StringBuilder buffer = new StringBuilder(message).append("\n");
+        if (properties != null) {
+            buffer.append("Properties: ").append(properties.toString()).append("\n");
         }
-        for (final StackTraceElement element : ArrayUtils.subarray(stackTrace, start.get(), start.getAndAdd(depth))) {
+        buffer.append(formatShortStackTrace(Thread.currentThread().getStackTrace(), depth));
+        log.error(buffer.toString());
+	}
+
+	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final int depth) {
+		final AtomicInteger       start      = new AtomicInteger(0);
+		for (final StackTraceElement element : stackTrace) {
+			if (StringUtils.equalsAny(element.getMethodName(), "logShortStackTrace", "formatShortStackTrace")) {
+				start.incrementAndGet();
+				continue;
+			}
+			start.incrementAndGet();
+			break;
+		}
+		final StringBuilder buffer = new StringBuilder();
+		for (final StackTraceElement element : ArrayUtils.subarray(stackTrace, start.get(), start.getAndAdd(depth))) {
 			buffer.append("    at ").append(element.getClassName()).append(".").append(element.getMethodName()).append("():").append(element.getLineNumber()).append("\n");
 		}
-		log.error(buffer.toString());
+		return buffer.toString();
+	}
+
+	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final String... regExes) {
+        final List<Pattern> patterns = Lists.transform(Arrays.asList(regExes), new Function<String, Pattern>() {
+            @Override
+            public Pattern apply(final String include) {
+                return Pattern.compile(include);
+            }
+        });
+        return formatShortStackTrace(stackTrace, new Predicate<StackTraceElement>() {
+            @Override
+            public boolean apply(final StackTraceElement element) {
+                if (StringUtils.equalsAny(element.getMethodName(), "logShortStackTrace", "formatShortStackTrace")) {
+                    return false;
+                }
+                final String fullyQualifiedMethodName = element.getClassName() + "." + element.getMethodName() + "()";
+                return Iterables.any(patterns, new Predicate<Pattern>() {
+                    @Override
+                    public boolean apply(final Pattern pattern) {
+                        return pattern.matcher(fullyQualifiedMethodName).matches();
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Convenience method that returns a formatted string containing only elements from classes under the
+     * "org.nrg..." package structure.
+     *
+     * @param stackTrace The stack trace to filter and format.
+     *
+     * @return A string containing the formatted stack trace elements from classes under the "org.nrg..." package structure.
+     */
+    public static String formatNrgShortStackTrace(final StackTraceElement[] stackTrace) {
+        return formatShortStackTrace(stackTrace, new Predicate<StackTraceElement>() {
+            @Override
+            public boolean apply(final StackTraceElement element) {
+                return StringUtils.startsWith(element.getClassName(), "org.nrg.");
+            }
+        });
+    }
+
+    /**
+     * Returns a formatted string with the lines from the submitted stack trace. The predicate parameter is applied to determine
+     * whether a particular stack trace line should be included or excluded from the output.
+     *
+     * @param stackTrace The stack trace to filter and format.
+     * @param predicate  The predicate to be applied to each element to determine whether or not it should be included in the output.
+     *
+     * @return A string containing the formatted stack trace elements that met the predicate criteria.
+     */
+	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final Predicate<StackTraceElement> predicate) {
+        return StringUtils.join(Lists.transform(Lists.newArrayList(Iterables.filter(Arrays.asList(stackTrace), predicate)), new Function<StackTraceElement, String>() {
+            @Override
+            public String apply(final StackTraceElement element) {
+                return "    at " + element.getClassName() + "." + element.getMethodName() + "():" + element.getLineNumber();
+            }
+        }), "\n");
 	}
 
 	private static final List<String> LOCALHOST_IPS = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");

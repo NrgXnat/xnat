@@ -649,7 +649,32 @@ public class UserGroupManager implements UserGroupServiceI {
 
             fm.init(psf, value, create, read, delete, edit, activate);
 
-            if (fms.addFieldMapping(fm, ea, user, activateChanges, c)) {
+            fms.setAllow(fm);
+
+            if (fms.getXdatFieldMappingSetId() != null) {
+                fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
+
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fm, user, true, false, true, false, c);
+                    fm.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(fm, user, true, false, false, false, c);
+                }
+            } else if (ea.getXdatElementAccessId() != null) {
+                fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fms, user, true, false, true, false, c);
+                    fms.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(fms, user, true, false, false, false, c);
+                }
+            } else {
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(ea, user, true, false, true, false, c);
+                    ea.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(ea, user, true, false, false, false, c);
+                }
                 impl.setElementAccess(ea);
             }
         } catch (Exception e) {

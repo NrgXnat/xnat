@@ -11,6 +11,7 @@ package org.nrg.xdat.security;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -26,6 +27,7 @@ import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -50,10 +52,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.SecurityManager.EDIT;
@@ -65,6 +64,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 @Service
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
+
     @Autowired
     public PermissionsServiceImpl(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {
         _eventService = eventService;
@@ -578,8 +578,19 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             log.info("Setting access level for project {} to {}, along with {} secured elements", projectId, accessibility, securedElements.size());
         }
 
+        final int currentAccessibility = Permissions.checkProjectAccess(_template, projectId);
         if (StringUtils.equals("public", accessibility)) {
-            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, true, true, ci);
+            if (currentAccessibility == 1) {
+                return false;
+            }
+            final List<Integer> projectFieldMappingIds = _template.queryForList(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", "xnat:projectData/ID").addValue("projectId", projectId), Integer.class);
+            if (projectFieldMappingIds.isEmpty()) {
+                setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, true, true, ci);
+            } else if (projectFieldMappingIds.size() == 1) {
+                _template.update(QUERY_MAKE_FIELD_MAPPING_PUBLIC, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.get(0)));
+            } else {
+                log.warn("Found case where there's more than one field mapping for guest access to project ID {}", projectId);
+            }
             for (final ElementSecurity securedElement : securedElements) {
                 final String elementName = securedElement.getElementName();
                 log.debug("Preparing to set permissions for secured element '{}' while setting access level for project {} to {}", elementName, projectId, accessibility);
@@ -600,24 +611,35 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             // Main diff between protected and private is that the project ID is readable by guest in protected, so set that once and apply privileges.
             // Other than that, nothing else is readable by guest in protected or private.
             final boolean readableByGuest = StringUtils.equals("protected", accessibility);
+            if (readableByGuest && currentAccessibility == 0 || !readableByGuest && currentAccessibility == -1) {
+                return false;
+            }
             log.debug("The project {} will {}be readable by guest users", projectId, readableByGuest ? "" : "not ");
-            setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, readableByGuest, false, false, false, readableByGuest, ci);
+            final List<Integer> projectFieldMappingIds = _template.queryForList(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", "xnat:projectData/ID").addValue("projectId", projectId), Integer.class);
+
+            // If no mapping IDs were found but we need one for protected status, then create that one.
+            if (readableByGuest) {
+                if (projectFieldMappingIds.isEmpty()) {
+                    setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, false, true, ci);
+                } else if (projectFieldMappingIds.size() == 1) {
+                    _template.update(QUERY_MAKE_FIELD_MAPPING_PROTECTED, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.get(0)));
+                } else {
+                    log.warn("Found case where there's more than one field mapping for guest access to project ID {}", projectId);
+                }
+            } else if (!projectFieldMappingIds.isEmpty()) {
+                // We found some mappings for guess access to project but this project isn't readable so they all gotta go.
+                deleteFieldMappings(projectFieldMappingIds, authenticatedUser, ci);
+            }
+            final Set<Integer> dataTypeFieldMappingIds = new HashSet<>();
             for (final ElementSecurity securedElement : securedElements) {
                 final String elementName = securedElement.getElementName();
-                log.debug("Preparing to set permissions for secured element '{}' while setting access level for project {} to {}", elementName, projectId, accessibility);
-                if (securedElement.hasField(elementName + "/project")) {
-                    log.debug("Setting permissions for secured element field '{}/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/project", projectId, false, false, false, false, false, true, ci);
-                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
-                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to {}", elementName, elementName + "/project", projectId, accessibility);
-                }
-                if (securedElement.hasField(elementName + "/sharing/share/project")) {
-                    log.debug("Setting permissions for secured element field '{}/sharing/share/project' while setting access level for project {} to {}", elementName, projectId, accessibility);
-                    setPermissionsInternal(false, guest, authenticatedUser, elementName, elementName + "/sharing/share/project", projectId, false, false, false, false, false, true, ci);
-                } else if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
-                    log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to {}", elementName, elementName + "/sharing/share/project", projectId, accessibility);
+                if (!StringUtils.equalsIgnoreCase("xnat:projectData", elementName)) {
+                    log.debug("Preparing to set permissions for secured element '{}' while setting access level for project {} to {}", elementName, projectId, accessibility);
+                    dataTypeFieldMappingIds.addAll(getFieldMappingIdsForDataType(projectId, accessibility, securedElement, elementName, elementName + "/project"));
+                    dataTypeFieldMappingIds.addAll(getFieldMappingIdsForDataType(projectId, accessibility, securedElement, elementName, elementName + "/sharing/share/project"));
                 }
             }
+            deleteFieldMappings(dataTypeFieldMappingIds, authenticatedUser, ci);
         }
 
         ((XDATUser) authenticatedUser).resetCriteria();
@@ -631,10 +653,41 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return true;
     }
 
+    private void deleteFieldMappings(final Collection<Integer> fieldMappingIds, final UserI authenticatedUser, final EventMetaI ci) throws Exception {
+        for (final Integer fieldMappingId : fieldMappingIds) {
+            final XdatFieldMapping mapping = XdatFieldMapping.getXdatFieldMappingsByXdatFieldMappingId(fieldMappingId, authenticatedUser, false);
+            if (mapping != null) {
+                log.debug("Deleting field mapping with ID {}", fieldMappingId);
+                SaveItemHelper.authorizedDelete(mapping.getItem(), authenticatedUser, ci);
+            } else {
+                log.warn("Tried to retrieve field mapping with ID {} but didn't find anything", fieldMappingId);
+            }
+        }
+    }
+
+    private List<Integer> getFieldMappingIdsForDataType(final String projectId, final String accessibility, final ElementSecurity securedElement, final String elementName, final String field) {
+        if (securedElement.hasField(field)) {
+            return _template.queryForList(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", field).addValue("projectId", projectId), Integer.class);
+        } else {
+            log.warn("The secured element '{}' does not have the field '{}' while trying to set project {} accessibility to {}", elementName, field, projectId, accessibility);
+            return Collections.emptyList();
+        }
+    }
+
     private void setPermissionsInternal(final boolean triggerEvent, final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
         try {
-            final XDATUser user = (XDATUser) affected;
-            final Long elementAccessId = getUserElementAccessForProject(user);
+            final boolean isAccessible = create || read || edit || delete || activate;
+            if (!isAccessible) {
+                final Integer fieldMappingId = _template.queryForObject(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", fieldName).addValue("projectId", fieldValue), Integer.class);
+                deleteFieldMappings(Collections.singletonList(fieldMappingId), affected, ci);
+                if (triggerEvent) {
+                    _eventService.triggerEvent(builder().xsiType(XdatFieldMapping.SCHEMA_ELEMENT_NAME).id(fieldMappingId.toString()).action(DELETE).build());
+                }
+                return;
+            }
+
+            final XDATUser user            = (XDATUser) affected;
+            final Long     elementAccessId = getUserElementAccess(user, elementName);
 
             final XdatElementAccess elementAccess;
             if (elementAccessId != null) {
@@ -648,26 +701,10 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 elementAccess.setProperty("xdat_user_xdat_user_id", user.getID());
             }
 
-            final boolean isAccessible = create || read || edit || delete || activate;
-
             final XdatFieldMappingSet fieldMappingSet = elementAccess.getOrCreateFieldMappingSet(authenticated);
-            final XdatFieldMapping    fieldMapping    = getFieldMapping(authenticated, fieldMappingSet, fieldName, fieldValue, isAccessible);
+            final XdatFieldMapping    fieldMapping    = getFieldMapping(authenticated, fieldMappingSet, fieldName, fieldValue);
 
             if (fieldMapping == null) {
-                return;
-            }
-
-            if (!isAccessible) {
-                final XFTItem item;
-                if (fieldMappingSet.getAllow().size() == 1) {
-                    item = fieldMappingSet.getItem();
-                } else {
-                    item = fieldMapping.getItem();
-                }
-                SaveItemHelper.authorizedDelete(item, authenticated, ci);
-                if (triggerEvent) {
-                    _eventService.triggerEvent(builder().item(item).action(DELETE).build());
-                }
                 return;
             }
 
@@ -680,8 +717,33 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             fieldMapping.setActiveElement(activate);
             fieldMapping.setComparisonType("equals");
 
-            if (fieldMappingSet.addFieldMapping(fieldMapping, elementAccess, authenticated, activateChanges, ci)) {
-                user.setElementAccess(elementAccess);
+            fieldMappingSet.setAllow(fieldMapping);
+
+            if (fieldMappingSet.getXdatFieldMappingSetId() != null) {
+                fieldMapping.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fieldMappingSet.getXdatFieldMappingSetId());
+
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, true, false, ci);
+                    fieldMapping.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(fieldMapping, authenticated, true, false, false, false, ci);
+                }
+            } else if (elementAccess.getXdatElementAccessId() != null) {
+                fieldMappingSet.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", elementAccess.getXdatElementAccessId());
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, true, false, ci);
+                    fieldMappingSet.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(fieldMappingSet, authenticated, true, false, false, false, ci);
+                }
+            } else {
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, true, false, ci);
+                    elementAccess.activate(authenticated);
+                } else {
+                    SaveItemHelper.authorizedSave(elementAccess, authenticated, true, false, false, false, ci);
+                }
+                ((XDATUser) affected).setElementAccess(elementAccess);
             }
 
             if (triggerEvent) {
@@ -700,16 +762,16 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
     }
 
-    private Long getUserElementAccessForProject(final UserI user) {
+    private Long getUserElementAccess(final UserI user, final String elementName) {
         try {
-            return _template.queryForObject(QUERY_USER_ELEMENT_ACCESS, new MapSqlParameterSource("elementName", "xnat:projectData").addValue("criteria", "u.login").addValue("identifier", user.getUsername()), Long.class);
+            return _template.queryForObject(QUERY_USER_ELEMENT_ACCESS, new MapSqlParameterSource("elementName", elementName).addValue("identifier", user.getUsername()), Long.class);
         } catch (EmptyResultDataAccessException e) {
             log.debug("Found no xnat:projectData elements configured for user {}", user.getUsername());
             return null;
         }
     }
 
-    private XdatFieldMapping getFieldMapping(final UserI user, final XdatFieldMappingSet fieldMappingSet, final String fieldName, final String fieldValue, final boolean isAccessible) {
+    private XdatFieldMapping getFieldMapping(final UserI user, final XdatFieldMappingSet fieldMappingSet, final String fieldName, final String fieldValue) {
         final Optional<XdatFieldMapping> optional = FluentIterable.from(fieldMappingSet.getAllow()).firstMatch(new Predicate<XdatFieldMapping>() {
             @Override
             public boolean apply(@Nullable final XdatFieldMapping fieldMapping) {
@@ -717,11 +779,13 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             }
         });
 
-        if (optional.isPresent()) {
-            return optional.get();
-        }
-
-        return isAccessible ? new XdatFieldMapping(user) : null;
+        //noinspection UnstableApiUsage
+        return optional.or(new Supplier<XdatFieldMapping>() {
+            @Override
+            public XdatFieldMapping get() {
+                return new XdatFieldMapping(user);
+            }
+        });
     }
 
     private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -783,59 +847,76 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
     }
 
-    private static class PermissionsBean {
-        PermissionsBean(final UserI affected, final UserI authenticated, final String elementName, final String fieldName, final String fieldValue, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final EventMetaI ci) {
-            _affected = affected;
-            _authenticated = authenticated;
-            _elementName = elementName;
-            _fieldName = fieldName;
-            _fieldValue = fieldValue;
-            _create = create;
-            _read = read;
-            _delete = delete;
-            _edit = edit;
-            _activate = activate;
-            _activateChanges = activateChanges;
-            _ci = ci;
-        }
-
-        final UserI      _affected;
-        final UserI      _authenticated;
-        final String     _elementName;
-        final String     _fieldName;
-        final String     _fieldValue;
-        final Boolean    _create;
-        final Boolean    _read;
-        final Boolean    _delete;
-        final Boolean    _edit;
-        final Boolean    _activate;
-        final boolean    _activateChanges;
-        final EventMetaI _ci;
-    }
-
-    private static final String QUERY_USER_ELEMENT_ACCESS    = "SELECT xdat_element_access_id " +
-                                                               "FROM " +
-                                                               "  xdat_element_access a " +
-                                                               "  LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                               "  LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id " +
-                                                               "WHERE " +
-                                                               "  a.element_name = :elementName AND " +
-                                                               "  :criteria = :identifier";
-    private static final String QUERY_USER_READABLE_ELEMENTS = "SELECT " +
-                                                               "  xea.element_name, " +
-                                                               "  xfm.field, " +
-                                                               "  xfm.field_value " +
-                                                               "FROM xdat_user u " +
-                                                               "  LEFT JOIN xdat_user_groupid map ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
-                                                               "  LEFT JOIN xdat_usergroup usergroup on map.groupid = usergroup.id " +
-                                                               "  LEFT JOIN xdat_element_access xea on (usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = xea.xdat_user_xdat_user_id) " +
-                                                               "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                               "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                               "WHERE " +
-                                                               "  xfm.field_value != '*' AND " +
-                                                               "  xfm.read_element = 1 AND " +
-                                                               "  u.login IN ('guest', '%s')";
-    private static final String GUEST_USERNAME               = "guest";
+    private static final String GUEST_USERNAME                     = "guest";
+    private static final String QUERY_USER_ELEMENT_ACCESS          = "SELECT  " +
+                                                                     "  xdat_element_access_id  " +
+                                                                     "FROM  " +
+                                                                     "  xdat_element_access a  " +
+                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id  " +
+                                                                     "    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id  " +
+                                                                     "WHERE  " +
+                                                                     "  a.element_name = :elementName AND  " +
+                                                                     "  (u.login = :identifier OR g.id = :identifier)";
+    private static final String QUERY_USER_READABLE_ELEMENTS       = "SELECT " +
+                                                                     "  a.element_name, " +
+                                                                     "  m.field, " +
+                                                                     "  m.field_value " +
+                                                                     "FROM xdat_user u " +
+                                                                     "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
+                                                                     "  LEFT JOIN xdat_usergroup g on i.groupid = g.id " +
+                                                                     "  LEFT JOIN xdat_element_access a on (xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
+                                                                     "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                     "  LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                     "WHERE " +
+                                                                     "  m.field_value != '*' AND " +
+                                                                     "  m.read_element = 1 AND " +
+                                                                     "  u.login IN ('guest', '%s')";
+    private static final String QUERY_FIELD_MAPPING                = "SELECT " +
+                                                                     "  m.xdat_field_mapping_id AS fieldMappingId " +
+                                                                     "FROM " +
+                                                                     "  xdat_element_access a " +
+                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                     "WHERE " +
+                                                                     "  u.login = 'guest' AND " +
+                                                                     "  m.field = :field AND " +
+                                                                     "  m.field_value = :projectId";
+    private static final String QUERY_FIELD_MAPPING_EXISTS         = "SELECT EXISTS(" + QUERY_FIELD_MAPPING + ")";
+    private static final String QUERY_FIND_ORPHAN_ELEMENT_ACCESS   = "SELECT " +
+                                                                     "  a.xdat_element_access_id " +
+                                                                     "FROM " +
+                                                                     "  xdat_element_access a " +
+                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                     "WHERE " +
+                                                                     "  s.permissions_allow_set_xdat_elem_xdat_element_access_id IS NULL";
+    private static final String QUERY_FIND_ORPHAN_MAPPING_SETS     = "SELECT " +
+                                                                     "  s.xdat_field_mapping_set_id " +
+                                                                     "FROM " +
+                                                                     "  xdat_field_mapping_set s " +
+                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                     "WHERE " +
+                                                                     "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
+    public static final  String QUERY_MAKE_FIELD_MAPPING_PROTECTED = "UPDATE " +
+                                                                     "  xdat_field_mapping " +
+                                                                     "SET " +
+                                                                     "  create_element = 0, " +
+                                                                     "  read_element = 1, " +
+                                                                     "  edit_element = 0, " +
+                                                                     "  delete_element = 0, " +
+                                                                     "  active_element = 0 " +
+                                                                     "WHERE " +
+                                                                     "  xdat_field_mapping_id = :fieldMappingId";
+    public static final  String QUERY_MAKE_FIELD_MAPPING_PUBLIC    = "UPDATE " +
+                                                                     "  xdat_field_mapping " +
+                                                                     "SET " +
+                                                                     "  create_element = 0, " +
+                                                                     "  read_element = 1, " +
+                                                                     "  edit_element = 0, " +
+                                                                     "  delete_element = 0, " +
+                                                                     "  active_element = 1 " +
+                                                                     "WHERE " +
+                                                                     "  xdat_field_mapping_id = :fieldMappingId";
 
     private final NrgEventService            _eventService;
     private final NamedParameterJdbcTemplate _template;

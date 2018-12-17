@@ -1082,7 +1082,7 @@ public class Permissions {
      *
      * @return Returns 1 if the project is public, 0 if the project is protected, and -1 if the project is private.
      */
-    private static Integer checkProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) {
+    public static Integer checkProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) {
         try {
             return template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, new MapSqlParameterSource("projectId", projectId), Integer.class);
         } catch (BadSqlGrammarException e) {

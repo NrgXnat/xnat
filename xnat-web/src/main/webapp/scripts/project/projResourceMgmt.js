@@ -12,7 +12,7 @@
  */
 XNAT.app.pResources={
 	configs:new Array(),
-	settingsDialog:new YAHOO.widget.Dialog("pResource_settings_dialog", { fixedcenter:true, visible:false, width:"950px", height:"660px", modal:true, close:true, draggable:true,resizable:true}),
+	settingsDialog:new YAHOO.widget.Dialog("pResource_settings_dialog", { fixedcenter:true, visible:false, width:"800px", height:"660px", modal:true, close:true, draggable:true,resizable:true}),
 	begin:function(){
 		this.load();
 
@@ -76,11 +76,9 @@ XNAT.app.pResources={
 			temp_html+="<option value='in'>inputs dir (in)</option>";
 			temp_html+="</select></div>";
 		}
-		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.label'>Resource Folder</div> <input class='pResourceField' required='true' data-required-msg='<b>Resource Folder</b> is required.' data-prop-name='label' size='10' type='text' id='pResource.label' required=true placeholder='ex. DICOM' data-regex='^[a-zA-Z0-9_-]+$' /></div>";
+		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.label'>Resource Folder</div> <input class='pResourceField' required='true' data-required-msg='<b>Resource Folder</b> is required.' data-prop-name='Resource Folder' size='10' type='text' id='pResource.label' required=true placeholder='ex. DICOM' data-regex='^[a-zA-Z0-9_-]+$' /></div>";
 		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.subdir'>Sub-folder (optional)</div> <input class='pResourceField' data-prop-name='subdir' type='text' id='pResource.subdir' placeholder='(optional) ex. data/sub/dir' size='24' data-regex='^[a-zA-Z0-9_\\-\\/]+$'/></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='overwrite' type='checkbox' id='pResource.overwrite'/> <label for='pResource.overwrite'>Allow overwrite</label></div>";
-		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='triage' type='checkbox' id='pResource.triage'/> <label for='pResource.triage'>Force Quarantine</label></div>";
-		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='format' type='checkbox' id='pResource.format'/> <label for='pResource.format'>Show Format & Content</label></div>";
 		temp_html+=" </div>";
 		temp_html+=" <div style='clear:both;'></div>";
 		temp_html+=" <div class='row3'><button id='cruCancelBut' onclick='$(\"#pResource_form\").html(\"\");$(\"#pResource_form\").hide();$(\"#pResource_exist\").height(430)'>Cancel</button><button class='default' id='cruAddBut' onclick='XNAT.app.pResources.add();'>Add</button></div>";
@@ -322,7 +320,7 @@ XNAT.app.pResources={
 	render:function(eventHandlers){
 		//identify columns
 		if(this.configs!=undefined && this.configs.length>0){
-			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-directory</dd><dd class='colM col6'>Overwrite?</dd><dd class='colN col5'>Quarantine</dd><dd class='colS col5'>Format/Content</dd><dd class='colT col6'>Options</dd></dl></dl>	";			
+			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-directory</dd><dd class='colM col6'>Overwrite?</dd><dd class='colS col7'>Options</dd></dl></dl>	";
 			jq.each(this.configs,function(i1,v1){
 				var elementName=window.available_elements_getByName(v1.type);
 				if(elementName!=undefined && elementName.singular!=undefined){
@@ -330,7 +328,7 @@ XNAT.app.pResources={
 				}else{
 					elementName=v1.type;
 				}
-				tmpHtml+="<dl class='item'><dd class='col1'><button onclick='XNAT.app.pResources.remove(\"" + i1 +"\");'>Remove</button></dd><dd class='colL col2'>"+ elementName +"</dd><dd class='colM col3'>"+v1.name +"</dd><dd class='colM col4'>"+v1.label +"</dd><dd class='colL col5'>"+v1.subdir +"&nbsp;</dd><dd class='colM col6'>"+((v1.overwrite)?v1.overwrite:"false") +"</dd><dd class='colN col5'>"+((v1.triage)?v1.triage:"false") +"</dd><dd class='colS col5'>"+((v1.format)?v1.format:"false") +"</dd><dd class='colT col6'>";
+				tmpHtml+="<dl class='item'><dd class='col1'><button onclick='XNAT.app.pResources.remove(\"" + i1 +"\");'>Remove</button></dd><dd class='colL col2'>"+ elementName +"</dd><dd class='colM col3'>"+v1.name +"</dd><dd class='colM col4'>"+v1.label +"</dd><dd class='colL col5'>"+v1.subdir +"&nbsp;</dd><dd class='colM col6'>"+((v1.overwrite)?v1.overwrite:"false") +"</dd><dd class='colS col7'>";
 				if(v1.level){
 					tmpHtml+="Level:"+v1.level;
 				}

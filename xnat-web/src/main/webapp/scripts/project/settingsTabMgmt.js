@@ -61,7 +61,7 @@ function fullConfigHandler() {
     var data = buildSettingsUpdateRequestBody([
         'siteId','uiDebugExtensionPoints', 'siteDescriptionType', 'siteDescriptionText', 'siteDescriptionPage', 'siteUrl', 'siteAdminEmail', 'siteLoginLanding', 'siteLandingLayout', 'siteHome', 'siteHomeLayout'
         , 'enableCsrfToken', 'enableCsrfEmail', 'restrictUserListAccessToAdmins', 'uiAllowNonAdminProjectCreation', 'allowNonAdminsToClaimUnassignedSessions', 'requireSaltedPasswords', 'passwordExpirationType', 'passwordExpirationInterval', 'passwordExpirationDate'
-        , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath', 'rtriagePath'
+        , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath'
         , 'requireLogin', 'enableNewRegistrations', 'emailVerification'
         , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smt.enabled'
         , 'anonScript', 'anonEnabled', 'dcmPort', 'dcmAe', 'enableDicomReceiver'

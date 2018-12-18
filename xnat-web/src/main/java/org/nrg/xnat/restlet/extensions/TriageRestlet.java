@@ -1,6 +1,6 @@
 //Copyright 2015 Radiologics, Inc
 //Author: James Dickson <james@radiologics.com>
-package org.nrg.xnat.restlet.extensions.triage;
+package org.nrg.xnat.restlet.extensions;
 
 
 import java.io.File;
@@ -69,8 +69,6 @@ import com.google.common.collect.Maps;
 		"/services/triage/projects/{PROJECT}/resources/{XNAME}",
 		"/services/triage/projects/{PROJECT}/resources/{XNAME}/files",
 		"/services/triage/projects/{PROJECT}/resources/{XNAME}/files/{FILE}"
-
-		
 		})
 public class TriageRestlet extends SecureResource {
 	private static final String FORMAT = "format";

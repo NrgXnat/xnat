@@ -1,6 +1,6 @@
 //Copyright 2012 Radiologics, Inc
 //Author: James Dickson <james@radiologics.com>
-package org.nrg.xnat.restlet.extensions.triage;
+package org.nrg.xnat.restlet.extensions;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;

@@ -15,7 +15,7 @@ import io.swagger.models.License
 
 buildscript {
     ext {
-        vXnat = "1.7.5.3"
+        vXnat = "1.7.6-SNAPSHOT"
     }
     repositories {
         mavenLocal()

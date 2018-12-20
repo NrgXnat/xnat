@@ -1,3 +1,4 @@
+<!-- BEGIN xnat-templates/screens/xnat_projectData/xnat_projectData_summary_management.vm -->
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
@@ -126,3 +127,4 @@
     YAHOO.util.Event.onDOMReady(addUserMgmtMonitor);
 
 </script>
+<!-- END xnat-templates/screens/xnat_projectData/xnat_projectData_summary_management.vm -->

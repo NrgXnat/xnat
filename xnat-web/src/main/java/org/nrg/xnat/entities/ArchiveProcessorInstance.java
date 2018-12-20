@@ -9,6 +9,7 @@ import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,7 +26,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
 
     }
 
-    public ArchiveProcessorInstance(String label, String scope, Set<String> scpWhitelist, Set<String> scpBlacklist, int order, Map<String, String> parameters, String processorClass) {
+    public ArchiveProcessorInstance(String label, String scope, Set<String> scpWhitelist, Set<String> scpBlacklist, int priority, String location, Map<String, String> parameters, String processorClass) {
         this.label = label;
         this.scope = scope;
         this.scpWhitelist = scpWhitelist;
@@ -60,11 +61,11 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.priority = priority;
     }
 
-    public int getLocation() {
+    public String getLocation() {
         return location;
     }
 
-    public void setLocation(int location) {
+    public void setLocation(String location) {
         this.location = location;
     }
 
@@ -107,16 +108,26 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.scpBlacklist = scpBlacklist;
     }
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    public List<String> getProjectIdsList() {
+        return projectIdsList;
+    }
+
+    public void setProjectIdsList(List<String> projectIdsList) {
+        this.projectIdsList = projectIdsList;
+    }
+
     private String label;
 
     private String scope;
 
     private Set<String> scpWhitelist;
     private Set<String> scpBlacklist;
-    private int location;
+    private String location;
     private int priority;
     private Map<String, String> parameters;
     private String processorClass;
+    private List<String> projectIdsList;
 
     public static final String SITE_SCOPE="site";
 }

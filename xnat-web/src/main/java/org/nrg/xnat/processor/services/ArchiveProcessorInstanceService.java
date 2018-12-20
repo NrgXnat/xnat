@@ -19,9 +19,10 @@ import java.util.List;
  */
 public interface ArchiveProcessorInstanceService extends BaseHibernateService<ArchiveProcessorInstance> {
     List<ArchiveProcessorInstance> getAllSiteProcessors();
+    List<ArchiveProcessorInstance> getAllSiteProcessorsForClass(final String processorClass);
     List<ArchiveProcessorInstance> getAllEnabledSiteProcessors();
     List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsForAe(String aeAndPort);
     List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrder();
-    List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final int location);
+    List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final String location);
     ArchiveProcessorInstance findSiteProcessorById(final long processorId);
 }

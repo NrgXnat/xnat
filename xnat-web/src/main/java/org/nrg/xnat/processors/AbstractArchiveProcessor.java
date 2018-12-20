@@ -21,10 +21,10 @@ public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
 
     @Override
     public boolean accept(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
-        return processorConfiguredForDataComingInToThisScpReceiver(instance, aeParameters);
+        return processorConfiguredForDataComingInToThisScpReceiverAndProject(sessionData, instance, aeParameters);
     }
 
-    protected boolean processorConfiguredForDataComingInToThisScpReceiver(ArchiveProcessorInstance instance, Map<String, Object> aeParameters){
+    protected boolean processorConfiguredForDataComingInToThisScpReceiverAndProject(final SessionData sessionData, ArchiveProcessorInstance instance, Map<String, Object> aeParameters){
         Object aeTitle = aeParameters.get(ProcessorGradualDicomImporter.RECEIVER_AE_TITLE_PARAM);
         Object port = aeParameters.get(ProcessorGradualDicomImporter.RECEIVER_PORT_PARAM);
         String aeAndPort = null;
@@ -36,6 +36,22 @@ public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
         if(scpWhitelist.isEmpty()||scpWhitelist.contains(aeAndPort)){
             if(scpBlacklist.isEmpty()||!scpBlacklist.contains(aeAndPort)){
                 //This SCP receiver is set up to use this processor.
+
+                List<String> projectsToProcess = instance.getProjectIdsList();
+                if(projectsToProcess!=null && projectsToProcess.size()>0){
+                    if(sessionData==null){
+                        //Project has not yet been set. Processors will not take effect if you try to configure them to
+                        // take place only on certain projects, but before the project is set.
+                        return false;
+                    }
+                    else if(projectsToProcess.contains(sessionData.getProject())){
+                        return true;
+                    }
+                    else{
+                        return false;
+                    }
+                }
+
                 return true;
             }
         }

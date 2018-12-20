@@ -840,6 +840,8 @@ var XNAT = getObject(XNAT || {});
             url: csrfUrl('/REST/projects/'+projectId+'/accessibility/'+accessibility),
             success: function(){
                 XNAT.ui.banner.top(2000,'<b>Success.</b> Project accessibility set to '+accessibility+'.', 'success');
+                $('#accessibility_save').prop('disabled', true);
+                currAccessibility = accessibility;
             },
             fail: function(e){
                 errorHandler(e)

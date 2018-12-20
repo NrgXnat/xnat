@@ -28,7 +28,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                 "org.nrg.xnat.services.cache",
                 "org.nrg.xnat.services.investigators.impl.xft",
                 "org.nrg.xnat.services.system.impl.hibernate",
-                "org.nrg.xnat.services.validation"})
+                "org.nrg.xnat.services.validation",
+                "org.nrg.xnat.services.triage"})
 public class XnatServicesConfig {
     @Bean
     public PermissionsServiceI permissionsService(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {

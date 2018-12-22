@@ -812,8 +812,10 @@ XNAT.app.abu.updateModalAction = function(){
 					
 					if(resourceConfigs[i].triage){ // If resource has been configured to upload to the project's quarantine. 
 						$("#triageMessage").css('display', 'block');
-						target=$(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label;
-						target=target.replace("/data/projects", "/data/archive/projects");
+						target=$(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
+						target=target.replace("/data/projects",    "/data/archive/projects");
+						target=target.replace("/data/experiments", "/data/archive/experiments");
+						
 						abu._fileUploader._currentAction = serverRoot + "/data/services/triage/projects/" + XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
 					}else{
 						$("#triageMessage").css('display', 'none');

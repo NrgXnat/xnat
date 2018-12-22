@@ -30,7 +30,7 @@ XNAT.app.pResources={
 		var temp_html="<div class='colA'><div class='info simple'>What resource are you requiring?</div>" +
 				"<div class='row'><div class='rowTitle' for='pResource.name'>Title</div> <input class='pResourceField' required='true' data-required-msg='<b>Title</b> field is required.' data-prop-name='name' type='text' id='pResource.name' value='' placeholder='Natural Language Title'/></div>" +
 				"<div class='row'><div class='rowTitle' for='pResource.desc'>Description (optional)</div> <textarea class='pResourceField' data-prop-name='description' id='pResource.desc' placeholder='' /></div>" +
-				"<div class='row script-select-row'><div class='rowTitle'>Script to run</div> <select id='pScriptSelect'>" + 
+				"<div class='row script-select-row' id='script-select-row'><div class='rowTitle'>Script to run</div> <select id='pScriptSelect'>" + 
 				'<option value="">NONE</option>' +
 				"</select></div>" +
 				"</div>";
@@ -77,7 +77,7 @@ XNAT.app.pResources={
 			temp_html+="</select></div>";
 		}
 		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.label'>Resource Folder</div> <input class='pResourceField' required='true' data-required-msg='<b>Resource Folder</b> is required.' data-prop-name='label' size='10' type='text' id='pResource.label' required=true placeholder='ex. DICOM' data-regex='^[a-zA-Z0-9_-]+$' /></div>";
-		temp_html+=" <div class='row'><div class='rowTitle' for='pResource.subdir'>Sub-folder (optional)</div> <input class='pResourceField' data-prop-name='subdir' type='text' id='pResource.subdir' placeholder='(optional) ex. data/sub/dir' size='24' data-regex='^[a-zA-Z0-9_\\-\\/]+$'/></div>";
+		temp_html+=" <div id='subdir-row' class='row'><div class='rowTitle' for='pResource.subdir'>Sub-folder (optional)</div> <input class='pResourceField' data-prop-name='subdir' type='text' id='pResource.subdir' placeholder='(optional) ex. data/sub/dir' size='24' data-regex='^[a-zA-Z0-9_\\-\\/]+$'/></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='overwrite' type='checkbox' id='pResource.overwrite'/> <label for='pResource.overwrite'>Allow overwrite</label></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='triage' type='checkbox' id='pResource.triage'/> <label for='pResource.triage'>Force Quarantine</label></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='format' type='checkbox' id='pResource.format'/> <label for='pResource.format'>Show Format & Content</label></div>";
@@ -88,6 +88,17 @@ XNAT.app.pResources={
 		$("#pResource_form").html(temp_html);
 		$("#pResource_form").show();
 		$("#pResource_exist").height(430-$("#pResource_form").height());
+		
+		$("#pResource\\.triage").bind("change", function(){
+			if(this.checked){ // Quarantine ignores these options so hide them. 
+				$("#subdir-row").hide();
+				$("#script-select-row").hide();
+			}else{
+				$("#subdir-row").show();
+				$("#script-select-row").show();
+			}
+		});
+		
 		var automationScriptsAjax = $.ajax({
 			type : "GET",
 			url:serverRoot+"/data/automation/scripts?format=json&XNAT_CSRF=" + window.csrfToken,

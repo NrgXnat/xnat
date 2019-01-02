@@ -1,5 +1,6 @@
 ##Copyright 2012 Radiologics, Inc
 ##Developer: Tim Olsen tim@radiologics.com
+#if($user.checkFeature($om,"QuarantineReview"))
 jq.getScript("$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")");
 jq.getScript("$content.getURI("scripts/triage/Triage_file_approve.js")");
 jq.getScript("$content.getURI("scripts/triage/Triage_file_delete.js")");
@@ -12,3 +13,4 @@ window.summaryTabView.addTab( new YAHOO.widget.Tab({
     dataSrc: serverRoot+'/data/services/triage/projects/$om.getId()/resources?project=$om.getId()&format=html&hideTopBar=true&requested_screen=TriageResources.vm',      
     cacheData: false
 }));
+#end

@@ -1,8 +1,0 @@
-## 2018 Radiologics, Inc
-## Developer: James Ransford <ransfordj@radiologics.com>
-
-<!--triage stuff-->
-<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_delete.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_approve.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_approve.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_delete.js')"></script>

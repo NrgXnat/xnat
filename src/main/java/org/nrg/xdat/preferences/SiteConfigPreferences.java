@@ -1524,6 +1524,175 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
         }
     }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiAutoRefreshCatalog() {
+        return getBooleanValue("uiAutoRefreshCatalog");
+    }
+
+    public void setUiAutoRefreshCatalog(final boolean uiAutoRefreshCatalog) {
+        try {
+            setBooleanValue(uiAutoRefreshCatalog, "uiAutoRefreshCatalog");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAutoRefreshCatalog': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiShowCachedFileCounts() {
+        return getBooleanValue("uiShowCachedFileCounts");
+    }
+
+    public void setUiShowCachedFileCounts(final boolean uiShowCachedFileCounts) {
+        try {
+            setBooleanValue(uiShowCachedFileCounts, "uiShowCachedFileCounts");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiShowCachedFileCounts': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiShowPrearchiveFileActions() {
+        return getBooleanValue("uiShowPrearchiveFileActions");
+    }
+
+    public void setUiShowPrearchiveFileActions(final boolean uiShowPrearchiveFileActions) {
+        try {
+            setBooleanValue(uiShowPrearchiveFileActions, "uiShowPrearchiveFileActions");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiShowPrearchiveFileActions': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true", aliases = "security.allow-non-private-projects")
+    public boolean getSecurityAllowNonPrivateProjects() {
+        return getBooleanValue("securityAllowNonPrivateProjects");
+    }
+
+    public void setSecurityAllowNonPrivateProjects(final boolean securityAllowNonPrivateProjects) {
+        try {
+            setBooleanValue(securityAllowNonPrivateProjects, "securityAllowNonPrivateProjects");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'securityAllowNonPrivateProjects': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiAllowPetTracerConfiguration() {
+        return getBooleanValue("uiAllowPetTracerConfiguration");
+    }
+
+    public void setUiAllowPetTracerConfiguration(final boolean uiAllowPetTracerConfiguration) {
+        try {
+            setBooleanValue(uiAllowPetTracerConfiguration, "uiAllowPetTracerConfiguration");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowPetTracerConfiguration': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiShowScanTypeMapping() {
+        return getBooleanValue("uiShowScanTypeMapping");
+    }
+
+    public void setUiShowScanTypeMapping(final boolean uiShowScanTypeMapping) {
+        try {
+            setBooleanValue(uiShowScanTypeMapping, "uiShowScanTypeMapping");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiShowScanTypeMapping': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getEmailProjectAccessRequestToAdmin() {
+        return getBooleanValue("emailProjectAccessRequestToAdmin");
+    }
+
+    public void setEmailProjectAccessRequestToAdmin(final boolean emailProjectAccessRequestToAdmin) {
+        try {
+            setBooleanValue(emailProjectAccessRequestToAdmin, "emailProjectAccessRequestToAdmin");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'emailProjectAccessRequestToAdmin': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiExptAllowLabelChange() {
+        return getBooleanValue("uiExptAllowLabelChange");
+    }
+
+    public void setUiExptAllowLabelChange(final boolean uiExptAllowLabelChange) {
+        try {
+            setBooleanValue(uiExptAllowLabelChange, "uiExptAllowLabelChange");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiExptAllowLabelChange': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiExptAllowProjectChange() {
+        return getBooleanValue("uiExptAllowProjectChange");
+    }
+
+    public void setUiExptAllowProjectChange(final boolean uiExptAllowProjectChange) {
+        try {
+            setBooleanValue(uiExptAllowProjectChange, "uiExptAllowProjectChange");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiExptAllowProjectChange': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiExptAllowSubjectChange() {
+        return getBooleanValue("uiExptAllowSubjectChange");
+    }
+
+    public void setUiExptAllowSubjectChange(final boolean uiExptAllowSubjectChange) {
+        try {
+            setBooleanValue(uiExptAllowSubjectChange, "uiExptAllowSubjectChange");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiExptAllowSubjectChange': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiHideScanDeleteIfQuarantined() {
+        return getBooleanValue("uiHideScanDeleteIfQuarantined");
+    }
+
+    public void setUiHideScanDeleteIfQuarantined(final boolean uiHideScanDeleteIfQuarantined) {
+        try {
+            setBooleanValue(uiHideScanDeleteIfQuarantined, "uiHideScanDeleteIfQuarantined");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiHideScanDeleteIfQuarantined': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "4")
+    public int getDefaultProjectAutoArchiveSetting() {
+        return getIntegerValue("defaultProjectAutoArchiveSetting");
+    }
+
+    public void setDefaultProjectAutoArchiveSetting(final int defaultProjectAutoArchiveSetting) {
+        try {
+            setIntegerValue(defaultProjectAutoArchiveSetting, "defaultProjectAutoArchiveSetting");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'defaultProjectAutoArchiveSetting': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiAllowMoreProjectInvestigators() {
+        return getBooleanValue("uiAllowMoreProjectInvestigators");
+    }
+
+    public void setUiAllowMoreProjectInvestigators(final boolean uiAllowMoreProjectInvestigators) {
+        try {
+            setBooleanValue(uiAllowMoreProjectInvestigators, "uiAllowMoreProjectInvestigators");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowMoreProjectInvestigators': something is very wrong here.", e);
+        }
+    }
 
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;

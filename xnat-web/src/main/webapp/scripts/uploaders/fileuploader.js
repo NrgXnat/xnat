@@ -69,6 +69,9 @@ abu.FileUploader = function(o){
 						'Verbose status output?' +
 						'</div>' : ""
 					) +
+					'<div class="abu-options-cb" id="triageMessage" style="display: none;">' +
+					'<br>Your files will be uploaded to the project quarantine location and will await review by project administrators' + 
+					'</div>' +
 					'</div>' +
 				'</div>' +
 			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 

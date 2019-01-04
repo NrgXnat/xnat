@@ -1,0 +1,127 @@
+##Copyright 2015 Radiologics, Inc
+##Developer: James Dickson james@radiologics.com
+<!-- ignore: false -->
+<!-- Sequence: 40 -->
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+
+<style type="text/css">
+	#button1 {
+ 	font:11px Arial, Helvetica, sans-serif;	 
+ 	
+	}
+
+	#resDIV .resItem, #resDIV .header {
+	  border-bottom:1px solid #888;
+	  font:11px Arial, Helvetica, sans-serif;
+	  margin-top:0;
+	  margin-bottom:0;
+	  padding: 4px;
+	  overflow:auto;
+	}
+	dl.resItem, item.resItem {
+		display:block;
+	}
+	#resDIV dl dl 	{ margin:1px 0;	}
+	#resDIV .header {
+		background-color: #ccc;
+		font-weight: bold;
+	}
+	#resDIV dl dt, #resDIV dl dd {
+		display:block;
+		float:left;
+		padding:4px 0;
+	}
+	.resItem:hover {
+		background-color:#fe9;
+	}
+	#resDIV dd 	{ 	margin-left:20px;}
+	dd.resId 	{	width:80px; position:relative;	}
+	
+	dd.resDir 	{	width:100px; position:relative;	}
+	dd.resFormat 	{	width:100px;	}
+	
+	dd.resContents 	{	width:100px;	}
+	dd.resDownload 	{	width:60px;	}
+	dd.resApprove 	{	width:60px;	}
+	dd.resRemove 	{	width:60px;	}
+	
+	dd.resButton 	{	width:60px;	}
+	dd.resDetails 	{	width:170px;	}
+	dd.resFormat 	{	width:100px;	}
+	dd.resDate 	{	width:50px;	}
+
+	dd.resListButton 	{	width:30px;	}
+	
+</style>	
+
+<!-- include only if not defined elsewhere -->
+##<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")"></script>
+##<tr class="x_rs_tr_head"><th>Resource</th><th>URI</th><th>TARGET</th><th>USER</th><th>DATE</th><th>OVERWRITE</th><th>EVENT_REASON</th></tr>
+
+<div id="resDIV">
+            <dl class="header">
+              <dl>
+                ##<dd class="resListButton">List</dd>
+                 <dd class="resId">ID</dd>
+                  ## <dd class="resDir">Source</dd>	
+                  <dd class="resDetails">Details</dd>
+                  <dd class="resDownload">User</dd>
+                  <dd class="resDate">Date</dd>
+                  <dd class="resDownload">Overwrite</dd>
+                  <dd class="resDownload">Actions</dd>                
+              </dl>
+            </dl>		
+#set($base=$content.getURI(''))		
+#foreach($row in $table.toArrayListOfLists())    	 
+		
+		#set($resource=$!row.get(0))
+		##set($url="$row.get(1)")
+		#set($src=$!row.get(1))
+		#set($url="$base$src")
+		
+	 	#set($target=$!row.get(2))
+		#set($theuser=$!row.get(3))
+		#set($date=$!row.get(4))
+		#set($overwrite=$!row.get(5))
+		#set($event_reason=$!row.get(6))
+		#set($ftarget=$!row.get(7))
+		#set($format=$!row.get(8))
+		#set($content=$!row.get(9))
+		#set($fsource=$!row.get(10))
+		
+		
+		#if($user.checkFeature($project,"QuarantineReview") || $user.getUsername().equals($theuser))
+			
+			 <dl id="resItem${velocityCount}" class="resItem">
+				##<dd class="resListButton"><button id="button1" onclick="XNAT.app.fileDialog.loadScan('${url}/files?format=html&requested_screen=TriageFileList.vm&popup=true&prettyPrint=true&project=$project', '$resource files');return false;">List</button></dd>
+				<dd class="resId">$resource</dd>
+				<dd class="resDetails"><b>Source: </b><br/>$fsource<b>Target: </b><br/>$ftarget</dd>	
+				##<dd class="resDir">$ftarget</dd>	
+				<dd class="resDownload">$theuser</dd>
+				<dd class="resDate">$date</dd>
+				<dd class="resDownload">$overwrite</dd>	
+				<dd class="resDownload">	
+				<button id="button1" onclick="window.location='${url}/files?format=zip';return false;">Download</button><br>
+				#if($user.checkFeature($project,"QuarantineReview"))
+					<button id="button1" onclick="XNAT.app.TriageResourceApprover.requestMove('$velocityCount','$resource','${src}/files','$target','$overwrite','$event_reason','$!format','$!content','$fsource','$date','$theuser');return false;">Approve</button><br>
+				#end
+				<button id="button1" onclick="XNAT.app.TriageResourceDeleter.requestDelete('$velocityCount','$resource','$url','$fsource','$date','$theuser');return false;">Remove</button>
+				</dd>				
+			 </dl>
+		#end
+		
+		#set($resource="")
+		#set($src="")
+	 	#set($target="")
+		#set($theuser="")
+		#set($date="")
+		#set($overwrite="")
+		#set($event_reason="")
+		#set($ftarget="")
+		#set($format="")
+		#set($content="")
+		#set($fsource="")
+#end
+							
+</DIV>

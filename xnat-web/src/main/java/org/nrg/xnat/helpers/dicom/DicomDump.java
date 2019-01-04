@@ -45,12 +45,17 @@ import java.util.*;
 
 
 public final class DicomDump extends SecureResource {
+	//dump all discovered fields from all dicom files in session,scan etc
+	private static final String SUMMARY_VALUE = "true";
+	private static final String SUMMARY_ATTR = "summary";
+
     // "src" attribute the contains the uri to the desired resources
     private static final String SRC_ATTR = "src";
     private static final String FIELD_PARAM = "field";
     // image type supported.
     private static final List<String> imageTypes = new ArrayList<>();
 
+    private static final int MAXFILENUMBER=10000;
     private static final ElementDictionary TAG_DICTIONARY = ElementDictionary.getDictionary();
 
     // The global environment
@@ -261,6 +266,11 @@ public final class DicomDump extends SecureResource {
                 }
             }
             return null;
+        }
+
+		public Iterable<File> retrieveAll(Env env, UserI user) throws Exception {
+            final Iterable<File> matches = env.r.getFiles(env, user, getFilter(env, user), MAXFILENUMBER);
+            return matches;    
         }
     }
 
@@ -576,25 +586,36 @@ public final class DicomDump extends SecureResource {
         }
     };
 
-    public Representation represent(final Variant variant) {
+    public Representation represent(final Variant variant) throws ResourceException{
         final MediaType mt = overrideVariant(variant);
         try {
-            String file = this.env.h.retrieve(this.env, getUser());
-            DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
-            final XFTTable t = d.render();
+        	//need extra param
+        	final XFTTable t;
+        	String summary=this.getQueryVariable(DicomDump.SUMMARY_ATTR);
+            if (SUMMARY_VALUE.equals(summary)){
+            	Iterable<File> files = this.env.h.retrieveAll(this.env, this.getUser());
+            	DicomSummaryHeaderDump d = new DicomSummaryHeaderDump(files, env.fields);
+                t = d.render();
+            }else{//default..
+            	String file = this.env.h.retrieve(this.env, this.getUser());
+                DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
+                t = d.render();
+            }
+           // String file = this.env.h.retrieve(this.env, getUser());
+           // DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
             return this.representTable(t, mt, new Hashtable<String, Object>());
         } catch (FileNotFoundException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (IOException e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (ClientException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (Throwable e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         }
     }
 }

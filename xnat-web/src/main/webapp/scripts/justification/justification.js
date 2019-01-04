@@ -50,6 +50,17 @@ XNAT.app.ConfirmWJustification=function(_yuioptions){
 			tr.appendChild(td1);
 			tb.appendChild(tr);
 		}
+		
+		//form checkbox  (optional)
+		if(this.yuioptions.checkbox!=undefined){
+			tr=document.createElement("tr");
+			td1=document.createElement("td");
+			td1.colSpan="2";
+			td1.innerHTML=this.yuioptions.checkbox;
+			
+			tr.appendChild(td1);
+			tb.appendChild(tr);
+		}
 
 		//justification
 		tr=document.createElement("tr");
@@ -88,6 +99,10 @@ XNAT.app.ConfirmWJustification=function(_yuioptions){
 				this.selector.event_reason = this.form.event_reason.value;
 				if(this.selector.event_reason==""){
                     xmodal.message('Project Validation', 'Please enter a justification.');
+					return;
+				}
+				if(this.selector.event_reason.indexOf('#')>-1){
+					xmodal.message('Project Validation', 'Please remove the # character from the justification.');
 					return;
 				}
 				this.cancel();

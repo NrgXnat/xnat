@@ -4030,6 +4030,47 @@ textarea.xml-formatted {
     box-sizing: border-box;
 }
 
+.dump {
+    border-collapse: collapse;
+}
+
+.dump .info {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.dump thead {
+    border-bottom: 1px solid #a0a0a0;
+}
+
+.dump th {
+    padding: 8px;
+    font-size: 14px;
+    width: 1%;
+}
+
+.dump td {
+    padding: 3px 8px;
+    vertical-align: top;
+}
+
+.dump td.tag,
+.dump td.desc {
+    white-space: nowrap;
+}
+
+.dump tbody tr:hover {
+    background: #e5f2ff;
+}
+
+.dump .center {
+    text-align: center;
+}
+
+.dump .left {
+    text-align: left;
+}
+
 /* accommodate smaller viewports */
 /***********************************************/
 @media screen and (max-width: 1200px) {

@@ -100,7 +100,7 @@ public class ProjtExptPipelineResource extends SecureResource {
 				if (mt.equals(MediaType.TEXT_XML)) {
 					return representItem(arcPipeline.getItem(), mt, null,false, true);
 				}else {
-					return null;
+					return representItem(arcPipeline.getItem(), mt);
 				}
 			}catch(Exception e) {
 				e.printStackTrace();

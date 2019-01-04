@@ -173,9 +173,11 @@ RestSharer = function(_array,_config) {
 						  this.stopped=true;
 						  this.dt.updateCell(o.argument.oRecord,"processed",3);
                           xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
+                          this.leaveOpen=true;
 						}else{
 							this.dt.updateCell(o.argument.oRecord,"processed",3);
 						  	//alert("Failed to share " + oRecord.getData("label") + ".  \r\n\r\nThis item has either already been shared into this " + XNAT.app.displayNames.singular.project.toLowerCase() + ", or there is already an item in this " + XNAT.app.displayNames.singular.project.toLowerCase() + " with the requested label.");
+							this.leaveOpen=true;
 						    this.process();
                         }
 					},
@@ -201,7 +203,9 @@ RestSharer = function(_array,_config) {
     	if(!processing){
     		this.oncomplete.fire(this.new_label);
 //            window.location.reload();
-    		this.popup.destroy();
+       		if(this.leaveOpen==undefined){
+    			this.popup.destroy();
+    		}
     	}
     }
 };

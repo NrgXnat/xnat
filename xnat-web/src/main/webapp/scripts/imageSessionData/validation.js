@@ -71,12 +71,31 @@ function confirmValues(_focus){
 		valid = false;
 	}
 	
+	if(validatePhi("checkboxphi") === false){ 
+		valid = false;
+	}
+	
 
 	return valid;
   }catch(e){
   	  xmodal.message('Error',"An exception has occurred. Please contact technical support for assistance.");
   	  return false;
   }
+}
+
+function validatePhi(name){
+	var phi=getValueById(name);
+	if(phi!=null && phi !=undefined){
+	  if(!phi.obj.checked){
+		  appendImage(phi.obj,"/images/checkmarkRed.gif","Please confirm data is free of PHI");
+		  return false;
+	  }else{
+		  removeAppendImage(phi.obj);
+		  return true;
+	  }
+	}else{
+		return true;
+	}
 }
 
 function validateDate(){
@@ -98,13 +117,19 @@ function validateDate(){
 			}
 		}
 	}
-	document.getElementById('dateMsg').innerHTML = "";
+	var dateMsg = document.getElementById('dateMsg');
+	if(dateMsg != null){ 
+		dateMsg.innerHTML = ""; 
+	}
 	removeAppendedIcon(elementName+".date.year");
+	
 	return true;
 }
 
 function getValueById(id){
 	var box=document.getElementById(id);
+	if(box==null){ return null; }
+	
 	if(box.value==undefined){
 		if(box.selectedIndex!=undefined){
 			return {"value":box.options[box.selectedIndex].value,obj:box};

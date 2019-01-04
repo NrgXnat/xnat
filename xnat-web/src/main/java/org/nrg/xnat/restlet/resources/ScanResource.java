@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.action.ActionException;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -275,8 +277,9 @@ public class ScanResource extends ItemResource {
             return;
         }
         try {
-
-            if (!Permissions.canDelete(getUser(), session) || XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false)) {
+        	boolean prevent_delete=StringUtils.contains(XDAT.getSiteConfigurationProperty("security.prevent-data-deletion-override", "[]"), session.getItem().getStatus())?false: XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false);
+        	
+        	if (!Permissions.canDelete(getUser(), session) || prevent_delete) {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
                 return;
             }
@@ -302,6 +305,9 @@ public class ScanResource extends ItemResource {
         } catch (SQLException e) {
             logger.error("There was an error running a query.", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+        } catch (ConfigServiceException e) {
+        	logger.error("There was an error.", e);
+        	getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
         } catch (Exception e) {
             logger.error("There was an error.", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);

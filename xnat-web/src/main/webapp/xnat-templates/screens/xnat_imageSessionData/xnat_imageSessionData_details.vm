@@ -1,6 +1,11 @@
 <!--BEGIN xnat_imageSessionData_details.vm -->
 <table border="0" width="920" >
     <tr>
+        <td align=left colspan='2'>
+            #addCustomScreens($om.getXSIType() "report/preDetails")
+        </td>
+    </tr>
+    <tr>
         <td valign="top">
             <!--BEGIN EXPT SUMMARY TABS -->
             <div ID="expt_summary_module" style="display:none">

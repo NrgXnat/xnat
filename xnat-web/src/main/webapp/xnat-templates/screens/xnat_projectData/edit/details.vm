@@ -117,6 +117,9 @@
         </td>
     </tr>
 
+   ## Add custom details
+   #addCustomScreens("xnat:projectData" "edit/details")
+    
     <tr>
         <th>
             <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>
@@ -139,7 +142,6 @@
         </td>
     </tr>
 
-    #addCustomScreens($om.getXSIType() "edit/details")
     #set($pathInfo = $arcP.getPaths())
 
     <input type="hidden" name="arc:project/current_arc" value="arc001">
@@ -166,10 +168,11 @@
         <td>
             <!-- #investigatorBox gets replaced via JS -->
             <div id="investigatorBox">Loading...</div>
-
-            <div class="requirementStatement">
-                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
-            </div>
+            #if($siteConfig.uiAllowMoreProjectInvestigators)
+                <div class="requirementStatement">
+                    <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
+                 </div>
+            #end
         </td>
     </tr>
 
@@ -299,13 +302,13 @@
                 primaryMenu.dialog(investigators.primary)
             }
         }
-
+        
         // xnat:projectData/investigators/investigator[1]/xnat_investigatordata_id
         // OTHER INVESTIGATORS
         var otherBox = spawn('div#other-investigators', {
             style: { margin: '15px 0' }
         }, [ ['b', 'Other Investigators: '], ['br'] ]);
-
+        
         otherMenu.createMenu({
             id: 'others-menu',
             name: 'otherInvestigators',
@@ -315,7 +318,7 @@
         });
 
         otherMenu.createMenuItems(investigators.others);
-
+        
         otherMenu.render(otherBox, 600);
 
         // button for creating new (other) investigators
@@ -324,8 +327,12 @@
         createOther.onclick = function(){
             otherMenu.dialog('', primaryMenu);
         };
-
+        
+#if($siteConfig.uiAllowMoreProjectInvestigators)
         iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, otherBox, createOther]);
+#else
+        iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, ' &nbsp; ', createOther]);
+#end
 
     })();
 </script>

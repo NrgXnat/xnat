@@ -15,6 +15,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.config.entities.Configuration;
+import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.config.services.ConfigService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.status.StatusProducer;
@@ -45,6 +48,7 @@ import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
+import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.status.ListenerUtils;
@@ -57,6 +61,9 @@ import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+
+
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -73,6 +80,8 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 public class PrearcSessionArchiver extends StatusProducer implements Callable<String>, StatusProducerI {
 
     public static final String MERGED = "Merged";
+    
+    public static final String MERGED_UID = "Merged UIDs";
 
     private static final String TRIGGER_PIPELINES = "triggerPipelines";
 
@@ -410,12 +419,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PROJ_MOD, new Exception());
             }
 
-            //check if the XSI types match
-            if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
-                failed(MODALITY_MOD);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, MODALITY_MOD, new Exception());
-            }
-
             if (!StringUtils.equals(existing.getSubjectId(), src.getSubjectId())) {
                 String subjectId = existing.getLabel();
                 String newError = SUBJECT_MOD + ": " + subjectId + " Already Exists for another Subject";
@@ -426,8 +429,11 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             if (!overrideExceptions) {
                 if (StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())) {
                     if (!StringUtils.equals(existing.getUid(), src.getUid())) {
-                        failed(UID_MOD);
-                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
+                    	SessionMergingConfigMapper mapper=new SessionMergingConfigMapper();
+                    	if(!mapper.getUidModSetting(existing.getProject())){
+                    		failed(UID_MOD);
+                    		throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
+                    	}
                     }
                 }
             }
@@ -504,16 +510,26 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             final PersistentWorkflowI workflow;
             final EventMetaI c;
 
+            PersistentWorkflowI workflow2 = null;
+			final EventMetaI c2;
+
             try {
                 String justification = (String) params.get(EventUtils.EVENT_REASON);
                 if (justification == null) {
                     justification = "standard upload";
                 }
-                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, src.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String) params.get(EventUtils.EVENT_TYPE), EventUtils.TYPE.WEB_SERVICE), (existing == null) ? EventUtils.TRANSFER : MERGED, justification, (String) params.get(EventUtils.EVENT_COMMENT)));
+                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing==null)?src.getItem():existing.getItem()),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), (existing==null)?EventUtils.TRANSFER:MERGED, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
                 assert workflow != null;
-                workflow.setStepDescription("Validating");
+			    workflow.setStepDescription("Validating");
                 c = workflow.buildEvent();
-
+                
+				if(existing!=null){
+					if(!StringUtils.equals(existing.getUid(),src.getUid())){
+						workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), MERGED_UID, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
+						workflow2.setStepDescription("Validating");
+						c2=workflow2.buildEvent();
+					}
+				}
             } catch (JustificationAbsent e2) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, e2);
             } catch (EventRequirementAbsent e2) {
@@ -532,6 +548,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             }
 
             try {
+                preArchive(user,src,params,existing);
+                
                 processing("validating loaded data");
                 validateSession();
 
@@ -607,16 +625,19 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                     }
                 };
 
-                ListenerUtils.addListeners(this, new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                        prearcSession,
-                        src,
-                        src.getPrearchivepath(),
-                        arcSessionDir,
-                        existing,
-                        arcSessionDir.getAbsolutePath(),
-                        allowSessionMerge,
-                        overrideExceptions || overwriteFiles,
-                        saveImpl, user, workflow.buildEvent())).call();
+				MergePrearcToArchiveSession mergePrearcToArchiveSession= new MergePrearcToArchiveSession(src.getPrearchivePath(),
+						 this.prearcSession,
+						 src,
+						 src.getPrearchivepath(),
+						 arcSessionDir,
+						 existing,
+						 arcSessionDir.getAbsolutePath(),
+						 allowSessionMerge, 
+						 (overrideExceptions)?overrideExceptions:overwriteFiles,
+						 saveImpl,user,workflow.buildEvent());
+				
+				ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
+				XnatImagesessiondata merged=mergePrearcToArchiveSession.getMerged();
 
                 FileUtils.DeleteFile(new File(this.prearcSession.getSessionDir().getAbsolutePath() + ".xml"));
                 FileUtils.DeleteFile(this.prearcSession.getSessionDir());
@@ -635,17 +656,21 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 try {
                     workflow.setStepDescription(PersistentWorkflowUtils.COMPLETE);
                     WorkflowUtils.complete(workflow, workflow.buildEvent());
+					if(workflow2!=null){
+						workflow2.setStepDescription(PersistentWorkflowUtils.COMPLETE);
+						WorkflowUtils.complete(workflow2, workflow2.buildEvent());
+					}
 
                 } catch (Exception e1) {
                     logger.error("", e1);
                 }
 
-                postArchive(user, src, params);
+                postArchive(user, merged, params);
 
                 String triggerPipelines = (String) params.get(TRIGGER_PIPELINES);
                 //if triggerPipelines!=false
                 if ((BooleanUtils.isNotFalse(BooleanUtils.toBooleanObject(triggerPipelines)))) {
-                    TriggerPipelines tp = new TriggerPipelines(src, false, user, waitFor);
+                    TriggerPipelines tp = new TriggerPipelines(merged, false, user, waitFor);
                     tp.call();
                 }
             } catch (ServerException | ClientException e) {
@@ -852,6 +877,10 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     public interface PostArchiveAction {
         Boolean execute(UserI user, XnatImagesessiondata src, Map<String, Object> params);
     }
+    
+	public interface PreArchiveAction {
+		public Boolean execute(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing) throws ServerException,ClientException;
+	}
 
     private void postArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params) {
 
@@ -875,6 +904,22 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             throw new RuntimeException(exception);
         }
     }
+    
+    private void preArchive(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing){
+		List<Class<?>> classes;
+	     try {
+	    	 classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.preArchive");
+
+	    	 if(classes!=null && classes.size()>0){
+				 for(Class<?> clazz: classes){
+					 PreArchiveAction action=(PreArchiveAction)clazz.newInstance();
+					 action.execute(user,src,params,existing);
+				 }
+			 }
+	     } catch (Exception exception) {
+	         throw new RuntimeException(exception);
+	     }
+	}
 
     public void validateSession() throws ServerException {
         try {
@@ -979,6 +1024,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         failed(msg);
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
+    
 
     private DicomFilterService getDicomFilterService() {
         if (_filterService == null) {

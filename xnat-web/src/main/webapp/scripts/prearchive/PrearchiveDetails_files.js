@@ -21,7 +21,7 @@ XNAT.app.fileCounter={
         YAHOO.util.Connect.asyncRequest('GET',tempURL,catCallback,null,this);
 
 		for(var sc=0;sc<this.scans.length;sc++){
-			document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="Loading...";
+			$("#scan"+this.scans[sc]+"Files").html("Loading...");
 		}
 	},
 	processCatalogs:function(o){
@@ -51,14 +51,15 @@ XNAT.app.fileCounter={
         $("#prearchiveSessionTotals").html("<b>Total:</b> "+ prearchiveSessionFileCount +" Files, " + size_format(prearchiveSessionFileSize));
 
 		for(var sc=0;sc<this.scans.length;sc++){
-			if(document.getElementById("scan"+this.scans[sc]+"Files").innerHTML.startsWith("Load")){
-				document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="0 files";
+			var fileDiv=document.getElementById("scan"+this.scans[sc]+"Files");
+			if(fileDiv!=null && fileDiv!=undefined && fileDiv.innerHTML.startsWith("Load")){
+				fileDiv.innerHTML="0 files";
 			}
 		}
    },
 	handleFailure:function(o){
 		for(var sc=0;sc<this.scans.length;sc++){
-			document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="-";
+			$("#scan"+this.scans[sc]+"Files").html("-");
 		}
 	},
 	scans:[]

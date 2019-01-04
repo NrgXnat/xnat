@@ -278,6 +278,24 @@ checksums:
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
         overhead to the archive process.
+uiShowCachedFileCounts:
+    kind: panel.input.switchbox
+    name: uiShowCachedFileCounts
+    label: Show cached file counts?
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Should this site display cached file counts (when available) on the Image Session Report pages?
+        This can improve page performance, but conceal file system changes.
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
+    name: uiShowPrearchiveFileActions
+    label: Show preachive file actions?
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
+        This is a useful feature, but can be disabled for backwards compatibility.
 #checksumsPropertyChangedListener:
 #    kind: panel.input.text
 #    id: checksumsPropertyChangedListener
@@ -294,13 +312,13 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-#        ${processingUrl}
         ${siteDescriptionType}
         ${siteLogo}
         ${siteLoginLanding}
-#        ${siteLandingLayout}
         ${siteHome}
-#        ${siteHomeLayout}
+#       ${siteLandingLayout}
+#       ${processingUrl}
+#       ${siteHomeLayout}
 
 adminInfo:
     kind: panel.form
@@ -1343,6 +1361,8 @@ fileSystem:
         ${pipelinePath}
         ${zipExtensions}
         ${checksums}
+        ${uiShowCachedFileCounts}
+        ${uiShowPrearchiveFileActions}
 #        ${checksumsPropertyChangedListener}
 
 #automationSettings:

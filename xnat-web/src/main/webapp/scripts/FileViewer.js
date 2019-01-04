@@ -31,10 +31,10 @@ function FileViewer(_obj){
 	this.init=function(refreshCatalog){
 		if(this.loading==0){
 			this.loading=1;
-			this.resetCounts();
-            if (refreshCatalog) {
+            if (refreshCatalog && XNAT.app.autoRefreshCatalog) {
                 this.catalogRefresh();
             } else {
+                this.resetCounts();
                 this.getCatalog();
 			}
 		}else if(this.loading==1){
@@ -341,7 +341,7 @@ function FileViewer(_obj){
     			this.obj.categories["misc"].cats.push(catalogs[catC]);
     		}
     	}
-    	
+    	this.showCounts();
     	this.loading=3;
     	
     	if(this.requestRender){
@@ -350,11 +350,87 @@ function FileViewer(_obj){
    };
    
    this.resetCounts=function(){
-        for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
-            var scans=this.obj.categories[this.obj.categories.ids[catC]];
-   			scans=null;
-   		}
+       var scans,sCount,sSize;
+       for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
+           var catName=this.obj.categories.ids[catC];
+           scans=this.obj.categories[this.obj.categories.ids[catC]];
+           for(var sC=0;sC<scans.length;sC++){
+               var dest=document.getElementById(catName + "_" + scans[sC].id + "_stats");
+               if(dest!=null && dest !=undefined){
+                   dest.innerHTML="Loading...";
+               }
+           }
+           scans=null;
+       }
     };
+    
+    this.showCounts=function(){
+           var scans,sCount,sSize;
+           
+           var scan_counts=new Object();
+           var scan_resources=new Array();
+           
+           //iterate over known categories
+           for(var catC=0;catC<this.obj.categories.ids.length;catC++)
+           {
+               var catName=this.obj.categories.ids[catC];
+               scans=this.obj.categories[catName];
+               for(var sC=0;sC<scans.length;sC++){
+                   var dest=document.getElementById(catName + "_" + scans[sC].id + "_stats");
+                   if(dest!=null && dest !=undefined){
+                       sCount=0;
+                       sSize=0;
+                       dest.innerHTML="";
+                       for(var scSC=0;scSC<scans[sC].cats.length;scSC++){
+                           dest.innerHTML+=scans[sC].cats[scSC].label
+                           dest.innerHTML+=" (";
+                           dest.innerHTML+=scans[sC].cats[scSC].file_count;
+                           dest.innerHTML+=" files, "
+                           dest.innerHTML+=size_format(scans[sC].cats[scSC].file_size)
+                           dest.innerHTML+=") ";
+                           
+                           if(catName=="scans"){
+                               if(scan_counts[scans[sC].cats[scSC].label]==undefined){
+                                   scan_counts[scans[sC].cats[scSC].label]=new Object();
+                                   scan_counts[scans[sC].cats[scSC].label].label=scans[sC].cats[scSC].label;
+                                   scan_counts[scans[sC].cats[scSC].label].count=0;
+                                   scan_counts[scans[sC].cats[scSC].label].size=0;
+                                   scan_resources.push(scans[sC].cats[scSC].label);
+                               }
+                               scan_counts[scans[sC].cats[scSC].label].count+=parseInt(scans[sC].cats[scSC].file_count);
+                               scan_counts[scans[sC].cats[scSC].label].size+=parseInt(scans[sC].cats[scSC].file_size);
+                           }
+                       }
+                   }
+               }
+
+               var dest=document.getElementById("total_dicom_files");
+               if(dest!=null && dest !=undefined){
+                   dest.innerHTML="Totals: ";
+                   for(var sC2=0;sC2<scan_resources.length;sC2++){
+                       dest.innerHTML+=scan_counts[scan_resources[sC2]].label+" (";
+                       dest.innerHTML+=scan_counts[scan_resources[sC2]].count;
+                       dest.innerHTML+=" files, ";
+                       dest.innerHTML+=size_format(scan_counts[scan_resources[sC2]].size);
+                       dest.innerHTML+=") ";
+                   }
+               }
+            
+               //iterate over misc catalogs
+               for(var scSC=0;scSC<this.obj.categories.misc.cats.length;scSC++){
+                   var tempCat=this.obj.categories.misc.cats[scSC];
+                   var dest=document.getElementById(tempCat.category + "_" + tempCat.label + "_stats");
+                   if(dest!=null && dest !=undefined){
+                       dest.innerHTML="";
+                       dest.innerHTML+=tempCat.file_count;
+                       dest.innerHTML+=" files, ";
+                       dest.innerHTML+=size_format(tempCat.file_size);
+                   }
+               }
+               
+               scans=null;
+           }
+   }
    
    this.refreshCatalogs=function(msg_id){
 		closeModalPanel(msg_id);
@@ -628,7 +704,7 @@ function FileViewer(_obj){
                 xmodal.message({
                     title: _this.obj.objectId + ' Refreshed',
                     content: 'The aggregate file count and size values have been updated for your ' +
-                             _this.obj.objectType + '. Click OK to reload the page.',
+                    ((_this.obj.objectType==undefined)?"item":_this.obj.objectType) + '. Click OK to reload the page.',
                     action: function() { window.location.reload() }
                 });
             },
@@ -1152,9 +1228,9 @@ function UploadFileForm(_obj){
 							coll_select.options[coll_select.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 						}
 	   	  			}
-						if(coll_select.options.length==0){
-							coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
-						}
+					//	if(coll_select.options.length==0){
+					//		coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
+					//	}
 	   	  		}else{
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
@@ -1269,9 +1345,9 @@ function UploadFileForm(_obj){
 					input.options[input.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 				}
 			}
-				if(input.options.length==0){
-					input.options[input.options.length]=new Option("NO LABEL","");
-				}
+			//	if(input.options.length==0){
+			//		input.options[input.options.length]=new Option("NO LABEL","");
+			//	}
    	  }
    	  
 //   	  div.appendChild(document.createElement("br"));
@@ -1812,7 +1888,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
             window.viewer.refreshCatalogs("add_file");
             this.cancel();
             // CNDA-497: Filtered out <pre> text, which is sent on successful completion (i.e. no message)
-            if (response.responseText && !response.responseText.match(/^<pre.*?><\/pre>$/)) {
+            if (response.responseText && !response.responseText.toLowerCase().match(/^<pre.*?><\/pre>$/)) {
                 try {
                     var parsedResponse = YAHOO.lang.JSON.parse(response.responseText);
                     if (parsedResponse.duplicates) {

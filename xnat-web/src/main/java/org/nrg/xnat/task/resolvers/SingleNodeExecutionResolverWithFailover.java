@@ -11,6 +11,7 @@ package org.nrg.xnat.task.resolvers;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.task.XnatTaskExecutionResolver;
 import org.nrg.framework.task.XnatTaskExecutionResolverI;
@@ -86,7 +87,7 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 			return true;
 		}	
 		final String[]           nodeList     = nodeListPref.getValue().replaceAll(" ", "").split(",");
-		final int                waitMin      = (nodeWaitPref != null && nodeWaitPref.getValue() != null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
+		final int                waitMin      = (nodeWaitPref != null && StringUtils.isNotEmpty(nodeWaitPref.getValue())) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
 		final List<XnatNodeInfo> nodeInfoList = _xnatNodeInfoService.getAll();
 		final List<XnatTaskInfo> taskInfoList = _xnatTaskInfoService.getXnatTaskInfoListByTaskIdAndNode(taskId);
 		final long               currentTime  = System.currentTimeMillis();

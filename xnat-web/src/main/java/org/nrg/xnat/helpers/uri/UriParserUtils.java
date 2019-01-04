@@ -14,14 +14,18 @@ import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xnat.helpers.uri.URIManager.DataURIA;
 import org.restlet.util.Template;
 import org.restlet.util.Variable;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -83,6 +87,30 @@ public final class UriParserUtils {
                 }
                 log.debug("Found no parameters from the data URI {}", dataUri);
             }
+        }else {
+        	// Parse Custom Plugin URIs
+        	Collection<ManageableXnatURIContainer> containers = XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
+        	for (ManageableXnatURIContainer uriContainer : containers) {
+        		if(dataUri.startsWith(uriContainer.getBaseTemplate())) {
+        			if(dataUri.equals(uriContainer.getBaseTemplate())) {
+        				try {
+        					final Map<String,Object> t=Collections.emptyMap();
+        					Constructor<? extends DataURIA> uriConstructor = uriContainer.getUri().getConstructor(Map.class,String.class);
+        					return uriConstructor.newInstance(t,dataUri);
+        				} catch (Exception e) {
+        					log.error("Unable to create URI Class " + uriContainer.getClass().getName(),e);
+        					throw new MalformedURLException();
+        				}
+        			}
+        			
+        			for(final URIManager.TemplateInfo template: URIManager.getTemplates(uriContainer.getTemplateType())){
+        				Map<String,Object> map=new UriParser(template.key,template.MODE).readUri(dataUri);
+        				if(map.size()>0){
+        					return template.wrap(map,dataUri);
+        				}
+        			}
+        		}
+        	}
         }
 
         log.warn("No valid data URI format was found for the data URI '{}'", dataUri);

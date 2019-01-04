@@ -342,7 +342,7 @@ public class SubjectResource extends ItemResource {
                             MaterializedView.deleteByUser(user);
 
                             // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
-                            boolean applyAnonScript = (null != existing && existing.getLabel().equals(sub.getLabel()));
+                            boolean applyAnonScript = (null != existing && !(existing.getLabel().equals(sub.getLabel())));
 
                             if(applyAnonScript){
                                for(final XnatSubjectassessordata expt : sub.getExperiments_experiment("xnat:imageSessionData")){

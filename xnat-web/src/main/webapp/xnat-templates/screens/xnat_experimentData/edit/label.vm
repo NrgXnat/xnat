@@ -5,9 +5,11 @@
    <div id="label_placeholder">$!om.getLabel()</div><input type="hidden" id="$om.getXSIType()/label" name="$om.getXSIType()/label" value="$!om.getLabel()"/>
   </td>
   <td>
-   <a onclick="modifyLabel()">
-       <i class="fa fa-edit" title="Edit Label"></i>
-   </a>
+  #if($siteConfig.uiExptAllowLabelChange)
+      <a onclick="modifyLabel()">
+          <i class="fa fa-edit" title="Edit Label"></i>
+      </a>
+  #end
   </td>
  </tr>
 </table>

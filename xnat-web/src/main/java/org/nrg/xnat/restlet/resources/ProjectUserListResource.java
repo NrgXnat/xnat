@@ -56,13 +56,17 @@ public class ProjectUserListResource extends SecureResource {
             _displayHiddenUsers = false;
             getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "The project ID " + projectId + " does not appear to be a valid project ID. Please verify your information.");
         } else {
-            if (!(Roles.isSiteAdmin(user) || Permissions.canEdit(user, _project) || isWhitelisted(projectId))) {
+            if (!(Roles.isSiteAdmin(user) || Permissions.canEdit(user, _project) || isWhitelisted(projectId) || !restrictUserListAccessToAdmins())) {
                 logger.error("Unauthorized Access to project-level user resources. User: " + userName);
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Access Denied: Only project owners and site managers can access user resources.");
             }
             _displayHiddenUsers = Boolean.parseBoolean((String) getParameter(request, "DISPLAY_HIDDEN_USERS"));
         }
     }
+    
+    private boolean restrictUserListAccessToAdmins() {
+        return XDAT.getBoolSiteConfigurationProperty("restrictUserListAccessToAdmins", true);
+        }
 
     @Override
     public Representation represent(Variant variant) throws ResourceException {

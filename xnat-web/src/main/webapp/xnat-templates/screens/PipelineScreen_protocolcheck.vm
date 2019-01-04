@@ -43,15 +43,11 @@ The following parameters have been set for the protocol validation pipeline
 <input type="hidden"  id=${dblQts}param[1].name.rowcount$dblQts name=${dblQts}param[1].name.rowcount$dblQts value="1"/>
 <td><input type="text" id=${dblQts}param[1][0].value$dblQts  name=${dblQts}param[1][0].value$dblQts value="$projectSettings.get("catalog_content").getCsvvalues()"/></td>
 </tr>
-#set ($notification_option=$projectSettings.get("notify").getCsvvalues())
-<tr>
-<td>notify</td>
-<input type="hidden"  id=${dblQts}param[5].name$dblQts name=${dblQts}param[5].name$dblQts value="notify"/>
-<input type="hidden"  id=${dblQts}param[5].name.rowcount$dblQts name=${dblQts}param[5].name.rowcount$dblQts value="1"/>
-<TD><input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="0" #if ($notification_option.equals("0")) checked #end> Do not notify &nbsp; <input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="1"#if ($notification_option.equals("1")) checked #end>Do Notify <input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="2"#if ($notification_option.equals("2")) checked #end>Notify a list of people ONLY if validation fails</TD></tr>
-
 </table>
 
+## notification parameter: used to be a radio button
+<input type="hidden"  id=${dblQts}param[5].name$dblQts name=${dblQts}param[5].name$dblQts value="notify"/>
+<input type="hidden"  id=${dblQts}param[5].name.rowcount$dblQts name=${dblQts}param[5].name.rowcount$dblQts value="1"/>
 
 ## sessionType parameter
 	  <input type="hidden"  id=${dblQts}param[0].name$dblQts name=${dblQts}param[0].name$dblQts value="sessionType"/> 
@@ -84,8 +80,6 @@ The following parameters have been set for the protocol validation pipeline
 <input type="hidden" name="param_cnt" value="6">
 <input type="hidden" name="pipeline_path" value="validation_tools/Validate.xml">
 <input type="hidden" name="launch_now" value="true">
-
-#insertCustomPipelineNotification("process")
 
    <input type="submit" id="submitBtn" $disabled  value="Run processing"  name="eventSubmit_doLaunchpipeline"/>
     			&nbsp;&nbsp;

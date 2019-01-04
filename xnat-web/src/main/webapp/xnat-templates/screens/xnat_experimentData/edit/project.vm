@@ -4,11 +4,13 @@
    <div id="project_placeholder">$!om.getProjectDisplayID()</div><input type="hidden" id="$om.getXSIType()/project" name="$om.getXSIType()/project" value="$!om.getProject()"/>
   </td>
   <td>
-	#if($data.getSession().getAttribute("userHelper").canDelete($om.getItem()))
-   <a onclick="modifyProject();">
-       <i class="fa fa-edit" title="Edit Project"></i>
-   </a>
-   #end
+  #if($siteConfig.uiExptAllowProjectChange)
+      #if($data.getSession().getAttribute("userHelper").canDelete($om.getItem()))
+          <a onclick="modifyProject();">
+              <i class="fa fa-edit" title="Edit Project"></i>
+          </a>
+      #end
+  #end
   </td>
  </tr>
 </table>

@@ -105,7 +105,7 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
     		while(newscan.getFile().size()>0)newscan.removeFile(0);
 		}
 
-        final ValidationResultsI vr = newmr.validate();        
+        final ValidationResultsI vr = newscan.validate();        
         
         if (vr != null && !vr.isValid())
         {

@@ -247,7 +247,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 
 						final String rootPath=proj.getRootArchivePath();
 
-						if(!((security).getItem().isActive() || (security).getItem().isQuarantine() )){ 
+						if(!(((resource).getItem().isActive() || (resource).getItem().isQuarantine() )) || (resource).getItem().isLocked()){ 
 							//cannot modify it if it isn't active
 							throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN,new Exception());
 						}
@@ -268,6 +268,10 @@ public class CatalogResource extends XNATCatalogTemplate {
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"User account doesn't have permission to modify this session.");
 						return;
 					}
+				} catch (ActionException e) {
+					logger.error("",e);
+					this.getResponse().setStatus(e.getStatus(),e.getMessage());
+					return;
 				} catch (Exception e) {
 					logger.error("",e);
 					this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());

@@ -78,6 +78,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -304,13 +305,13 @@ public class DefaultCatalogService implements CatalogService {
         return insertResources(user, parentUri, resources, false, label, description, format, content, tags);
     }
 
-
     /**
      * {@inheritDoc}
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        final Collection<File> missing = Lists.newArrayList();
+        long startTime=Calendar.getInstance().getTimeInMillis();
+    	final Collection<File> missing = Lists.newArrayList();
         for (final File source : resources) {
             if (!source.exists()) {
                 missing.add(source);
@@ -321,7 +322,6 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
-
         final File destination = new File(catalog.getUri()).getParentFile();
         for (final File source : resources) {
             if (source.isDirectory() && preserveDirectories) {
@@ -332,9 +332,11 @@ public class DefaultCatalogService implements CatalogService {
                 FileUtils.copyFileToDirectory(source, destination);
             }
         }
-
+        log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
+        startTime=Calendar.getInstance().getTimeInMillis();
         refreshResourceCatalog(user, parentUri);
-
+        log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
+        
         return catalog;
     }
 
@@ -1019,44 +1021,33 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
-        if (resource instanceof XnatResourcecatalog) {
-            final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
+        long startTime=Calendar.getInstance().getTimeInMillis();
 
+    	if (resource instanceof XnatResourcecatalog) {
+            final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
             final CatCatalogBean cat     = CatalogUtils.getCatalog(projectPath, catRes);
             final File           catFile = CatalogUtils.getCatalogFile(projectPath, catRes);
-
+            
             if (cat != null) {
-                boolean modified = false;
-
-                if (addUnreferencedFiles) {//check for files in the proper resource directory, but not referenced from the existing xml
-                    if (CatalogUtils.addUnreferencedFiles(catFile, cat, user, now.getEventId())) {
-                        modified = true;
-                    }
-                }
-
-                if (CatalogUtils.formalizeCatalog(cat, catFile.getParent(), user, now, checksums, removeMissingFiles)) {
-                    modified = true;
-                }
+                Object[] refresh_info = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
+                        addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+                boolean modified = (boolean) refresh_info[0];
+                Map<String, Map<String, Integer>> audit_summary = (Map<String, Map<String, Integer>>) refresh_info[1];
 
                 if (modified) {
                     try {
-                        CatalogUtils.writeCatalogToFile(cat, catFile, checksums);
+                        //checksums and audit_summary computed in CatalogUtils.refreshCatalog
+                        CatalogUtils.writeCatalogToFile(cat, catFile, false, audit_summary);
+                        if (populateStats) {
+                            resource.save(user, false, false, now);
+                        }
                     } catch (Exception e) {
                         throw new ServerException("An error occurred writing the catalog file " + catFile.getAbsolutePath(), e);
                     }
                 }
 
-                // populate (or repopulate) the file stats --- THIS SHOULD BE DONE AFTER modifications to the catalog xml
-                if (populateStats || modified) {
-                    if (CatalogUtils.populateStats(resource, projectPath) || modified) {
-                        try {
-                            resource.save(user, false, false, now);
-                        } catch (Exception e) {
-                            throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
-                        }
-                    }
-                }
-
+            }  else{
+            	log.error("Unable to load Catalog file");
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {
@@ -1067,7 +1058,7 @@ public class DefaultCatalogService implements CatalogService {
                 }
             }
         }
-
+        log.info("refreshResourceCatalog runtime: "+(Calendar.getInstance().getTimeInMillis() - startTime)+"ms");
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
@@ -1165,8 +1156,8 @@ public class DefaultCatalogService implements CatalogService {
             parameters.addValue("sessionIds", sessionIds);
             parameters.addValue("projectId", projectId);
 
-            final List<String> scanTypesWithNullRemoved   = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
-            final List<String> scanFormatsWithNullRemoved = Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+            final List<String> scanTypesWithNullRemoved   = cleanupScanTypes(scanTypes);
+            final List<String> scanFormatsWithNullRemoved = cleanupScanFormats(scanFormats);
 
             parameters.addValue("scanTypes", scanTypesWithNullRemoved);
             parameters.addValue("scanFormats", scanFormatsWithNullRemoved);
@@ -1218,6 +1209,30 @@ public class DefaultCatalogService implements CatalogService {
 
         return sessionMap;
     }
+    
+    // Clean up scan formats before we search for them in the database
+    private List<String> cleanupScanFormats(List<String> scanFormats){
+        // Remove null
+        return Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+    }
+    
+    // Clean up scan types before we search for them in the database
+    private List<String> cleanupScanTypes(List<String> scanTypes){
+        // First remove null values
+        final List<String> types      = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
+        
+        final List<String> cleanTypes = new ArrayList<String>(); 
+        for (String type : types) {
+            //A \ in scantype is stored in the database as \\
+            //We will use what the database expects to query it
+            if (type.contains("\\")) {
+                cleanTypes.add(type.replace("\\", "\\\\"));
+            }else {
+                cleanTypes.add(type);
+             }
+        }
+        return cleanTypes;
+    }
 
     private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, final boolean withSize) {
         Long totalSize              = 0L;
@@ -1237,8 +1252,8 @@ public class DefaultCatalogService implements CatalogService {
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
 
-            final List<String> scanTypesWithNullRemoved   = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
-            final List<String> scanFormatsWithNullRemoved = Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+            final List<String> scanTypesWithNullRemoved = cleanupScanTypes(scanTypes);
+            final List<String> scanFormatsWithNullRemoved = cleanupScanFormats(scanFormats);
 
             parameters.addValue("scanTypes", scanTypesWithNullRemoved);
             parameters.addValue("scanFormats", scanFormatsWithNullRemoved);
@@ -1255,12 +1270,40 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry    = new CatEntryBean();
                 final String       scanId   = (String) scan.get("scan_id");
+                      String       scanType = (String) scan.get("scan_type");
                 final Long         scanSize = (Long) scan.get("size");
                 final String       resource = URLEncoder.encode(StringUtils.defaultIfBlank((String) scan.get("resource"), "NULL"), "UTF-8");
-                entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                
+                if (options.isSimplified()) {
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                }else {
+                    // Include Series Description in the folder name for "Non Simplified" Download
+                
+                    // ScanType may have characters not conformant to naming conventions on the OS
+                    // InvalidPathException should take care of that
+                    if (null == scanType) {
+                        entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    }else {
+                        
+                        // First clean up the scan type string so we don't break the download
+                        // Replace \,/,(,), and spaces with underscores
+                        scanType = scanType.replaceAll("[\\\\/() ]", "_"); 
+                        String path = null;
+                        try {
+                            path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);
+                        }catch(InvalidPathException ipe) {
+                            path=getPath(options, project, subject, label, "scans", scanId, "resources", resource);
+                        }
+                        if (null != path) { 
+                            entry.setName(path);
+                        }
+                    }
+                }
+                
                 entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
+                
                 if (scanSize != null) {
                     totalSize += scanSize;
                 } else {
@@ -1463,113 +1506,113 @@ public class DefaultCatalogService implements CatalogService {
     private static final Map<String, String> SCAN_TYPE_CLAUSES              = ImmutableMap.of(KEY_NO_NULLS, CLAUSE_SCAN_TYPES, KEY_WITH_NULLS, CLAUSE_SCAN_TYPES_WITH_NULLS, KEY_NULL_ONLY, CLAUSE_NULL_SCAN_TYPES);
 
     private static final String QUERY_FIND_SCANS_BY_SESSION               = "SELECT DISTINCT image_session_id " +
-                                                                            "FROM xnat_imagescandata scan " +
-                                                                            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                            "WHERE " +
-                                                                            "  image_session_id IN (:sessionIds) AND " +
-                                                                            "  ${scanTypesClause} AND " +
-                                                                            "  ${scanFormatsClause}";
+            "FROM xnat_imagescandata scan " +
+            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "WHERE " +
+            "  image_session_id IN (:sessionIds) AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT    = "SELECT DISTINCT scan.image_session_id AS session_id " +
-                                                                            "FROM xnat_imagescandata scan " +
-                                                                            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                            "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
-                                                                            "WHERE " +
-                                                                            "  expt.id IN (:sessionIds) AND " +
-                                                                            "  (share.project = :projectId OR expt.project = :projectId) AND " +
-                                                                            "  ${scanTypesClause} AND " +
-                                                                            "  ${scanFormatsClause}";
+            "FROM xnat_imagescandata scan " +
+            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
+            "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
+            "WHERE " +
+            "  expt.id IN (:sessionIds) AND " +
+            "  (share.project = :projectId OR expt.project = :projectId) AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT       = "SELECT " +
-                                                                            "  scan.id   AS scan_id, " +
-                                                                            "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
-                                                                            "  res.file_size AS size " +
-                                                                            "FROM xnat_imagescandata scan " +
-                                                                            "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                            "WHERE " +
-                                                                            "  scan.image_session_id = :sessionId AND " +
-                                                                            "  ${scanTypesClause} AND " +
-                                                                            "  ${scanFormatsClause} " +
-                                                                            "ORDER BY scan_id";
+            "  scan.id   AS scan_id, " +
+            "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
+            "  res.file_size AS size " +
+            "FROM xnat_imagescandata scan " +
+            "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+            "WHERE " +
+            "  scan.image_session_id = :sessionId AND " +
+            "  ${scanTypesClause} AND " +
+            "  ${scanFormatsClause} " +
+            "ORDER BY scan_id";
     private static final String QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID     = "SELECT " +
-                                                                            "  xme.element_name " +
-                                                                            "FROM xnat_experimentData expt " +
-                                                                            "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
-                                                                            "WHERE expt.id = :id";
+            "  xme.element_name " +
+            "FROM xnat_experimentData expt " +
+            "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
+            "WHERE expt.id = :id";
     private static final String QUERY_SESSION_RESOURCES                   = "SELECT res.label resource, " +
-                                                                            "  res.file_size AS size " +
-                                                                            "FROM xnat_abstractresource res " +
-                                                                            "  LEFT JOIN xnat_experimentdata_resource exptRes " +
-                                                                            "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
-                                                                            "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
-                                                                            "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
+            "  res.file_size AS size " +
+            "FROM xnat_abstractresource res " +
+            "  LEFT JOIN xnat_experimentdata_resource exptRes " +
+            "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
+            "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
     private static final String QUERY_SESSION_ASSESSORS                   = "SELECT " +
-                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
-                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-                                                                            "  assessor.id AS assessor_id, " +
-                                                                            "  coalesce(share.label, assessor.label) AS assessor_label, " +
-                                                                            "  session.id AS session_id, " +
-                                                                            "  session.label AS session_label, " +
-                                                                            "  :projectId AS project, " +
-                                                                            "  CASE WHEN share.project = :projectId THEN TRUE ELSE FALSE END AS is_shared, " +
-                                                                            "  xme.element_name AS xsi, " +
-                                                                            "  abstract.file_size AS size " +
-                                                                            "FROM " +
-                                                                            "  xnat_abstractresource abstract " +
-                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-                                                                            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
-                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-                                                                            "WHERE " +
-                                                                            "  :projectId IN (share.project, assessor.project) AND " +
-                                                                            "  xme.element_name IN (:assessorTypes) AND " +
-                                                                            "  session.id = :sessionId";
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  coalesce(share.label, assessor.label) AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  :projectId AS project, " +
+            "  CASE WHEN share.project = :projectId THEN TRUE ELSE FALSE END AS is_shared, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  :projectId IN (share.project, assessor.project) AND " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId";
     @SuppressWarnings("unused")
     private static final String QUERY_SESSION_ASSESSORS_WITH_ALL_PROJECTS = "SELECT " +
-                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
-                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-                                                                            "  assessor.id AS assessor_id, " +
-                                                                            "  assessor.label AS assessor_label, " +
-                                                                            "  session.id AS session_id, " +
-                                                                            "  session.label AS session_label, " +
-                                                                            "  assessor.project AS project, " +
-                                                                            "  xme.element_name AS xsi, " +
-                                                                            "  abstract.file_size AS size " +
-                                                                            "FROM " +
-                                                                            "  xnat_abstractresource abstract " +
-                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-                                                                            "WHERE " +
-                                                                            "  xme.element_name IN (:assessorTypes) AND " +
-                                                                            "  session.id = :sessionId " +
-                                                                            "UNION " +
-                                                                            "SELECT " +
-                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
-                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-                                                                            "  assessor.id AS assessor_id, " +
-                                                                            "  share.label AS assessor_label, " +
-                                                                            "  session.id AS session_id, " +
-                                                                            "  session.label AS session_label, " +
-                                                                            "  share.project AS project, " +
-                                                                            "  xme.element_name AS xsi, " +
-                                                                            "  abstract.file_size AS size " +
-                                                                            "FROM " +
-                                                                            "  xnat_abstractresource abstract " +
-                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-                                                                            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
-                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-                                                                            "WHERE " +
-                                                                            "  share.label IS NOT NULL AND " +
-                                                                            "  xme.element_name IN (:assessorTypes) AND " +
-                                                                            "  session.id = :sessionId ";
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  assessor.label AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  assessor.project AS project, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId " +
+            "UNION " +
+            "SELECT " +
+            "  abstract.xnat_abstractresource_id AS resource_id, " +
+            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+            "  assessor.id AS assessor_id, " +
+            "  share.label AS assessor_label, " +
+            "  session.id AS session_id, " +
+            "  session.label AS session_label, " +
+            "  share.project AS project, " +
+            "  xme.element_name AS xsi, " +
+            "  abstract.file_size AS size " +
+            "FROM " +
+            "  xnat_abstractresource abstract " +
+            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+            "WHERE " +
+            "  share.label IS NOT NULL AND " +
+            "  xme.element_name IN (:assessorTypes) AND " +
+            "  session.id = :sessionId ";
 
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
 

@@ -47,6 +47,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     protected final Object     control;
     final           UserI      user;
     final           EventMetaI c;
+    protected A     merged;
 
     private static final Logger logger = LoggerFactory.getLogger(MergeSessionsA.class);
 
@@ -139,7 +140,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             @SuppressWarnings("unchecked")
             final Results<A> update = mergeSessions((A) session, srcRootPath, dest, destRootPath, rootBackup);
 
-            A merged = update.getResult();
+            this.merged = update.getResult();
 
             //If we wrote to the src directory's catalogs, would the overwrite persist them into the new space (overwriting the old ones).
             //What if the same catalog had two different catalog file names.  This would cause duplicate catalogs.
@@ -155,10 +156,10 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             mergeDirectories(srcDIR, destDIR, overwriteFiles);
 
-            finalize(merged);
+            finalize(this.merged);
 
             processing("Updating stored metadata.");
-            saver.save(merged);
+            saver.save(this.merged);
 
             for (Callable<Boolean> followup : update.getAfter()) {
                 try {
@@ -168,9 +169,9 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }
 
-            postSave(merged);
+            postSave(this.merged);
 
-            return merged;
+            return this.merged;
         } catch (MizerException e) {
             logger.error("An error occurred when anonymizing the data. This occurred prior to moving files, so no rollback is performed.", e);
             failed("An error occurred when anonymizing the data: " + e.getMessage());
@@ -186,6 +187,15 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         }
     }
+    
+	public A getMerged() {
+		return merged;
+	}
+
+	public void setMerged(A merged) {
+		this.merged = merged;
+	}
+
 
     public void postSave(A session) {
 

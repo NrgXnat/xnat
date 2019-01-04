@@ -1,0 +1,72 @@
+<!-- Sequence: 100 -->
+#set($pipeline=$om.canRunPipeline($data.getSession().getAttribute("user"),"ProtocolCheck"))
+#if($pipeline)
+  <!--<li class="yuimenuitem $!li_class">
+	<A HREF="${link.setPage("PipelineScreen_protocolcheck.vm").addPathInfo("schema_type","$element.getFullXMLName()").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}" ><div class="ic"><img border="0" src="$content.getURI("images/e.gif")"/></div><div class="ic_spacer">&nbsp;</div>Validate Protocol</a>
+  </li>-->
+  
+  <li id="lnch_valid_li" class="yuimenuitem">
+    <a id="lnch_valid_a" class="yuimenuitemlabel" href="" onclick="XNAT.app.protChk.show();return false;">Validate Protocol</A>
+   </li>
+	
+	<!-- begin upload dialog -->
+	<div id="lnch_valid_dialog" style="visibility:hidden"> 
+	    <div class="hd">Launch Protocol Validator</div> 
+	    <div class="bd" style="">
+			<div class="upl_a">
+				<div>The following parameters should be set for the protocol validation pipeline:</div>
+				<form id="lnch_valid_upload_frm">
+				<table>
+                    <tr>
+						<td>Schematron version (CONTENT)</td>
+						<input type="hidden" name="param[1].name" value="catalog_content"/>
+						<input type="hidden"  name="param[1].name.rowcount" value="1"/>
+						<td><select id="catalog_content_field"  name="param[1][0].value"></select></td>
+                    </tr>
+					</table>
+                		
+					## notification option, used to be a radio button
+						<input type="hidden"  id="param[5].name" name="param[5].name" value="notify" />
+						<input type="hidden"  id="param[5].name.rowcount" name="param[5].name.rowcount" value="1" />
+						<input type="hidden" id="param[5][0].value" name="param[5][0].value" value="1"/>
+                    
+					## sessionType parameter
+                    	  <input type="hidden" name="param[0].name" value="sessionType"/> 
+                    	  <input type="hidden"  name="param[0].name.rowcount" value="1"/>
+                    	  <input type="hidden" name="param[0][0].value" value="$om.getXSIType()"/>
+                    
+                    ## session parameter
+                    	  <input type="hidden"  name="param[2].name" value="session"/> 
+                    	  <input type="hidden"  name="param[2].name.rowcount" value="1"/>
+                    	  <input type="hidden" name="param[2][0].value" value="$om.getId()"/>
+                    
+                    ## sessionLabel parameter
+                    
+                    	  <input type="hidden"  name="param[3].name" value="sessionLabel"/> 
+                    	  <input type="hidden"  name="param[3].name.rowcount" value="1"/>
+                    	  <input type="hidden" name="param[3][0].value" value="$om.getLabel()"/>
+                    
+                    ## xnat_project parameter
+                    	  <input type="hidden"  name="param[4].name" value="xnat_project"/> 
+                    	  <input type="hidden"  name="param[4].name.rowcount" value="1"/>
+                    	  <input type="hidden" name="param[4][0].value" value="$om.getProject()"/>
+                    <br/>
+                    #xdatPassItemFormFields($search_element $search_field $search_value $project)
+                    
+                    <input type="hidden" name="schema_type" value="$om.getXSIType()">
+                    <input type="hidden" name="param_cnt" value="6">
+                    <input type="hidden" name="pipeline_path" value="validation_tools/Validate.xml">
+                    <input type="hidden" name="launch_now" value="true">
+					<input type="hidden" name="task" value="launch"/>
+                    
+                </form>
+			</div>
+		</div> 
+	</div> 
+	
+    <script type="text/javascript" src="$content.getURI("scripts/pipeline/RunValidation.js")"></script>
+    <script>
+        XNAT.app.protChk.expt_id='$!om.getId()';
+        XNAT.app.protChk.project='$!om.getProject()';
+    </script>
+#end

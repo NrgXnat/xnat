@@ -3,7 +3,7 @@
 #* @vtlvariable name="resendEmailLink" type="java.lang.String" *#
 #* @vtlvariable name="siteName" type="java.lang.String" *#
 #* @vtlvariable name="verifyEmailLink" type="java.lang.String" *#
-Dear $name, <br><br>
+$name, <br><br>
 We received a request to register an account for you on $siteName. If you did not make this request, you can safely ignore this email. <br><br>
 If you would like to register, please confirm your email address by clicking this link within the next 24 hours: <a href="$verifyEmailLink" title="Verify your email address on $siteName">$verifyEmailLink</a> <br><br>
 #if($isEnabled)

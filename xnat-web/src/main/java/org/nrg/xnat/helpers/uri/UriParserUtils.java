@@ -87,7 +87,20 @@ public final class UriParserUtils {
                 }
                 log.debug("Found no parameters from the data URI {}", dataUri);
             }
-        }else {
+        } else if(dataUri.startsWith("/services/triage")){
+			if(dataUri.equals("/services/triage")){
+				final Map<String,Object> t=Collections.emptyMap();
+				return new URIManager.TriageURI(t,dataUri);
+			}
+			
+			for(final URIManager.TemplateInfo template: URIManager.getTemplates(URIManager.TEMPLATE_TYPE.TRIAGE)){
+				Map<String,Object> map=new UriParser(template.key,template.MODE).readUri(dataUri);
+				if(map.size()>0){
+					return template.wrap(map,dataUri);
+				}
+			}
+			
+		} else {
         	// Parse Custom Plugin URIs
         	Collection<ManageableXnatURIContainer> containers = XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
         	for (ManageableXnatURIContainer uriContainer : containers) {

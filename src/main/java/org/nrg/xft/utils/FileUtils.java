@@ -12,6 +12,7 @@
 package org.nrg.xft.utils;
 
 import org.apache.commons.lang3.StringUtils;
+import javax.annotation.Nullable;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.InvalidValueException;
@@ -270,7 +271,7 @@ public  class FileUtils
 	 * @param local     local path
 	 * @return full path
 	 */
-	public static String AppendRootPath(String root, String local)
+	public static String AppendRootPath(@Nullable String root, String local)
 	{
 		if (StringUtils.isEmpty(root)) {
 			return local;
@@ -286,12 +287,23 @@ public  class FileUtils
 		}
 	}
 
-    public static String AppendSlash(String root)
+	/**
+	 * Append trailing slash to first argument. If empty, return null
+	 * @param root string to which we append the slash
+	 * @return root with string appended or null
+	 */
+	public static String AppendSlash(@Nullable String root)
 	{
     	return AppendSlash(root, null);
 	}
 
-	public static String AppendSlash(String root, String dflt)
+	/**
+	 * Append trailing slash to first argument. If empty, return second argument
+	 * @param root string to which we append the slash
+	 * @param dflt string we return if root is empty
+	 * @return root with string appended or dflt
+	 */
+	public static String AppendSlash(@Nullable String root, @Nullable String dflt)
 	{
 		if (StringUtils.isEmpty(root)) {
 			return dflt;

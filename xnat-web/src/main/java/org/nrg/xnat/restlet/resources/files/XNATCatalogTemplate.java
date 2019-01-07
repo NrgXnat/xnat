@@ -20,6 +20,7 @@ import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.helpers.resource.direct.DirectResourceModifierBuilder;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierBuilderI;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
@@ -129,19 +130,7 @@ public class XNATCatalogTemplate extends XNATTemplate {
 
 
     protected File getFileOnLocalFileSystem(String fullPath) {
-        File f = new File(fullPath);
-        if (!f.exists()){
-            if (!fullPath.endsWith(".gz")){
-            	f= new File(fullPath + ".gz");
-            	if (!f.exists()){
-            		return null;
-            	}
-            }else{
-                return null;
-            }
-        }
-
-        return f;
+        return CatalogUtils.getFileOnLocalFileSystem(fullPath);
     }
 
     public XnatResourceInfo buildResourceInfo(EventMetaI ci){

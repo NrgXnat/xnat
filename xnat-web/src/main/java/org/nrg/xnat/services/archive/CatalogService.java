@@ -330,6 +330,20 @@ public interface CatalogService {
     void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException;
 
     /**
+     *
+     * Adds the listed URLs into an existing resource catalog. If you wish to add local files to an existing resource catalog,
+     * copy them into the resource and then run {@link #refreshResourceCatalog(UserI, String, Operation...)}.
+     *
+     * @param user              The user running the operation.
+     * @param catalogResource   The URI of the resource catalog.
+     * @param urls              The URLs to add to the catalog.
+     *
+     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
+     * @throws ServerException When an error occurs in the system during the refresh operation.
+     */
+    void addToResourceCatalog(final UserI user, final String catalogResource, final Collection<String> urls) throws ServerException, ClientException;
+
+    /**
      * Inserts the XML object into the XNAT data store. The submitted XML is validated and inserted (created or updated as appropriate). The contents of the parameters map
      * can contain the following parameters:
      *

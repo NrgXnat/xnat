@@ -41,6 +41,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -413,19 +414,7 @@ public class XNATUtils {
 
 
     protected static File GetFileOnLocalFileSystem(String fullPath) {
-        File f = new File(fullPath);
-        if (!f.exists()){
-            if (!fullPath.endsWith(".gz")){
-            	f= new File(fullPath + ".gz");
-            	if (!f.exists()){
-            		return null;
-            	}
-            }else{
-                return null;
-            }
-        }
-        
-        return f;
+      return CatalogUtils.getFileOnLocalFileSystem(fullPath);
     }
     
     public static boolean isNull(String s){

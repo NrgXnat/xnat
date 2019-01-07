@@ -15,6 +15,7 @@ import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.dicomtools.exceptions.AttributeException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,14 +62,14 @@ public abstract class AnonymizerA implements Callable<Boolean> {
     abstract List<File> getFilesToAnonymize() throws IOException;
 
     private void anonymize(List<File> files, String projectName, String subject, String label, long id, String script, boolean record) throws MizerException {
-        if( script != null) {
-            if( isEnabled()) {
-
+        if (script != null) {
+            if (isEnabled()) {
                 final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                service.anonymize( files, getProjectName(), getSubject(), getLabel(), id, script, record);
-
-            }
-            else {
+                service.anonymize(files, getProjectName(), getSubject(), getLabel(), id, script, record);
+                // Delete files on remote filesystems, would prefer to reupload (a.k.a., move), but anonymize doesn't
+                // return the new file list. Files will get pushed back to remote (provided it's an archiver) during cleanup
+                CatalogUtils.deleteRemoteFile(files);
+            } else {
                 // anonymization is disabled.
                 if (_log.isDebugEnabled()) {
                     _log.debug("Anonymization is disabled for the script {}, nothing to do.", script.toString());

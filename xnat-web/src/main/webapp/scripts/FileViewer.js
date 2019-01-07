@@ -1060,6 +1060,9 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 
                 if(sp == splitPath.length - 1){
                     var filename = splitPath[sp];
+                    if (file.Name) {
+                        filename = file.Name;
+                    }
                     filename=filename.split(".").join(".&shy;");
                     filename=filename.split("_").join("_&shy;");
                     var _html="<a target='_blank' onclick=\"location.href='" +serverRoot + file.URI + "';\">" + filename + "</a>";

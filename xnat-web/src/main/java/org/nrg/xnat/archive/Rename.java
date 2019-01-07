@@ -11,7 +11,6 @@ package org.nrg.xnat.archive;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.transaction.TransactionException;
@@ -33,6 +32,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 
 import java.io.File;
@@ -101,131 +101,144 @@ public class Rename  implements Callable<File>{
 	 * @throws URISyntaxException
 	 * @throws Exception
 	 */
-	public File call() throws FieldNotFoundException, ProcessingInProgress, DuplicateLabelException, IllegalAccessException, LabelConflictException, FolderConflictException, InvalidArchiveStructure, URISyntaxException,Exception{
+	public File call() throws FieldNotFoundException, ProcessingInProgress, DuplicateLabelException,
+			IllegalAccessException, LabelConflictException, FolderConflictException, InvalidArchiveStructure,
+			URISyntaxException, Exception{
+
 		final File newSessionDir = item instanceof XnatSubjectdata
-								   ? new File(new File(project.getRootArchivePath(), "subjects"), newLabel)
-								   : new File(new File(project.getRootArchivePath(), project.getCurrentArc()), newLabel);
+				? new File(new File(project.getRootArchivePath(), "subjects"), newLabel)
+				: new File(new File(project.getRootArchivePath(), project.getCurrentArc()), newLabel);
 
 		try {
 			final String id           = item.getStringProperty("ID");
 			final String currentLabel = StringUtils.defaultIfBlank(item.getStringProperty("label"), id);
 						
-			if(newLabel.equals(currentLabel)){
+			if (newLabel.equals(currentLabel)) {
 				throw new DuplicateLabelException();
 			}
 			
-			//confirm if user has permission
-			if(!checkPermissions(item, user)){
+			//Confirm user has permission
+			if (!checkPermissions(item, user)) {
 				throw new org.nrg.xdat.exceptions.IllegalAccessException("Invalid Edit permissions for project: " + project.getId());
 			}
 
-			//confirm if new label is already in use
-			if(item instanceof XnatSubjectdata){
-				final XnatSubjectdata match=XnatSubjectdata.GetSubjectByProjectIdentifier(project.getId(), newLabel, null, false);
-				if(match!=null){
-					throw new LabelConflictException();
-				}
-			}else{
-				final XnatExperimentdata match=XnatExperimentdata.GetExptByProjectIdentifier(project.getId(), newLabel, null, false);
-				if(match!=null){
-					throw new LabelConflictException();
-				}
+			//Confirm new label not already in use
+			ArchivableItem match = null;
+			if (item instanceof XnatSubjectdata) {
+				match = XnatSubjectdata.GetSubjectByProjectIdentifier(project.getId(), newLabel, null, false);
+			} else {
+				match = XnatExperimentdata.GetExptByProjectIdentifier(project.getId(), newLabel, null, false);
 			}
-			
+			if (match != null) {
+				throw new LabelConflictException();
+			}
+
+			//Confirm processing not running
 			final Collection<? extends PersistentWorkflowI> open=PersistentWorkflowUtils.getOpenWorkflows(user, id);
-			if(!open.isEmpty()){		
+			if (!open.isEmpty()) {
 				throw new ProcessingInProgress(((WrkWorkflowdata)CollectionUtils.get(open, 0)).getPipelineName());
 			}
 			
-			//confirm if new directory already exists w/ stuff in it
-			if(newSessionDir.exists() && ArrayUtils.getLength(newSessionDir.list()) > 0){
+			//Confirm new directory doesn't exist w/ stuff in it
+			if (newSessionDir.exists() && ArrayUtils.getLength(newSessionDir.list()) > 0){
 				throw new FolderConflictException();
-			}else{
+			} else {
 				newSessionDir.mkdir();
 			}
 			
-			//identify existing directory
-			final File oldSessionDir = item.getExpectedCurrentDirectory();
-				
-			final String message=String.format("Renamed from %s to %s", currentLabel,newLabel);
+			final String message = String.format("Renamed from %s to %s", currentLabel, newLabel);
 			
-			//add workflow entry    		
-			final PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, item.getXSIType(), item.getStringProperty("ID"), project.getId(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, type, EventUtils.RENAME, reason, null));
+			//Add workflow entry
+			final PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, item.getXSIType(),
+					item.getStringProperty("ID"), project.getId(),
+					EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, type, EventUtils.RENAME, reason, null));
 			workflow.setDetails(message);
-			EventMetaI c=WorkflowUtils.setStep(workflow, getStep().toString());
+			EventMetaI c = WorkflowUtils.setStep(workflow, getStep().toString());
 			PersistentWorkflowUtils.save(workflow,c);
-			
-			
-			final URI expected=oldSessionDir.toURI();
-			final String newArchive=newSessionDir.getAbsolutePath();
-			
-			final boolean moveFiles=oldSessionDir.exists();
-			
-			c=this.updateStep(workflow, setStep(STEP.PREPARE_SQL));	
-			
+
+			//Variables
+			final File oldSessionDir = item.getExpectedCurrentDirectory();
+			final URI expected = oldSessionDir.toURI();
+			final String oldArchive = oldSessionDir.getAbsolutePath();
+			final String newArchive = newSessionDir.getAbsolutePath();
+			final boolean moveFiles = oldSessionDir.exists();
+
 			try {
-				//Copy files to new location    		
-				
 				//Generate SQL to update URIs
+				c = this.updateStep(workflow, setStep(STEP.PREPARE_SQL));
 				final DBItemCache cache=new DBItemCache(user,c);
 				generateLabelSQL(item, newLabel, cache, user, c);
 				generateURISQL(item, expected, newArchive, cache, user);
 
+				//Copy files to new location
 				this.updateStep(workflow, setStep(STEP.COPY_DIR));
+				if (moveFiles) {
+					if (!CatalogUtils.copyRemoteDirectory(oldArchive, newArchive)) {
+						//If remote copy fails, pull everything down to local so it'll be pushed properly during cleanup
+						if (!CatalogUtils.getRemoteDirectory(oldArchive)) {
+							throw new Exception("Issue copying and pulling files from remote filesystem");
+						}
+					}
+					org.nrg.xft.utils.FileUtils.CopyDir(oldSessionDir, newSessionDir,false);
+				}
 
-				if(moveFiles)org.nrg.xft.utils.FileUtils.CopyDir(oldSessionDir, newSessionDir,false);	
-				
-				if(item instanceof XnatImagesessiondata){
+				//Apply anonymization. If an anonymization script exists, this will pull all files into local filesystem,
+				//where they'll be updated and later pushed to remote on cleanup.
+				if (item instanceof XnatImagesessiondata){
 					this.updateStep(workflow, setStep(STEP.ANONYMIZE));
 					new ProjectAnonymizer(newLabel,
-										  (XnatImagesessiondata) item,
-										  project.getId(),
-										  ((XnatImagesessiondata) item).getArchivePath(item.getArchiveRootPath())
-										  ).call();
-				}else if(item instanceof XnatSubjectdata){
+							(XnatImagesessiondata) item,
+							project.getId(),
+							((XnatImagesessiondata) item).getArchivePath(item.getArchiveRootPath())
+					).call();
+				} else if (item instanceof XnatSubjectdata){
 					for(final XnatSubjectassessordata expt : ((XnatSubjectdata) item).getExperiments_experiment("xnat:imageSessionData")){
-                        try{
-                           // re-apply this project's edit script
-                           expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, newLabel, expt.getProject(), expt.getArchiveRootPath()));
-                        }
-                        catch (TransactionException e) {
-                           throw new AnonException(e);
-                        }
-                   }
+						try{
+							// re-apply this project's edit script
+							expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, newLabel, expt.getProject(), expt.getArchiveRootPath()));
+						}
+						catch (TransactionException e) {
+							throw new AnonException(e);
+						}
+					}
 				}
-				
-				this.updateStep(workflow, setStep(STEP.EXECUTE_SQL));
+
 				//Execute SQL
+				this.updateStep(workflow, setStep(STEP.EXECUTE_SQL));
 				executeSQL(cache,user);
 
+				//If successful, move old directory to cache)
 				this.updateStep(workflow, setStep(STEP.DELETE_OLD_DIR));
-				//if successful, move old directory to cache)
-				if(moveFiles)org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), SUCCESSFUL_RENAMES, oldSessionDir);
-				
-				//close workflow entry
+				if (moveFiles) {
+					CatalogUtils.deleteRemoteDirectory(oldSessionDir.getAbsolutePath());
+					org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), SUCCESSFUL_RENAMES, oldSessionDir);
+				}
+
+				//Close workflow entry
 				workflow.setStepDescription(setStep(STEP.COMPLETE).toString());
 				workflow.setStatus(PersistentWorkflowUtils.COMPLETE);
 			} catch (final Exception e) {
-				if(!getStep().equals(STEP.DELETE_OLD_DIR)){
+				if (!getStep().equals(STEP.DELETE_OLD_DIR)){
 					try {
-						if(moveFiles)org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), FAILED_RENAME, newSessionDir);
+						if (moveFiles) {
+							org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), FAILED_RENAME, newSessionDir);
+							CatalogUtils.deleteRemoteDirectory(newSessionDir.getAbsolutePath());
+						}
 					} catch (IOException e1) {
-						log.error("", e1);
+						log.error("Issue caching rename failure", e1);
 					}
-					
-					//close workflow
+
+					//Fail workflow
 					workflow.setStatus(PersistentWorkflowUtils.FAILED);
-					
+
 					throw e;
-				}else{
+				} else {
 					workflow.setStatus(PersistentWorkflowUtils.COMPLETE);
 				}
-			}finally{
+			} finally {
 				PersistentWorkflowUtils.save(workflow,c);
 			}
-		} catch (XFTInitException e) {
-			log.error("", e);
-		} catch (ElementNotFoundException e) {
+		} catch (XFTInitException | ElementNotFoundException e) {
 			log.error("", e);
 		}
 		
@@ -362,7 +375,7 @@ public class Rename  implements Callable<File>{
 				//session contains resource which is not in the standard format, but is in a directory with the old label.
 				throw new UnsupportedResourceType();
 			}else{
-			return false;
+				return false;
 			}
 		}else{
 			//properly in place

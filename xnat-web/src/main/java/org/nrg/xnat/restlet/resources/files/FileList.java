@@ -18,7 +18,6 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.table;
 import org.json.JSONObject;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
@@ -35,7 +34,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -150,7 +148,7 @@ public class FileList extends XNATCatalogTemplate {
 
                                 }
                             }catch(Exception e){
-                                logger.error("Error getting assessor object to check permissions.", e);
+                                log.error("Error getting assessor object to check permissions.", e);
                             }
                             if((proj==null || Permissions.canReadProject(user,proj.getId())) && (assessorObject==null || Permissions.canRead(user,assessorObject))) {
                                 resources.add(res);
@@ -180,7 +178,7 @@ public class FileList extends XNATCatalogTemplate {
             getVariants().add(new Variant(MediaType.TEXT_XML));
             getVariants().add(new Variant(MediaType.IMAGE_JPEG));
         } catch (Exception e) {
-            logger.error("Error occurred while initializing FileList service", e);
+            log.error("Error occurred while initializing FileList service", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "Error during service initialization");
         }
     }
@@ -258,7 +256,7 @@ public class FileList extends XNATCatalogTemplate {
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("Exception checking whether user has project access.", e);
+                    log.error("Exception checking whether user has project access.", e);
                 }
 
                 return handleMultipleCatalogs(mt);
@@ -267,7 +265,7 @@ public class FileList extends XNATCatalogTemplate {
             if (acceptNotFound) {
                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT, "Unable to find file.");
             } else {
-                logger.error("", e);
+                log.error("", e);
                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
             }
             return new StringRepresentation("");
@@ -396,7 +394,7 @@ public class FileList extends XNATCatalogTemplate {
                             getResponse().setEntity(new JSONObjectRepresentation(MediaType.TEXT_HTML, new JSONObject(ImmutableMap.of("workflowId", wrk.getWorkflowId()))));
                         }
                     } catch (Exception e) {
-                        logger.error("Error occurred while trying to POST file", e);
+                        log.error("Error occurred while trying to POST file", e);
                         throw e;
                     }
 
@@ -406,10 +404,10 @@ public class FileList extends XNATCatalogTemplate {
                 }
             } catch(IllegalArgumentException e){ // XNAT-2989
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
-                logger.error("", e);
+                log.error("", e);
             } catch (Exception e) {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-                logger.error("", e);
+                log.error("", e);
             }
         }
     }
@@ -454,10 +452,10 @@ public class FileList extends XNATCatalogTemplate {
                         }
 
                         if (entries.size() == 0 && filePath.endsWith("/")) {
-                            final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
+                            final CatalogUtils.CatEntryFilterI folderFilter = new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            						return entry.getUri().startsWith(filePath);
+            						return entry.getUri().startsWith(filePath) || entry.getId().startsWith(filepath);
             					}
             				};
 
@@ -473,8 +471,8 @@ public class FileList extends XNATCatalogTemplate {
 
                         final AtomicInteger deletedCount = new AtomicInteger(0);
                         for (CatEntryI entry : entries) {
-                            final File file = new File(parentPath, entry.getUri());
-                            if (file.exists()) {
+                            final File file = CatalogUtils.getFile(entry, parentPath);
+                            if (file != null && file.exists()) {
                                 PersistentWorkflowI work = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, security.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_FILE));
                                 EventMetaI ci = work.buildEvent();
 
@@ -482,8 +480,11 @@ public class FileList extends XNATCatalogTemplate {
                                 CatalogUtils.writeCatalogToFile(cat, catFile);
                                 CatalogUtils.moveToHistory(catFile, file, (CatEntryBean) entry, ci);
 
-                                if (!isQueryVariableFalse("removeFiles") && !file.delete()) {
-                                    logger.warn("Error attempting to delete physical file for deleted resource: " + file.getAbsolutePath());
+                                if (!isQueryVariableFalse("removeFiles")) {
+                                    CatalogUtils.deleteRemoteFile(file, entry.getUri());
+                                    if (!file.delete()) {
+                                        log.warn("Error attempting to delete physical file for deleted resource: " + file.getAbsolutePath());
+                                    }
                                 }
 
                                 //if parent folder is empty, then delete folder
@@ -573,7 +574,7 @@ public class FileList extends XNATCatalogTemplate {
             try {
                 rep = new ZipRepresentation(mt, getSessionIds(), identifyCompression(null));
             } catch (ActionException e) {
-                logger.error("", e);
+                log.error("", e);
                 setResponseStatus(e);
                 return null;
             }
@@ -927,7 +928,7 @@ public class FileList extends XNATCatalogTemplate {
                     try {
                         rep = new ZipRepresentation(mt, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
                     } catch (ActionException e) {
-                        logger.error("", e);
+                        log.error("", e);
                         setResponseStatus(e);
                         return null;
                     }
@@ -944,7 +945,7 @@ public class FileList extends XNATCatalogTemplate {
                     try {
                         rep = new ZipRepresentation(mt, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
                     } catch (ActionException e) {
-                        logger.error("", e);
+                        log.error("", e);
                         setResponseStatus(e);
                         return null;
                     }
@@ -1064,11 +1065,7 @@ public class FileList extends XNATCatalogTemplate {
                     getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                     return new StringRepresentation("");
                 } else {
-                    if (FileUtils.IsAbsolutePath(entry.getUri())) {
-                        f = new File(entry.getUri());
-                    } else {
-                        f = new File(parentPath, entry.getUri());
-                    }
+                    f = CatalogUtils.getFile(entry, parentPath);
 
                     if (f.exists()) {
                         String fName;

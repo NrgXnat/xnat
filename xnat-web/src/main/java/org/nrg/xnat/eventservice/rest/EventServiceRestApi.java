@@ -46,7 +46,7 @@ import java.util.Optional;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
-import static org.nrg.xdat.security.helpers.AccessLevel.Owner;
+import static org.nrg.xdat.security.helpers.AccessLevel.Delete;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -96,7 +96,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(created.name() + ":" + Long.toString(created.id()), HttpStatus.CREATED);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription", method = POST)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription", method = POST)
     @ApiOperation(value = "Create a Subscription for (project)", code = 201)
     public ResponseEntity<String> createSubscription(final @RequestBody ProjectSubscriptionCreator subscription,
                                                             final @PathVariable @ProjectId String project)
@@ -144,7 +144,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription/{id}", method = PUT)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}", method = PUT)
     @ApiOperation(value = "Update an existing Subscription for (project)")
     public ResponseEntity<Void> updateSubscription(final @PathVariable long id,
                                                    final @RequestBody SubscriptionUpdate update,
@@ -166,7 +166,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription/{id}/activate", method = POST)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}/activate", method = POST)
     @ApiOperation(value = "Activate an existing Subscription")
     public ResponseEntity<Void> activateSubscription(final @PathVariable long id,
                                                      final @PathVariable @ProjectId String project)
@@ -185,7 +185,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription/{id}/deactivate", method = POST)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}/deactivate", method = POST)
     @ApiOperation(value = "Activate an existing Subscription")
     public ResponseEntity<Void> deactivateSubscription(final @PathVariable long id,
                                                      final @PathVariable @ProjectId String project)
@@ -203,7 +203,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptions();
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscriptions", method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscriptions", method = GET, produces = JSON)
     @ResponseBody
     public List<Subscription> getAllSubscriptions(final @PathVariable @ProjectId String project)
             throws NrgServiceRuntimeException {
@@ -217,7 +217,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscription(id);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = {"/projects/{project}/events/subscription/{id}"}, method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Delete, value = {"/projects/{project}/events/subscription/{id}"}, method = GET, produces = JSON)
     @ApiOperation(value = "Get a Subscription by ID")
     @ResponseBody
     public Subscription retrieveSubscription(final @PathVariable long id,
@@ -233,7 +233,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.noContent().build();
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/subscription/{id}", method = DELETE)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}", method = DELETE)
     @ApiOperation(value="Deactivate and delete a subscription by ID", code = 204)
     public ResponseEntity<Void> delete(final @PathVariable long id,
                                        final @PathVariable @ProjectId String project) throws Exception {
@@ -254,7 +254,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredProjectSubscriptions(
             final @PathVariable @ProjectId String project,
@@ -307,7 +307,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             return eventService.getActions(xnatType, user);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/actions", method = GET, params = {"!event-type"})
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/actions", method = GET, params = {"!event-type"})
     @ResponseBody
     public List<Action> getProjectActions(
             final @PathVariable @ProjectId String project,
@@ -334,7 +334,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getActionsByEvent(eventId, projectId, user);
     }
 
-    @XapiRequestMapping(restrictTo = Owner, value = "/projects/{project}/events/actionsbyevent", method = GET, params = {"!xnattype"})
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/actionsbyevent", method = GET, params = {"!xnattype"})
     @ApiOperation(value="Get actions that can act on a particular Event type")
     public List<Action> getProjectActionsByEvent(final @RequestParam(value = "event-type", required = true) String eventId,
                                           final @PathVariable @ProjectId String project)

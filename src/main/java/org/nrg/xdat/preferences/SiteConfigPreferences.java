@@ -1693,7 +1693,33 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'uiAllowMoreProjectInvestigators': something is very wrong here.", e);
         }
     }
-
+    
+    public void setSecurityMaxLoginInterval(final int securityMaxLoginInterval) {
+        try {
+        	setIntegerValue(securityMaxLoginInterval, "securityMaxLoginInterval");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'securityMaxLoginInterval': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "1")
+    public int getSecurityMaxLoginInterval() {
+        return getIntegerValue("securityMaxLoginInterval");
+    }
+    
+    public void setSecurityLastModifiedInterval(final int securityLastModifiedInterval) {
+        try {
+            setIntegerValue(securityLastModifiedInterval, "securityLastModifiedInterval");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'securityLastModifiedInterval': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "1")
+    public int getSecurityLastModifiedInterval() {
+        return getIntegerValue("securityLastModifiedInterval");
+    }
+    
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

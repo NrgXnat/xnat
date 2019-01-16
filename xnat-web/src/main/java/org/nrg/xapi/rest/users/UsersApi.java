@@ -27,6 +27,7 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.*;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -43,6 +44,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
@@ -89,7 +91,7 @@ public class UsersApi extends AbstractXapiRestController {
     };
 
     public static final String QUERY_USER_PROFILES = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id";
-    public static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id";
+    public static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - (INTERVAL '1 year' * :maxLoginInterval)) OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - (INTERVAL '1 year' * :lastModifiedInterval)) ) ) )) ORDER BY xdat_user.xdat_user_id";
     public static final String QUERY_USER_PROFILE  = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login=:username";
 
     @Autowired
@@ -164,7 +166,10 @@ public class UsersApi extends AbstractXapiRestController {
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<User>> currentUsersProfilesGet() {
-        return new ResponseEntity<>(_jdbcTemplate.query(QUERY_CURRENT_USERS, USER_ROW_MAPPER), OK);
+        return new ResponseEntity<>(_jdbcTemplate.query(QUERY_CURRENT_USERS, 
+               new MapSqlParameterSource().addValue("maxLoginInterval",     this.getMaxLoginInterval())
+                                          .addValue("lastModifiedInterval", this.getLastModifiedInterval()), 
+                                          USER_ROW_MAPPER),OK);
     }
 
     @ApiOperation(value = "Get list of active users.", notes = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.", response = Map.class, responseContainer = "Map")
@@ -907,6 +912,16 @@ public class UsersApi extends AbstractXapiRestController {
         } catch (UserInitException e) {
             log.error("An error occurred trying to check for duplicate username", e);
         }
+    }
+    
+    private int getLastModifiedInterval() {
+        int interval = XDAT.getSiteConfigPreferences().getSecurityLastModifiedInterval();
+        return (interval > 0) ? interval : 1; // Make sure its greater than 0
+    }
+    
+    private int getMaxLoginInterval() {
+        int interval = XDAT.getSiteConfigPreferences().getSecurityMaxLoginInterval();
+        return (interval > 0) ? interval : 1; // Make sure its greater than 0
     }
 
     private static class SessionInfoToIdFunction implements Function<SessionInformation, String> {

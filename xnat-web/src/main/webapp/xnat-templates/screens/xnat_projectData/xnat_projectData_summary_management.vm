@@ -65,19 +65,23 @@
     <table class="xnat-table clean">
         <tr>
             <td nowrap>
-                <label><input name="accessibility" type="radio" value="private" #if($guest=="private")CHECKED#end /> Private</label>
+                <label><input id="private_access" name="accessibility" type="radio" value="private"
+                    #if($guest=="private")checked #else disabled #end/>Private
+                </label>
             </td>
             <td>Only you and study members will be able to access study data.</td>
         </tr>
         <tr>
             <td nowrap>
-                <label><input name="accessibility" type="radio" value="protected" #if($guest=="protected")CHECKED#end /> Protected</label>
+                <label><input id="protected_access" name="accessibility" type="radio" value="protected" 
+                   #if($guest=="protected")checked #end #if($guest=="public") disabled #end/> Protected
+                </label>
             </td>
             <td>All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.</td>
         </tr>
         <tr>
             <td nowrap>
-                <label><input name="accessibility" type="radio" value="public" #if($guest=="public")CHECKED#end /> Public</label>
+                <label><input id="public_access" name="accessibility" type="radio" value="public" #if($guest=="public")CHECKED#end /> Public</label>
             </td>
             <td>All users will be able to access study data for analysis and download.</td>
         </tr>

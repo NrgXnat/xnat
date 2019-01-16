@@ -841,6 +841,25 @@ var XNAT = getObject(XNAT || {});
             success: function(){
                 XNAT.ui.banner.top(2000,'<b>Success.</b> Project accessibility set to '+accessibility+'.', 'success');
                 $('#accessibility_save').prop('disabled', true);
+                switch(accessibility){
+                    case "public":
+                       $('#protected_access').attr('disabled', true);
+                       $('#private_access').attr('disabled', true);
+                       $('#public_access').attr('disabled', false);
+                       break;
+                    case "protected":
+                        $('#protected_access').attr('disabled', false);
+                        $('#private_access').attr('disabled', true);
+                        $('#public_access').attr('disabled', false);
+                        break;
+                    case "private":
+                    default:
+                        $('#protected_access').attr('disabled', false);
+                        $('#private_access').attr('disabled', false);
+                        $('#public_access').attr('disabled', false);
+                        break;
+                }
+                
                 currAccessibility = accessibility;
             },
             fail: function(e){

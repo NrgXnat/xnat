@@ -294,7 +294,7 @@ window.xmodal = getObject(window.xmodal);
 
                     // is there a 'maximize' button in the header?
                     // defaults to NO maximize button
-                    this.maxBtn = firstDefined(this.maxBtn || undef, false);
+                    this.maxBtn = firstDefined(this.maxBtn, false);
 
                     // header buttons (close, maximize)
                     this.headerButtons = {};
@@ -401,7 +401,7 @@ window.xmodal = getObject(window.xmodal);
                         className: 'ok',
                         isDefault: true,
                         action: this.okAction || diddly,
-                        close: this.okClose || true
+                        close: firstDefined(this.okClose, true)
                     });
                     // default 'cancel' button
                     this.buttons.push({
@@ -410,7 +410,7 @@ window.xmodal = getObject(window.xmodal);
                         className: 'cancel',
                         isDefault: false,
                         action: this.cancelAction || diddly,
-                        close: this.cancelClose || true
+                        close: firstDefined(this.cancelClose, true)
                     });
                 }
 
@@ -1154,7 +1154,7 @@ window.xmodal = getObject(window.xmodal);
             nuke: true, // destroy on close?
             buttons: opts.buttons || [{
                 label: opts.buttonLabel || opts.okLabel || 'OK',
-                close: firstDefined(opts.okClose || undef, true),
+                close: firstDefined(opts.okClose, true),
                 isDefault: true,
                 isSubmit: true,
                 action: opts.okAction || diddly
@@ -1184,7 +1184,7 @@ window.xmodal = getObject(window.xmodal);
         if (opts.buttons.length === 1) {
             opts.buttons.push({
                 label: opts.cancelLabel || 'Cancel',
-                close: firstDefined(opts.cancelClose || undef, true),
+                close: firstDefined(opts.cancelClose, true),
                 isCancel: true,
                 action: opts.cancelAction || diddly
             })

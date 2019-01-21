@@ -232,7 +232,7 @@ public class CatalogUtils {
                 }
                 File file = null;
                 if (includeFile || StringUtils.isEmpty(size) || StringUtils.isEmpty(name)) {
-                    file = getFileOnLocalFileSystem(entryPath);
+                    file = getFile(entry, parentPath);
                     assert file != null;
                     name = file.getName();
                     size = String.valueOf(file.length());

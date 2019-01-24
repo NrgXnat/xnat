@@ -71,31 +71,12 @@ function confirmValues(_focus){
 		valid = false;
 	}
 	
-	if(validatePhi("checkboxphi") === false){ 
-		valid = false;
-	}
-	
 
 	return valid;
   }catch(e){
   	  xmodal.message('Error',"An exception has occurred. Please contact technical support for assistance.");
   	  return false;
   }
-}
-
-function validatePhi(name){
-	var phi=getValueById(name);
-	if(phi!=null && phi !=undefined){
-	  if(!phi.obj.checked){
-		  appendImage(phi.obj,"/images/checkmarkRed.gif","Please confirm data is free of PHI");
-		  return false;
-	  }else{
-		  removeAppendImage(phi.obj);
-		  return true;
-	  }
-	}else{
-		return true;
-	}
 }
 
 function validateDate(){

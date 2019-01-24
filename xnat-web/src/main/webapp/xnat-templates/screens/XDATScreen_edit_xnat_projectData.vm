@@ -60,10 +60,10 @@ $page.setVlinkColor($ui.vlink)
 
                 <div id="access-buttons" class="radio-toggle">
                     <label class="access-label" title="Only you and study members will be able to access study data.">
-                        <input type="radio" id="private_access" name="accessibility" value="private" #if($om.getPublicAccessibility() != "private")disabled #end/> Private
+                        <input type="radio" id="private_access" name="accessibility" value="private"/> Private
                     </label>
                     <label class="access-label" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.">
-                        <input type="radio" id="protected_access" name="accessibility" value="protected" #if($om.getPublicAccessibility() == "public")disabled #end/> Protected
+                        <input type="radio" id="protected_access" name="accessibility" value="protected"/> Protected
                     </label>
                     <label class="access-label" style="margin-bottom:0" title="All users will be able to access study data for analysis and download.">
                         <input type="radio" id="public_access" name="accessibility" value="public"/> Public

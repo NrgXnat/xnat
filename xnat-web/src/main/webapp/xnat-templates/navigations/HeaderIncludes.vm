@@ -150,8 +150,7 @@ $navigation.setTemplate("/BaseJS.vm")
     XNAT.app.showLeftBarFavorites = realValue($!siteConfig.uiShowLeftBarFavorites);
     XNAT.app.showLeftBarSearch =  realValue($!siteConfig.uiShowLeftBarSearch);
     XNAT.app.showLeftBarBrowse = realValue($!siteConfig.uiShowLeftBarBrowse);
-    XNAT.app.autoRefreshCatalog = realValue($!siteConfig.uiAutoRefreshCatalog);
-    	
+    
     #if ($project)
         #if ($project.getId())
         window.projectScope = "$!project.getId()";

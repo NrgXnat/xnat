@@ -26,8 +26,6 @@ import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
-import org.nrg.xnat.preferences.AutomationPreferences;
-import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
 import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
@@ -58,7 +56,7 @@ import java.util.List;
                 "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",
                 "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners",
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
-                "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.processors",
+                "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.preferences", "org.nrg.xnat.processors",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
@@ -96,16 +94,6 @@ public class ApplicationConfig {
     @Bean
     public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new NotificationsPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
-    }
-
-    @Bean
-    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
-    }
-
-    @Bean
-    public PluginOpenUrlsPreference pluginOpenUrlsPreference(final NrgPreferenceService preferenceService) {
-        return new PluginOpenUrlsPreference(preferenceService);
     }
 
     @Bean

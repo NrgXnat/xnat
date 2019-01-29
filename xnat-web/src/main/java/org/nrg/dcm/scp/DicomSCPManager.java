@@ -54,6 +54,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -62,7 +63,6 @@ import javax.inject.Provider;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.Executors;
 
 import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
@@ -72,12 +72,12 @@ import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 @NrgPreferenceBean(toolId = TOOL_ID, toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
 public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean implements PreferenceHandlerMethod {
     public static final String TOOL_ID = "dicomScpManager";
-    public static final String PREF_ID = "dicomSCPInstances";
 
     @Autowired
-    public DicomSCPManager(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
+    public DicomSCPManager(final ThreadPoolExecutorFactoryBean threadPoolFactory, final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         super(preferenceService, eventService);
 
+        _threadPoolFactory = threadPoolFactory;
         _provider = receivedFileUserProvider;
         _context = context;
 
@@ -546,7 +546,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
                     dicomSCP.stop();
                 }
             } else {
-                dicomSCP = DicomSCP.create(this, Executors.newCachedThreadPool(), port);
+                dicomSCP = DicomSCP.create(this, _threadPoolFactory.getObject(), port);
                 _dicomSCPs.put(port, dicomSCP);
             }
             final List<String> started = dicomSCP.start();
@@ -583,6 +583,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     }
 
+    private static final String PREF_ID      = "dicomSCPInstances";
     private static final String DSCPM_DB_URL = "jdbc:h2:mem:" + PREF_ID;
 
     // Read queries: no changes to DicomSCPs required.
@@ -621,6 +622,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     };
 
+    private final ThreadPoolExecutorFactoryBean _threadPoolFactory;
     private final XnatUserProvider           _provider;
     private final ApplicationContext         _context;
     private final String                     _primaryDicomObjectIdentifierBeanId;

@@ -7,6 +7,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.*;
+import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
@@ -27,12 +28,12 @@ import java.util.zip.ZipOutputStream;
  * <p>
  * You can specify the size of the internal buffer used to transfer data from the resource to the zip stream by calling
  * the constructor with the buffer size parameter. If you call the other constructor, {@link FileUtils#LARGE_DOWNLOAD}
- * is used for the default size.
+ * is used for the default size.'
  */
+@SuppressWarnings("WeakerAccess")
 @Slf4j
 public abstract class AbstractZipStreamingResponseBody implements StreamingResponseBody {
-    public static final String MEDIA_TYPE          = "application/zip";
-    public static final int    DEFAULT_BUFFER_SIZE = FileUtils.LARGE_DOWNLOAD;
+    public static final String MEDIA_TYPE = "application/zip";
 
     /**
      * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
@@ -42,7 +43,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody() {
-        this(Paths.get(""), DEFAULT_BUFFER_SIZE, null);
+        this(Paths.get(""), DEFAULT_BUFFER_SIZE, null, true);
     }
 
     /**
@@ -54,7 +55,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath) {
-        this(Paths.get(rootPath), DEFAULT_BUFFER_SIZE, null);
+        this(Paths.get(rootPath), DEFAULT_BUFFER_SIZE, null, true);
     }
 
     /**
@@ -66,7 +67,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final Path rootPath) {
-        this(rootPath, DEFAULT_BUFFER_SIZE, null);
+        this(rootPath, DEFAULT_BUFFER_SIZE, null, true);
     }
 
     /**
@@ -79,7 +80,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath, final int bufferSize) {
-        this(Paths.get(rootPath), bufferSize, null);
+        this(Paths.get(rootPath), bufferSize, null, true);
     }
 
     /**
@@ -93,8 +94,9 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      * @param bufferSize The size of the buffer to use when writing files.
      * @param history    The file where the zip write history should recorded.
      */
+    @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final int bufferSize, final File history) {
-        this((Path) null, bufferSize, history);
+        this(null, bufferSize, history, true);
     }
 
     /**
@@ -109,8 +111,24 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      * @param bufferSize The size of the buffer to use when writing files.
      * @param history    The file where the zip write history should recorded.
      */
+    @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath, final int bufferSize, final File history) {
-        this(Paths.get(rootPath), bufferSize, history);
+        this(Paths.get(rootPath), bufferSize, history, true);
+    }
+
+    /**
+     * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
+     * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
+     * sets the size of the transfer buffer to {@link #DEFAULT_BUFFER_SIZE}. The history is written as a CSV file
+     * with the zip entry path, full path of the file written to the zip entry, and the total number of bytes written.
+     * If the history file isn't set, the history won't be recorded, but errors and warnings are still logged in the
+     * standard log files.
+     *
+     * @param rootPath The root path for resolving resources.
+     * @param history  The file where the zip write history should recorded.
+     */
+    public AbstractZipStreamingResponseBody(final String rootPath, final File history) {
+        this(Paths.get(rootPath), DEFAULT_BUFFER_SIZE, history, true);
     }
 
     /**
@@ -125,7 +143,25 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      * @param bufferSize The size of the buffer to use when writing files.
      * @param history    The file where the zip write history should recorded.
      */
+    @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final Path rootPath, final int bufferSize, final File history) {
+        this(rootPath, bufferSize, history, true);
+    }
+
+    /**
+     * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
+     * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
+     * sets the size of the transfer buffer to {@link FileUtils#LARGE_DOWNLOAD}. The history is written as a CSV file
+     * with the zip entry path, full path of the file written to the zip entry, and the total number of bytes written.
+     * If the history file isn't set, the history won't be recorded, but errors and warnings are still logged in the
+     * standard log files.
+     *
+     * @param rootPath          The root path for resolving resources.
+     * @param bufferSize        The size of the buffer to use when writing files.
+     * @param history           The file where the zip write history should recorded.
+     * @param closeOnCompletion Indicates whether the output stream should be closed when the write operation is completed.
+     */
+    public AbstractZipStreamingResponseBody(final Path rootPath, final int bufferSize, final File history, final boolean closeOnCompletion) {
         _rootPath = rootPath;
         _buffer = new byte[bufferSize];
         try {
@@ -133,6 +169,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
         } catch (FileNotFoundException e) {
             throw new RuntimeException("Couldn't find the specified history file " + history.getAbsolutePath(), e);
         }
+        _closeOnCompletion = closeOnCompletion;
     }
 
     protected abstract PathResourceMap<String, Resource> getResourceMap();
@@ -163,8 +200,13 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
                 writeHistory(path, file, total);
             }
             log.info("Mapper has no more entries, processed {} total entries.", getResourceMap().getProcessedCount());
+        } catch (SocketException e) {
+            log.error("Got a socket exception, closing output stream early", e);
         } finally {
-            output.flush();
+            if (_closeOnCompletion) {
+                output.flush();
+                output.close();
+            }
             endHistory();
         }
     }
@@ -187,7 +229,10 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
         }
     }
 
+    private static final int DEFAULT_BUFFER_SIZE = FileUtils.LARGE_DOWNLOAD;
+
     private final Path        _rootPath;
     private final byte[]      _buffer;
     private final PrintWriter _history;
+    private final boolean     _closeOnCompletion;
 }

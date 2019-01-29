@@ -13,17 +13,19 @@ import com.fasterxml.jackson.core.SerializableString;
 import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Chars;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.preferences.AsyncOperationsPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
+import org.nrg.xnat.web.http.AsyncLifecycleMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -31,6 +33,8 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
@@ -46,11 +50,18 @@ import java.util.Map;
 @Configuration
 @EnableWebMvc
 @EnableAspectJAutoProxy
+@Slf4j
 @ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Autowired
-    public void setJackson2ObjectMapperBuilder(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
-        _objectMapperBuilder = objectMapperBuilder;
+    public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder, final ThreadPoolExecutorFactoryBean factoryBean, final AsyncOperationsPreferences preferences) {
+        _threadPoolFactory = factoryBean;
+        _preferences = preferences;
+        _objectMapper = objectMapperBuilder.build();
+        _objectMapper.getFactory().setCharacterEscapes(CHARACTER_ESCAPES);
+        _marshaller = new Jaxb2Marshaller();
+        _marshaller.setClassesToBeBound(SiteConfigPreferences.class);
+        _marshaller.setMarshallerProperties(MARSHALLER_PROPERTIES);
     }
 
     @Override
@@ -82,8 +93,9 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureAsyncSupport(final AsyncSupportConfigurer configurer) {
-        configurer.setDefaultTimeout(-1);
+        configurer.setDefaultTimeout(_preferences.getDefaultTimeout());
         configurer.setTaskExecutor(asyncTaskExecutor());
+        configurer.registerCallableInterceptors(new AsyncLifecycleMonitor());
     }
 
     @Bean
@@ -113,14 +125,24 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public HttpMessageConverter<?> mappingJackson2HttpMessageConverter() {
-        final ObjectMapper objectMapper = _objectMapperBuilder.build();
-        objectMapper.getFactory().setCharacterEscapes(CHARACTER_ESCAPES);
-        return new MappingJackson2HttpMessageConverter(objectMapper);
+        return new MappingJackson2HttpMessageConverter(_objectMapper);
     }
 
     @Bean
     public AsyncTaskExecutor asyncTaskExecutor() {
-        return new SimpleAsyncTaskExecutor("async");
+        final int     corePoolSize           = _preferences.getCorePoolSize();
+        final boolean allowCoreThreadTimeOut = _preferences.getAllowCoreThreadTimeOut();
+        final int     maxPoolSize            = _preferences.getMaxPoolSize();
+        final int     keepAliveSeconds       = _preferences.getKeepAliveSeconds();
+
+        log.info("Configuring async task executor with core pool size {}, max pool size {}, keep-alive seconds {}, and allow core thread timeout {}", corePoolSize, maxPoolSize, keepAliveSeconds, allowCoreThreadTimeOut);
+        final ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setThreadFactory(_threadPoolFactory);
+        taskExecutor.setCorePoolSize(corePoolSize);
+        taskExecutor.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
+        taskExecutor.setMaxPoolSize(maxPoolSize);
+        taskExecutor.setKeepAliveSeconds(keepAliveSeconds);
+        return taskExecutor;
     }
 
     @Bean
@@ -134,7 +156,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         resolver.setExposeContextBeansAsAttributes(true);
         resolver.setViewClass(JstlView.class);
         resolver.setPrefix("/page/");
-        // resolver.setSuffix("/index.jsp");
         return resolver;
     }
 
@@ -159,10 +180,8 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         }
     };
 
-    private final Jaxb2Marshaller _marshaller = new Jaxb2Marshaller() {{
-        setClassesToBeBound(SiteConfigPreferences.class);
-        setMarshallerProperties(MARSHALLER_PROPERTIES);
-    }};
-
-    private Jackson2ObjectMapperBuilder _objectMapperBuilder;
+    private final AsyncOperationsPreferences    _preferences;
+    private final Jaxb2Marshaller               _marshaller;
+    private final ThreadPoolExecutorFactoryBean _threadPoolFactory;
+    private       ObjectMapper                  _objectMapper;
 }

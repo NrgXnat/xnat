@@ -16,6 +16,7 @@ import io.swagger.models.License
 buildscript {
     ext {
         vXnat = "1.7.5.2-SNAPSHOT"
+        vXnatPlugin = "1.7.5"
     }
     repositories {
         mavenLocal()
@@ -43,7 +44,7 @@ buildscript {
         classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:1.7.5"
+        classpath "org.nrg.xnat:xnat-data-models:${vXnatPlugin}"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
         classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }

@@ -61,6 +61,7 @@ public class EventServiceLoggingAction extends SingleActionProvider {
         log.debug("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
         try {
             log.debug(mapper.writeValueAsString(subscription));
+            log.debug(event.toString());
         } catch (JsonProcessingException e) {
             log.error("Could not write subscription values to log. ", e.getMessage());
         }

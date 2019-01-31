@@ -22,7 +22,6 @@ import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import java.sql.ResultSet;
@@ -39,7 +38,7 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.A
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_FAILED;
 
 @Slf4j
-@Service
+//@Service
 public class EventServiceEmailAction extends SingleActionProvider {
 
     private static final String FROM_KEY    = "from";

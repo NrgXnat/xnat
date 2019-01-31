@@ -120,6 +120,8 @@ public class EventServiceItemSaveAspect {
                     }
                 }
                 eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI) resource, userLogin, ResourceEvent.Status.CREATED, project));
+            } else {
+                retVal = null;
             }
 
         } catch (Throwable e) {

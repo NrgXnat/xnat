@@ -43,7 +43,7 @@ public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusE
         if (wfsEvent.getWorkflow() instanceof WrkWorkflowdata) {
             try {
                 final String project = wfsEvent.getExternalId();
-                if(Strings.isNullOrEmpty(project) && project.contentEquals("ADMIN")){
+                if(!Strings.isNullOrEmpty(project) && project.contentEquals("ADMIN")){
                     return;
                 }
 

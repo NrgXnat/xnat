@@ -28,7 +28,6 @@ import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -39,17 +38,13 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
-import org.nrg.xdat.security.user.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -71,7 +66,7 @@ import java.util.concurrent.Executors;
 
 import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
-@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
+@SuppressWarnings({"SqlNoDataSourceInspection"})
 @Service
 @Slf4j
 @NrgPreferenceBean(toolId = TOOL_ID, toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
@@ -80,7 +75,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     public static final String PREF_ID = "dicomSCPInstances";
 
     @Autowired
-    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {        super(preferenceService, eventService);
+    public DicomSCPManager(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
+        super(preferenceService, eventService);
 
         _provider = receivedFileUserProvider;
         _context = context;
@@ -194,7 +190,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public List<DicomSCPInstance> getDicomSCPInstancesList() {
-        return _template.query("SELECT * FROM dicom_scp_instance",DICOM_SCP_INSTANCE_ROW_MAPPER);
+        return _template.query(GET_ALL, DICOM_SCP_INSTANCE_ROW_MAPPER);
     }
 
     /**

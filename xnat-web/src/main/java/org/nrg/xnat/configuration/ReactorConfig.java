@@ -10,8 +10,9 @@
 package org.nrg.xnat.configuration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xft.event.listeners.XftItemEventHandler;
+import org.nrg.xnat.event.XnatEventService;
 import org.nrg.xnat.event.util.UncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,8 +30,8 @@ import reactor.core.dispatch.WorkQueueDispatcher;
 @Slf4j
 public class ReactorConfig {
     @Bean
-    public NrgEventService eventService(final EventBus eventBus) {
-        return new NrgEventService(eventBus);
+    public DataTypeAwareEventService eventService(final EventBus eventBus) {
+        return new XnatEventService(eventBus);
     }
 
     @Bean

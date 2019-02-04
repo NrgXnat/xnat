@@ -10,9 +10,9 @@
 package org.nrg.xnat.configuration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.configuration.ConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -21,17 +21,18 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.preferences.AutomationPreferences;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
+import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
+import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
-import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
-import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -41,11 +42,9 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
-import org.apache.commons.configuration.ConfigurationException;
-
-import java.io.IOException;
 
 import javax.servlet.ServletContext;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -90,17 +89,17 @@ public class ApplicationConfig {
     }
 
     @Bean(name = {"siteConfigPreferences", "siteConfig"})
-    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @Bean
-    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new NotificationsPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @Bean
-    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
     }
 
@@ -158,6 +157,6 @@ public class ApplicationConfig {
 
     @Bean
     public ProcessorImporterMap processorImporterMap(final List<ProcessorImporterHandlerA> handlers) throws ConfigurationException, IOException, ClassNotFoundException {
-        return new ProcessorImporterMap(new HashSet<>(Arrays.asList("org.nrg.xnat.processor.importer")), handlers);
+        return new ProcessorImporterMap(new HashSet<>(Collections.singletonList("org.nrg.xnat.processor.importer")), handlers);
     }
 }

@@ -28,6 +28,7 @@ import static lombok.AccessLevel.PRIVATE;
  * Provides both {@link AbstractXftItemEventHandlerMethod} implementation and the default implementations for <b>CacheEventListener</b> methods
  * from the <b>CacheEventListenerAdapter</b> class.
  */
+@SuppressWarnings("WeakerAccess")
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
@@ -163,9 +164,12 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         throw new RuntimeException("The native cache is not an ehcache instance, but instead is " + nativeCache.getClass().getName());
     }
 
-    @SuppressWarnings("unused")
-    protected void cacheObject(final String cacheId, final Provider<Object> provider) {
-        cacheObject(cacheId, provider.get());
+    protected <K, V> void cacheMap(final String cacheId, final Map<K, V> map) {
+        cacheObject(cacheId, checkMapForNullKey(cacheId, map));
+    }
+
+    protected <K, V> void cacheMultimap(final String cacheId, final Multimap<K, V> map) {
+        cacheObject(cacheId, checkMapForNullKey(cacheId, map));
     }
 
     protected void cacheObject(final String cacheId, final Object object) {
@@ -187,14 +191,10 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         forceCacheObject(cacheId, object);
     }
 
-    @SuppressWarnings("unused")
-    protected void forceCacheObject(final String cacheId, final Provider<Object> provider) {
-        forceCacheObject(cacheId, provider.get());
-    }
-
     protected void forceCacheObject(final String cacheId, final Object object) {
-        log.trace("Storing cache entry '{}' with object of type: {}", cacheId, object.getClass().getName());
-        getCache().put(cacheId, object);
+        final Object target = object instanceof Provider ? ((Provider<?>) object).get() : object;
+        log.trace("Storing cache entry '{}' with object of type: {}", cacheId, target.getClass().getName());
+        getCache().put(cacheId, target);
     }
 
     protected <T> T getCachedObject(final String cacheId, final Class<? extends T> type) {
@@ -261,8 +261,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         getCache().clear();
     }
 
-    @SuppressWarnings("unchecked")
-    protected <K, V> Map<K, V> buildImmutableMap(final Map<K, V>... maps) {
+    protected <K, V> Map<K, V> buildImmutableMap(final List<Map<K, V>> maps) {
         // The keys set keeps track of keys that have already been added
         // so that we don't add them again.
         final Set<K> keys = new HashSet<>();
@@ -278,7 +277,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
             keys.addAll(map.keySet());
         }
         final ImmutableMap<K, V> map = builder.build();
-        log.debug("Created immutable map combining {} maps, resulting in {} total entries", maps.length, map.size());
+        log.debug("Created immutable map combining {} maps, resulting in {} total entries", maps.size(), map.size());
         return map;
     }
 
@@ -321,6 +320,20 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         } else {
             log.warn("I don't know how to handle the native cache type {}", nativeCache.getClass().getName());
         }
+    }
+
+    private static <K, V> Multimap<K, V> checkMapForNullKey(final String cacheId, final Multimap<K, V> map) {
+        if (map.containsKey(null)) {
+            log.warn("I was asked to cache a map with the ID {}, but this map has a null key. Removing to allow execution, but this could indicate a corrupt index hash in the database. The value(s) stored under the null key are: {}", cacheId, map.removeAll(null));
+        }
+        return map;
+    }
+
+    private static <K, V> Map<K, V> checkMapForNullKey(final String cacheId, final Map<K, V> map) {
+        if (map.containsKey(null)) {
+            log.warn("I was asked to cache a map with the ID {}, but this map has a null key. Removing to allow execution, but this could indicate a corrupt index hash in the database. The value(s) stored under the null key are: {}", cacheId, map.remove(null));
+        }
+        return map;
     }
 
     private final CacheEventListener _cacheEventListener;

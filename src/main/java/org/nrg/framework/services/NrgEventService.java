@@ -34,7 +34,7 @@ import static org.nrg.framework.utilities.ExceptionUtils.getStackTraceDisplay;
 @Slf4j
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
-public class NrgEventService {
+public class NrgEventService implements NrgEventServiceI {
     /**
      * Instantiates a new xft event service.
      *
@@ -52,6 +52,7 @@ public class NrgEventService {
      * @param event                the event
      * @param notifyClassListeners Notify class listeners?
      */
+    @Override
     public void triggerEvent(final String description, final EventI event, final boolean notifyClassListeners) {
         triggerEventInternal(Event.wrap(event), description, notifyClassListeners);
     }
@@ -62,6 +63,7 @@ public class NrgEventService {
      * @param description the event desc
      * @param event       the event
      */
+    @Override
     public void triggerEvent(final String description, final EventI event) {
         triggerEventInternal(Event.wrap(event), description, true);
     }
@@ -71,6 +73,7 @@ public class NrgEventService {
      *
      * @param event the event
      */
+    @Override
     public void triggerEvent(final EventI event) {
         triggerEventInternal(Event.wrap(event), null, null);
     }
@@ -81,6 +84,7 @@ public class NrgEventService {
      * @param event   the event
      * @param replyTo the reply to
      */
+    @Override
     public void triggerEvent(final EventI event, final Object replyTo) {
         if (replyTo == null) {
             throw new IllegalArgumentException("Event replyTo object cannot be null");
@@ -95,6 +99,7 @@ public class NrgEventService {
      * @param event                the event
      * @param notifyClassListeners Notify class event listeners?
      */
+    @Override
     @SuppressWarnings("rawtypes")
     public void triggerEvent(final String description, final Event event, final boolean notifyClassListeners) {
         triggerEventInternal(event, description, notifyClassListeners);
@@ -106,6 +111,7 @@ public class NrgEventService {
      * @param description the event desc
      * @param event       the event
      */
+    @Override
     @SuppressWarnings("rawtypes")
     public void triggerEvent(final String description, final Event event) {
         triggerEventInternal(event, description, true);
@@ -116,6 +122,7 @@ public class NrgEventService {
      *
      * @param event the event
      */
+    @Override
     @SuppressWarnings("rawtypes")
     public void triggerEvent(final Event event) {
         triggerEventInternal(event, null, null);
@@ -126,6 +133,7 @@ public class NrgEventService {
      *
      * @param event the event
      */
+    @Override
     @SuppressWarnings({"rawtypes", "unused"})
     public void sendEvent(final Event event) {
         sendEventInternal(event, null, null, null, false);
@@ -139,6 +147,7 @@ public class NrgEventService {
      * @param notifyClassListeners Notify class listeners?
      * @param replyTo              the reply to
      */
+    @Override
     @SuppressWarnings({"rawtypes", "unused"})
     public void sendEvent(final String description, final EventI event, final Bus replyTo, final boolean notifyClassListeners) {
         sendEventInternal(Event.wrap(event), null, description, replyTo, notifyClassListeners);
@@ -151,6 +160,7 @@ public class NrgEventService {
      * @param event       the event
      * @param replyTo     the reply to
      */
+    @Override
     @SuppressWarnings({"rawtypes", "unused"})
     public void sendEvent(final String description, final EventI event, final Bus replyTo) {
         sendEventInternal(Event.wrap(event), null, description, replyTo, true);
@@ -162,6 +172,7 @@ public class NrgEventService {
      * @param event   the event
      * @param replyTo the reply to
      */
+    @Override
     @SuppressWarnings({"rawtypes", "unused"})
     public void sendEvent(final EventI event, final Bus replyTo) {
         sendEventInternal(Event.wrap(event), event.getClass(), null, replyTo, false);

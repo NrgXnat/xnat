@@ -11,6 +11,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.modules.screens.RawScreen;
@@ -19,28 +20,24 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.presentation.CSVPresenter;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
-import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTableI;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.Date;
 
-@SuppressWarnings("ResultOfMethodCallIgnored")
+@Slf4j
 public class CSVScreen extends RawScreen {
-    private static final Logger logger = LoggerFactory.getLogger(CSVScreen.class);
-
     public String getContentType(RunData data) {
         return "application/msexcel";
     }
@@ -49,7 +46,7 @@ public class CSVScreen extends RawScreen {
         if (TurbineUtils.GetPassedParameter("search_xml", data) != null) {
             String searchXml = ((String) TurbineUtils.GetPassedParameter("search_xml", data));
             if (StringUtils.isBlank(searchXml)) {
-                logger.warn("Requested search XML, but found nothing in the run data.");
+                log.warn("Requested search XML, but found nothing in the run data.");
                 return null;
             }
 
@@ -68,14 +65,14 @@ public class CSVScreen extends RawScreen {
                     XFTItem item = reader.parse(is);
                     XdatStoredSearch search = new XdatStoredSearch(item);
                     DisplaySearch ds = search.getCSVDisplaySearch(user);
-                    if (logger.isDebugEnabled()) {
+                    if (log.isDebugEnabled()) {
                         if (ds != null) {
-                            logger.debug("Found display search " + ds.getTitle() + ": " + ds.getDescription());
+                            log.debug("Found display search " + ds.getTitle() + ": " + ds.getDescription());
                         }
                     }
                     return ds;
                 } catch (Throwable e) {
-                    logger.error("", e);
+                    log.error("", e);
                 }
             }
         }
@@ -100,18 +97,16 @@ public class CSVScreen extends RawScreen {
             String fileName = TurbineUtils.getUser(data).getUsername() + "_" + (today.getMonth() + 1) + "_" + today.getDate() + "_" + (today.getYear() + 1900) + "_" + today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds() + ".csv";
 
             try {
-                final String directory = AccessLogger.getAccessLogDirectory();
-                if (StringUtils.isNotBlank(directory)) {
-                    final File file = new File(directory + "history");
-                    if (!file.exists()) {
-                        file.mkdir();
-                    }
-                    FileUtils.OutputToFile(sb, directory + "history" + File.separator + fileName);
+                final Path xnatHome = XDAT.getContextService().getBean("xnatHome", Path.class);
+                if (xnatHome != null) {
+                    final Path history = xnatHome.resolve("logs").resolve("history");
+                    Files.createDirectories(history);
+                    FileUtils.OutputToFile(sb, history.resolve(fileName).toAbsolutePath().toString());
                 } else {
-                    logger.error("Couldn't find the access log directory! Message is orphaned: " + sb);
+                    log.error("Couldn't find the access log directory! Message is orphaned: " + sb);
                 }
             } catch (RuntimeException e) {
-                logger.error("Something went wrong trying to write out the data", e);
+                log.error("Something went wrong trying to write out the data", e);
             }
 
             HttpServletResponse response = data.getResponse();

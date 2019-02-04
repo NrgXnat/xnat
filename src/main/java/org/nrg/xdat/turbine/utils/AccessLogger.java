@@ -9,76 +9,53 @@
 
 package org.nrg.xdat.turbine.utils;
 
+import com.noelios.restlet.ext.servlet.ServletCall;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
 import org.apache.axis.session.Session;
+import org.apache.axis.transport.http.HTTPConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
 import org.apache.turbine.services.InstantiationException;
 import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
+import org.restlet.data.Request;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 
+import static org.springframework.http.HttpHeaders.USER_AGENT;
+
 /**
  * @author Tim
- *
  */
+@Slf4j
 public class AccessLogger {
-    private static final String  REQUEST_HISTORY   = "request_history";
-    private static final Logger  logger            = Logger.getLogger(AccessLogger.class);
-    private static       Boolean TRACKING_SESSIONS = null;
-
-    private static Boolean isTrackingSessions() {
-        if (TRACKING_SESSIONS == null) {
-            try {
-                final Collection<?> col = TurbineSession.getActiveSessions();
-                TRACKING_SESSIONS = Boolean.FALSE;
-                if (col.size() > 0) {
-                    TRACKING_SESSIONS = Boolean.TRUE;
-                }
-            } catch (InstantiationException exception) {
-                logger.info("Got InstantiationException, maybe it's too early to do this?");
-            }
+    public static String GetRequestIp(final HttpServletRequest request) {
+        if (request == null) {
+            return NULL_ADDRESS;
         }
-        return TRACKING_SESSIONS;
-    }
 
-    public static String GetRequestIp(HttpServletRequest request){
-    	@SuppressWarnings("unchecked")
-		final Enumeration<String> headers = request.getHeaders("x-forwarded-for");
-
-    	final String nullAddy = "0.0.0.0";
+        final Enumeration<String> headers = request.getHeaders("x-forwarded-for");
         if (headers == null) {
-        	return nullAddy;
-        } else {
-            while (headers.hasMoreElements()) {
-                final String[] ips = headers.nextElement().split(",");
-                for (final String ip : ips) {
-                    final String proxy = ip.trim();
-                    if (!"unknown".equals(proxy) && !proxy.isEmpty()) {
-                        try {
-                            InetAddress proxyAddy = InetAddress.getByName(proxy);
-                            if (proxyAddy != null) {
-                                return proxyAddy.getHostAddress();
-                            } else {
-                                return nullAddy;
-                            }
-                        } catch (UnknownHostException e) {
-                            logger.warn("ignoring host " + proxy + ": " + e.getClass().getName() + ": " + e.getMessage());
-                        }
+            return NULL_ADDRESS;
+        }
+
+        while (headers.hasMoreElements()) {
+            final String[] ips = headers.nextElement().split("\\s*,\\s*");
+            for (final String ip : ips) {
+                if (StringUtils.isNotBlank(ip) && !StringUtils.equalsIgnoreCase("unknown", ip)) {
+                    try {
+                        final InetAddress proxyAddy = InetAddress.getByName(ip);
+                        return proxyAddy != null ? proxyAddy.getHostAddress() : NULL_ADDRESS;
+                    } catch (UnknownHostException e) {
+                        log.warn("Ignoring unknown host {}: {}", ip, e.getMessage());
                     }
                 }
             }
@@ -86,109 +63,90 @@ public class AccessLogger {
 
         return request.getRemoteAddr();
     }
-    
-    @SuppressWarnings("unchecked")
-    public static void LogScreenAccess(RunData data) {
-        if (!data.getScreen().equalsIgnoreCase("")) {
-            final UserI user = XDAT.getUserDetails();
-            final StringBuilder buffer = new StringBuilder(user != null ? user.getUsername() : "Guest");
-            buffer.append(" ").append(GetRequestIp(data.getRequest())).append(" SCREEN: ").append(data.getScreen());
 
-            if (TurbineUtils.HasPassedParameter("search_element", data)) {
-                buffer.append(" ").append(TurbineUtils.GetPassedParameter("search_element", data));
-            }
-            if (TurbineUtils.HasPassedParameter("search_value", data)) {
-                buffer.append(" ").append(TurbineUtils.GetPassedParameter("search_value", data));
-            }
-            logger.error(buffer.toString());
+    public static void LogScreenAccess(final RunData data) {
+        if (StringUtils.isNotBlank(data.getScreen())) {
+            logAccess(data, true);
         }
-
-        trackSession(data);
-    }
-    
-    @SuppressWarnings("unchecked")
-    public static void LogActionAccess(RunData data)
-	{
-        if (!data.getAction().equalsIgnoreCase(""))
-        {
-            final UserI  user = XDAT.getUserDetails();
-            final StringBuilder buffer = new StringBuilder(user != null ? user.getUsername() : "Guest");
-            buffer.append(" ").append(GetRequestIp(data.getRequest())).append(" ACTION: ").append(data.getAction());
-
-		    if(TurbineUtils.HasPassedParameter("xdataction", data)){
-		    	buffer.append(" ").append(TurbineUtils.GetPassedParameter("xdataction", data));
-		    }
-		    if(TurbineUtils.HasPassedParameter("search_element", data)){
-                buffer.append(" ").append(TurbineUtils.GetPassedParameter("search_element", data));
-		    }
-		    if(TurbineUtils.HasPassedParameter("search_value", data)){
-                buffer.append(" ").append(TurbineUtils.GetPassedParameter("search_value", data));
-		    }
-
-            logger.error(buffer.toString());
-        }
-
         trackSession(data);
     }
 
-    @SuppressWarnings("unchecked")
-    public static void LogScreenAccess(RunData data, String message) {
-        if (!data.getScreen().equalsIgnoreCase("")) {
-            final UserI user = XDAT.getUserDetails();
-            logger.error(((user != null) ? user.getUsername() : "Guest") + " " + GetRequestIp(data.getRequest()) + " SCREEN: " + data.getScreen() + " " + message);
+    public static void LogActionAccess(final RunData data) {
+        if (StringUtils.isNotBlank(data.getAction())) {
+            logAccess(data, false);
         }
-
         trackSession(data);
     }
 
-    @SuppressWarnings("unchecked")
-    public static void LogActionAccess(RunData data, String message) {
-        if (!data.getAction().equalsIgnoreCase("")) {
-            final UserI user = XDAT.getUserDetails();
-            logger.error(((user != null) ? user.getUsername() : "Guest") + " " + GetRequestIp(data.getRequest()) + " ACTION: " + data.getAction() + " " + message);
+    public static void LogScreenAccess(final RunData data, final String message) {
+        if (StringUtils.isNotBlank(data.getScreen())) {
+            logAccess(data, true, message);
         }
-
         trackSession(data);
     }
 
-    public static void LogServiceAccess(String user, String address, String service, String message) {
-        logger.error(user + " " + address + " " + service + " " + message);
+    public static void LogActionAccess(final RunData data, final String message) {
+        if (StringUtils.isNotBlank(data.getAction())) {
+            logAccess(data, false, message);
+        }
+        trackSession(data);
+    }
 
-        final Boolean trackingSessions = isTrackingSessions();
-        if (trackingSessions != null && trackingSessions) {
+    public static void LogResourceAccess(final String user, final Request request, final String service, final String message) {
+        logAccess(user, ServletCall.getRequest(request), service, message);
+    }
+
+    public static void LogServiceAccess(final String user, final MessageContext context, final String service, final String message) {
+        LogServiceAccess(user, getAxisRequest(context), service, message);
+    }
+
+    public static void LogServiceAccess(final String user, final HttpServletRequest request, final String service, final String message) {
+        logAccess(user, request, service, message);
+
+        if (isTrackingSessions()) {
             try {
-                MessageContext mc      = AxisEngine.getCurrentMessageContext();
-                Session        session = mc.getSession();
-
+                final Session      session = AxisEngine.getCurrentMessageContext().getSession();
+                final List<String> history;
                 if (session.get(REQUEST_HISTORY) == null) {
-                    session.set(REQUEST_HISTORY, new ArrayList<String>());
+                    history = new ArrayList<>();
+                    session.set(REQUEST_HISTORY, history);
+                } else {
+                    //noinspection unchecked
+                    history = (List<String>) session.get(REQUEST_HISTORY);
                 }
-
-                //noinspection unchecked
-                ((List<String>) session.get(REQUEST_HISTORY)).add(service + " " + message);
+                history.add(service + " " + message);
             } catch (Throwable e) {
-                logger.error("", e);
+                log.error("An error occurred trying to record request history for user \"{}\", attempted request was: {}", user, service + " " + message, e);
             }
         }
     }
 
-    public static String getAccessLogDirectory() {
-        final Enumeration<?> appenders = logger.getAllAppenders();
-        while (appenders.hasMoreElements()) {
-            final Appender appender = (Appender) appenders.nextElement();
-            if (appender instanceof FileAppender) {
-                final String location = ((FileAppender) appender).getFile();
-                if (StringUtils.isNotBlank(location)) {
-                    return FileUtils.AppendSlash(new File(location).getParentFile().getAbsolutePath());
-                }
-            }
+    private static void logAccess(final RunData data, final boolean isScreen) {
+        logAccess(data, isScreen, null);
+    }
+
+    private static void logAccess(final RunData data, final boolean isScreen, final String message) {
+        final UserI user = XDAT.getUserDetails();
+
+        final List<String> parameters = new ArrayList<>();
+        if (TurbineUtils.HasPassedParameter("xdataction", data)) {
+            parameters.add("xdataction=" + TurbineUtils.GetPassedParameter("xdataction", data));
         }
-        return null;
+        if (TurbineUtils.HasPassedParameter("search_element", data)) {
+            parameters.add("search_element=" + TurbineUtils.GetPassedParameter("search_element", data));
+        }
+        if (TurbineUtils.HasPassedParameter("search_value", data)) {
+            parameters.add("search_value=" + TurbineUtils.GetPassedParameter("search_value", data));
+        }
+        logAccess(user != null ? user.getUsername() : "Guest", data.getRequest(), (isScreen ? "SCREEN" : "ACTION") + ": " + (isScreen ? data.getScreen() : data.getAction()), (parameters.isEmpty() ? "" : StringUtils.join(parameters, " ")) + StringUtils.defaultIfBlank(message, ""));
+    }
+
+    private static void logAccess(final String username, final HttpServletRequest request, final String target, final String payload) {
+        log.error("{} {}  {} \"{}\" {}", username, GetRequestIp(request), target, getUserAgentHeader(request), StringUtils.defaultIfBlank(payload, ""));
     }
 
     private static void trackSession(final RunData data) {
-        final Boolean trackingSessions = isTrackingSessions();
-        if (trackingSessions != null && trackingSessions) {
+        if (isTrackingSessions()) {
             try {
                 if (data.getSession().getAttribute(REQUEST_HISTORY) == null) {
                     data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList<String>());
@@ -197,8 +155,31 @@ public class AccessLogger {
                 //noinspection unchecked
                 ((List<String>) data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
             } catch (Throwable e) {
-                logger.error("", e);
+                log.error("", e);
             }
         }
     }
+
+    private static Boolean isTrackingSessions() {
+        if (TRACKING_SESSIONS == null) {
+            try {
+                TRACKING_SESSIONS = !TurbineSession.getActiveSessions().isEmpty();
+            } catch (InstantiationException exception) {
+                log.info("Got instantiation exception trying to track active sessions. Maybe it's too early to do this?");
+            }
+        }
+        return TRACKING_SESSIONS != null && TRACKING_SESSIONS;
+    }
+
+    private static String getUserAgentHeader(final HttpServletRequest request) {
+        return request == null ? "<null request>" : request.getHeader(USER_AGENT);
+    }
+
+    private static HttpServletRequest getAxisRequest(final MessageContext context) {
+        return (HttpServletRequest) context.getProperty(HTTPConstants.MC_HTTP_SERVLETREQUEST);
+    }
+
+    private static final String  NULL_ADDRESS      = "0.0.0.0";
+    private static final String  REQUEST_HISTORY   = "request_history";
+    private static       Boolean TRACKING_SESSIONS = null;
 }

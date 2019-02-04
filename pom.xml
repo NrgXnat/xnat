@@ -210,6 +210,10 @@
             <artifactId>velocity-tools</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.noelios.restlet</groupId>
+            <artifactId>com.noelios.restlet.ext.servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>ecs</groupId>
             <artifactId>ecs</artifactId>
         </dependency>

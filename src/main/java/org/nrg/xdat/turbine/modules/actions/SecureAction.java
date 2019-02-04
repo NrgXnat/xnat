@@ -50,6 +50,8 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Enumeration;
 
+import static org.springframework.http.HttpHeaders.USER_AGENT;
+
 /**
  * @author Tim
  */
@@ -192,7 +194,7 @@ public abstract class SecureAction extends VelocitySecureAction {
         }
 
         //let anyone using something other than a browser ignore the token.
-        final String userAgent = request.getHeader("User-Agent");
+        final String userAgent = request.getHeader(USER_AGENT);
         if (!strict) {
             if (StringUtils.isBlank(userAgent) || StringUtils.contains(userAgent, "XNATDesktopClient")) {
                 return true;

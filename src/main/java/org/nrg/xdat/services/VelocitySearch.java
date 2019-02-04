@@ -9,11 +9,9 @@
 
 
 package org.nrg.xdat.services;
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.Iterator;
 
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
@@ -26,6 +24,10 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
+
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.Iterator;
 /**
  * @author Tim
  *
@@ -34,9 +36,10 @@ public class VelocitySearch{
 	static org.apache.log4j.Logger logger = Logger.getLogger(VelocitySearch.class);
     public String search(String _field,String _comparison,Object _value,String _dataType)  throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","VelocitySearch",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext,"VelocitySearch",_field + " " +  _comparison + " " + _value);
         try {
             SearchService search = new SearchService();
             search.setUsername(_username);
@@ -77,9 +80,10 @@ public class VelocitySearch{
     }
     public String search(String _session_id,String _field,String _comparison,Object _value,String _dataType,String templateName)  throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_session_id,"","VelocitySearch",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_session_id, messageContext, "VelocitySearch", _field + " " + _comparison + " " + _value);
         try {
             SearchService search = new SearchService();
             search.setUsername(_username);
@@ -125,9 +129,10 @@ public class VelocitySearch{
     }
     public String search(String _session_id,String _field,String _comparison,Object _value,String _dataType)  throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_session_id,"","VelocitySearch",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_session_id, messageContext, "VelocitySearch", _field + " " + _comparison + " " + _value);
         try {
             SearchService search = new SearchService();
             search.setSession_id(_session_id);

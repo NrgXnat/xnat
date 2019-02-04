@@ -20,6 +20,7 @@ import java.util.Iterator;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.user.exceptions.FailedLoginException;
@@ -39,9 +40,10 @@ public class XMLSearch {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XMLSearch.class);
     public ArrayList search(String _field,String _comparison,Object _value,String _dataType,Boolean limited) throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","XMLSearch",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext,"XMLSearch",_field + " " +  _comparison + " " + _value);
         ArrayList al = new ArrayList();
         try {
             SearchService search = new SearchService();

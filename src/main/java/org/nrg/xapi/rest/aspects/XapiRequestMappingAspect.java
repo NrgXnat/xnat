@@ -2,6 +2,7 @@ package org.nrg.xapi.rest.aspects;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -20,8 +21,6 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -45,6 +44,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
  */
 @Aspect
 @Component
+@Slf4j
 public class XapiRequestMappingAspect {
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
@@ -84,14 +84,14 @@ public class XapiRequestMappingAspect {
         try {
             evaluate(joinPoint, xapiRequestMapping);
 
-            final StopWatch stopWatch = _log.isDebugEnabled() ? new StopWatch() {{ start(); }} : null;
+            final StopWatch stopWatch = log.isDebugEnabled() ? new StopWatch() {{ start(); }} : null;
             try {
                 return joinPoint.proceed();
             } finally {
                 if (stopWatch != null) {
                     stopWatch.stop();
                     final HttpServletRequest request = getRequest();
-                    _log.debug("Request to {} took {}ms to execute", request.getServletPath() + request.getPathInfo(), NumberFormat.getInstance().format(stopWatch.getTotalTimeMillis()));
+                    log.debug("Request to {} took {}ms to execute", request.getServletPath() + request.getPathInfo(), NumberFormat.getInstance().format(stopWatch.getTotalTimeMillis()));
                 }
             }
         } catch (InsufficientPrivilegesException e) {
@@ -117,8 +117,7 @@ public class XapiRequestMappingAspect {
         final String requestIp     = AccessLogger.GetRequestIp(request);
         final String requestMethod = request.getMethod();
         final String requestUrl    = request.getRequestURL().toString();
-        _log.debug("User {} from IP {} requesting {} operation on URL {}", username, requestIp, requestMethod, requestUrl);
-        _accessLog.error("{} {} {} {}", username, requestIp, requestMethod, requestUrl);
+        AccessLogger.LogServiceAccess(username, request, requestUrl, requestMethod);
 
         final String path = request.getServletPath() + request.getPathInfo();
 
@@ -133,7 +132,7 @@ public class XapiRequestMappingAspect {
         // If access level is not null or Read (which could be valid when system is open and project is public), i.e.
         // authenticated or above, first check whether the user is logged in.
         if (user.isGuest() && _preferences.getRequireLogin() && accessLevel != Read) {
-            _log.info("Guest user from IP {} tried to access a URL that required authentication access: {}", requestIp, requestUrl);
+            log.info("Guest user from IP {} tried to access a URL that required authentication access: {}", requestIp, requestUrl);
             throw new NotAuthenticatedException(requestUrl);
         }
 
@@ -189,8 +188,6 @@ public class XapiRequestMappingAspect {
     }
 
 
-    private static final Logger         _accessLog      = LoggerFactory.getLogger(AccessLogger.class);
-    private static final Logger         _log            = LoggerFactory.getLogger(XapiRequestMappingAspect.class);
     private static final AntPathMatcher PATH_MATCHER    = new AntPathMatcher();
     private static final String         WWW_AUTH_HEADER = "WWW-Authenticate";
 

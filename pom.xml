@@ -87,7 +87,7 @@
         <nrg.dicom-edit4.version>1.0.3</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0.5</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.3</nrg.ecat.version>
         <nrg.extattr.version>4.2.4</nrg.extattr.version>

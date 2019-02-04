@@ -25,6 +25,18 @@ import java.util.List;
 @SuppressWarnings("RedundantThrows")
 @Slf4j
 public class Features {
+    public static final String ADD_FEATURE         = "addFeature";
+    public static final String ADDED               = "added";
+    public static final String REMOVE_FEATURE      = "removeFeature";
+    public static final String REMOVED             = "removed";
+    public static final String DISABLE_FEATURE     = "disableFeature";
+    public static final String DISABLED            = "disabled";
+    public static final String BLOCK_FEATURE       = "blockFeature";
+    public static final String BLOCKED             = "blocked";
+    public static final String UNBLOCK_FEATURE     = "unblockFeature";
+    public static final String UNBLOCKED           = "unblocked";
+    public static final String REMOVE_ALL_FEATURES = "removeAllFeatures";
+
     /**
      * Returns the currently configured features service. You can change the default implementation returned via the
      * security.featureService.default configuration parameter

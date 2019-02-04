@@ -31,7 +31,6 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -41,7 +40,6 @@ import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
@@ -50,6 +48,7 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
@@ -61,7 +60,6 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
@@ -116,6 +114,7 @@ public class XDAT implements Initializable, Configurable{
 	private static NotificationService        _notificationService;
 	private static XdatUserAuthService        _xdatUserAuthService;
 	private static ConfigService              _configurationService;
+	private static DataTypeAwareEventService  _eventService;
 	private static SiteConfigPreferences      _siteConfigPreferences;
 	private static CacheManager               _cacheManager;
 	private static NotificationsPreferences   _notificationsPreferences;
@@ -522,54 +521,54 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	public static void triggerEvent(final EventI event) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event);
+		getEventService().triggerEvent(event);
 	}
 
 	public static void triggerEvent(final String description, final EventI event, final boolean notifyClassListeners) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event, notifyClassListeners);
+		getEventService().triggerEvent(description, event, notifyClassListeners);
 	}
 
 	public static void triggerEvent(final String description, final EventI event) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event);
+		getEventService().triggerEvent(description, event);
 	}
 
 	public static void triggerEvent(final EventI event, final Object replyTo) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event, replyTo);
+		getEventService().triggerEvent(event, replyTo);
 	}
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action) {
-		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).build());
+		getEventService().triggerXftItemEvent(xsiType, id, action);
 	}
 
 	public static void triggerXftItemEvent(final XFTItem item, final String action) {
-		triggerEvent(XftItemEvent.builder().item(item).action(action).build());
+		getEventService().triggerXftItemEvent(item, action);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement baseElement, final String action) {
-		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).build());
+		getEventService().triggerXftItemEvent(baseElement, action);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement[] baseElements, final String action) {
-		triggerEvent(XftItemEvent.builder().elements(Arrays.asList(baseElements)).action(action).build());
+		getEventService().triggerXftItemEvent(baseElements, action);
 	}
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(xsiType, id, action, properties);
 	}
 
 	public static void triggerUserIEvent(final String username, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).id(username).action(action).properties(properties).build());
+		getEventService().triggerUserIEvent(username, action, properties);
 	}
 
 	public static void triggerXftItemEvent(final XFTItem item, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().item(item).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(item, action, properties);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement baseElement, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(baseElement, action, properties);
 	}
 
-    public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
+	public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
         _screenTemplatesFolders.put(path, screenTemplatesFolder);
     }
 
@@ -628,7 +627,14 @@ public class XDAT implements Initializable, Configurable{
 	    return _configurationService;
 	}
 
-    @SuppressWarnings("RedundantThrows")
+	public static DataTypeAwareEventService getEventService() {
+		if (_eventService == null) {
+			_eventService = XDAT.getContextService().getBean(DataTypeAwareEventService.class);
+		}
+		return _eventService;
+	}
+
+	@SuppressWarnings("RedundantThrows")
 	public static Properties getSiteConfiguration() throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		if (preferences == null) {

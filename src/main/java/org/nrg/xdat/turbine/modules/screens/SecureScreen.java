@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -89,6 +90,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         context.put("systemName", TurbineUtils.GetSystemName());
         context.put("siteLogoPath", XDAT.getSiteLogoPath());
         context.put("esc", new EscapeTool());
+        context.put("escUtils", new StringEscapeUtils());
 
         context.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
         context.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());

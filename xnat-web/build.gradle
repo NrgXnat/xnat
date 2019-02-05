@@ -15,7 +15,7 @@ import io.swagger.models.License
 
 buildscript {
     ext {
-        vXnat = "1.7.5.2-SNAPSHOT"
+        vXnat = "1.7.5.2"
         vXnatPlugin = "1.7.5"
     }
     repositories {

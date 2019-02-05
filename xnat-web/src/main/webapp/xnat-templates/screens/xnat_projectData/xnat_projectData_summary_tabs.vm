@@ -11,7 +11,7 @@
             #end
             #foreach($tab in $tabs)
                 <li>
-                    <a href="#$tab.getProperty("divName")"><em>#escapeHTML($tab.getProperty("title"))</em></a>
+                    <a href="#$tab.getProperty("divName")"><em>#escapeCleanHTML($tab.getProperty("title"))</em></a>
                 </li>
             #end
 

@@ -14,8 +14,8 @@
             #foreach($f in $group.getFields_field())
                 #if($!om.getProperty($f.getXmlpath()))
                 <tr>
-                    <th>#escapeHTML($!f.getName())</th>
-                    <td>#escapeHTML($!om.getProperty($f.getXmlpath()))</td>
+                    <th>#escapeCleanHTML($!f.getName())</th>
+                    <td>#escapeCleanHTML($!om.getProperty($f.getXmlpath()))</td>
                 </tr>
                 #end
             #end

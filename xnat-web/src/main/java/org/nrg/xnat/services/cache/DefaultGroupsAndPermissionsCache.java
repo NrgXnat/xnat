@@ -1109,7 +1109,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             readableCounts.put(WrkWorkflowdata.SCHEMA_ELEMENT_NAME, getUserReadableWorkflowCount(username));
             readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects));
 
-            cacheMap(cacheId, readableCounts);
+            cacheObject(cacheId, readableCounts);
             if (log.isDebugEnabled()) {
                 log.debug("Caching the following readable element counts for user '{}' with cache ID '{}': '{}'", username, cacheId, getDisplayForReadableCounts(readableCounts));
             }
@@ -1164,7 +1164,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.info("Initializing element access managers cache entry for user '{}' with cache ID '{}'", username, cacheId);
         final Map<String, ElementAccessManager> managers = ElementAccessManager.initialize(_template, QUERY_USER_PERMISSIONS, new MapSqlParameterSource("username", username));
 
-        cacheMap(cacheId, managers);
+        cacheObject(cacheId, managers);
         log.trace("Found {} element access managers for user '{}'", managers.size(), username);
         return managers;
     }
@@ -1201,7 +1201,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
 
             log.info("Adding {} element displays to cache entry {}", browseableElements.size(), cacheId);
-            cacheMap(cacheId, browseableElements);
+            cacheObject(cacheId, browseableElements);
             return browseableElements;
         } catch (ElementNotFoundException e) {
             if (!_missingElements.containsKey(e.ELEMENT)) {
@@ -1324,7 +1324,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             log.info("Cached {} elements with READ access, {} elements with EDIT access, and {} elements with CREATE access for user {} with cache ID {}", elementDisplays.get(SecurityManager.READ).size(), elementDisplays.get(SecurityManager.EDIT).size(), elementDisplays.get(SecurityManager.CREATE).size(), username, cacheId);
         }
 
-        cacheMultimap(cacheId, elementDisplays);
+        cacheObject(cacheId, elementDisplays);
 
         return elementDisplays;
     }

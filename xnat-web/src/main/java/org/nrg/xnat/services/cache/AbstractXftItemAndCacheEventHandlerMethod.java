@@ -1,6 +1,7 @@
 package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -164,14 +165,6 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         throw new RuntimeException("The native cache is not an ehcache instance, but instead is " + nativeCache.getClass().getName());
     }
 
-    protected <K, V> void cacheMap(final String cacheId, final Map<K, V> map) {
-        cacheObject(cacheId, checkMapForNullKey(cacheId, map));
-    }
-
-    protected <K, V> void cacheMultimap(final String cacheId, final Multimap<K, V> map) {
-        cacheObject(cacheId, checkMapForNullKey(cacheId, map));
-    }
-
     protected void cacheObject(final String cacheId, final Object object) {
         if (object == null) {
             log.warn("I was asked to cache an object with ID '{}' but the object was null.", cacheId);
@@ -192,7 +185,15 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     protected void forceCacheObject(final String cacheId, final Object object) {
-        final Object target = object instanceof Provider ? ((Provider<?>) object).get() : object;
+        final Object candidate = object instanceof Provider ? ((Provider<?>) object).get() : object;
+        final Object target;
+        if (candidate instanceof Map) {
+            target = checkMapForNullKey(cacheId, (Map) candidate);
+        } else if (candidate instanceof Multimap) {
+            target = checkMultimapForNullKey(cacheId, (Multimap) candidate);
+        } else {
+            target = candidate;
+        }
         log.trace("Storing cache entry '{}' with object of type: {}", cacheId, target.getClass().getName());
         getCache().put(cacheId, target);
     }
@@ -322,18 +323,28 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         }
     }
 
-    private static <K, V> Multimap<K, V> checkMapForNullKey(final String cacheId, final Multimap<K, V> map) {
-        if (map.containsKey(null)) {
-            log.warn("I was asked to cache a map with the ID {}, but this map has a null key. Removing to allow execution, but this could indicate a corrupt index hash in the database. The value(s) stored under the null key are: {}", cacheId, map.removeAll(null));
+    private static <K, V> Multimap<K, V> checkMultimapForNullKey(final String cacheId, final Multimap<K, V> map) {
+        try {
+            if (map.containsKey(null)) {
+                log.warn("I was asked to cache a multimap with the ID {}, but this multimap has a null key. This could indicate a corrupt index hash in the database. Removing to allow execution to proceed. The value(s) stored under the null key are: {}", cacheId, map.removeAll(null));
+            }
+            return map;
+        } catch (UnsupportedOperationException e) {
+            log.warn("I was asked to cache a multimap with the ID {}, but this multimap has a null key. This could indicate a corrupt index hash in the database. The multimap is immutable, so I'm creating a copy without the null key to allow execution to proceed. The value(s) stored under the null key are: {}", cacheId, map.get(null));
+            return ImmutableMultimap.copyOf(Multimaps.filterKeys(map, Predicates.notNull()));
         }
-        return map;
     }
 
     private static <K, V> Map<K, V> checkMapForNullKey(final String cacheId, final Map<K, V> map) {
-        if (map.containsKey(null)) {
-            log.warn("I was asked to cache a map with the ID {}, but this map has a null key. Removing to allow execution, but this could indicate a corrupt index hash in the database. The value(s) stored under the null key are: {}", cacheId, map.remove(null));
+        try {
+            if (map.containsKey(null)) {
+                log.warn("I was asked to cache a map with the ID {}, but this map has a null key. This could indicate a corrupt index hash in the database. Removing to allow execution to proceed. The value stored under the null key is: {}", cacheId, map.remove(null));
+            }
+            return map;
+        } catch (UnsupportedOperationException e) {
+            log.warn("I was asked to cache a map with the ID {}, but this map has a null key. This could indicate a corrupt index hash in the database. The map is immutable, so I'm creating a copy without the null key to allow execution to proceed. The value stored under the null key is: {}", cacheId, map.get(null));
+            return ImmutableMap.copyOf(Maps.filterKeys(map, Predicates.notNull()));
         }
-        return map;
     }
 
     private final CacheEventListener _cacheEventListener;

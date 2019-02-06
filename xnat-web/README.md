@@ -1,18 +1,13 @@
 # XNAT Web Application #
 
-This is the XNAT Web application source code repository. The latest release version of XNAT is 1.7.5.2. The source for the release version can be found at 
-[the 1.7.5.2 branch in the xnat-web source repository](https://bitbucket.org/xnatdev/xnat-web/src/1.7.5.2). 
+This is the XNAT Web application source code repository.
 
 # Installing #
 
-If you just want to install the latest release version of XNAT, find it on the [XNAT download page](https://download.xnat.org) or click the icon below:
-
-[![Download](https://download.xnat.org/i/xnat-web/1.7.5.2.svg)](https://api.bitbucket.org/2.0/repositories/xnatdev/xnat-web/downloads/xnat-web-1.7.5.2.war)
+If you just want to install the latest release version of XNAT, find it on the [XNAT download page](https://download.xnat.org).
 
 You will also need to download the [XNAT pipeline engine](https://github.com/nrgxnat/xnat-pipeline-engine), which is also available on the [XNAT download 
-page](https://download.xnat.org) or by clicking the icon below:
-
-[![Download](https://download.xnat.org/i/xnat-pipeline-engine/1.7.5.svg)](https://ci.xnat.org/job/pipeline/job/xnat-pipeline-engine/lastSuccessfulReleaseBuild/artifact/build/libs/xnat-pipeline-1.7.5.zip)
+page](https://download.xnat.org).
 
 If you would like to build a virtual machine that can run XNAT, try using the [XNAT Vagrant project](https://bitbucket.org/xnatdev/xnat-vagrant).
 

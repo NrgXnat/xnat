@@ -21,7 +21,6 @@ import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.datacache.SerializerRegistry;
@@ -37,24 +36,15 @@ import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -102,37 +92,6 @@ public class RootConfig {
     @Bean
     public LoggingService loggingService() {
         return new DefaultLoggingService(xnatPluginBeanManager());
-    }
-
-    @Bean
-    @DependsOn("xnatHome")
-    public ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean() throws IOException, InvocationTargetException, IllegalAccessException {
-        final ThreadPoolExecutorFactoryBean bean = new ThreadPoolExecutorFactoryBean();
-
-        final Path executor = getXnatHome().resolve("../executor.properties");
-        if (executor.toFile().exists()) {
-            try (final BufferedReader reader = Files.newBufferedReader(executor, StandardCharsets.UTF_8)) {
-                final Properties properties = new Properties();
-                properties.load(reader);
-                final Map<String, String> converted = new HashMap<>();
-                for (final String key : properties.stringPropertyNames()) {
-                    converted.put(key, properties.getProperty(key));
-                }
-                BeanUtils.populate(bean, converted);
-            }
-        }
-
-        return bean;
-    }
-
-    @Bean
-    public ScheduledExecutorFactoryBean scheduledExecutorFactoryBean() throws IllegalAccessException, IOException, InvocationTargetException {
-        final ScheduledExecutorFactoryBean bean = new ScheduledExecutorFactoryBean();
-        bean.setRemoveOnCancelPolicy(true);
-        bean.setContinueScheduledExecutionAfterException(true);
-        bean.setWaitForTasksToCompleteOnShutdown(true);
-        bean.setThreadFactory(threadPoolExecutorFactoryBean());
-        return bean;
     }
 
     @Bean

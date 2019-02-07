@@ -27,8 +27,6 @@ import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -297,25 +295,22 @@ public class XNATSessionBuilder implements Callable<Boolean> {
 
     private static ExecutorService getExecutor() {
         if (_executorService == null) {
-            try {
-                final ThreadPoolExecutorFactoryBean factory = XDAT.getContextService().getBean(ThreadPoolExecutorFactoryBean.class);
-                if (factory != null) {
-                    _executorService = factory.getObject();
-                }
-            } catch (NoSuchBeanDefinitionException ignored) {
-                // We can just ignore this since we have a fallback method.
-            }
-            if (_executorService == null) {
-                final PropertiesHelper.ImplLoader<ExecutorService> loader  = new PropertiesHelper.ImplLoader<>(_executorFileName, _executorIdentifier);
-                try {
-                    _executorService = loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(_executorFileName, _executorIdentifier + ".size", 2)));
-                } catch (IllegalArgumentException | SecurityException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException | ConfigurationException e) {
-                    logger.error("An error occurred trying to build the executor based on the file name " + _executorFileName + " and identifier " + _executorIdentifier, e);
-                }
-            }
+            _executorService = XDAT.getContextService().getBeanSafely(ExecutorService.class);
         }
-
+        if (_executorService == null) {
+            _executorService = initializeExecutorFromProperties();
+        }
         return _executorService;
+    }
+
+    private static ExecutorService initializeExecutorFromProperties() {
+        final PropertiesHelper.ImplLoader<ExecutorService> loader = new PropertiesHelper.ImplLoader<>(_executorFileName, _executorIdentifier);
+        try {
+            return loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(_executorFileName, _executorIdentifier + ".size", 2)));
+        } catch (IllegalArgumentException | SecurityException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException | ConfigurationException e) {
+            logger.error("An error occurred trying to build the executor based on the file name {} and identifier {}", _executorFileName, _executorIdentifier, e);
+            return Executors.newCachedThreadPool();
+        }
     }
 
     private static class BuilderConfig implements Comparable {

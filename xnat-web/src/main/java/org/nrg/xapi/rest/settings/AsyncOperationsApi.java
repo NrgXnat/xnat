@@ -9,10 +9,10 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Maps;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.NoContentException;
@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
@@ -70,12 +70,15 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
             throw new NoContentException("You must specify one or more async operations preferences to be set.");
         }
 
-        return _preferences.setBatch(Maps.transformValues(preferences, new Function<Object, String>() {
-            @Override
-            public String apply(@Nullable final Object value) {
-                return value == null ? "" : value.toString();
+        final AtomicInteger count = new AtomicInteger();
+        for (final Map.Entry<String, Object> entry : preferences.entrySet()) {
+            final String value = ObjectUtils.defaultIfNull(entry.getValue(), "").toString();
+            final String current = _preferences.set(value, entry.getKey());
+            if (!StringUtils.equals(value, current)) {
+                count.incrementAndGet();
             }
-        })).size();
+        }
+        return count.get();
     }
 
     @ApiOperation(value = "Returns the value of a particular async operations preference.")

@@ -22,7 +22,6 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
 import org.restlet.resource.OutputRepresentation;
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +48,7 @@ public class ZipRepresentation extends OutputRepresentation {
 
     public ZipRepresentation(final MediaType mediaType, final List<String> tokens, final Integer compression) {
         super(mediaType);
+        _executor = ObjectUtils.defaultIfNull(XDAT.getContextService().getBeanSafely(ExecutorService.class), Executors.newSingleThreadExecutor());
         _tokens.addAll(tokens);
         _compression = deriveCompression(compression);
     }
@@ -245,12 +245,6 @@ public class ZipRepresentation extends OutputRepresentation {
         return zip;
     }
 
-    @NotNull
-    private ExecutorService getExecutor() {
-        final ThreadPoolExecutorFactoryBean factory = XDAT.getContextService().getBeanSafely(ThreadPoolExecutorFactoryBean.class);
-        return factory != null ? factory.getObject() : Executors.newSingleThreadExecutor();
-    }
-
     public abstract class ZipEntry {
         ZipEntry(final String path) {
             _path = path;
@@ -289,8 +283,10 @@ public class ZipRepresentation extends OutputRepresentation {
         private final InputStream _input;
     }
 
-    private final List<ZipEntry> _entries    = new ArrayList<>();
-    private final List<String>   _tokens     = new ArrayList<>();
-    private final int            _compression;
-    private final List<Runnable> _afterWrite = new ArrayList<>();
+    private final List<ZipEntry>  _entries    = new ArrayList<>();
+    private final List<String>    _tokens     = new ArrayList<>();
+    private final List<Runnable>  _afterWrite = new ArrayList<>();
+
+    private final int             _compression;
+    private final ExecutorService _executor;
 }

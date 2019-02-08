@@ -792,6 +792,9 @@ div.alert:before, div.warning:before {
     content: "\f071";
     color: #ffaa66;
 }
+.text-warning {
+    color: #ffaa66;
+}
 
 div.error {
     background-color: #ffeaf5;
@@ -800,6 +803,10 @@ div.error:before {
     content: "\f056";
     color: #993333;
 }
+.text-error {
+    color: #993333;
+}
+
 
 div.message,
 div.info {
@@ -810,6 +817,9 @@ div.info:before {
     content: "\f05a";
     color: #2d69b8;
 }
+.text-info {
+    color: #2d69b8;
+}
 
 div.success {
     background-color: #dbffc9;
@@ -817,6 +827,13 @@ div.success {
 div.success:before {
     content: "\f00c";
     color: #339933;
+}
+.text-success {
+    color: #339933;
+}
+
+.text-default {
+    color: grey;
 }
 
 div.justification:before {
@@ -4129,5 +4146,4 @@ textarea.xml-formatted {
     .truncateCellNarrow {
         width: 70px;
     }
-
 }

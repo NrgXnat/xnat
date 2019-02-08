@@ -1,6 +1,18 @@
 /* selectable table checkbox behavior */
 console.log('selectableTableBehavior.js');
 
+function setStateSelectAllToggle($selectAllToggle) {
+    var indeterminate = false;
+    var containingTable = $selectAllToggle.parents('.data-table-container');
+    if (containingTable.find('tbody .selectable-select-one:checked').length > 0) {
+        containingTable.find('.data-table-action').removeClass('disabled');
+        if (containingTable.find('tbody .selectable-select-one:not(:hidden):not(:checked)').length > 0) {
+            indeterminate = true;
+        }
+    }
+    $selectAllToggle.prop("indeterminate",indeterminate);
+}
+
 $(document).on('mousedown','.selectable-select-all',function(){
     var selectAllToggle = $(this);
     if (selectAllToggle.prop('indeterminate')) {
@@ -9,34 +21,15 @@ $(document).on('mousedown','.selectable-select-all',function(){
 });
 
 $(document).on('click','.selectable-select-all',function(){
-    var checkProp = false;
-    var selectAllToggle = $(this);
-    var containingTable = selectAllToggle.parents('.data-table-container');
+    var checkProp = $(this).prop("checked");
+    var $selectAllToggle = $(this);
 
-    // check all checkboxes in the table body to find any unchecked. Default behavior will be to check all.
-    containingTable.find('tbody').find('.selectable-select-one').each(function(){
-        if (!$(this).is(':checked')) {
-            checkProp = 'checked';
-            return false;
-        }
-    });
-
-    // now iterate over all checkboxes again, performing the default operation
-    containingTable.find('tbody').find('.selectable-select-one').each(function(){
+    // now iterate over all checkboxes, performing the default operation
+    $selectAllToggle.parents('.data-table-container').find('tbody').find('.selectable-select-one:not(:hidden)').each(function(){
         $(this).prop('checked',checkProp);
     });
 
-    if (checkProp === 'checked') {
-        containingTable.find('.data-table-action').removeClass('disabled');
-    } else {
-        containingTable.find('.data-table-action').addClass('disabled');
-    }
-
-    // do a final check on the select-all selector to ensure it is set to true when clicked from an intedeterminate state
-    if (selectAllToggle.data('indeterminate') === 'true') {
-        selectAllToggle.data('indeterminate','false');
-        if (selectAllToggle.prop('checked') === false) selectAllToggle.prop('checked','checked');
-    }
+    setStateSelectAllToggle($selectAllToggle);
 });
 
 // set toggle-all selector state based on internal checkbox statuses
@@ -61,10 +54,6 @@ $(document).on('click','.selectable-select-one',function(){
             return false;
         }
     });
-
-    var indeterminate = !(allChecked || allUnchecked); // indeterminate is only true if all checkboxes are neither checked or unchecked
-
-    selectAll.prop('checked',allChecked).prop('indeterminate',indeterminate);
 
     if (allUnchecked) {
         containingTable.find('.data-table-action').addClass('disabled');

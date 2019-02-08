@@ -138,7 +138,7 @@
 .inline-actions {
     background-color: #e4efff;
     display: none;
-    padding: 3px 0 3px 6px;
+    padding: 3px 6px;
     position: absolute;
     right: 0;
     bottom: 3px;

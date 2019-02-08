@@ -38,26 +38,49 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 		if(id==null)return null;
 		return  WrkWorkflowdata.getWrkWorkflowdatasByWrkWorkflowdataId(id, user, false);
 	}
+
+	private static CriteriaCollection getOpenWorkflowCriteriaCollection() {
+		final CriteriaCollection cc= new CriteriaCollection("OR");
+		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.IN_PROGRESS);
+		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.RUNNING);
+		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.QUEUED);
+		return cc;
+	}
 	
 	/* (non-Javadoc)
 	 * @see org.nrg.xnat.utils.PersistentWorkflowBuilderI#getOpenWorkflows(org.nrg.xdat.security.UserI, java.lang.String)
 	 */
 	@Override
-	public Collection<? extends PersistentWorkflowI> getOpenWorkflows(final UserI user,final String ID){		
+	public Collection<? extends PersistentWorkflowI> getOpenWorkflows(final UserI user,final String ID){
 		//check to see if a process is already running.
 		final CriteriaCollection cc= new CriteriaCollection("AND");
 		cc.addClause("wrk:workFlowData.ID",ID);
 		
-		final CriteriaCollection cc2= new CriteriaCollection("OR");
-		cc2.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.IN_PROGRESS);
-		cc2.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.RUNNING);
-		cc2.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.QUEUED);
-		
+		final CriteriaCollection cc2 = getOpenWorkflowCriteriaCollection();
 		cc.add(cc2);
 		
 		final Collection<? extends PersistentWorkflowI> al = WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false);
 		return al;
 
+	}
+
+	/**
+	 * Get list of open pipelineName workflows for ID
+	 * @param user			the user
+	 * @param ID			the item ID
+	 * @param pipelineName	the pipeline
+	 * @return list of workflows
+	 */
+	public static Collection<? extends PersistentWorkflowI> getOpenWorkflowsForPipeline(final UserI user,final String ID, final String pipelineName){
+		final CriteriaCollection cc= new CriteriaCollection("AND");
+		cc.addClause("wrk:workFlowData.ID",ID);
+		cc.addClause("wrk:workFlowData.pipelineName",pipelineName);
+
+		final CriteriaCollection cc2 = getOpenWorkflowCriteriaCollection();
+		cc.add(cc2);
+
+		final Collection<? extends PersistentWorkflowI> al = WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false);
+		return al;
 	}
 	
 	/* (non-Javadoc)

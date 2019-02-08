@@ -33,6 +33,9 @@ public class Subject extends XnatModelObject {
     private List<Session> sessions;
     private List<Resource> resources;
     @JsonProperty("project-id") private String projectId;
+    @JsonProperty("group") private String group;
+    @JsonProperty("source") private String source;
+    @JsonProperty("initials") private String initials;
 
     public Subject() {}
 
@@ -69,6 +72,9 @@ public class Subject extends XnatModelObject {
         this.xsiType = "xnat:subjectData";
         try { this.xsiType = xnatSubjectdataI.getXSIType();} catch(NullPointerException e){log.error("Subject failed to detect xsiType");}
         this.projectId = xnatSubjectdataI.getProject();
+        this.group = xnatSubjectdataI.getGroup();
+        this.source = xnatSubjectdataI.getSrc();
+        this.initials = xnatSubjectdataI.getInitials();
 
         this.sessions = Lists.newArrayList();
         for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
@@ -92,6 +98,9 @@ public class Subject extends XnatModelObject {
         subject.setXsiType("xnat:subjectData");
         subject.setUri("/archive/subjects/XNAT_S00003");
         subject.setProjectId("SampleProjectID");
+        subject.setGroup("EXP_51");
+        subject.setSource("NLST_54");
+        subject.setInitials("PR");
         return subject;
     }
 
@@ -169,6 +178,18 @@ public class Subject extends XnatModelObject {
     public void setProjectId(final String projectId) {
         this.projectId = projectId;
     }
+
+    public String getGroup() { return group; }
+
+    public void setGroup(String group) { this.group = group; }
+
+    public String getSource() { return source; }
+
+    public void setSource(String source) { this.source = source; }
+
+    public String getInitials() { return initials; }
+
+    public void setInitials(String initials) { this.initials = initials; }
 
     @Override
     public XFTItem getXftItem(final UserI userI) {

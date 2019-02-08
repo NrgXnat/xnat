@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Arrays;
@@ -19,7 +21,7 @@ public class XnatFile extends XnatModelObject {
     private List<String> tags;
     private String format;
     private String content;
-    private File file;
+    private java.io.File file;
 
     public XnatFile() {}
 
@@ -35,6 +37,8 @@ public class XnatFile extends XnatModelObject {
         } else {
             this.uri = parentUri + "/files/" + name;
         }
+
+        this.label = name;
         this.name = name;
         this.path = path;
         this.tags = Arrays.asList(tagsCsv.split(","));
@@ -42,6 +46,7 @@ public class XnatFile extends XnatModelObject {
         this.content = content;
         this.file = file;
     }
+
 
     public static XnatFile populateSample() {
         XnatFile xnatFile = new XnatFile();
@@ -94,17 +99,22 @@ public class XnatFile extends XnatModelObject {
         this.content = content;
     }
 
-    public File getFile() {
+    public java.io.File getFile() {
         return file;
     }
 
-    public void setFile(final File file) {
+    public void setFile(final java.io.File file) {
         this.file = file;
     }
 
     @Override
     public XFTItem getXftItem(final UserI userI) {
         return null;
+    }
+
+    @Override
+    public String getDerivedWrapperInputValue() {
+        return getName();
     }
 
     @Override

@@ -60,10 +60,20 @@ public abstract class XnatModelObject {
         this.uri = uri;
     }
 
-    public static XnatModelObject populateSample() {return null;}
-
     @JsonIgnore
     public abstract XFTItem getXftItem(final UserI userI);
+
+    @JsonIgnore
+    public String getExternalWrapperInputValue() {
+        return getUri();
+    }
+
+    @JsonIgnore
+    public String getDerivedWrapperInputValue() {
+        return getLabel();
+    }
+
+    public static XnatModelObject populateSample() {return null;}
 
     @Override
     public boolean equals(Object o) {

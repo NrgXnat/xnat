@@ -177,6 +177,11 @@ public class Assessor extends XnatModelObject {
         return new Project(xnatImageassessordataI.getProject(), userI);
     }
 
+    public Session getSession(final UserI userI) {
+        loadXnatImageassessordataI(userI);
+        return new Session(xnatImageassessordataI.getImagesessionId(), userI);
+    }
+
     public void loadXnatImageassessordataI(final UserI userI) {
         if (xnatImageassessordataI == null) {
             xnatImageassessordataI = XnatImageassessordata.getXnatImageassessordatasById(id, userI, false);
@@ -230,7 +235,7 @@ public class Assessor extends XnatModelObject {
     @Override
     public XFTItem getXftItem(final UserI userI) {
         loadXnatImageassessordataI(userI);
-        return xnatImageassessordataI == null ? null : ((XnatImagesessiondata) xnatImageassessordataI).getItem();
+        return xnatImageassessordataI == null ? null : ((XnatImageassessordata) xnatImageassessordataI).getItem();
     }
 
     @Override

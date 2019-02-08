@@ -34,7 +34,7 @@ public class Project extends XnatModelObject {
     public Project() {}
 
     public Project(final String projectId, final UserI userI) {
-        new Project(projectId, userI, true);
+        this(projectId, userI, true);
     }
 
     public Project(final String projectId, final UserI userI, final boolean preload) {
@@ -45,7 +45,7 @@ public class Project extends XnatModelObject {
     }
 
     public Project(final ProjectURII projectURII) {
-        new Project(projectURII, true);
+        this(projectURII, true);
     }
 
     public Project(final ProjectURII projectURII, final boolean preload) {

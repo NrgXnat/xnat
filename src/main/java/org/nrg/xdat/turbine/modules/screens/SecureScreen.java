@@ -9,9 +9,12 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -25,7 +28,6 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -54,10 +56,10 @@ import java.util.regex.Pattern;
  * @author Tim
  */
 public abstract class SecureScreen extends VelocitySecureScreen {
-    protected final static Logger  logger   = LoggerFactory.getLogger(SecureScreen.class);
-    private static      Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
-    private List<String> _whitelistedIPs;
-    protected ThemeService themeService = XDAT.getThemeService();
+    protected final static Logger       logger       = LoggerFactory.getLogger(SecureScreen.class);
+    private static         Pattern      _pattern     = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
+    private                List<String> _whitelistedIPs;
+    protected              ThemeService themeService = XDAT.getThemeService();
 
     @SuppressWarnings("unused")
     public String getReason(RunData data) {
@@ -119,63 +121,62 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      *
      * @throws Exception When something goes wrong.
      */
-    protected void doBuildTemplate(RunData data) throws Exception {
+    protected void doBuildTemplate(final RunData data) throws Exception {
         try {
             attemptToPreventBrowserCachingOfHTML(data.getResponse());
-            Context c = TurbineVelocity.getContext(data);
-            loadAdditionalVariables(data, c);
-            if (data.getSession().getAttribute("userHelper") == null && !XDAT.getSiteConfigPreferences().getRequireLogin()) {
-                data.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(Users.getGuest()));
+            final Context context = TurbineVelocity.getContext(data);
+            loadAdditionalVariables(data, context);
+            if (UserHelper.getUserHelper(data) == null && !XDAT.getSiteConfigPreferences().getRequireLogin()) {
+                UserHelper.setGuestUserHelper(data);
             }
 
-            ThemeConfig themeConfig = themeService.getTheme();
+            final ThemeConfig themeConfig = themeService.getTheme();
             if (themeConfig != null) {
-                c.put("theme", themeConfig.getName());
-                String themedStyle = themeService.getThemePage("theme", "style");
-                if (themedStyle != null) {
-                    c.put("themedStyle", themedStyle);
+                context.put("theme", themeConfig.getName());
+                final String themedStyle = themeService.getThemePage("theme", "style");
+                if (StringUtils.isNotBlank(themedStyle)) {
+                    context.put("themedStyle", themedStyle);
                 }
-                String themedScript = themeService.getThemePage("theme", "script");
-                if (themedScript != null) {
-                    c.put("themedScript", themedScript);
+                final String themedScript = themeService.getThemePage("theme", "script");
+                if (StringUtils.isNotBlank(themedScript)) {
+                    context.put("themedScript", themedScript);
                 }
             }
 
-            c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
-            preserveVariables(data, c);
+            context.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+            preserveVariables(data, context);
 
             if (isAuthorized(data)) {
-                SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+                final SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
 
                 if (sessionRegistry != null) {
-                    List<String> uniqueIPs = new ArrayList<>();
-                    List<String> sessionIds = new ArrayList<>();
+                    final List<String> uniqueIPs = new ArrayList<>();
 
                     final UserI user = XDAT.getUserDetails();
-                    if (user != null && !user.isGuest()) {
-                        for (SessionInformation session : sessionRegistry.getAllSessions(user, false)) {
-                            sessionIds.add(session.getSessionId());
+                    final List<String> sessionIds = user != null && !user.isGuest() ? Lists.transform(sessionRegistry.getAllSessions(user, false), new Function<SessionInformation, String>() {
+                        @Override
+                        public String apply(final SessionInformation session) {
+                            return session.getSessionId();
                         }
-                    }
+                    }) : Collections.<String>emptyList();
 
                     assert user != null;
-                    if (sessionIds.size() > 0) {
-                        String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
-
+                    if (!sessionIds.isEmpty()) {
                         _whitelistedIPs = XDAT.getWhitelistedIPs(user);
 
                         try {
-                            XFTTable table = TableSearch.Execute(query, user.getDBName(), user.getUsername());
+                            final String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
+                            final XFTTable table = TableSearch.Execute(query, user.getDBName(), user.getUsername());
                             table.resetRowCursor();
                             while (table.hasMoreRows()) {
-                                final Hashtable row = table.nextRowHash();
-                                String ipAddress = (String) row.get("ip_address");
+                                final Hashtable row       = table.nextRowHash();
+                                final String ipAddress = (String) row.get("ip_address");
                                 if (!uniqueIPs.contains(ipAddress)) {
                                     if (!isExcludedIp(ipAddress)) {
                                         uniqueIPs.add(ipAddress);
                                     } else {
                                         // If the session is at an excluded IP...
-                                        for (String sessionId : sessionIds) {
+                                        for (final String sessionId : sessionIds) {
                                             // Then we need to disregard the session ID as well.
                                             if (sessionId.equals(row.get("session_id"))) {
                                                 sessionIds.remove(sessionId);
@@ -191,12 +192,12 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     }
                     //if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
                     if (!user.isGuest()) {
-                        c.put("sessionCount", sessionIds.size());
-                        c.put("sessionIpCount", uniqueIPs.size());
-                        c.put("sessionIpCsv", Joiner.on(", ").join(uniqueIPs));
+                        context.put("sessionCount", sessionIds.size());
+                        context.put("sessionIpCount", uniqueIPs.size());
+                        context.put("sessionIpCsv", Joiner.on(", ").join(uniqueIPs));
                     }
                 }
-                doBuildTemplate(data, c);
+                doBuildTemplate(data, context);
             } else {
                 if (!XDAT.getSiteConfigPreferences().getRequireLogin()) {
                     data.setScreenTemplate("Login.vm");
@@ -361,17 +362,17 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
-        List<Properties> tabs = new ArrayList<>();
-        File tabsFolder;
-        String forwardSlashSubFolder = subfolder;
-        if(forwardSlashSubFolder!=null){
+        List<Properties> tabs                  = new ArrayList<>();
+        File             tabsFolder;
+        String           forwardSlashSubFolder = subfolder;
+        if (forwardSlashSubFolder != null) {
             forwardSlashSubFolder = subfolder.replace("\\", "/");
         }
         List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + forwardSlashSubFolder);
         if (uris.size() > 0) {
-            final URL url = uris.get(0);
-            String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-            String resolved = CustomClasspathResourceLoader.safeJoin("/", forwardSlashSubFolder, fileName);
+            final URL url      = uris.get(0);
+            String    fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+            String    resolved = CustomClasspathResourceLoader.safeJoin("/", forwardSlashSubFolder, fileName);
             try {
                 //addProps(cpTabFile, tabs, _defaultTabs, forwardSlashSubFolder + "/" + cpTabFile.getName());
                 addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), tabs, _defaultTabs, resolved);
@@ -451,10 +452,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             if (file != null) {
                 try (final Scanner scanner = new Scanner(file)) {
                     while (scanner.hasNextLine()) {
-                        String line = scanner.nextLine();
+                        String  line    = scanner.nextLine();
                         Matcher matcher = _pattern.matcher(line);
                         if (matcher.matches()) {
-                            String key = matcher.group(1);
+                            String key   = matcher.group(1);
                             String value = matcher.group(2);
                             if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
                                 if (logger.isDebugEnabled()) {

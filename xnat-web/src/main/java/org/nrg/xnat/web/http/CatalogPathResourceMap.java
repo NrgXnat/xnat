@@ -25,6 +25,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.services.archive.PathResourceMap;
+import org.nrg.xnat.services.archive.impl.legacy.DownloadArchiveOptions;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +54,12 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         _archiveRoot = archiveRoot;
         _catalogId = catalog.getId();
 
-        log.debug("{}: Added catalog: {}", _catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
+        final String description = StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)");
+        log.debug("{}: Added catalog: {}", _catalogId, description);
+
+        _projectIncludedInPath = StringUtils.contains(description, DownloadArchiveOptions.Option.ProjectIncludedInPath.toString());
+        _subjectIncludedInPath = _projectIncludedInPath || StringUtils.contains(description, DownloadArchiveOptions.Option.SubjectIncludedInPath.toString());
+
         for (final CatCatalogI entrySet : catalog.getSets_entryset()) {
             _sessions.push(entrySet);
             log.debug("{}: Added entry set {}: {}", _catalogId, entrySet.getId(), StringUtils.defaultIfBlank(entrySet.getDescription(), "(no description)"));
@@ -75,7 +82,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
     @Override
     public long getProcessedCount() {
-        return _resourceCount;
+        return _resourceCount.get();
     }
 
     @Override
@@ -86,19 +93,19 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         }
         // If we don't have any available resources AND the entries and catalog stack are empty, we're done here.
         if (_entries.isEmpty() && _sessions.isEmpty()) {
-            log.info("{}: No entries or sets left in resource map, processed {} total resources", _catalogId, _resourceCount);
+            log.info("{}: No entries or sets left in resource map, processed {} total resources", _catalogId, getProcessedCount());
             return false;
         }
         try {
             // If the resources are empty, that's OK as long as we have more entries or catalogs to burn through.
             if (!refresh()) {
-                log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
+                log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, getProcessedCount());
                 return false;
             }
             return true;
         } catch (EmptyStackException e) {
             // This is OK: it just means we're done.
-            log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
+            log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, getProcessedCount());
             return false;
         }
     }
@@ -129,8 +136,8 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         while (_resources.isEmpty() && (!_entries.isEmpty() || !_sessions.isEmpty())) {
             // If the entries stack is empty, keep popping catalogs until we have some entries.
             while (_entries.isEmpty() && !_sessions.isEmpty()) {
-                final CatCatalogI catalog = _sessions.pop();
-                final String catalogId = catalog.getId();
+                final CatCatalogI catalog   = _sessions.pop();
+                final String      catalogId = catalog.getId();
                 log.debug("{}: Just popped a fresh catalog {}: {}", _catalogId, catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
                 for (final CatCatalogI entrySet : catalog.getSets_entryset()) {
                     _sessions.push(entrySet);
@@ -170,7 +177,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                 final String                resourceName = currentEntry.getName();
                 final String                resourceUri  = currentEntry.getUri();
                 final ResourceURII          uri          = (ResourceURII) raw;
-                final XnatAbstractresourceI resource = uri.getXnatResource();
+                final XnatAbstractresourceI resource     = uri.getXnatResource();
 
                 // There are different kinds of resources that we might encounter, so that has to be accounted for here. These three types--XnatResourceCatalogI, XnatImageresourceI, and
                 // XnatResourceI--are by far the most common ones. If we run into a need for handling XnatDicomseriesI or XnatImageresourceseriesI, we can add that with sample data.
@@ -209,16 +216,16 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                                 return null;
                             }
 
-                            log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
+                            log.debug("{}: Resource entry {} with name {}: {}", _catalogId, _resourceCount.incrementAndGet(), getResourceName(resourceName, file), resourceUri);
                             return new CatalogPathResourceMapping(resourceName, file);
                         }
                     });
                     _resources.addAll(entries);
-                } else if (resource instanceof XnatImageresourceI || resource instanceof XnatResourceI) {
+                } else if (resource instanceof XnatResourceI) {
                     final XnatResource xnatResource = (resource instanceof XnatImageresourceI) ? ((XnatImageresource) resource).getResource() : (XnatResource) resource;
                     if (xnatResource != null) {
                         final String resourcePath = xnatResource.getUri();
-                        final File resourceFile = Paths.get(resourcePath).toFile();
+                        final File   resourceFile = Paths.get(resourcePath).toFile();
                         if (resourceFile.exists()) {
                             _resources.add(new CatalogPathResourceMapping(resourceName, resourceFile));
                         }
@@ -229,15 +236,22 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                     log.error("This implementation doesn't recognize the resource type \"{}\" for resource \"{}\", ID \"{}\".", resource.getXSIType(), resource.getLabel(), resource.getXnatAbstractresourceId());
                 }
             } else {
-                log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId);
+                log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId, raw.getClass().getName());
             }
         } catch (MalformedURLException e) {
             // TODO: We created these, they should be good for now. Add checks later.
         }
     }
 
-    private static String getResourceName(final String resourceName, final File file) {
-        final Iterable<String> components = Iterables.filter(Arrays.asList(resourceName.split("/")), IGNORED_PATH_COMPONENT);
+    private String getResourceName(final String resourceName, final File file) {
+        final List<String> components = Lists.newArrayList(Iterables.filter(Arrays.asList(resourceName.split("/")), IGNORED_PATH_COMPONENT));
+        // The subject isn't reflected in the archive path, so, if subject is included
+        // in the resource name, it needs to be removed or the matcher won't work.
+        if (_subjectIncludedInPath) {
+            // If the project path is included, that pushes the subject path to index
+            // 1, otherwise subject path should be index 0.
+            components.remove(_projectIncludedInPath ? 1 : 0);
+        }
         final Matcher matcher = Pattern.compile(Joiner.on(".*").join(components) + "/(?<remnant>.*)$").matcher(file.getAbsolutePath());
         if (matcher.find()) {
             return matcher.group("remnant");
@@ -279,13 +293,14 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         private final List<String> _ignored = Arrays.asList("assessors", "resources", "scans");
     };
 
-    private final Stack<CatCatalogI>               _sessions  = new Stack<>();
-    private final Stack<CatEntryI>                 _entries   = new Stack<>();
-    private final Stack<Mapping<String, Resource>> _resources = new Stack<>();
+    private final Stack<CatCatalogI>               _sessions      = new Stack<>();
+    private final Stack<CatEntryI>                 _entries       = new Stack<>();
+    private final Stack<Mapping<String, Resource>> _resources     = new Stack<>();
+    private final AtomicLong                       _resourceCount = new AtomicLong();
 
-    private final String                 _catalogId;
-    private final String                 _archiveRoot;
-    private final File                   _testFile;
-
-    private long _resourceCount = 0;
+    private final String  _catalogId;
+    private final String  _archiveRoot;
+    private final boolean _projectIncludedInPath;
+    private final boolean _subjectIncludedInPath;
+    private final File    _testFile;
 }

@@ -70,7 +70,12 @@
             #else
                 <script>
                     #foreach($scan in $om.getSortedScans())
-                    XNAT.data.context.scans.push({ id: '#escapeAll($!scan.getProperty("ID"))', series_description: '#escapeAll($!scan.getProperty("series_description"))', modality: '#escapeAll($!scan.getProperty("modality"))', xsitype: '#escapeAll($!scan.getXSIType())' });
+                    XNAT.data.context.scans.push({
+                        id: '#escapeAll("$!scan.getProperty('ID')")',
+                        series_description: '#escapeAll("$!scan.getProperty('series_description')")',
+                        modality: '#escapeAll("$!scan.getProperty('modality')")',
+                        xsitype: '#escapeAll("$!scan.getXSIType()")'
+                    });
                     #end
                 </script>
 

@@ -8,13 +8,13 @@
 ## Default macro file for XNAT
 ##
 
-#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").toString().trim()#end
-#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").toString().trim()#end
-#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s")).toString().trim()#end
-#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").toString().trim()#end
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$!s").toString().trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$!s").toString().trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$!s")).toString().trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$!s").toString().trim()#end
 #macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
 
-#macro(escapeXML $s)$!escUtils.escapeXml11("$s")#end
+#macro(escapeXML $s)$!escUtils.escapeXml11("$!s")#end
 #macro(escapeCleanHTML $s)$!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))).replaceAll("'", "&apos;").replaceAll('"', '&quot;')#end
 #macro(escapeCleanJS $s)$!escUtils.escapeEcmaScript($!escUtils.unescapeEcmaScript("$!s"))#end
 #macro(escapeAllJS $s)$!escUtils.escapeEcmaScript($!escUtils.escapeXml11($!escUtils.unescapeXml("$!s")))#end

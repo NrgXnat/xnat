@@ -337,7 +337,7 @@ public class DefaultCatalogService implements CatalogService {
         }
         log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
         startTime=Calendar.getInstance().getTimeInMillis();
-        refreshResourceCatalog(user, parentUri);
+        refreshResourceCatalog(user, parentUri, catalog);
         log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
         
         return catalog;
@@ -508,6 +508,11 @@ public class DefaultCatalogService implements CatalogService {
             log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parent.getItem().getIDValue(), e);
             throw e;
         }
+    }
+
+    private void refreshResourceCatalog(final UserI user, final String parentURI, XnatResourcecatalog catalog,
+                                        final Operation... operations) throws ServerException, ClientException {
+        _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog);
     }
 
     /**
@@ -861,7 +866,7 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     /**
-     * Performs the actual work of refreshing a single catalog.
+     * Performs the actual work of refreshing all catalogs within a resourcePath.
      *
      * @param user         The user requesting the refresh operation.
      * @param resourcePath The archive path for the resource to refresh.
@@ -871,6 +876,23 @@ public class DefaultCatalogService implements CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations) throws ServerException, ClientException {
+        _refreshCatalog(user, resourcePath, operations, null);
+    }
+
+    /**
+     * Performs the actual work of refreshing a single catalog within resourcePath
+     *
+     * @param user          The user requesting the refresh operation.
+     * @param resourcePath  The archive path for the resource to refresh.
+     * @param operations    The operations to be performed.
+     * @param catalog       If null, refresh all catalogs in resourcePath. Otherwise, just refresh this one
+     *
+     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
+     * @throws ServerException When an error occurs in the system during the refresh operation.
+     */
+    private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations,
+                                 @Nullable XnatAbstractresourceI catalog) throws ServerException, ClientException {
+
         try {
             final URIManager.DataURIA uri = UriParserUtils.parseURI(resourcePath);
 
@@ -884,15 +906,6 @@ public class DefaultCatalogService implements CatalogService {
             checkEditPermissionsOnItem(user, item, resourcePath);
 
             if (item != null) {
-                final EventDetails event = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, "Catalog(s) Refreshed", "Refreshed catalog for resource " + resourceURI.getUri(), "");
-
-                final Collection<Operation> list = getOperations(operations);
-
-                final boolean append        = list.contains(Operation.Append);
-                final boolean checksum      = list.contains(Operation.Checksum);
-                final boolean delete        = list.contains(Operation.Delete);
-                final boolean populateStats = list.contains(Operation.PopulateStats);
-
                 try {
                     if (resourceURI instanceof ResourceURII) {//if we are referencing a specific catalog, make sure it doesn't actually reference an individual file.
                         final String resourceFilePath = ((ResourceURII) resourceURI).getResourceFilePath();
@@ -900,7 +913,6 @@ public class DefaultCatalogService implements CatalogService {
                             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, new Exception("This operation cannot be performed directly on a file URL"));
                         }
                     }
-
                     try {
                         if (!Permissions.canEdit(user, item)) {
                             throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, new Exception("Unauthorized attempt to add a file to " + resourceURI.getUri()));
@@ -911,16 +923,43 @@ public class DefaultCatalogService implements CatalogService {
                         log.error("An error occurred trying to check the edit permissions for user " + user.getUsername(), e);
                     }
 
-                    final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
+                    List<XnatAbstractresourceI> resources = resourceURI.getResources(true);
 
-                    final List<XnatAbstractresourceI> resources = resourceURI.getResources(true);
+                    String reason = "Refreshed catalog for resource " + resourceURI.getUri();
+                    if (catalog != null) {
+                        boolean found = false;
+                        for (XnatAbstractresourceI res : resources) {
+                            if (res.getXnatAbstractresourceId().equals(catalog.getXnatAbstractresourceId())) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            throw new ClientException("Unauthorized: attempted to refresh catalog " + catalog.getLabel() +
+                                    " which is not a resource of " + item.getId());
+                        }
+                        reason = "Refreshed "+ catalog.getLabel() +" catalog for resource " + resourceURI.getUri();
+                        resources = Collections.singletonList(catalog);
+                    }
+
+                    final EventDetails event = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, "Catalog(s) Refreshed",
+                            reason, "");
                     if (resources.isEmpty()) {
                         log.warn("Trying to refresh the resources for catalog '{}', but no resources were returned for the calculated URI: {}", resourcePath, resourceURI.getUri());
-                    } else {
-                        for (final XnatAbstractresourceI resource : resources) {
-                            final String archiveRootPath = item.getArchiveRootPath();
-                            refreshResourceCatalog((XnatAbstractresource) resource, archiveRootPath, populateStats, checksum, delete, append, user, workflow.buildEvent());
-                        }
+                    }
+
+                    final Collection<Operation> list = getOperations(operations);
+
+                    final boolean append        = list.contains(Operation.Append);
+                    final boolean checksum      = list.contains(Operation.Checksum);
+                    final boolean delete        = list.contains(Operation.Delete);
+                    final boolean populateStats = list.contains(Operation.PopulateStats);
+
+                    final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
+                    // Note that resources will contain only catalog if that is specified
+                    for (final XnatAbstractresourceI resource : resources) {
+                        final String archiveRootPath = item.getArchiveRootPath();
+                        refreshResourceCatalog((XnatAbstractresource) resource, archiveRootPath, populateStats, checksum, delete, append, user, workflow.buildEvent());
                     }
 
                     WorkflowUtils.complete(workflow, workflow.buildEvent());

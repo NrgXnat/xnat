@@ -1128,6 +1128,17 @@ body [type="submit"]:hover {
     box-shadow: none;
 }
 
+.btn1:active,
+.btn.primary:active,
+.btn.submit:active,
+.btn.save:active,
+body input.btn1:active,
+body .btn1[type="button"]:active,
+body [type="submit"]:active {
+    background: #145b91;
+    box-shadow: none;
+}
+
 /* btn2 gets gray background */
 .btn,
 .btn2,
@@ -1144,6 +1155,14 @@ body button:hover,
 body [type="button"]:hover,
 body [type="reset"]:hover {
    background: #f0f0f0;
+}
+
+.btn:active,
+.btn2:active,
+body button:active,
+body [type="button"]:active,
+body [type="reset"]:active {
+    background: #e0e0e0;
 }
 
 /* smaller btn */

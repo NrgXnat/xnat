@@ -81,7 +81,7 @@
 
                 #foreach($scan in $om.getSortedScans())
                     #set ($scanID =$!scan.getProperty("ID"))
-                    <tr valign="top" id="scan-${scanID}">
+                    <tr valign="top" id="scan-${scanID}" data-scan="${scanID}">
                         <td class="scan-actions-controls scan-selector center" style="width: 45px;">
                             <input type="checkbox" class="selectable-select-one" name="scanAction" value="$scanID" />
                         </td>

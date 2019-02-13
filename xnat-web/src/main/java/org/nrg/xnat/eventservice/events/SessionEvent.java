@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="SessionEvent")
 public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatImagesessiondataI> {
 
-    public enum Status {CREATED, UPDATED, DELETED};
+    public enum Status {CREATED, DELETED};
 
     public SessionEvent(){};
 

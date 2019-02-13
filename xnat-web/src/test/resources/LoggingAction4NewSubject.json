@@ -3,7 +3,7 @@
     "active": true,
     "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
     "event-filter": {
-        "event-type": "org.nrg.xnat.eventservice.services.SubjectEvent",
+        "event-type": "org.nrg.xnat.eventservice.events.SubjectEvent",
         "status": "CREATED"
     },
     "act-as-event-user": false

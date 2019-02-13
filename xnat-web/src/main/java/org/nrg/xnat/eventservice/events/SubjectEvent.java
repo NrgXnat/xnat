@@ -1,8 +1,7 @@
-package org.nrg.xnat.eventservice.services;
+package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatSubjectdataI;
-import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="SubjectEvent")
 public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSubjectdataI> {
 
-    public enum Status {CREATED, UPDATED, DELETED};
+    public enum Status {CREATED, DELETED};
 
     public SubjectEvent(){};
 

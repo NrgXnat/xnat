@@ -41,6 +41,7 @@ import org.xml.sax.SAXException;
 import javax.annotation.Nonnull;
 import java.io.*;
 import java.net.*;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.ByteBuffer;
@@ -1403,14 +1404,40 @@ public class CatalogUtils {
 
         refreshAuditSummary(xml, audit_summary);
 
-        try (final FileOutputStream fos = new FileOutputStream(dest)) {
-            final FileLock fl = fos.getChannel().lock();
+        doWrite(xml, dest, Calendar.getInstance().getTimeInMillis());
+    }
+
+    /**
+     * Attempt to write to the file. If I cannot get the lock, retry. After 2 min of trying (unsuccessfully),
+     * throw Exception.
+     *
+     * Why is this needed? If another thread has a write lock on this file, an OverlappingFileLockException will be thrown when
+     * we try to acquire the lock. Rather than aborting, we want to wait and retry (reopen output stream, retry for lock).
+     * But not forever! (Throw an exception after 2min.)
+     *
+     * @param xml       the catalog
+     * @param dest      the file destination
+     * @param startTime time we started trying to write
+     * @throws Exception if we cannot get the lock in 2 min
+     */
+    private static void doWrite(CatCatalogI xml, File dest, long startTime) throws Exception {
+        try(final FileOutputStream fos = new FileOutputStream(dest)) {
             try {
-                final OutputStreamWriter fw = new OutputStreamWriter(fos);
-                xml.toXML(fw);
-                fw.flush();
-            } finally {
-                fl.release();
+                final FileLock fl = fos.getChannel().lock();
+                try {
+                    final OutputStreamWriter fw = new OutputStreamWriter(fos);
+                    xml.toXML(fw);
+                    fw.flush();
+                } finally {
+                    fl.release();
+                }
+            } catch (OverlappingFileLockException e) {
+                if (Calendar.getInstance().getTimeInMillis() - startTime > 120000) {
+                    //Trying for 2 min to write to the file, throw an exception
+                    throw new Exception("Unable to get a write lock on " + dest.getAbsolutePath());
+                }
+                Thread.sleep(5000); //sleep 5s
+                doWrite(xml, dest, startTime);
             }
         }
     }

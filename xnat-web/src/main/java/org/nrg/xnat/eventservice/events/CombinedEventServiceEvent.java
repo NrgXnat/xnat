@@ -130,9 +130,9 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     public String toString() {
         return "CombinedEventServiceEvent{" +
                 "eventUser='" + eventUser + '\'' +
-                ", object=" + object.getClass().getSimpleName() +
-                ", eventCreatedTimestamp=" + eventCreatedTimestamp.toString() +
-                ", status=" + status.toString() +
+                ", object=" + (object != null ? object.getClass().getSimpleName() : "null") +
+                ", eventCreatedTimestamp=" + (eventCreatedTimestamp != null ? eventCreatedTimestamp.toString() : "null") +
+                ", status=" + (status != null ? status.toString() : "null") +
                 ", projectId='" + projectId + '\'' +
                 '}';
     }

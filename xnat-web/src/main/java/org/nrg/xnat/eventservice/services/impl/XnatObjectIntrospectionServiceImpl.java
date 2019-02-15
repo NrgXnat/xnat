@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.model.XnatExperimentdataI;
+import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -64,6 +65,17 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     }
 
     @Override
+    public List<String> getStoredImageSessionIds(XnatSubjectdataI subject) {
+        final List<Map<String, Object>> sessions = simpleQuery(QUERY_IMAGESESSIONS_BY_SUBJECT, "subjectId", subject.getId());
+        if(sessions != null){
+            List<String> sessionIds = new ArrayList<>();
+            sessions.forEach(session->sessionIds.add((String) session.get("id")));
+            return sessionIds;
+        }
+        return null;
+    }
+
+    @Override
     public Boolean storedInDatabase(XnatExperimentdata experiment) {
         List<Map<String, Object>> result = simpleQuery(QUERY_EXPERIMENTDATA, "experimentId", experiment.getId());
         if(result != null && !result.isEmpty()){
@@ -73,7 +85,7 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
         }    }
 
     @Override
-    public List<String> getScanIds(XnatExperimentdata experiment) {
+    public List<String> getStoredScanIds(XnatExperimentdata experiment) {
         final List<Map<String, Object>> scans = simpleQuery(QUERY_SCANDATAID, "experimentId", experiment.getId());
         if(scans != null){
             List<String> scanIds = new ArrayList<>();
@@ -82,6 +94,15 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
         }
         return null;
     }
+
+    @Override
+    public boolean storedInDatabase(XnatImageassessordataI assessor) {
+        List<Map<String, Object>> result = simpleQuery(QUERY_IMAGEASSESSORDATA, "imageAssessorId", assessor.getId());
+        if(result != null && !result.isEmpty()){
+            return true;
+        } else {
+            return false;
+        }    }
 
     @Override
     public Integer getResourceCount(XnatProjectdataI project) {
@@ -113,7 +134,11 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
 
     private static final String QUERY_SUBJECTDATA = "SELECT * FROM xnat_subjectdata WHERE id = :subjectId";
 
+    private static final String QUERY_IMAGESESSIONS_BY_SUBJECT = " SELECT id FROM xnat_imagesessiondata WHERE id IN (SELECT id from xnat_subjectassessordata WHERE subject_id = 'XNAT_S00001')";
+
     private static final String QUERY_EXPERIMENTDATA = "SELECT * FROM xnat_experimentdata WHERE id = :experimentId";
+
+    private static final String QUERY_IMAGEASSESSORDATA = "SELECT * FROM xnat_imageassessordata WHERE id = :imageAssessorId";
 
     private static final String QUERY_SCANDATAID = "SELECT id FROM xnat_imagescandata WHERE image_session_id = :experimentId";
 

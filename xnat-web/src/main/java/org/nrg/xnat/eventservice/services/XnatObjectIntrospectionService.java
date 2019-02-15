@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.services;
 
 import org.nrg.xdat.model.XnatExperimentdataI;
+import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -19,9 +20,13 @@ public interface XnatObjectIntrospectionService {
 
     Boolean storedInDatabase(XnatSubjectdataI subject);
 
+    List<String> getStoredImageSessionIds(XnatSubjectdataI subject);
+
     Boolean storedInDatabase(XnatExperimentdata experiment);
 
-    List<String> getScanIds(XnatExperimentdata experiment);
+    List<String> getStoredScanIds(XnatExperimentdata experiment);
+
+    boolean storedInDatabase(XnatImageassessordataI assessor);
 
     Integer getResourceCount(XnatProjectdataI project);
 

@@ -553,7 +553,7 @@ public class EventSubscriptionEntityServiceImpl
                 }
                 // Check for exclusion based on project id
                 if (filter.projectIds() != null && !filter.projectIds().isEmpty() &&
-                        filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId()))){
+                        filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId() != null ? event.getProjectId() : ""))){
                     return false;
                 }
                 // Check for exclusion based on payload filter (if available)

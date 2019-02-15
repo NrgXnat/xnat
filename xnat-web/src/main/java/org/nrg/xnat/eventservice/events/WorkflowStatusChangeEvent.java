@@ -68,4 +68,15 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
         }
         return payloadSignatureObject;
     }
+
+    @Override
+    public String toString() {
+        return "WorkflowStatusChangeEvent{" +
+                "eventUser='" + eventUser + '\'' +
+                ", object=" + object.getClass().getSimpleName() +
+                ", eventCreatedTimestamp=" + eventCreatedTimestamp.toString() +
+                ", projectId='" + projectId + '\'' +
+                '}';
+    }
+
 }

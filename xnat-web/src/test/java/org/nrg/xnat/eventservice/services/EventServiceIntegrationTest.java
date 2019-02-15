@@ -31,6 +31,7 @@ import org.nrg.xnat.eventservice.events.ProjectEvent;
 import org.nrg.xnat.eventservice.events.SampleEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
+import org.nrg.xnat.eventservice.events.SubjectEvent;
 import org.nrg.xnat.eventservice.events.TestCombinedEvent;
 import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
@@ -38,8 +39,6 @@ import org.nrg.xnat.eventservice.listeners.TestListener;
 import org.nrg.xnat.eventservice.model.*;
 import org.nrg.xnat.eventservice.model.xnat.Scan;
 import org.nrg.xnat.eventservice.model.xnat.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -1025,7 +1024,7 @@ public class EventServiceIntegrationTest {
         sw1.stop();
         System.out.print("\n" + Integer.toString(eventService.getSubscriptions().size()) + " Subscriptions created in : " + sw1.getTotalTimeSeconds() + "seconds\n");
 
-        XnatImagesessiondata session = new XnatImagesessiondata();
+        XnatImagesessiondataI session = new XnatImagesessiondata(mockUser);
         session.setModality("MR");
         session.setProject(projectId);
         session.setSessionType("xnat:imageSessionData");

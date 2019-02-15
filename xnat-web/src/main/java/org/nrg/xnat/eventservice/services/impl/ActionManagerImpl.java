@@ -190,7 +190,7 @@ public class ActionManagerImpl implements ActionManager {
     @Override
     public PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, EventServiceEvent esEvent, UserI user) {
         try {
-            if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem()instanceof XFTItem) {
+            if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem() instanceof XFTItem) {
                 XFTItem eventXftItem = ((BaseElement)esEvent.getObject()).getItem();
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,

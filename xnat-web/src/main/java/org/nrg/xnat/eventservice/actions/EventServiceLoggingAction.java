@@ -7,7 +7,10 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -24,6 +27,10 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    @Lazy
+    EventServiceComponentManager componentManager;
 
     public EventServiceLoggingAction() {
     }
@@ -58,10 +65,15 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     @Override
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
-        log.debug("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
+        log.info("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
         try {
-            log.debug(mapper.writeValueAsString(subscription));
-            log.debug(event.toString());
+            log.info("Subscription: " + mapper.writeValueAsString(subscription));
+            log.info("Event: " + event.toString());
+            XnatModelObject modelObject = componentManager.getModelObject(event.getObject(), user);
+            if (modelObject != null){
+                log.info("Event Payload:");
+                log.info(mapper.writeValueAsString(modelObject));
+            }
         } catch (JsonProcessingException e) {
             log.error("Could not write subscription values to log. ", e.getMessage());
         }

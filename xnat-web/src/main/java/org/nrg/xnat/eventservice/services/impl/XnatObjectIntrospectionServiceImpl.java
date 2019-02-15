@@ -134,7 +134,7 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
 
     private static final String QUERY_SUBJECTDATA = "SELECT * FROM xnat_subjectdata WHERE id = :subjectId";
 
-    private static final String QUERY_IMAGESESSIONS_BY_SUBJECT = " SELECT id FROM xnat_imagesessiondata WHERE id IN (SELECT id from xnat_subjectassessordata WHERE subject_id = 'XNAT_S00001')";
+    private static final String QUERY_IMAGESESSIONS_BY_SUBJECT = "SELECT id FROM xnat_imagesessiondata WHERE id IN (SELECT id from xnat_subjectassessordata WHERE subject_id = :subjectId)";
 
     private static final String QUERY_EXPERIMENTDATA = "SELECT * FROM xnat_experimentdata WHERE id = :experimentId";
 

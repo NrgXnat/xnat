@@ -8,6 +8,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
@@ -32,7 +33,6 @@ import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,30 +67,37 @@ public class EventServiceItemSaveAspect {
                 log.debug("ProjectEvent.Status.UPDATED detected - no-op");
                 //XnatProjectdataI project = item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item);
 
-            } else if (StringUtils.equals(item.getXSIType(), "xnat:subjectData")) {
+            } else if (StringUtils.equals(item.getXSIType(), "xnat:subjectData") || item instanceof  XnatSubjectdataI) {
                 XnatSubjectdataI subject = item instanceof XnatSubjectdataI ? (XnatSubjectdataI) item : new XnatSubjectdata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subject);
-                List<String> removedSessionIds = null;
-                List<String> addedSessionIds = null;
-                if(alreadyStored) {
-                    List<String> preImageSessionIds = alreadyStored ? xnatObjectIntrospectionService.getStoredImageSessionIds(subject) : new ArrayList<String>();
-                    List<XnatSubjectassessordataI> postSessions =
-                            subject.getExperiments_experiment()
-                                   .stream().filter(experiment -> experiment instanceof XnatImagesessiondataI).collect(Collectors.toList());
-                    List<String> postSessionIds = postSessions.stream().map(XnatSubjectassessordataI::getId).collect(Collectors.toList());
-                    removedSessionIds = preImageSessionIds.stream().filter(id -> !postSessionIds.contains(id)).collect(Collectors.toList());
-                    addedSessionIds = postSessionIds.stream().filter(id -> !preImageSessionIds.contains(id)).collect(Collectors.toList());
-                }
-                retVal = joinPoint.proceed();
-                if (!alreadyStored && xnatObjectIntrospectionService.storedInDatabase(subject)) {
+                if (!alreadyStored) {
+                    // New subject save
                     log.debug("New Subject Data Save" + " : xsiType:" + item.getXSIType());
+                    retVal = joinPoint.proceed();
                     triggerSubjectCreate(subject, user);
+                } else if (alreadyStored && (item instanceof XnatSubjectdataI) && (subject.getExperiments_experiment() == null || subject.getExperiments_experiment().isEmpty())){
+                    // This is an existing subject being edited
+                    log.debug("SubjectEvent.Status.UPDATED detected - no-op");
+                    retVal = joinPoint.proceed();
                 } else {
+                    List<String> preImageSessionIds = xnatObjectIntrospectionService.getStoredImageSessionIds(subject);
+                    List<XnatSubjectassessordataI> currentSessions =
+                            subject.getExperiments_experiment()
+                                    .stream().filter(experiment -> experiment instanceof XnatImagesessiondataI).collect(Collectors.toList());
+                    List<String> currentSessionIds = currentSessions.stream().map(XnatSubjectassessordataI::getId).collect(Collectors.toList());
+                    List<String> removedSessionIds = preImageSessionIds.stream().filter(id -> !currentSessionIds.contains(id)).collect(Collectors.toList());
+                    List<String> addedSessionIds = currentSessionIds.stream().filter(id -> !preImageSessionIds.contains(id)).collect(Collectors.toList());
                     log.debug("Existing Subject Data Save" + " : xsiType:" + item.getXSIType());
                     triggerSessionDelete(removedSessionIds, user);
+                    triggerSessionsCreate(currentSessions.stream()
+                                                         .filter(s -> addedSessionIds.contains(s.getId()))
+                                                         .filter(s -> s instanceof XnatImagesessiondataI)
+                                                         .map(s -> (XnatImagesessiondataI)s)
+                                                         .collect(Collectors.toList()), user);
+                    
                     log.debug("SubjectEvent.Status.UPDATED detected - no-op");
+                    retVal = joinPoint.proceed();
                     //eventService.triggerEvent(new SubjectEvent(subject, userLogin, SubjectEvent.Status.UPDATED, subject.getProject()));
-
                 }
 
             } else if (item instanceof XnatImagesessiondataI || StringUtils.containsIgnoreCase(item.getXSIType(), "SessionData")) {
@@ -212,12 +219,28 @@ public class EventServiceItemSaveAspect {
     //** Subject Triggers **//
     private void triggerSubjectCreate(XnatSubjectdataI subject, UserI user){
         eventService.triggerEvent(new SubjectEvent(subject, user.getLogin(), SubjectEvent.Status.CREATED, subject.getProject()));
+        if (subject.getExperiments_experiment() != null) {
+            subject.getExperiments_experiment().stream()
+                   .filter(s -> s instanceof XnatImagesessiondataI)
+                   .map(s -> (XnatImagesessiondataI) s)
+                   .forEach(s -> triggerSessionCreate(s, user));
+        }
+        if (subject.getResources_resource() != null) {
+            subject.getResources_resource().stream()
+                   .forEach(r ->triggerResourceCreate(r, user));
+        }
+
     }
     private void triggerSubjectDelete(XnatSubjectdataI subject, UserI user){
         eventService.triggerEvent(new SubjectEvent(subject, user.getLogin(), SubjectEvent.Status.DELETED, subject.getProject()));
     }
 
     //** Session Triggers **//
+    private void triggerSessionsCreate(List<XnatImagesessiondataI> sessions, UserI user){
+        if (sessions != null && !sessions.isEmpty()){
+            sessions.forEach(session -> triggerSessionCreate(session, user));
+        }
+    }
     private void triggerSessionCreate(XnatImagesessiondataI session, UserI user){
         eventService.triggerEvent(new SessionEvent(session, user.getLogin(), SessionEvent.Status.CREATED, session.getProject()));
         List<XnatImagescandataI> scans = session.getScans_scan();
@@ -227,6 +250,10 @@ public class EventServiceItemSaveAspect {
         List<XnatImageassessordataI> assessors = session.getAssessors_assessor();
         if (assessors != null && !assessors.isEmpty()){
             assessors.forEach(as -> triggerImageAssessorCreate(as, user));
+        }
+        List<XnatAbstractresourceI> resources = session.getResources_resource();
+        if(resources != null && !resources.isEmpty()){
+            resources.forEach(r -> triggerResourceCreate(r, user));
         }
 
     }
@@ -256,5 +283,10 @@ public class EventServiceItemSaveAspect {
     private void triggerImageAssessorCreate(XnatImageassessordataI imageAssessor, UserI user){
         eventService.triggerEvent(new ImageAssessorEvent(imageAssessor, user.getLogin(), ImageAssessorEvent.Status.CREATED, imageAssessor.getProject()));
 
+    }
+
+    //** Resource Triggers **//
+    private void triggerResourceCreate(XnatAbstractresourceI resource, UserI user){
+        //TODO
     }
 }

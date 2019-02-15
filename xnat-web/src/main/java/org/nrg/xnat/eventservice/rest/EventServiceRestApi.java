@@ -13,7 +13,9 @@ import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.ProjectId;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
@@ -39,7 +41,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,7 +104,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             throws NrgServiceRuntimeException, SubscriptionValidationException, JsonProcessingException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         Subscription toCreate = Subscription.createOnProject(subscription, userI.getLogin());
-        checkProjectSubscriptionAccess(toCreate ,project,userI);
+        checkProjectSubscriptionAccess(toCreate, project, userI);
         eventService.throwExceptionIfNameExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
         if(created == null){
@@ -371,10 +372,31 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     private void checkProjectSubscriptionAccess(Subscription subscription, String project, UserI userI) throws UnauthorizedException {
-        if(subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty() || Arrays.asList(project) != subscription.eventFilter().projectIds()){
+        if(subscription.eventFilter().projectIds() == null ||
+                subscription.eventFilter().projectIds().isEmpty() ||
+                !subscription.eventFilter().projectIds().contains(project) ||
+                !(isAdmin(userI) || isOwner(userI, subscription.eventFilter().projectIds()))) {
+
             throw new UnauthorizedException(userI.getLogin() + " not authorized to modify subscriptions for project(s): "
                     + ((subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty()) ? "Site" : StringUtils.join(subscription.eventFilter().projectIds(),',')));
         }
+    }
+
+    private boolean isAdmin(final UserI user) throws UnauthorizedException {
+        return getRoleHolder().isSiteAdmin(user);
+    }
+
+    private boolean isOwner(final UserI user, final List<String> projectIds){
+        if(projectIds == null || projectIds.isEmpty()) {
+            return false;
+        }
+        final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
+        for (String pid : projectIds) {
+            if(!userHelperService.isOwner(pid)){
+                return false;
+            }
+        }
+        return true;
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)

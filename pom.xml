@@ -303,7 +303,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${project.version}</version>
+                <version>${xnat.previous.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>

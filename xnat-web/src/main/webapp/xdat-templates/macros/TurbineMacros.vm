@@ -1,5 +1,6 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="escUtils" type="org.apache.commons.text.StringEscapeUtils" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="tipText" type="java.util.List" *#
 ##Copyright 2016 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
@@ -7,11 +8,19 @@
 ## Default macro file for XNAT
 ##
 
-#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").toString().trim()#end
-#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").toString().trim()#end
-#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s")).toString().trim()#end
-#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").toString().trim()#end
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$!s").toString().trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$!s").toString().trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$!s")).toString().trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$!s").toString().trim()#end
 #macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
+
+#macro(escapeXML $s)$!escUtils.escapeXml11("$!s")#end
+#macro(escapeCleanHTML $s)$!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))).replaceAll("'", "&apos;").replaceAll('"', '&quot;')#end
+#macro(escapeCleanJS $s)$!escUtils.escapeEcmaScript($!escUtils.unescapeEcmaScript("$!s"))#end
+#macro(escapeAllJS $s)$!escUtils.escapeEcmaScript($!escUtils.escapeXml11($!escUtils.unescapeXml("$!s")))#end
+
+#macro(unescapeAllHTML $s)$!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))#end
+#macro(escapeHtmlForJS $s)#escapeCleanJS($!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))))#end
 
 ## convert " to &quot; - prevents breaking out of HTML attributes
 #macro(replaceQuotes $str)$str.toString().replaceAll('"', '&quot;')#end

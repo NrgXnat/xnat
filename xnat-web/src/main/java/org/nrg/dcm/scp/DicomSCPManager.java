@@ -28,7 +28,6 @@ import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -39,17 +38,13 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
-import org.nrg.xdat.security.user.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -67,21 +62,22 @@ import javax.inject.Provider;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
-@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
+@SuppressWarnings({"SqlNoDataSourceInspection"})
 @Service
 @Slf4j
 @NrgPreferenceBean(toolId = TOOL_ID, toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
 public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean implements PreferenceHandlerMethod {
     public static final String TOOL_ID = "dicomScpManager";
-    public static final String PREF_ID = "dicomSCPInstances";
 
     @Autowired
-    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {        super(preferenceService, eventService);
+    public DicomSCPManager(final ExecutorService executorService, final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
+        super(preferenceService, eventService);
 
+        _executorService = executorService;
         _provider = receivedFileUserProvider;
         _context = context;
 
@@ -194,7 +190,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public List<DicomSCPInstance> getDicomSCPInstancesList() {
-        return _template.query("SELECT * FROM dicom_scp_instance",DICOM_SCP_INSTANCE_ROW_MAPPER);
+        return _template.query(GET_ALL, DICOM_SCP_INSTANCE_ROW_MAPPER);
     }
 
     /**
@@ -293,9 +289,9 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public DicomSCPInstance getDicomSCPInstance(final int id) {
         try {
-        return _template.queryForObject(GET_INSTANCE_BY_ID,
-                                        new MapSqlParameterSource("id", id),
-                                        DICOM_SCP_INSTANCE_ROW_MAPPER);
+            return _template.queryForObject(GET_INSTANCE_BY_ID,
+                                            new MapSqlParameterSource("id", id),
+                                            DICOM_SCP_INSTANCE_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -313,9 +309,9 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {
         try {
-        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
-                                        new MapSqlParameterSource("aeTitle", aeTitle).addValue("port", port),
-                                        DICOM_SCP_INSTANCE_ROW_MAPPER);
+            return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
+                                            new MapSqlParameterSource("aeTitle", aeTitle).addValue("port", port),
+                                            DICOM_SCP_INSTANCE_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -323,9 +319,9 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
         try {
-        return _template.query(GET_ENABLED_INSTANCES_BY_PORT,
-                               new MapSqlParameterSource("enabled", true).addValue("port", port),
-                               DICOM_SCP_INSTANCE_ROW_MAPPER);
+            return _template.query(GET_ENABLED_INSTANCES_BY_PORT,
+                                   new MapSqlParameterSource("enabled", true).addValue("port", port),
+                                   DICOM_SCP_INSTANCE_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -337,14 +333,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public void enableDicomSCPInstances(final int... ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
         toggleEnabled(true, Arrays.asList(ArrayUtils.toObject(ids)));
-        for(int id:ids) {
+        for (int id : ids) {
             try {
-                String prefKey = "dicomSCPInstances:" + id;
+                String     prefKey  = "dicomSCPInstances:" + id;
                 Preference instance = getPreference(prefKey);
-                if(instance!=null){
+                if (instance != null) {
                     JSONObject jsonObj = new JSONObject(instance.getValue());
-                    jsonObj.put("enabled",true);
-                    set(jsonObj.toString(),prefKey);
+                    jsonObj.put("enabled", true);
+                    set(jsonObj.toString(), prefKey);
                 }
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 invalidPreferenceName.printStackTrace();
@@ -358,14 +354,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public void disableDicomSCPInstances(final int... ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
         toggleEnabled(false, Arrays.asList(ArrayUtils.toObject(ids)));
-        for(int id:ids) {
+        for (int id : ids) {
             try {
-                String prefKey = "dicomSCPInstances:" + id;
+                String     prefKey  = "dicomSCPInstances:" + id;
                 Preference instance = getPreference(prefKey);
-                if(instance!=null){
+                if (instance != null) {
                     JSONObject jsonObj = new JSONObject(instance.getValue());
-                    jsonObj.put("enabled",false);
-                    set(jsonObj.toString(),prefKey);
+                    jsonObj.put("enabled", false);
+                    set(jsonObj.toString(), prefKey);
                 }
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 invalidPreferenceName.printStackTrace();
@@ -550,7 +546,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
                     dicomSCP.stop();
                 }
             } else {
-                dicomSCP = DicomSCP.create(this, Executors.newCachedThreadPool(), port);
+                dicomSCP = DicomSCP.create(this, _executorService, port);
                 _dicomSCPs.put(port, dicomSCP);
             }
             final List<String> started = dicomSCP.start();
@@ -587,6 +583,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     }
 
+    private static final String PREF_ID      = "dicomSCPInstances";
     private static final String DSCPM_DB_URL = "jdbc:h2:mem:" + PREF_ID;
 
     // Read queries: no changes to DicomSCPs required.
@@ -625,14 +622,15 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     };
 
-    private final XnatUserProvider           _provider;
-    private final ApplicationContext         _context;
-    private final String                     _primaryDicomObjectIdentifierBeanId;
-    private final Set<String>                _dicomObjectIdentifierBeanIds;
-    private final IdentifiersToMapFunction   _identifiersToMapFunction;
-    private final EmbeddedDatabase           _database;
-    private final NamedParameterJdbcTemplate _template;
-    private final ProcessorGradualDicomImporter       _importer;
+    private final ExecutorService               _executorService;
+    private final XnatUserProvider              _provider;
+    private final ApplicationContext            _context;
+    private final String                        _primaryDicomObjectIdentifierBeanId;
+    private final Set<String>                   _dicomObjectIdentifierBeanIds;
+    private final IdentifiersToMapFunction      _identifiersToMapFunction;
+    private final EmbeddedDatabase              _database;
+    private final NamedParameterJdbcTemplate    _template;
+    private final ProcessorGradualDicomImporter _importer;
 
     private boolean _isEnableDicomReceiver;
 

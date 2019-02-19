@@ -119,6 +119,11 @@ var XNAT = getObject(XNAT);
         downloadIframe(url);
     }
 
+    function removeScanRow(scanId){
+        // remove scan row
+        scanTable.dataTable$.find('tr[data-scan="' + scanId + '"]').remove();
+    }
+
     function deleteScan(scanId){
         scanId = scanId || getScanId(this);
         XNAT.ui.dialog.open({
@@ -126,25 +131,31 @@ var XNAT = getObject(XNAT);
             width: 480,
             nuke: true, // destroys the modal on close, rather than preserving its state
             content: XNAT.spawner.spawn({
-                p: {
-                    tag: 'p',
-                    content: 'This will delete scan <b>' + scanId + '</b> from this image session.'
-                },
-                delete_files: {
-                    kind: 'panel.input.switchbox',
-                    name: 'delete_files',
-                    id: 'delete_files',
-                    value: 'true',
-                    values: 'true|false',
-                    label: 'Delete Scan Files',
-                    onText: 'Yes (Default)',
-                    offText: 'No',
-                    description: 'If selected, all scan files will be deleted from the filesystem'
+                panel: {
+                    tag: 'div.panel',
+                    contents: {
+                        msg: {
+                            tag: 'div',
+                            content: '' +
+                                '<p>This will delete scan <b>' + scanId + '</b> from this image session.</p>' +
+                                '<div class="warning">This deletion is permanent and cannot be undone.</div>' +
+                                '<br>'
+                        },
+                        delete_files: {
+                            kind: 'panel.input.switchbox',
+                            name: 'delete_files',
+                            id: 'delete_files',
+                            value: true,
+                            values: 'true|false',
+                            checked: true,
+                            label: 'Delete Scan Files',
+                            onText: 'Yes (Default)',
+                            offText: 'No',
+                            description: 'If selected, all scan files will be <br>deleted from the filesystem'
+                        }
+                    }
                 }
             }).get(),
-            beforeShow: function(obj){
-                obj.dialogBody$.addClass('panel');
-            },
             buttons: [
                 {
                     label: 'Delete Scan',
@@ -168,13 +179,16 @@ var XNAT = getObject(XNAT);
                         XNAT.xhr.delete({
                             url: XNAT.url.csrfUrl(deleteUrl, params),
                             success: function(data){
+
+                                removeScanRow(scanId);
+
                                 var msg = 'Scan deleted';
                                 msg += (deleteFiles) ? ' and scan files permanently removed from file system.' : '.';
 
                                 XNAT.ui.dialog.open({
                                     title: 'Success',
                                     width: 360,
-                                    content: '<p>'+msg+' Page will reload.</p>',
+                                    content: '<p>' + msg + '</p>',
                                     buttons: [
                                         {
                                             label: 'OK',
@@ -182,7 +196,7 @@ var XNAT = getObject(XNAT);
                                             close: true,
                                             action: function(){
                                                 XNAT.ui.dialog.closeAll();
-                                                window.location.reload();
+                                                // window.location.reload();
                                             }
                                         }
                                     ]
@@ -213,6 +227,11 @@ var XNAT = getObject(XNAT);
             ]
         });
     }
+
+    // bulk-delete selected scans
+    // function deleteScans(scanIds){
+    // // no back-end support for this yet
+    // }
 
     function editScanNote(e) {
 

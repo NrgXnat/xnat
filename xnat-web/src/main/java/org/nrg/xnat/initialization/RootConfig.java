@@ -18,8 +18,9 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.datacache.SerializerRegistry;
@@ -39,19 +40,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+
+import static lombok.AccessLevel.PRIVATE;
 
 /**
  * Configuration for the XNAT root application context. This contains all of the F infrastructure for initializing
@@ -63,11 +58,19 @@ import java.util.Properties;
  */
 @Configuration
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
+@Getter(PRIVATE)
+@Accessors(prefix = "_")
 @Slf4j
 public class RootConfig {
     @Autowired
+    public void setXnatHome(final Path xnatHome) {
+        log.info("Setting xnatHome to {}", xnatHome);
+        _xnatHome = xnatHome;
+    }
+
+    @Autowired
     public void setJacksonModules(final Module[] jacksonModules) {
-        log.info("Setting {} Jackson modules", jacksonModules != null ? jacksonModules.length : 0);
+        log.info("Adding {} Jackson modules", jacksonModules != null ? jacksonModules.length : 0);
         _jacksonModules = jacksonModules;
     }
 
@@ -92,40 +95,11 @@ public class RootConfig {
     }
 
     @Bean
-    public ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean(final Path xnatHome) throws IOException, InvocationTargetException, IllegalAccessException {
-        final ThreadPoolExecutorFactoryBean bean = new ThreadPoolExecutorFactoryBean();
-
-        final Path executor = xnatHome.resolve("../executor.properties");
-        if (executor.toFile().exists()) {
-            try (final BufferedReader reader = Files.newBufferedReader(executor, StandardCharsets.UTF_8)) {
-                final Properties properties = new Properties();
-                properties.load(reader);
-                final Map<String, String> converted = new HashMap<>();
-                for (final String key : properties.stringPropertyNames()) {
-                    converted.put(key, properties.getProperty(key));
-                }
-                BeanUtils.populate(bean, converted);
-            }
-        }
-
-        return bean;
-    }
-
-    @Bean
-    public ScheduledExecutorFactoryBean scheduledExecutorFactoryBean() {
-        final ScheduledExecutorFactoryBean bean = new ScheduledExecutorFactoryBean();
-        bean.setRemoveOnCancelPolicy(true);
-        bean.setContinueScheduledExecutionAfterException(true);
-        bean.setWaitForTasksToCompleteOnShutdown(true);
-        return bean;
-    }
-
-    @Bean
     public PrettyPrinter prettyPrinter() {
         return new DefaultPrettyPrinter() {{
-                final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
-                indentObjectsWith(indenter);
-                indentArraysWith(indenter);
+            final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
+            indentObjectsWith(indenter);
+            indentArraysWith(indenter);
         }};
     }
 
@@ -165,5 +139,6 @@ public class RootConfig {
         return new SerializerRegistry();
     }
 
+    private Path     _xnatHome;
     private Module[] _jacksonModules;
 }

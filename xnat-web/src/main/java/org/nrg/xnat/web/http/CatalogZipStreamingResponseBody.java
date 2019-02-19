@@ -50,7 +50,7 @@ public final class CatalogZipStreamingResponseBody extends AbstractZipStreamingR
      * @param testMode    Whether the zip should be run in test mode.
      */
     public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot, final boolean testMode) {
-        super(archiveRoot, DEFAULT_BUFFER_SIZE, Users.getUserCacheFile(user, "catalogs", catalog.getId() + ".csv"));
+        super(archiveRoot, Users.getUserCacheFile(user, "catalogs", catalog.getId() + ".csv"));
         _mapper = new CatalogPathResourceMap(catalog, archiveRoot, testMode);
     }
 

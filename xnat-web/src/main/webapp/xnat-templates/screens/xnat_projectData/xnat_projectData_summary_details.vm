@@ -6,7 +6,7 @@
             #if($item.getChildItems("aliases/alias").size()>0)
                 &nbsp;&nbsp;&nbsp;Aka:
                 #foreach($alias in $item.getChildItems("aliases/alias"))
-                    #escapeHTML($alias.getProperty("alias"))&nbsp;
+                    #escapeCleanHTML($alias.getProperty("alias"))&nbsp;
                 #end
             #end
         </td>
@@ -17,10 +17,10 @@
             <td>
                 #if($!item.getStringProperty("xnat:projectData/description").length()>300)
                     <div style="height:100;overflow:auto">
-                        #escapeHTML($!item.getStringProperty("xnat:projectData/description"))
+                        #escapeCleanHTML($!item.getStringProperty("xnat:projectData/description"))
                     </div>
                 #else
-                    #escapeHTML($!item.getStringProperty("xnat:projectData/description"))
+                    #escapeCleanHTML($!item.getStringProperty("xnat:projectData/description"))
                 #end
             </td>
         </tr>
@@ -28,13 +28,13 @@
     #if($item.getProperty("xnat:projectData/keywords"))
         <tr>
             <th align="left">Keywords:</th>
-            <td>#escapeHTML($!item.getStringProperty("xnat:projectData/keywords"))</td>
+            <td>#escapeCleanHTML($!item.getStringProperty("xnat:projectData/keywords"))</td>
         </tr>
     #end
     #if($item.getProperty("xnat:projectData/PI"))
         <tr>
             <th align="left">PI:</th>
-            <td>#escapeHTML($!item.getStringProperty("xnat:projectData/PI/lastname")), #escapeHTML($!item.getStringProperty("xnat:projectData/PI/firstname"))</td>
+            <td>#escapeCleanHTML($!item.getStringProperty("xnat:projectData/PI/lastname")), #escapeCleanHTML($!item.getStringProperty("xnat:projectData/PI/firstname"))</td>
         </tr>
     #end
     #if($om.getInvestigators_investigator().size()>0)
@@ -42,7 +42,7 @@
             <th align="left">Investigators:</th>
             <td>
                 #foreach($invest in $om.getInvestigators_investigator())
-                    #if($velocityCount>1);#end #escapeHTML($!invest.getLastname()), #escapeHTML($!invest.getFirstname())
+                    #if($velocityCount>1);#end #escapeCleanHTML($!invest.getLastname()), #escapeCleanHTML($!invest.getFirstname())
                 #end
             </td>
         </tr>

@@ -9,292 +9,284 @@
 
 package org.nrg.xnat.restlet.representations;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.zip.ZipOutputStream;
-
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
 import org.restlet.resource.OutputRepresentation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.zip.ZipOutputStream;
 
+import static lombok.AccessLevel.PROTECTED;
+
+@Getter(PROTECTED)
+@Accessors(prefix = "_")
+@Slf4j
 public class ZipRepresentation extends OutputRepresentation {
-    private final Logger logger = LoggerFactory.getLogger(ZipRepresentation.class);
-    
-    private ArrayList<ZipEntry> _entries=new ArrayList<ZipEntry>();
-    private ArrayList<String> _tokens=new ArrayList<String>();
-    private MediaType mt=null;
-    private final int compression;
-    private List<Runnable> afterWrite = Lists.newArrayList();
-
-    public ZipRepresentation(MediaType mt,String token, Integer compression) {
-        super(mt);
-        this.mt=mt;
-        _tokens.add(token);
-        this.compression=deriveCompression(compression);
+    public ZipRepresentation(final MediaType mediaType, final String token, final Integer compression) {
+        this(mediaType, Collections.singletonList(token), compression);
     }
 
-    public ZipRepresentation(MediaType mt,ArrayList<String> token, Integer compression) {
-        super(mt);
-        this.mt=mt;
-        _tokens=token;
-        this.compression=deriveCompression(compression);
+    public ZipRepresentation(final MediaType mediaType, final List<String> tokens, final Integer compression) {
+        super(mediaType);
+        _executor = ObjectUtils.defaultIfNull(XDAT.getContextService().getBeanSafely(ExecutorService.class), Executors.newSingleThreadExecutor());
+        _tokens.addAll(tokens);
+        _compression = deriveCompression(compression);
     }
 
-    public int deriveCompression(Integer compression){
-        if(compression==null){
-            return ZipUtils.DEFAULT_COMPRESSION;
-        }else{
-            return compression;
+    @Override
+    public String getDownloadName() {
+        final MediaType mediaType = getMediaType();
+        if (mediaType.equals(MediaType.APPLICATION_GNU_TAR)) {
+            return getTokenName() + ".tar.gz";
         }
+        if (mediaType.equals(MediaType.APPLICATION_TAR)) {
+            return getTokenName() + ".tar";
+        }
+        if (mediaType.equals(SecureResource.APPLICATION_XAR)) {
+            return getTokenName() + ".xar";
+        }
+        return getTokenName() + ".zip";
     }
 
-    public void addEntry(String p, File f){
-        _entries.add(new ZipFileEntry(p,f));
-    }
-
-    public void addEntry(String p, InputStream is){
-        _entries.add(new ZipStreamEntry(p,is));
-    }
-
-    public void addFolder(String p, File dir){
-        if(dir.isDirectory()){
-            for(final File f:dir.listFiles()){
-                if(f.isDirectory()){
-                    this.addFolder(append(p,f.getName()),f);
-                }else{
-                    this.addEntry(append(p,f.getName()),f);
+    @Override
+    public void write(final OutputStream output) throws IOException {
+        final MediaType mediaType = getMediaType();
+        try (final ZipI zip = initializeZip(output, mediaType)) {
+            for (final ZipEntry zipEntry : _entries) {
+                if (zipEntry instanceof ZipFileEntry) {
+                    final File file = ((ZipFileEntry) zipEntry).getFile();
+                    if (!file.isDirectory()) {
+                        zip.write(zipEntry.getPath(), file);
+                    }
+                } else {
+                    zip.write(zipEntry.getPath(), ((ZipStreamEntry) zipEntry).getInputStream());
                 }
             }
-        }else{
-            this.addEntry(append(p,dir.getName()),dir);
+        } finally {
+            if (!_afterWrite.isEmpty()) {
+                final Executor executor = getExecutor();
+                for (final Runnable runnable : _afterWrite) {
+                    executor.execute(runnable);
+                }
+            }
         }
     }
 
-    public String append(String pre, String post){
-        return (pre.endsWith("/"))?pre+post:pre+"/"+post;
+    public void addEntry(final String path, final File file) {
+        _entries.add(new ZipFileEntry(path, file));
     }
 
-    public void addEntry(File f){
-        String p = f.getAbsolutePath().replace('\\','/');
-        int i=-1;
-        String _token=null;
+    public void addEntry(final String path, final InputStream input) {
+        _entries.add(new ZipStreamEntry(path, input));
+    }
 
-        for(String token:_tokens){
-            _token=token;
-            i=p.indexOf('/'+ _token + '/');
-            if(i==-1){
-                i=p.indexOf('/'+ _token);
+    public void addFolder(final String path, final File folder) {
+        if (folder.isDirectory()) {
+            final File[] files = folder.listFiles();
+            if (files != null) {
+                for (final File file : files) {
+                    if (file.isDirectory()) {
+                        addFolder(Paths.get(path, file.getName()).toString(), file);
+                    } else {
+                        addEntry(Paths.get(path, file.getName()).toString(), file);
+                    }
+                }
+            }
+        } else {
+            addEntry(Paths.get(path, folder.getName()).toString(), folder);
+        }
+    }
 
-                if(i==-1){
-                    i=p.indexOf(_token+'/');
-                    if(i>-1){
-                        i=(p.substring(0, i)).lastIndexOf('/') +1;
+    public void addEntry(final File file) {
+        final String path      = file.getAbsolutePath().replace('\\', '/');
+        int    i      = -1;
+        String _token = null;
+
+        for (final String token : _tokens) {
+            _token = token;
+            i = path.indexOf('/' + _token + '/');
+            if (i == -1) {
+                i = path.indexOf('/' + _token);
+
+                if (i == -1) {
+                    i = path.indexOf(_token + '/');
+                    if (i > -1) {
+                        i = (path.substring(0, i)).lastIndexOf('/') + 1;
                         break;
                     }
-                }else{
+                } else {
                     i++;
                     break;
                 }
-            }else{
+            } else {
                 i++;
                 break;
             }
         }
 
-        if(i==-1){
-            if(p.indexOf(":")>-1){
-                p=p.substring(p.indexOf(":"));
-                p=p.substring(p.indexOf("/"));
-                p=_token+p;
-            }else{
-                p=_token+p;
-            }
-
-            _entries.add(new ZipFileEntry(p,f));
-        }else{
-
-            _entries.add(new ZipFileEntry(p.substring(i),f));
-        }
-    }
-
-    public void addAll(List<File> fs){
-        for(File f: fs){
-            this.addEntry(f);
-        }
-    }
-
-    public void addAllAtRelativeDirectory(String ins, ArrayList<File> fs) {
-        ins=ins.replace('\\','/');
-        for(File f: fs){
-            String pathS = f.getAbsolutePath().replace('\\','/');
-            int pos=pathS.indexOf(ins);
-            if (pos>=0) {
-                this.addEntry(pathS.substring(pos+ins.length()+1),f);
+        if (i == -1) {
+            String derivedPath;
+            if (path.contains(":")) {
+                derivedPath = path.substring(path.indexOf(":"));
+                derivedPath = _token + derivedPath.substring(derivedPath.indexOf("/"));
             } else {
-                this.addEntry(f);
+                derivedPath = _token + path;
+            }
+
+            _entries.add(new ZipFileEntry(derivedPath, file));
+        } else {
+            _entries.add(new ZipFileEntry(path.substring(i), file));
+        }
+    }
+
+    public void addAll(final List<File> files) {
+        for (final File file : files) {
+            addEntry(file);
+        }
+    }
+
+    public void addAllAtRelativeDirectory(final String dirSpec, final List<File> files) {
+        final String dirCleaned = dirSpec.replace('\\', '/');
+        for (final File file : files) {
+            final String path = file.getAbsolutePath().replace('\\', '/');
+            final int    index   = path.indexOf(dirCleaned);
+            if (index >= 0) {
+                addEntry(path.substring(index + dirCleaned.length() + 1), file);
+            } else {
+                addEntry(file);
             }
         }
     }
 
-    public String getTokenName(){
-        if(this._tokens.size()>1){
-            return "various";
-        }else{
-            return this._tokens.get(0);
-        }
+    public int getEntryCount() {
+        return _entries.size();
     }
 
-    public int getEntryCount(){
-        return this._entries.size();
-    }
-
-    @Override
-    public String getDownloadName() {
-        if (this.mt.equals(MediaType.APPLICATION_GNU_TAR))
-        {
-            return getTokenName()+".tar.gz";
-        }else if (this.mt.equals(MediaType.APPLICATION_TAR))
-        {
-            return getTokenName()+".tar";
-        }else if (this.mt.equals(SecureResource.APPLICATION_XAR))
-        {
-            return getTokenName()+".xar";
-        }else{
-            return getTokenName() +".zip";
-        }
-    }
-
-    /**
-     * Adds a task that should be performed asynchronously after this ZipRepresentation
-     * completes a write.
-     * @param runnable
-     * @return this
-     */
-    public ZipRepresentation afterWrite(final Runnable runnable) {
-        afterWrite.add(runnable);
-        return this;
-    }
-    
     /**
      * After this ZipRepresentation completes a write, remove the named file.
-     * @param f
-     * @return this
+     *
+     * @param file The file object for the directory to be deleted.
+     *
+     * @return A reference to the current instance.
      */
-    public ZipRepresentation deleteDirectoryAfterWrite(final File f) {
+    @SuppressWarnings("UnusedReturnValue")
+    public ZipRepresentation deleteDirectoryAfterWrite(final File file) {
         return afterWrite(new Runnable() {
             public void run() {
                 try {
-                    FileUtils.deleteDirectory(f);
+                    FileUtils.deleteDirectory(file);
                 } catch (IOException e) {
-                    logger.error("unable to remove working directory " + f, e);
+                    log.error("unable to remove working directory " + file, e);
                 }
             }
         });
     }
 
-    @Override
-    public void write(OutputStream os) throws IOException {
-        try {
-            ZipI zip = null;
-            if (this.mt.equals(MediaType.APPLICATION_GNU_TAR))
-            {
-                zip = new TarUtils();
-                zip.setOutputStream(os,ZipOutputStream.DEFLATED);
-                this.setDownloadName(getTokenName()+".tar.gz");
-                this.setDownloadable(true);
-            }else if (this.mt.equals(MediaType.APPLICATION_TAR)){
-                zip = new TarUtils();
-                zip.setOutputStream(os,ZipOutputStream.STORED);
-                this.setDownloadName(getTokenName()+".tar");
-                this.setDownloadable(true);
-            }else{
-                zip = new ZipUtils();
-                zip.setOutputStream(os,compression);
-                this.setDownloadName(getTokenName() +".zip");
-                this.setDownloadable(true);
-            }
-
-            for (final ZipEntry ze: this._entries) {
-                if (ze instanceof ZipFileEntry) {
-                    final ZipFileEntry zfe = (ZipFileEntry)ze;
-                    final File f = zfe.getF();
-                    if (!f.isDirectory()) {
-                        zip.write(ze.getPath(),f);
-                    }
-                } else {
-                    zip.write(ze.getPath(), ((ZipStreamEntry)ze).getInputStream());
-                }
-            }
-
-            // Complete the ZIP file
-            zip.close();
-        } finally {
-            if (!afterWrite.isEmpty()) {
-                final Executor executor = Executors.newSingleThreadExecutor();
-                for (final Runnable r : afterWrite) {
-                    executor.execute(r);
-                }
-            }
-        }
+    /**
+     * Adds a task that should be performed asynchronously after this ZipRepresentation
+     * completes a write.
+     *
+     * @param runnable The task to be run after the write operation is completed.
+     *
+     * @return A reference to the current instance.
+     */
+    private ZipRepresentation afterWrite(final Runnable runnable) {
+        _afterWrite.add(runnable);
+        return this;
     }
 
-    public abstract class ZipEntry{
-        String path=null;
+    private int deriveCompression(final Integer compression) {
+        return ObjectUtils.defaultIfNull(compression, ZipUtils.DEFAULT_COMPRESSION);
+    }
+
+    private String getTokenName() {
+        return _tokens.size() > 1 ? "various" : _tokens.get(0);
+    }
+
+    @NotNull
+    private ZipI initializeZip(final OutputStream output, final MediaType mediaType) throws IOException {
+        final ZipI zip;
+        if (mediaType.equals(MediaType.APPLICATION_GNU_TAR)) {
+            zip = new TarUtils();
+            zip.setOutputStream(output, ZipOutputStream.DEFLATED);
+            setDownloadName(getTokenName() + ".tar.gz");
+            setDownloadable(true);
+        } else if (mediaType.equals(MediaType.APPLICATION_TAR)) {
+            zip = new TarUtils();
+            zip.setOutputStream(output, ZipOutputStream.STORED);
+            setDownloadName(getTokenName() + ".tar");
+            setDownloadable(true);
+        } else {
+            zip = new ZipUtils();
+            zip.setOutputStream(output, _compression);
+            setDownloadName(getTokenName() + ".zip");
+            setDownloadable(true);
+        }
+        return zip;
+    }
+
+    public abstract class ZipEntry {
+        ZipEntry(final String path) {
+            _path = path;
+        }
 
         public String getPath() {
-            return path;
+            return _path;
         }
-        public void setPath(String path) {
-            this.path = path;
-        }
+
+        private final String _path;
     }
 
     public class ZipFileEntry extends ZipEntry {
-        public ZipFileEntry(String p,File f){
-            path=p;
-            file=f;
+        ZipFileEntry(final String path, final File file) {
+            super(path);
+            _file = file;
         }
 
-        File file=null;
+        public File getFile() {
+            return _file;
+        }
 
-        public File getF() {
-            return file;
-        }
-        public void setF(File f) {
-            this.file = f;
-        }
+        private final File _file;
     }
-
 
     public class ZipStreamEntry extends ZipEntry {
-        public ZipStreamEntry(String p,InputStream _is){
-            path=p;
-            is=_is;
+        ZipStreamEntry(final String path, final InputStream input) {
+            super(path);
+            _input = input;
         }
-
-        private InputStream is=null;
 
         public InputStream getInputStream() {
-            return is;
+            return _input;
         }
-        public void setInputStream(InputStream _is) {
-            this.is = _is;
-        }
+
+        private final InputStream _input;
     }
+
+    private final List<ZipEntry>  _entries    = new ArrayList<>();
+    private final List<String>    _tokens     = new ArrayList<>();
+    private final List<Runnable>  _afterWrite = new ArrayList<>();
+
+    private final int             _compression;
+    private final ExecutorService _executor;
 }
-
-

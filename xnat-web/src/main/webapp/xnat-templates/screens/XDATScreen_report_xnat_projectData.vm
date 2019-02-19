@@ -1,3 +1,5 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="escUtils" type="org.apache.commons.text.StringEscapeUtils" *#
 #set($project=$om)
 <script language="javascript">
     var server = "$content.getURI("images")/";
@@ -24,11 +26,7 @@
     #addCustomScreens($om.getXSIType() "report/alerts")
     #addCustomScreens($om.getXSIType() "report/errors")
 
-    #define ($projectName)
-        #escapeAll($!item.getStringProperty("xnat:projectData/name"))
-    #end
-
-    <h2 class="edit_header1" style="">$!projectName.toString().trim()</h2>
+    <h2 class="edit_header1" style="">#escapeCleanHTML($!item.getStringProperty("xnat:projectData/name"))</h2>
 
     #if($data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>

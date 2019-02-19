@@ -23,7 +23,7 @@
     <div id="page-body">
         <div class="pad">
 
-            <div id="admin-page">
+            <div id="admin-page" class="settings-tabs">
                 <header id="content-header">
                     <h2 class="pull-left">Site Administration</h2>
                     <div class="clearfix"></div>

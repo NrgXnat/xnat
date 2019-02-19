@@ -17,7 +17,7 @@
     <div id="page-body">
         <div class="pad">
 
-            <div id="admin-page">
+            <div id="plugin-admin-page" class="settings-tabs">
                 <header id="content-header">
                     <h2 class="pull-left">Plugin Settings</h2>
                     <div class="clearfix"></div>

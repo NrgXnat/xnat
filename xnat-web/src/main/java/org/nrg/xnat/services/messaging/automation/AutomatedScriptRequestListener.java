@@ -9,22 +9,21 @@
 
 package org.nrg.xnat.services.messaging.automation;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
 import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +36,18 @@ import java.util.Map;
  * component's <code>addAutomatedScriptRequestListener<code> method. When
  * the automatedScriptRequest event occurs, that object's appropriate
  * method is invoked.
- *
- * @see AutomatedScriptRequestEvent
  */
+@Slf4j
 public class AutomatedScriptRequestListener {
+    @Autowired
+    public void setScriptRunnerService(final ScriptRunnerService service) {
+        _service = service;
+    }
+
+    @Autowired
+    public void setEventService(final DataTypeAwareEventService eventService) {
+        _eventService = eventService;
+    }
 
     /**
      * On request.
@@ -106,7 +113,7 @@ public class AutomatedScriptRequestListener {
             	scriptOut.setOutput(message);
             }
             AdminUtils.sendAdminEmail("Script execution failure", message);
-            logger.error(message, e);
+            log.error(message, e);
             if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
                 WorkflowUtils.fail(workflow, workflow.buildEvent());
             }
@@ -162,14 +169,9 @@ public class AutomatedScriptRequestListener {
         return sb.toString();
     }
 
-    /** The Constant logger. */
-    private static final Logger logger = LoggerFactory.getLogger(AutomatedScriptRequestListener.class);
-
     /** The _service. */
-    @Inject
     private ScriptRunnerService _service;
 	
     /** The _event service. */
-    @Inject
-	private NrgEventService _eventService;
+	private DataTypeAwareEventService _eventService;
 }

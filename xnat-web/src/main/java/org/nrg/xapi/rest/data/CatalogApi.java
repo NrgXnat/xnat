@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,23 +125,7 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
-
-        final boolean hasProjectId  = resources.containsKey("projectId");
-        final boolean hasProjectIds = resources.containsKey("projectIds");
-        if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {
-            throw new NoContentException("There were no resources or sessions specified in the request.");
-        }
-
-        if (log.isInfoEnabled()) {
-            // You don't normally need to check is isInfoEnabled(), but the Joiner and map testing is somewhat complex,
-            // so this removes that unnecessary operation when the logging level is higher than info.
-            log.info("User {} requested download catalog for {} resources in projects {}",
-                     user.getUsername(),
-                     resources.get("sessions"),
-                     Joiner.on(", ").join(hasProjectId && hasProjectIds
-                                          ? ListUtils.union(resources.get("projectId"), resources.get("projectIds"))
-                                          : (hasProjectId ? resources.get("projectId") : resources.get("projectIds"))));
-        }
+        validateResourceRequest(user, resources);
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, false).get("id"), HttpStatus.OK);
     }
 
@@ -161,23 +146,7 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<Map<String,String>> createDownloadSessionsCatalogWithSize(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
-
-        final boolean hasProjectId  = resources.containsKey("projectId");
-        final boolean hasProjectIds = resources.containsKey("projectIds");
-        if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {
-            throw new NoContentException("There were no resources or sessions specified in the request.");
-        }
-
-        if (log.isInfoEnabled()) {
-            // You don't normally need to check is isInfoEnabled(), but the Joiner and map testing is somewhat complex,
-            // so this removes that unnecessary operation when the logging level is higher than info.
-            log.info("User {} requested download catalog for {} resources in projects {}",
-                    user.getUsername(),
-                    resources.get("sessions"),
-                    Joiner.on(", ").join(hasProjectId && hasProjectIds
-                            ? ListUtils.union(resources.get("projectId"), resources.get("projectIds"))
-                            : (hasProjectId ? resources.get("projectId") : resources.get("projectIds"))));
-        }
+        validateResourceRequest(user, resources);
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, true), HttpStatus.OK);
     }
 
@@ -261,12 +230,7 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
-        if (StringUtils.isBlank(catalogId)) {
-            throw new NoContentException("There was no catalog specified in the request.");
-        }
-        // TODO: Need to validate the catalog exists (404 if not), the user has permissions to view all resources (403 if not), if that's cool then proceed.
-        log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
-
+        validateCatalogRequest(user, catalogId);
         return ResponseEntity.ok()
                              .header(HttpHeaders.CONTENT_TYPE, AbstractZipStreamingResponseBody.MEDIA_TYPE)
                              .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
@@ -285,12 +249,7 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
-
-        if (StringUtils.isBlank(catalogId)) {
-            throw new NoContentException("There was no catalog specified in the request.");
-        }
-        // TODO: Need to validate the catalog exists (404 if not), the user has permissions to view all resources (403 if not), if that's cool then proceed.
-        log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
+        validateCatalogRequest(user, catalogId);
 
         final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
         if (catalog == null) {
@@ -321,7 +280,7 @@ public class CatalogApi extends AbstractXapiRestController {
             throw new NoContentException("There was no XML provided with the request.");
         }
 
-        try (final InputStream inputStream = IOUtils.toInputStream(xml)) {
+        try (final InputStream inputStream = IOUtils.toInputStream(xml, Charset.defaultCharset())) {
             return callInsertXmlObject(inputStream, allowDataDeletion, action, reason, comment);
         } catch (IOException e) {
             throw new ServerException("An error occurred trying to convert the uploaded XML to an input stream.", e);
@@ -351,6 +310,33 @@ public class CatalogApi extends AbstractXapiRestController {
         } catch (IOException e) {
             throw new ServerException("An error occurred trying to open the uploaded XML as an input stream.", e);
         }
+    }
+
+    private void validateResourceRequest(final UserI user, @ProjectId @RequestBody @ApiParam("The resources to be cataloged.") final Map<String, List<String>> resources) throws NoContentException {
+        final boolean hasProjectId  = resources.containsKey("projectId");
+        final boolean hasProjectIds = resources.containsKey("projectIds");
+        if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {
+            throw new NoContentException("There were no resources or sessions specified in the request.");
+        }
+
+        if (log.isInfoEnabled()) {
+            // You don't normally need to check is isInfoEnabled(), but the Joiner and map testing is somewhat complex,
+            // so this removes that unnecessary operation when the logging level is higher than info.
+            log.info("User {} requested download catalog for {} resources in projects {}",
+                     user.getUsername(),
+                     resources.get("sessions"),
+                     Joiner.on(", ").join(hasProjectId && hasProjectIds
+                                          ? ListUtils.union(resources.get("projectId"), resources.get("projectIds"))
+                                          : (hasProjectId ? resources.get("projectId") : resources.get("projectIds"))));
+        }
+    }
+
+    private void validateCatalogRequest(final UserI user, final String catalogId) throws NoContentException {
+        if (StringUtils.isBlank(catalogId)) {
+            throw new NoContentException("There was no catalog specified in the request.");
+        }
+        // TODO: Need to validate the catalog exists (404 if not), the user has permissions to view all resources (403 if not), if that's cool then proceed.
+        log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
     }
 
     private ResponseEntity<String> callInsertXmlObject(final InputStream inputStream, final boolean allowDeletion, final String action, final String reason, final String comment) throws ServerException, ClientException {

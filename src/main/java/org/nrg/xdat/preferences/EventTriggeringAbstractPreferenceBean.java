@@ -14,6 +14,7 @@ import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -26,19 +27,79 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
-    @SuppressWarnings("unused")
+    /**
+     * Creates the bean instance with the submitted preference and event services.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventService event service instance}.
+     *
+     * @deprecated Use the {@link #EventTriggeringAbstractPreferenceBean(NrgPreferenceService, NrgEventServiceI)} constructor instead.
+     */
+    @Deprecated
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
         this(preferenceService, eventService, null);
     }
 
-    @SuppressWarnings("WeakerAccess")
-    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths) {
-        super(preferenceService, configPaths);
-        _eventService = eventService;
+    /**
+     * Creates the bean instance with the submitted preference and event services.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventServiceI event service instance}.
+     */
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService) {
+        this(preferenceService, eventService, null);
     }
 
-    @SuppressWarnings("WeakerAccess")
+    /**
+     * Creates the bean instance with the submitted preference and event services.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventService event service instance}.
+     * @param configPaths       The {@link ConfigPaths configuration paths instance}.
+     *
+     * @deprecated Use the {@link #EventTriggeringAbstractPreferenceBean(NrgPreferenceService, NrgEventServiceI, ConfigPaths)} constructor instead.
+     */
+    @Deprecated
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths) {
+        this(preferenceService, eventService, configPaths, null);
+    }
+
+    /**
+     * Creates the bean instance with the submitted preference and event services, getting its configuration settings from the configuration files on the {@link ConfigPaths configuration paths}.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventServiceI event service instance}.
+     * @param configPaths       The {@link ConfigPaths configuration paths instance}.
+     */
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths) {
+        this(preferenceService, eventService, configPaths, null);
+    }
+
+    /**
+     * Creates the bean instance with the submitted preference and event services.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventService event service instance}.
+     * @param configPaths       The {@link ConfigPaths configuration paths instance}.
+     * @param initPrefs         The initialization preferences.
+     *
+     * @deprecated Use the {@link #EventTriggeringAbstractPreferenceBean(NrgPreferenceService, NrgEventServiceI, ConfigPaths, OrderedProperties)} constructor instead.
+     */
+    @Deprecated
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        this(preferenceService, (NrgEventServiceI) eventService, configPaths, initPrefs);
+    }
+
+    /**
+     * Creates the bean instance with the submitted preference and event services, getting its configuration settings from the initialization and configuration files on the {@link ConfigPaths
+     * configuration paths}.
+     *
+     * @param preferenceService The {@link NrgPreferenceService preference service instance}.
+     * @param eventService      The {@link NrgEventServiceI event service instance}.
+     * @param configPaths       The {@link ConfigPaths configuration paths instance}.
+     * @param initPrefs         The initialization preferences.
+     */
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
         super(preferenceService, configPaths, initPrefs);
         _eventService = eventService;
     }
@@ -144,5 +205,5 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
         _eventService.triggerEvent(new PreferenceDeletedEvent(scope, entityId, namespacedPropertyId));
     }
 
-    private final NrgEventService _eventService;
+    private final NrgEventServiceI _eventService;
 }

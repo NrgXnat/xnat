@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
@@ -31,6 +30,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -66,7 +66,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Autowired
-    public PermissionsServiceImpl(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {
+    public PermissionsServiceImpl(final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
         _eventService = eventService;
         _template = template;
     }
@@ -918,7 +918,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                      "WHERE " +
                                                                      "  xdat_field_mapping_id = :fieldMappingId";
 
-    private final NrgEventService            _eventService;
+    private final DataTypeAwareEventService  _eventService;
     private final NamedParameterJdbcTemplate _template;
 
     private GroupsAndPermissionsCache _cache;

@@ -19,7 +19,7 @@ import org.nrg.framework.beans.ProxiedBeanMixIn;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -69,7 +69,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String SITE_URL            = "siteUrl";
 
     @Autowired
-    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
         super(preferenceService, eventService, configPaths, initPrefs);
     }
 

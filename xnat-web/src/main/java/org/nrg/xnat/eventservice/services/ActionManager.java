@@ -37,5 +37,5 @@ public interface ActionManager {
 
     @Async
     void processAsync(EventServiceActionProvider provider, Subscription subscription, EventServiceEvent esEvent,
-                      UserI user, Long deliveryId);
+                      UserI user, Long deliveryId, PersistentWorkflowI workflow);
 }

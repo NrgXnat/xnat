@@ -2484,6 +2484,13 @@ body #fileUploadDialog fieldset {
     border: 1px solid #dedede;
 }
 
+body #justificationDialog_mask{
+    z-index: 2104 !important
+}
+body #justificationDialog_c{
+    z-index: 2105 !important
+}
+
 body #fileUploadDialog h3 {
     padding-bottom: 5px;
     /* margin-bottom: 8px !important ; */

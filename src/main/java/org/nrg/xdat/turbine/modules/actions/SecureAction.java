@@ -19,6 +19,7 @@ import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
@@ -97,7 +98,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             final String topTab  = (String) TurbineUtils.GetPassedParameter("topTab", search);
             final String params  = (String) TurbineUtils.GetPassedParameter("params", search);
 
-            final StringBuilder path = new StringBuilder(TurbineUtils.GetRelativeServerPath(search) + "/app/template/" + URLEncoder.encode(report, encoding) + "/search_field/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_field", search)), encoding) + "/search_value/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_value", search)), encoding) + "/search_element/" + URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_element", search)), encoding));
+            final StringBuilder path = new StringBuilder(XDAT.getSiteConfigurationProperty("siteUrl", TurbineUtils.GetRelativeServerPath(search))).append("/app/template/").append(URLEncoder.encode(report, encoding)).append("/search_field/").append(URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_field", search)), encoding)).append("/search_value/").append(URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_value", search)), encoding)).append("/search_element/").append(URLEncoder.encode(((String) TurbineUtils.GetPassedParameter("search_element", search)), encoding));
             if (StringUtils.isNotBlank(popup)) {
                 path.append("/popup/").append(URLEncoder.encode(popup, encoding));
             }
@@ -117,6 +118,8 @@ public abstract class SecureAction extends VelocitySecureAction {
             } catch (XFTInitException | ElementNotFoundException ignored) {
                 log.error("An error occurred trying to redirect the user to the report screen '{}' for an item of type {} (couldn't get item ID, that threw an exception as well)", report, item.getXSIType(), e);
             }
+        } catch (ConfigServiceException e) {
+            log.error("An error occurred trying to retrieve the siteUrl property from the system", e);
         }
     }
 
@@ -126,7 +129,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             final String popup = (String) TurbineUtils.GetPassedParameter("popup", data);
             final String project = (String) TurbineUtils.GetPassedParameter("project", data);
 
-            final StringBuilder path = new StringBuilder(TurbineUtils.GetRelativeServerPath(data) + "/app/template/" + URLEncoder.encode(report, encoding));
+            final StringBuilder path = new StringBuilder(XDAT.getSiteConfigurationProperty("siteUrl", TurbineUtils.GetRelativeServerPath(data))).append("/app/template/").append(URLEncoder.encode(report, encoding));
             if (StringUtils.isNotBlank(popup)) {
                 path.append("/popup/").append(URLEncoder.encode(popup, encoding));
             }
@@ -136,6 +139,8 @@ public abstract class SecureAction extends VelocitySecureAction {
             data.setRedirectURI(path.toString());
         } catch (UnsupportedEncodingException e) {
             log.error("An error occurred trying to redirect the user to the screen {}", report, e);
+        } catch (ConfigServiceException e) {
+            log.error("An error occurred trying to retrieve the siteUrl property from the system", e);
         }
     }
 

@@ -263,8 +263,18 @@ public class PoolDBUtils {
     	cache.reset();
 	}
 
-
-
+	public static float getDatabaseVersion() {
+		if (VERSION == null) {
+			try {
+				final PoolDBUtils      instance         = new PoolDBUtils();
+				final DatabaseMetaData databaseMetaData = instance.getDatabaseMetaData();
+				VERSION = Float.parseFloat(databaseMetaData.getDatabaseMajorVersion() + "." + databaseMetaData.getDatabaseMinorVersion());
+			} catch (SQLException e) {
+				logger.error("An SQL error occurred trying to get a database connection. There's probably something wrong somewhere.", e);
+			}
+		}
+		return VERSION;
+	}
 
 	/**
 	 * Check if the database type exists
@@ -504,6 +514,25 @@ public class PoolDBUtils {
 			}
 		}
 		return _connection;
+	}
+
+	/**
+	 * Gets the metadata for the configured data source.
+	 *
+	 * @return Metadata for the database.
+	 *
+	 * @throws SQLException When an error occurs trying to get the database connection.
+	 */
+	private DatabaseMetaData getDatabaseMetaData() throws SQLException {
+		if (_databaseMetaData == null) {
+			final Connection connection = getConnection();
+			if (connection != null) {
+				_databaseMetaData = connection.getMetaData();
+			} else {
+				logger.warn("Couldn't load the data source to create a connection.");
+			}
+		}
+		return _databaseMetaData;
 	}
 
 //	/**
@@ -1028,8 +1057,11 @@ public class PoolDBUtils {
 															  "\n) " +
 															  "\nWITH OIDS;";
 
-	private Connection _connection = null;
-	private Statement  _statement  = null;
+	private static Float VERSION = null;
+
+	private Connection       _connection       = null;
+	private Statement        _statement        = null;
+	private DatabaseMetaData _databaseMetaData = null;
 }
 
 

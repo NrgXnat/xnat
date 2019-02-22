@@ -3188,16 +3188,38 @@ public class DBAction {
     //It reviews the number of rows in the table and makes sure the sequence is set higher then that.
     //the logic ends up changing the sequence to aggressively when the row count is 1.  I tried to fix it, but it introduced lots of bugs.
     //so, this small issue is tolerable.  If you mess with it, test installing a new server, and creating some stuff.
-    private static void adjustSequence(String sequenceName, String column, String table, String dbName) throws Exception {
-        final int    numRows   = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0)).intValue();
-        final Number nextValue = (Number) PoolDBUtils.ReturnStatisticQuery("SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName, "LAST_COUNT", dbName, null);
+    private static void adjustSequence(final String sequenceName, final String column, final String table, final String dbName) throws Exception {
+        final int numRows   = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0)).intValue();
+        final int nextValue = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(getSequenceQuery(sequenceName), "LAST_COUNT", dbName, null), -1)).intValue();
 
-        if (nextValue == null) {
+        if (nextValue == -1) {
             log.info("Adjusting missing sequence ({})", table);
-            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
-        } else if (numRows >= nextValue.intValue()) {
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + numRows + 1 + ")", dbName, null);
+        } else if (numRows >= nextValue) {
             log.info("Adjusting invalid sequence ({}) from {} to {} ({} max_row)", table, nextValue, numRows + 1, numRows);
-            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + numRows + 1 + ")", dbName, null);
+        } else {
+            log.debug("Checked sequence {} and found no issues with existing values", sequenceName);
+        }
+    }
+
+    private static String getSequenceQuery(final String sequenceName) throws SQLException {
+        if (PoolDBUtils.getDatabaseVersion() < 10.0) {
+            return String.format(PRE_PG10_SEQUENCE_QUERY, sequenceName);
+        }
+        final String[] atoms = StringUtils.split(sequenceName, ".");
+        switch (atoms.length) {
+            case 0:
+                throw new SQLException("Invalid sequence name, empty!");
+
+            case 1:
+                return String.format(POST_PG10_SEQUENCE_QUERY, "public", atoms[0]);
+
+            case 2:
+                return String.format(POST_PG10_SEQUENCE_QUERY, atoms[0], atoms[1]);
+
+            default:
+                throw new SQLException("Invalid sequence name: cross-database references are not supported, so the sequence name \"" + sequenceName + " is invalid");
         }
     }
 
@@ -3279,5 +3301,8 @@ public class DBAction {
         }
         log.debug("triggers ({}): {} ms", cmds.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
     }
+
+    private static final String PRE_PG10_SEQUENCE_QUERY  = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from %s";
+    private static final String POST_PG10_SEQUENCE_QUERY = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT FROM pg_sequences WHERE schemaname = '%s' AND sequencename = '%s'";
 }
 

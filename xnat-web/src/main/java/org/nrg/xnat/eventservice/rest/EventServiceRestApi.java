@@ -244,15 +244,37 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.noContent().build();
     }
 
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/count", method = GET)
+    @ResponseBody
+    public Integer getDeliveredSubscriptionsCount(
+            final @RequestParam(value = "project", required = false) String projectId,
+            final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
+            throws Exception {
+        return eventService.getSubscriptionDeliveriesCount(projectId, subscriptionId, includeFilterMismatch);
+    }
+
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = GET)
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
-            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
+            final @RequestParam(value = "first-result", required = false) Integer firstResult,
+            final @RequestParam(value = "max-results", required = false, defaultValue = "100") Integer maxResults)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
-        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch);
+        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, firstResult, maxResults);
+    }
+
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/count", method = GET)
+    @ResponseBody
+    public Integer getDeliveredProjectSubscriptionsCount(
+            final @PathVariable @ProjectId String project,
+            final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
+            throws Exception {
+        return eventService.getSubscriptionDeliveriesCount(project, subscriptionId, includeFilterMismatch);
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
@@ -260,9 +282,11 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public List<SubscriptionDelivery> getDeliveredProjectSubscriptions(
             final @PathVariable @ProjectId String project,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
-            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
+            final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
+            final @RequestParam(value = "first-result", required = false) Integer firstResult,
+            final @RequestParam(value = "max-results", required = false, defaultValue = "100") Integer maxResults)
             throws Exception {
-        return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch);
+        return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, firstResult, maxResults);
     }
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/events", method = GET)

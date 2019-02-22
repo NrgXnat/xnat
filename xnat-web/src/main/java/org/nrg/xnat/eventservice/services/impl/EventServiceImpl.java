@@ -486,8 +486,21 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+        return subscriptionDeliveryEntityService.count(projectId, subscriptionId, includeFilterMismatches);
+    }
+
+    @Override
     public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
-        return subscriptionDeliveryEntityService.get(projectId, subscriptionId, includeFilterMismatches);
+        return getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatches, null, null);
+    }
+
+    @Override
+    public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches,
+                                                                Integer firstResult, Integer maxResults) {
+        return subscriptionDeliveryEntityService.get(projectId, subscriptionId,
+                (includeFilterMismatches != null ? includeFilterMismatches : false),
+                firstResult, maxResults);
     }
 
     @Override

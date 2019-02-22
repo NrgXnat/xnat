@@ -18,10 +18,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_DETECTED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_TRIGGERED;
@@ -87,57 +87,81 @@ public class SubscriptionDeliveryEntityServiceImpl
     }
 
     @Override
-    public List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
-        List<SubscriptionDeliveryEntity> deliveryEntities = null;
-        if(subscriptionId == null){
-            if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getAll(); }
-            else { deliveryEntities = getDao().findByProjectId(projectId); }
-        } else {
-            if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getDao().findBySubscriptionId(subscriptionId); }
-            else { deliveryEntities = getDao().findByProjectIdAndSubscriptionId(projectId, subscriptionId); }
-        }
-        if(deliveryEntities == null) {
-            return new ArrayList<>();
-        } else if(includeFilterMismatches != null && includeFilterMismatches == true){
-            return toPojo(deliveryEntities);
-        } else {
-            return toPojo(
-                    deliveryEntities.stream()
-                                    .filter(de -> de.getStatus() != TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT)
-                                    .collect(Collectors.toList()));
-        }
+    public Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+        return getDao().count(
+                projectId,
+                subscriptionId,
+                (includeFilterMismatches == null || includeFilterMismatches == false
+                        ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT
+                        : null));
     }
+
+    //@Override
+    //public List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+    //    List<SubscriptionDeliveryEntity> deliveryEntities = null;
+    //    if(subscriptionId == null){
+    //        if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getAll(); }
+    //        else { deliveryEntities = getDao().findByProjectId(projectId); }
+    //    } else {
+    //        if(Strings.isNullOrEmpty(projectId)){ deliveryEntities = getDao().findBySubscriptionId(subscriptionId); }
+    //        else { deliveryEntities = getDao().findByProjectIdAndSubscriptionId(projectId, subscriptionId); }
+    //    }
+    //    if(deliveryEntities == null) {
+    //        return new ArrayList<>();
+    //    } else if(includeFilterMismatches != null && includeFilterMismatches == true){
+    //        return toPojo(deliveryEntities);
+    //    } else {
+    //        return toPojo(
+    //                deliveryEntities.stream()
+    //                                .filter(de -> de.getStatus() != TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT)
+    //                                .collect(Collectors.toList()));
+    //    }
+    //}
+
+    @Override
+    public List<SubscriptionDelivery> get(String projectId, Long subscriptionId, @Nonnull Boolean includeFilterMismatches,
+                                          Integer firstResult, Integer maxResults) {
+        return toPojo(getDao().get(projectId, subscriptionId, firstResult, maxResults,
+                (includeFilterMismatches == null || includeFilterMismatches == false
+                        ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT
+                        : null)));
+    }
+
 
     private List<SubscriptionDelivery> toPojo(List<SubscriptionDeliveryEntity> entities){
         List<SubscriptionDelivery> deliveries = new ArrayList<>();
         if(entities != null) {
             for (SubscriptionDeliveryEntity sde : entities) {
-                deliveries.add(toPojo(sde));
+                SubscriptionDelivery delivery = toPojo(sde);
+                if (delivery != null) deliveries.add(delivery);
             }
         }
         return deliveries;
     }
 
     private SubscriptionDelivery toPojo(SubscriptionDeliveryEntity entity) {
-        SubscriptionDelivery subscriptionDelivery = SubscriptionDelivery.builder()
-                .id(entity.getId())
-                .actionUser(entity.getActionUserLogin())
-                .projectId(entity.getProjectId())
-                .actionInputs(entity.getActionInputs())
-                .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
-                .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
-                .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
-                .build();
-        try{
-            if(!Strings.isNullOrEmpty(entity.getEventType())) {
-                subscriptionDelivery = subscriptionDelivery.toBuilder()
-                                                           .event(eventService.getEvent(entity.getEventType(), false))
-                                                           .build();
-            }else {
-                log.error("EventType not stored is subscription delivery history table. Skipping creation of event for display.");
+        SubscriptionDelivery subscriptionDelivery = null;
+        if (entity != null) {
+            subscriptionDelivery = SubscriptionDelivery.builder()
+                                                                            .id(entity.getId())
+                                                                            .actionUser(entity.getActionUserLogin())
+                                                                            .projectId(entity.getProjectId())
+                                                                            .actionInputs(entity.getActionInputs())
+                                                                            .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
+                                                                            .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
+                                                                            .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
+                                                                            .build();
+            try {
+                if (!Strings.isNullOrEmpty(entity.getEventType())) {
+                    subscriptionDelivery = subscriptionDelivery.toBuilder()
+                                                               .event(eventService.getEvent(entity.getEventType(), false))
+                                                               .build();
+                } else {
+                    log.error("EventType not stored is subscription delivery history table. Skipping creation of event for display.");
+                }
+            } catch (Exception e) {
+                log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
         }
         return subscriptionDelivery;
     }

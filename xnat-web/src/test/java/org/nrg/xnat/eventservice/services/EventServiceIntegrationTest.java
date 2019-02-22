@@ -1185,9 +1185,15 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata sessionToCatch = new XnatImagesessiondata();
         sessionToCatch.setModality("MR");
         sessionToCatch.setProject(projectIdToCatch);
-        sessionToCatch.setSessionType("xnat:imageSessionData");
+        sessionToCatch.setSessionType("xnat:mrSessionData");
 
-        assertThat(createSessionSubscription("TheOneAndOnly", projectIdToCatch, null), notNullValue());
+        String projectIdToIgnore = "ProjectIdToIgnore";
+        XnatImagesessiondata sessionToIgnore = new XnatImagesessiondata();
+        sessionToCatch.setModality("MR");
+        sessionToCatch.setProject(projectIdToIgnore);
+        sessionToCatch.setSessionType("xnat:mrSessionData");
+
+        assertThat(createSessionSubscription("SubscriptionOfInterest", projectIdToCatch, null), notNullValue());
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
         for(Integer i=0; i<10; i++){
@@ -1199,14 +1205,46 @@ public class EventServiceIntegrationTest {
         sw3.stop();
 
         List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false);
-        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
-        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
-        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true);
-
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
+
+        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
+
+        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
+
+        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true);
         assertThat("Expected 10 deliveries.", deliveries.size(), is(10));
+
+        // Add some other things to the history table
+        assertThat(createSessionSubscription("SubscriptionToIgnore", projectIdToIgnore, null), notNullValue());
+        for(Integer i=0; i<10; i++){
+            eventService.triggerEvent(new SessionEvent(sessionToIgnore, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToIgnore));
+        }
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+
+        deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false);
+        assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
+        Integer deliveriesWithProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, null, false);
+        assertThat("Expected 10 deliveries counted.", deliveriesWithProjectIdCount, is(10));
+
+
+        deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
+        assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
+        Integer deliveriesWithSubscriptionIdCount = eventService.getSubscriptionDeliveriesCount(null, 1L, true);
+        assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdCount, is(10));
+
+        deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
+        assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
+        Integer deliveriesWithSubscriptionIdAndProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, 1L, false);
+        assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdAndProjectIdCount, is(10));
+
+        deliveries = eventService.getSubscriptionDeliveries(null, null, true);
+        assertThat("Expected 20 deliveries.", deliveries.size(), is(20));
+        Integer deliveriesCount = eventService.getSubscriptionDeliveriesCount(null, null, true);
+        assertThat("Expected 20 deliveries counted.", deliveriesCount, is(20));
 
     }
 
@@ -1237,7 +1275,7 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata session = new XnatImagesessiondata();
         session.setModality("MR");
         session.setProject(projectId);
-        session.setSessionType("xnat:imageSessionData");
+        session.setSessionType("xnat:mrSessionData");
 
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
@@ -1278,7 +1316,7 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata session = new XnatImagesessiondata();
         session.setModality("MR");
         session.setProject(projectId);
-        session.setSessionType("xnat:imageSessionData");
+        session.setSessionType("xnat:mrSessionData");
 
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
@@ -1319,7 +1357,7 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata session = new XnatImagesessiondata();
         session.setModality("MR");
         session.setProject(projectId);
-        session.setSessionType("xnat:imageSessionData");
+        session.setSessionType("xnat:mrSessionData");
 
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
@@ -1352,7 +1390,7 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata session = new XnatImagesessiondata();
         session.setModality("MR");
         session.setProject(projectId1);
-        session.setSessionType("xnat:imageSessionData");
+        session.setSessionType("xnat:mrSessionData");
 
         XnatImagescandata scan = new XnatImagescandata();
         scan.setImageSessionData(session);
@@ -1397,7 +1435,7 @@ public class EventServiceIntegrationTest {
         XnatImagesessiondata session = new XnatImagesessiondata();
         session.setModality("MR");
         session.setProject(projectId1);
-        session.setSessionType("xnat:imageSessionData");
+        session.setSessionType("xnat:mrSessionData");
 
         XnatImagescandata scan = new XnatImagescandata();
         scan.setImageSessionData(session);

@@ -3,11 +3,20 @@ package org.nrg.xnat.eventservice.entities;
 import com.google.common.base.Objects;
 import org.nrg.xnat.eventservice.model.TimedEventStatus;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 public class TimedEventStatusEntity implements Serializable {
@@ -111,7 +120,7 @@ public class TimedEventStatusEntity implements Serializable {
 
     }
 
-    public static List<TimedEventStatus> toPojo(List<TimedEventStatusEntity> statusEntities){
+    public static List<TimedEventStatus> toPojo(Set<TimedEventStatusEntity> statusEntities){
         List<TimedEventStatus> statuses = new ArrayList<>();
         for(TimedEventStatusEntity entity : statusEntities) {
             statuses.add(entity.toPojo());

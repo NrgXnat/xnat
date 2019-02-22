@@ -1,11 +1,17 @@
 package org.nrg.xnat.eventservice.entities;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -21,7 +27,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private String projectId;
     private String actionInputs;
     private TriggeringEventEntity triggeringEventEntity;
-    private List<TimedEventStatusEntity> timedEventStatuses = Lists.newArrayList();
+    private Set<TimedEventStatusEntity> timedEventStatuses = Sets.newLinkedHashSet();
     private TimedEventStatusEntity.Status status;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
@@ -49,7 +55,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.eventType = eventType;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     public SubscriptionEntity getSubscription() { return subscription; }
 
     public void setSubscription(SubscriptionEntity subscription) {
@@ -91,11 +97,11 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    public List<TimedEventStatusEntity> getTimedEventStatuses() {
+    public Set<TimedEventStatusEntity> getTimedEventStatuses() {
         return timedEventStatuses;
     }
 
-    public void setTimedEventStatuses(List<TimedEventStatusEntity> timedEventStatuses){
+    public void setTimedEventStatuses(Set<TimedEventStatusEntity> timedEventStatuses){
         this.timedEventStatuses = timedEventStatuses;
     }
 

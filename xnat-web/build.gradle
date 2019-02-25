@@ -7,23 +7,16 @@
  * Released under the Simplified BSD.
  */
 
-import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
-import com.github.zhurlik.SwaggerTask
-import io.swagger.models.Contact
-import io.swagger.models.Info
-import io.swagger.models.License
-
 buildscript {
     ext {
         vXnat = "1.7.6-SNAPSHOT"
     }
     repositories {
         mavenLocal()
+        mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
-        mavenCentral()
-        jcenter()
         maven {
             url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
             name "XNAT Release Repository"
@@ -34,18 +27,11 @@ buildscript {
         }
     }
     dependencies {
-        gradleApi()
         classpath "com.bmuschko:gradle-cargo-plugin:2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
-        classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
-        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
         classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
-        classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:${vXnat}"
-        classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
 }
 
@@ -54,7 +40,6 @@ version = vXnat
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
-apply plugin: "com.github.zhurlik.swagger"
 apply plugin: "com.palantir.git-version"
 apply plugin: "eclipse"
 apply plugin: "groovy"
@@ -149,6 +134,7 @@ configurations {
         exclude group: "commons-betwixt"
         exclude group: "commons-dbcp"
         exclude group: "commons-email"
+        exclude group: "commons-logging"
         exclude group: "commons-messenger"
         exclude group: "commons-pool"
         exclude group: "edu.ucar", module: "netcdf"
@@ -172,6 +158,7 @@ configurations {
         exclude group: "jms", module: "jms"
         exclude group: "jndi"
         exclude group: "jython"
+        exclude group: "log4j", module: "log4j"
         exclude group: "mockobjects"
         exclude group: "mysql"
         exclude group: "net.sf.saxon", module: "Saxon-B"
@@ -187,6 +174,7 @@ configurations {
         exclude group: "org.nrg.xdat", module: "beans"
         exclude group: "org.nrg.xnat", module: "web"
         exclude group: "org.python"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "quartz"
         exclude group: "resources", module: "resources"
         exclude group: "servletapi"
@@ -274,8 +262,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-ldap"
     implementation "org.springframework.security:spring-security-taglibs"
     implementation "org.springframework.ldap:spring-ldap-core"
-    implementation "org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE"
-    implementation "org.springframework.security:spring-security-jwt:1.0.8.RELEASE"
+    implementation "org.springframework.security.oauth:spring-security-oauth2"
+    implementation "org.springframework.security:spring-security-jwt"
 
     implementation "org.hibernate:hibernate-core"
     implementation "org.hibernate:hibernate-ehcache"
@@ -335,16 +323,19 @@ dependencies {
     implementation "org.apache.xmlbeans:xmlbeans-xpath"
     implementation "org.apache.xbean:xbean-spring"
     implementation "net.java.dev.msv:xsdlib"
+    implementation "javax.servlet:jstl"
+    implementation "com.google.code.gson:gson"
+    implementation "com.google.guava:guava"
 
     implementation "org.postgresql:postgresql"
 
     implementation "org.slf4j:slf4j-api"
-    implementation "org.slf4j:slf4j-log4j12"
     implementation "org.slf4j:jul-to-slf4j"
-    implementation "log4j:log4j"
-    implementation "javax.servlet:jstl"
-    implementation "com.google.code.gson:gson"
-    implementation "com.google.guava:guava"
+    implementation "org.slf4j:jcl-over-slf4j"
+    implementation "org.slf4j:log4j-over-slf4j"
+    implementation "ch.qos.logback:logback-classic"
+    implementation "ch.qos.logback:logback-core"
+    implementation "net.logstash.logback:logstash-logback-encoder"
 
     compileOnly "com.google.code.findbugs:jsr305"
 
@@ -495,42 +486,6 @@ jacocoTestReport {
     }
 }
 
-task swagger(type: SwaggerTask, dependsOn: classes) {
-
-    // any dirs with classes
-    classesDirs = [
-            file("${buildDir}/classes/java/main")
-    ]
-
-    apiSources = [
-            new ApiSource(
-                    springmvc: true,
-                    locations: ["org.nrg.xapi.rest"],
-                    schemes: ["http", "https"],
-                    host: "xnat.org",
-                    basePath: "/xapi",
-                    info: new Info(
-                            title: "XNAT REST API",
-                            version: "${version}",
-                            description: "REST API for the XNAT server",
-                            contact: new Contact(
-                                    email: "info@xnat.org",
-                                    name: "XNAT",
-                                    url: "http://www.xnat.org"
-                            ),
-                            license: new License(
-                                    url: "https://opensource.org/licenses/BSD-2-Clause",
-                                    name: "Simplified 2-Clause BSD"
-                            )
-                    ),
-                    outputPath: file("${buildDir}/docs").path,
-                    outputFormats: "json,yaml",
-                    swaggerDirectory: file("${buildDir}/docs").path,
-                    swaggerFileName: "${project.group}.${project.name}-${project.version}-swagger"
-            )
-    ]
-}
-
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadoc")
@@ -544,7 +499,7 @@ task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar) { // TODO: Issues with both coverage report and Swagger JSON generation, removing until we spend time on them and they're useful. , dependsOn: [javadocCoverageReport, swagger]) {
+task javadocJar(type: Jar) {
     classifier "javadoc"
     from javadoc.destinationDir
 }

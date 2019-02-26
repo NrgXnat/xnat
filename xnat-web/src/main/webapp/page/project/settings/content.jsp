@@ -51,7 +51,7 @@
                     return;
                 }
 
-                $('span.project-id').text(PROJECT_ID);
+                $('span.project-id').html('<a href="/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/'+PROJECT_ID+'">'+PROJECT_ID+'</a>');
 
                 // cache DOM objects
                 var projectSettingsHeader$ = $('#project-settings-header');

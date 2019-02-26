@@ -40,10 +40,9 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 	}
 
 	private static CriteriaCollection getOpenWorkflowCriteriaCollection() {
-		final CriteriaCollection cc= new CriteriaCollection("OR");
-		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.IN_PROGRESS);
-		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.RUNNING);
-		cc.addClause("wrk:workFlowData.status",PersistentWorkflowUtils.QUEUED);
+		final CriteriaCollection cc = new CriteriaCollection("AND");
+		cc.addClause("wrk:workFlowData.status","!=",PersistentWorkflowUtils.COMPLETE);
+		cc.addClause("wrk:workFlowData.status","NOT LIKE", PersistentWorkflowUtils.FAILED + "%");
 		return cc;
 	}
 	

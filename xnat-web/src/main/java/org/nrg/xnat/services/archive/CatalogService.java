@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.services.archive;
 
-import org.apache.ecs.xhtml.label;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -336,12 +335,14 @@ public interface CatalogService {
      *
      * @param user              The user running the operation.
      * @param catalogResource   The URI of the resource catalog.
-     * @param urls              The URLs to add to the catalog.
+     * @param urls              URLs to add to the catalog (key=URL, value=desired relative path)
+     * @param create            True: catalog should be created if it doesn't exist
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
-    void addToResourceCatalog(final UserI user, final String catalogResource, final Collection<String> urls) throws ServerException, ClientException;
+    void addToResourceCatalog(final UserI user, final String catalogResource, final Map<String, String> urls, boolean create)
+            throws ServerException, ClientException;
 
     /**
      * Inserts the XML object into the XNAT data store. The submitted XML is validated and inserted (created or updated as appropriate). The contents of the parameters map

@@ -776,7 +776,11 @@ public class FileList extends XNATCatalogTemplate {
 
                 if (cat != null) {
                     if (filepath == null || filepath.equals("")) {
-                        table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
+                        table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath,
+                                (catResource.getBaseURI() != null) ?
+                                        catResource.getBaseURI() + "/files" :
+                                        baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
+                                catResource, isZip || (index != null), entryFilter, proj, locator));
                     } else {
                         ArrayList<CatEntryI> entries = new ArrayList<>();
 
@@ -797,8 +801,12 @@ public class FileList extends XNATCatalogTemplate {
                             final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            						if(entry.getUri().startsWith(dir)){
-            							if(recursive || StringUtils.contains(entry.getUri().substring(dir.length()+1),"/"))
+            					    String relPath = entry.getUri();
+            					    if (FileUtils.IsUrl(relPath)) {
+            					        relPath = entry.getId();
+                                    }
+            						if(relPath.startsWith(dir)){
+            							if(recursive || StringUtils.contains(relPath.substring(dir.length()+1),"/"))
             							{
                 							return (entryFilter == null || entryFilter.accept(entry));
             							}
@@ -817,27 +825,17 @@ public class FileList extends XNATCatalogTemplate {
 
 
                         if (entries.size() == 1) {
-                            if (FileUtils.IsAbsolutePath(entries.get(0).getUri())) {
-                                f = new File(entries.get(0).getUri());
-                            } else {
-                                f = new File(parentPath, entries.get(0).getUri());
-                            }
-
-                            if (f.exists()) break;
+                            f = CatalogUtils.getFile(entries.get(0), parentPath);
+                            if (f != null && f.exists()) break;
 
                         } else {
-
                             for (CatEntryI entry : entries) {
-                                if (FileUtils.IsAbsolutePath(entry.getUri())) {
-                                    f = new File(entry.getUri());
-                                } else {
-                                    f = new File(parentPath, entry.getUri());
+                                f = CatalogUtils.getFile(entries.get(0), parentPath);
+                                if (f != null && f.exists()) {
+                                    String relPath = entry.getUri();
+                                    if (FileUtils.IsUrl(relPath)) relPath = entry.getId();
+                                    fileList.put(relPath, f);
                                 }
-
-                                if (f.exists()) {
-                                    fileList.put(entry.getUri(), f);
-                                }
-
                             }
                             break;
                         }
@@ -991,7 +989,9 @@ public class FileList extends XNATCatalogTemplate {
                 String baseURI = getBaseURI();
 
                 if (cat != null) {
-                	table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
+                	table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath,
+                            baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
+                            catResource, false, entryFilter, proj, locator));
                 }
             } else {
 
@@ -1056,7 +1056,9 @@ public class FileList extends XNATCatalogTemplate {
 
     				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
     				if(filepath.endsWith("/")){
-    					table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
+    					table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath,
+                                baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
+                                catResource, false, folderFilter, proj, locator));
     				}else{
                         getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                         return new StringRepresentation("");

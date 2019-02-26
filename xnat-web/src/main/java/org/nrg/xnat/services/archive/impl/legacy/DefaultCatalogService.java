@@ -555,7 +555,8 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void addToResourceCatalog(final UserI user, final String catalogResource, final Collection<String> urls) throws ServerException, ClientException {
+    public void addToResourceCatalog(final UserI user, final String catalogResource, final Map<String, String> urls,
+                                     final boolean create) throws ServerException, ClientException {
         try {
             //Is it a valid resource?
             final URIManager.DataURIA uri = UriParserUtils.parseURI(catalogResource);
@@ -570,14 +571,30 @@ public class DefaultCatalogService implements CatalogService {
             } else {
                 final String resourceFilePath = ((ResourceURII) resourceURI).getResourceFilePath();
                 if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
-                    throw new ClientException("Resource URI: " + catalogResource + " is a file; you should provide the path to a catalog resource (leave off the *_catalog.xml).");
+                    throw new ClientException("Resource URI: " + catalogResource + " is a file; " +
+                            "you should provide the path to a catalog resource (leave off the *_catalog.xml).");
                 }
             }
 
             //Is it a catalog resource?
-            final XnatAbstractresourceI resource = ((ResourceURII) resourceURI).getXnatResource();
+            XnatAbstractresourceI resource = ((ResourceURII) resourceURI).getXnatResource();
+            if (resource == null && create) {
+                // Resource doesn't exist yet, try to create it
+                String parentUriStr = catalogResource.replaceAll("/resources/[^/]*$","");
+                if (!(UriParserUtils.parseURI(parentUriStr) instanceof URIManager.ArchiveItemURI)) {
+                    throw new ClientException("Cannot determine parent resource, " +
+                            "please create the catalog before you add to it.");
+                }
+                try {
+                    resource = createAndInsertResourceCatalog(user, parentUriStr, ((ResourceURII) resourceURI).getResourceLabel(),
+                            null, null, null);
+                } catch (Exception e) {
+                    throw new ServerException(e);
+                }
+            }
             if (!(resource instanceof XnatResourcecatalog)) {
-                throw new ClientException("Resource URI: " + catalogResource + " doesn't refer to a catalog.");
+                throw new ClientException("Resource URI: " + catalogResource +
+                        " doesn't refer to a catalog or doesn't exist and couldn't be created.");
             }
 
             //Does it correspond to an archivable item?
@@ -603,14 +620,15 @@ public class DefaultCatalogService implements CatalogService {
                 final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null,
                         null, null, user, now, now, eventId);
 
-                final Map<String, Object[]> catalogMap = CatalogUtils.buildCatalogMap(cat, catPath,false);
-                boolean invalidUrl = false;
+                final Map<String, Object[]> catalogMap = CatalogUtils.buildCatalogMap(cat, catPath, false,
+                        "",true);
+                List<String> invalidUrls = new ArrayList<>();
                 int nadded = 0;
-                long catSize = (Long) resource.getFileSize();
-                for (String url : urls) {
+                long catSize = resource.getFileSize() == null ? 0 : (Long) resource.getFileSize();
+                for (String url : urls.keySet()) {
                     if (!org.nrg.xft.utils.FileUtils.IsUrl(url, true)) {
                         //Not a URL
-                        invalidUrl = true;
+                        invalidUrls.add(url);
                         continue;
                     }
                     if (catalogMap.containsKey(url)) {
@@ -621,12 +639,20 @@ public class DefaultCatalogService implements CatalogService {
                     CatalogUtils.CatalogEntryAttributes attrs = UrlUtils.getCatalogEntryAttributesForUrl(url, catPath);
                     if (attrs == null) {
                         //Unable to retrieve headers
-                        invalidUrl = true;
+                        invalidUrls.add(url);
                         continue;
                     }
 
                     //Add to catalog
-                    CatEntryBean newEntry = CatalogUtils.populateAndAddCatEntry(cat, url, attrs.relativePath,
+                    String relPath = urls.get(url);
+                    if (StringUtils.isBlank(relPath) || catalogMap.containsKey(relPath)) {
+                        relPath = attrs.relativePath;
+                    }
+                    if (catalogMap.containsKey(relPath)) {
+                        invalidUrls.add(relPath);
+                    }
+
+                    CatEntryBean newEntry = CatalogUtils.populateAndAddCatEntry(cat, url, relPath,
                             attrs.name, info, attrs.size);
                     if (attrs.md5 != null) {
                         newEntry.setDigest(attrs.md5);
@@ -643,19 +669,24 @@ public class DefaultCatalogService implements CatalogService {
 
                     // Update resource stats
                     resource.setFileSize(catSize);
-                    resource.setFileCount(resource.getFileCount() + nadded);
+                    Integer fileCount = resource.getFileCount();
+                    fileCount = (fileCount == null) ? 0 : fileCount;
+                    resource.setFileCount(fileCount + nadded);
                     ((XnatResourcecatalog) resource).save(user, false, false, wrkevent);
                 }
 
                 WorkflowUtils.complete(wrk, wrk.buildEvent());
 
-                if (invalidUrl) {
-                    String message = "Some or all submitted URLs were not valid; ";
+                if (invalidUrls.size() > 0) {
+                    String message = "The following URLs or relative paths were not valid/unique: " +
+                            Joiner.on(", ").join(invalidUrls) + ".";
                     if (nadded>0) {
-                        message += "others were successfully added to the catalog.";
+                        message += " Others were successfully added to the catalog.";
                     } else {
-                        message += "nothing added to catalog.";
+                        message += " Nothing added to the catalog.";
                     }
+
+
                     throw new ClientException(message);
                 }
             } catch (ClientException e) {
@@ -669,7 +700,7 @@ public class DefaultCatalogService implements CatalogService {
             } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
                 throw new ClientException("Couldn't find the primary project for the specified resource " + catalogResource);
             } catch (Exception e) {
-                throw new ServerException("An error occurred trying to save the workflow for the add operation.", e);
+                throw new ServerException("An error occurred during the add operation: " + e.getMessage(), e);
             }
         } catch (MalformedURLException e) {
             throw new ClientException("Invalid Resource URI: " + catalogResource);

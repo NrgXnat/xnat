@@ -1,15 +1,17 @@
 package org.nrg.xnat.services.archive;
 
 import org.nrg.prefs.beans.AbstractPreferenceBean;
-import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 
 @Service
 public interface FilesystemService {
+    String separator = File.separator;
 
     /**
      * Is the remote filesystem service configured and active? (needed to differentiate from just having plugin installed)
@@ -24,6 +26,15 @@ public interface FilesystemService {
      * @param preferences
      */
     void activate(AbstractPreferenceBean preferences);
+
+    /**
+     * Retrieves the file indicated by inputPath (URL or local path)
+     *
+     * @param inputPath may be a URL or may be an absolute local path
+     * @return File
+     * @throws Exception if issue
+     */
+    InputStream getInputStream(String inputPath) throws Exception;
 
     /**
      * Retrieves the file indicated by inputPath (URL or local path)
@@ -132,4 +143,11 @@ public interface FilesystemService {
      * @return CatalogUtils.CatalogEntryAttributes
      */
     CatalogUtils.CatalogEntryAttributes getMetadata(String inputPath, String catalogPath);
+
+    /**
+     * Returns a list of all files AND DIRECTORIES within root, <strong>directories must end with "/"</strong>
+     * @param root  the topmost directory
+     * @return      list of subdirs & files
+     */
+    List<String> listAllFiles(@Nullable String root);
 }

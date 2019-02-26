@@ -303,21 +303,26 @@ public class CatalogApi extends AbstractXapiRestController {
                              .body((StreamingResponseBody) new CatalogZipStreamingResponseBody(user, catalog, _preferences.getArchivePath(), true));
     }
 
-    @ApiOperation(value = "Add list of URLs to a resource catalog.", notes = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001/scans/SCANID/resources/DICOM or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID. If multiple catalogs are found within the provided path, an error will be returned", response = String.class)
+    @ApiOperation(value = "Add list of URLs to a resource catalog.", notes = "The resource should be identified by standard " +
+            "archive-relative paths, such as /archive/experiments/XNAT_E0001/scans/SCANID/resources/DICOM or " +
+            "/archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID. If multiple catalogs are found within the " +
+            "provided path, an error will be returned", response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The add operation completed successfully."),
             @ApiResponse(code = 400, message = "Something is wrong with your request"),
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred on the server side.")})
     @XapiRequestMapping(value = "catalogs/add", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     @ResponseBody
-    public ResponseEntity<String> addToResourceCatalog(@ApiParam("The path to a resource catalog.") @RequestParam(value = "resource") final String resource,
-                                                     @ApiParam("The list of URLs to add.") @RequestBody final List<String> urls) {
+    public ResponseEntity<String> addToResourceCatalog(
+            @ApiParam("The path to a resource catalog.") @RequestParam final String resource,
+            @ApiParam("Create the catalog if it doesn't exist?") @RequestParam(defaultValue = "true") final boolean create,
+            @ApiParam("Json map of URLs to add {'url':'displayPath'}, e.g., {'s3://my/url/file.txt':'file.txt'}, " +
+                    "{'s3://my/url/alt/file.txt':'alt/file.txt'}") @RequestBody final Map<String, String> urls) {
         final UserI user = getSessionUser();
 
-        log.info("User {} requested to add to resource catalog {} the following urls: " + Joiner.on(", ").join(urls),
-                user.getUsername(), resource);
+        log.debug("User {} requested to add URLs to the resource catalog {}", user.getUsername(), resource);
 
         try {
-            _service.addToResourceCatalog(user, resource, urls);
+            _service.addToResourceCatalog(user, resource, urls, create);
             return new ResponseEntity<>("Success!", HttpStatus.OK);
         } catch (ServerException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

@@ -17,7 +17,7 @@ import io.swagger.models.License
 buildscript {
     ext {
         vXnat = "1.7.6-SNAPSHOT"
-        vXnatDev = "1.7.6-eventservice-SNAPSHOT"
+        vXnatDev = "1.8.0-eventservice-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -176,7 +176,7 @@ dependencyManagement.imports {
 dependencies {
     // NRG dependencies first.
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
+    implementation("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
     implementation "org.nrg.xdat:core:${vXnatDev}"

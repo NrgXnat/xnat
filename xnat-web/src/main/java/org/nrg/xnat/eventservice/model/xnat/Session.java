@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @JsonInclude(Include.NON_NULL)
@@ -40,7 +41,8 @@ public class Session extends XnatModelObject {
     @JsonProperty("project-id") private String projectId;
     @JsonProperty("subject-id") private String subjectId;
     private String directory;
-    @JsonProperty("modality") private String modality;
+    //@JsonProperty("modality") private String modality;
+    @JsonProperty("modalities-in-study") private List<String> modalities;
 
     public Session() {}
 
@@ -81,7 +83,8 @@ public class Session extends XnatModelObject {
         try { this.xsiType = xnatImagesessiondataI.getXSIType();} catch(NullPointerException e){log.error("Session failed to detect xsiType");}
         this.projectId = xnatImagesessiondataI.getProject();
         this.subjectId = xnatImagesessiondataI.getSubjectId();
-        this.modality = xnatImagesessiondataI.getModality();
+        //this.modality = xnatImagesessiondataI.getModality();
+        this.modalities = xnatImagesessiondataI.getScans_scan().stream().map(XnatImagescandataI::getModality).distinct().collect(Collectors.toList());
 
         try {
             if(XnatExperimentdata.class.isAssignableFrom(xnatImagesessiondataI.getClass()))
@@ -118,7 +121,8 @@ public class Session extends XnatModelObject {
         session.setDirectory("/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/");
         session.setProjectId("SampleProjectID");
         session.setSubjectId("XNAT_S00001");
-        session.setModality("MR");
+//        session.setModality("MR");
+        session.setModalities(Arrays.asList("MR", "CT"));
 
 
         return session;
@@ -247,12 +251,18 @@ public class Session extends XnatModelObject {
         return xnatImagesessiondataI == null ? null : ((XnatImagesessiondata)xnatImagesessiondataI).getItem();
     }
 
-    public String getModality() {
-        return modality;
-    }
+    //public String getModality() {
+    //    return modality;
+    //}
 
-    public void setModality(String modality) {
-        this.modality = modality;
+    //public void setModality(String modality) {
+    //    this.modality = modality;
+    //}
+
+    public List<String> getModalities() { return modalities; }
+
+    public void setModalities(List<String> modalities) {
+        this.modalities = modalities;
     }
 
     @Override
@@ -267,7 +277,9 @@ public class Session extends XnatModelObject {
                 Objects.equals(this.resources, that.resources) &&
                 Objects.equals(this.projectId, that.projectId) &&
                 Objects.equals(this.subjectId, that.subjectId) &&
-                Objects.equals(this.directory, that.directory);
+                Objects.equals(this.directory, that.directory) &&
+                this.modalities.stream().allMatch(thsMod->that.modalities.contains(thsMod)) &&
+                that.modalities.stream().allMatch(thtMod->this.modalities.contains(thtMod));
     }
 
     @Override
@@ -284,6 +296,7 @@ public class Session extends XnatModelObject {
                 .add("projectId", projectId)
                 .add("subjectId", subjectId)
                 .add("directory", directory)
+                .add("modalities-in-study", (modalities != null ? modalities.toString() : ""))
                 .toString();
     }
 }

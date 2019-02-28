@@ -2,8 +2,10 @@ package org.nrg.xnat.eventservice.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
@@ -439,6 +441,22 @@ public class EventServiceIntegrationTest {
 
     }
 
+    @Test
+    public void testJsonPathFilterConfiguration() throws Throwable {
+        final Configuration jaywayConf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+
+        String scanJson = objectMapper.writeValueAsString(mrScan1);
+
+        List singleQuoteMatch = JsonPath.using(jaywayConf).parse(scanJson).read("$[?(@.xsiType in ['xnat:Scan'])]");
+        assertThat(singleQuoteMatch, notNullValue());
+        assertThat(singleQuoteMatch.size(), is(not(0)));
+
+        List doubleQuoteMatch = JsonPath.using(jaywayConf).parse(scanJson).read(  "$[?((@.xsiType in [\"xnat:Scan\"]))]");
+        assertThat(doubleQuoteMatch, notNullValue());
+        assertThat(doubleQuoteMatch.size(), is(not(0)));
+
+
+    }
 
     @Test
     public void testJsonPathFilterSelector() throws Throwable {

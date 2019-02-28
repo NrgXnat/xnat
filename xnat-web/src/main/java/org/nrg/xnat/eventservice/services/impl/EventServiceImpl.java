@@ -75,7 +75,7 @@ public class EventServiceImpl implements EventService {
     private UserManagementServiceI userManagementService;
     private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
-    private Configuration jaywayConf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+    private Configuration jaywayConf = Configuration.defaultConfiguration().builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private List<EventServiceEvent> recentTriggers = new ArrayList<>();
 
     @Autowired
@@ -421,6 +421,7 @@ public class EventServiceImpl implements EventService {
                                     return;
                                 } else {
                                     String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+                                    jsonFilter = jsonFilter.contains("'") ? jsonFilter.replace("'","\"") : jsonFilter;
                                     List<String> filterResult = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
                                     String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 200);
                                     if (filterResult.isEmpty()) {

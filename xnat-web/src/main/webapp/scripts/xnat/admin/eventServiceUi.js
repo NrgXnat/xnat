@@ -896,7 +896,7 @@ var XNAT = getObject(XNAT || {});
         XNAT.ui.dialog.open({
             title: 'Confirm Deletion',
             width: 350,
-            content: '<p>Are you sure you want to permanently delete the <strong>'+ escapeHTML(subscription.name) +'</strong> event subscription? This will also delete all event history items associated with this event. This operation cannot be undone. Alternately, you can just disable it.</p>',
+            content: '<p>Are you sure you want to permanently delete the <strong>'+ escapeHTML(subscription.name) +'</strong> event subscription? This will also delete all event history items associated with this event. This operation cannot be undone. Alternatively, you can just disable it.</p>',
             buttons: [
                 {
                     label: 'Confirm Delete',

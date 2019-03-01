@@ -678,8 +678,8 @@ public class DefaultCatalogService implements CatalogService {
                 WorkflowUtils.complete(wrk, wrk.buildEvent());
 
                 if (invalidUrls.size() > 0) {
-                    String message = "The following URLs or relative paths were not valid/unique: " +
-                            Joiner.on(", ").join(invalidUrls) + ".";
+                    String message = "The following URLs were not accessible from XNAT and/or the following " +
+                            "relative paths were not unique: " + Joiner.on(", ").join(invalidUrls) + ".";
                     if (nadded>0) {
                         message += " Others were successfully added to the catalog.";
                     } else {

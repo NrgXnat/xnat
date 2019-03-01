@@ -315,8 +315,10 @@ public class CatalogApi extends AbstractXapiRestController {
     public ResponseEntity<String> addToResourceCatalog(
             @ApiParam("The path to a resource catalog.") @RequestParam final String resource,
             @ApiParam("Create the catalog if it doesn't exist?") @RequestParam(defaultValue = "true") final boolean create,
-            @ApiParam("Json map of URLs to add {'url':'displayPath'}, e.g., {'s3://my/url/file.txt':'file.txt'}, " +
-                    "{'s3://my/url/alt/file.txt':'alt/file.txt'}") @RequestBody final Map<String, String> urls) {
+            @ApiParam("Json map of URLs to add. JSON key should be URL, JSON value should be the desired relative path " +
+                    "within the catalog, or an empty string for default: {\"url\":\"displayPath\"}, e.g., " +
+                    "{\"s3://my/url/file.txt\":\"file.txt\"}, {\"s3://my/url/alt/file.txt\":\"alt/file.txt\"}")
+            @RequestBody final Map<String, String> urls) {
         final UserI user = getSessionUser();
 
         log.debug("User {} requested to add URLs to the resource catalog {}", user.getUsername(), resource);

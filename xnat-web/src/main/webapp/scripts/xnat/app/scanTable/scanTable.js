@@ -152,7 +152,7 @@ var XNAT = getObject(XNAT);
                     close: false,
                     action: function (obj) {
                         XNAT.app.requestJustificationDialog(function(event_reason){
-                            var reasonStr = event_reason ? "event_reason=" + encodeURI(event_reason) : "";
+                            var reasonStr = event_reason ? "event_reason=" + encodeURIComponent(event_reason) : "";
                             var deleteUrl   = '/REST/experiments/' + XNAT.data.context.ID + '/scans/' + scanId;
                             var deleteFiles = obj.dialogBody$.find('#delete_files').is(':checked');
                             var params = [
@@ -246,7 +246,7 @@ var XNAT = getObject(XNAT);
                     close: false,
                     action: function (obj) {
                         XNAT.app.requestJustificationDialog(function(event_reason){
-                            var reasonStr = event_reason ? "event_reason=" + encodeURI(event_reason) : "";
+                            var reasonStr = event_reason ? "event_reason=" + encodeURIComponent(event_reason) : "";
                             
                             var updateNoteUrl = scanUrl('?req_format=form&' + reasonStr, projectId, subjectId);
                             if (!noteEditor.value) {

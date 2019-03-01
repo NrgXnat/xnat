@@ -176,10 +176,22 @@ XNAT.app.justificationDialog = function(callback,_opts){
     var msg           = spawn('p',   opts.message ? opts.message : 'Please provide justification for this action.'); 
     var content       = spawn('div', opts.content);         // Optional content
     var note          = spawn('p',   opts.note);            // Optional note from the caller
-    var justifyBox    = spawn('div.justificationBox',[ msg, content, event_reason, note ]);
+    var justifyBox    = spawn('div#justificationBox',[ msg, content, event_reason, note ]);
     
     this.call = function(obj){
+        $("div#validationError").remove();
+        
         if($("#event_reason").val()==""){
+            var icon = spawn('i.fa.fa-asterisk',{ style:{ color: '#c66' } } );
+            var msg  = spawn('div#validationError',[icon," Justification Required"]);
+            $("#justificationBox").append(msg);
+            $("#event_reason").css("border","solid 1px red");
+            return;
+        }
+        if($("#event_reason").val().indexOf('#')>-1){
+            var icon = spawn('i.fa.fa-asterisk',{ style:{ color: '#c66' } } );
+            var msg  = spawn('div#validationError',[icon," The '#' character is not allowed."]);
+            $("#justificationBox").append(msg);
             $("#event_reason").css("border","solid 1px red");
             return;
         }
@@ -190,7 +202,7 @@ XNAT.app.justificationDialog = function(callback,_opts){
     XNAT.ui.dialog.open({
         title:          opts.header ? opts.header : 'Justification Required',
         width:          opts.width  ? opts.width  : '400px',
-        height:         opts.height ? opts.height : '250px',
+        height:         opts.height ? opts.height : '260px',
         destroyOnClose: true,
         content:        justifyBox,
         afterShow:      function () { $("textarea#event_reason").focus(); }, 

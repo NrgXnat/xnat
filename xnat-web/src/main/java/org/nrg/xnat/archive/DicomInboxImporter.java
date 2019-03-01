@@ -24,7 +24,9 @@ import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.restlet.data.Status;
+import org.nrg.xdat.security.helpers.Permissions;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,24 +51,21 @@ public final class DicomInboxImporter extends ImporterHandlerA {
     public DicomInboxImporter(final Object listener, final UserI user, @SuppressWarnings("unused") final FileWriterWrapperI writer, final Map<String, Object> parameters) throws ClientException, ConfigServiceException {
         super(listener, user);
 
-        final boolean hasSessionParameter = parameters.containsKey("session");
         final boolean hasPathParameter    = parameters.containsKey("path");
         
         if (parameters.containsKey(CLEANUP_PARAMETER)) {
         	_cleanupAfterImport = Boolean.valueOf(parameters.get(CLEANUP_PARAMETER).toString());
         }
 
-        // == here functions as XOR: if both are false or true (i.e. ==), XOR is false.
-        if (hasSessionParameter == hasPathParameter) {
+        if (!hasPathParameter) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
-                                      "You must specify *either* the session parameter with a label for processing a session folder from the configured " +
-                                      "Inbox location *or* the path parameter specifying a full path to the session data to be imported.");
+                                      "You must specify the path parameter specifying a full path to the session data to be imported.");
         }
 
-        final String parameter = String.valueOf(parameters.get(hasSessionParameter ? "session" : "path"));
-        _sessionPath = (hasSessionParameter ? Paths.get(XDAT.getSiteConfigurationProperty("inboxPath"), parameter) : Paths.get(parameter)).toFile();
+        final String parameter = String.valueOf(parameters.get("path"));
+        _sessionPath = (Paths.get(parameter)).toFile();
         if (!_sessionPath.exists()) {
-            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified " + (hasSessionParameter ? "inbox location " : "path: ") + parameter);
+            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
         }
         if (_sessionPath.isFile()) {
         	_sessionPath = handleInboxArchiveFile(_sessionPath);
@@ -79,6 +78,31 @@ public final class DicomInboxImporter extends ImporterHandlerA {
             // Remove the session parameter so that it doesn't cause the final imported session to be renamed.
             parameters.remove("session");
         }
+
+		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
+		String pathFromRequest = parameters.get("path")==null?"":parameters.get("path").toString();
+		String projectFromRequest = parameters.get("PROJECT_ID")==null?"":parameters.get("PROJECT_ID").toString();
+		pathFromRequest = pathFromRequest.replaceFirst("^"+inboxPath, "");
+		pathFromRequest = pathFromRequest.replaceFirst("^\\\\", "");
+		pathFromRequest = pathFromRequest.replaceFirst("^/", "");
+		int backslashIndex = pathFromRequest.indexOf('\\');
+		int forwardslashIndex = pathFromRequest.indexOf('/');
+		int slashIndex = ((backslashIndex<forwardslashIndex&&backslashIndex!=-1)?backslashIndex:forwardslashIndex);
+		String inboxSubdirectory = pathFromRequest;
+		if(slashIndex>-1) {
+			inboxSubdirectory = pathFromRequest.substring(0, slashIndex);
+		}
+
+		XnatProjectdata inboxProject = XnatProjectdata.getXnatProjectdatasById(inboxSubdirectory, user, false);
+		XnatProjectdata destinationProject = XnatProjectdata.getXnatProjectdatasById(projectFromRequest, user, false);
+
+		//Make sure user has access to both the project whose subdirectory the data is in right now, as well as the destination project.
+		if(destinationProject == null || !Permissions.canEditProject(user, projectFromRequest)){
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You do not have permission to edit the specified destination project.");
+		}
+		if(inboxProject == null || !Permissions.canEditProject(user, inboxSubdirectory)){
+			throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
+		}
 
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);
         _user = user;

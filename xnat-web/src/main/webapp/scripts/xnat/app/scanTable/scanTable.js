@@ -119,19 +119,6 @@ var XNAT = getObject(XNAT);
         downloadIframe(url);
     }
     
-    /*
-     * Function requests justification reason for the action if required by XNAT.
-     * If not, this function executes the action. 
-     */
-    function justifyAction(id, header, scope, action){
-        if(showReason){
-            var justification=new XNAT.app.requestJustification(id,header,action,scope);
-        }else{
-            var passthrough= new XNAT.app.passThrough(action,scope);
-            passthrough.fire();
-        }
-    }
-
     function deleteScan(scanId){
         scanId = scanId || getScanId(this);
         XNAT.ui.dialog.open({
@@ -164,15 +151,15 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function (obj) {
-                        justifyAction("delete_scan","Delete Scan", this, function(arg1,arg2,container){
+                        XNAT.app.requestJustificationDialog(function(event_reason){
+                            var reasonStr = event_reason ? "event_reason=" + encodeURI(event_reason) : "";
                             var deleteUrl   = '/REST/experiments/' + XNAT.data.context.ID + '/scans/' + scanId;
                             var deleteFiles = obj.dialogBody$.find('#delete_files').is(':checked');
-                            var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
                             var params = [
                                 'format=json',
-                                'event_reason='+event_reason,
                                 'event_action=Removed scan',
-                                'event_type=WEB_FORM'
+                                'event_type=WEB_FORM',
+                                reasonStr
                             ];
 
                             if (deleteFiles) {
@@ -217,7 +204,7 @@ var XNAT = getObject(XNAT);
                                     })
                                 }
                             }) // end XNAT.xhr.delete
-                        }) // end justifyAction
+                        }) // end justification
                     } // end action function
                 },
                 {
@@ -258,10 +245,10 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function (obj) {
-                        justifyAction("edit_note","Edit Note Justification", this, function(arg1,arg2,container){
-                            var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
-                        
-                            var updateNoteUrl = scanUrl('?req_format=form&event_reason='+event_reason, projectId, subjectId);
+                        XNAT.app.requestJustificationDialog(function(event_reason){
+                            var reasonStr = event_reason ? "event_reason=" + encodeURI(event_reason) : "";
+                            
+                            var updateNoteUrl = scanUrl('?req_format=form&' + reasonStr, projectId, subjectId);
                             if (!noteEditor.value) {
                                 noteEditor.value = ' '
                             }
@@ -309,7 +296,7 @@ var XNAT = getObject(XNAT);
                                     })
                                 }
                             }) // end XNAT.xhr.put
-                        },this); //end justifyAction
+                        }) //end justification
                     }
                 },
                 {

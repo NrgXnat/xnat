@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -327,7 +328,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             throws NrgServiceRuntimeException {
         final UserI user = XDAT.getUserDetails();
         if(projectId != null)
-            return eventService.getActions(projectId, xnatType, user);
+            return eventService.getActions(projectId, Arrays.asList(xnatType), user);
         else
             return eventService.getActions(xnatType, user);
     }

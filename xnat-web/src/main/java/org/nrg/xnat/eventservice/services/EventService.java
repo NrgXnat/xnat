@@ -36,8 +36,15 @@ public interface EventService {
 
     List<Action> getAllActions();
 
+    @Deprecated
     List<Action> getActions(String xnatType, UserI user);
+    @Deprecated
     List<Action> getActions(String projectId, String xnatType, UserI user);
+
+
+    List<Action> getActions(List<String> xnatTypes, UserI user);
+    List<Action> getActions(String projectId, List<String> xnatTypes, UserI user);
+
     List<Action> getActionsByEvent(String eventId, String projectId, UserI user);
     List<Action> getActionsByProvider(String actionProvider, UserI user);
     Action getActionByKey(String actionKey, UserI user);
@@ -74,5 +81,7 @@ public interface EventService {
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
 
     List<String> getRecentTriggers(Integer count);
+
+    EventServiceComponentManager getComponentManager();
 
 }

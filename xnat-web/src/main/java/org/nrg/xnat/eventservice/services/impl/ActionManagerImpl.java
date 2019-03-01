@@ -25,6 +25,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -89,6 +90,7 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
+    @Deprecated
     public List<Action> getActions(UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
@@ -99,19 +101,14 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    public List<Action> getActions(String xnatType, UserI user) {
+    public List<Action> getActions(String projectId, @Nonnull List<String> xnatTypes, UserI user) {
         List<Action> actions = new ArrayList<>();
-        for(EventServiceActionProvider provider:getActionProviders()) {
-            Optional.ofNullable(provider.getActions(null, xnatType, user)).ifPresent(actions::addAll);
-        }
-        return actions;
-    }
-
-    @Override
-    public List<Action> getActions(String projectId, String xnatType, UserI user) {
-        List<Action> actions = new ArrayList<>();
-        for(EventServiceActionProvider provider:getActionProviders()) {
-            Optional.ofNullable(provider.getActions(projectId, xnatType, user)).ifPresent(actions::addAll);
+        for (EventServiceActionProvider provider : getActionProviders()) {
+            try {
+                Optional.ofNullable(provider.getActions(projectId, xnatTypes, user)).ifPresent(actions::addAll);
+            }catch (Throwable e){
+                log.error("Exception attempting to get actions from " + provider.toString(), e.getCause());
+            }
         }
         return actions;
     }
@@ -129,15 +126,6 @@ public class ActionManagerImpl implements ActionManager {
     @Override
     public List<Action> getActionsByProvider(EventServiceActionProvider provider, UserI user) {
         return provider.getActions(null, null, user);
-    }
-
-    @Override
-    public List<Action> getActionsByObject(String operation) {
-//        List<EventServiceAction> actions = null;
-//        for(EventServiceAction action : getActionsByProvider()){
-//            if(action.)
-//        }
-        return null;
     }
 
     @Override

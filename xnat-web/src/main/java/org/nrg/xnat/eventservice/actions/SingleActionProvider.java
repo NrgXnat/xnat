@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 public abstract class SingleActionProvider implements  EventServiceActionProvider {
 
-    public abstract Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user);
+    public abstract Map<String, ActionAttributeConfiguration> getAttributes(String projectId, UserI user);
 
     @Override
     public String getName() { return this.getClass().getName(); }
@@ -44,13 +44,13 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
 //    }
 
     @Override
-    public List<Action> getActions(String projectId, String xnatType, UserI user) {
+    public List<Action> getActions(String projectId, List<String> xnatTypes, UserI user) {
         return new ArrayList<>(Arrays.asList(
                 Action.builder().id(getName())
                       .actionKey(getActionKey() )
                       .displayName(getDisplayName())
                       .description(getDescription())
-                      .attributes(getAttributes(projectId, xnatType, user))
+                      .attributes(getAttributes(projectId, user))
                       .provider(this)
                       .build()
         ));

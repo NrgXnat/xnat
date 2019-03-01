@@ -20,7 +20,7 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
     public TestCombinedEvent(){};
 
     public TestCombinedEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, payload.getXSIType());
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -83,8 +84,11 @@ public class Session extends XnatModelObject {
         try { this.xsiType = xnatImagesessiondataI.getXSIType();} catch(NullPointerException e){log.error("Session failed to detect xsiType");}
         this.projectId = xnatImagesessiondataI.getProject();
         this.subjectId = xnatImagesessiondataI.getSubjectId();
-        //this.modality = xnatImagesessiondataI.getModality();
         this.modalities = xnatImagesessiondataI.getScans_scan().stream().map(XnatImagescandataI::getModality).distinct().collect(Collectors.toList());
+        // Use session modality if no scans or no scan modality info
+        if ((this.modalities == null || modalities.isEmpty()) && !Strings.isNullOrEmpty(xnatImagesessiondataI.getModality())) {
+            this.modalities = Arrays.asList(xnatImagesessiondataI.getModality());
+        }
 
         try {
             if(XnatExperimentdata.class.isAssignableFrom(xnatImagesessiondataI.getClass()))

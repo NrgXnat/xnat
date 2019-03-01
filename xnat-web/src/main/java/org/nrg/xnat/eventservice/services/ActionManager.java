@@ -18,13 +18,11 @@ public interface ActionManager {
     @Deprecated
     List<Action> getActions(UserI user);
 
-    List<Action> getActions(String xnatType, UserI user);
-    List<Action> getActions(String projectId, String xnatType, UserI user);
+    List<Action> getActions(String projectId, List<String> xnatType, UserI user);
 
     List<Action> getActionsByProvider(String providerName, UserI user);
-    public EventServiceActionProvider getActionProviderByKey(String actionKey);
+    EventServiceActionProvider getActionProviderByKey(String actionKey);
     List<Action> getActionsByProvider(EventServiceActionProvider provider, UserI user);
-    List<Action> getActionsByObject(String operation);
 
     List<EventServiceActionProvider> getActionProviders();
     EventServiceActionProvider getActionProvider(String providerName);

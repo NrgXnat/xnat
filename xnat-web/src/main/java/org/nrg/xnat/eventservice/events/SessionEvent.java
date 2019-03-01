@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.events;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @XnatEventServiceEvent(name="SessionEvent")
 public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatImagesessiondataI> {
@@ -19,9 +21,8 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
     public SessionEvent(){};
 
     public SessionEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
-
 
     @Override
     public String getDisplayName() {
@@ -31,11 +32,6 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
     @Override
     public String getDescription() {
         return "Session created, updated, or deleted.";
-    }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:imageSessionData";
     }
 
     @Override

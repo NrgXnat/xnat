@@ -32,6 +32,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     Date eventDetectedTimestamp = null;
     Enum status = null;
     String projectId = null;
+    String xsiType = null;
 
     private final TypeToken<EventObjectT> eventObjectTTypeToken = new TypeToken<EventObjectT>(getClass()) { };
 
@@ -45,12 +46,22 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
         this(object, eventUser, status, null);
     }
 
+    @Deprecated
     public CombinedEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId) {
         this.object = object;
         this.eventUser = eventUser;
         this.eventCreatedTimestamp = new Date();
         this.status = status;
         this.projectId = projectId;
+    }
+
+    public CombinedEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId, final String xsiType) {
+        this.object = object;
+        this.eventUser = eventUser;
+        this.eventCreatedTimestamp = new Date();
+        this.status = status;
+        this.projectId = projectId;
+        this.xsiType = xsiType;
     }
 
     @Override
@@ -72,6 +83,11 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
 
     @Override
     public Class getObjectClass() { return eventObjectTTypeToken.getRawType(); }
+
+    @Override
+    public String getPayloadXnatType() { return xsiType; }
+
+    public void setPayloadXnatType(String xsiType) {this.xsiType = xsiType;}
 
     @Override
     public String getUser() {

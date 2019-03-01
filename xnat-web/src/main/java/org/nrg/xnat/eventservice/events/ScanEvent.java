@@ -19,7 +19,7 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
     public ScanEvent(){};
 
     public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
@@ -30,11 +30,6 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
     @Override
     public String getDescription() {
         return "New scan saved";
-    }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:imageScanData";
     }
 
     @Override

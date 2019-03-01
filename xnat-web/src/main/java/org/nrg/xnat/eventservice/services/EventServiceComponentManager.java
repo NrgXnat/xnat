@@ -5,6 +5,7 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public interface EventServiceComponentManager {
@@ -20,4 +21,6 @@ public interface EventServiceComponentManager {
     XnatModelObject getModelObject(Object object, UserI user);
 
     Class<?> getModelObjectClass(Class<?> objectClass);
+
+    List<String> getXsiTypes(@Nonnull Class<?> xnatClass);
 }

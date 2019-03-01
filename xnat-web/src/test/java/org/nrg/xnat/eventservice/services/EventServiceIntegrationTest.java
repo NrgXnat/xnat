@@ -16,7 +16,11 @@ import org.mockito.Mockito;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
+import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -181,6 +185,7 @@ public class EventServiceIntegrationTest {
         ctScan1.setSeriesDescription("This is the description of a series which is this one.");
 
 
+
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn(FAKE_USER);
@@ -200,7 +205,7 @@ public class EventServiceIntegrationTest {
         when(mockEventServiceLoggingAction.getName()).thenReturn("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDisplayName()).thenReturn("MockEventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDescription()).thenReturn("MockEventServiceLoggingAction");
-        when(mockEventServiceLoggingAction.getActions(Matchers.any(String.class),Matchers.any(String.class),Matchers.any(UserI.class))).thenReturn(null);
+        when(mockEventServiceLoggingAction.getActions(Matchers.any(String.class),Matchers.any(List.class),Matchers.any(UserI.class))).thenReturn(null);
 
 
     }
@@ -247,6 +252,27 @@ public class EventServiceIntegrationTest {
         assertThat(listeners, notNullValue());
         assertThat(listeners, not(is(empty())));
     }
+
+    @Test
+    public void checkXsiTypeToObjectMapping() throws Exception {
+
+        List<String> projectXsiTypes = componentManager.getXsiTypes(XnatProjectdataI.class);
+        assertThat(projectXsiTypes, is(notNullValue()));
+
+        List<String> subjectXsiTypes = componentManager.getXsiTypes(XnatSubjectdataI.class);
+        assertThat(subjectXsiTypes, is(notNullValue()));
+
+        List<String> sessionXsiTypes = componentManager.getXsiTypes(XnatImagesessiondataI.class);
+        assertThat(sessionXsiTypes, is(notNullValue()));
+
+        List<String> scanXsiTypes = componentManager.getXsiTypes(XnatImagescandataI.class);
+        assertThat(scanXsiTypes, is(notNullValue()));
+
+        List<String> assessorXsiTypes = componentManager.getXsiTypes(XnatImageassessordataI.class);
+        assertThat(assessorXsiTypes, is(notNullValue()));
+
+    }
+
 
     @Test
     @DirtiesContext
@@ -319,7 +345,7 @@ public class EventServiceIntegrationTest {
         EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
                                                             .eventType(eventType)
                                                             .projectIds(Arrays.asList(projectId))
-                                                            .jsonPathFilter("(@.modality == \"MR\")")
+                                                            .jsonPathFilter("(\"MR\" in @.modalities-in-study)")
                                                             .build();
 
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -599,7 +625,7 @@ public class EventServiceIntegrationTest {
         EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
                                                             .eventType(eventType)
                                                             .projectIds(Arrays.asList(projectId))
-                                                            .jsonPathFilter("(@.modality == \"MR\")")
+                                                            .jsonPathFilter("( \"MR\" in @.modalities-in-study)")
                                                             .build();
 
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -1599,7 +1625,7 @@ public class EventServiceIntegrationTest {
         }
 
         @Override
-        public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user) {
+        public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, UserI user) {
             return null;
         }
     }

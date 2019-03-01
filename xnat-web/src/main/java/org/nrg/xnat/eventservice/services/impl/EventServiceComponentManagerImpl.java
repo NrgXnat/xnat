@@ -1,7 +1,10 @@
 package org.nrg.xnat.eventservice.services.impl;
 
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xdat.bean.ClassMappingFactory;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
@@ -34,7 +37,11 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -44,6 +51,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
     private List<EventServiceListener> installedListeners;
     private List<EventServiceActionProvider> actionProviders;
     private List<EventServiceEvent> installedEvents;
+    private Map<Class<?>, List<String>> classToXsiTypesMap = new HashMap<>();
 
     @Autowired
     public EventServiceComponentManagerImpl(@Lazy final List<EventServiceListener> installedListeners,
@@ -188,6 +196,36 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
             return Subject.class;
         }
         return null;
+    }
+
+    @Override
+    public List<String> getXsiTypes(@Nonnull Class<?> xnatClass) {
+
+        if (!classToXsiTypesMap.containsKey(xnatClass)) {
+            try {
+                final Map<String, String> classMap = ClassMappingFactory.getInstance().getElements();
+                Set<String> xsiTypes = new HashSet<>();
+                for (String xsiKey : classMap.keySet()) {
+                    try {
+                        if (xnatClass.isAssignableFrom(
+                                Class.forName(StringUtils.removeEnd(classMap.get(xsiKey), "Bean").replaceAll("bean", "om")))) {
+                            String xsiType = StringUtils.substringAfterLast(xsiKey, "/");
+                            if (!Strings.isNullOrEmpty(xsiType)) {
+                                xsiTypes.add(xsiType);
+                            }
+                        }
+                    }catch (Throwable e){
+                        log.debug("Could not load class type: " + StringUtils.removeEnd(classMap.get(xsiKey), "Bean").replaceAll("bean", "om"));
+                    }
+                }
+                if(xsiTypes != null && !xsiTypes.isEmpty()) {
+                    classToXsiTypesMap.put(xnatClass, new ArrayList<>(xsiTypes));
+                }
+            } catch (Throwable e) {
+                log.error("Could not get xsi type for Class: " + xnatClass.getName(), e.getMessage());
+            }
+        }
+        return classToXsiTypesMap.get(xnatClass);
     }
 
 }

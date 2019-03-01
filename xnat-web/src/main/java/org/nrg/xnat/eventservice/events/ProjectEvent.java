@@ -21,7 +21,7 @@ public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatPr
     public ProjectEvent(){};
 
     public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
@@ -29,11 +29,6 @@ public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatPr
 
     @Override
     public String getDescription() { return description; }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:projectData";
-    }
 
     @Override
     public Boolean isPayloadXsiType() {

@@ -80,7 +80,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
     public String getDescription() { return description; }
 
     @Override
-    public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user) {
+    public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, UserI user) {
 
         if(!isUserAdmin(user)) {
             if (Strings.isNullOrEmpty(projectId)) {

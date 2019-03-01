@@ -20,9 +20,8 @@ public interface EventServiceActionProvider {
     List<Action> getAllActions();
 
     // Return a list of org.nrg.xnat.eventservice.model.Action objects to describe actions available to the user //
-    //List<Action> getActions(UserI user);
-    //List<Action> getActions(String xnatType, UserI user);
-    List<Action> getActions(String projectId, String xnatType, UserI user);
+    List<Action> getActions(String projectId, List<String> xnatTypes, UserI user);
+
 
     Boolean isActionAvailable(String actionKey, String projectId, UserI user);
 

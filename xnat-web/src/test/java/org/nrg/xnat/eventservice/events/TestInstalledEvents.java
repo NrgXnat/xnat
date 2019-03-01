@@ -71,9 +71,6 @@ public class TestInstalledEvents {
             assertThat("Null or empty event ID in " + event.getClass().getName(), event.getType(), not(IsEmptyString.isEmptyOrNullString()));
             assertThat("Null or empty event Display Name in " + event.getClass().getName(), event.getDisplayName(), not(IsEmptyString.isEmptyOrNullString()));
             assertThat("Null IsPayloadXsiType in " + event.getClass().getName(), event.isPayloadXsiType(), not(nullValue()));
-            if(event.isPayloadXsiType()) {
-                assertThat("Null or Empty Payload XNAT Type in" + event.getClass().getName(), event.getPayloadXnatType(), not(IsEmptyString.isEmptyOrNullString()));
-            }
             assertThat("EventUser should be null until event is triggered in " + event.getClass().getName(), event.getUser(), nullValue());
             assertThat("Null EventTimestamp. Should be assigned at object creation for " + event.getClass().getName(), event.getEventTimestamp(), not(nullValue()));
             assertThat("Null EventUUID. Should be assigned at object creation for " + event.getClass().getName(), event.getEventUUID(), not(nullValue()));

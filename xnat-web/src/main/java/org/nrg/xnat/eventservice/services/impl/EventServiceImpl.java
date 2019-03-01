@@ -46,6 +46,7 @@ import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -192,27 +193,40 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<Action> getActions(String xnatType, UserI user) {
-        return actionManager.getActions(xnatType, user);
+        return getActions(Arrays.asList(xnatType), user);
     }
 
     @Override
     public List<Action> getActions(String projectId, String xnatType, UserI user) {
-        return actionManager.getActions(projectId, xnatType, user);
+        return getActions(projectId, Arrays.asList(xnatType), user);
+    }
+
+    @Override
+    public List<Action> getActions(List<String> xnatTypes, UserI user) {
+        return actionManager.getActions(null, xnatTypes, user);
+    }
+
+    @Override
+    public List<Action> getActions(String projectId, List<String> xnatTypes, UserI user) {
+        return actionManager.getActions(projectId, xnatTypes, user);
     }
 
     @Override
     public List<Action> getActionsByEvent(String eventId, String projectId, UserI user) {
+        return getActionsByEvent(componentManager.getEvent(eventId), projectId, user);
+    }
+
+    private List<Action> getActionsByEvent(EventServiceEvent event, String projectId, UserI user){
         List<Action> actions = new ArrayList<>();
-        EventServiceEvent event = componentManager.getEvent(eventId);
-        if(event != null && !StringUtils.isNullOrEmpty(event.getPayloadXnatType())){
+        List<String> xsiTypes = componentManager.getXsiTypes(event.getObjectClass());
+        if(event != null && xsiTypes != null && !xsiTypes.isEmpty()){
             if(StringUtils.isNullOrEmpty(projectId)){
-                actions = getActions(event.getPayloadXnatType(), user);
+                actions = getActions(xsiTypes, user);
             } else {
-                actions = getActions(projectId, event.getPayloadXnatType(), user);
+                actions = getActions(projectId, xsiTypes, user);
             }
         }
-        return actions;
-    }
+        return actions;    }
 
     @Override
     public List<Action> getActionsByProvider(String actionProvider, UserI user) {
@@ -532,6 +546,11 @@ public class EventServiceImpl implements EventService {
             e.printStackTrace();
         }
         return triggers;
+    }
+
+    @Override
+    public EventServiceComponentManager getComponentManager() {
+        return componentManager;
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {

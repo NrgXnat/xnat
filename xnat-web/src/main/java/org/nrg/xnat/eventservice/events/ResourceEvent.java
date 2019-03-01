@@ -21,7 +21,7 @@ public class ResourceEvent extends CombinedEventServiceEvent<ResourceEvent, Xnat
     public ResourceEvent(){};
 
     public ResourceEvent(final XnatResourcecatalogI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
@@ -29,11 +29,6 @@ public class ResourceEvent extends CombinedEventServiceEvent<ResourceEvent, Xnat
 
     @Override
     public String getDescription() { return description; }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:resourceCatalog";
-    }
 
     @Override
     public Boolean isPayloadXsiType() {

@@ -18,7 +18,7 @@ public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, 
     public ImageAssessorEvent(){};
 
     public ImageAssessorEvent(final XnatImageassessordataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
@@ -29,11 +29,6 @@ public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, 
     @Override
     public String getDescription() {
         return "Image assessor saved.";
-    }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:imageAssessorData";
     }
 
     @Override

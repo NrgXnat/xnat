@@ -20,6 +20,7 @@ import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
@@ -29,6 +30,7 @@ import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.events.SubjectEvent;
 import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -43,31 +45,36 @@ public class EventServiceItemSaveAspect {
 
     private EventService eventService;
     private XnatObjectIntrospectionService xnatObjectIntrospectionService;
+    private EventServiceComponentManager componentManager;
 
     @Autowired
-    public EventServiceItemSaveAspect(EventService eventService, XnatObjectIntrospectionService xnatObjectIntrospectionService) {
+    public EventServiceItemSaveAspect(EventService eventService, XnatObjectIntrospectionService xnatObjectIntrospectionService,
+                                      EventServiceComponentManager componentManager) {
         this.eventService = eventService;
         this.xnatObjectIntrospectionService = xnatObjectIntrospectionService;
+        this.componentManager = componentManager;
     }
 
    @Around(value = "execution(* org.nrg.xft.utils.SaveItemHelper.save(..)) && @annotation(org.nrg.xft.utils.EventServiceTrigger) && args(item, user,..)")
     public Object processItemSaveTrigger(final ProceedingJoinPoint joinPoint, ItemI item, UserI user) throws Throwable {
         Object retVal = null;
         try {
-            String userLogin = user == null ? null : user.getLogin();
-            if (StringUtils.contains(item.getXSIType(), "xnat:user")) {
+            if (isItemA(item, XnatType.USER)) {
                 retVal = joinPoint.proceed();
 
-            } else if (StringUtils.equals(item.getXSIType(), "arc:project")) {
+            } else if (isItemA(item, XnatType.WORKFLOW)){
+                retVal = joinPoint.proceed();
+
+            }else if (isItemA(item, XnatType.NEW_PROJECT)) {
                 log.debug("New Project Data Save" + " : xsiType:" + item.getXSIType());
                 XnatProjectdataI project = item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item);
                 triggerProjectCreate(project, user);
-            } else if (StringUtils.equals(item.getXSIType(), "xnat:projectData")) {
+            } else if (isItemA(item, XnatType.PROJECT)) {
                 log.debug("Existing Project Data Save" + " : xsiType:" + item.getXSIType());
                 log.debug("ProjectEvent.Status.UPDATED detected - no-op");
                 //XnatProjectdataI project = item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item);
 
-            } else if (StringUtils.equals(item.getXSIType(), "xnat:subjectData") || item instanceof  XnatSubjectdataI) {
+            } else if (isItemA(item, XnatType.SUBJECT)) {
                 XnatSubjectdataI subject = item instanceof XnatSubjectdataI ? (XnatSubjectdataI) item : new XnatSubjectdata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subject);
                 if (!alreadyStored) {
@@ -100,7 +107,7 @@ public class EventServiceItemSaveAspect {
                     //eventService.triggerEvent(new SubjectEvent(subject, userLogin, SubjectEvent.Status.UPDATED, subject.getProject()));
                 }
 
-            } else if (item instanceof XnatImagesessiondataI || StringUtils.containsIgnoreCase(item.getXSIType(), "SessionData")) {
+            } else if (isItemA(item, XnatType.SESSION)) {
                 log.debug("Session Data Save" + " : xsiType:" + item.getXSIType());
                 XnatImagesessiondataI session = item instanceof XnatImagesessiondataI ? (XnatImagesessiondataI) item : new XnatImagesessiondata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase((XnatExperimentdata) session);
@@ -117,7 +124,7 @@ public class EventServiceItemSaveAspect {
                     postScanIds.removeAll(preScanIds);
                     if (!postScanIds.isEmpty()) {
                         List<XnatImagescandataI> newScans = session.getScans_scan().stream().filter(scn -> postScanIds.contains(scn.getId())).collect(Collectors.toList());
-                        newScans.forEach(sc -> eventService.triggerEvent(new ScanEvent(sc, userLogin, ScanEvent.Status.CREATED, session.getProject())));
+                        triggerScansCreate(newScans, session.getProject(), user);
                     }
                     log.debug("SessionEvent.Status.UPDATED detected - no-op");
                     //eventService.triggerEvent(new SessionEvent(session, userLogin, SessionEvent.Status.UPDATED, session.getProject()));
@@ -138,7 +145,7 @@ public class EventServiceItemSaveAspect {
 //                }
 //                eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI) resource, userLogin, ResourceEvent.Status.CREATED, project));
 //
-            } else if (item instanceof XnatImagescandata) {
+            } else if (isItemA(item, XnatType.SCAN)) {
                 log.debug("Image Scan Data Save : xsiType:" + item.getXSIType());
                 XnatImagescandataI sc = (XnatImagescandata)item;
                 String project = null;
@@ -151,7 +158,7 @@ public class EventServiceItemSaveAspect {
                 } else {
                     triggerScanCreate(sc, project, user);
                 }
-            } else if (item instanceof XnatImageassessordataI || StringUtils.containsIgnoreCase(item.getXSIType(), "AssessorData")) {
+            } else if (isItemA(item, XnatType.IMAGE_ASSESSOR)) {
                 XnatImageassessordataI assessor = new XnatImageassessordata(item);
                 if(!Strings.isNullOrEmpty(assessor.getImagesessionId())){
                     if(!xnatObjectIntrospectionService.storedInDatabase(assessor)) {
@@ -161,7 +168,10 @@ public class EventServiceItemSaveAspect {
                         log.debug("Image Assessor Data Update - no-op");
                     }
                 }
-            } else {
+            } else if (isItemA(item, XnatType.NON_IMAGE__SUBJECT_ASSESSOR)) {
+                log.debug("Subject Assessor Data Save : xsiType: "  + item.getXSIType());
+                triggerSubjectAssessorCreate(new XnatSubjectassessordata(item), user);
+            }else {
                 retVal = null;
             }
 
@@ -275,6 +285,12 @@ public class EventServiceItemSaveAspect {
     }
 
     //** Scan Triggers **//
+    private void triggerScansCreate(List<XnatImagescandataI> scans, String projectId, UserI user){
+        if (scans != null && !scans.isEmpty()){
+            scans.forEach(scan -> triggerScanCreate(scan, projectId, user));
+        }
+    }
+
     private void triggerScanCreate(XnatImagescandataI scan, String projectId, UserI user){
         eventService.triggerEvent(new ScanEvent(scan, user.getLogin(), ScanEvent.Status.CREATED, projectId));
     }
@@ -285,8 +301,76 @@ public class EventServiceItemSaveAspect {
 
     }
 
+    //** Non-Image Subject Assessor Triggers **//
+    private void triggerSubjectAssessorCreate(XnatSubjectassessordataI subjectAssessor, UserI user){
+        log.debug("NO-OP");
+        //TODO
+    }
+
     //** Resource Triggers **//
     private void triggerResourceCreate(XnatAbstractresourceI resource, UserI user){
+        log.debug("NO-OP");
         //TODO
+    }
+
+
+    private enum XnatType {
+        USER,
+        WORKFLOW,
+        NEW_PROJECT,
+        PROJECT,
+        SUBJECT,
+        SESSION,
+        SCAN,
+        IMAGE_ASSESSOR,
+        NON_IMAGE__SUBJECT_ASSESSOR
+    }
+
+    private Boolean isItemA(ItemI item, XnatType type){
+        switch (type) {
+            case USER:
+                return StringUtils.contains(item.getXSIType(), "xnat:user") || StringUtils.contains(item.getXSIType(), "xdat:user_login");
+            case WORKFLOW:
+                return StringUtils.contains(item.getXSIType(), "wrk:workflowData");
+            case NEW_PROJECT:
+                return StringUtils.equals(item.getXSIType(), "arc:project");
+            case PROJECT:
+                return StringUtils.equals(item.getXSIType(), "xnat:projectData");
+            case SUBJECT:
+                return (StringUtils.equals(item.getXSIType(), "xnat:subjectData") || item instanceof  XnatSubjectdataI);
+            case SESSION:
+                if (item instanceof XnatImagesessiondataI)
+                    return true;
+                // Attempt xsiType lookup
+                List<String> sessionXsiTypes = componentManager.getXsiTypes(XnatImagesessiondataI.class);
+                if (sessionXsiTypes != null && !sessionXsiTypes.isEmpty() && sessionXsiTypes.contains(item.getXSIType())){
+                    return true;
+                }
+                // if that fails, compare to static string
+                else if(StringUtils.containsIgnoreCase(item.getXSIType(), "SessionData")){
+                    return true;
+                }
+                return false;
+            case SCAN:
+                return (item instanceof XnatImagescandata);
+            case IMAGE_ASSESSOR:
+                if (item instanceof XnatImageassessordataI)
+                    return true;
+                // Attempt xsiType lookup
+                List<String> imageAssessorXsiTypes = componentManager.getXsiTypes(XnatImagesessiondataI.class);
+                if (imageAssessorXsiTypes != null && !imageAssessorXsiTypes.isEmpty() && imageAssessorXsiTypes.contains(item.getXSIType())) {
+                    return true;
+                }
+                // if that fails, compare to static string
+                else if(StringUtils.containsIgnoreCase(item.getXSIType(), "ImageAssessorData")) {
+                    return true;
+                }
+                return false;
+            case NON_IMAGE__SUBJECT_ASSESSOR:
+                return false;
+            default:
+                log.error("No detection implementation for type: " + type.name());
+                return false;
+        }
     }
 }

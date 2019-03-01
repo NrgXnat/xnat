@@ -18,7 +18,7 @@ public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSu
     public SubjectEvent(){};
 
     public SubjectEvent(final XnatSubjectdataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
@@ -29,11 +29,6 @@ public class SubjectEvent extends CombinedEventServiceEvent<SubjectEvent, XnatSu
     @Override
     public String getDescription() {
         return "Subject created, updated, or deleted.";
-    }
-
-    @Override
-    public String getPayloadXnatType() {
-        return "xnat:subjectData";
     }
 
     @Override

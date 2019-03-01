@@ -43,7 +43,7 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     public String getDescription() { return description; }
 
     @Override
-    public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, String xnatType, UserI user) {
+    public Map<String, ActionAttributeConfiguration> getAttributes(String projectId, UserI user) {
         Map<String, ActionAttributeConfiguration> attributeConfigurationMap = new HashMap<>();
         attributeConfigurationMap.put("param1",
                 ActionAttributeConfiguration.builder()

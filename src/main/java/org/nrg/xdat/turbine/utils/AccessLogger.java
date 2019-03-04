@@ -96,6 +96,14 @@ public class AccessLogger {
         logAccess(user, ServletCall.getRequest(request), service, message);
     }
 
+    public static void LogResourceAccess(final String user, final HttpServletRequest request, final String service) {
+        logAccess(user, request, service, null);
+    }
+
+    public static void LogResourceAccess(final String user, final HttpServletRequest request, final String service, final String message) {
+        logAccess(user, request, service, message);
+    }
+
     public static void LogServiceAccess(final String user, final MessageContext context, final String service, final String message) {
         LogServiceAccess(user, getAxisRequest(context), service, message);
     }
@@ -142,7 +150,7 @@ public class AccessLogger {
     }
 
     private static void logAccess(final String username, final HttpServletRequest request, final String target, final String payload) {
-        log.error("{} {}  {} \"{}\" {}", username, GetRequestIp(request), target, getUserAgentHeader(request), StringUtils.defaultIfBlank(payload, ""));
+        log.info("{} {} {} {} \"{}\" {}", username, GetRequestIp(request), request.getMethod(), target, getUserAgentHeader(request), StringUtils.defaultIfBlank(payload, ""));
     }
 
     private static void trackSession(final RunData data) {

@@ -3,6 +3,7 @@ package org.nrg.xapi.rest.aspects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -25,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.StopWatch;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -46,6 +46,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @Component
 @Slf4j
 public class XapiRequestMappingAspect {
+
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     public XapiRequestMappingAspect(final SiteConfigPreferences preferences, final List<XapiAuthorization> authorizers) {
@@ -79,60 +80,62 @@ public class XapiRequestMappingAspect {
     // TODO: @Before(value = "xapiRequestMappingPointcut(xapiRequestMapping)", argNames = "joinPoint,xapiRequestMapping")
     // TODO: public void processXapiRequest(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) {
     @Around(value = "xapiRequestMappingPointcut(xapiRequestMapping)", argNames = "joinPoint,xapiRequestMapping")
-    public Object processXapiRequest(final ProceedingJoinPoint joinPoint,
-                                     final XapiRequestMapping xapiRequestMapping) throws Throwable {
+    public Object processXapiRequest(final ProceedingJoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws Throwable {
+        final HttpServletRequest request = getRequest();
         try {
             evaluate(joinPoint, xapiRequestMapping);
 
-            final StopWatch stopWatch = log.isDebugEnabled() ? new StopWatch() {{ start(); }} : null;
+            final StopWatch stopWatch = log.isDebugEnabled() ? StopWatch.createStarted() : null;
             try {
                 return joinPoint.proceed();
             } finally {
                 if (stopWatch != null) {
                     stopWatch.stop();
-                    final HttpServletRequest request = getRequest();
-                    log.debug("Request to {} took {}ms to execute", request.getServletPath() + request.getPathInfo(), NumberFormat.getInstance().format(stopWatch.getTotalTimeMillis()));
+                    log.debug("Request to {} took {} ms to execute", request.getServletPath() + request.getPathInfo(), NumberFormat.getInstance().format(stopWatch.getTime()));
                 }
             }
         } catch (InsufficientPrivilegesException e) {
             final HttpServletResponse response = getResponse();
             response.setStatus(HttpStatus.FORBIDDEN.value());
+            final UserI user = XDAT.getUserDetails();
+            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, request.getRequestURL().toString(), FORBIDDEN);
         } catch (NotAuthenticatedException e) {
             final HttpServletResponse response = getResponse();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setHeader(WWW_AUTH_HEADER, "Basic realm=\"" + _preferences.getSiteId() + "\"");
+            final UserI user = XDAT.getUserDetails();
+            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, request.getRequestURL().toString(), UNAUTHORIZED);
         }
         return null;
     }
 
     private void evaluate(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws InsufficientPrivilegesException, NotAuthenticatedException {
-        final HttpServletRequest request = getRequest();
-        final UserI              user    = XDAT.getUserDetails();
+        final HttpServletRequest request    = getRequest();
+        final String             requestUrl = request.getRequestURL().toString();
+
+        final UserI user = XDAT.getUserDetails();
         if (user == null) {
+            AccessLogger.LogResourceAccess("", request, requestUrl, UNAUTHORIZED);
             throw new InsufficientPrivilegesException("User principal couldn't be found.");
         }
 
         final String username = user.getUsername();
-
-        final String requestIp     = AccessLogger.GetRequestIp(request);
-        final String requestMethod = request.getMethod();
-        final String requestUrl    = request.getRequestURL().toString();
-        AccessLogger.LogServiceAccess(username, request, requestUrl, requestMethod);
-
-        final String path = request.getServletPath() + request.getPathInfo();
+        final String path     = request.getServletPath() + request.getPathInfo();
 
         // Is restrictTo configured?
         final AccessLevel accessLevel = xapiRequestMapping.restrictTo();
 
         // We just let Null and open URLs go.
         if (accessLevel == Null || isOpenUrl(path)) {
+            AccessLogger.LogResourceAccess(username, request, requestUrl);
             return;
         }
 
         // If access level is not null or Read (which could be valid when system is open and project is public), i.e.
         // authenticated or above, first check whether the user is logged in.
         if (user.isGuest() && _preferences.getRequireLogin() && accessLevel != Read) {
-            log.info("Guest user from IP {} tried to access a URL that required authentication access: {}", requestIp, requestUrl);
+            log.info("Guest user from IP {} tried to access a URL that required authentication access: {}", AccessLogger.GetRequestIp(request), requestUrl);
+            AccessLogger.LogResourceAccess(username, request, requestUrl, UNAUTHORIZED);
             throw new NotAuthenticatedException(requestUrl);
         }
 
@@ -156,6 +159,7 @@ public class XapiRequestMappingAspect {
         }
 
         authorizer.check(accessLevel, joinPoint, user, request);
+        AccessLogger.LogResourceAccess(username, request, requestUrl);
     }
 
     private boolean isOpenUrl(final String path) {
@@ -187,9 +191,10 @@ public class XapiRequestMappingAspect {
         return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
     }
 
-
     private static final AntPathMatcher PATH_MATCHER    = new AntPathMatcher();
     private static final String         WWW_AUTH_HEADER = "WWW-Authenticate";
+    private static final String         UNAUTHORIZED    = HttpStatus.UNAUTHORIZED.toString();
+    private static final String         FORBIDDEN       = HttpStatus.FORBIDDEN.toString();
 
     private final SiteConfigPreferences _preferences;
 

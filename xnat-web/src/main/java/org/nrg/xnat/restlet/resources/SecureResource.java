@@ -207,9 +207,7 @@ public abstract class SecureResource extends Resource {
 
     public void logAccess() {
         final String url = getRequest().getResourceRef().toString();
-        if (!(Method.GET.equals(getRequest().getMethod()) && url.contains("resources/SNAPSHOTS"))) {
-            AccessLogger.LogResourceAccess(getUser().getUsername(), getRequest(), getRequest().getMethod() + " " + url, "");
-        }
+        AccessLogger.LogResourceAccess(getUser().getUsername(), getRequest(), url, "");
     }
 
     public MediaType getRequestedMediaType() {

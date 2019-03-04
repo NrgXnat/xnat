@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.table;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;
@@ -215,6 +216,44 @@ public class CatalogUtils {
         return digest;
     }
 
+    /**
+     * Get the relative path for the file indicated by the catalog entry.
+     * Originally/by default, the relative path is in the URI attribute, but now that we support URL paths as URIs,
+     * we store the relative path in the ID attribute (and also the cachePath if it's a URL).
+     *
+     * So: default to relative path = URI for backward compatibility (old IDs not set correctly), but if URI is an
+     * absolute path, we try cachePath and then ID for the relative path.
+     *
+     * @param entry the catalog entry
+     * @return the relative path
+     */
+    public static String getRelativePathForCatalogEntry(CatEntryI entry) {
+        return getRelativePathForCatalogEntry(entry, null);
+    }
+
+    /**
+     * The same as {@link #getRelativePathForCatalogEntry(CatEntryI entry)}, but if cachePath and ID are both blank and
+     * a catalog path is provided, try to get a relative path by relativizing the URI against the catalog path
+     *
+     * @param entry the catalog entry
+     * @param catalogPath the catalog path
+     * @return the relative path
+     */
+    public static String getRelativePathForCatalogEntry(CatEntryI entry, String catalogPath) {
+        // Originally/by default, the relative path is the URI, but now we support URL paths as URIs, it should be the ID (and
+        // the cachePath if it's a URL). Still, we default to URI for backward compatibility (old IDs not set correctly)
+        String uri = entry.getUri();
+        String relPath = null;
+        if (FileUtils.IsAbsolutePath(uri)) {
+            relPath = StringUtils.defaultIfBlank(entry.getCachepath(), entry.getId());
+            if (StringUtils.isBlank(relPath) && catalogPath != null) {
+                // Try to relativize against parent
+                relPath = Paths.get(catalogPath).relativize(Paths.get(uri)).toString();
+            }
+        }
+        return StringUtils.defaultIfBlank(relPath, uri);
+    }
+
     public static List<Object[]> getEntryDetails(CatCatalogI cat, String parentPath, String uriPath,
                                                  XnatResource _resource, boolean includeFile,
                                                  final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
@@ -247,9 +286,7 @@ public class CatalogUtils {
                 row.add(name);
                 row.add(includeFile ? 0 : size);
                 if (locator.equalsIgnoreCase("URI")) {
-                    row.add(FileUtils.IsAbsolutePath(entry.getUri()) ?
-                            FileUtils.AppendSlash(uriPath, "") + entry.getId() :
-                            FileUtils.AppendSlash(uriPath, "") + entry.getUri());
+                    row.add(FileUtils.AppendSlash(uriPath, "") + getRelativePathForCatalogEntry(entry, parentPath));
                 } else if (locator.equalsIgnoreCase("absolutePath")) {
                     row.add(entryPath);
                 } else if (locator.equalsIgnoreCase("projectPath")) {
@@ -417,6 +454,10 @@ public class CatalogUtils {
         if (StringUtils.isEmpty(entry.getId()) ||
                 FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getId().equals(relativePath)) {
             entry.setId(relativePath);
+            mod = true;
+        }
+        if (FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getCachepath().equals(relativePath)) {
+            entry.setCachepath(relativePath);
             mod = true;
         }
         if (StringUtils.isEmpty(entry.getName())) {
@@ -679,21 +720,21 @@ public class CatalogUtils {
             if (pull) f = getFile(entry, catPath); //pulls from remote FS
 
             // Want the HashMap key to be the relative path on the filesystem (or the URI if requested).
-            // Originally/by default, this is the URI, but now we support URL paths as URIs, it should be the ID
-            // Default to URI for backward compatibility (old IDs not set correctly)
+            // Originally/by default, this is the URI, but now we support URL paths as URIs, it should be the ID (and
+            // the cachePath if it's a URL). Still, we default to URI (see getRelativePathForCatalogEntry)
+            // for backward compatibility (old IDs not set correctly)
             String uri = entry.getUri();
-            String relativePath = uri;
-            if (FileUtils.IsAbsolutePath(relativePath)) {
-                if (f != null) {
-                    relativePath = Paths.get(catPath).relativize(f.toPath()).toString();
-                } else if (StringUtils.isNotEmpty(entry.getId())){
-                    relativePath = entry.getId();
-                }
-                if (addUriAndRelative && !uri.equals(relativePath)) {
-                    catalog_map.put(uri, map_entry);
-                }
+            String relativePath;
+            // relativePath should be set to the same thing regardless of which of these we use
+            if (f != null) {
+                relativePath = Paths.get(catPath).relativize(f.toPath()).toString();
+            } else {
+                relativePath = getRelativePathForCatalogEntry(entry, catPath);
             }
-            catalog_map.put(FileUtils.AppendRootPath(prefix,relativePath), map_entry);
+            if (addUriAndRelative && !uri.equals(relativePath)) {
+                catalog_map.put(uri, map_entry);
+            }
+            catalog_map.put(FileUtils.AppendRootPath(prefix, relativePath), map_entry);
         }
         return catalog_map;
     }
@@ -778,13 +819,16 @@ public class CatalogUtils {
      * @return File object represented by CatEntryI
      */
     public static File getFile(CatEntryI entry, String parentPath) {
+        // If the URI is an absolute path, entryPath = URI
         String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
 
-        // If entryPath is a URL, we will need the local path where file ought to be saved
-        String entryPathLocal = "";
-        if (FileUtils.IsUrl(entry.getUri(), true) && StringUtils.isNotEmpty(entry.getId())) {
-            entryPathLocal = FileUtils.AppendRootPath(parentPath, entry.getId());
+        // For a local file, entryPath = entryPathLocal
+        String entryPathLocal = entryPath;
+        if (FileUtils.IsUrl(entryPath, true)) {
+            String relPath = getRelativePathForCatalogEntry(entry, parentPath);
+            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(parentPath, relPath), "\\", "/");
         }
+
         return getFileOnLocalFileSystem(entryPath, entryPathLocal);
     }
 
@@ -1849,11 +1893,20 @@ public class CatalogUtils {
         return modified;
     }
 
-    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname, XnatResourceInfo info, long size) {
+    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname,
+                                                      XnatResourceInfo info, long size) {
+        return populateAndAddCatEntry(cat, uri, id, fname, info, size, null);
+    }
+
+    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname,
+                                                      XnatResourceInfo info, long size, String relativePath) {
         CatEntryBean newEntry = new CatEntryBean();
         newEntry.setUri(uri);
         newEntry.setName(fname);
         newEntry.setId(id);
+        if (StringUtils.isNotBlank(relativePath)) {
+            newEntry.setCachepath(relativePath);
+        }
         setMetaFieldByName(newEntry, SIZE_METAFIELD, Long.toString(size));
         configureEntry(newEntry, info, false);
         cat.addEntries_entry(newEntry);

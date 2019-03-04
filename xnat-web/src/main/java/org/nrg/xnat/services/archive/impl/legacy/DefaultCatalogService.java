@@ -613,6 +613,9 @@ public class DefaultCatalogService implements CatalogService {
                 final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
                 final File catFile = CatalogUtils.getCatalogFile(item.getArchiveRootPath(), catRes);
                 final CatCatalogBean cat = CatalogUtils.getCatalog(catFile);
+                if (cat == null) {
+                    throw new ClientException("No catalog at " + catFile);
+                }
                 final String catPath = catFile.getParent();
                 final Date now = Calendar.getInstance().getTime();
                 final EventMetaI wrkevent = wrk.buildEvent();
@@ -653,7 +656,7 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     CatEntryBean newEntry = CatalogUtils.populateAndAddCatEntry(cat, url, relPath,
-                            attrs.name, info, attrs.size);
+                            attrs.name, info, attrs.size, relPath);
                     if (attrs.md5 != null) {
                         newEntry.setDigest(attrs.md5);
                     }

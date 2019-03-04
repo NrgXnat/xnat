@@ -455,7 +455,8 @@ public class FileList extends XNATCatalogTemplate {
                             final CatalogUtils.CatEntryFilterI folderFilter = new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            						return entry.getUri().startsWith(filePath) || entry.getId().startsWith(filepath);
+            					    String relPath = CatalogUtils.getRelativePathForCatalogEntry(entry);
+            					    return relPath.startsWith(filePath);
             					}
             				};
 
@@ -801,10 +802,7 @@ public class FileList extends XNATCatalogTemplate {
                             final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            					    String relPath = entry.getUri();
-            					    if (FileUtils.IsUrl(relPath)) {
-            					        relPath = entry.getId();
-                                    }
+            					    String relPath = CatalogUtils.getRelativePathForCatalogEntry(entry);
             						if(relPath.startsWith(dir)){
             							if(recursive || StringUtils.contains(relPath.substring(dir.length()+1),"/"))
             							{
@@ -832,8 +830,7 @@ public class FileList extends XNATCatalogTemplate {
                             for (CatEntryI entry : entries) {
                                 f = CatalogUtils.getFile(entries.get(0), parentPath);
                                 if (f != null && f.exists()) {
-                                    String relPath = entry.getUri();
-                                    if (FileUtils.IsUrl(relPath)) relPath = entry.getId();
+                                    String relPath = CatalogUtils.getRelativePathForCatalogEntry(entry);
                                     fileList.put(relPath, f);
                                 }
                             }

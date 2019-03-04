@@ -85,6 +85,7 @@ import org.restlet.data.*;
 import org.restlet.ext.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.xml.sax.SAXException;
@@ -147,10 +148,10 @@ public abstract class SecureResource extends Resource {
 
     public static final MediaType TEXT_CSV = MediaType.register("text/csv", "CSV");
 
-    protected List<String> actions          = null;
-    public String          userName         = null;
-    public String          requested_format;
-    public String          filepath;
+    protected    List<String> actions = null;
+    public final String       userName;
+    public       String       requested_format;
+    public       String       filepath;
 
     public SecureResource(Context context, Request request, Response response) {
         super(context, request, response);
@@ -159,6 +160,11 @@ public abstract class SecureResource extends Resource {
         if (null == _serializer) {
             getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
+        }
+        _template = XDAT.getNamedParameterJdbcTemplate();
+        if (_template == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
+            throw new NrgServiceRuntimeException("ERROR: Named parameter JDBC template was not properly initialized.");
         }
 
         requested_format = getQueryVariable("format");
@@ -179,6 +185,7 @@ public abstract class SecureResource extends Resource {
             // expects that the user exists in the session (either via traditional
             // session or set via the XnatSecureGuard
             _user = ObjectUtils.defaultIfNull(XDAT.getUserDetails(), Users.getGuest());
+            userName = _user.getUsername();
             logAccess();
         } catch (UserNotFoundException | UserInitException e) {
             throw new RuntimeException("An error occurred where it really should not have occurred", e);
@@ -268,6 +275,10 @@ public abstract class SecureResource extends Resource {
 
     protected SerializerService getSerializer() {
         return _serializer;
+    }
+
+    protected NamedParameterJdbcTemplate getTemplate() {
+        return _template;
     }
 
     private Form _body;
@@ -451,7 +462,7 @@ public abstract class SecureResource extends Resource {
     }
 
     @SuppressWarnings("unchecked")
-    public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> cp) {
+    public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> columnProperties) {
         if (table != null) {
             if (getQueryVariable("sortBy") != null) {
                 final String sortBy = getQueryVariable("sortBy");
@@ -466,7 +477,7 @@ public abstract class SecureResource extends Resource {
             if (clazz != null) {
                 try {
                     Class[] parameterTypes = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
-                    Object[] parameters = {table, cp, params, mt};
+                    Object[] parameters = {table, columnProperties, params, mt};
                     Constructor<OutputRepresentation> rep = clazz.getConstructor(parameterTypes);
 
                     return rep.newInstance(parameters);
@@ -476,13 +487,13 @@ public abstract class SecureResource extends Resource {
             }
 
             if (mt.equals(MediaType.TEXT_XML)) {
-                return new XMLTableRepresentation(table, cp, params, MediaType.TEXT_XML);
+                return new XMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_XML);
             } else if (mt.equals(MediaType.APPLICATION_JSON)) {
-                return new JSONTableRepresentation(table, cp, params, MediaType.APPLICATION_JSON);
+                return new JSONTableRepresentation(table, columnProperties, params, MediaType.APPLICATION_JSON);
             } else if (mt.equals(MediaType.APPLICATION_EXCEL) || mt.equals(TEXT_CSV)) {
-                return new CSVTableRepresentation(table, cp, params, mt);
+                return new CSVTableRepresentation(table, columnProperties, params, mt);
             } else if (mt.equals(APPLICATION_XLIST)) {
-                Representation rep = new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, false);
+                Representation rep = new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, false);
                 rep.setMediaType(MediaType.TEXT_HTML);
                 return rep;
             } else {
@@ -496,10 +507,10 @@ public abstract class SecureResource extends Resource {
                         return new StandardTurbineScreen(MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), params);
                     } catch (TurbineException e) {
                         logger.error("", e);
-                        return new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, true);
+                        return new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, true);
                     }
                 } else {
-                    return new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, true);
+                    return new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, true);
                 }
             }
         } else {
@@ -1909,6 +1920,7 @@ public abstract class SecureResource extends Resource {
         }
     }
 
-    private final UserI             _user;
-    private final SerializerService _serializer;
+    private final UserI                      _user;
+    private final SerializerService          _serializer;
+    private final NamedParameterJdbcTemplate _template;
 }

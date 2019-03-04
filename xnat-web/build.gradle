@@ -306,7 +306,6 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
-    implementation "org.python:jython-standalone"
 
     implementation "net.sourceforge.saxon:saxon"
     implementation "xalan:xalan"
@@ -351,6 +350,7 @@ dependencies {
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
+    runtimeOnly "org.python:jython-standalone"
 
     providedCompile "javax.servlet:javax.servlet-api"
 

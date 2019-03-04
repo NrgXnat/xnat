@@ -42,7 +42,7 @@ public class GrantProjectAccess {
         UserI userObject = Users.getUser(requestingUser);
 
 
-        if (!(Permissions.canDelete(userObject, "xnat:subjectData/project", projectID) || Roles.isSiteAdmin(userObject))) {
+        if (!(Permissions.isProjectOwner(userObject, projectID) || Roles.isSiteAdmin(userObject))) {
             //The requesting user does not have sufficient rights to add this user to this project.
             response.setStatus(403);
             response.setContentType("text/html");

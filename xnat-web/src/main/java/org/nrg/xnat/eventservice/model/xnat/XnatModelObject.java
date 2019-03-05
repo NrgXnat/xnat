@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
+import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
@@ -19,7 +20,8 @@ import java.util.Objects;
         @JsonSubTypes.Type(value = Scan.class, name = "Scan"),
         @JsonSubTypes.Type(value = Assessor.class, name = "Assessor"),
         @JsonSubTypes.Type(value = Resource.class, name = "Resource"),
-        @JsonSubTypes.Type(value = XnatFile.class, name = "File")
+        @JsonSubTypes.Type(value = XnatFile.class, name = "File"),
+        @JsonSubTypes.Type(value = Investigator.class, name = "Investigator")
 })
 @JsonInclude(Include.NON_NULL)
 public abstract class XnatModelObject {

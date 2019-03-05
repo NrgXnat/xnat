@@ -3,6 +3,7 @@ package org.nrg.xnat.eventservice.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -10,6 +11,9 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.model.XnatInvestigatordataI;
+import org.nrg.xdat.model.XnatProjectdataAliasI;
+import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -20,8 +24,10 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @JsonInclude(Include.NON_NULL)
@@ -30,6 +36,15 @@ public class Project extends XnatModelObject {
     private List<Resource> resources;
     private List<Subject> subjects;
     private String directory;
+    private String title;
+    @JsonProperty("running-title") private String runningTitle;
+    private String description;
+    private String keywords;
+    private String accessibility;
+    private List<String> aliases;
+    private Investigator pi;
+    private List<Investigator> investigators = new ArrayList<>();
+
 
     public Project() {}
 
@@ -66,10 +81,26 @@ public class Project extends XnatModelObject {
 
     private void populateProperties(final boolean preload) {
         this.id = xnatProjectdata.getId();
-        this.label = !Strings.isNullOrEmpty(xnatProjectdata.getName()) ? xnatProjectdata.getName() : xnatProjectdata.getDisplayID();
         this.xsiType = "xnat:projectData";
         try { this.xsiType = xnatProjectdata.getXSIType();} catch(NullPointerException e){log.error("Project failed to detect xsiType. " + e.getMessage());}
+        if(StringUtils.contains(this.xsiType, "arc:project")){
+            this.reloadXnatProjectdata(xnatProjectdata.getUser());
+        }
         try { this.directory = xnatProjectdata.getRootArchivePath() + "arc001";} catch (NullPointerException e){log.error("Project could not get root archive path " + e.getMessage());}
+        try { this.accessibility = xnatProjectdata.getPublicAccessibility();} catch (Throwable e){log.error("Could not get project accessibility.", e.getMessage());}
+
+        this.label = !Strings.isNullOrEmpty(xnatProjectdata.getName()) ? xnatProjectdata.getName() : xnatProjectdata.getId();
+        this.title = xnatProjectdata.getName();
+        this.runningTitle = xnatProjectdata.getDisplayID();
+        this.description = xnatProjectdata.getDescription();
+        this.keywords = xnatProjectdata.getKeywords();
+        this.aliases = xnatProjectdata.getAliases_alias().stream().map(XnatProjectdataAliasI::getAlias).collect(Collectors.toList());
+        this.pi = xnatProjectdata.getPi() != null ? new Investigator(xnatProjectdata.getPi()) : null;
+
+        List<XnatInvestigatordataI> xnatInvestigators = xnatProjectdata.getInvestigators_investigator();
+        if(xnatInvestigators != null && !xnatInvestigators.isEmpty()){
+            xnatInvestigators.forEach(i -> this.investigators.add(new Investigator((XnatInvestigatordata)i)));
+        }
 
         this.subjects = Lists.newArrayList();
         try {
@@ -149,8 +180,12 @@ public class Project extends XnatModelObject {
 
     public void loadXnatProjectdata(final UserI userI) {
         if (xnatProjectdata == null) {
-            xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
+            reloadXnatProjectdata(userI);
         }
+    }
+
+    public void reloadXnatProjectdata(final UserI userI) {
+        xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
     }
 
     public XnatProjectdata getXnatProjectdata() {
@@ -185,6 +220,38 @@ public class Project extends XnatModelObject {
         this.directory = directory;
     }
 
+    public String getTitle() { return title; }
+
+    public void setTitle(String title) { this.title = title; }
+
+    public String getRunningTitle() { return runningTitle; }
+
+    public void setRunningTitle(String runningTitle) { this.runningTitle = runningTitle; }
+
+    public String getDescription() { return description; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public String getKeywords() { return keywords; }
+
+    public void setKeywords(String keywords) { this.keywords = keywords; }
+
+    public List<String> getAliases() { return aliases; }
+
+    public void setAliases(List<String> aliases) { this.aliases = aliases; }
+
+    public Investigator getPi() { return pi; }
+
+    public void setPi(Investigator pi) { this.pi = pi; }
+
+    public List<Investigator> getInvestigators() { return investigators; }
+
+    public void setInvestigators(List<Investigator> investigators) { this.investigators = investigators; }
+
+    public String getAccessibility() { return accessibility; }
+
+    public void setAccessibility(String accessibility) { this.accessibility = accessibility; }
+
     @Override
     public XFTItem getXftItem(final UserI userI) {
         loadXnatProjectdata(userI);
@@ -215,6 +282,8 @@ public class Project extends XnatModelObject {
                 .add("directory", directory)
                 .add("resources", resources)
                 .add("subjects", subjects)
+                .add("pi", pi)
+                .add("investigators", investigators)
                 .toString();
     }
 }

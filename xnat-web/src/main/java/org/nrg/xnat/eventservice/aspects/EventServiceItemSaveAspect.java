@@ -15,6 +15,7 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xdat.om.XdatUsergroupI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -60,6 +61,9 @@ public class EventServiceItemSaveAspect {
         Object retVal = null;
         try {
             if (isItemA(item, XnatType.USER)) {
+                retVal = joinPoint.proceed();
+
+            } else if (isItemA(item, XnatType.USER_GROUP)){
                 retVal = joinPoint.proceed();
 
             } else if (isItemA(item, XnatType.WORKFLOW)){
@@ -316,6 +320,7 @@ public class EventServiceItemSaveAspect {
 
     private enum XnatType {
         USER,
+        USER_GROUP,
         WORKFLOW,
         NEW_PROJECT,
         PROJECT,
@@ -330,6 +335,8 @@ public class EventServiceItemSaveAspect {
         switch (type) {
             case USER:
                 return StringUtils.contains(item.getXSIType(), "xnat:user") || StringUtils.contains(item.getXSIType(), "xdat:user_login");
+            case USER_GROUP:
+                return (item instanceof XdatUsergroupI || StringUtils.contains(item.getXSIType(), "xdat:userGroup"));
             case WORKFLOW:
                 return StringUtils.contains(item.getXSIType(), "wrk:workflowData");
             case NEW_PROJECT:

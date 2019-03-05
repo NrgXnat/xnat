@@ -20,8 +20,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -73,7 +71,8 @@ public class Resource extends XnatModelObject {
         this.xsiType = null;
         try { this.xsiType = xnatResourcecatalog.getXSIType();} catch(NullPointerException e){log.error("Resource failed to detect xsiType");}
 
-        final CatCatalogBean cat = xnatResourcecatalog.getCleanCatalog(rootArchivePath, true, null, null);
+//        final CatCatalogBean cat = xnatResourcecatalog.getCleanCatalog(rootArchivePath, true, null, null);
+        final CatCatalogBean cat = xnatResourcecatalog.getCatalog(rootArchivePath);
         this.directory = xnatResourcecatalog.getCatalogFile(rootArchivePath).getParent();
 
         final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, null, xnatResourcecatalog, true, null, null, "absolutePath");

@@ -54,24 +54,11 @@ apply plugin: "war"
 
 repositories {
     mavenLocal()
-    maven {
-        url "https://www.dcm4che.org/maven2/"
-        name "dcm4che Maven Repository"
-    }
-    maven {
-        url "http://maven.imagej.net/content/groups/public"
-        name "ImageJ Maven Repository"
-    }
+    maven { url "https://www.dcm4che.org/maven2/" }
     jcenter()
     mavenCentral()
-    maven {
-        url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
-        name "XNAT Release Repository"
-    }
-    maven {
-        url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
-        name "XNAT Snapshot Repository"
-    }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
 }
 
 sourceCompatibility = 1.7
@@ -173,7 +160,6 @@ configurations {
         exclude group: "org.nrg", module: "plexiviewer"
         exclude group: "org.nrg.xdat", module: "beans"
         exclude group: "org.nrg.xnat", module: "web"
-        exclude group: "org.python"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "quartz"
         exclude group: "resources", module: "resources"

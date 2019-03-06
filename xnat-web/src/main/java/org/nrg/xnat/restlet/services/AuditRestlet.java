@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 public class AuditRestlet extends SecureResource {
-	ItemI item;
-	final String key;
-	final String xsiType;
+	protected ItemI item;
+	protected final String key;
+	protected final String xsiType;
 
 	public AuditRestlet(Context context, Request request, Response response) {
 		super(context, request, response);

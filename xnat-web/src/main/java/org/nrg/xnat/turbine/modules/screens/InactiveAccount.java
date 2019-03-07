@@ -45,6 +45,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                 context.put("login", TurbineUtils.getUser(data).getUsername());
                 context.put("topMessage", "Your account is not currently enabled, possibly due to inactivity.<br>" +
                         "Enter your email address to send a reactivation email.");
+                context.put("disabled", true);
             } else {
             	UserI user = XDAT.getUserDetails();
 

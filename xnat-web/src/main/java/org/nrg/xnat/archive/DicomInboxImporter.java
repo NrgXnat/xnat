@@ -62,25 +62,14 @@ public final class DicomInboxImporter extends ImporterHandlerA {
                                       "You must specify the path parameter specifying a full path to the session data to be imported.");
         }
 
-        final String parameter = String.valueOf(parameters.get("path"));
-        _sessionPath = (Paths.get(parameter)).toFile();
-        if (!_sessionPath.exists()) {
-            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
-        }
-        if (_sessionPath.isFile()) {
-        	_sessionPath = handleInboxArchiveFile(_sessionPath);
-        }
-        if (_sessionPath == null) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to process supplied archive file");
-        }
-        // If the call specifies an experiment label...
-        if (parameters.containsKey(URIManager.EXPT_LABEL)) {
-            // Remove the session parameter so that it doesn't cause the final imported session to be renamed.
-            parameters.remove("session");
-        }
-
 		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
-		String pathFromRequest = parameters.get("path")==null?"":parameters.get("path").toString();
+        final String parameter = String.valueOf(parameters.get("path"));
+		String normalizedPath = parameter==null?"":parameter.toString();
+		normalizedPath = Paths.get(normalizedPath).normalize().toString();
+		if(!normalizedPath.startsWith(inboxPath)){
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Specified directory is not within inbox directory.");
+		}
+		String pathFromRequest = normalizedPath;
 		String projectFromRequest = parameters.get("PROJECT_ID")==null?"":parameters.get("PROJECT_ID").toString();
 		pathFromRequest = pathFromRequest.replaceFirst("^"+inboxPath, "");
 		pathFromRequest = pathFromRequest.replaceFirst("^\\\\", "");
@@ -103,6 +92,23 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		if(inboxProject == null || !Permissions.canEditProject(user, inboxSubdirectory)){
 			throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
 		}
+
+		_sessionPath = (Paths.get(normalizedPath)).toFile();
+        if (!_sessionPath.exists()) {
+            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
+        }
+        if (_sessionPath.isFile()) {
+        	_sessionPath = handleInboxArchiveFile(_sessionPath);
+        }
+        if (_sessionPath == null) {
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to process supplied archive file");
+        }
+        // If the call specifies an experiment label...
+        if (parameters.containsKey(URIManager.EXPT_LABEL)) {
+            // Remove the session parameter so that it doesn't cause the final imported session to be renamed.
+            parameters.remove("session");
+        }
+
 
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);
         _user = user;

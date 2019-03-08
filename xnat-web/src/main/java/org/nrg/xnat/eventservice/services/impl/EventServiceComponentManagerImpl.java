@@ -9,6 +9,7 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -24,6 +25,7 @@ import org.nrg.xnat.eventservice.model.xnat.Project;
 import org.nrg.xnat.eventservice.model.xnat.Scan;
 import org.nrg.xnat.eventservice.model.xnat.Session;
 import org.nrg.xnat.eventservice.model.xnat.Subject;
+import org.nrg.xnat.eventservice.model.xnat.SubjectAssessor;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
@@ -162,6 +164,9 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         }
         else if(XnatImagesessiondataI.class.isAssignableFrom(object.getClass())) {
             return new Session((XnatImagesessiondataI) object);
+        }
+        else if(XnatSubjectassessordataI.class.isAssignableFrom(object.getClass())) {
+            return new SubjectAssessor((XnatSubjectassessordataI) object);
         }
         else if(XnatSubjectdataI.class.isAssignableFrom(object.getClass())) {
             return new Subject((XnatSubjectdataI) object);

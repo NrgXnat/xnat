@@ -29,7 +29,7 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
 
     @Override
     public String getDescription() {
-        return "New scan saved";
+        return "New scan created";
     }
 
     @Override

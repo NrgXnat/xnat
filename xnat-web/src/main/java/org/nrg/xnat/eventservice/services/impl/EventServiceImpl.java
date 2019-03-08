@@ -3,7 +3,7 @@ package org.nrg.xnat.eventservice.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import com.google.common.collect.EvictingQueue;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -77,7 +77,7 @@ public class EventServiceImpl implements EventService {
     private EventPropertyService eventPropertyService;
     private ObjectMapper mapper;
     private Configuration jaywayConf = Configuration.defaultConfiguration().builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
-    private List<EventServiceEvent> recentTriggers = new ArrayList<>();
+    private EvictingQueue<EventServiceEvent> recentTriggers = EvictingQueue.create(100);
 
     @Autowired
     public EventServiceImpl(ContextService contextService,
@@ -353,7 +353,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public void triggerEvent(EventServiceEvent event) {
         try{
-            log.debug("Firing EventService Event for Label: " + event.toString());
+            log.debug("Firing EventService Event for Label: " + event.getDisplayName() + " : " + event.toString());
             eventBus.notify(event, Event.wrap(event));
             recentTriggers.add(event);
         } catch (Throwable e) {
@@ -527,9 +527,9 @@ public class EventServiceImpl implements EventService {
     public List<String> getRecentTriggers(Integer count) {
         List<EventServiceEvent> triggerEvents;
         if (count != null && count > 0 && recentTriggers != null && !recentTriggers.isEmpty()) {
-            triggerEvents = Lists.reverse(recentTriggers).stream().limit(count).collect(Collectors.toList());
+            triggerEvents = recentTriggers.stream().limit(count).collect(Collectors.toList());
         } else {
-            triggerEvents = Lists.reverse(recentTriggers);
+            triggerEvents = recentTriggers.stream().collect(Collectors.toList());
         }
         List<String> triggers = new ArrayList<>();
         try {

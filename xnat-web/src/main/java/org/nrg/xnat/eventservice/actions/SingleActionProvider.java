@@ -33,16 +33,6 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
         ));
     }
 
-//    @Override
-//    public List<Action> getActions(UserI user) {
-//        return getAllActions();
-//    }
-//
-//    @Override
-//    public List<Action> getActions(String xnatType, UserI user) {
-//        return getAllActions();
-//    }
-
     @Override
     public List<Action> getActions(String projectId, List<String> xnatTypes, UserI user) {
         return new ArrayList<>(Arrays.asList(

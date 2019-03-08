@@ -31,7 +31,7 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
 
     @Override
     public String getDescription() {
-        return "Session created, updated, or deleted.";
+        return "Session created or deleted.";
     }
 
     @Override

@@ -1,7 +1,9 @@
 package org.nrg.xnat.eventservice.events;
 
+
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
-import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
@@ -9,26 +11,27 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-@XnatEventServiceEvent(name="ImageAssessorEvent")
-public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, XnatImageassessordataI> {
+@XnatEventServiceEvent(name="NonImageSubjectAssessorEvent")
+public class NonImageSubjectAssessorEvent extends CombinedEventServiceEvent<NonImageSubjectAssessorEvent, XnatSubjectassessordataI> {
 
-    public enum Status {CREATED};
+    public enum Status {CREATED, DELETED};
 
-    public ImageAssessorEvent(){};
+    public NonImageSubjectAssessorEvent(){};
 
-    public ImageAssessorEvent(final XnatImageassessordataI payload, final String eventUser, final Status status, final String projectId) {
+    public NonImageSubjectAssessorEvent(final XnatSubjectassessordataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
     }
 
     @Override
     public String getDisplayName() {
-        return "Image Assessor Event";
+        return "Non-imaging Subject Assessor Event";
     }
 
     @Override
     public String getDescription() {
-        return "Image assessor created.";
+        return "Non-imaging Subject Assessor created or deleted.";
     }
 
     @Override
@@ -41,6 +44,6 @@ public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, 
 
     @Override
     public EventServiceListener getInstance() {
-        return new ImageAssessorEvent();
+        return new NonImageSubjectAssessorEvent();
     }
 }

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.model.XnatExperimentdataI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
@@ -66,14 +67,34 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
 
     @Override
     public List<String> getStoredImageSessionIds(XnatSubjectdataI subject) {
+        List<String> sessionIds = new ArrayList<>();
         final List<Map<String, Object>> sessions = simpleQuery(QUERY_IMAGESESSIONS_BY_SUBJECT, "subjectId", subject.getId());
         if(sessions != null){
-            List<String> sessionIds = new ArrayList<>();
             sessions.forEach(session->sessionIds.add((String) session.get("id")));
-            return sessionIds;
         }
-        return null;
+        return sessionIds;
     }
+
+    @Override
+    public List<String> getStoredSubjectAssessorIds(XnatSubjectdataI subject) {
+        List<String> assessorIds = new ArrayList<>();
+        final List<Map<String, Object>> assessors = simpleQuery(QUERY_SUBJECTASSESSORS_BY_SUBJECT, "subjectId", subject.getId());
+        if(assessors != null){
+            assessors.forEach(session->assessorIds.add((String) session.get("id")));
+        }
+        return assessorIds;
+    }
+
+    @Override
+    public List<String> getStoredNonImageSubjectAssessorIds(XnatSubjectdataI subject) {
+        List<String> assessorIds = new ArrayList<>();
+        final List<Map<String, Object>> assessors = simpleQuery(QUERY_NONIMAGEASSEORS_BY_SUBJECT, "subjectId", subject.getId());
+        if(assessors != null){
+            assessors.forEach(session->assessorIds.add((String) session.get("id")));
+        }
+        return assessorIds;
+    }
+
 
     @Override
     public Boolean storedInDatabase(XnatExperimentdata experiment) {
@@ -86,13 +107,12 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
 
     @Override
     public List<String> getStoredScanIds(XnatExperimentdata experiment) {
+        List<String> scanIds = new ArrayList<>();
         final List<Map<String, Object>> scans = simpleQuery(QUERY_SCANDATAID, "experimentId", experiment.getId());
         if(scans != null){
-            List<String> scanIds = new ArrayList<>();
             scans.forEach(scan->scanIds.add((String) scan.get("id")));
-            return scanIds;
         }
-        return null;
+        return scanIds;
     }
 
     @Override
@@ -105,12 +125,18 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
         }    }
 
     @Override
+    public boolean storedInDatabase(XnatSubjectassessordataI subjectAssessor) {
+        Integer result = jdbcTemplate.queryForObject(QUERY_COUNT_SUBJECTASESSORS_BY_ID,
+                new MapSqlParameterSource("subjectAssessorId", subjectAssessor.getId()), Integer.class);
+        return result > 0;
+    }
+
+    @Override
     public Integer getResourceCount(XnatProjectdataI project) {
         Integer result = jdbcTemplate.queryForObject(COUNT_PROJECTDATA_RESOURCES,
                 new MapSqlParameterSource("projectId", project.getId()), Integer.class);
         return result;
     }
-
 
 
     private List<Map<String, Object>> simpleQuery(String queryString, String parameterName, String parameterValue){
@@ -136,9 +162,15 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
 
     private static final String QUERY_IMAGESESSIONS_BY_SUBJECT = "SELECT id FROM xnat_imagesessiondata WHERE id IN (SELECT id from xnat_subjectassessordata WHERE subject_id = :subjectId)";
 
+    private static final String QUERY_SUBJECTASSESSORS_BY_SUBJECT = "SELECT id FROM xnat_subjectassessordata WHERE subject_id = :subjectId";
+
+    private static final String QUERY_NONIMAGEASSEORS_BY_SUBJECT = "SELECT id FROM xnat_subjectassessordata WHERE subject_id = :subjectId AND id NOT IN (SELECT id from xnat_imagesessiondata)";
+
     private static final String QUERY_EXPERIMENTDATA = "SELECT * FROM xnat_experimentdata WHERE id = :experimentId";
 
     private static final String QUERY_IMAGEASSESSORDATA = "SELECT * FROM xnat_imageassessordata WHERE id = :imageAssessorId";
+
+    private static final String QUERY_COUNT_SUBJECTASESSORS_BY_ID = "SELECT COUNT(id) from xnat_subjectassessordata WHERE id = :subjectAssessorId";
 
     private static final String QUERY_SCANDATAID = "SELECT id FROM xnat_imagescandata WHERE image_session_id = :experimentId";
 

@@ -17,6 +17,7 @@ import java.util.Objects;
         @JsonSubTypes.Type(value = Project.class, name = "Project"),
         @JsonSubTypes.Type(value = Subject.class, name = "Subject"),
         @JsonSubTypes.Type(value = Session.class, name = "Session"),
+        @JsonSubTypes.Type(value = SubjectAssessor.class, name = "SubjectAssessor"),
         @JsonSubTypes.Type(value = Scan.class, name = "Scan"),
         @JsonSubTypes.Type(value = Assessor.class, name = "Assessor"),
         @JsonSubTypes.Type(value = Resource.class, name = "Resource"),

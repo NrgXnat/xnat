@@ -9,6 +9,8 @@ import java.util.List;
 public interface DicomInboxImportRequestService extends BaseHibernateService<DicomInboxImportRequest> {
     List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequests();
 
+    List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequestsForUser(String username);
+
     DicomInboxImportRequest getDicomInboxImportRequest(final long id);
 
     void setStatus(final DicomInboxImportRequest request, final Status status);

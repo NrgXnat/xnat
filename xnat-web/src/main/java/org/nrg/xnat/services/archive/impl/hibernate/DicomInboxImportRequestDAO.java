@@ -31,5 +31,14 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
         return (List<DicomInboxImportRequest>) criteria.list();
     }
 
+    public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(String username) {
+        final Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.not(Restrictions.or(Restrictions.in("status", NOT_OUTSTANDING_VALUES))));
+        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
+        criteria.add(Restrictions.eq("username", username));
+        //noinspection unchecked
+        return (List<DicomInboxImportRequest>) criteria.list();
+    }
+
     private static final List<DicomInboxImportRequest.Status> NOT_OUTSTANDING_VALUES = Arrays.asList(Failed, Completed);
 }

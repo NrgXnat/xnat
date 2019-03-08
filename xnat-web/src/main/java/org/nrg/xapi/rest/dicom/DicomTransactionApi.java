@@ -31,9 +31,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import org.nrg.xft.security.UserI;
+import org.nrg.xdat.security.helpers.Roles;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-@Api(description = "XNAT DICOM SCP management API")
+@Api(description = "XNAT DICOM transaction management API")
 @XapiRestController
 @RequestMapping(value = "/dicom")
 public class DicomTransactionApi extends AbstractXapiRestController {
@@ -50,7 +53,13 @@ public class DicomTransactionApi extends AbstractXapiRestController {
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomInboxImportRequest>> getOutstandingDicomInboxImportRequests() {
-        return new ResponseEntity<>(_importRequestService.getOutstandingDicomInboxImportRequests(), HttpStatus.OK);
+        UserI user = getSessionUser();
+        if(Roles.isSiteAdmin(user)){
+            return new ResponseEntity<>(_importRequestService.getOutstandingDicomInboxImportRequests(), HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<>(_importRequestService.getOutstandingDicomInboxImportRequestsForUser(user.getUsername()), HttpStatus.OK);
+        }
     }
 
     @ApiOperation(value = "Retrieves the requested inbox import request.", response = DicomInboxImportRequest.class)
@@ -60,7 +69,14 @@ public class DicomTransactionApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<DicomInboxImportRequest> getDicomInboxImportRequest(@PathVariable final long id) {
-        return new ResponseEntity<>(_importRequestService.getDicomInboxImportRequest(id), HttpStatus.OK);
+        DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(id);
+        UserI user = getSessionUser();
+        if(Roles.isSiteAdmin(user) || StringUtils.equals(request.getUsername(),user.getUsername())) {
+            return new ResponseEntity<>(request, HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
     }
 
     private final DicomInboxImportRequestService _importRequestService;

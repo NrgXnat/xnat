@@ -41,6 +41,12 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
     }
 
     @Override
+    public List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequestsForUser(String username) {
+        log.debug("Getting outstanding DICOM inbox import request for user");
+        return getDao().findAllOutstandingDicomInboxImportRequestsForUser(username);
+    }
+
+    @Override
     public DicomInboxImportRequest getDicomInboxImportRequest(final long id) {
         return getDao().findById(id);
     }

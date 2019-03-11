@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipOutputStream;
 
 @Slf4j
-@ImporterHandler(handler = ImporterHandlerA.DICOM_INBOX_IMPORTER, allowCallsWithoutFiles = true)
+@ImporterHandler(handler = ImporterHandlerA.DICOM_INBOX_IMPORTER, allowCallsWithoutFiles = true, callPartialUriWrap = false)
 public final class DicomInboxImporter extends ImporterHandlerA {
 	
     private static final String[] ARCHIVE_EXTENSIONS = { ".zip", ".tgz", ".tar", ".tar.gz." }; 

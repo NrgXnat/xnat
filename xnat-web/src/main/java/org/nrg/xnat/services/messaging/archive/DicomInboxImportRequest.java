@@ -64,8 +64,6 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
     // Must provide the public getParameters() method explicitly (i.e. without Lombok) in order for Hibernate
     // to properly determine the type of the parameters map.
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="parameterName")
-    @Column(name="value")
     public Map<String, String> getParameters() {
         return parameters;
     }

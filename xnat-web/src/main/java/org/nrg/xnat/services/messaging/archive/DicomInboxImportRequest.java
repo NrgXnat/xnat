@@ -1,6 +1,8 @@
 package org.nrg.xnat.services.messaging.archive;
 
-import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 
@@ -10,11 +12,10 @@ import java.util.Map;
 
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Queued;
 
+@Slf4j
 @Entity
-@Data
-@Builder
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+@Table
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class DicomInboxImportRequest extends AbstractHibernateEntity {
 	
 	private static final long serialVersionUID = -3293317266317350423L;
@@ -38,22 +39,23 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
         setStatus(Queued);
     }
 
-    @NonNull
+    public DicomInboxImportRequest(String username, Map<String, String> parameters, String sessionPath, org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status status, Boolean cleanupAfterImport, String resolution) {
+        this.username = username;
+        this.parameters = parameters;
+        this.sessionPath = sessionPath;
+        this.status = status;
+        this.cleanupAfterImport = cleanupAfterImport;
+        this.resolution = resolution;
+    }
+
     private String username;
 
-    @NonNull
-    @Builder.Default
     private Map<String, String> parameters = new HashMap<>();
 
-    @NonNull
     private String sessionPath;
 
-    @NonNull
-    @Builder.Default
     private Status status = Queued;
 
-    @NonNull
-    @Builder.Default
     private Boolean cleanupAfterImport = true;
 
     @Column(length = 4096)
@@ -62,8 +64,9 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
     // Must provide the public getParameters() method explicitly (i.e. without Lombok) in order for Hibernate
     // to properly determine the type of the parameters map.
     @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="parameterName")
+    @Column(name="value")
     public Map<String, String> getParameters() {
-        // return ImmutableMap.copyOf(parameters);
         return parameters;
     }
 
@@ -101,5 +104,49 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
                 put(entry.getKey(), entry.getValue());
             }
         }};
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setParameters(Map<String, String> parameters) {
+        this.parameters = parameters;
+    }
+
+    public String getSessionPath() {
+        return sessionPath;
+    }
+
+    public void setSessionPath(String sessionPath) {
+        this.sessionPath = sessionPath;
+    }
+
+    public org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status status) {
+        this.status = status;
+    }
+
+    public Boolean getCleanupAfterImport() {
+        return cleanupAfterImport;
+    }
+
+    public void setCleanupAfterImport(Boolean cleanupAfterImport) {
+        this.cleanupAfterImport = cleanupAfterImport;
+    }
+
+    public String getResolution() {
+        return resolution;
+    }
+
+    public void setResolution(String resolution) {
+        this.resolution = resolution;
     }
 }

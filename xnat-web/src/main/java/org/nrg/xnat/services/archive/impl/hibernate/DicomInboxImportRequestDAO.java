@@ -20,9 +20,27 @@ import java.util.List;
 
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Completed;
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Failed;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxImportRequest> {
+    @SuppressWarnings("unchecked")
+    @Transactional
+    @Override
+    public DicomInboxImportRequest findById(final long id) {
+        final Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("id", id));
+        List<DicomInboxImportRequest> reqs = criteria.list();
+        if(reqs!=null && reqs.size()>0){
+            return reqs.get(0);
+        }
+        else{
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequests() {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.not(Restrictions.or(Restrictions.in("status", NOT_OUTSTANDING_VALUES))));
@@ -31,6 +49,8 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
         return (List<DicomInboxImportRequest>) criteria.list();
     }
 
+    @SuppressWarnings("unchecked")
+    @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(String username) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.not(Restrictions.or(Restrictions.in("status", NOT_OUTSTANDING_VALUES))));

@@ -181,11 +181,10 @@ public final class DicomInboxImporter extends ImporterHandlerA {
      */
     @Override
     public List<String> call() {
-        final DicomInboxImportRequest request = DicomInboxImportRequest.builder()
-                                                                       .username(_user.getUsername())
-                                                                       .sessionPath(_sessionPath.getAbsolutePath())
-                                                                       .cleanupAfterImport(_cleanupAfterImport)
-                                                                       .build();
+        final DicomInboxImportRequest request = new DicomInboxImportRequest();
+		request.setUsername(_user.getUsername());
+		request.setSessionPath(_sessionPath.getAbsolutePath());
+		request.setCleanupAfterImport(_cleanupAfterImport);
         request.setParametersFromObjectMap(_parameters);
         XDAT.sendJmsRequest(_service.create(request));
 

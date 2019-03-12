@@ -1130,7 +1130,7 @@ public class FileList extends XNATCatalogTemplate {
     private List<String> getSessionIds() {
         final List<XnatExperimentdata> experiments = !assesseds.isEmpty() ? assesseds : !expts.isEmpty() ? expts : null;
         if (experiments != null) {
-            return Lists.transform(assesseds, new Function<XnatExperimentdata, String>() {
+            return Lists.transform(experiments, new Function<XnatExperimentdata, String>() {
                 @Override
                 public String apply(final XnatExperimentdata experiment) {
                     return experiment.getArchiveDirectoryName();

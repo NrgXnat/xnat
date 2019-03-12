@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.xnat.archive.DicomZipImporter
+ * web: org.nrg.xnat.archive.DicomInboxImporter
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -50,69 +50,10 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 
     public DicomInboxImporter(final Object listener, final UserI user, @SuppressWarnings("unused") final FileWriterWrapperI writer, final Map<String, Object> parameters) throws ClientException, ConfigServiceException {
         super(listener, user);
-
-        final boolean hasPathParameter    = parameters.containsKey("path");
-        
-        if (parameters.containsKey(CLEANUP_PARAMETER)) {
-        	_cleanupAfterImport = Boolean.valueOf(parameters.get(CLEANUP_PARAMETER).toString());
-        }
-
-        if (!hasPathParameter) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
-                                      "You must specify the path parameter specifying a full path to the session data to be imported.");
-        }
-
-		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
-        final String parameter = String.valueOf(parameters.get("path"));
-		String normalizedPath = parameter==null?"":parameter.toString();
-		normalizedPath = Paths.get(normalizedPath).normalize().toString();
-		if(!normalizedPath.startsWith(inboxPath)){
-			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Specified directory is not within inbox directory.");
-		}
-		String pathFromRequest = normalizedPath;
-		String projectFromRequest = parameters.get("PROJECT_ID")==null?"":parameters.get("PROJECT_ID").toString();
-		pathFromRequest = pathFromRequest.replaceFirst("^"+inboxPath, "");
-		pathFromRequest = pathFromRequest.replaceFirst("^\\\\", "");
-		pathFromRequest = pathFromRequest.replaceFirst("^/", "");
-		int backslashIndex = pathFromRequest.indexOf('\\');
-		int forwardslashIndex = pathFromRequest.indexOf('/');
-		int slashIndex = ((backslashIndex<forwardslashIndex&&backslashIndex!=-1)?backslashIndex:forwardslashIndex);
-		String inboxSubdirectory = pathFromRequest;
-		if(slashIndex>-1) {
-			inboxSubdirectory = pathFromRequest.substring(0, slashIndex);
-		}
-
-		XnatProjectdata inboxProject = XnatProjectdata.getXnatProjectdatasById(inboxSubdirectory, user, false);
-		XnatProjectdata destinationProject = XnatProjectdata.getXnatProjectdatasById(projectFromRequest, user, false);
-
-		//Make sure user has access to both the project whose subdirectory the data is in right now, as well as the destination project.
-		if(destinationProject == null || !Permissions.canEditProject(user, projectFromRequest)){
-			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You do not have permission to edit the specified destination project.");
-		}
-		if(inboxProject == null || !Permissions.canEditProject(user, inboxSubdirectory)){
-			throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
-		}
-
-		_sessionPath = (Paths.get(normalizedPath)).toFile();
-        if (!_sessionPath.exists()) {
-            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder or archive file was found at the specified path: " + parameter);
-        }
-        if (_sessionPath.isFile()) {
-        	_sessionPath = handleInboxArchiveFile(_sessionPath);
-        }
-        if (_sessionPath == null) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to process supplied archive file");
-        }
-        // If the call specifies an experiment label...
-        if (parameters.containsKey(URIManager.EXPT_LABEL)) {
-            // Remove the session parameter so that it doesn't cause the final imported session to be renamed.
-            parameters.remove("session");
-        }
-
-
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);
         _user = user;
         _parameters = parameters;
+        _sessionPath = null;
     }
     
 
@@ -180,8 +121,82 @@ public final class DicomInboxImporter extends ImporterHandlerA {
      * @return A list of all of the files that were imported into XNAT.
      */
     @Override
-    public List<String> call() {
-        final DicomInboxImportRequest request = new DicomInboxImportRequest();
+    public List<String> call() throws ClientException {
+
+		final boolean hasPathParameter    = _parameters.containsKey("path");
+
+		if (_parameters.containsKey(CLEANUP_PARAMETER)) {
+			_cleanupAfterImport = Boolean.valueOf(_parameters.get(CLEANUP_PARAMETER).toString());
+		}
+
+		if (!hasPathParameter) {
+			//You must specify the path parameter specifying a full path to the session data to be imported.
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+					"You must specify a valid path to a file or directory. It must be under the main inbox directory within a subdirectory whose name matches the ID of a project you have edit access to.");
+		}
+
+		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
+		final String parameter = String.valueOf(_parameters.get("path"));
+		String normalizedPath = parameter==null?"":parameter.toString();
+		normalizedPath = Paths.get(normalizedPath).normalize().toString();
+		if(!normalizedPath.startsWith(inboxPath)){
+			//Specified directory is not within inbox directory.
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a valid path to a file or directory. It must be under the main inbox directory within a subdirectory whose name matches the ID of a project you have edit access to.");
+		}
+		String pathFromRequest = normalizedPath;
+		String projectFromRequest = _parameters.get("PROJECT_ID")==null?"":_parameters.get("PROJECT_ID").toString();
+		pathFromRequest = pathFromRequest.replaceFirst("^"+inboxPath, "");
+		pathFromRequest = pathFromRequest.replaceFirst("^\\\\", "");
+		pathFromRequest = pathFromRequest.replaceFirst("^/", "");
+		int backslashIndex = pathFromRequest.indexOf('\\');
+		int forwardslashIndex = pathFromRequest.indexOf('/');
+		int slashIndex = ((backslashIndex<forwardslashIndex&&backslashIndex!=-1)?backslashIndex:forwardslashIndex);
+		String inboxSubdirectory = pathFromRequest;
+		if(slashIndex>-1) {
+			inboxSubdirectory = pathFromRequest.substring(0, slashIndex);
+		}
+
+		try {
+			_sessionPath = (Paths.get(normalizedPath)).toFile();
+		}
+		catch(Exception e){
+
+		}
+		if (!_sessionPath.exists()) {
+			//No session folder or archive file was found at the specified path
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a valid path to a file or directory. It must be under the main inbox directory within a subdirectory whose name matches the ID of a project you have edit access to.");
+		}
+
+		XnatProjectdata inboxProject = XnatProjectdata.getXnatProjectdatasById(inboxSubdirectory, _user, false);
+		XnatProjectdata destinationProject = XnatProjectdata.getXnatProjectdatasById(projectFromRequest, _user, false);
+
+		//Make sure _user has access to both the project whose subdirectory the data is in right now, as well as the destination project.
+		if(inboxProject == null || !Permissions.canEditProject(_user, inboxSubdirectory)){
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a valid path to a file or directory. It must be under the main inbox directory within a subdirectory whose name matches the ID of a project you have edit access to.");
+		}
+		if(destinationProject == null || !Permissions.canEditProject(_user, projectFromRequest)){
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You do not have permission to edit the specified destination project.");
+		}
+
+		if (_sessionPath.isFile()) {
+			_sessionPath = handleInboxArchiveFile(_sessionPath);
+		}
+		else if (_sessionPath.isDirectory()){
+			String[] filesInIt = _sessionPath.list();
+			if(filesInIt==null || filesInIt.length==0){
+				throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Specified directory does not contain any files.");
+			}
+		}
+		if (_sessionPath == null) {
+			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to process supplied archive file");
+		}
+		// If the call specifies an experiment label...
+		if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
+			// Remove the session parameter so that it doesn't cause the final imported session to be renamed.
+			_parameters.remove("session");
+		}
+
+		final DicomInboxImportRequest request = new DicomInboxImportRequest();
 		request.setUsername(_user.getUsername());
 		request.setSessionPath(_sessionPath.getAbsolutePath());
 		request.setCleanupAfterImport(_cleanupAfterImport);

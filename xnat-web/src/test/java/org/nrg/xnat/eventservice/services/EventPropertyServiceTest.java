@@ -12,6 +12,7 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
@@ -199,6 +200,7 @@ public class EventPropertyServiceTest {
                     event.getObjectClass().isAssignableFrom(XnatImagesessiondataI.class) ||
                     event.getObjectClass().isAssignableFrom(XnatImagescandataI.class) ||
                     event.getObjectClass().isAssignableFrom(XnatImageassessordataI.class) ||
+                    event.getObjectClass().isAssignableFrom(XnatSubjectassessordataI.class) ||
                     event.getObjectClass().isAssignableFrom(XnatResourcecatalogI.class)){
                 assertThat("Event Filter Node map for XnatModelObject" + event.getObjectClass().getSimpleName() + " should not be empty", nodeMap.size(), greaterThan(0));
             }

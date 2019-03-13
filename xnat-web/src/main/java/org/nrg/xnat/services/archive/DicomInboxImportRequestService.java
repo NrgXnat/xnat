@@ -11,6 +11,8 @@ public interface DicomInboxImportRequestService extends BaseHibernateService<Dic
 
     List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequestsForUser(String username);
 
+    List<DicomInboxImportRequest> getDicomInboxImportRequestsForUser(String username);
+
     DicomInboxImportRequest getDicomInboxImportRequest(final long id);
 
     void setStatus(final DicomInboxImportRequest request, final Status status);

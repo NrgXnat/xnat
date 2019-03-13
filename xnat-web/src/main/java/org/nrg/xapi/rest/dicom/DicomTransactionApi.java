@@ -50,7 +50,7 @@ public class DicomTransactionApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "All outstanding inbox import requests are returned."),
                    @ApiResponse(code = 403, message = "The user has insufficient authorization to access the list of inbox import requests."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "list/active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomInboxImportRequest>> getOutstandingDicomInboxImportRequests() {
         UserI user = getSessionUser();
@@ -59,6 +59,22 @@ public class DicomTransactionApi extends AbstractXapiRestController {
         }
         else{
             return new ResponseEntity<>(_importRequestService.getOutstandingDicomInboxImportRequestsForUser(user.getUsername()), HttpStatus.OK);
+        }
+    }
+
+    @ApiOperation(value = "Get a list of all inbox import requests.", response = DicomInboxImportRequest.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "All inbox import requests are returned."),
+            @ApiResponse(code = 403, message = "The user has insufficient authorization to access the list of inbox import requests."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "list/all", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<List<DicomInboxImportRequest>> getDicomInboxImportRequests() {
+        UserI user = getSessionUser();
+        if(Roles.isSiteAdmin(user)){
+            return new ResponseEntity<>(_importRequestService.getAll(), HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<>(_importRequestService.getDicomInboxImportRequestsForUser(user.getUsername()), HttpStatus.OK);
         }
     }
 

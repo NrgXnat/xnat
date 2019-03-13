@@ -60,5 +60,15 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
         return (List<DicomInboxImportRequest>) criteria.list();
     }
 
+    @SuppressWarnings("unchecked")
+    @Transactional
+    public List<DicomInboxImportRequest> findAllDicomInboxImportRequestsForUser(String username) {
+        final Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
+        criteria.add(Restrictions.eq("username", username));
+        //noinspection unchecked
+        return (List<DicomInboxImportRequest>) criteria.list();
+    }
+
     private static final List<DicomInboxImportRequest.Status> NOT_OUTSTANDING_VALUES = Arrays.asList(Failed, Completed);
 }

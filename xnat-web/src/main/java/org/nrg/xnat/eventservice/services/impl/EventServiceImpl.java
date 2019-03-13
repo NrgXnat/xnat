@@ -18,6 +18,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
@@ -35,6 +36,7 @@ import org.nrg.xnat.eventservice.services.EventPropertyService;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
 import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +80,7 @@ public class EventServiceImpl implements EventService {
     private ObjectMapper mapper;
     private Configuration jaywayConf = Configuration.defaultConfiguration().builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private EvictingQueue<EventServiceEvent> recentTriggers = EvictingQueue.create(100);
+    private EventServicePrefsBean prefs;
 
     @Autowired
     public EventServiceImpl(ContextService contextService,
@@ -87,7 +90,8 @@ public class EventServiceImpl implements EventService {
                             SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                             UserManagementServiceI userManagementService,
                             EventPropertyService eventPropertyService,
-                            ObjectMapper mapper) {
+                            ObjectMapper mapper,
+                            EventServicePrefsBean prefsBean) {
         this.contextService = contextService;
         this.subscriptionService = subscriptionService;
         this.eventBus = eventBus;
@@ -97,16 +101,18 @@ public class EventServiceImpl implements EventService {
         this.userManagementService = userManagementService;
         this.eventPropertyService = eventPropertyService;
         this.mapper = mapper;
+        this.prefs = prefsBean;
     }
 
     @Override
-    public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException {
-
+    public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException {
+        throwIfDisabled();
         return subscriptionService.createSubscription(subscription);
     }
 
     @Override
-    public Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException {
+    public Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException , SubscriptionAccessException {
+        throwIfDisabled();
         if(overpopulateAttributes != null && overpopulateAttributes == true){
             Map<String, String> attributes = new HashMap<>(subscription.attributes());
             try {
@@ -123,7 +129,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException {
+    public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException {
+        throwIfDisabled();
         Subscription updated = subscriptionService.update(subscription);
         if(updated != null){
             log.debug("Reactivating updated subscription: " + subscription.id());
@@ -138,6 +145,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void deleteSubscription(Long id) throws Exception {
+        throwIfDisabled();
         subscriptionService.delete(id);
     }
 
@@ -147,17 +155,24 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Subscription> getSubscriptions() {
+    public List<Subscription> getSubscriptions() throws SubscriptionAccessException{
+        if(!prefs.getEnabled()) {
+            return Arrays.asList();
+        }
         return subscriptionService.getAllSubscriptions();
     }
 
     @Override
-    public List<Subscription> getSubscriptions(String projectId) {
+    public List<Subscription> getSubscriptions(String projectId) throws SubscriptionAccessException{
+        if(!prefs.getEnabled()) {
+            return Arrays.asList();
+        }
         return subscriptionService.getSubscriptions(projectId);
     }
 
     @Override
-    public Subscription getSubscription(Long id) throws NotFoundException {
+    public Subscription getSubscription(Long id) throws NotFoundException, SubscriptionAccessException {
+        throwIfDisabled();
         return subscriptionService.getSubscription(id);
     }
 
@@ -352,6 +367,11 @@ public class EventServiceImpl implements EventService {
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event) {
+        if (this.getPrefs() != null && !this.getPrefs().getEnabled()){
+            if(log.isDebugEnabled()){ log.debug("Preference: enabled == false. Skipping Event Service triggering");  }
+            return;
+        }
+
         try{
             log.debug("Firing EventService Event for Label: " + event.getDisplayName() + " : " + event.toString());
             eventBus.notify(event, Event.wrap(event));
@@ -364,6 +384,11 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void processEvent(EventServiceListener listener, Event event) {
+        if (this.getPrefs() != null && !this.getPrefs().getRespondToEvents()){
+            if(log.isDebugEnabled()){ log.debug("Preference: respondToEvents == false. Skipping Event Service response");  }
+            return;
+        }
+
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
             String jsonObject = null;
@@ -551,6 +576,16 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventServiceComponentManager getComponentManager() {
         return componentManager;
+    }
+
+    @Override
+    public EventServicePrefsBean getPrefs() { return prefs; }
+
+
+    private void throwIfDisabled() throws SubscriptionAccessException{
+        if (!prefs.getEnabled()){
+            throw new SubscriptionAccessException("Event Service disabled.");
+        }
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {

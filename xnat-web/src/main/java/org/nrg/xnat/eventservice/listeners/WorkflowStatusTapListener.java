@@ -39,6 +39,11 @@ public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusE
     //*
     @Override
     public void accept(Event<WorkflowStatusEvent> event) {
+
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getTriggerWorkflowStatusEvents()){
+            return;
+        }
+
         WorkflowStatusEvent wfsEvent = event.getData();
         if (wfsEvent.getWorkflow() instanceof WrkWorkflowdata) {
             try {

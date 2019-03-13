@@ -10,12 +10,33 @@ import org.nrg.xnat.eventservice.actions.EventServiceLoggingAction;
 import org.nrg.xnat.eventservice.actions.TestAction;
 import org.nrg.xnat.eventservice.daos.EventSubscriptionEntityDao;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
-import org.nrg.xnat.eventservice.entities.*;
-import org.nrg.xnat.eventservice.events.*;
+import org.nrg.xnat.eventservice.entities.EventServiceFilterEntity;
+import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
+import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
+import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
+import org.nrg.xnat.eventservice.entities.TriggeringEventEntity;
+import org.nrg.xnat.eventservice.events.ProjectEvent;
+import org.nrg.xnat.eventservice.events.ScanEvent;
+import org.nrg.xnat.eventservice.events.SessionEvent;
+import org.nrg.xnat.eventservice.events.SubjectEvent;
+import org.nrg.xnat.eventservice.events.TestCombinedEvent;
+import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
-import org.nrg.xnat.eventservice.services.*;
-import org.nrg.xnat.eventservice.services.impl.*;
+import org.nrg.xnat.eventservice.services.ActionManager;
+import org.nrg.xnat.eventservice.services.EventPropertyService;
+import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
+import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
+import org.nrg.xnat.eventservice.services.impl.ActionManagerImpl;
+import org.nrg.xnat.eventservice.services.impl.EventPropertyServiceImpl;
+import org.nrg.xnat.eventservice.services.impl.EventServiceComponentManagerImpl;
+import org.nrg.xnat.eventservice.services.impl.EventServiceImpl;
+import org.nrg.xnat.eventservice.services.impl.EventSubscriptionEntityServiceImpl;
+import org.nrg.xnat.eventservice.services.impl.SubscriptionDeliveryEntityServiceImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -44,8 +65,9 @@ public class EventServiceTestConfig {
                                      SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                                      UserManagementServiceI userManagementService,
                                      EventPropertyService eventPropertyService,
-                                     ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper);
+                                     ObjectMapper mapper,
+                                     EventServicePrefsBean mockEventServicePrefsBean){
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
     @Bean
@@ -56,8 +78,9 @@ public class EventServiceTestConfig {
                                          SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
                                          UserManagementServiceI userManagementService,
                                          EventPropertyService eventPropertyService,
-                                         ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper);
+                                         ObjectMapper mapper,
+                                         EventServicePrefsBean mockEventServicePrefsBean){
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
     @Bean
@@ -71,6 +94,12 @@ public class EventServiceTestConfig {
                                                                    final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
         return new EventSubscriptionEntityServiceImpl(eventBus, contextService, actionManager, componentManager, eventService, objectMapper, userManagementService, subscriptionDeliveryEntityService);
     }
+
+    @Bean
+    public EventServicePrefsBean mockEventServicePrefsBean() {
+        return Mockito.mock(EventServicePrefsBean.class);
+    }
+
 
     @Bean
     public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService, final @Lazy EventSubscriptionEntityService eventSubscriptionService){

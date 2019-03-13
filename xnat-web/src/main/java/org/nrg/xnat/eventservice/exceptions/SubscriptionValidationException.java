@@ -9,7 +9,6 @@ public class SubscriptionValidationException extends Exception {
         super(message);
     }
     public SubscriptionValidationException(final String message, final Throwable cause) { super(message, cause); }
-
     public SubscriptionValidationException(final Throwable cause) {
         super(cause);
     }

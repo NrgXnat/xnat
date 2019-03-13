@@ -5,6 +5,7 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
@@ -52,13 +53,13 @@ public interface EventService {
     Map<String, JsonPathFilterNode> getEventFilterNodes(String eventId);
     List<EventPropertyNode> getEventPropertyNodes(String eventId);
 
-    List<Subscription> getSubscriptions();
-    Subscription getSubscription(Long id) throws NotFoundException;
-    List<Subscription> getSubscriptions(String projectId);
+    List<Subscription> getSubscriptions() throws SubscriptionAccessException;
+    Subscription getSubscription(Long id) throws NotFoundException, SubscriptionAccessException;
+    List<Subscription> getSubscriptions(String projectId) throws SubscriptionAccessException;
     Subscription validateSubscription(Subscription subscription) throws SubscriptionValidationException;
-    Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
-    Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException;
-    Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException;
+    Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException;
+    Subscription createSubscription(Subscription subscription, Boolean overpopulateAttributes) throws SubscriptionValidationException, SubscriptionAccessException;
+    Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException;
     void deleteSubscription(Long id) throws Exception;
     void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException;
 
@@ -84,4 +85,5 @@ public interface EventService {
 
     EventServiceComponentManager getComponentManager();
 
+    EventServicePrefsBean getPrefs();
 }

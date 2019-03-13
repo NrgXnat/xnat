@@ -23,6 +23,10 @@ public class InitializeSubscriptions extends AbstractInitializingTask {
 
     @Override
     protected void callImpl() throws InitializingTaskException {
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getEnabled()){
+            if(log.isDebugEnabled()){ log.debug("Preference: enabled == false. Skipping Event Service Subscription Initialization");  }
+            return;
+        }
         try {
             log.debug("Registering all active event subscriptions from SubscriptionEntity table to Reactor.EventBus.");
             eventService.reactivateAllSubscriptions();

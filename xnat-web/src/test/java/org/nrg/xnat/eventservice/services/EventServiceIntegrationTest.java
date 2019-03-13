@@ -104,6 +104,7 @@ public class EventServiceIntegrationTest {
     @Autowired private EventServiceLoggingAction mockEventServiceLoggingAction;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService;
+    @Autowired private EventServicePrefsBean mockEventServicePrefsBean;
 
 
     private SubscriptionCreator project1CreatedSubscription;
@@ -207,6 +208,12 @@ public class EventServiceIntegrationTest {
         when(mockEventServiceLoggingAction.getDescription()).thenReturn("MockEventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getActions(Matchers.any(String.class),Matchers.any(List.class),Matchers.any(UserI.class))).thenReturn(null);
 
+        // Mock prefs bean
+        when(mockEventServicePrefsBean.getEnabled()).thenReturn(true);
+        when(mockEventServicePrefsBean.getTriggerCoreEvents()).thenReturn(true);
+        when(mockEventServicePrefsBean.getTriggerPluginEvents()).thenReturn(true);
+        when(mockEventServicePrefsBean.getTriggerWorkflowStatusEvents()).thenReturn(true);
+        when(mockEventServicePrefsBean.getRespondToEvents()).thenReturn(true);
 
     }
 

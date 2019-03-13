@@ -64,7 +64,13 @@ public class EventServiceItemSaveAspect {
 
    @Around(value = "execution(* org.nrg.xft.utils.SaveItemHelper.save(..)) && @annotation(org.nrg.xft.utils.EventServiceTrigger) && args(item, user,..)")
     public Object processItemSaveTrigger(final ProceedingJoinPoint joinPoint, ItemI item, UserI user) throws Throwable {
-        StopWatch sw = new StopWatch();
+
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getTriggerCoreEvents()){
+           return joinPoint.proceed();
+       }
+
+
+       StopWatch sw = new StopWatch();
         sw.start();
         ProceedingReturn proceedingReturn = null;
         try {
@@ -286,14 +292,14 @@ public class EventServiceItemSaveAspect {
             "&& args(item, user, ..)" +
             "&& execution(* org.nrg.xft.utils.SaveItemHelper.delete(..))")
     public void triggerOnItemDelete(final JoinPoint joinPoint, ItemI item, UserI user) throws Throwable{
+
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getTriggerCoreEvents()){
+            return;
+        }
+
         try {
 
             String userLogin = user != null ? user.getLogin() : null;
-
-            log.debug("triggerOnItemDelete AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
-                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
-                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
-                    "  UserI = " + userLogin);
 
             if(isItemA(item, XnatType.PROJECT)){
                 triggerProjectDelete(new XnatProjectdata(item), user);

@@ -43,8 +43,9 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
     @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequests() {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.not(Restrictions.or(Restrictions.in("status", NOT_OUTSTANDING_VALUES))));
+        criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
         criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
         //noinspection unchecked
         return (List<DicomInboxImportRequest>) criteria.list();
     }
@@ -53,9 +54,10 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
     @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(String username) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.not(Restrictions.or(Restrictions.in("status", NOT_OUTSTANDING_VALUES))));
+        criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
         criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
         criteria.add(Restrictions.eq("username", username));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
         //noinspection unchecked
         return (List<DicomInboxImportRequest>) criteria.list();
     }
@@ -66,6 +68,7 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
         criteria.add(Restrictions.eq("username", username));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
         //noinspection unchecked
         return (List<DicomInboxImportRequest>) criteria.list();
     }

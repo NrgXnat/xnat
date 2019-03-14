@@ -205,6 +205,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 			if(SessionImporter.getExperimentByIdorLabel(projectFromRequest, sess, _user)!=null){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already exists in that project.");
 			}
+			_parameters.put(URIManager.EXPT_LABEL, sess);
 		}
 
 		final DicomInboxImportRequest request = new DicomInboxImportRequest();

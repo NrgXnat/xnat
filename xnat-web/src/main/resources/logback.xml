@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Stop output INFO at start -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
     <!--
         By default, the logstash appender is a NOPAppender and does nothing. You can define logstash
         to use something like LogstashTcpSocketAppender to send logging to an ELK service. The appender
@@ -282,211 +285,208 @@
             <pattern>%d [%t] %-5p %c - %m%n</pattern>
         </encoder>
     </appender>
-
     <root level="ERROR">
         <appender-ref ref="app"/>
-        </root>
-
+    </root>
     <logger name="org.nrg.xft.search" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.security" additivity="false" level="WARN">
         <appender-ref ref="security"/>
-        </logger>
+    </logger>
     <logger name="org.apache.xalan" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="net.sf.ehcache" additivity="false" level="WARN">
         <appender-ref ref="cache"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.event" additivity="false" level="WARN">
         <appender-ref ref="events"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.restlet" additivity="false" level="WARN">
         <appender-ref ref="restlet"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.context" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.configuration" additivity="false" level="WARN">
         <appender-ref ref="configuration"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.web" additivity="false" level="WARN">
         <appender-ref ref="xapi"/>
-        </logger>
+    </logger>
     <logger name="org.apache.bcel" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xft.event" additivity="false" level="WARN">
         <appender-ref ref="events"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xdat.preferences" additivity="false" level="WARN">
         <appender-ref ref="configuration"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.pipeline" additivity="false" level="ERROR">
         <appender-ref ref="pipeline"/>
-        </logger>
+    </logger>
     <logger name="net.sf.saxon" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.automation" additivity="false" level="ERROR">
         <appender-ref ref="automation"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.jms" additivity="false" level="WARN">
         <appender-ref ref="jms"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.dao" additivity="false" level="WARN">
         <appender-ref ref="orm"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.security" additivity="false" level="WARN">
         <appender-ref ref="security"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xdat" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.apache.xml" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.beans" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.web" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xdat.turbine.utils.AccessLogger" additivity="false" level="INFO">
         <appender-ref ref="access"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.http" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.pipeline.launch" additivity="false" level="INFO">
         <appender-ref ref="launch"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.cache" additivity="false" level="WARN">
         <appender-ref ref="cache"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xft" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.mail" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.schedule" additivity="false" level="WARN">
         <appender-ref ref="scheduler"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.jdbc" additivity="false" level="WARN">
         <appender-ref ref="orm"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xapi" additivity="false" level="WARN">
         <appender-ref ref="xapi"/>
-        </logger>
+    </logger>
     <logger name="org.apache.xpath" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.apache.axis" additivity="false" level="ERROR">
         <appender-ref ref="axis"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.services.messaging" additivity="false" level="WARN">
         <appender-ref ref="jms"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.dcm.id" additivity="false" level="WARN">
         <appender-ref ref="identifiers"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.dcm.edit" additivity="false" level="WARN">
         <appender-ref ref="anon"/>
-        </logger>
+    </logger>
     <logger name="org.apache.regexp" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.framework.services.NrgEventService" additivity="false" level="WARN">
         <appender-ref ref="events"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.dcm" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
-        </logger>
+    </logger>
     <logger name="velocity" additivity="false" level="ERROR">
         <appender-ref ref="velocity"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.oxm" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.xnat.xnatfs" additivity="false" level="ERROR">
         <appender-ref ref="xnatfs"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xdat.security" additivity="false" level="WARN">
         <appender-ref ref="security"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.task" additivity="false" level="WARN">
         <appender-ref ref="tasks"/>
-        </logger>
+    </logger>
     <logger name="RUNNABLE" additivity="false" level="WARN">
         <appender-ref ref="runnable"/>
-        </logger>
+    </logger>
     <logger name="org.apache.turbine" additivity="false" level="ERROR">
         <appender-ref ref="turbine"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.stereotype" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.initialization" additivity="false" level="WARN">
         <appender-ref ref="configuration"/>
-        </logger>
+    </logger>
     <logger name="org.apache.fop" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.transaction" additivity="false" level="WARN">
         <appender-ref ref="orm"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
-        </logger>
+    </logger>
     <logger name="org.apache.turbine.app.xnat17" additivity="false" level="ERROR">
         <appender-ref ref="app"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.node" additivity="false" level="WARN">
         <appender-ref ref="tasks"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.ldap" additivity="false" level="WARN">
         <appender-ref ref="security"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.scheduling" additivity="false" level="WARN">
         <appender-ref ref="scheduler"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.services.cache" additivity="false" level="WARN">
         <appender-ref ref="cache"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.orm" additivity="false" level="WARN">
         <appender-ref ref="orm"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.framework.orm" additivity="false" level="WARN">
         <appender-ref ref="orm"/>
-        </logger>
+    </logger>
     <logger name="org.dcm4che" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.util" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.helpers.prearchive" additivity="false" level="WARN">
         <appender-ref ref="prearchive"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xft.db.PoolDBUtils" additivity="false" level="ERROR">
         <appender-ref ref="sql"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.received" additivity="false" level="INFO">
         <appender-ref ref="RECEIVED"/>
-        </logger>
+    </logger>
     <logger name="org.springframework.core" additivity="false" level="WARN">
         <appender-ref ref="spring"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.initialization.tasks" additivity="false" level="WARN">
         <appender-ref ref="tasks"/>
-        </logger>
+    </logger>
     <logger name="avalon" additivity="false" level="ERROR">
         <appender-ref ref="avalon"/>
-        </logger>
+    </logger>
     <logger name="org.nrg.xnat.turbine" additivity="false" level="ERROR">
         <appender-ref ref="turbine"/>
-        </logger>
-
+    </logger>
 </configuration>

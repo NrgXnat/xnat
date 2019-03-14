@@ -27,11 +27,11 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.3"
-        classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
+        classpath "com.bmuschko:gradle-cargo-plugin:2.6.1"
+        classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:1.14"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
+        classpath "io.franzbecker:gradle-lombok:2.1"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.7.RELEASE"
     }
 }
 
@@ -345,7 +345,11 @@ dependencies {
             "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
-            "org.codehaus.cargo:cargo-ant"
+          "org.codehaus.cargo:cargo-ant",
+          "org.slf4j:jcl-over-slf4j",
+          "org.slf4j:slf4j-api",
+          "ch.qos.logback:logback-classic",
+          "ch.qos.logback:logback-core"
 
     testCompile "org.nrg:test"
     testCompile "junit:junit"
@@ -364,8 +368,7 @@ tomcatRun.contextPath = "/"
 tomcatRunWar.contextPath = "/"
 
 [tomcatRun, tomcatRunWar].each { task ->
-    // TODO: This can be configured with an external folder reference to be used for loading XNAT modules.
-    task.additionalRuntimeResources << file("/Users/rherrick/xnat/config/plugins")
+    task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
 }
 
 task deployToTomcat(type: Copy, dependsOn: war) {

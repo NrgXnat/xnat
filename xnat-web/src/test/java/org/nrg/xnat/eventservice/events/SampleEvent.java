@@ -97,4 +97,7 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public String getProjectId() { return null; }
+
+    @Override
+    public EventScope getEventScope() {return EventScope.PROJECT;}
 }

@@ -43,4 +43,6 @@ public class ProjectEvent extends CombinedEventServiceEvent<ProjectEvent, XnatPr
         return new ProjectEvent();
     }
 
+    @Override
+    public EventScope getEventScope() { return EventScope.SITE; }
 }

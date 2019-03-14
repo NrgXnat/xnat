@@ -231,10 +231,15 @@ public class EventServiceImpl implements EventService {
         return getActionsByEvent(componentManager.getEvent(eventId), projectId, user);
     }
 
-    private List<Action> getActionsByEvent(EventServiceEvent event, String projectId, UserI user){
+    private List<Action> getActionsByEvent(@Nonnull EventServiceEvent event, String projectId, UserI user){
         List<Action> actions = new ArrayList<>();
-        List<String> xsiTypes = componentManager.getXsiTypes(event.getObjectClass());
-        if(event != null && xsiTypes != null && !xsiTypes.isEmpty()){
+        List<String> xsiTypes;
+        if(event.getPayloadXnatType() != null) {
+            xsiTypes = Arrays.asList(event.getPayloadXnatType());
+        } else {
+            xsiTypes = componentManager.getXsiTypes(event.getObjectClass());
+        }
+        if(event != null){
             if(StringUtils.isNullOrEmpty(projectId)){
                 actions = getActions(xsiTypes, user);
             } else {
@@ -601,6 +606,7 @@ public class EventServiceImpl implements EventService {
                       .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                       .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                       .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
+                      .eventScope(event.getEventScope() == null ? "" : event.getEventScope().name())
                       .payloadSignature(event.filterablePayload() ? event.getPayloadSignatureObject() : null)
                       .build();
     }

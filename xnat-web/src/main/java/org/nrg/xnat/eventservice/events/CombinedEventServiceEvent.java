@@ -130,6 +130,10 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     @Override
     public Object getPayloadSignatureObject() {return null;}
 
+
+    @Override
+    public EventScope getEventScope() { return EventScope.PROJECT; }
+
     @Override
     public void accept(Event<EventT> event){
         if( event.getData() instanceof EventServiceEvent) {

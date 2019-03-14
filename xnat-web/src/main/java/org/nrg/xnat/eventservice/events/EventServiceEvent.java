@@ -8,6 +8,11 @@ import java.util.UUID;
 
 public interface EventServiceEvent<ObjectT> extends EventI {
 
+    enum EventScope {
+        PROJECT,
+        SITE
+    }
+
     // Get descriptive unique identifier for event
     String getType();
 
@@ -31,12 +36,15 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     Date getEventTimestamp();
      // Get the event object UUID (generated at instantiation)
     UUID getEventUUID();
-    //Get the possible status states, e.g. created, updated, deleted
+    // Get the possible status states, e.g. created, updated, deleted
     List<String> getStatiStates();
-    //Get the status of the current triggered event
+    // Get the status of the current triggered event
     Enum getCurrentStatus();
-    //Get the projectId of the current triggered event (returns null if no Project association)
+    // Get the projectId of the current triggered event (returns null if no Project association)
     String getProjectId();
+    // Get the event scope - project scoped events might be triggered from a certain project,
+    // while SITE scoped events will never be confined to acting on a certain project. e.g. Project Created Event
+    EventScope getEventScope();
 
     String toString();
 }

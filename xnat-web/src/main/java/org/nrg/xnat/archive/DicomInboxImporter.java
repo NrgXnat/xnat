@@ -27,7 +27,7 @@ import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.restlet.data.Status;
 import org.nrg.xdat.security.helpers.Permissions;
-
+import org.nrg.xnat.restlet.actions.SessionImporter;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -194,6 +194,17 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
 			// Remove the session parameter so that it doesn't cause the final imported session to be renamed.
 			_parameters.remove("session");
+
+			String expt_label = (String)_parameters.get(URIManager.EXPT_LABEL);
+			if(SessionImporter.getExperimentByIdorLabel(projectFromRequest, expt_label, _user)!=null){
+				throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Experiment with that label already exists in that project.");
+			}
+		}
+		else if(_parameters.containsKey("session")){
+			String sess = (String)_parameters.get("session");
+			if(SessionImporter.getExperimentByIdorLabel(projectFromRequest, sess, _user)!=null){
+				throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already exists in that project.");
+			}
 		}
 
 		final DicomInboxImportRequest request = new DicomInboxImportRequest();

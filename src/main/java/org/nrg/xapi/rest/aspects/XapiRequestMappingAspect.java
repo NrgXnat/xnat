@@ -98,20 +98,20 @@ public class XapiRequestMappingAspect {
             final HttpServletResponse response = getResponse();
             response.setStatus(HttpStatus.FORBIDDEN.value());
             final UserI user = XDAT.getUserDetails();
-            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, request.getRequestURL().toString(), FORBIDDEN);
+            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), FORBIDDEN);
         } catch (NotAuthenticatedException e) {
             final HttpServletResponse response = getResponse();
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setHeader(WWW_AUTH_HEADER, "Basic realm=\"" + _preferences.getSiteId() + "\"");
             final UserI user = XDAT.getUserDetails();
-            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, request.getRequestURL().toString(), UNAUTHORIZED);
+            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), UNAUTHORIZED);
         }
         return null;
     }
 
     private void evaluate(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws InsufficientPrivilegesException, NotAuthenticatedException {
         final HttpServletRequest request    = getRequest();
-        final String             requestUrl = request.getRequestURL().toString();
+        final String             requestUrl = AccessLogger.getFullRequestUrl(request);
 
         final UserI user = XDAT.getUserDetails();
         if (user == null) {

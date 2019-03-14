@@ -21,7 +21,9 @@ import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
+import org.python.antlr.ast.arguments;
 import org.restlet.data.Request;
+import org.slf4j.helpers.MessageFormatter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
@@ -108,6 +110,14 @@ public class AccessLogger {
         LogServiceAccess(user, getAxisRequest(context), service, message);
     }
 
+    public static void LogAjaxServiceAccess(final String user, final HttpServletRequest request) {
+        LogServiceAccess(user, request, getFullRequestUrl(request), null);
+    }
+
+    public static void LogAjaxServiceAccess(final String user, final HttpServletRequest request, final String message, final String... arguments) {
+        LogServiceAccess(user, request, getFullRequestUrl(request), arguments.length == 0 ? message : MessageFormatter.arrayFormat(message, arguments).getMessage());
+    }
+
     public static void LogServiceAccess(final String user, final HttpServletRequest request, final String service, final String message) {
         logAccess(user, request, service, message);
 
@@ -127,6 +137,14 @@ public class AccessLogger {
                 log.error("An error occurred trying to record request history for user \"{}\", attempted request was: {}", user, service + " " + message, e);
             }
         }
+    }
+
+    public static String getFullRequestUrl(final HttpServletRequest request) {
+        final String querystring = request.getQueryString();
+        if (StringUtils.isBlank(querystring)) {
+            return request.getRequestURL().toString();
+        }
+        return request.getRequestURL().append("?").append(querystring).toString();
     }
 
     private static void logAccess(final RunData data, final boolean isScreen) {

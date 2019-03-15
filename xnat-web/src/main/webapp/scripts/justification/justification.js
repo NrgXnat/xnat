@@ -181,7 +181,7 @@ XNAT.app.justificationDialog = function(callback,_opts){
     this.call = function(obj){
         $("div#validationError").remove();
         
-        if($("#event_reason").val()=="" || $("#event_reason").val().match(/.*\w.*/g)){
+        if($("#event_reason").val()=="" || !$("#event_reason").val().match(/.*\w.*/g)){
             var icon = spawn('i.fa.fa-asterisk',{ style:{ color: '#c66' } } );
             var msg  = spawn('div#validationError',[icon," Justification Required"]);
             $("#justificationBox").append(msg);

@@ -2,7 +2,6 @@
  * Initialize XNAT settings
  */
 
-
 var XNAT = getObject(XNAT);
 
 (function(factory){
@@ -188,7 +187,9 @@ var XNAT = getObject(XNAT);
                 buildDate: "Sun Jun 05 12:41:24 CDT 2016",
                 buildNumber: "Manual",
                 commit: "v275-gd2220fd",
-                version: "1.7.0"
+                version: "1.7.0",
+                proxiedHost: "true",
+                hostName: "host-01.foo.bar"
             };
 
             function displayBuildInfo(data){
@@ -201,6 +202,9 @@ var XNAT = getObject(XNAT);
                 if (isNonRelease) {
                     version_string += ' (' + data.commit + ')';
                     build_string += '<br>' + data.buildDate;
+                }
+                if (data.proxiedHost === "true") {
+                    version_string += '<br>Host: ' + data.hostName;
                 }
 
                 $('#xnat_power')

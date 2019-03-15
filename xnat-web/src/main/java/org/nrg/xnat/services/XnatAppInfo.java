@@ -21,8 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.springframework.core.env.Environment;
@@ -45,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -66,13 +69,25 @@ public class XnatAppInfo {
     public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
 
     @Inject
-    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
+    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node) throws IOException {
         _preferences = preferences;
         _template = template;
         _environment = environment;
         _openUrlsPref = openUrlsPref;
         _serializerService = serializerService;
         _primaryNode = Boolean.parseBoolean(_environment.getProperty(XNAT_PRIMARY_MODE_PROPERTY, "true"));
+
+        final String      siteAddress = new URL(_preferences.getSiteUrl()).getHost();
+        final Set<String> hostNames   = XDAT.getHostNames();
+        if (hostNames.isEmpty()) {
+            _hostName = "localhost";
+        } else if (hostNames.size() == 1) {
+            _hostName = hostNames.iterator().next();
+        } else {
+            _hostName = hostNames.contains(siteAddress) ? siteAddress : hostNames.iterator().next();
+        }
+        _isProxiedHost = !StringUtils.equals(_hostName, siteAddress);
+        _node = node;
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
@@ -123,6 +138,10 @@ public class XnatAppInfo {
 
                 _buildDate = parseDate(attributes.getValue(MANIFEST_BUILD_DATE));
                 builder.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+
+                builder.put(PROPERTY_HOSTNAME, _hostName);
+                builder.put(PROPERTY_PROXIED_HOST, Boolean.toString(_isProxiedHost));
+                builder.put(PROPERTY_NODE_ID, _node.getNodeId());
 
                 _properties = builder.build();
 
@@ -253,7 +272,7 @@ public class XnatAppInfo {
         if (!_initialized) {
             // Recheck to see if it has been initialized. We don't need to recheck to see if it's been
             // uninitialized because that's silly.
-            //noinspection SqlDialectInspection,SqlNoDataSourceInspection
+            // noinspection SqlNoDataSourceInspection
             try {
                 _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
                 if (_initialized) {
@@ -524,6 +543,20 @@ public class XnatAppInfo {
         return _primaryNode;
     }
 
+    @SuppressWarnings("unused")
+    public String getHostName() {
+        return _hostName;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isProxiedHost() {
+        return _isProxiedHost;
+    }
+
+    public XnatNode getNode() {
+        return _node;
+    }
+
     /**
      * Returns the system uptime in a formatted display string.
      *
@@ -727,6 +760,9 @@ public class XnatAppInfo {
     private static final String PROPERTY_COMMIT       = "commit";
     private static final String PROPERTY_TIMESTAMP    = "timestamp";
     private static final String PROPERTY_TAG          = "tag";
+    private static final String PROPERTY_HOSTNAME     = "hostName";
+    private static final String PROPERTY_PROXIED_HOST = "proxiedHost";
+    private static final String PROPERTY_NODE_ID      = "nodeId";
 
     private static final List<String>        PRIMARY_MANIFEST_ATTRIBUTES   = Arrays.asList(MANIFEST_BUILD_NUMBER, MANIFEST_BUILD_DATE, MANIFEST_VERSION, MANIFEST_SHA, MANIFEST_DIRTY);
     private static final List<String>        MANIFEST_ATTRIBUTE_EXCLUSIONS = Arrays.asList("Application-Name", "Manifest-Version", "Implementation-CleanTag");
@@ -756,6 +792,12 @@ public class XnatAppInfo {
     private final String                   _nonAdminErrorPath;
     private final List<String>             _nonAdminErrorPathPatterns;
     private final boolean                  _primaryNode;
+    private final Map<String, String>      _properties;
+    private final String                   _versionDisplay;
+    private final Date                     _buildDate;
+    private final String                   _hostName;
+    private final XnatNode                 _node;
+    private final boolean                  _isProxiedHost;
 
     private       boolean                          _initialized      = false;
     private final List<String>                     _initUrls         = new ArrayList<>();
@@ -764,7 +806,4 @@ public class XnatAppInfo {
     private final Map<String, String>              _foundPreferences = new HashMap<>();
     private final Date                             _startTime        = new Date();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
-    private final Map<String, String>              _properties;
-    private final String                           _versionDisplay;
-    private final Date                             _buildDate;
 }

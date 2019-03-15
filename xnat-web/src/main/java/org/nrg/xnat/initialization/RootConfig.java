@@ -25,6 +25,7 @@ import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -75,8 +76,8 @@ public class RootConfig {
     }
 
     @Bean
-    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
-        return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref);
+    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node) throws IOException {
+        return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref, node);
     }
 
     @Bean

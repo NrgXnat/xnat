@@ -366,12 +366,21 @@ function ProjectEditor(_config) {
                                     if (!window.leaving) {
                                         if( o.status == 404 ) {
                                             // subject not currently owned by or shared into the new project, warn user that we must do this to change the project
-                                            if (confirm("As part of this change, the system will attempt to share this " + XNAT.app.displayNames.singular.imageSession.toLowerCase() + "'s " + XNAT.app.displayNames.singular.subject.toLowerCase() + " into the new " + XNAT.app.displayNames.singular.project.toLowerCase() + ".  Is this OK?")) {
-                                                this.subjectNeedsToBeSharedIntoNewProject = true;
-                                                this.modifyProject();
-                                            } else {
-                                                this.cancel();
-                                            }
+                                            xmodal.confirm({
+                                                height: 220,
+                                                scroll: false,
+                                                content: "" +
+                                                "<p>As part of this change, the system will attempt to share this " + 
+                                                XNAT.app.displayNames.singular.imageSession.toLowerCase() + "'s " + 
+                                                XNAT.app.displayNames.singular.subject.toLowerCase() + 
+                                                " into the new " + XNAT.app.displayNames.singular.project.toLowerCase() + 
+                                                ".  Is this OK?</p>",
+                                                okAction: function(){
+                                                    this.subjectNeedsToBeSharedIntoNewProject = true;
+                                                    this.modifyProject();
+                                                }.bind(this),
+                                                cancelAction: this.cancel()
+                                            });
                                         }
                                         else {
                                             // some systemic error occurred
@@ -388,24 +397,33 @@ function ProjectEditor(_config) {
                         
                         var url = serverRoot + "/REST/projects/" + this.selector.new_project + "/subjects/" + window.currentSubjectLabel + "?format=json&XNAT_CSRF=" + csrfToken;
                         YAHOO.util.Connect.asyncRequest('GET', url, callback);
-                	}
-                    
-                	this.modifyProject = function () {
-                        if (confirm("Modifying the primary " + XNAT.app.displayNames.singular.project.toLowerCase() + " of an imaging " + XNAT.app.displayNames.singular.imageSession.toLowerCase() + " will result in the moving of files on the file server into the new " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  Are you sure you want to make this change?")) {
-                        	if(showReason){
-                    			var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.project + " Modification Justification",this._modifyProject,this);
-                    		}else{
-                    			var passthrough= new XNAT.app.passThrough(this._modifyProject,this);
-                    			passthrough.fire();
-                    		}
-                        } else {
-                            this.cancel();
-                        }
                     }
-                	
-                	this._modifyProject=function(arg1,arg2,container){
-                	    var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
-                		openModalPanel("modify_project", "Modifying " + XNAT.app.displayNames.singular.project.toLowerCase() + ", please wait...");
+                    
+                    this.modifyProject = function () {
+                    xmodal.confirm({
+                            height: 220,
+                            scroll: false,
+                            content: "" +
+                                "<p>Modifying the primary " + XNAT.app.displayNames.singular.project.toLowerCase() + 
+                                " of an imaging " + XNAT.app.displayNames.singular.imageSession.toLowerCase() +
+                                " will result in the moving of files on the file server into the new " +
+                                XNAT.app.displayNames.singular.project.toLowerCase() +
+                                "'s storage space.  Are you sure you want to make this change?</p>",
+                            okAction: function(){
+                                if(showReason){
+                                    var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.project + " Modification Justification",this._modifyProject,this);
+                                }else{
+                                    var passthrough= new XNAT.app.passThrough(this._modifyProject,this);
+                                    passthrough.fire();
+                                }
+                            }.bind(this),
+                            cancelAction: this.cancel()
+                        });
+                    }
+                    
+                    this._modifyProject=function(arg1,arg2,container){
+                        var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
+                        openModalPanel("modify_project", "Modifying " + XNAT.app.displayNames.singular.project.toLowerCase() + ", please wait...");
 
                         var callback = {
                                 success:function (o) {
@@ -598,16 +616,23 @@ function SubjectEditor(_config) {
                             this.selector.onModification.fire();
                             this.cancel();
                         } else {
-                            if (confirm("Modifying the " + XNAT.app.displayNames.singular.subject.toLowerCase() + " of an experiment may result in the moving of files on the file server into the new " + XNAT.app.displayNames.singular.subject.toLowerCase() + "'s storage space.  Are you sure you want to make this change?")) {
-                            	if(showReason){
-                        			var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.subject + " Modification Justification",XNAT.app._modifySubject,this);
-                        		}else{
-                        			var passthrough= new XNAT.app.passThrough(XNAT.app._modifySubject,this);
-                        			passthrough.fire();
-                        		}
-                            } else {
-                                this.cancel();
-                            }
+                            xmodal.confirm({
+                                height: 220,
+                                scroll: false,
+                                content: "Modifying the " + XNAT.app.displayNames.singular.subject.toLowerCase() + 
+                                         " of an experiment may result in the moving of files on the file server into the new " + 
+                                         XNAT.app.displayNames.singular.subject.toLowerCase() + 
+                                         "'s storage space.  Are you sure you want to make this change?</p>",
+                                okAction: function(){
+                                    if(showReason){
+                                        var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.subject + " Modification Justification",XNAT.app._modifySubject,this);
+                                    }else{
+                                        var passthrough= new XNAT.app.passThrough(XNAT.app._modifySubject,this);
+                                        passthrough.fire();
+                                    }
+                                }.bind(this),
+                                cancelAction: this.cancel()
+                            });
                         }
                     }
                 }}, isDefault:true},
@@ -758,14 +783,24 @@ function LabelEditor(_config) {
                         this.selector.onModification.fire();
                         this.cancel();
                     } else {
-                        if (confirm("Modifying the " + this.selector.config.header + " of an imaging " + XNAT.app.displayNames.singular.imageSession.toLowerCase() + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  Are you sure you want to make this change?")) {
-                        	if(showReason){
-                    			var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.imageSession + " Modification Justification",XNAT.app._modifyLabel,this);
-                    		}else{
-                    			var passthrough= new XNAT.app.passThrough(XNAT.app._modifyLabel,this);
-                    			passthrough.fire();
-                    		}
-                        }
+                        xmodal.confirm({
+                            height: 220,
+                            scroll: false,
+                            content: "<p>Modifying the " + this.selector.config.header + " of an imaging " + 
+                                     XNAT.app.displayNames.singular.imageSession.toLowerCase() + 
+                                     " will result in the moving of files on the file server within the " + 
+                                     XNAT.app.displayNames.singular.project.toLowerCase() + 
+                                     "'s storage space.  Are you sure you want to make this change?",
+                            okAction: function(){
+                                if(showReason){
+                                    var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.imageSession + " Modification Justification",XNAT.app._modifyLabel,this);
+                                }else{
+                                    var passthrough= new XNAT.app.passThrough(XNAT.app._modifyLabel,this);
+                                    passthrough.fire();
+                                }
+                            }.bind(this),
+                            cancelAction: this.cancel()
+                        });
                     }
                 }
             };

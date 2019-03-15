@@ -147,10 +147,14 @@
                                 #end
                                 </span>
                             </div>
-                            #if ($item.canEdit($user))
-                                <div class="inline-actions pull-right text-right" style="width:15%;">
-                                    <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
-                                </div>
+                            #if($item.getStatus()!="obsolete")
+                                #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                    #if ($item.canEdit($user))
+                                        <div class="inline-actions pull-right text-right" style="width:15%;">
+                                            <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
+                                        </div>
+                                    #end
+                                #end
                             #end
                         </td>
                         <td class="run-menu inline-actions-menu-container" style="position: relative; width: 24px; display: none;">

@@ -76,13 +76,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.annotation.Nullable;
 import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -926,20 +925,38 @@ public class XDAT implements Initializable, Configurable{
 		return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 	}
 
+	public static List<InetAddress> getInetAddresses() {
+    	if (INET_ADDRESSES.isEmpty()) {
+			synchronized (INET_ADDRESSES) {
+				try {
+					INET_ADDRESSES.addAll(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
+				} catch (UnknownHostException exception) {
+					log.error("Localhost is unknown host... Wha?", exception);
+				}
+			}
+		}
+    	return INET_ADDRESSES;
+	}
+
+    public static Set<String> getHostNames() {
+        return new HashSet<>(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
+            @Nullable
+            @Override
+            public String apply(final InetAddress address) {
+                return address.getCanonicalHostName();
+            }
+        }));
+    }
+
 	public static Set<String> getLocalhostIPs() {
 		final Set<String> localhostIPs = new HashSet<>(LOCALHOST_IPS);
-		final String      siteUrl      = XDAT.getSiteConfigPreferences().getSiteUrl();
-		try {
-			final InetAddress[] addresses = ArrayUtils.addAll(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()), InetAddress.getAllByName(new URI(siteUrl).getHost()));
-			for (final InetAddress address : addresses) {
-				final String hostAddress = address.getHostAddress();
-				localhostIPs.add(hostAddress.contains("%") ? hostAddress.substring(0, hostAddress.indexOf("%")) : hostAddress);
-			}
-		} catch (URISyntaxException e) {
-			log.error("The configured site URL {} is an invalid URL.", siteUrl, e);
-		} catch (UnknownHostException exception) {
-			log.error("Localhost is unknown host... Wha?", exception);
-		}
+		localhostIPs.addAll(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
+            @Nullable
+            @Override
+            public String apply(final InetAddress address) {
+                return StringUtils.substringBefore(address.getHostAddress(), "%");
+            }
+        }));
 		return localhostIPs;
 	}
 
@@ -1037,5 +1054,6 @@ public class XDAT implements Initializable, Configurable{
         }), "\n");
 	}
 
-	private static final List<String> LOCALHOST_IPS = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<String>      LOCALHOST_IPS  = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<InetAddress> INET_ADDRESSES = new ArrayList<>();
 }

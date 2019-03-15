@@ -11,6 +11,7 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionProvider;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
 import org.nrg.xnat.eventservice.model.Listener;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
@@ -86,4 +87,6 @@ public interface EventService {
     EventServiceComponentManager getComponentManager();
 
     EventServicePrefsBean getPrefs();
+    EventServicePrefs getPrefsPojo();
+    void updatePrefs(EventServicePrefs prefs);
 }

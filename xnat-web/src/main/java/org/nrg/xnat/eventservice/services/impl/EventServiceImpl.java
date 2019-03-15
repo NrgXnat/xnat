@@ -24,6 +24,7 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionProvider;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.nrg.xnat.eventservice.model.EventSignature;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
 import org.nrg.xnat.eventservice.model.Listener;
@@ -348,7 +349,7 @@ public class EventServiceImpl implements EventService {
         List<Subscription> failedReactivations = new ArrayList<>();
         for (Subscription subscription:subscriptionService.getAllSubscriptions()) {
             if(subscription.active()) {
-                log.debug("Reactivating of subscription: " + Long.toString(subscription.id()));
+                log.debug("Reactivating subscription: " + Long.toString(subscription.id()));
                 try {
                     Subscription active = subscriptionService.activate(subscription);
                     if(active == null || !active.active()){
@@ -372,7 +373,7 @@ public class EventServiceImpl implements EventService {
     @Async
     @Override
     public void triggerEvent(EventServiceEvent event) {
-        if (this.getPrefs() != null && !this.getPrefs().getEnabled()){
+        if (prefs != null && !prefs.getEnabled()){
             if(log.isDebugEnabled()){ log.debug("Preference: enabled == false. Skipping Event Service triggering");  }
             return;
         }
@@ -389,7 +390,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void processEvent(EventServiceListener listener, Event event) {
-        if (this.getPrefs() != null && !this.getPrefs().getRespondToEvents()){
+        if (prefs != null && !prefs.getRespondToEvents()){
             if(log.isDebugEnabled()){ log.debug("Preference: respondToEvents == false. Skipping Event Service response");  }
             return;
         }
@@ -586,6 +587,21 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventServicePrefsBean getPrefs() { return prefs; }
 
+    @Override
+    public EventServicePrefs getPrefsPojo() { return prefs.toPojo(); }
+
+    @Override
+    public void updatePrefs(EventServicePrefs prefs) {
+        Boolean wasEnabled = this.prefs.getEnabled();
+        this.prefs.update(prefs);
+        Boolean isEnabled = this.prefs.getEnabled();
+        if( !wasEnabled && isEnabled){
+            if(log.isDebugEnabled()){
+                log.debug("Enabling Event Service - Refreshing active subscriptions.");
+            }
+            reactivateAllSubscriptions();
+        }
+    }
 
     private void throwIfDisabled() throws SubscriptionAccessException{
         if (!prefs.getEnabled()){

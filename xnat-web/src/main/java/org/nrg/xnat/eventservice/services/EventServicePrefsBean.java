@@ -8,6 +8,7 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,7 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
         if (enabled != null) {
             try {
                 setBooleanValue(enabled, "triggerCoreEvents");
+
             } catch (InvalidPreferenceName e) {
                 _log.error("Error setting Event Service preference \"name\".", e.getMessage());
             }
@@ -104,6 +106,24 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
                 _log.error("Error setting Event Service preference \"name\".", e.getMessage());
             }
         }
+    }
+
+    public EventServicePrefs toPojo(){
+        return EventServicePrefs.builder()
+                .enabled(this.getEnabled())
+                .triggerCoreEvents(this.getTriggerCoreEvents())
+                .respondToEvents(this.getRespondToEvents())
+                .triggerPluginEvents(this.getTriggerPluginEvents())
+                .triggerWorkflowStatusEvents(this.getTriggerWorkflowStatusEvents())
+                .build();
+    }
+
+    public void update(EventServicePrefs prefs){
+        if(prefs.enabled() != null) this.setEnabled(prefs.enabled());
+        if(prefs.respondToEvents() != null) this.setRespondToEvents(prefs.respondToEvents());
+        if(prefs.triggerCoreEvents() != null) this.setTriggerCoreEvents(prefs.triggerCoreEvents());
+        if(prefs.triggerWorkflowStatusEvents() != null) this.setTriggerWorkflowStatusEvents(prefs.triggerWorkflowStatusEvents());
+        if(prefs.triggerPluginEvents() != null) this.setTriggerPluginEvents(prefs.triggerPluginEvents());
     }
 
 

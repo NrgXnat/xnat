@@ -77,7 +77,7 @@ public class SubjectAssessor extends XnatModelObject {
         this.label = xnatSubjectassessordataI.getLabel();
         this.xsiType = "xnat:subjectAssessorData";
         try { this.xsiType = xnatSubjectassessordataI.getXSIType();} catch (NullPointerException e) {
-            log.error("Session failed to detect xsiType");
+            log.error("Subject Assessor failed to detect xsiType");
         }
         this.projectId = xnatSubjectassessordataI.getProject();
         this.subjectId = xnatSubjectassessordataI.getSubjectId();

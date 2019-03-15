@@ -23,6 +23,7 @@ import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.exceptions.UnauthorizedException;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
 import org.nrg.xnat.eventservice.model.ProjectSubscriptionCreator;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
@@ -262,7 +263,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
             final @RequestParam(value = "first-result", required = false) Integer firstResult,
-            final @RequestParam(value = "max-results", required = false, defaultValue = "100") Integer maxResults)
+            final @RequestParam(value = "max-results", required = false, defaultValue = "1000") Integer maxResults)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, firstResult, maxResults);
@@ -377,6 +378,21 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     //    final UserI user = XDAT.getUserDetails();
     //    return eventService.getActionsByProvider(provider, user);
     //}
+
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/prefs", method = GET)
+    @ApiOperation(value="Get Event Service Preferences")
+    public EventServicePrefs getPrefs() throws NrgServiceRuntimeException {
+        return eventService.getPrefsPojo();
+    }
+
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/prefs", method = PUT)
+    @ApiOperation(value="Update Event Service Preferences")
+    public ResponseEntity<Void> updatePrefs(final @RequestBody EventServicePrefs prefs)
+            throws NrgServiceRuntimeException {
+        eventService.updatePrefs(prefs);
+        return ResponseEntity.ok().build();
+    }
+
 
     @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/action"}, params = "actionkey", method = GET)
     @ApiOperation(value = "Get a actions by key in the form of \"ProviderID:ActionID\"")

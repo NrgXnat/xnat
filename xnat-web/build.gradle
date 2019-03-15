@@ -50,7 +50,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = vXnat
+version = "1.7.5.RAD1"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -211,7 +211,7 @@ dependencies {
     implementation("org.nrg.xnat:xnat-data-models") {
         transitive = false
     }
-    implementation "org.nrg.xdat:core"
+    implementation "org.nrg.xdat:core:1.7.5.RAD1"
     implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"

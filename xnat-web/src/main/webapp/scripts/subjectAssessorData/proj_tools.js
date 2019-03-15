@@ -619,7 +619,7 @@ function SubjectEditor(_config) {
                             xmodal.confirm({
                                 height: 220,
                                 scroll: false,
-                                content: "Modifying the " + XNAT.app.displayNames.singular.subject.toLowerCase() + 
+                                content: "<p>Modifying the " + XNAT.app.displayNames.singular.subject.toLowerCase() + 
                                          " of an experiment may result in the moving of files on the file server into the new " + 
                                          XNAT.app.displayNames.singular.subject.toLowerCase() + 
                                          "'s storage space.  Are you sure you want to make this change?</p>",
@@ -790,7 +790,7 @@ function LabelEditor(_config) {
                                      XNAT.app.displayNames.singular.imageSession.toLowerCase() + 
                                      " will result in the moving of files on the file server within the " + 
                                      XNAT.app.displayNames.singular.project.toLowerCase() + 
-                                     "'s storage space.  Are you sure you want to make this change?",
+                                     "'s storage space.  Are you sure you want to make this change?</p>",
                             okAction: function(){
                                 if(showReason){
                                     var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.imageSession + " Modification Justification",XNAT.app._modifyLabel,this);

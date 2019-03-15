@@ -14,6 +14,7 @@ import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.dcm4che2.data.*;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.DicomOutputStream;
@@ -405,6 +406,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private PrearchiveCode shouldAutoArchive(final XnatProjectdata project, final DicomObject o) {
         if (null == project) {
             return null;
+        }
+        if (_parameters.containsKey("force_auto_commit") && BooleanUtils.toBoolean((String)_parameters.get("force_auto_commit"))) {
+            return PrearchiveCode.AutoArchive;
         }
         Boolean fromDicomObject = getIdentifier().requestsAutoarchive(o);
         if (fromDicomObject != null) {

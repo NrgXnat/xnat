@@ -97,7 +97,7 @@ XNAT.app.ConfirmWJustification=function(_yuioptions){
         this.panel.selector=this;
         var buttons=[{text:"Confirm",handler:{fn:function(){
                 this.selector.event_reason = this.form.event_reason.value;
-                if(this.selector.event_reason==""){
+                if(this.selector.event_reason=="" || !this.selector.event_reason.match(/.*\w.*/g)){
                     xmodal.message('Project Validation', 'Please enter a justification.');
                     return;
                 }
@@ -181,7 +181,7 @@ XNAT.app.justificationDialog = function(callback,_opts){
     this.call = function(obj){
         $("div#validationError").remove();
         
-        if($("#event_reason").val()==""){
+        if($("#event_reason").val()=="" || $("#event_reason").val().match(/.*\w.*/g)){
             var icon = spawn('i.fa.fa-asterisk',{ style:{ color: '#c66' } } );
             var msg  = spawn('div#validationError',[icon," Justification Required"]);
             $("#justificationBox").append(msg);

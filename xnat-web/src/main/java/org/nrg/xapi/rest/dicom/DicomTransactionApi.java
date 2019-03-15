@@ -87,11 +87,14 @@ public class DicomTransactionApi extends AbstractXapiRestController {
     public ResponseEntity<DicomInboxImportRequest> getDicomInboxImportRequest(@PathVariable final long id) {
         DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(id);
         UserI user = getSessionUser();
-        if(Roles.isSiteAdmin(user) || StringUtils.equals(request.getUsername(),user.getUsername())) {
+        if(request==null){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        else if (Roles.isSiteAdmin(user) || StringUtils.equals(request.getUsername(),user.getUsername())) {
             return new ResponseEntity<>(request, HttpStatus.OK);
         }
         else{
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 

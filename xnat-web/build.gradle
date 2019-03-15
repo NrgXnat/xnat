@@ -208,7 +208,7 @@ dependencyManagement.imports {
 dependencies {
     // NRG dependencies first.
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models") {
+    implementation("org.nrg.xnat:xnat-data-models:1.7.5.RAD1") {
         transitive = false
     }
     implementation "org.nrg.xdat:core:1.7.5.RAD1"

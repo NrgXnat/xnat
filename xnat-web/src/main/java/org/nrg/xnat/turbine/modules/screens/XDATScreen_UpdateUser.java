@@ -58,6 +58,15 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                 UserChangeRequest userChangeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestByGuid(confirmationToken);
                 if(userChangeRequest!=null && StringUtils.equals(userChangeRequest.getFieldToChange(),"email")){
                     UserI existing = null;
+                    
+                    // If the user is not logged in
+                    final UserI user = XDAT.getUserDetails();
+                    if(user == null || user.getUsername().equalsIgnoreCase("guest")) {
+                       // Since we have the confirmation token, go ahead and change the email
+                       // but set this variable so we can setup the page accordingly. (Noninteractive.vm, etc)
+                       context.put("unathenticated", true); 
+                    }
+                    
                     String username = userChangeRequest.getUsername();
                     if (username != null) {
                         existing = Users.getUser(username);
@@ -82,18 +91,12 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             context.put("message", "The email address you've specified is already in use.");
                         }
 
-                        final UserI user = XDAT.getUserDetails();
-                        assert user != null;
-
-                        existing.setEmail(newEmail);
-
                         try {
-                            Users.save(existing, user, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
+                            existing.setEmail(newEmail);
+                            Users.save(existing, existing, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
                             ElementSecurity.refresh();
 
-                            // Update the email address for the user principal in the application session.
-                            user.setEmail(newEmail);
-                            XDAT.getContextService().getBean(UserChangeRequestService.class).cancelRequest(XDAT.getUserDetails().getUsername(), "email");
+                            XDAT.getContextService().getBean(UserChangeRequestService.class).cancelRequest(existing.getUsername(), "email");
 
                             final String message = "Your email address was successfully changed to " + newEmail + ".";
                             try {

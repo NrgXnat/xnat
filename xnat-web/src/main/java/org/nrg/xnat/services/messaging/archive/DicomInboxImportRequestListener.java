@@ -149,11 +149,10 @@ public final class DicomInboxImportRequestListener {
         }
     }
 
-    @Slf4j
-    private static class DicomInboxImportRequestImporter extends ImporterHandlerA implements FileVisitor<Path> {
+    private class DicomInboxImportRequestImporter extends ImporterHandlerA implements FileVisitor<Path> {
         DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final Path inboxPath, final DicomInboxImportRequest request, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer) throws FileNotFoundException {
             super(null, user);
-
+            _dicomFiles = 0;
             _service = service;
             _inboxPath = inboxPath;
             _request = request;
@@ -184,11 +183,16 @@ public final class DicomInboxImportRequestListener {
             _service.setToImporting(_request);
             try {
                 Files.walkFileTree(_sessionPath.toPath(), WALKER_OPTIONS, Integer.MAX_VALUE, this);
-                log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
-                _service.setToProcessed(_request);
-                if (_request.getCleanupAfterImport() && isInboxDirectory()) {
-                	log.debug("Cleaning up inbox files after import - " + _sessionPath.getAbsolutePath());
-                	FileUtils.deleteDirQuietly(_sessionPath);
+                if(_dicomFiles==0){
+                    _service.fail(_request, "No valid DICOM files found for the specified session :" + _request.getSessionPath());
+                }
+                else {
+                    log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
+                    _service.setToProcessed(_request);
+                    if (_request.getCleanupAfterImport() && isInboxDirectory()) {
+                        log.debug("Cleaning up inbox files after import - " + _sessionPath.getAbsolutePath());
+                        FileUtils.deleteDirQuietly(_sessionPath);
+                    }
                 }
             } catch (IOException e) {
                 _service.fail(_request, "An error occurred reading data while processing the session located at {}:\n{}", _request.getSessionPath(), e.getMessage());
@@ -235,6 +239,7 @@ public final class DicomInboxImportRequestListener {
                     importer.setNamer(getNamer());
                 }
                 _fileUris.addAll(importer.call());
+                _dicomFiles++;
             } catch (ClientException | ServerException e) {
                 log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file.toString(), _sessionPath.getAbsolutePath(), e);
             }
@@ -253,7 +258,7 @@ public final class DicomInboxImportRequestListener {
             return FileVisitResult.CONTINUE;
         }
 
-        private static final Set<FileVisitOption> WALKER_OPTIONS = ImmutableSet.of(FileVisitOption.FOLLOW_LINKS);
+        private final Set<FileVisitOption> WALKER_OPTIONS = ImmutableSet.of(FileVisitOption.FOLLOW_LINKS);
 
         private final Set<String> _folderUris = new LinkedHashSet<>();
         private final Set<String> _fileUris   = new LinkedHashSet<>();
@@ -271,5 +276,6 @@ public final class DicomInboxImportRequestListener {
     private final SiteConfigPreferences                               _preferences;
     private       Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     private       Map<String, DicomFileNamer>                         _namers;
+    private       int                                                 _dicomFiles;
 	
 }

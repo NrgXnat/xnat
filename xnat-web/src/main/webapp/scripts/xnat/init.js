@@ -188,8 +188,8 @@ var XNAT = getObject(XNAT);
                 buildNumber: "Manual",
                 commit: "v275-gd2220fd",
                 version: "1.7.0",
-                proxiedHost: "true",
-                hostName: "host-01.foo.bar"
+                displayHostName: "true",
+                hostName: "host-01.miskatonic.edu"
             };
 
             function displayBuildInfo(data){
@@ -203,7 +203,7 @@ var XNAT = getObject(XNAT);
                     version_string += ' (' + data.commit + ')';
                     build_string += '<br>' + data.buildDate;
                 }
-                if (data.proxiedHost === "true") {
+                if (data.displayHostName === "true") {
                     version_string += '<br>Host: ' + data.hostName;
                 }
 

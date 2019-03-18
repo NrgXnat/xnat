@@ -1005,6 +1005,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "multinode")
+    public DisplayHostName getDisplayHostName() {
+        return getEnumValue(DisplayHostName.class, "displayHostName");
+    }
+
+    public void setDisplayHostName(final DisplayHostName displayHostName) {
+        try {
+            setEnumValue(displayHostName, "displayHostName");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'displayHostName': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.allow-project-delete")
     public boolean getUiAllowProjectDelete() {
         return getBooleanValue("uiAllowProjectDelete");

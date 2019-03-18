@@ -263,7 +263,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
             final @RequestParam(value = "first-result", required = false) Integer firstResult,
-            final @RequestParam(value = "max-results", required = false, defaultValue = "1000") Integer maxResults)
+            final @RequestParam(value = "max-results", required = false) Integer maxResults)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, firstResult, maxResults);
@@ -286,7 +286,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
             final @RequestParam(value = "first-result", required = false) Integer firstResult,
-            final @RequestParam(value = "max-results", required = false, defaultValue = "100") Integer maxResults)
+            final @RequestParam(value = "max-results", required = false) Integer maxResults)
             throws Exception {
         return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, firstResult, maxResults);
     }

@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -48,8 +49,6 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceBeanHelper;
 import org.nrg.prefs.transformers.PreferenceTransformer;
 import org.reflections.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -66,6 +65,7 @@ import static com.google.common.base.Predicates.*;
 import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
 import static org.nrg.framework.utilities.Reflection.getGetter;
 
+@Slf4j
 public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
     /**
      * Initializes default preferences for the bean and sets the preference service to be used for managing system
@@ -406,6 +406,22 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @JsonIgnore
     @Override
+    public <T extends Enum<T>> T getEnumValue(final Class<T> enumClass, final String key, final String... subkeys) throws UnknownToolId {
+        return getEnumValue(enumClass, EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T extends Enum<T>> T getEnumValue(final Class<T> enumClass, final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        return T.valueOf(enumClass, value);
+    }
+
+    @JsonIgnore
+    @Override
     public <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId {
         return getMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
@@ -441,7 +457,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo info = getPreferenceInfo(preferenceName);
         if (info == null) {
-            _log.warn("Could not retrieve preference information.  Cannot determine list type.");
+            log.warn("Could not retrieve preference information.  Cannot determine list type.");
             return null;
         }
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
@@ -506,14 +522,12 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
     }
 
-    @SuppressWarnings("RedundantThrows")
     @JsonIgnore
     @Override
     public void create(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _preferenceService.create(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
 
-    @SuppressWarnings("RedundantThrows")
     @JsonIgnore
     @Override
     public void create(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
@@ -664,6 +678,23 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T extends Enum<T>> void setEnumValue(final T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            storeToCache(key, value);
+        }
+        setEnumValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T extends Enum<T>> void setEnumValue(final Scope scope, final String entityId, final T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
     }
 
     @JsonIgnore
@@ -929,14 +960,14 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * Provides pre-processing functionality for bean initialization.
      */
     protected void preProcessPreferences() {
-        _log.debug("Performing default preference pre-processing.");
+        log.debug("Performing default preference pre-processing.");
     }
 
     /**
      * Provides post-processing functionality for bean initialization.
      */
     protected void postProcessPreferences() {
-        _log.debug("Performing default preference post-processing.");
+        log.debug("Performing default preference post-processing.");
     }
 
     @SuppressWarnings("unused")
@@ -1003,8 +1034,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     private void storeToCacheAsType(final String key, final String value, final PreferenceInfo info) {
         final PreferenceTransformer transformer = _preferenceService.getTransformer(info);
+        final Object cacheValue;
         if (transformer != null) {
-            final Object cacheValue;
             if (info.getItemType() == null) {
                 cacheValue = transformer.transform(value);
             } else if (info.isArray()) {
@@ -1016,9 +1047,14 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             } else {
                 cacheValue = null;
             }
-            if (cacheValue != null) {
-                storeToCache(key, cacheValue);
-            }
+        } else if (info.isEnum()) {
+            //noinspection unchecked
+            cacheValue = Enum.valueOf((Class<? extends Enum>) info.getValueType(), value);
+        } else {
+            cacheValue = null;
+        }
+        if (cacheValue != null) {
+            storeToCache(key, cacheValue);
         }
     }
 
@@ -1053,8 +1089,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
 
         if (!_preferences.isEmpty()) {
-            if (_log.isInfoEnabled()) {
-                _log.info("Found {} default values to add to tool {}", _preferences.size(), getToolId());
+            if (log.isInfoEnabled()) {
+                log.info("Found {} default values to add to tool {}", _preferences.size(), getToolId());
             }
             for (final String preference : _preferences.keySet()) {
                 final PreferenceInfo info = _preferences.get(preference);
@@ -1072,13 +1108,13 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                                                    ? initializationValue
                                                    : info.getDefaultValue());
 
-                    if (_log.isDebugEnabled()) {
+                    if (log.isDebugEnabled()) {
                         final String message = hasOverrideValue
                                                ? "Found preference override value for property {} with value {}." :
                                                (hasInitializationValue
                                                 ? "Found initialization override value for property {} with value {}."
                                                 : "Setting property {} to default value of {}.");
-                        _log.debug(message, preference, defaultValue);
+                        log.debug(message, preference, defaultValue);
                     }
 
                     try {
@@ -1118,64 +1154,64 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                         }
                     } catch (JsonParseException e) {
                         final String message = "An error occurred parsing the JSON string: " + defaultValue;
-                        _log.error(message);
+                        log.error(message);
                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, message, e);
                     } catch (JsonMappingException e) {
                         final String message = "An error occurred mapping the JSON string: " + defaultValue;
-                        _log.error(message);
+                        log.error(message);
                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, message, e);
                     } catch (IOException e) {
                         final String message = "An unknown error occurred processing the JSON string: " + defaultValue;
-                        _log.error(message);
+                        log.error(message);
                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, message, e);
                     } catch (InvocationTargetException | IllegalAccessException e) {
                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "An error occurred invoking a method", e);
                     }
-                    if (_log.isDebugEnabled()) {
-                        _log.debug(" * {}: {}", preference, info);
+                    if (log.isDebugEnabled()) {
+                        log.debug(" * {}: {}", preference, info);
                     }
-                } else if (_log.isDebugEnabled()) {
-                    _log.debug(" * {}: No default value specified", preference);
+                } else if (log.isDebugEnabled()) {
+                    log.debug(" * {}: No default value specified", preference);
                 }
             }
         }
         if (initializationProperties.size() > 0) {
             if (tool.isStrict()) {
-                _log.warn("Extra initialization properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
-                          tool.getToolId(),
-                          Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
+                log.warn("Extra initialization properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
+                         tool.getToolId(),
+                         Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
             } else {
                 for (final String property : initializationProperties.stringPropertyNames()) {
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
                         final String value = initializationProperties.getProperty(property);
                         _preferenceService.create(tool.getToolId(), property, value);
                         preferenceIds.add(property);
-                        _log.info("Created a new preference entry from the initialization settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                        log.info("Created a new preference entry from the initialization settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                     }
                 }
             }
         }
         if (overrideProperties.size() > 0) {
             if (tool.isStrict()) {
-                _log.warn("Extra override properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
-                          tool.getToolId(),
-                          Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
+                log.warn("Extra override properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
+                         tool.getToolId(),
+                         Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
             } else {
                 for (final String property : overrideProperties.stringPropertyNames()) {
                     final String value = overrideProperties.getProperty(property);
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
                         _preferenceService.create(tool.getToolId(), property, value);
                         preferenceIds.add(property);
-                        _log.info("Created a new preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                        log.info("Created a new preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                     } else {
                         try {
                             if (!StringUtils.equals(_preferenceService.getPreferenceValue(tool.getToolId(), property), value)) {
                                 _preferenceService.setPreferenceValue(tool.getToolId(), property, value);
                                 preferenceIds.add(property);
-                                _log.info("Updated a preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                                log.info("Updated a preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                             }
                         } catch (InvalidPreferenceName invalidPreferenceName) {
-                            _log.error("Attempted to override the value for tool {} preference {} with the value {}, but something went wrong.", tool.getToolId(), property, value);
+                            log.error("Attempted to override the value for tool {} preference {} with the value {}, but something went wrong.", tool.getToolId(), property, value);
                         }
                     }
                 }
@@ -1250,7 +1286,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             } catch (FileNotFoundException ignored) {
                 // Nothing to do here: we've already checked that the file exists.
             } catch (IOException e) {
-                _log.warn("An error occurred attempting to read the file " + file.getAbsolutePath(), e);
+                log.warn("An error occurred attempting to read the file " + file.getAbsolutePath(), e);
             }
         }
 
@@ -1352,10 +1388,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (containsKey(preference)) {
             final Object value = getFromCache(preference);
             if (value != null) {
-                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
+                log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
                 return value;
             }
-            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
+            log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
         }
         if (_methods.containsKey(preference)) {
             return _methods.get(preference);
@@ -1435,7 +1471,6 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return atoms.length == 1 ? "" : atoms[1];
     }
 
-    private static final Logger       _log    = LoggerFactory.getLogger(AbstractPreferenceBean.class);
     private static final ObjectMapper _mapper = new ObjectMapper() {{
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);

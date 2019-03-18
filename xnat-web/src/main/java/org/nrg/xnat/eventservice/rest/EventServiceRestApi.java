@@ -30,6 +30,7 @@ import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionCreator;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,6 +255,16 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch)
             throws Exception {
         return eventService.getSubscriptionDeliveriesCount(projectId, subscriptionId, includeFilterMismatch);
+    }
+
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/summary", method = GET)
+    @ResponseBody
+    public List<SubscriptionDeliverySummary> getDeliveredSubscriptionsSummary(
+            final @RequestParam(value = "project", required = false) String projectId,
+            final @RequestParam(value = "first-result", required = false) Integer firstResult,
+            final @RequestParam(value = "max-results", required = false) Integer maxResults)
+            throws Exception {
+        return eventService.getSubscriptionDeliverySummary(projectId, firstResult, maxResults);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = GET)

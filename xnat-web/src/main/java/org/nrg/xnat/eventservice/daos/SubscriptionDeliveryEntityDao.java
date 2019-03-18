@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.daos;
 
 import com.google.common.base.Strings;
 import org.hibernate.Criteria;
+import org.hibernate.FetchMode;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
@@ -55,7 +56,7 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
             cr.setMaxResults(maxResults);
         }
         cr.addOrder(Order.desc("id"));
-        cr.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+        cr.setFetchMode("timedEventStatuses", FetchMode.SELECT);
         return cr.list();
     }
 

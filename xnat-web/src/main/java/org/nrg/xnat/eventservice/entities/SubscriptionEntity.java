@@ -5,9 +5,17 @@ import com.google.common.collect.Maps;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.eventservice.model.Subscription;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 import java.util.Map;
+import java.util.Set;
 
 
 @Entity
@@ -29,7 +37,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
     private EventServiceFilterEntity eventServiceFilterEntity;
     private Boolean actAsEventUser;
     private String subscriptionOwner;
-    private List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities;
+    private Set<SubscriptionDeliveryEntity> subscriptionDeliveryEntities;
     private Integer registration;
 
 
@@ -38,7 +46,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
                               Map<String, String> attributes,
                               EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser,
                               String subscriptionOwner,
-                              List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities,
+                              Set<SubscriptionDeliveryEntity> subscriptionDeliveryEntities,
                               Integer registration) {
         this.name = name;
         this.active = active;
@@ -124,12 +132,12 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
     public void setActAsEventUser(Boolean actAsEventUser) { this.actAsEventUser = actAsEventUser; }
 
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    public List<SubscriptionDeliveryEntity> getSubscriptionDeliveryEntities() {
+    public Set<SubscriptionDeliveryEntity> getSubscriptionDeliveryEntities() {
         return subscriptionDeliveryEntities;
     }
 
     public void setSubscriptionDeliveryEntities(
-            List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities) {
+            Set<SubscriptionDeliveryEntity> subscriptionDeliveryEntities) {
         this.subscriptionDeliveryEntities = subscriptionDeliveryEntities;
     }
 

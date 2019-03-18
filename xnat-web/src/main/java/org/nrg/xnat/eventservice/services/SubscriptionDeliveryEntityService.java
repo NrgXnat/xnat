@@ -8,6 +8,7 @@ import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 
 import java.util.Date;
 import java.util.List;
@@ -25,4 +26,7 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
     Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
     List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, Integer firstResult, Integer maxResults);
+
+    List<SubscriptionDeliverySummary> getSummaries(String projectId, Integer firstResult, Integer maxResults);
+
 }

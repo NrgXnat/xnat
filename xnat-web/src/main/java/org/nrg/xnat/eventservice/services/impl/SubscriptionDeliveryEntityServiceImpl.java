@@ -10,6 +10,7 @@ import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
@@ -118,6 +119,12 @@ public class SubscriptionDeliveryEntityServiceImpl
     //    }
     //}
 
+
+    @Override
+    public List<SubscriptionDeliverySummary> getSummaries(String projectId, Integer firstResult, Integer maxResults) {
+        return toSummaryPojos(getDao().get(projectId, null, firstResult, maxResults, TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT));
+    }
+
     @Override
     public List<SubscriptionDelivery> get(String projectId, Long subscriptionId, @Nonnull Boolean includeFilterMismatches,
                                           Integer firstResult, Integer maxResults) {
@@ -125,6 +132,43 @@ public class SubscriptionDeliveryEntityServiceImpl
                 (includeFilterMismatches == null || includeFilterMismatches == false
                         ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT
                         : null)));
+    }
+
+    private List<SubscriptionDeliverySummary> toSummaryPojos(List<SubscriptionDeliveryEntity> entities){
+        List<SubscriptionDeliverySummary> summaries = new ArrayList<>();
+        if(entities != null) {
+            for (SubscriptionDeliveryEntity sde : entities) {
+                SubscriptionDeliverySummary summary = toSummaryPojo(sde);
+                if (summary != null) summaries.add(summary);
+            }
+        }
+        return summaries;
+    }
+
+    private SubscriptionDeliverySummary toSummaryPojo(SubscriptionDeliveryEntity entity) {
+        SubscriptionDeliverySummary summary = null;
+        if (entity != null) {
+            String eventName = entity.getEventType();
+            try {
+                if (!Strings.isNullOrEmpty(entity.getEventType())) {
+                    eventName = eventService.getEvent(entity.getEventType(), false).displayName();
+                }
+            } catch (Exception e) {
+                log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
+            }
+
+            summary = SubscriptionDeliverySummary.builder()
+                                                 .id(entity.getId())
+                                                 .subscriptionName(entity.getSubscription() != null ? entity.getSubscription().getName() : null)
+                                                 .eventName(eventName)
+                                                 .actionUser(entity.getActionUserLogin())
+                                                 .projectId(entity.getProjectId())
+                                                 .triggerLabel(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().getObjectLabel() : null)
+                                                 .status((entity.getStatus() == null) ? null : entity.getStatus().name())
+                                                 .timestamp(entity.getStatusTimestamp())
+                                                 .build();
+        }
+        return summary;
     }
 
 

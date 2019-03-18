@@ -31,6 +31,7 @@ import org.nrg.xnat.eventservice.model.Listener;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.ActionManager;
 import org.nrg.xnat.eventservice.services.EventPropertyService;
@@ -534,6 +535,11 @@ public class EventServiceImpl implements EventService {
     @Override
     public Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
         return subscriptionDeliveryEntityService.count(projectId, subscriptionId, includeFilterMismatches);
+    }
+
+    @Override
+    public List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId, Integer firstResult, Integer maxResults) {
+        return subscriptionDeliveryEntityService.getSummaries(projectId, firstResult, maxResults);
     }
 
     @Override

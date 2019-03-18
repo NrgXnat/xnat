@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Lob;
@@ -29,6 +30,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private TriggeringEventEntity triggeringEventEntity;
     private Set<TimedEventStatusEntity> timedEventStatuses = Sets.newLinkedHashSet();
     private TimedEventStatusEntity.Status status;
+    private Date statusTimestamp;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
                                       String projectId, String actionInputs) {
@@ -107,7 +109,8 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message){
         TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, this);
-        this.status = status;
+        this.setStatus(status);
+        this.setStatusTimestamp(statusTimestamp);
         this.timedEventStatuses.add(timedEventStatus);
     }
 
@@ -115,5 +118,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void setStatus(TimedEventStatusEntity.Status status) { this.status = status; }
 
+
+    @Column(name = "status_timestamp")
+    public Date getStatusTimestamp() {
+        return statusTimestamp;
+    }
+
+    public void setStatusTimestamp(Date statusTimestamp) {
+        this.statusTimestamp = statusTimestamp;
+    }
 
 }

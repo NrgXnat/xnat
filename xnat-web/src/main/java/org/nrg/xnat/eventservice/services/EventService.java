@@ -17,6 +17,7 @@ import org.nrg.xnat.eventservice.model.Listener;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 import reactor.bus.Event;
 
 import java.util.List;
@@ -75,6 +76,8 @@ public interface EventService {
     Subscription deactivateSubscription(long id) throws NotFoundException;
 
     Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
+
+    List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId, Integer firstResult, Integer maxResults);
 
     List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 

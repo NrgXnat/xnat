@@ -79,7 +79,7 @@
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.0.6-SNAPSHOT</nrg.mizer.version>
@@ -197,7 +197,7 @@
         <junit.version>4.12</junit.version>
         <junit-jupiter.version>5.2.0</junit-jupiter.version>
         <spring-test-junit5.version>1.2.0</spring-test-junit5.version>
-        <jacoco.version>0.8.2</jacoco.version>
+        <jacoco.version>0.8.3</jacoco.version>
         <jython.version>2.7.1</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
@@ -241,7 +241,7 @@
         <gradle-cargo.version>2.3</gradle-cargo.version>
         <gradle-dependency-management.version>1.0.6.RELEASE</gradle-dependency-management.version>
         <gradle-lombok.version>2.1</gradle-lombok.version>
-        <tomcat-embed.version>7.0.82</tomcat-embed.version>
+        <tomcat-embed.version>7.0.93</tomcat-embed.version>
 
         <!-- Maven plugin versions -->
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>

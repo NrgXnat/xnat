@@ -966,8 +966,7 @@ var XNAT = getObject(XNAT || {});
         if (project) params.push('project='+project);
         if (sub) params.push('subscriptionid='+sub);
         var appended = (params.length) ? '?'+params.join('&') : '';
-
-        return XNAT.url.restUrl('/xapi/events/delivered'+appended);
+        return XNAT.url.restUrl('/xapi/events/delivered/summary' + appended);
     }
 
     historyTable.getHistory = function(opts,callback){
@@ -1041,6 +1040,20 @@ var XNAT = getObject(XNAT || {});
     };
 
     historyTable.datatable = function(data, $datatable){
+
+        // sample object returned with call to
+        // /xapi/events/delivered/summary
+        var sampleData = {
+            'id': 1,
+            'event-name': 'Workflow Status',
+            'subscription-name': 'Workflow Status',
+            'user': 'admin',
+            'project': 'Cat_Imaging',
+            'trigger-label': 'WorkflowStatusEvent',
+            'status': 'ACTION_CALLED',
+            'timestamp': null
+        };
+
         var dataLengthToDisplay = 100;
         var datatableOptions = {
             aaData: data,
@@ -1058,9 +1071,9 @@ var XNAT = getObject(XNAT || {});
                     sClass: 'left',
                     sWidth: '200px',
                     mData: function(source){
-                        var message = '<a class="view-event-history" href="#!" data-id="'+source.id+'" style="font-weight: bold">'+ source.subscription.name+'</a>';
-                        if (source.trigger) {
-                            message = message+ '<br>Trigger: '+source.trigger.label;
+                        var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
+                        if (source['trigger-label']) {
+                            message = message + '<br>Trigger: ' + source['trigger-label'];
                         }
                         return message;
                     }
@@ -1068,7 +1081,7 @@ var XNAT = getObject(XNAT || {});
                 {
                     sTitle: '<b>Event Type</b>',
                     mData: function(source){
-                        return (source.trigger) ? source.trigger['event-name'] : 'Unknown';
+                        return (source['event-name']) ? source['event-name'] : 'Unknown';
                     },
                     sWidth: '120px'
                 },
@@ -1089,12 +1102,14 @@ var XNAT = getObject(XNAT || {});
                 {
                     sTitle: '<b>Date</b>',
                     mData: function(source){
-                        var timestamp = 0, dateString;
-                        if (source.status.length > 0){
-                            timestamp = source.status[0]['timestamp'].replace(/-/g,'/'); // include date format hack for Safari
-                            if (timestamp.indexOf('UTC') <0) timestamp = timestamp.trim()+' UTC';
-                            timestamp = new Date(timestamp);
-                            dateString = timestamp.toLocaleString();
+                        var timestamp  = source.timestamp || '';
+                        var dateString = '';
+                        if (timestamp) {
+                            timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
+                            if (timestamp.indexOf('UTC') < 0) {
+                                timestamp = timestamp.trim() + ' UTC';
+                            }
+                            dateString = (new Date(timestamp)).toLocaleString();
                             // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
 
                         } else {
@@ -1115,14 +1130,44 @@ var XNAT = getObject(XNAT || {});
             aaSorting: [[ 0, "desc" ]]
         };
 
+
+
         $datatable.dataTable(datatableOptions);
 
         addColumnFilters($datatable,datatableOptions.aoColumns);
     };
 
+
+    function historyItemErrorDialog(id){
+        console.error('Error displaying history item width id: ' + id);
+        XNAT.ui.dialog.open({
+            content: 'Sorry, could not display this history item.',
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true
+                }
+            ]
+        });
+    }
+
+
     historyTable.viewHistory = function(id){
-        if (XNAT.admin.eventServicePanel.historyData[id]) {
-            var historyEntry = XNAT.admin.eventServicePanel.historyData[id];
+
+        var historyItemRequest = XNAT.xhr.get({
+            url: XNAT.url.restUrl('/xapi/events/delivered/' + id),
+            dataType: 'json'
+        });
+
+        historyItemRequest.done(function(data){
+
+            if (!data) { historyItemErrorDialog(id); }
+
+            var historyEntry =
+                    eventServicePanel.historyData[id] =
+                        data;
+
             var historyDialogButtons = [
                 {
                     label: 'OK',
@@ -1147,20 +1192,34 @@ var XNAT = getObject(XNAT || {});
                 .th({ addClass: 'left', html: '<b>Value</b>' });
 
             for (var key in historyEntry){
+
                 var val = historyEntry[key], formattedVal = '';
+
                 if (Array.isArray(val)) {
-                    var items = [];
-                    val.forEach(function(item){
-                        if (typeof item === 'object') item = JSON.stringify(item);
-                        items.push(spawn('li',[ spawn('code',item) ]));
+                    var items = val.map(function(item){
+                        return isPlainObject(item) ?
+                            spawn('li', [spawn('pre.mono.json', {
+                                style: { border: 'none', outline: 'none', padding: 0 }
+                            }, JSON.stringify(item, null, 2))]) :
+                            item;
                     });
-                    formattedVal = spawn('ul',{ style: { 'list-style-type': 'none', 'padding-left': '0' }}, items);
-                } else if (typeof val === 'object' ) {
-                    formattedVal = spawn('code', JSON.stringify(val));
-                } else if (!val) {
-                    formattedVal = spawn('code','false');
-                } else {
-                    formattedVal = spawn('code',val);
+                    formattedVal = spawn('ul', {
+                        style: {
+                            'list-style-type': 'none',
+                            'padding-left': '0'
+                        }
+                    }, items);
+                }
+                else if (isPlainObject(val)) {
+                    formattedVal = spawn('pre.mono.json', {
+                        style: { border: 'none', outline: 'none', padding: 0 }
+                    }, JSON.stringify(val, null, 2));
+                }
+                else if (!val) {
+                    formattedVal = spawn('pre', 'false');
+                }
+                else {
+                    formattedVal = spawn('pre', val);
                 }
 
                 pheTable.tr()
@@ -1176,19 +1235,15 @@ var XNAT = getObject(XNAT || {});
                 content: pheTable.table,
                 buttons: historyDialogButtons
             });
-        } else {
-            console.log(id);
-            XNAT.ui.dialog.open({
-                content: 'Sorry, could not display this history item.',
-                buttons: [
-                    {
-                        label: 'OK',
-                        isDefault: true,
-                        close: true
-                    }
-                ]
+
             });
-        }
+
+        historyItemRequest.fail(function(msg){
+            console.error(msg);
+            console.warn(arguments);
+            historyItemErrorDialog(id);
+        });
+
     };
 
     $(document).off('click','a.view-event-history').on('click','a.view-event-history',function(e){
@@ -1202,12 +1257,10 @@ var XNAT = getObject(XNAT || {});
 
         historyTable.getHistory().done(function(data){
             if (data.length){
-
-                $container.empty().append(spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site'))
-                $container.append('<table class="xnat-table data-table compact" id="event-history-table" style="width: 100%"></table>');
-                var $datatable = $(document).find('#event-history-table');
-                historyTable.datatable(data,$datatable);
-
+                var h3 = spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site');
+                var $datatable = $.spawn('table#event-history-table.xnat-table.data-table.compact', { style: { width: '100%' }});
+                $container.empty().append([h3, $datatable]);
+                historyTable.datatable(data, $datatable);
             } else {
                 $container.empty().append(spawn('p','No event history to display'));
             }

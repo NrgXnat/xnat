@@ -2,9 +2,11 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
+import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
@@ -121,8 +123,17 @@ public class SubscriptionDeliveryEntityServiceImpl
 
 
     @Override
-    public List<SubscriptionDeliverySummary> getSummaries(String projectId, Integer firstResult, Integer maxResults) {
-        return toSummaryPojos(getDao().get(projectId, null, firstResult, maxResults, TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT));
+    public List<SubscriptionDeliverySummary> getSummaries(String projectId) {
+        return toPojos(getDao().getSummaryDeliveries(projectId));
+    }
+
+    @Override
+    public SubscriptionDelivery get(Long id, String projectId) throws NotFoundException {
+        SubscriptionDeliveryEntity deliveryEntity = get(id);
+        if(!Strings.isNullOrEmpty(projectId) && !projectId.contentEquals(deliveryEntity.getProjectId())){
+            throw new NotFoundException("No history item with matching id and projectID");
+        }
+        return toPojo(deliveryEntity);
     }
 
     @Override
@@ -134,24 +145,24 @@ public class SubscriptionDeliveryEntityServiceImpl
                         : null)));
     }
 
-    private List<SubscriptionDeliverySummary> toSummaryPojos(List<SubscriptionDeliveryEntity> entities){
+    private List<SubscriptionDeliverySummary> toPojos(List<SubscriptionDeliverySummaryEntity> entities){
         List<SubscriptionDeliverySummary> summaries = new ArrayList<>();
         if(entities != null) {
-            for (SubscriptionDeliveryEntity sde : entities) {
-                SubscriptionDeliverySummary summary = toSummaryPojo(sde);
+            for (SubscriptionDeliverySummaryEntity sde : entities) {
+                SubscriptionDeliverySummary summary = toPojo(sde);
                 if (summary != null) summaries.add(summary);
             }
         }
         return summaries;
     }
 
-    private SubscriptionDeliverySummary toSummaryPojo(SubscriptionDeliveryEntity entity) {
+    private SubscriptionDeliverySummary toPojo(SubscriptionDeliverySummaryEntity entity) {
         SubscriptionDeliverySummary summary = null;
         if (entity != null) {
-            String eventName = entity.getEventType();
+            String eventName = entity.getEventName();
             try {
-                if (!Strings.isNullOrEmpty(entity.getEventType())) {
-                    eventName = eventService.getEvent(entity.getEventType(), false).displayName();
+                if (!Strings.isNullOrEmpty(eventName)) {
+                    eventName = eventService.getEvent(eventName, false).displayName();
                 }
             } catch (Exception e) {
                 log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
@@ -159,15 +170,14 @@ public class SubscriptionDeliveryEntityServiceImpl
 
             summary = SubscriptionDeliverySummary.builder()
                                                  .id(entity.getId())
-                                                 .subscriptionName(entity.getSubscription() != null ? entity.getSubscription().getName() : null)
                                                  .eventName(eventName)
-                                                 .actionUser(entity.getActionUserLogin())
+                                                 .subscriptionName(entity.getSubscriptionName())
+                                                 .actionUser(entity.getActionUser())
                                                  .projectId(entity.getProjectId())
-                                                 .triggerLabel(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().getObjectLabel() : null)
-                                                 .status((entity.getStatus() == null) ? null : entity.getStatus().name())
-                                                 .timestamp(entity.getStatusTimestamp())
-                                                 .build();
-        }
+                                                 .triggerLabel(entity.getTriggerLabel())
+                                                 .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                                                 .timestamp(entity.getTimestamp())
+                                                 .build();        }
         return summary;
     }
 

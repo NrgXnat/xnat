@@ -77,7 +77,9 @@ public interface EventService {
 
     Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
-    List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId, Integer firstResult, Integer maxResults);
+    List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId);
+
+    SubscriptionDelivery getSubscriptionDelivery(Long id, String projectId) throws NotFoundException;
 
     List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 

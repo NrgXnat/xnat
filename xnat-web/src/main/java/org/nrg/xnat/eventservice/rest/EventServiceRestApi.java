@@ -257,15 +257,22 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDeliveriesCount(projectId, subscriptionId, includeFilterMismatch);
     }
 
+
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/summary", method = GET)
     @ResponseBody
     public List<SubscriptionDeliverySummary> getDeliveredSubscriptionsSummary(
-            final @RequestParam(value = "project", required = false) String projectId,
-            final @RequestParam(value = "first-result", required = false) Integer firstResult,
-            final @RequestParam(value = "max-results", required = false) Integer maxResults)
+            final @RequestParam(value = "project", required = false) String projectId)
             throws Exception {
-        return eventService.getSubscriptionDeliverySummary(projectId, firstResult, maxResults);
+        return eventService.getSubscriptionDeliverySummary(projectId);
     }
+
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/{id}", method = GET)
+    @ResponseBody
+    public SubscriptionDelivery getDeliveredSubscriptions(final @PathVariable long id)
+            throws Exception {
+        return eventService.getSubscriptionDelivery(id, null);
+    }
+
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = GET)
     @ResponseBody
@@ -289,6 +296,24 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             throws Exception {
         return eventService.getSubscriptionDeliveriesCount(project, subscriptionId, includeFilterMismatch);
     }
+
+    @XapiRequestMapping(restrictTo = Delete, value = "/events/{project}/delivered/{id}", method = GET)
+    @ResponseBody
+    public SubscriptionDelivery getDeliveredProjectSubscriptions(
+            final @PathVariable long id,
+            final @PathVariable @ProjectId String project)
+            throws Exception {
+        return eventService.getSubscriptionDelivery(id, project);
+    }
+
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/summary", method = GET)
+    @ResponseBody
+    public List<SubscriptionDeliverySummary> getDeliveredProjectSubscriptionsSummary(
+            final @PathVariable @ProjectId String project)
+            throws Exception {
+        return eventService.getSubscriptionDeliverySummary(project);
+    }
+
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
     @ResponseBody

@@ -538,8 +538,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId, Integer firstResult, Integer maxResults) {
-        return subscriptionDeliveryEntityService.getSummaries(projectId, firstResult, maxResults);
+    public List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId) {
+        return subscriptionDeliveryEntityService.getSummaries(projectId);
+    }
+
+    @Override
+    public SubscriptionDelivery getSubscriptionDelivery(Long id, String projectId) throws NotFoundException {
+        return subscriptionDeliveryEntityService.get(id, projectId);
     }
 
     @Override

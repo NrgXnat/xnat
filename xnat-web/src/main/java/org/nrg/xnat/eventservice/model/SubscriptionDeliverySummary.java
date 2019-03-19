@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Date;
 
@@ -42,6 +44,19 @@ public abstract class SubscriptionDeliverySummary {
                 .triggerLabel(triggerLabel)
                 .status(status)
                 .timestamp(timestamp)
+                .build();
+    }
+
+    public static SubscriptionDeliverySummary create(@Nonnull SubscriptionDeliverySummaryEntity summaryEntity){
+        return builder()
+                .id(summaryEntity.getId())
+                .eventName(summaryEntity.getEventName())
+                .subscriptionName(summaryEntity.getSubscriptionName())
+                .actionUser(summaryEntity.getActionUser())
+                .projectId(summaryEntity.getProjectId())
+                .triggerLabel(summaryEntity.getTriggerLabel())
+                .status(summaryEntity.getStatus() != null ? summaryEntity.getStatus().name() : null)
+                .timestamp(summaryEntity.getTimestamp())
                 .build();
     }
 

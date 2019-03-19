@@ -3,11 +3,13 @@ package org.nrg.xnat.eventservice.daos;
 import com.google.common.base.Strings;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.Query;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
+import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
 import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
 import org.springframework.stereotype.Repository;
 
@@ -34,6 +36,22 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
     //            .setString("projectId", projectId)
     //            .list();
     //}
+
+    public List<SubscriptionDeliverySummaryEntity> getSummaryDeliveries(String projectId){
+        TimedEventStatusEntity.Status statusToExclude = TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
+
+        String selectString = "SELECT NEW org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity(" +
+                "D.id, D.eventType, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D ";
+        String whereString = "WHERE D.status != :statusToExclude " +  (Strings.isNullOrEmpty(projectId) ? "" : "AND WHERE project_id = :projectId");
+
+        Query query = getSession().createQuery(selectString + " " + whereString + " ORDER BY D.id ASC");
+
+        query.setInteger("statusToExclude", statusToExclude.ordinal());
+        if(!Strings.isNullOrEmpty(projectId)) {
+            query.setString("projectId", projectId);
+        }
+        return query.list();
+    }
 
     public List<SubscriptionDeliveryEntity> get(String projectId, Long subscriptionId, Integer firstResult, Integer maxResults, TimedEventStatusEntity.Status statusToExclude){
         Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);

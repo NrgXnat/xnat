@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.services;
 
 
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
@@ -25,8 +26,10 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
+    SubscriptionDelivery get(Long id, String projectId) throws NotFoundException;
+
     List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, Integer firstResult, Integer maxResults);
 
-    List<SubscriptionDeliverySummary> getSummaries(String projectId, Integer firstResult, Integer maxResults);
+    List<SubscriptionDeliverySummary> getSummaries(String projectId);
 
 }

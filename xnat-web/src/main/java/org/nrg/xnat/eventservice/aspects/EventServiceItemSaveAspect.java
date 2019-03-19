@@ -26,7 +26,6 @@ import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
-import org.nrg.xnat.eventservice.events.NonImageSubjectAssessorEvent;
 import org.nrg.xnat.eventservice.events.ProjectEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
@@ -154,11 +153,7 @@ public class EventServiceItemSaveAspect {
                                                                      .filter(as -> as instanceof XnatImagesessiondataI)
                                                                      .map(as -> (XnatImagesessiondataI) as)
                                                                      .collect(Collectors.toList()), user);
-                        // Non-Imaging Subject Assessors
-                        triggerNonImageSubjectAssessorCreate(currentSubjectAssessors.stream()
-                                                                                    .filter(as -> addedSubjectAssessorIds.contains(as.getId()))
-                                                                                    .filter(as -> !(as instanceof XnatImagesessiondataI))
-                                                                                    .collect(Collectors.toList()), user);
+
 
 
                         // ** If an XML was uploaded without delete permissions, the assessors that we detect as deleted may not have actually been deleted ** //
@@ -166,13 +161,11 @@ public class EventServiceItemSaveAspect {
                         final List<String> updatedSubjectAssessorIds = xnatObjectIntrospectionService.getStoredSubjectAssessorIds(subject);
                         final List<String> updatedRemovedSubjectAssessorIds = removedSubjectAssessorIds.stream().filter(id -> !updatedSubjectAssessorIds.contains(id)).collect(Collectors.toList());
                         final List<String> updatedRemovedSessionIds = removedSessionIds.stream().filter(id -> !updatedSubjectAssessorIds.contains(id)).collect(Collectors.toList());
-                        final List<String> updatedRemoveNonImageAssesorIds = removeNonImageAssesorIds.stream().filter(id -> !updatedSubjectAssessorIds.contains(id)).collect(Collectors.toList());
 
 
                         // ** Now trigger events with the corrected added/removed ids ** //
                         triggerSubjectAssessorDelete(deletedAssessors.stream().filter(as -> updatedRemovedSubjectAssessorIds.contains(as.getId())).collect(Collectors.toList()), user);
                         triggerSessionDelete(deletedAssessors.stream().filter(as -> updatedRemovedSessionIds.contains(as.getId())).collect(Collectors.toList()), user);
-                        triggerNonImageSubjectAssessorDelete(deletedAssessors.stream().filter(as -> updatedRemoveNonImageAssesorIds.contains(as.getId())).collect(Collectors.toList()), user);
 
 
                         log.debug("SubjectEvent.Status.UPDATED detected - no-op");
@@ -217,8 +210,6 @@ public class EventServiceItemSaveAspect {
                             //eventService.triggerEvent(new SessionEvent(session, userLogin, SessionEvent.Status.UPDATED, session.getProject()));
                         }
                     }
-                } else if (!alreadyStored){ // ** type = nonImageSubjectAssessor implied by else statement
-                    triggerNonImageSubjectAssessorCreate(subjectAssessor, user);
                 }
                 if(log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
@@ -311,8 +302,6 @@ public class EventServiceItemSaveAspect {
                 if (isItemA(item, XnatType.SESSION)) {
                     XnatImagesessiondataI session = new XnatImagesessiondata(item);
                     triggerSessionDelete(session, user);
-                } else {
-                    triggerNonImageSubjectAssessorDelete(subjectAssessor, user);
                 }
 
             }else if(isItemA(item, XnatType.SUBJECT)){
@@ -342,8 +331,6 @@ public class EventServiceItemSaveAspect {
                 triggerSubjectAssessorCreate(sa, user);
                 if (sa instanceof XnatImageassessordataI) {
                     triggerSessionCreate((XnatImagesessiondataI) sa, user);
-                } else {
-                    triggerNonImageSubjectAssessorCreate(sa, user);
                 }
             }
         }
@@ -371,25 +358,6 @@ public class EventServiceItemSaveAspect {
     }
     private void triggerSubjectAssessorDelete(XnatSubjectassessordataI subjectAssessor, UserI user){
         eventService.triggerEvent(new SubjectAssessorEvent(subjectAssessor, user.getLogin(), SubjectAssessorEvent.Status.DELETED, subjectAssessor.getProject()));
-    }
-
-    //** Non-Image Subject Assessor Triggers **//
-    private void triggerNonImageSubjectAssessorCreate(List<XnatSubjectassessordataI> subjectAssessors, UserI user) {
-        if(subjectAssessors != null && !subjectAssessors.isEmpty()){
-            subjectAssessors.forEach(as -> triggerNonImageSubjectAssessorCreate(as, user));
-        }
-    }
-    private void triggerNonImageSubjectAssessorCreate(XnatSubjectassessordataI subjectAssessor, UserI user){
-        eventService.triggerEvent(new NonImageSubjectAssessorEvent(subjectAssessor, user.getLogin(), NonImageSubjectAssessorEvent.Status.CREATED, subjectAssessor.getProject()));
-    }
-    private void triggerNonImageSubjectAssessorDelete(List<XnatSubjectassessordataI> subjectAssessors, UserI user){
-        if(subjectAssessors != null) {
-            subjectAssessors.forEach(subjectAssessor ->
-                    triggerNonImageSubjectAssessorDelete(subjectAssessor, user)
-            );
-        }
-    }    private void triggerNonImageSubjectAssessorDelete(XnatSubjectassessordataI subjectAssessor, UserI user){
-        eventService.triggerEvent(new NonImageSubjectAssessorEvent(subjectAssessor, user.getLogin(), NonImageSubjectAssessorEvent.Status.DELETED, subjectAssessor.getProject()));
     }
 
     //** Session Triggers **//
@@ -458,8 +426,7 @@ public class EventServiceItemSaveAspect {
         SESSION,
         SCAN,
         IMAGE_ASSESSOR,
-        SUBJECT_ASSESSOR,
-        NON_IMAGE__SUBJECT_ASSESSOR
+        SUBJECT_ASSESSOR
     }
 
     private Boolean isItemA(ItemI item, XnatType type){
@@ -516,8 +483,7 @@ public class EventServiceItemSaveAspect {
                     return true;
                 }
                 return false;
-            case NON_IMAGE__SUBJECT_ASSESSOR:
-                return isItemA(item, XnatType.SUBJECT_ASSESSOR) && !isItemA(item, XnatType.SESSION);
+
             default:
                 log.error("No detection implementation for type: " + type.name());
                 return false;

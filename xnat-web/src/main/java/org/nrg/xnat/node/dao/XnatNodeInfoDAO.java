@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Repository
 public class XnatNodeInfoDAO extends AbstractHibernateDAO<XnatNodeInfo> {
-	
 	/**
 	 * Gets the xnat node info list by node id.
 	 *
@@ -53,4 +52,11 @@ public class XnatNodeInfoDAO extends AbstractHibernateDAO<XnatNodeInfo> {
         return (XnatNodeInfo)criteria.uniqueResult();
 	}
 
+	public List<XnatNodeInfo> getAllXnatNodeInfos() {
+		return findAll();
+	}
+
+	public List<XnatNodeInfo> getActiveXnatNodeInfos() {
+		return findByProperty("isActive", true);
+	}
 }

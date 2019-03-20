@@ -18,6 +18,7 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,6 +151,7 @@ public interface CatalogService {
      * @param user                  The user creating the catalog.
      * @param parentUri             The URI of the resource parent.
      * @param resources             The files and/or folders to copy into the resource folder.
+     * @param parentEventId         Nullable parent event id to prevent new workflow entry from being created
      * @param preserveDirectories   Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
      * @param label                 The label for the new resource catalog.
      * @param description           The description of the resource catalog.
@@ -161,13 +163,16 @@ public interface CatalogService {
      *
      * @throws Exception When something goes wrong.
      */
-    XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
+    XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
+                                        @Nullable Integer parentEventId, final boolean preserveDirectories,
+                                        final String label, final String description, final String format,
+                                        final String content, final String... tags) throws Exception;
 
     /**
      * Creates a new resource catalog with the indicated attributes. The new resource catalog is not associated with any
      * particular resource or entity on the system, is not persisted to the database, and doesn't have any related files
      * in the archive. To store the catalog to the system, you can use the {@link #insertResourceCatalog(UserI, String,
-     * XnatResourcecatalog, Map)} or {@link #insertResourceCatalog(UserI, String, XnatResourcecatalog)} methods.
+     * XnatResourcecatalog, Integer, Map)} or {@link #insertResourceCatalog(UserI, String, XnatResourcecatalog, Integer)} methods.
      *
      * @param user        The user creating the resource catalog.
      * @param label       The label for the new resource.
@@ -182,12 +187,15 @@ public interface CatalogService {
      */
     XnatResourcecatalog createResourceCatalog(final UserI user, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
-    XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
+    XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri, @Nullable Integer parentEventId,
+                                                       final String label, final String description, final String format,
+                                                       final String content, final String... tags) throws Exception;
+
 
     /**
      * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
      * parameters into the insert function, you should use the {@link #insertResourceCatalog(UserI, String,
-     * XnatResourcecatalog, Map)} version of this method.
+     * XnatResourcecatalog, Integer, Map)} version of this method.
      *
      * @param user      The user creating the resource catalog.
      * @param parentUri The URI for the resource parent.
@@ -200,23 +208,42 @@ public interface CatalogService {
     XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog) throws Exception;
 
     /**
+     * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
+     * parameters into the insert function, you should use the {@link #insertResourceCatalog(UserI, String,
+     * XnatResourcecatalog, Integer, Map)} version of this method.
+     *
+     * @param user      The user creating the resource catalog.
+     * @param parentUri The URI for the resource parent.
+     * @param catalog   The catalog object to insert.
+     * @param parentEventId EventId from parent workflow if it exists
+     *
+     * @return The newly inserted resource catalog.
+     *
+     * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
+     */
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog,
+                                              @Nullable Integer parentEventId) throws Exception;
+
+    /**
      * Inserts the resource catalog into the resource specified by the parent URI parameter.
      *
      * @param user       The user creating the resource catalog.
      * @param parentUri  The URI for the resource parent.
      * @param parameters One or more parameters to be passed into the create method.
      * @param catalog    The catalog object to insert.
+     * @param parentEventId EventId from parent workflow if it exists
      *
      * @return The newly inserted resource catalog.
      *
      * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
      */
-    XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception;
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog,
+                                              @Nullable Integer parentEventId, final Map<String, String> parameters) throws Exception;
 
     /**
      * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
      * parameters into the insert function, you should use the {@link #insertResourceCatalog(UserI, String,
-     * XnatResourcecatalog, Map)} version of this method.
+     * XnatResourcecatalog, Integer, Map)} version of this method.
      *
      * @param user    The user creating the resource catalog.
      * @param parent  The resource parent.
@@ -230,18 +257,38 @@ public interface CatalogService {
     XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog) throws Exception;
 
     /**
+     * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
+     * parameters into the insert function, you should use the {@link #insertResourceCatalog(UserI, String,
+     * XnatResourcecatalog, Integer, Map)} version of this method.
+     *
+     * @param user    The user creating the resource catalog.
+     * @param parent  The resource parent.
+     * @param catalog The catalog object to insert.
+     * @param parentEventId EventId from parent workflow if it exists
+     *
+     * @return The newly inserted resource catalog.
+     *
+     * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
+     */
+    @SuppressWarnings("unused")
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog,
+                                              @Nullable Integer parentEventId) throws Exception;
+
+    /**
      * Inserts the resource catalog into the resource specified by the parent URI parameter.
      *
      * @param user       The user creating the resource catalog.
      * @param parent     The resource parent.
      * @param parameters One or more parameters to be passed into the create method.
      * @param catalog    The catalog object to insert.
+     * @param parentEventId EventId from parent workflow if it exists
      *
      * @return The newly inserted resource catalog.
      *
      * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
      */
-    XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception;
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog,
+                                              @Nullable Integer parentEventId, final Map<String, String> parameters) throws Exception;
 
     /**
      * Refreshes the catalog for the specified resource. The resource should be identified by standard archive-relative

@@ -296,7 +296,9 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource,
+                                               final String label, final String description, final String format,
+                                               final String content, final String... tags) throws Exception {
         return insertResources(user, parentUri, Collections.singletonList(resource), label, description, format, content, tags);
     }
 
@@ -304,16 +306,21 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        return insertResources(user, parentUri, resources, false, label, description, format, content, tags);
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
+                                               final String label, final String description, final String format,
+                                               final String content, final String... tags) throws Exception {
+        return insertResources(user, parentUri, resources, null, false, label, description, format, content, tags);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        long startTime=Calendar.getInstance().getTimeInMillis();
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
+                                               @Nullable Integer parentEventId, final boolean preserveDirectories,
+                                               final String label, final String description,
+                                               final String format, final String content, final String... tags) throws Exception {
+        long startTime = Calendar.getInstance().getTimeInMillis();
     	final Collection<File> missing = Lists.newArrayList();
         for (final File source : resources) {
             if (!source.exists()) {
@@ -324,7 +331,8 @@ public class DefaultCatalogService implements CatalogService {
             throw new FileNotFoundException("Unable to find the following source files/folders: " + Joiner.on(", ").join(missing));
         }
 
-        final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
+        final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, parentEventId, label,
+                description, format, content, tags);
         final File destination = new File(catalog.getUri()).getParentFile();
         for (final File source : resources) {
             if (source.isDirectory() && preserveDirectories) {
@@ -336,8 +344,8 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
         log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
-        startTime=Calendar.getInstance().getTimeInMillis();
-        refreshResourceCatalog(user, parentUri, catalog);
+        startTime = Calendar.getInstance().getTimeInMillis();
+        refreshResourceCatalog(user, parentUri, catalog, parentEventId);
         log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
         
         return catalog;
@@ -387,24 +395,41 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+    public XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri,
+                                                              @Nullable Integer parentEventId, final String label,
+                                                              final String description, final String format,
+                                                              final String content, final String... tags) throws Exception {
         final XnatResourcecatalog catalog = createResourceCatalog(user, label, description, format, content, tags);
-        insertResourceCatalog(user, parentUri, catalog);
+        insertResourceCatalog(user, parentUri, catalog, parentEventId);
         return catalog;
     }
 
     /**
      * {@inheritDoc}
      */
-
-    public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog) throws Exception {
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri,
+                                                     final XnatResourcecatalog catalog)
+            throws Exception {
         return insertResourceCatalog(user, parentUri, catalog, null);
+    }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri,
+                                                     final XnatResourcecatalog catalog, @Nullable Integer parentEventId)
+            throws Exception {
+        return insertResourceCatalog(user, parentUri, catalog, parentEventId, null);
     }
 
     /**
      * {@inheritDoc}
      */
-    public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception {
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog,
+                                                     @Nullable Integer parentEventId, final Map<String, String> parameters)
+            throws Exception {
         final URIManager.DataURIA uri = UriParserUtils.parseURI(parentUri);
 
         if (!(uri instanceof URIManager.ArchiveItemURI)) {
@@ -448,21 +473,36 @@ public class DefaultCatalogService implements CatalogService {
             return null;
         }
 
-        return insertResourceCatalog(user, parent, catalog, parameters);
+        return insertResourceCatalog(user, parent, catalog, parentEventId, parameters);
     }
-
     /**
      * {@inheritDoc}
      */
-    public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement item, final XnatResourcecatalog catalog) throws Exception {
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement item,
+                                                     final XnatResourcecatalog catalog)
+            throws Exception {
         return insertResourceCatalog(user, item, catalog, null);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement item,
+                                                     final XnatResourcecatalog catalog, @Nullable Integer parentEventId)
+            throws Exception {
+        return insertResourceCatalog(user, item, catalog, parentEventId, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("ConstantConditions")
-    public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception {
+    @Override
+    public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent,
+                                                     final XnatResourcecatalog catalog, @Nullable Integer parentEventId,
+                                                     final Map<String, String> parameters) throws Exception {
         final XFTItem item             = parent.getItem();
         final boolean isScan           = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
         final boolean isReconstruction = item.instanceOf(XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME);
@@ -481,27 +521,30 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final EventDetails event = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, CREATE_RESOURCE, "Catalog service invoked", "");
+        PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
+        EventMetaI eventMetaI = workflow.buildEvent();
+
         try {
             if (isExperiment) {
                 final XnatExperimentdata experiment = (XnatExperimentdata) parent;
                 event.setComment("Created experiment resource " + uploadId + " for " + experiment.getId() + " at " + catalog.getUri());
-                insertExperimentResourceCatalog(user, experiment, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+                insertExperimentResourceCatalog(user, experiment, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
             } else if (isScan) {
                 final XnatImagescandata scan = (XnatImagescandata) parent;
                 event.setComment("Created scan resource " + uploadId + " for image session " + scan.getImageSessionId() + " scan " + scan.getId() + " at " + catalog.getUri());
-                insertScanResourceCatalog(user, scan, catalog, uploadId, event);
+                insertScanResourceCatalog(user, scan, catalog, uploadId, eventMetaI);
             } else if (isProject) {
                 final XnatProjectdata project = (XnatProjectdata) parent;
                 event.setComment("Created project resource " + uploadId + " for project " + project.getId() + " at " + catalog.getUri());
-                insertProjectResourceCatalog(user, project, catalog, uploadId, event);
+                insertProjectResourceCatalog(user, project, catalog, uploadId, eventMetaI);
             } else if (isSubject) {
                 final XnatSubjectdata subject = (XnatSubjectdata) parent;
                 event.setComment("Created subject resource " + uploadId + " for " + subject.getId() + " at " + catalog.getUri());
-                insertSubjectResourceCatalog(user, subject, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+                insertSubjectResourceCatalog(user, subject, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
             } else if (isReconstruction) {
                 final XnatReconstructedimagedata reconstruction = (XnatReconstructedimagedata) parent;
                 event.setComment("Created reconstruction resource " + uploadId + " for image session " + reconstruction.getImageSessionId() + " reconstruction " + reconstruction.getId() + " at " + catalog.getUri());
-                insertReconstructionResourceCatalog(user, reconstruction, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+                insertReconstructionResourceCatalog(user, reconstruction, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
             }
             return catalog;
         } catch (Exception e) {
@@ -511,8 +554,8 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private void refreshResourceCatalog(final UserI user, final String parentURI, XnatResourcecatalog catalog,
-                                        final Operation... operations) throws ServerException, ClientException {
-        _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog);
+                                        @Nullable Integer parentEventId, final Operation... operations) throws ServerException, ClientException {
+        _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog, parentEventId);
     }
 
     /**
@@ -586,8 +629,8 @@ public class DefaultCatalogService implements CatalogService {
                             "please create the catalog before you add to it.");
                 }
                 try {
-                    resource = createAndInsertResourceCatalog(user, parentUriStr, ((ResourceURII) resourceURI).getResourceLabel(),
-                            null, null, null);
+                    resource = createAndInsertResourceCatalog(user, parentUriStr, null,
+                            ((ResourceURII) resourceURI).getResourceLabel(), null, null, null);
                 } catch (Exception e) {
                     throw new ServerException(e);
                 }
@@ -910,7 +953,7 @@ public class DefaultCatalogService implements CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations) throws ServerException, ClientException {
-        _refreshCatalog(user, resourcePath, operations, null);
+        _refreshCatalog(user, resourcePath, operations, null, null);
     }
 
     /**
@@ -925,7 +968,7 @@ public class DefaultCatalogService implements CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations,
-                                 @Nullable XnatAbstractresourceI catalog) throws ServerException, ClientException {
+                                 @Nullable XnatAbstractresourceI catalog, @Nullable Integer parentEventId) throws ServerException, ClientException {
 
         try {
             final URIManager.DataURIA uri = UriParserUtils.parseURI(resourcePath);
@@ -940,6 +983,7 @@ public class DefaultCatalogService implements CatalogService {
             checkEditPermissionsOnItem(user, item, resourcePath);
 
             if (item != null) {
+                PersistentWorkflowI workflow = null;
                 try {
                     if (resourceURI instanceof ResourceURII) {//if we are referencing a specific catalog, make sure it doesn't actually reference an individual file.
                         final String resourceFilePath = ((ResourceURII) resourceURI).getResourceFilePath();
@@ -989,25 +1033,33 @@ public class DefaultCatalogService implements CatalogService {
                     final boolean delete        = list.contains(Operation.Delete);
                     final boolean populateStats = list.contains(Operation.PopulateStats);
 
-                    final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
+                    workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
                     // Note that resources will contain only catalog if that is specified
                     for (final XnatAbstractresourceI resource : resources) {
                         final String archiveRootPath = item.getArchiveRootPath();
                         refreshResourceCatalog((XnatAbstractresource) resource, archiveRootPath, populateStats, checksum, delete, append, user, workflow.buildEvent());
                     }
 
-                    WorkflowUtils.complete(workflow, workflow.buildEvent());
+                    if (parentEventId == null) {
+                        WorkflowUtils.complete(workflow, workflow.buildEvent());
+                    }
                 } catch (ClientException e) {
+                    failWorkflow(parentEventId, workflow);
                     throw e;
                 } catch (PersistentWorkflowUtils.JustificationAbsent justificationAbsent) {
+                    failWorkflow(parentEventId, workflow);
                     throw new ClientException("No justification was provided for the refresh action, but is required by the system configuration.");
                 } catch (PersistentWorkflowUtils.ActionNameAbsent actionNameAbsent) {
+                    failWorkflow(parentEventId, workflow);
                     throw new ClientException("No action name was provided for the refresh action, but is required by the system configuration.");
                 } catch (PersistentWorkflowUtils.IDAbsent idAbsent) {
+                    failWorkflow(parentEventId, workflow);
                     throw new ClientException("No workflow ID was provided for the refresh action, but is required by the system configuration.");
                 } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
+                    failWorkflow(parentEventId, workflow);
                     throw new ClientException("Couldn't find the primary project for the specified resource " + resourcePath);
                 } catch (Exception e) {
+                    failWorkflow(parentEventId, workflow);
                     throw new ServerException("An error occurred trying to save the workflow for the refresh operation.", e);
                 }
             }
@@ -1016,7 +1068,17 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void insertProjectResourceCatalog(final UserI user, final XnatProjectdata project, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails ci) throws Exception {
+    private void failWorkflow(Integer parentEventId, PersistentWorkflowI workflow) {
+        if (parentEventId == null && workflow != null) {
+            try {
+                WorkflowUtils.fail(workflow, workflow.buildEvent());
+            } catch (Exception e) {
+                log.error("Unable to update workflow", e);
+            }
+        }
+    }
+
+    private void insertProjectResourceCatalog(final UserI user, final XnatProjectdata project, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI ci) throws Exception {
         final XnatProjectdata working;
         if (project.getUser() == null) {
             working = XnatProjectdata.getProjectByIDorAlias(project.getId(), user, true);
@@ -1052,7 +1114,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void insertSubjectResourceCatalog(final UserI user, final XnatSubjectdata subject, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails ci, final Map<String, String> parameters) throws Exception {
+    private void insertSubjectResourceCatalog(final UserI user, final XnatSubjectdata subject, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI ci, final Map<String, String> parameters) throws Exception {
         final String resourceFolder = resourceCatalog.getLabel();
         final XnatProjectdata project = parameters.containsKey("project")
                                         ? XnatProjectdata.getProjectByIDorAlias(parameters.get("project"), user, false)
@@ -1085,7 +1147,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void insertExperimentResourceCatalog(final UserI user, final XnatExperimentdata experiment, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails event, final Map<String, String> parameters) throws Exception {
+    private void insertExperimentResourceCatalog(final UserI user, final XnatExperimentdata experiment, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI event, final Map<String, String> parameters) throws Exception {
         final boolean isImageAssessor = experiment.getItem().instanceOf(XnatImageassessordata.SCHEMA_ELEMENT_NAME);
         final String  resourceFolder  = resourceCatalog.getLabel();
         final String  experimentId    = experiment.getId();
@@ -1138,7 +1200,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void insertScanResourceCatalog(final UserI user, final XnatImagescandata scan, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails ci) throws Exception {
+    private void insertScanResourceCatalog(final UserI user, final XnatImagescandata scan, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI ci) throws Exception {
         final String resourceFolder = resourceCatalog.getLabel();
 
         final CatCatalogBean catalog = new CatCatalogBean();
@@ -1175,7 +1237,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void insertReconstructionResourceCatalog(final UserI user, final XnatReconstructedimagedata reconstruction, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails ci, final Map<String, String> parameters) throws Exception {
+    private void insertReconstructionResourceCatalog(final UserI user, final XnatReconstructedimagedata reconstruction, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI ci, final Map<String, String> parameters) throws Exception {
         final String               resourceFolder = resourceCatalog.getLabel();
         final XnatImagesessiondata session        = reconstruction.getImageSessionData();
         final Path                 path           = Paths.get(session.getCurrentSessionFolder(true), "ASSESSORS", "PROCESSED", uploadId);

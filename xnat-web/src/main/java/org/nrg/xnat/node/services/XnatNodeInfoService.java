@@ -51,17 +51,4 @@ public interface XnatNodeInfoService extends BaseHibernateService<XnatNodeInfo> 
 	 */
 	XnatNodeInfo getXnatNodeInfoByNodeIdAndHostname(String nodeId, String hostName);
 
-	/**
-	 * Gets a list of all configured nodes.
-	 *
-	 * @return The list of configured node info objects.
-	 */
-	List<XnatNodeInfo> getAllXnatNodeInfos();
-
-	/**
-	 * Gets a list of the currently active nodes.
-	 *
-	 * @return The list of node info objects for active nodes.
-	 */
-	List<XnatNodeInfo> getActiveXnatNodeInfos();
 }

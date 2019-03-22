@@ -48,7 +48,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -76,12 +75,11 @@ public class XnatAppInfo {
         _environment = environment;
         _openUrlsPref = openUrlsPref;
         _serializerService = serializerService;
-        _nodeInfoService = nodeInfoService;
         _primaryNode = Boolean.parseBoolean(_environment.getProperty(PROPERTY_XNAT_PRIMARY_MODE, "true"));
         _node = node;
 
-        _siteAddress = getSiteAddress();
-        _hostName = getXnatNodeHostName();
+        _siteAddress = new URL(_preferences.getSiteUrl()).getHost();
+        _hostName = getXnatNodeHostName(nodeInfoService);
         _displayHostName = shouldDisplayHostName(_preferences.getDisplayHostName());
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
@@ -214,6 +212,10 @@ public class XnatAppInfo {
 
     }
 
+    private boolean shouldDisplayHostName(final DisplayHostName displayHostName) {
+        return displayHostName == DisplayHostName.always || (displayHostName != DisplayHostName.never && !StringUtils.equals(_hostName, _siteAddress));
+    }
+
     @SuppressWarnings("unused")
     public void updateOpenUrlList() {
         /*
@@ -253,6 +255,7 @@ public class XnatAppInfo {
         if (!_initialized) {
             // Recheck to see if it has been initialized. We don't need to recheck to see if it's been
             // uninitialized because that's silly.
+            // noinspection SqlNoDataSourceInspection
             try {
                 _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
                 if (_initialized) {
@@ -266,8 +269,8 @@ public class XnatAppInfo {
                     for (final String preference : _foundPreferences.keySet()) {
                         if (_foundPreferences.get(preference) != null) {
                             _template.update(
-                                "UPDATE xhbm_preference SET value = ? WHERE name = ?",
-                                new Object[] {_foundPreferences.get(preference), preference}, new int[] {Types.VARCHAR, Types.VARCHAR}
+                                    "UPDATE xhbm_preference SET value = ? WHERE name = ?",
+                                    new Object[]{_foundPreferences.get(preference), preference}, new int[]{Types.VARCHAR, Types.VARCHAR}
                                             );
                             try {
                                 _preferences.set(_foundPreferences.get(preference), preference);
@@ -626,38 +629,12 @@ public class XnatAppInfo {
         }
     }
 
-    @Nonnull
     private static List<String> findHostNames() {
         final Set<String> hostNames = XDAT.getHostNames();
         if (hostNames.isEmpty()) {
             return Collections.singletonList("localhost");
         }
         return new ArrayList<>(hostNames);
-    }
-
-    @Nullable
-    private String getSiteAddress() {
-        final String siteUrl = _preferences.getSiteUrl();
-        if (StringUtils.isBlank(siteUrl)) {
-            log.info("No site URL is currently configured, returning null for site address");
-            return null;
-        }
-        try {
-            return new URL(siteUrl).getHost();
-        } catch (MalformedURLException e) {
-            log.info("The site URL \"{}\" is invalid, returning null for site address", siteUrl);
-            return null;
-        }
-    }
-
-    private boolean shouldDisplayHostName(final DisplayHostName displayHostName) {
-        if (displayHostName == DisplayHostName.always || displayHostName == DisplayHostName.never) {
-            return displayHostName == DisplayHostName.always;
-        }
-        if (_siteAddress != null && !StringUtils.equals(_hostName, _siteAddress)) {
-            return true;
-        }
-        return _nodeInfoService.getActiveXnatNodeInfos().size() > 1;
     }
 
     private XnatNodeInfo getXnatNodeInfo(final XnatNodeInfoService nodeInfoService) {
@@ -672,8 +649,8 @@ public class XnatAppInfo {
         return null;
     }
 
-    private String getXnatNodeHostName() {
-        final XnatNodeInfo nodeInfo = getXnatNodeInfo(_nodeInfoService);
+    private String getXnatNodeHostName(final XnatNodeInfoService nodeInfoService) {
+        final XnatNodeInfo nodeInfo = getXnatNodeInfo(nodeInfoService);
         if (nodeInfo != null) {
             return nodeInfo.getHostName();
         }
@@ -839,7 +816,6 @@ public class XnatAppInfo {
     private final Environment              _environment;
     private final SiteConfigPreferences    _preferences;
     private final SerializerService        _serializerService;
-    private final XnatNodeInfoService      _nodeInfoService;
     private final PluginOpenUrlsPreference _openUrlsPref;
     private final String                   _setupPath;
     private final List<String>             _setupPathPatterns;

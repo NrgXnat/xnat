@@ -61,8 +61,8 @@ public final class DicomInboxImporter extends ImporterHandlerA {
     	final String pFn = pFile.getName();
     	final String lFn = pFn.toLowerCase();
     	if (!hasArchiveExtension(lFn)) {
-	    	throw new ClientException("User inbox file " + pFn + " does not have an archive extension - " + ARCHIVE_EXTENSIONS +
-	    			".  It will be skipped.");
+	    	throw new ClientException("User inbox file " + pFn + " does not have an archive extension - " + Arrays.toString(ARCHIVE_EXTENSIONS) +
+	    			".  It will be skipped. The path must be to either a directory or an archive file.");
     	}
     	final File parent = pFile.getParentFile();
     	// Create a subdirectory for the file and move it there.

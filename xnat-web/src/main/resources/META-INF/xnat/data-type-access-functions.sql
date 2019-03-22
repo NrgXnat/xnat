@@ -250,3 +250,43 @@ BEGIN
     RETURN has_mismatches OR has_missing;
 END
 $_$;
+
+-- Gets all hash indices in the public schema along with the CREATE INDEX
+-- statements required to regenerate the indices.
+CREATE OR REPLACE VIEW get_xnat_hash_indices AS
+SELECT
+  indexname,
+  regexp_replace(indexdef, E'[\n\r]+', ' ', 'g') AS recreate
+FROM
+  pg_indexes
+WHERE
+    indexdef LIKE '%hash%' AND
+    schemaname = 'public';
+
+-- Drops all hash indices as returned with the get_hash_indices view. The
+-- recreate parameter is true by default and indicates whether each index
+-- should be regenerated once it's been dropped.
+CREATE OR REPLACE FUNCTION drop_xnat_hash_indices(recreate BOOLEAN DEFAULT TRUE)
+  RETURNS INTEGER
+AS
+$_$
+DECLARE
+  total_count INTEGER := 0;
+BEGIN
+  DECLARE
+    current_index RECORD;
+  BEGIN
+    FOR current_index IN SELECT * FROM get_xnat_hash_indices
+      LOOP
+        total_count := total_count + 1;
+        EXECUTE ('DROP INDEX ' || current_index.indexname);
+        IF recreate
+        THEN
+          EXECUTE (current_index.recreate);
+        END IF;
+      END LOOP;
+  END;
+  RETURN total_count;
+END;
+$_$
+  LANGUAGE plpgsql;

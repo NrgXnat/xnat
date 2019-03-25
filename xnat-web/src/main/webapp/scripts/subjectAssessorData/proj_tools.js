@@ -606,7 +606,7 @@ function SubjectEditor(_config) {
                     if (this.selector.new_subject == window.currentSubject) {
                         xmodal.message('Modify Subject', 'No ' + XNAT.app.displayNames.singular.subject.toLowerCase() + ' modification found.');
                         this.cancel();
-                    } else if (this.form.new_subject.selectedValue == 0) {
+                    } else if (this.form.new_subject.selectedIndex == 0) {
                         xmodal.message('Modify Subject', 'Please select a ' + XNAT.app.displayNames.singular.subject.toLowerCase());
                     } else {
                         if (this.selector.config.uri == undefined) {

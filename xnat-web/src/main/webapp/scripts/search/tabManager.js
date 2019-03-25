@@ -204,6 +204,7 @@ function TabManager(_id){
                 content: '<div id="' + _id + '_dt_p" class="xT_p"></div><div id="' + _id + '_dt_c" class="xT_c" style="overflow:auto;"><div id="' + _id + '_dt" class="xT_dt">Preparing Results</div></div>',
                 active: true
             });
+            
 
             tempTab.search_id = _id;
             tempTab.tab_manager = this;
@@ -212,6 +213,12 @@ function TabManager(_id){
             //this.tabView.set('activeTab',tempTab,true);
             //this.tabView.addTab(tempTab);
 
+            // Show/Hide the close icon based on how many tabs are loaded
+            if(this.loaded.length > 1){
+                $("span.close.totally-bogus").show();
+            }else{
+                $("span.close.totally-bogus").hide();
+            }
             YAHOO.util.Event.on(tempTab.getElementsByClassName('close')[0], 'click', function(e, tab) {
 
                 var $this_tab = $(this).closest('li');
@@ -232,7 +239,12 @@ function TabManager(_id){
                 if (navset_position.left < target_tab_position.left){
                     $target_tab.addClass('dont_move');
                 }
-
+                
+                // If there is only one tab loaded, hide the close icon
+                if(tab.tab_manager.loaded.length == 1){
+                    $("span.close.totally-bogus").hide();
+                }
+                
                 $target_tab.trigger('click');
 
             }, tempTab);

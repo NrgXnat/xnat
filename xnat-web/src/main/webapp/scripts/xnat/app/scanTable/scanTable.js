@@ -80,9 +80,14 @@ var XNAT = getObject(XNAT);
     scanTable.displayScanDetails = function(scanId){
 
         if (!scanId) return false;
-
+        
+        // If the details modal for this scan is open, don't open it again.
+        if(scanTable.scanDetailsOpen.includes(scanId)) return false;
+        
+        
         if (loadSnapshotImageNoBlocking(scanId)) {
 
+            scanTable.scanDetailsOpen.push(scanId);
             var tmpl = $('#scan-' + scanId + '-details-template').html();
 
             XNAT.ui.dialog.message({
@@ -93,6 +98,9 @@ var XNAT = getObject(XNAT);
                 mask: false,
                 esc: true,
                 okLabel: 'Close',
+                afterClose: function(){
+                    delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
+                },
                 footer: {
                     content: 'Click in the header to move this dialog around the page'
                 }
@@ -364,6 +372,9 @@ var XNAT = getObject(XNAT);
         if (scanId) { scanTable.displayScanDetails(scanId) }
         else { console.log('No Scan ID found') }
     });
+    
+    // Array that keeps track of which scan details modals are open.
+    scanTable.scanDetailsOpen = [];
 
     // this script has loaded
     scanTable.loaded = true;

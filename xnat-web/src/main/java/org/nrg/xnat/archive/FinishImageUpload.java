@@ -182,8 +182,13 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
         final SessionData sessionData = session.getSessionData();
         if (sessionData != null) {
             PrearchiveCode sessionAutoArcSetting = sessionData.getAutoArchive();
-            if (sessionAutoArcSetting != null && (sessionAutoArcSetting == PrearchiveCode.AutoArchive || sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite)) {
-                return setArchiveReason(session, true);
+            if(sessionAutoArcSetting != null){
+                if (sessionAutoArcSetting == PrearchiveCode.AutoArchive || sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite) {
+                    return setArchiveReason(session, true);
+                }
+                else if(sessionAutoArcSetting == PrearchiveCode.Manual){
+                    return setArchiveReason(session, false);
+                }
             }
         }
 

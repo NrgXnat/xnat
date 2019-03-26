@@ -16,6 +16,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.ThemeService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.XnatProviderManager;
 
 @Slf4j
@@ -40,8 +41,8 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         }
         
         // Redirect to Index.vm if the user is already logged in
-        XDATUser u = (XDATUser) context.get("user");
-        if(null != u && !"guest".equalsIgnoreCase(u.getUsername())){
+        UserI u = XDAT.getUserDetails();
+        if(null != u && !u.getUsername().equalsIgnoreCase("guest")){
             data.setScreenTemplate("Index.vm");
         }
     }

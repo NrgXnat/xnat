@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xnat.security.XnatProviderManager;
 
@@ -36,6 +37,12 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         String themedScript = themeService.getThemePage("theme", "script");
         if (themedScript != null) {
             context.put("themedScript", themedScript);
+        }
+        
+        // Redirect to Index.vm if the user is already logged in
+        XDATUser u = (XDATUser) context.get("user");
+        if(null != u && !"guest".equalsIgnoreCase(u.getUsername())){
+            data.setScreenTemplate("Index.vm");
         }
     }
 

@@ -407,10 +407,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         if (null == project) {
             return null;
         }
-        if (_parameters.containsKey("prevent_auto_commit") && BooleanUtils.toBoolean((String)_parameters.get("prevent_auto_commit"))) {
-            return PrearchiveCode.Manual;
-        }
-        else if (_parameters.containsKey("force_auto_commit") && BooleanUtils.toBoolean((String)_parameters.get("force_auto_commit"))) {
+        if (_parameters.containsKey("force_auto_commit") && BooleanUtils.toBoolean((String)_parameters.get("force_auto_commit"))) {
             return PrearchiveCode.AutoArchive;
         }
         Boolean fromDicomObject = getIdentifier().requestsAutoarchive(o);

@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.XnatProviderManager;

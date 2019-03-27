@@ -52,12 +52,20 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
+        final UserI user = XDAT.getUserDetails();
+        if(user == null || user.getUsername().equalsIgnoreCase("guest")) {
+           // If the user isn't authenticated, we need to setup the page with
+           // Noninteractive.vm and hide the "Manage user Login and Profile" section. 
+           context.put("unathenticated", true); 
+        }
+        
         try {
             if(TurbineUtils.HasPassedParameter("confirmationToken", data)){
                 String confirmationToken = (String) TurbineUtils.GetPassedParameter("confirmationToken", data);
                 UserChangeRequest userChangeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestByGuid(confirmationToken);
                 if(userChangeRequest!=null && StringUtils.equals(userChangeRequest.getFieldToChange(),"email")){
                     UserI existing = null;
+                    
                     String username = userChangeRequest.getUsername();
                     if (username != null) {
                         existing = Users.getUser(username);
@@ -82,18 +90,12 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             context.put("message", "The email address you've specified is already in use.");
                         }
 
-                        final UserI user = XDAT.getUserDetails();
-                        assert user != null;
-
-                        existing.setEmail(newEmail);
-
                         try {
-                            Users.save(existing, user, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
+                            existing.setEmail(newEmail);
+                            Users.save(existing, existing, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
                             ElementSecurity.refresh();
 
-                            // Update the email address for the user principal in the application session.
-                            user.setEmail(newEmail);
-                            XDAT.getContextService().getBean(UserChangeRequestService.class).cancelRequest(XDAT.getUserDetails().getUsername(), "email");
+                            XDAT.getContextService().getBean(UserChangeRequestService.class).cancelRequest(existing.getUsername(), "email");
 
                             final String message = "Your email address was successfully changed to " + newEmail + ".";
                             try {
@@ -104,7 +106,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             context.put("success", true);
                             context.put("message", "Email address changed.");
                         } catch (InvalidPermissionException e) {
-                            AdminUtils.sendAdminEmail(user, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+                            AdminUtils.sendAdminEmail(existing, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
                             data.getResponse().sendError(403);
                         } catch (Exception e) {
                             log.error("Error Storing User", e);
@@ -117,7 +119,6 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("message", "Invalid or expired change request.");
                 }
             }
-            UserI user = XDAT.getUserDetails();
             if (user != null && !user.getUsername().equalsIgnoreCase("guest")) {
                 if (!StringUtils.isBlank(user.getUsername()) &&
                         !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
@@ -155,9 +156,9 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             data.getSession().setAttribute("forgot", true);
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
                             if(userID!=null){
-                                user = Users.getUser(userID);
-                                XDAT.loginUser(data, user, true);
-                                context.put("user", user);
+                                UserI validatedUser = Users.getUser(userID);
+                                XDAT.loginUser(data, validatedUser, true);
+                                context.put("user", validatedUser);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");

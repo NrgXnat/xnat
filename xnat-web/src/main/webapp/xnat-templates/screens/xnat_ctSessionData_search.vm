@@ -20,18 +20,42 @@
             <h5>$displayManager.getSingularDisplayNameForSubject():</h5>
             #xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBJECT_ID"))
         </div>
-
-        <div class="search-item">
-            <h5>ID:</h5>
-            #xdatSearchField($schemaElement $schemaElement.getDisplayField("EXPT_ID"))
-        </div>
-
+            
         <div class="clear"></div>
 
+        <div class="search-item">
+            <h5>Gender:</h5>
+            <select name="xnat:subjectData.GENDER_TEXT_equals">
+                #set($GENDER_TEXT_value=$!search.getWebFormValue("xnat:subjectData.GENDER_TEXT_equals"))
+                <option value="" #if($GENDER_TEXT_value=="") SELECTED #end>(SELECT)</option>
+                <option value="F" #if($GENDER_TEXT_value=="F") SELECTED #end>female</option>
+                <option value="M" #if($GENDER_TEXT_value=="M") SELECTED #end>male</option>
+                <option value="U" #if($GENDER_TEXT_value=="U") SELECTED #end>unknown</option>
+            </select>
+        </div>
+        
         <div class="search-item">
             <h5>Age:</h5>
             #xdatSearchField($schemaElement $schemaElement.getDisplayField("AGE"))
         </div>
+            
+        <div class="clear"></div>
+        
+        <h4>CT Fields</h4>
+
+        <div class="search-item">
+            <h5>ID:</h5>
+            <input type="hidden"
+                name="xnat:ctSessionData.COMBO1_FIELDS"
+                value="xnat:ctSessionData/ID_equals,xnat:ctSessionData/label_equals,xnat:ctSessionData/sharing/share/label_equals">
+
+            <input type="text" size="20"
+                name="xnat:ctSessionData.COMBO1"
+                value="$!search.getWebFormValue("xnat:ctSessionData.COMBO1")"
+                maxlength="100">
+        </div>
+
+        <div class="clear"></div>
 
         <div class="search-item">
             <h5>Inserted:</h5>

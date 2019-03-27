@@ -2,13 +2,8 @@
 <!-- search script -->
 <script type="text/javascript">
     function submitQuickSearch(){
-        if($('#searchValue').val().length > 0) {
-            concealContent();
-            $('#quickSearchForm').submit();
-        }
-        else {
-            return false;
-        }
+        concealContent();
+        $('#quickSearchForm').submit();
     }
     $(document).on('click','#search_btn',function(e){
         e.preventDefault();

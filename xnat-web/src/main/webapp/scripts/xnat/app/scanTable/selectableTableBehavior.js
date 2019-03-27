@@ -9,7 +9,10 @@ function setStateSelectAllToggle($selectAllToggle) {
         if (containingTable.find('tbody .selectable-select-one:not(:hidden):not(:checked)').length > 0) {
             indeterminate = true;
         }
+    }else{
+       containingTable.find('.data-table-action').addClass('disabled');
     }
+    
     $selectAllToggle.prop("indeterminate",indeterminate);
 }
 

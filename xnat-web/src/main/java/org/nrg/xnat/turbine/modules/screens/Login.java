@@ -15,6 +15,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.ThemeService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.XnatProviderManager;
 
 @Slf4j
@@ -36,6 +37,12 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         String themedScript = themeService.getThemePage("theme", "script");
         if (themedScript != null) {
             context.put("themedScript", themedScript);
+        }
+        
+        // Redirect to Index.vm if the user is already logged in
+        UserI u = XDAT.getUserDetails();
+        if(null != u && !u.getUsername().equalsIgnoreCase("guest")){
+            data.setScreenTemplate("Index.vm");
         }
     }
 

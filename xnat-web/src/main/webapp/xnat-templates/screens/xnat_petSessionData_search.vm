@@ -36,7 +36,6 @@
                 <option value="" #if($GENDER_TEXT_value=="") SELECTED #end>(SELECT)</option>
                 <option value="F" #if($GENDER_TEXT_value=="F") SELECTED #end>female</option>
                 <option value="M" #if($GENDER_TEXT_value=="M") SELECTED #end>male</option>
-                <option value="O" #if($GENDER_TEXT_value=="O") SELECTED #end>other</option>
                 <option value="U" #if($GENDER_TEXT_value=="U") SELECTED #end>unknown</option>
             </select>
         </div>
@@ -52,26 +51,19 @@
 
         <div class="search-item">
             <h5>PET ID:</h5>
-            <input size="20" type="text" name="xnat:petSessionData.EXPT_ID_equals" value="$!search.getWebFormValue("xnat:petSessionData.EXPT_ID_equals")" maxlength="100"/>
+            <input type="hidden"
+                name="xnat:petSessionData.COMBO1_FIELDS"
+                value="xnat:petSessionData/ID_equals,xnat:petSessionData/label_equals,xnat:petSessionData/sharing/share/label_equals">
+
+        <input type="text" size="20"
+                name="xnat:petSessionData.COMBO1"
+                value="$!search.getWebFormValue("xnat:petSessionData.COMBO1")"
+                maxlength="100">
         </div>
 
         <div class="search-item">
             <h5>Tracer:</h5>
-            <select name="xnat:petSessionData.TRACER_NAME_equals">
-                #set($SCANNER_value=$!search.getWebFormValue("xnat:petSessionData.TRACER_NAME_equals"))
-                <option value="" #if($SCANNER_value=="") SELECTED #end>(SELECT)</option>
-                #if($siteConfig.sitewidePetTracers)
-                    #set ($tracers = $siteConfig.sitewidePetTracers.split('\s')) <!-- split a whitespace-separated string into an array -->
-                    #foreach($tracer in $tracers)
-                        <option value="$tracer" #if($SCANNER_value=="$tracer") SELECTED #end>$tracer</option>
-                    #end
-                #else
-                    <option value="PIB" #if($SCANNER_value=="PIB") SELECTED #end>PIB</option>
-                    <option value="FDG" #if($SCANNER_value=="FDG") SELECTED #end>FDG</option>
-                    <option value="RAC" #if($SCANNER_value=="RAC") SELECTED #end>RAC</option>
-                    <option value="PK" #if($SCANNER_value=="PK") SELECTED #end>PK</option>
-                #end
-            </select>
+            <input size="10" type="text" name="xnat:petSessionData.TRACER_NAME_equals" value="$!search.getWebFormValue("xnat:petSessionData.TRACER_NAME_equals")"/>
         </div>
 
         <div class="clear"></div>

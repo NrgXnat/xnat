@@ -31,7 +31,6 @@
                         <option value="" #if($GENDER_TEXT_value=="") SELECTED #end>(SELECT)</option>
                         <option value="F" #if($GENDER_TEXT_value=="F") SELECTED #end>female</option>
                         <option value="M" #if($GENDER_TEXT_value=="M") SELECTED #end>male</option>
-                        <option value="O" #if($GENDER_TEXT_value=="O") SELECTED #end>other</option>
                         <option value="U" #if($GENDER_TEXT_value=="U") SELECTED #end>unknown</option>
                     </select>
                 </td>

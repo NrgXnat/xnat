@@ -91,7 +91,7 @@
                                     <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
                                 #end
                                 #if($item.getStatus()!="obsolete")
-                                    #if(!($item.isQuarantine() && $siteConfig.uiHideScanDeleteIfQuarantined))
+                                    #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
                                         #if ($data.getSession().getAttribute("userHelper").canDelete($item))
                                             <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
                                                 <i class="fa fa-trash"></i>
@@ -147,10 +147,14 @@
                                 #end
                                 </span>
                             </div>
-                            #if ($item.canEdit($user))
-                                <div class="inline-actions pull-right text-right" style="width:15%;">
-                                    <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
-                                </div>
+                            #if($item.getStatus()!="obsolete")
+                                #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                    #if ($item.canEdit($user))
+                                        <div class="inline-actions pull-right text-right" style="width:15%;">
+                                            <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
+                                        </div>
+                                    #end
+                                #end
                             #end
                         </td>
                         <td class="run-menu inline-actions-menu-container" style="position: relative; width: 24px; display: none;">

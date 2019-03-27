@@ -80,9 +80,14 @@ var XNAT = getObject(XNAT);
     scanTable.displayScanDetails = function(scanId){
 
         if (!scanId) return false;
-
+        
+        // If the details modal for this scan is open, don't open it again.
+        if(scanTable.scanDetailsOpen.includes(scanId)) return false;
+        
+        
         if (loadSnapshotImageNoBlocking(scanId)) {
 
+            scanTable.scanDetailsOpen.push(scanId);
             var tmpl = $('#scan-' + scanId + '-details-template').html();
 
             XNAT.ui.dialog.message({
@@ -93,6 +98,9 @@ var XNAT = getObject(XNAT);
                 mask: false,
                 esc: true,
                 okLabel: 'Close',
+                afterClose: function(){
+                    delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
+                },
                 footer: {
                     content: 'Click in the header to move this dialog around the page'
                 }
@@ -118,7 +126,7 @@ var XNAT = getObject(XNAT);
         var url = scanUrl('/scans/' + scanId + '/files?format=zip');
         downloadIframe(url);
     }
-
+    
     function deleteScan(scanId){
         scanId = scanId || getScanId(this);
         XNAT.ui.dialog.open({
@@ -150,60 +158,62 @@ var XNAT = getObject(XNAT);
                     label: 'Delete Scan',
                     isDefault: true,
                     close: false,
-                    action: function(obj){
+                    action: function (obj) {
+                        XNAT.app.requestJustificationDialog(function(event_reason){
+                            var reasonStr = event_reason ? "event_reason=" + encodeURIComponent(event_reason) : "";
+                            var deleteUrl   = '/REST/experiments/' + XNAT.data.context.ID + '/scans/' + scanId;
+                            var deleteFiles = obj.dialogBody$.find('#delete_files').is(':checked');
+                            var params = [
+                                'format=json',
+                                'event_action=Removed scan',
+                                'event_type=WEB_FORM',
+                                reasonStr
+                            ];
 
-                        var deleteUrl   = '/REST/experiments/' + XNAT.data.context.ID + '/scans/' + scanId;
-                        var deleteFiles = obj.dialogBody$.find('#delete_files').is(':checked');
-
-                        var params = [
-                            'format=json',
-                            'event_action=Removed scan',
-                            'event_type=WEB_FORM'
-                        ];
-
-                        if (deleteFiles) {
-                            params.push('removeFiles=true');
-                        }
-
-                        XNAT.xhr.delete({
-                            url: XNAT.url.csrfUrl(deleteUrl, params),
-                            success: function(data){
-                                var msg = 'Scan deleted';
-                                msg += (deleteFiles) ? ' and scan files permanently removed from file system.' : '.';
-
-                                XNAT.ui.dialog.open({
-                                    title: 'Success',
-                                    width: 360,
-                                    content: '<p>'+msg+' Page will reload.</p>',
-                                    buttons: [
-                                        {
-                                            label: 'OK',
-                                            isDefault: true,
-                                            close: true,
-                                            action: function(){
-                                                XNAT.ui.dialog.closeAll();
-                                                window.location.reload();
-                                            }
-                                        }
-                                    ]
-                                })
-                            },
-                            fail: function(e){
-                                XNAT.ui.dialog.open({
-                                    title: 'Error',
-                                    width: 360,
-                                    content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
-                                    buttons: [
-                                        {
-                                            label: 'OK',
-                                            isDefault: true,
-                                            close: true
-                                        }
-                                    ]
-                                })
+                            if (deleteFiles) {
+                                params.push('removeFiles=true');
                             }
-                        })
-                    }
+
+                            XNAT.xhr.delete({
+                                url: XNAT.url.csrfUrl(deleteUrl, params),
+                                success: function(data){
+                                    var msg = 'Scan deleted';
+                                    msg += (deleteFiles) ? ' and scan files permanently removed from file system.' : '.';
+
+                                    XNAT.ui.dialog.open({
+                                        title: 'Success',
+                                        width: 360,
+                                        content: '<p>'+msg+' Page will reload.</p>',
+                                        buttons: [
+                                            {
+                                                label: 'OK',
+                                                isDefault: true,
+                                                close: true,
+                                                action: function(){
+                                                    XNAT.ui.dialog.closeAll();
+                                                    window.location.reload();
+                                                }
+                                            }
+                                        ]
+                                    })
+                                },
+                                fail: function(e){
+                                    XNAT.ui.dialog.open({
+                                        title: 'Error',
+                                        width: 360,
+                                        content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
+                                        buttons: [
+                                            {
+                                                label: 'OK',
+                                                isDefault: true,
+                                                close: true
+                                            }
+                                        ]
+                                    })
+                                }
+                            }) // end XNAT.xhr.delete
+                        }) // end justification
+                    } // end action function
                 },
                 {
                     label: 'Cancel',
@@ -243,54 +253,58 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function (obj) {
-                        var updateNoteUrl = scanUrl('?req_format=form', projectId, subjectId);
-                        if (!noteEditor.value) {
-                            noteEditor.value = ' '
-                        }
-                        var updateNoteString = editorForm$.serialize() || '';
-
-                        // force the note field to save as empty
-                        if (updateNoteString.length === 0) updateNoteString = 'NULL';
-
-                        XNAT.xhr.put({
-                            url: XNAT.url.csrfUrl(updateNoteUrl),
-                            data: updateNoteString,
-                            success: function (data) {
-                                XNAT.ui.dialog.message({
-                                    title: 'Success',
-                                    width: 360,
-                                    content: '<p>Scan note updated. Page will reload.</p>',
-                                    enter: true,
-                                    buttons: [
-                                        {
-                                            label: 'OK',
-                                            isDefault: true,
-                                            close: true,
-                                            action: function () {
-                                                XNAT.ui.dialog.closeAll();
-                                                window.location.reload();
-                                            }
-                                        }
-                                    ]
-                                })
-                            },
-                            fail: function (e) {
-                                XNAT.ui.dialog.message({
-                                    title: 'Error',
-                                    width: 360,
-                                    content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
-                                    enter: true,
-                                    esc: true,
-                                    buttons: [
-                                        {
-                                            label: 'OK',
-                                            isDefault: true,
-                                            close: true
-                                        }
-                                    ]
-                                })
+                        XNAT.app.requestJustificationDialog(function(event_reason){
+                            var reasonStr = event_reason ? "event_reason=" + encodeURIComponent(event_reason) : "";
+                            
+                            var updateNoteUrl = scanUrl('?req_format=form&' + reasonStr, projectId, subjectId);
+                            if (!noteEditor.value) {
+                                noteEditor.value = ' '
                             }
-                        })
+                            var updateNoteString = editorForm$.serialize() || '';
+
+                            // force the note field to save as empty
+                            if (updateNoteString.length === 0) updateNoteString = 'NULL';
+
+                            XNAT.xhr.put({
+                                url: XNAT.url.csrfUrl(updateNoteUrl),
+                                data: updateNoteString,
+                                success: function (data) {
+                                    XNAT.ui.dialog.message({
+                                        title: 'Success',
+                                        width: 360,
+                                        content: '<p>Scan note updated. Page will reload.</p>',
+                                        enter: true,
+                                        buttons: [
+                                            {
+                                                label: 'OK',
+                                                isDefault: true,
+                                                close: true,
+                                                action: function () {
+                                                    XNAT.ui.dialog.closeAll();
+                                                    window.location.reload();
+                                                }
+                                            }
+                                        ]
+                                    })
+                                },
+                                fail: function (e) {
+                                    XNAT.ui.dialog.message({
+                                        title: 'Error',
+                                        width: 360,
+                                        content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
+                                        enter: true,
+                                        esc: true,
+                                        buttons: [
+                                            {
+                                                label: 'OK',
+                                                isDefault: true,
+                                                close: true
+                                            }
+                                        ]
+                                    })
+                                }
+                            }) // end XNAT.xhr.put
+                        }) //end justification
                     }
                 },
                 {
@@ -358,6 +372,9 @@ var XNAT = getObject(XNAT);
         if (scanId) { scanTable.displayScanDetails(scanId) }
         else { console.log('No Scan ID found') }
     });
+    
+    // Array that keeps track of which scan details modals are open.
+    scanTable.scanDetailsOpen = [];
 
     // this script has loaded
     scanTable.loaded = true;

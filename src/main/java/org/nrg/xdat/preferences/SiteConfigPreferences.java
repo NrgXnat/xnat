@@ -1655,19 +1655,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
     
-    @NrgPreference(defaultValue = "false")
-    public boolean getUiHideScanDeleteIfQuarantined() {
-        return getBooleanValue("uiHideScanDeleteIfQuarantined");
-    }
-
-    public void setUiHideScanDeleteIfQuarantined(final boolean uiHideScanDeleteIfQuarantined) {
-        try {
-            setBooleanValue(uiHideScanDeleteIfQuarantined, "uiHideScanDeleteIfQuarantined");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiHideScanDeleteIfQuarantined': something is very wrong here.", e);
-        }
-    }
-    
     @NrgPreference(defaultValue = "4")
     public int getDefaultProjectAutoArchiveSetting() {
         return getIntegerValue("defaultProjectAutoArchiveSetting");
@@ -1718,6 +1705,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     @NrgPreference(defaultValue = "1")
     public int getSecurityLastModifiedInterval() {
         return getIntegerValue("securityLastModifiedInterval");
+    }
+    
+    public void setUiHideDesktopClientDownload(final boolean uiHideDesktopClientDownload) {
+        try {
+            setBooleanValue(uiHideDesktopClientDownload, "uiHideDesktopClientDownload");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiHideDesktopClientDownload': something is very wrong here.", e);
+        }
+    }
+    
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiHideDesktopClientDownload() {
+        return getBooleanValue("uiHideDesktopClientDownload");
     }
     
     public boolean isComplete() {

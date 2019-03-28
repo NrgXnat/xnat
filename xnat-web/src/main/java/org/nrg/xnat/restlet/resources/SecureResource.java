@@ -1213,12 +1213,14 @@ public abstract class SecureResource extends Resource {
                 // NOTE: modified driveFileName here to return a name when content-type is null
                 final String fileName = (filepath == null || filepath.equals("")) ? RequestUtil.deriveFileName("upload", entity, false) : filepath;
 
-                if (fileName == null) {
-                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message.");
+                if (StringUtils.isBlank(fileName)) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, there is no filename specified.");
                 }
-
-                if (entity == null || entity.getSize() == -1 || entity.getSize() == 0) {
-                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message.");
+                if (entity == null) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity is null.");
+                }
+                if (entity.getSize() < 1) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity size is " + entity.getSize() + ".");
                 }
 
                 wrappers.add(new FileWriterWrapper(entity, fileName));

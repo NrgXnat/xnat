@@ -80,7 +80,7 @@ public class XnatAppInfo {
         _node = node;
         _siteAddress = getSiteAddress();
         _hostName = getXnatNodeHostName(nodeInfoService);
-        _hasMultipleActiveNodes = hasMultipleActiveNodes();
+        _hasMultipleActiveNodes = !StringUtils.equals(XnatNode.NODE_ID_NOT_CONFIGURED, _node.getNodeId()) && _template.queryForObject(QUERY_COUNT_ACTIVE_NODES, Boolean.class);
         _displayHostName = shouldDisplayHostName(_preferences.getDisplayHostName());
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
@@ -211,10 +211,6 @@ public class XnatAppInfo {
             }
         }
 
-    }
-
-    private boolean hasMultipleActiveNodes() {
-        return _template.queryForObject("SELECT count(*) > 1 AS has_multiple FROM xhbm_xnat_node_info WHERE enabled = TRUE", Boolean.class);
     }
 
     @SuppressWarnings("unused")
@@ -654,13 +650,7 @@ public class XnatAppInfo {
     }
 
     private boolean shouldDisplayHostName(final DisplayHostName displayHostName) {
-        if (displayHostName == DisplayHostName.always || displayHostName == DisplayHostName.never) {
-            return displayHostName == DisplayHostName.always;
-        }
-        if (_siteAddress != null && !StringUtils.equals(_hostName, _siteAddress)) {
-            return true;
-        }
-        return _hasMultipleActiveNodes;
+        return displayHostName == DisplayHostName.always || displayHostName != DisplayHostName.never && _hasMultipleActiveNodes;
     }
 
     private XnatNodeInfo getXnatNodeInfo(final XnatNodeInfoService nodeInfoService) {
@@ -837,6 +827,7 @@ public class XnatAppInfo {
     private static final String           SECONDS                   = "seconds";
     private static final Pattern          CHECK_VALID_PATTERN       = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
     private static final Pattern          CHECK_TRUE_PATTERN        = Pattern.compile("^(?i)(1|true|t)$");
+    private static final String QUERY_COUNT_ACTIVE_NODES = "SELECT count(*) > 1 AS has_multiple FROM xhbm_xnat_node_info WHERE enabled = TRUE";
 
     private final JdbcTemplate             _template;
     private final Environment              _environment;

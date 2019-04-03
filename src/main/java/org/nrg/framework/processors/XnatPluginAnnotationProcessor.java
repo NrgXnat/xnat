@@ -10,6 +10,7 @@
 package org.nrg.framework.processors;
 
 import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.MetaInfServices;
 import org.nrg.framework.annotations.XnatDataModel;
@@ -23,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.framework.annotations.XnatPlugin.*;
+
 /**
  * Processes the {@link XnatPlugin} annotation and generates the plugin's properties file that used by XNAT for plugin
  * discovery. The basis for this code was adapted from <a href="http://kohsuke.org">Kohsuke Kawaguchi's</a> code for the
@@ -32,25 +35,25 @@ import java.util.Map;
  */
 @MetaInfServices(Processor.class)
 @SupportedAnnotationTypes("org.nrg.framework.annotations.XnatPlugin")
+@Slf4j
 public class XnatPluginAnnotationProcessor extends NrgAbstractAnnotationProcessor<XnatPlugin> {
-
-    /* (non-Javadoc)
-     * @see org.nrg.framework.processors.NrgAbstractAnnotationProcessor#processAnnotation(javax.lang.model.element.TypeElement, java.lang.annotation.Annotation)
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected Map<String, String> processAnnotation(final TypeElement element, final XnatPlugin plugin) {
         final Map<String, String> properties = new LinkedHashMap<>();
-        properties.put(XnatPlugin.PLUGIN_ID, plugin.value());
-        properties.put(XnatPlugin.PLUGIN_CLASS, element.getQualifiedName().toString());
-        properties.put(XnatPlugin.PLUGIN_NAME, plugin.name());
+        properties.put(PLUGIN_ID, plugin.value());
+        properties.put(PLUGIN_CLASS, element.getQualifiedName().toString());
+        properties.put(PLUGIN_NAME, plugin.name());
         if (StringUtils.isNotBlank(plugin.version())) {
-            properties.put(XnatPlugin.PLUGIN_VERSION, plugin.version());
+            properties.put(PLUGIN_VERSION, plugin.version());
         }
         if (StringUtils.isNotBlank(plugin.namespace())) {
-            properties.put(XnatPlugin.PLUGIN_NAMESPACE, plugin.namespace());
+            properties.put(PLUGIN_NAMESPACE, plugin.namespace());
         }
         if (StringUtils.isNotBlank(plugin.description())) {
-            properties.put(XnatPlugin.PLUGIN_DESCRIPTION, plugin.description());
+            properties.put(PLUGIN_DESCRIPTION, plugin.description());
         }
 
         final String beanName;
@@ -59,28 +62,34 @@ public class XnatPluginAnnotationProcessor extends NrgAbstractAnnotationProcesso
         } else {
             beanName = StringUtils.uncapitalize(element.getSimpleName().toString());
         }
-        properties.put(XnatPlugin.PLUGIN_BEAN_NAME, beanName);
+        properties.put(PLUGIN_BEAN_NAME, beanName);
         final List<String> entityPackages = Arrays.asList(plugin.entityPackages());
         if (entityPackages.size() > 0) {
-            properties.put(XnatPlugin.PLUGIN_ENTITY_PACKAGES, Joiner.on(", ").join(entityPackages));
+            properties.put(PLUGIN_ENTITY_PACKAGES, Joiner.on(", ").join(entityPackages));
         }
 
-        if (StringUtils.isNotBlank(plugin.log4jPropertiesFile())) {
-            properties.put(XnatPlugin.PLUGIN_LOG4J_PROPERTIES, plugin.log4jPropertiesFile());
+        if (StringUtils.isNotBlank(plugin.logConfigurationFile())) {
+            properties.put(PLUGIN_LOG_CONFIGURATION, plugin.logConfigurationFile());
+        } else {
+            //noinspection deprecation
+            if (StringUtils.isNotBlank(plugin.log4jPropertiesFile())) {
+                log.error("The log4jPropertiesFile setting is deprecated. You should use logConfigurationFile instead. You should also convert any log4j properties files to use the logback XML format. https://logback.qos.ch/translator can help! Your configuration will be added to the logging extensions, but I can't guarantee it will work properly.");
+                //noinspection deprecation
+                properties.put(PLUGIN_LOG_CONFIGURATION, plugin.log4jPropertiesFile());
+            }
         }
 
         final List<String> openUrls = Arrays.asList(plugin.openUrls());
-        if (openUrls.size() > 0) {
-            properties.put(XnatPlugin.PLUGIN_OPEN_URLS, Joiner.on(", ").join(openUrls));
+        if (!openUrls.isEmpty()) {
+            properties.put(PLUGIN_OPEN_URLS, Joiner.on(", ").join(openUrls));
         }
 
         final List<String> adminUrls = Arrays.asList(plugin.adminUrls());
-        if (adminUrls.size() > 0) {
-            properties.put(XnatPlugin.PLUGIN_ADMIN_URLS, Joiner.on(", ").join(adminUrls));
+        if (!adminUrls.isEmpty()) {
+            properties.put(PLUGIN_ADMIN_URLS, Joiner.on(", ").join(adminUrls));
         }
 
-        final List<XnatDataModel> dataModels = Arrays.asList(plugin.dataModels());
-        for (final XnatDataModel dataModel : dataModels) {
+        for (final XnatDataModel dataModel : plugin.dataModels()) {
             final String elementPrefix = getElementPrefix(dataModel);
             properties.put(elementPrefix + "secured", Boolean.toString(dataModel.secured()));
             final String singular = dataModel.singular();
@@ -104,6 +113,7 @@ public class XnatPluginAnnotationProcessor extends NrgAbstractAnnotationProcesso
      * Gets the element prefix.
      *
      * @param dataModel the data model
+     *
      * @return the element prefix
      */
     private String getElementPrefix(final XnatDataModel dataModel) {
@@ -117,7 +127,7 @@ public class XnatPluginAnnotationProcessor extends NrgAbstractAnnotationProcesso
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatPlugin plugin) {
         final String namespace = plugin.namespace();
-        final String pluginId = plugin.value();
+        final String pluginId  = plugin.value();
         if (StringUtils.isBlank(namespace)) {
             return String.format("META-INF/xnat/%s-plugin.properties", pluginId);
         }

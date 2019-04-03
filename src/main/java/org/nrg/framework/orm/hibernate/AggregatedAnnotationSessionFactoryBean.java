@@ -67,7 +67,7 @@ public class AggregatedAnnotationSessionFactoryBean extends LocalSessionFactoryB
     public AggregatedAnnotationSessionFactoryBean(final XnatPluginBeanManager pluginBeanManager, final String... resourcePaths) {
         _pluginBeanManager = pluginBeanManager;
         _packagesToScan.addAll(getXnatEntityPackages(resourcePaths));
-        super.setPackagesToScan(_packagesToScan.toArray(new String[_packagesToScan.size()]));
+        super.setPackagesToScan(_packagesToScan.toArray(new String[0]));
     }
 
     /**
@@ -76,7 +76,7 @@ public class AggregatedAnnotationSessionFactoryBean extends LocalSessionFactoryB
     @Override
     public void setPackagesToScan(final String[] packagesToScan) {
         _packagesToScan.addAll(Arrays.asList(packagesToScan));
-        super.setPackagesToScan(_packagesToScan.toArray(new String[_packagesToScan.size()]));
+        super.setPackagesToScan(_packagesToScan.toArray(new String[0]));
     }
 
     /**
@@ -89,7 +89,7 @@ public class AggregatedAnnotationSessionFactoryBean extends LocalSessionFactoryB
             for (final HibernateEntityPackageList list : packageLists) {
                 _packagesToScan.addAll(list);
             }
-            setPackagesToScan(_packagesToScan.toArray(new String[_packagesToScan.size()]));
+            setPackagesToScan(_packagesToScan.toArray(new String[0]));
         }
     }
 
@@ -99,6 +99,7 @@ public class AggregatedAnnotationSessionFactoryBean extends LocalSessionFactoryB
      *
      * @param pluginBeanManager The instance of the plugin bean manager to set.
      */
+    @SuppressWarnings("unused")
     public void setPluginBeanManager(final XnatPluginBeanManager pluginBeanManager) {
         _pluginBeanManager = pluginBeanManager;
     }

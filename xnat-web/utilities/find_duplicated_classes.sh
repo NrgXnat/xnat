@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# web: find_duplicated_classes.sh
+# XNAT http://www.xnat.org
+# Copyright (c) 2019, Washington University School of Medicine and Howard Hughes Medical Institute
+# All Rights Reserved
+#  
+# Released under the Simplified BSD.
+#
 
 [[ -z ${1} ]] && {
     LIB_FOLDER=/var/lib/tomcat7/webapps/ROOT/WEB-INF/lib

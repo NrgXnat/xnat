@@ -1,13 +1,21 @@
 package org.nrg.xnat.services.logging;
 
-import java.util.Properties;
+// import java.util.Properties;
+
+import java.util.List;
 
 public interface LoggingService {
     /**
-     * Resets the logging configuration from the master log4j properties and any extended log4j configurations
-     * that were located in plugins, etc.
+     * Resets the logging configuration from the master logging configuration and any extended logging configurations
+     * specified by plugins, etc.
      *
-     * @return The properties that were used when resetting the logging configuration.
+     * @return The URLs or paths to the logging configurations that were loaded on reset.
      */
-    Properties reset();
+    List<String> reset();
+
+    <T extends Runnable> void start(T runnable);
+
+    <T extends Runnable> void update(T runnable, String message, Object... parameters);
+
+    <T extends Runnable> void finish(T runnable);
 }

@@ -1,6 +1,10 @@
 package org.nrg.xnat.task;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.xnat.services.logging.LoggingService;
 import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 
 /**
@@ -8,6 +12,9 @@ import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
  * common functionality like logging performance metrics. Subclasses should provide task-specific
  * functionality in the {@link #runTask()} method.
  */
+@Getter
+@Setter
+@Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractXnatRunnable implements Runnable {
     /**
@@ -20,12 +27,32 @@ public abstract class AbstractXnatRunnable implements Runnable {
      */
     @Override
     public void run() {
-        DefaultLoggingService.start(this);
+        start();
 
         try {
             runTask();
         } finally {
-            DefaultLoggingService.finish(this);
+            finish();
         }
+    }
+
+    private void start() {
+        if (getLoggingService() != null) {
+            getLoggingService().start(this);
+        } else {
+            log.warn("This task is starting now, but the logging service is not yet available");
+        }
+    }
+
+    private void finish() {
+        if (getLoggingService() != null) {
+            getLoggingService().finish(this);
+        } else {
+            log.warn("This task is finishing now, but the logging service is not yet available");
+        }
+    }
+
+    private LoggingService getLoggingService() {
+        return DefaultLoggingService.getInstance();
     }
 }

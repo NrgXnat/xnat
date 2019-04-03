@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import ch.qos.logback.core.joran.spi.JoranException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.PrettyPrinter;
@@ -29,6 +30,8 @@ import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xft.schema.DataTypeSchemaService;
+import org.nrg.xft.schema.impl.DefaultDataTypeSchemaService;
 import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
@@ -42,8 +45,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -87,13 +95,33 @@ public class RootConfig {
     }
 
     @Bean
+    public DocumentBuilder documentBuilder() throws ParserConfigurationException {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+    }
+
+    @Bean
+    public Transformer transformer() throws TransformerConfigurationException {
+        final Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.VERSION, "1.0");
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+        return transformer;
+    }
+
+    @Bean
+    public DataTypeSchemaService dataTypeSchemaService() throws ParserConfigurationException {
+        return new DefaultDataTypeSchemaService(documentBuilder());
+    }
+
+    @Bean
     public XnatPluginBeanManager xnatPluginBeanManager() {
         return new XnatPluginBeanManager();
     }
 
     @Bean
-    public LoggingService loggingService() {
-        return new DefaultLoggingService(xnatPluginBeanManager());
+    public LoggingService loggingService(final Path xnatHome) throws ParserConfigurationException, JoranException, SAXException, TransformerException, IOException {
+        return new DefaultLoggingService(xnatHome, documentBuilder(), transformer(), xnatPluginBeanManager());
     }
 
     @Bean

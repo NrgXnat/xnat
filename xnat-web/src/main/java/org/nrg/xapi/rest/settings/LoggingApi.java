@@ -35,25 +35,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xnat.web.http.AbstractZipStreamingResponseBody.MEDIA_TYPE;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api(description = "XNAT Logging API")
+@Api("XNAT Logging API")
 @XapiRestController
 @RequestMapping(value = "/logs")
 @Slf4j
@@ -65,20 +62,13 @@ public class LoggingApi extends AbstractXapiRestController {
         _xnatHome = xnatHome;
     }
 
-    @ApiOperation(value = "Resets and reloads logging configuration from all log4j configuration files located either in XNAT itself or in plugins.", response = String.class)
+    @ApiOperation(value = "Resets and reloads logging configuration from all logging configuration files located either in XNAT itself or in plugins.", response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "XNAT logging configuration successfully reset."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "reset", produces = TEXT_PLAIN_VALUE, method = POST, restrictTo = Admin)
-    public ResponseEntity<String> resetLoggingConfiguration() {
-        final Properties properties = _logging.reset();
-        try (final StringWriter writer = new StringWriter()) {
-            properties.store(writer, "Generated properties for XNAT log4j configuration");
-            return new ResponseEntity<>(writer.getBuffer().toString(), OK);
-        } catch (IOException e) {
-            log.warn("An error occurred trying to write the log4j properties", e);
-            return new ResponseEntity<>(INTERNAL_SERVER_ERROR);
-        }
+    public List<String> resetLoggingConfiguration() {
+        return _logging.reset();
     }
 
     @ApiOperation(value = "Downloads the XNAT log files as a zip archive.", response = StreamingResponseBody.class)

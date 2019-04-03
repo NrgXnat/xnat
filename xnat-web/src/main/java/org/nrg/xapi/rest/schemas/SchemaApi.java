@@ -51,7 +51,7 @@ import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
-@Api(description = "XNAT Data Type Schemas API")
+@Api("XNAT Data Type Schemas API")
 @XapiRestController
 @RequestMapping(value = "/schemas")
 @Slf4j

@@ -1014,7 +1014,12 @@ public class PoolDBUtils {
 
 		public void execute(Collection<String> statements) throws SQLException {
 			for (final String statement : statements) {
-				st.execute(statement);
+				try {
+					st.execute(statement);
+				} catch (SQLException e) {
+					logger.error("An error occurred trying to execute the SQL statement: '{}'", statement);
+					throw e;
+				}
 			}
 		}
 
@@ -1063,5 +1068,3 @@ public class PoolDBUtils {
 	private Statement        _statement        = null;
 	private DatabaseMetaData _databaseMetaData = null;
 }
-
-

@@ -33,6 +33,7 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -217,8 +218,36 @@ public class XDATServlet extends HttpServlet {
          */
         public DatabaseUpdater(final String conf, final Path generatedSqlLogPath, final String... generatedSqlLogHeaders) {
             _conf = conf;
-            _generatedSqlLogPath = generatedSqlLogPath;
+            _generatedSqlLogPath = validateGeneratedSqlLogPath(generatedSqlLogPath);
             _generatedSqlLogHeaders = generatedSqlLogHeaders;
+        }
+
+        private Path validateGeneratedSqlLogPath(final Path generatedSqlLogPath) {
+            final File file = generatedSqlLogPath.toFile();
+            if (file.exists()) {
+                if (file.isDirectory()) {
+                    return generatedSqlLogPath.resolve(getGeneratedSqlLogFilename());
+                }
+                if (file.canWrite()) {
+                    return generatedSqlLogPath;
+                }
+                logger.warn("I was asked to log generated SQL queries to the file {}, but I can't write to that.", generatedSqlLogPath);
+                return null;
+            }
+            final File    parent = file.getParentFile();
+            if (parent.exists()) {
+                if (parent.isFile()) {
+                    logger.warn("I was asked to log generated SQL queries to the file {}, but the parent is a file (must be a directory).", generatedSqlLogPath);
+                    return null;
+                }
+                return generatedSqlLogPath;
+            }
+            final boolean success = parent.mkdirs();
+            if (!success) {
+                logger.warn("I was asked to log generated SQL queries to the file {}, but the parent directory doesn't exist and I can't seem to create it.", generatedSqlLogPath);
+                return null;
+            }
+            return generatedSqlLogPath;
         }
 
         public void addStatements(List<String> more) {
@@ -447,10 +476,14 @@ public class XDATServlet extends HttpServlet {
             return null;
         }
 
-        final String timestamp           = Long.toString(Calendar.getInstance().getTimeInMillis());
+        final String timestamp           = DateUtils.getMsTimestamp();
         final Path   generatedSqlLogPath = Paths.get(StringSubstitutor.replace(properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString()), ImmutableMap.<String, Object>of("timestamp", timestamp)));
         logger.info("Found path specified for generated SQL log path: {}", generatedSqlLogPath);
         return generatedSqlLogPath;
+    }
+
+    private static String getGeneratedSqlLogFilename() {
+        return "xnat-" + DateUtils.getMsTimestamp() + ".sql";
     }
 
     private void replaceLogging() {

@@ -32,6 +32,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private Set<TimedEventStatusEntity> timedEventStatuses = new LinkedHashSet<>();
     private TimedEventStatusEntity.Status status;
     private Date statusTimestamp;
+    private Boolean errorState = null;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
                                       String projectId, String actionInputs) {
@@ -95,8 +96,8 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void setTriggeringEventEntity(TriggeringEventEntity triggeringEventEntity) { this.triggeringEventEntity = triggeringEventEntity; }
 
-    public void addTriggeringEventEntity(String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {
-        this.triggeringEventEntity = new TriggeringEventEntity(eventName, isXsiType, xnatType, xsiUri, objectLabel);
+    public void addTriggeringEventEntity(String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {
+        this.triggeringEventEntity = new TriggeringEventEntity(eventName, status, isXsiType, xnatType, xsiUri, objectLabel);
     }
 
     @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
@@ -118,8 +119,11 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public TimedEventStatusEntity.Status getStatus() { return status; }
 
-    public void setStatus(TimedEventStatusEntity.Status status) { this.status = status; }
-
+    public void setStatus(TimedEventStatusEntity.Status status) {
+        this.status = status;
+        this.setErrorState(status == null ? null :
+                status.name().matches(".*FAULT.*|.*ERROR.*|.*FAILED.*") ? true : false);
+    }
 
     @Column(name = "status_timestamp")
     public Date getStatusTimestamp() {
@@ -130,4 +134,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.statusTimestamp = statusTimestamp;
     }
 
+    public Boolean getErrorState() { return errorState; }
+
+    public void setErrorState(Boolean errorState) { this.errorState = errorState; }
 }

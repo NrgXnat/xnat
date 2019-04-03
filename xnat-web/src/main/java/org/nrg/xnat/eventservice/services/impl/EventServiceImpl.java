@@ -481,7 +481,7 @@ public class EventServiceImpl implements EventService {
                                 // TODO: Handle other object types
                             }
                             subscriptionDeliveryEntityService.setTriggeringEvent(
-                                    deliveryId, esEvent.getDisplayName(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel);
+                                    deliveryId, esEvent.getDisplayName(), esEvent.getCurrentStatus().name(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel);
                         } catch (Throwable e){
                             log.error("Could not build TriggeringEventEntity ", e.getMessage(), e);
                         }

@@ -7,23 +7,28 @@ public class SubscriptionDeliverySummaryEntity {
 
     private Long id;
     private String eventName;
+    private Long subscriptionId;
     private String subscriptionName;
     private String actionUser;
     private String projectId;
     private String triggerLabel;
     private TimedEventStatusEntity.Status status;
+    private Boolean errorState;
     private Date timestamp;
 
-    public SubscriptionDeliverySummaryEntity(Long id, String eventName, String subscriptionName,
+    public SubscriptionDeliverySummaryEntity(Long id, String eventName, Long subscriptionId, String subscriptionName,
                                              String actionUser, String projectId, String triggerLabel,
-                                             TimedEventStatusEntity.Status status, Date timestamp) {
+                                             TimedEventStatusEntity.Status status, Boolean errorState,
+                                             Date timestamp) {
         this.id = id;
         this.eventName = eventName;
+        this.subscriptionId = subscriptionId;
         this.subscriptionName = subscriptionName;
         this.actionUser = actionUser;
         this.projectId = projectId;
         this.triggerLabel = triggerLabel;
         this.status = status;
+        this.errorState = errorState;
         this.timestamp = timestamp;
     }
 
@@ -34,6 +39,8 @@ public class SubscriptionDeliverySummaryEntity {
     public String getEventName() {
         return eventName;
     }
+
+    public Long getSubscriptionId() { return subscriptionId; }
 
     public String getSubscriptionName() {
         return subscriptionName;
@@ -55,8 +62,11 @@ public class SubscriptionDeliverySummaryEntity {
         return status;
     }
 
+    public Boolean getErrorState() { return errorState; }
+
     public Date getTimestamp() {
         return timestamp;
     }
+
 }
 

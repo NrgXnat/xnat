@@ -213,6 +213,7 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         subTable.tr()
+            .th('<b>ID</b>')
             .th({ addClass: 'left', html: '<b>Name</b>' })
             .th('<b>Project</b>')
             .th('<b>Trigger Event</b>')
@@ -300,10 +301,11 @@ var XNAT = getObject(XNAT || {});
 
         eventServicePanel.getSubscriptions().done(function(data){
             if (data.length) {
-                data = data.sort(function(a,b){ return (a.name > b.name) ? 1 : -1 });
+                data = data.sort(function(a,b){ return (a.id > b.id) ? 1 : -1 });
 
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
+                        .td(subscription['id'])
                         .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
                         .td([ displayProjects(subscription['event-filter']['project-ids']) ])
                         .td([ eventNiceName(subscription) ])
@@ -1063,15 +1065,15 @@ var XNAT = getObject(XNAT || {});
             aaData: data,
             aoColumns: [
                 {
-                    sTitle: '<b>ID</b>',
+                    sTitle: '<b>Subscription ID</b>',
                     sClass: 'left',
                     sWidth: '80px',
                     mData: function(source){
-                        return source.id
+                        return source['subscription-id']
                     }
                 },
                 {
-                    sTitle: '<b>Event Subscription</b>',
+                    sTitle: '<b>Subscription Name</b>',
                     sClass: 'left',
                     sWidth: '200px',
                     mData: function(source){

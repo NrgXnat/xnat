@@ -81,10 +81,10 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
     }
 
     @Override
-    public void setTriggeringEvent(Long deliveryId, String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel){
+    public void setTriggeringEvent(Long deliveryId, String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel){
         SubscriptionDeliveryEntity subscriptionDeliveryEntity = retrieve(deliveryId);
         if(subscriptionDeliveryEntity != null) {
-            subscriptionDeliveryEntity.addTriggeringEventEntity(eventName,isXsiType,xnatType,xsiUri,objectLabel);
+            subscriptionDeliveryEntity.addTriggeringEventEntity(eventName, status,isXsiType,xnatType,xsiUri,objectLabel);
             update(subscriptionDeliveryEntity);
             log.debug("Updated SubscriptionDeliveryEntity: {} with triggering event object: {}", deliveryId, eventName);
         } else{
@@ -174,6 +174,7 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
             summary = SubscriptionDeliverySummary.builder()
                                                  .id(entity.getId())
                                                  .eventName(eventName)
+                                                 .subscriptionId(entity.getSubscriptionId())
                                                  .subscriptionName(entity.getSubscriptionName())
                                                  .actionUser(entity.getActionUser())
                                                  .projectId(entity.getProjectId())
@@ -207,6 +208,7 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
                                                                             .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
                                                                             .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
                                                                             .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
+                                                                            .errorState(entity.getErrorState())
                                                                             .build();
             try {
                 if (!Strings.isNullOrEmpty(entity.getEventType())) {

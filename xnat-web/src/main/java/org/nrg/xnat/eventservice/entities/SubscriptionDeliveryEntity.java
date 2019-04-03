@@ -1,6 +1,5 @@
 package org.nrg.xnat.eventservice.entities;
 
-import com.google.common.collect.Sets;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -11,7 +10,9 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private String projectId;
     private String actionInputs;
     private TriggeringEventEntity triggeringEventEntity;
-    private Set<TimedEventStatusEntity> timedEventStatuses = Sets.newLinkedHashSet();
+    private Set<TimedEventStatusEntity> timedEventStatuses = new LinkedHashSet<>();
     private TimedEventStatusEntity.Status status;
     private Date statusTimestamp;
 
@@ -99,6 +100,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OrderBy("id ASC")
     public Set<TimedEventStatusEntity> getTimedEventStatuses() {
         return timedEventStatuses;
     }

@@ -14,7 +14,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,8 +27,6 @@ import java.util.Map;
 public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
     @Autowired
     public DefaultDataTypeSchemaService(final DocumentBuilder builder) {
-        _builder = builder;
-
         try {
             for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd")) {
                 try {
@@ -33,7 +34,7 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
                     final String      schemaName = StringUtils.split(schemaPath, "/")[1];
                     final InputStream input      = new ReusableInputStream(resource.getInputStream());
                     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                        final Document document = parseSchema(reader);
+                        final Document document = builder.parse(new InputSource(reader));
                         _schemaDocs.put(schemaPath, document);
                         _schemaDocs.put(schemaName, document);
                     }
@@ -53,37 +54,68 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
         }
     }
 
+    /**
+     * Gets the path for the submitted schema. For this version of this method, the path is the schema name
+     * as containing folder with any extensions stripped, then the schema name as the file name, with the
+     * extension ".xsd" added if not present. For example, if the requested schema name is <b>foo</b>, the
+     * resulting schema path would be <b>foo/foo.xsd</b>.
+     *
+     * @param schema The schema to get a path for.
+     *
+     * @return The calculated schema path.
+     */
+    public static String getSchemaPath(final String schema) {
+        return getSchemaPath(StringUtils.removeEnd(schema, ".xsd"), schema);
+    }
+
+    /**
+     * Gets the path for the submitted schema. For this version of this method, the path is the namespace
+     * as containing folder and the schema name as the file name, with the extension ".xsd" added if not
+     * present. For example, if the requested namespace is <b>foo</b> and requested schema name is
+     * <b>bar</b>, the resulting schema path would be <b>foo/bar.xsd</b>.
+     *
+     * @param namespace The namespace to get a path for.
+     * @param schema    The schema to get a path for.
+     *
+     * @return The calculated schema path.
+     */
     public static String getSchemaPath(final String namespace, final String schema) {
         return StringUtils.appendIfMissing(namespace + "/" + schema, ".xsd");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Document getSchema(final String namespace, final String schema) {
         final String schemaPath = getSchemaPath(namespace, schema);
         return _schemaDocs.containsKey(schemaPath) ? _schemaDocs.get(schemaPath) : _schemaDocs.get(schema);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Document getSchema(final String schemaPath) {
-        return _schemaDocs.get(schemaPath);
+    public Document getSchema(final String schema) {
+        return _schemaDocs.get(schema);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getSchemaContents(final String namespace, final String schema) {
         final String schemaPath = getSchemaPath(namespace, schema);
         return _schemas.containsKey(schemaPath) ? _schemas.get(schemaPath) : _schemas.get(schema);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public String getSchemaContents(final String schemaPath) {
-        return _schemas.get(schemaPath);
+    public String getSchemaContents(final String schema) {
+        return _schemas.containsKey(schema) ? _schemas.get(schema) : _schemas.get(getSchemaPath(schema));
     }
-
-    private Document parseSchema(final Reader schema) throws IOException, SAXException {
-        return _builder.parse(new InputSource(schema));
-    }
-
-    private final DocumentBuilder _builder;
 
     private final Map<String, String>   _schemas    = new HashMap<>();
     private final Map<String, Document> _schemaDocs = new HashMap<>();

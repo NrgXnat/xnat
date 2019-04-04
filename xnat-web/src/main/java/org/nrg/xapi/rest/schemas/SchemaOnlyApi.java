@@ -1,7 +1,7 @@
 /*
- * web: org.nrg.xapi.rest.schemas.SchemaApi
+ * web: org.nrg.xapi.rest.schemas.SchemaOnlyApi
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2019, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -46,9 +46,13 @@ public class SchemaOnlyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{schema}", method = GET, produces = APPLICATION_XML_VALUE)
+    @XapiRequestMapping(value = "{schema:[A-z0-9-_].xsd}", produces = APPLICATION_XML_VALUE, method = GET)
     public String getRequestedDataTypeSchema(@PathVariable("schema") final String schema) throws NotFoundException {
-        return getRequestedDataTypeSchema(StringUtils.removeEnd(schema, ".xsd"), schema);
+        final String document = _schemaService.getSchemaContents(schema);
+        if (StringUtils.isBlank(document)) {
+            throw new NotFoundException("The requested schema \"" + getSchemaPath(schema) + "\" could not be found on this system");
+        }
+        return document;
     }
 
     @ApiOperation(value = "Returns the requested XNAT data-type schema.", notes = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd, but sometimes the folder name differs from the schema name. This function returns the schema named SCHEMA.xsd in the folder named NAMESPACE. This tells you nothing about whether the data types defined in the schemas are active or configured.", response = String.class)
@@ -56,7 +60,7 @@ public class SchemaOnlyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{namespace}/{schema}", produces = APPLICATION_XML_VALUE, method = GET)
+    @XapiRequestMapping(value = "{namespace}/{schema:[A-z0-9-_].xsd}", produces = APPLICATION_XML_VALUE, method = GET)
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
     public String getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws NotFoundException {
         final String document = _schemaService.getSchemaContents(namespace, schema);

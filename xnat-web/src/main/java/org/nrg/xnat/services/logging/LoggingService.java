@@ -1,3 +1,12 @@
+/*
+ * web: org.nrg.xnat.services.logging.LoggingService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2019, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.xnat.services.logging;
 
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -26,14 +35,17 @@ public interface LoggingService {
      *
      * @return A list of all logging configuration resources.
      */
-    List<String> getConfigurationResources();
+    Map<String, String> getConfigurationResources();
 
     /**
-     * Returns the requested resource configured the logging system.
+     * Returns the requested resource configured the logging system. The resource is identified by
+     * the ID or key in the map returned by {@link #getConfigurationResources()}.
+     *
+     * @param resourceId The ID of the resource to retrieve.
      *
      * @return The contents of the requested logging configuration resource.
      */
-    String getConfigurationResource(final String resource) throws IOException, NotFoundException;
+    String getConfigurationResource(final String resourceId) throws IOException, NotFoundException;
 
     /**
      * Returns a list of the loggers and appenders configured in the primary logging configuration.

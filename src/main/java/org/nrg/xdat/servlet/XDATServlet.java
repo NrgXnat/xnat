@@ -223,6 +223,9 @@ public class XDATServlet extends HttpServlet {
         }
 
         private Path validateGeneratedSqlLogPath(final Path generatedSqlLogPath) {
+            if (generatedSqlLogPath == null) {
+                return null;
+            }
             final File file = generatedSqlLogPath.toFile();
             if (file.exists()) {
                 if (file.isDirectory()) {

@@ -387,6 +387,9 @@
     <logger name="org.apache.axis" additivity="false" level="ERROR">
         <appender-ref ref="axis"/>
     </logger>
+    <logger name="org.nrg.xnat.services.logging" additivity="false" level="INFO">
+        <appender-ref ref="app"/>
+    </logger>
     <logger name="org.nrg.xnat.services.messaging" additivity="false" level="WARN">
         <appender-ref ref="jms"/>
     </logger>

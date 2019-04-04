@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -37,17 +38,13 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xnat.web.http.AbstractZipStreamingResponseBody.MEDIA_TYPE;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Api("XNAT Logging API")
@@ -62,13 +59,40 @@ public class LoggingApi extends AbstractXapiRestController {
         _xnatHome = xnatHome;
     }
 
-    @ApiOperation(value = "Resets and reloads logging configuration from all logging configuration files located either in XNAT itself or in plugins.", response = String.class)
+    @ApiOperation(value = "Resets and reloads logging configuration from all logging configuration files located either in XNAT itself or in plugins.", responseContainer = "List", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "XNAT logging configurations successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "reset", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
+    public List<String> resetLoggingConfiguration() {
+        return _logging.reset();
+    }
+
+    @ApiOperation(value = "Gets a list of all logging configuration files located either in XNAT itself or in plugins.", responseContainer = "List", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "XNAT logging configurations successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "configs", produces = APPLICATION_JSON_VALUE, restrictTo = Admin)
+    public List<String> getLoggingConfigurations() {
+        return _logging.getConfigurationResources();
+    }
+
+    @ApiOperation(value = "Gets the requested logging configuration file located either in XNAT itself or in plugins.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "XNAT logging configuration successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "configs/{resource}", produces = APPLICATION_JSON_VALUE, restrictTo = Admin)
+    public String getLoggingConfigurations(@PathVariable final String resource) throws NotFoundException, IOException {
+        return _logging.getConfigurationResource(resource);
+    }
+
+    @ApiOperation(value = "Gets a list of the logger and appender elements defined in the primary logging configuration file in XNAT itself.", responseContainer = "Map", response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "XNAT logging configuration successfully reset."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "reset", produces = TEXT_PLAIN_VALUE, method = POST, restrictTo = Admin)
-    public List<String> resetLoggingConfiguration() {
-        return _logging.reset();
+    @XapiRequestMapping(value = "elements", produces = APPLICATION_JSON_VALUE, restrictTo = Admin)
+    public Map<String, List<String>> getPrimaryElements() {
+        return _logging.getPrimaryElements();
     }
 
     @ApiOperation(value = "Downloads the XNAT log files as a zip archive.", response = StreamingResponseBody.class)

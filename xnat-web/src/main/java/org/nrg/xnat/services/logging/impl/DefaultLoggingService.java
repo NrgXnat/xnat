@@ -14,6 +14,7 @@ import com.google.common.collect.Maps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,7 @@ import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xnat.services.logging.LoggingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -69,16 +72,18 @@ public class DefaultLoggingService implements LoggingService {
             StatusPrinter.printInCaseOfErrorsOrWarnings(_context);
         }
 
-        _resourceReferences = new ArrayList<>();
+        _configurationResources = new ArrayList<>();
         _primaryLogConfiguration = getPrimaryLogConfiguration();
+        _primaryElements = new HashMap<>();
 
         if (_primaryLogConfiguration != null) {
-            _loggers = findAllElementNames(_primaryLogConfiguration, "logger");
-            _appenders = findAllElementNames(_primaryLogConfiguration, "appender");
+            _primaryElements.put("loggers", findAllElementNames(_primaryLogConfiguration, "logger"));
+            _primaryElements.put("appenders", findAllElementNames(_primaryLogConfiguration, "appender"));
+
             _pluginLogConfigurations = getPluginLogConfigurations(beans.getPluginBeans());
 
-            _resourceReferences.add(getResourceReference(_primaryLogConfiguration));
-            _resourceReferences.addAll(Collections2.transform(_pluginLogConfigurations.values(), new Function<Resource, String>() {
+            _configurationResources.add(getResourceReference(_primaryLogConfiguration));
+            _configurationResources.addAll(Collections2.transform(_pluginLogConfigurations.values(), new Function<Resource, String>() {
                 @Nullable
                 @Override
                 public String apply(final Resource resource) {
@@ -90,8 +95,6 @@ public class DefaultLoggingService implements LoggingService {
                 attachPluginLogConfigurations();
             }
         } else {
-            _loggers = Collections.emptyList();
-            _appenders = Collections.emptyList();
             _pluginLogConfigurations = Collections.emptyMap();
         }
     }
@@ -100,6 +103,9 @@ public class DefaultLoggingService implements LoggingService {
         return INSTANCE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T extends Runnable> void start(final T runnable) {
         final String objectId = ObjectUtils.identityToString(runnable);
@@ -110,6 +116,9 @@ public class DefaultLoggingService implements LoggingService {
         _runnableTasks.put(objectId, StopWatch.createStarted());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T extends Runnable> void update(final T runnable, final String message, final Object... parameters) {
         final String objectId = ObjectUtils.identityToString(runnable);
@@ -120,6 +129,9 @@ public class DefaultLoggingService implements LoggingService {
         RUNNABLE_LOGGER.info(message + " in method {}.run() for object {} in {} ns", ArrayUtils.addAll(parameters, runnable.getClass().getSimpleName(), objectId, _runnableTasks.get(objectId).getNanoTime()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T extends Runnable> void finish(final T runnable) {
         final String objectId = ObjectUtils.identityToString(runnable);
@@ -136,12 +148,26 @@ public class DefaultLoggingService implements LoggingService {
      * {@inheritDoc}
      */
     @Override
+    public String getConfigurationResource(final String resource) throws IOException, NotFoundException {
+        final boolean isPrimary = StringUtils.equalsIgnoreCase("primary", resource);
+        if (StringUtils.isBlank(resource) || !_configurationResources.contains(resource) && !isPrimary) {
+            throw new NotFoundException("The requested resource does not exist: " + resource);
+        }
+        try (final InputStream input = isPrimary ? _primaryLogConfiguration.getInputStream() : new UrlResource(resource).getInputStream()) {
+            return IOUtils.toString(input, StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<String> reset() {
         try {
             _context.reset();
             _initializer.configureByResource(_primaryLogConfiguration.getURL());
             attachPluginLogConfigurations();
-            return getResourceReferences();
+            return getConfigurationResources();
         } catch (JoranException | IOException e) {
             log.error("An error occurred trying to reset the logging configurations. I'm not sure what this means for logging on this server.", e);
             return Collections.emptyList();
@@ -185,7 +211,7 @@ public class DefaultLoggingService implements LoggingService {
             log.warn("No primary logback configuration found.");
             return null;
         }
-        log.info("Primary logback configuration found at {}", url);
+        log.debug("Primary logback configuration found at {}", url);
         return new UrlResource(url);
     }
 
@@ -203,7 +229,7 @@ public class DefaultLoggingService implements LoggingService {
                     return resource;
                 }
                 if (StringUtils.endsWith(resource.getFilename(), ".properties")) {
-                    log.info("Found a properties-based logging configuration for the plugin \"{}\", translating to logback format.", pluginId);
+                    log.debug("Found a properties-based logging configuration for the plugin \"{}\", translating to logback format.", pluginId);
                     return convertPropertiesLogConfig(pluginId, resource, convertedLogConfigFolder);
                 }
                 log.warn("I don't recognize the format of the logging configuration for the plugin \"{}\", ignoring.", pluginId);
@@ -383,15 +409,14 @@ public class DefaultLoggingService implements LoggingService {
 
     private static LoggingService INSTANCE;
 
-    private final Path                   _xnatHome;
-    private final DocumentBuilder        _builder;
-    private final Transformer            _transformer;
-    private final Resource               _primaryLogConfiguration;
-    private final Map<String, Resource>  _pluginLogConfigurations;
-    private final List<String>           _resourceReferences;
-    private final List<String>           _loggers;
-    private final List<String>           _appenders;
-    private final Map<String, StopWatch> _runnableTasks;
-    private       LoggerContext          _context;
-    private       ContextInitializer     _initializer;
+    private final Path                      _xnatHome;
+    private final DocumentBuilder           _builder;
+    private final Transformer               _transformer;
+    private final Resource                  _primaryLogConfiguration;
+    private final Map<String, Resource>     _pluginLogConfigurations;
+    private final List<String>              _configurationResources;
+    private final Map<String, List<String>> _primaryElements;
+    private final Map<String, StopWatch>    _runnableTasks;
+    private       LoggerContext             _context;
+    private       ContextInitializer        _initializer;
 }

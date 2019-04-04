@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -134,6 +135,11 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(ClientException.class)
     public ResponseEntity<?> handleClientException(final HttpServletRequest request, final ClientException exception) {
         return getExceptionResponseEntity(request, valueOf(exception.getStatus().getCode()), "There was an error in the request: " + exception.getMessage());
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<?> handleIOException(final HttpServletRequest request, final IOException exception) {
+        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "There was an error reading or writing the requested resource: " + exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

@@ -246,6 +246,7 @@ public class XNATApplication extends Application {
 
         //file short-cut
         attachArchiveURI(router, "/projects/{PROJECT_ID}/files", FileList.class);
+        attachArchiveURI(router, "/projects/{PROJECT_ID}/oldFiles", OldFileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/files", FileList.class);

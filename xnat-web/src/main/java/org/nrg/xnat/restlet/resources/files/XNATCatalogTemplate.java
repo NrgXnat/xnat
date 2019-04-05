@@ -55,7 +55,8 @@ public class XNATCatalogTemplate extends XNATTemplate {
     protected XNATCatalogTemplate(final Context context, final Request request, final Response response, final boolean allowAll) throws ClientException {
         super(context, request, response);
 
-        final List<String> requestedResources = Arrays.asList(StringUtils.defaultIfBlank((String) getParameter(request, RESOURCE_ID), "").split("\\s*,\\s*"));
+        final String       requestedResourceId = (String) getParameter(request, RESOURCE_ID);
+        final List<String> requestedResources  = StringUtils.isNotBlank(requestedResourceId) ? Arrays.asList(requestedResourceId.split("\\s*,\\s*")) : Collections.<String>emptyList();
         if (!requestedResources.isEmpty()) {
             // Separate numeric and non-numeric IDs to start. Non-numeric IDs get qualified by project/experiment/etc later.
             _resourceIds.addAll(Lists.newArrayList(Iterables.filter(requestedResources, Predicates.not(Predicates.containsPattern("^\\d+$")))));

@@ -620,7 +620,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
+    public static SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
         return SimpleEvent.builder()
                     .id(event.getType() == null ? "" : event.getType())
                     .statuses(event.getStatiStates())

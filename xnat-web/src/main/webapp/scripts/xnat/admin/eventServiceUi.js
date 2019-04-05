@@ -1093,6 +1093,12 @@ var XNAT = getObject(XNAT || {});
                     sWidth: '120px'
                 },
                 {
+                    sTitle: '<b>Status</b>',
+                    mData: function(source){
+                        return source.status
+                    },
+                    sWidth: '150px'
+                },                {
                     sTitle: '<b>Project</b>',
                     mData: function(source){
                         return source.project

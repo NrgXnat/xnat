@@ -109,8 +109,8 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.timedEventStatuses = timedEventStatuses;
     }
 
-    public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message){
-        TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, this);
+    public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message, Object payload){
+        TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, payload, this);
         this.setStatus(status);
         this.setStatusTimestamp(statusTimestamp);
         this.timedEventStatuses.add(timedEventStatus);

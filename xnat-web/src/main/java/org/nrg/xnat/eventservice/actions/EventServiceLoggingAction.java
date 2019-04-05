@@ -1,20 +1,24 @@
 package org.nrg.xnat.eventservice.actions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_COMPLETE;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_FAILED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_STEP;
 
 @Slf4j
 @Service
@@ -31,6 +35,10 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     @Autowired
     @Lazy
     EventServiceComponentManager componentManager;
+
+    @Autowired
+    SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
+
 
     public EventServiceLoggingAction() {
     }
@@ -67,15 +75,26 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
         log.info("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
         try {
-            log.info("Subscription: " + mapper.writeValueAsString(subscription));
-            log.info("Event: " + event.toString());
-            XnatModelObject modelObject = componentManager.getModelObject(event.getObject(), user);
-            if (modelObject != null){
-                log.info("Event Payload:");
-                log.info(mapper.writeValueAsString(modelObject));
+
+            Object serializableObject = componentManager.getModelObject(event.getObject(), user);
+            if(serializableObject == null && event.getObject() != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(event.getObject().getClass()))){
+                serializableObject = event.getObject();
             }
-        } catch (JsonProcessingException e) {
+
+            if(serializableObject != null){
+                subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_STEP, new Date(), "Filterable Event Payload Type: " + serializableObject.getClass().getSimpleName(), serializableObject);
+                if(log.isDebugEnabled()) {
+                    String jsonString = mapper.writeValueAsString(serializableObject);
+                    log.debug("Subscription: " + mapper.writeValueAsString(subscription));
+                    log.debug("Event: " + event.toString());
+                    log.debug("Event Payload:");
+                    log.debug(jsonString);
+                }
+            }
+            subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_COMPLETE, new Date(), "Logging action completed successfully.");
+        } catch (Throwable e) {
             log.error("Could not write subscription values to log. ", e.getMessage());
+            subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_FAILED, new Date(), "Could not write subscription values to log. " + e.getMessage());
         }
 
     }

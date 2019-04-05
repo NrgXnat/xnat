@@ -67,9 +67,14 @@ public class SubscriptionDeliveryEntityServiceImpl
 
     @Override
     public void addStatus(Long deliveryId, TimedEventStatusEntity.Status status, Date statusTimestamp, String message) {
+        addStatus(deliveryId, status, statusTimestamp, message, null);
+    }
+
+    @Override
+    public void addStatus(Long deliveryId, TimedEventStatusEntity.Status status, Date statusTimestamp, String message, Object payload) {
         SubscriptionDeliveryEntity subscriptionDeliveryEntity = retrieve(deliveryId);
         if(subscriptionDeliveryEntity != null) {
-            subscriptionDeliveryEntity.addTimedEventStatus(status, statusTimestamp, message);
+            subscriptionDeliveryEntity.addTimedEventStatus(status, statusTimestamp, message, payload);
             update(subscriptionDeliveryEntity);
             log.debug("Updated SubscriptionDeliveryEntity: {} with status: {}", deliveryId, status.toString());
         } else{

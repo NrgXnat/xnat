@@ -10,6 +10,7 @@ import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -25,7 +26,7 @@ import java.util.Objects;
         @JsonSubTypes.Type(value = Investigator.class, name = "Investigator")
 })
 @JsonInclude(Include.NON_NULL)
-public abstract class XnatModelObject {
+public abstract class XnatModelObject implements Serializable {
     protected String id;
     protected String label;
     protected String xsiType;

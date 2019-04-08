@@ -212,6 +212,42 @@ var XNAT = getObject(XNAT);
         }
     }
 
+    function getValueFromJson(name, data) {
+        // If data had field "name", just return that
+        if (data.hasOwnProperty(name)) {
+            return data[name];
+        }
+        // Otherwise, check if name is a form2js-type name
+        // e.g., arrayParam[index]:field
+        var delimiter = ':'; // See line 645 xhr.js
+        var arrayItemRegexp = /\[([0-9]*)\]/;
+        var matches, arrNm, idx;
+        $.each(name.split(delimiter), function(i, item) {
+            matches = arrayItemRegexp.exec(item);
+            if (matches === null) {
+                // Not an array
+                if (data.hasOwnProperty(item)) {
+                    data = data[item];
+                } else {
+                    return ''; // we can't find this key, not sure what to do so just return empty string
+                }
+            } else {
+                // shouldn't have nested arrays (arrayParm[3][4]), so we dont need to do further matching
+                arrNm = item.replace(/\[.*/,'');
+                if (data.hasOwnProperty(arrNm)) {
+                    data = data[arrNm];
+                    idx = matches[1];
+                    if (idx && Array.isArray(data)) {
+                        data = data[idx];
+                    }
+                } else {
+                    return ''; // we can't find this key, not sure what to do so just return empty string
+                }
+            }
+
+        });
+        return firstDefined(data,'');
+    }
 
     function setFieldValues(inputs, data){
         // create data object to use for js2form()
@@ -223,7 +259,7 @@ var XNAT = getObject(XNAT);
                     input.title.split(':')[0].trim() ||
                     input.id;
             if (name) {
-                obj[name] = (isPlainObject(data)) ? firstDefined(data[name], '') : data;
+                obj[name] = (isPlainObject(data)) ? getValueFromJson(name, data) : data;
                 parseInputValue(input, obj);
                 // setValue(input, data[name]);
             }
@@ -278,7 +314,7 @@ var XNAT = getObject(XNAT);
         if (isPlainObject(values)) {
             try {
                 // use js2form() for easier setting of array values to multiple inputs
-                // js2form(form0, values, '.', null, 'data-name');
+                // js2form(form0, values, ':', null, 'data-name');
                 setFieldValues(inputs_, values);
             }
             catch (e) {

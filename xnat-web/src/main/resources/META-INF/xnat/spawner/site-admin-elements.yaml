@@ -263,6 +263,12 @@ pipelinePath:
     label: Pipeline Path
     validation: required onblur
     description: ""
+inboxPath:
+    kind: panel.input.text
+    name: inboxPath
+    label: Inbox Path
+    validation: required onblur
+    description: ""
 zipExtensions:
     kind: panel.input.text
     name: zipExtensions
@@ -1387,6 +1393,7 @@ fileSystem:
         ${ftpPath}
         ${buildPath}
         ${pipelinePath}
+        ${inboxPath}
         ${zipExtensions}
         ${checksums}
 asyncOperations:

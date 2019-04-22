@@ -21,7 +21,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.ListenerUtils;
@@ -71,7 +70,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
      * @param params          Import parameters.
 	 */
 	public SessionImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String,Object> params){
-		super(listenerControl, user, fileWriter, params);
+		super(listenerControl, user);
 		this.uID=listenerControl;
 		this.user=user;
 		this.fw=fileWriter;

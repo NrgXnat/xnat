@@ -6,4 +6,14 @@
  *
  * Released under the Simplified BSD.
  */
-rootProject.name = 'web'
+
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    }
+}
+
+rootProject.name = "web"

@@ -8,6 +8,7 @@
   ~ Released under the Simplified BSD.
   -->
 
+<!--suppress SpringSecurityFiltersConfiguredInspection -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:amq="http://activemq.apache.org/schema/core"
@@ -65,6 +66,7 @@
     <amq:queue id="moveStoredFileRequest" physicalName="moveStoredFileRequest" />
     <amq:queue id="prearchiveOperationRequest" physicalName="prearchiveOperationRequest" />
     <amq:queue id="initializeGroupRequest" physicalName="initializeGroupRequest" />
+    <amq:queue id="dicomInboxImportRequest" physicalName="dicomInboxImportRequest" />
     <!-- new request types go here -->
 
     <!-- message consumers -->
@@ -73,6 +75,7 @@
     <bean id="moveStoredFileRequestListener" class="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener" />
     <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" />
     <bean id="initializeGroupRequestListener"  class="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener" />
+    <bean id="dicomInboxImportRequestListener"  class="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequestListener" />
 
     <!-- listeners for new request types go here -->
     <bean id="dlqMessageListener" class="org.nrg.framework.messaging.DlqListener">
@@ -88,6 +91,7 @@
                 <entry key="org.nrg.xnat.services.messaging.file.MoveStoredFileRequest" value="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener.onRequest"/>
                 <entry key="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest" value="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener.onRequest"/>
                 <entry key="org.nrg.xnat.services.cache.jms.InitializeGroupRequest" value="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener.onRequest"/>
+                <entry key="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest" value="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequestListener.onRequest"/>
                 <!-- update with new request types and their listener methods -->
             </map>
         </property>
@@ -102,6 +106,7 @@
         <jms:listener destination="moveStoredFileRequest" ref="moveStoredFileRequestListener" method="onRequest" />
         <jms:listener destination="prearchiveOperationRequest" ref="prearchiveOperationRequestListener" method="onRequest" />
         <jms:listener destination="initializeGroupRequest" ref="initializeGroupRequestListener" method="onRequest" />
+        <jms:listener destination="dicomInboxImportRequest" ref="dicomInboxImportRequestListener" method="onRequest" />
         <!-- update with requests, their listeners, and methods  -->
         <!-- I tried referencing my own DLQ in the redelivery policy but ActiveMQ ignores it and uses the default system DLQ -->
         <!-- So we'll just listen on that queue instead -->

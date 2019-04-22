@@ -22,9 +22,10 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
-import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -40,6 +41,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -1086,7 +1088,7 @@ public class Permissions {
         try {
             return template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, new MapSqlParameterSource("projectId", projectId), Integer.class);
         } catch (BadSqlGrammarException e) {
-            final List<String> groupIds = _template.queryForList(QUERY_GET_GUEST_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
+            final List<String> groupIds = _template.queryForList(GroupsAndPermissionsCache.QUERY_GET_GROUPS_FOR_USER, GUEST_QUERY_PARAMETERS, String.class);
             log.warn("Got a bad SQL grammar exception trying to find the access level for the project '{}', which usually indicates that the guest user has been added to groups. Checking for guest user access directly.\nGroups found for guest user: {}\nError code and message: [{}] {}\nSQL in error: {}", projectId, StringUtils.join(groupIds, ", "), e.getSQLException().getErrorCode(), e.getSQLException().getMessage(), e.getSql());
             return template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED_GUEST_ONLY, new MapSqlParameterSource("projectId", projectId), Integer.class);
         }
@@ -1212,14 +1214,9 @@ public class Permissions {
     private static final String QUERY_PROJECT_EXISTS                            = getObjectExistsQuery("xnat_projectdata", "id", "projectId");
     private static final String QUERY_SUBJECT_EXISTS                            = getObjectExistsQuery("xnat_subjectdata", "id", "subjectId");
 
-    private static final String QUERY_GET_GUEST_GROUPS = "SELECT groupid " +
-                                                         "FROM xdat_user_groupid xug " +
-                                                         "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
-                                                         "WHERE xu.login = 'guest' " +
-                                                         "ORDER BY groupid";
-
-    private static final List<String> PROJECT_GROUPS      = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
-    private static final int          PROJECT_GROUP_COUNT = PROJECT_GROUPS.size();
+    private static final List<String>       PROJECT_GROUPS         = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
+    private static final int                PROJECT_GROUP_COUNT    = PROJECT_GROUPS.size();
+    private static final SqlParameterSource GUEST_QUERY_PARAMETERS = new MapSqlParameterSource("username", "guest");
 
     private static PermissionsServiceI        _service;
     private static NamedParameterJdbcTemplate _template;

@@ -122,7 +122,7 @@ public class XDATServlet extends HttpServlet {
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         final Properties prop = new Properties();
-        final File f = Paths.get(conf, "properties", "database.properties").toFile();
+        final File       f    = Paths.get(conf, "properties", "database.properties").toFile();
         if (f.exists()) {
             prop.load(new FileInputStream(f));
         }
@@ -136,8 +136,7 @@ public class XDATServlet extends HttpServlet {
             final Path generatedSqlLogPath = getGeneratedSqlLogPath();
             if (userCount != null) {
                 //only interested in the required ones here.
-                @SuppressWarnings("unchecked")
-                final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
+                @SuppressWarnings("unchecked") final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
                 if (!sql.isEmpty()) {
                     final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
                     _shouldUpdateViews = false;
@@ -178,7 +177,7 @@ public class XDATServlet extends HttpServlet {
                 // xdat-user table doesn't exist, assume this is an empty
                 // database
                 final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
-                final List<String>    sql = SQLCreateGenerator.GetSQLCreate(false);
+                final List<String>    sql             = SQLCreateGenerator.GetSQLCreate(false);
                 databaseUpdater.addStatements(sql);
                 databaseUpdater.run();// start and wait for it
 
@@ -237,7 +236,7 @@ public class XDATServlet extends HttpServlet {
                 logger.warn("I was asked to log generated SQL queries to the file {}, but I can't write to that.", generatedSqlLogPath);
                 return null;
             }
-            final File    parent = file.getParentFile();
+            final File parent = file.getParentFile();
             if (parent.exists()) {
                 if (parent.isFile()) {
                     logger.warn("I was asked to log generated SQL queries to the file {}, but the parent is a file (must be a directory).", generatedSqlLogPath);
@@ -275,13 +274,12 @@ public class XDATServlet extends HttpServlet {
                     logger.info("Initializing database schema...");
                     try {
                         execute(transaction, writer, _sql);
-                    }
-                    catch(Throwable t){
+                    } catch (Throwable t) {
                         String errMessage = t.getMessage();
-                        if(Pattern.compile(".*cannot\\sdrop\\stable(?s).*view.*depends\\son\\stable.*").matcher(errMessage).find()) {
+                        if (Pattern.compile(".*cannot\\sdrop\\stable(?s).*view.*depends\\son\\stable.*").matcher(errMessage).find()) {
                             //In cases where it is failing to modify a table because one or more views depend on it, simply drop all XNAT views and try again.
                             transaction.rollback();
-                            String dbName = "xnat";
+                            String dbName     = "xnat";
                             Object dbUsername = XDAT.getContextService().getBean("dbUsername", String.class);
                             if (dbUsername != null) {
                                 dbName = dbUsername.toString();
@@ -289,8 +287,7 @@ public class XDATServlet extends HttpServlet {
                             transaction.execute(getViewDropSql(dbName));
                             execute(transaction, writer, GenericWrapperUtils.GetExtensionTables());
                             execute(transaction, writer, _sql);
-                        }
-                        else{
+                        } else {
                             throw t;
                         }
                     }
@@ -302,7 +299,7 @@ public class XDATServlet extends HttpServlet {
                 logger.info("Initializing database functions...");
                 for (Object o : XFTManager.GetInstance().getOrderedElements()) {
                     GenericWrapperElement element = (GenericWrapperElement) o;
-                    List<String>[] func = GenericWrapperUtils.GetFunctionStatements(element);
+                    List<String>[]        func    = GenericWrapperUtils.GetFunctionStatements(element);
                     execute(transaction, writer, func[0]);
                     runAfter.addAll(func[1]);
                 }
@@ -462,11 +459,11 @@ public class XDATServlet extends HttpServlet {
     private static Path getGeneratedSqlLogPath() {
         //noinspection unchecked
         final List<Path> configFiles = (List<Path>) XDAT.getContextService().getBean("configFiles");
-        final Properties properties = new Properties();
+        final Properties properties  = new Properties();
         for (final Path path : configFiles) {
             final File file = path.toFile();
             if (file.exists()) {
-                try (final BufferedReader reader = new BufferedReader(new FileReader(file))){
+                try (final BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     properties.load(reader);
                 } catch (IOException e) {
                     logger.error("An error occurred trying to read the properties file {}", file.toURI(), e);
@@ -474,13 +471,14 @@ public class XDATServlet extends HttpServlet {
             }
         }
 
-        if (!BooleanUtils.toBoolean(properties.getProperty("xnat.database.sql.log", "false"))) {
-            logger.debug("xnat.database.sql.log either doesn't exist or is not set to true, no generated SQL log path considered.");
+        final String sqlLogFile = properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString());
+        if (!BooleanUtils.toBoolean(properties.getProperty("xnat.database.sql.log", BooleanUtils.toStringTrueFalse(StringUtils.isNotBlank(sqlLogFile))))) {
+            logger.debug("Either xnat.database.sql.log doesn't exist and no value is set for xnat.database.sql.log.file or xnat.database.sql.log.folder OR xnat.database.sql.log is set to false, so no generated SQL log path considered.");
             return null;
         }
 
         final String timestamp           = DateUtils.getMsTimestamp();
-        final Path   generatedSqlLogPath = Paths.get(StringSubstitutor.replace(properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString()), ImmutableMap.<String, Object>of("timestamp", timestamp)));
+        final Path   generatedSqlLogPath = Paths.get(StringSubstitutor.replace(sqlLogFile, ImmutableMap.<String, Object>of("timestamp", timestamp)));
         logger.info("Found path specified for generated SQL log path: {}", generatedSqlLogPath);
         return generatedSqlLogPath;
     }
@@ -508,43 +506,43 @@ public class XDATServlet extends HttpServlet {
         final List<String> dropSql = Lists.newArrayList();
         dropSql.add(
                 "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-                        "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-                        "BEGIN " +
-                        "RETURN QUERY " +
-                        "SELECT " +
-                        "n.nspname AS table_schema, " +
-                        "c.relname AS view_name " +
-                        "FROM pg_catalog.pg_class c " +
-                        "LEFT JOIN pg_catalog.pg_namespace n " +
-                        "ON (n.oid = c.relnamespace) " +
-                        "WHERE c.relkind = 'v' " +
-                        "AND c.relowner = (SELECT usesysid " +
-                        "FROM pg_catalog.pg_user " +
-                        "WHERE usename = $1); " +
-                        "END$$ LANGUAGE plpgsql;");
+                "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+                "BEGIN " +
+                "RETURN QUERY " +
+                "SELECT " +
+                "n.nspname AS table_schema, " +
+                "c.relname AS view_name " +
+                "FROM pg_catalog.pg_class c " +
+                "LEFT JOIN pg_catalog.pg_namespace n " +
+                "ON (n.oid = c.relnamespace) " +
+                "WHERE c.relkind = 'v' " +
+                "AND c.relowner = (SELECT usesysid " +
+                "FROM pg_catalog.pg_user " +
+                "WHERE usename = $1); " +
+                "END$$ LANGUAGE plpgsql;");
         dropSql.add(
                 "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-                        "RETURNS INTEGER AS $$ " +
-                        "DECLARE " +
-                        "r RECORD; " +
-                        "s TEXT; " +
-                        "c INTEGER := 0; " +
-                        "BEGIN " +
-                        "RAISE NOTICE 'Dropping views for user %', $1; " +
-                        "FOR r IN " +
-                        "SELECT * FROM find_user_views($1) " +
-                        "LOOP " +
-                        "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-                        "EXECUTE s; " +
-                        "c := c + 1; " +
-                        "RAISE NOTICE 's = % ', S; " +
-                        "END LOOP; " +
-                        "RETURN c; " +
-                        "END$$ LANGUAGE plpgsql;"
-        );
+                "RETURNS INTEGER AS $$ " +
+                "DECLARE " +
+                "r RECORD; " +
+                "s TEXT; " +
+                "c INTEGER := 0; " +
+                "BEGIN " +
+                "RAISE NOTICE 'Dropping views for user %', $1; " +
+                "FOR r IN " +
+                "SELECT * FROM find_user_views($1) " +
+                "LOOP " +
+                "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+                "EXECUTE s; " +
+                "c := c + 1; " +
+                "RAISE NOTICE 's = % ', S; " +
+                "END LOOP; " +
+                "RETURN c; " +
+                "END$$ LANGUAGE plpgsql;"
+                   );
         dropSql.add(
                 "SELECT drop_user_views('" + user + "');"
-        );
+                   );
         return dropSql;
     }
 }

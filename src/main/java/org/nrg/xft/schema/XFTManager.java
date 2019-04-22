@@ -244,7 +244,7 @@ public class XFTManager {
             //look for schema that are ok to parse in this pass
             for (final SchemaWrapper schema : toLoadCopy) {
                 try (final InputStream inputStream = schema.getResource().getInputStream()) {
-                    if (inputStream != null && !schemaParsed.contains(schema.getName())) {
+                    if (!schemaParsed.contains(schema.getName())) {
                         //check if dependent schema have been registered yet, excepting those that are ignored.
                         final List<String> dependencies = Lists.newArrayList(schema.getDependencies());
                         dependencies.removeAll(IGNORED_SCHEMA_NAMES);

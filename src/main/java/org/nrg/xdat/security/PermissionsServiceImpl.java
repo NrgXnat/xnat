@@ -97,7 +97,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final CriteriaCollection collection    = new CriteriaCollection("OR");
         for (final PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
             if (isProjectData && log.isTraceEnabled()) {
-                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
+                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
             }
             if (criteria.getRead()) {
                 collection.add(DisplayCriteria.buildCriteria(root, criteria));
@@ -573,7 +573,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final UserI                 guest           = Users.getGuest();
 
         if (securedElements.isEmpty()) {
-            log.error("Setting access level for project {} to {}, but there are no secured elements to set. Most likely bad things are going to happen.", projectId, accessibility, securedElements.size());
+            log.error("Setting access level for project {} to {}, but there are no secured elements to set. Most likely bad things are going to happen.", projectId, accessibility);
         } else {
             log.info("Setting access level for project {} to {}, along with {} secured elements", projectId, accessibility, securedElements.size());
         }
@@ -897,7 +897,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                      "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
                                                                      "WHERE " +
                                                                      "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
-    public static final  String QUERY_MAKE_FIELD_MAPPING_PROTECTED = "UPDATE " +
+    private static final String QUERY_MAKE_FIELD_MAPPING_PROTECTED = "UPDATE " +
                                                                      "  xdat_field_mapping " +
                                                                      "SET " +
                                                                      "  create_element = 0, " +
@@ -907,7 +907,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                      "  active_element = 0 " +
                                                                      "WHERE " +
                                                                      "  xdat_field_mapping_id = :fieldMappingId";
-    public static final  String QUERY_MAKE_FIELD_MAPPING_PUBLIC    = "UPDATE " +
+    private static final String QUERY_MAKE_FIELD_MAPPING_PUBLIC    = "UPDATE " +
                                                                      "  xdat_field_mapping " +
                                                                      "SET " +
                                                                      "  create_element = 0, " +

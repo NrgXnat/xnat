@@ -714,7 +714,12 @@ public  class FileUtils
 		
             if (!dest.exists()){
                 try {
-                    moved = src.renameTo(dest);
+                	final File destDir = dest.getParentFile();
+					if (!destDir.mkdirs()) {
+						logger.error("Failed to create the destination folder {} when trying to move \"{}\" to \"{}\". This isn't an exception, so I don't know what went wrong, but probably more stuff will fail later.", destDir.getAbsolutePath(), src.getAbsolutePath(), dest.getAbsolutePath());
+					} else {
+						moved = src.renameTo(dest);
+					}
                 } catch (Throwable e) {
                     logger.error("",e);
                 }
@@ -729,7 +734,7 @@ public  class FileUtils
     
     	if (!moved) {
     	    if (dest.exists()) {
-    		org.apache.commons.io.FileUtils.forceDelete(dest);
+    			org.apache.commons.io.FileUtils.forceDelete(dest);
     	    }
     	    org.apache.commons.io.FileUtils.moveFile(src, dest);
     	}

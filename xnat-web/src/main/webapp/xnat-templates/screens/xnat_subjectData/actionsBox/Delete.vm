@@ -1,3 +1,4 @@
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/actionsBox/Delete.vm -->
 <!-- Sequence: 10 -->
 	#if ($item.canDelete($user))
       <li class="yuimenuitem lockable">
@@ -18,3 +19,4 @@
    					window.deleter.init();
 				}
 	</script>
+<!-- END xnat-templates/screens/xnat_subjectData/actionsBox/Delete.vm -->

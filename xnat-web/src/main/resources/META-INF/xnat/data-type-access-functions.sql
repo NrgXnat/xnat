@@ -59,6 +59,23 @@ CREATE OR REPLACE VIEW public.data_type_views_orphaned_field_sets AS
     s.xdat_field_mapping_set_id IS NOT NULL AND
     m.xdat_field_mapping_id IS NULL;
 
+CREATE OR REPLACE VIEW public.secured_identified_data_types AS
+    WITH
+        secure_elements AS (SELECT
+                                s.element_name AS element_name,
+                                regexp_replace(s.element_name, '[^A-z0-9]', '_', 'g') AS table_name
+                            FROM
+                                xdat_element_security s
+                            WHERE
+                                    s.secure = 1)
+    SELECT
+        e.element_name,
+        e.table_name
+    FROM
+        secure_elements e
+            LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND column_name = 'id'
+    WHERE c.column_name IS NOT NULL;
+
 CREATE OR REPLACE FUNCTION create_public_element_access_for_data_type(elementName VARCHAR(255))
   RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -290,3 +307,63 @@ BEGIN
 END;
 $_$
   LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.object_exists_in_table(id VARCHAR(255), data_type TEXT)
+    RETURNS BOOLEAN AS
+$$
+DECLARE
+    exists_in_table BOOLEAN;
+BEGIN
+    EXECUTE format('SELECT EXISTS(SELECT TRUE FROM %s WHERE id = ''%s'')', regexp_replace(data_type, '[^A-z0-9]', '_', 'g'), id) INTO exists_in_table;
+    RETURN exists_in_table;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.find_orphaned_data()
+    RETURNS TABLE (
+                      project      VARCHAR(255),
+                      id           VARCHAR(255),
+                      label        VARCHAR(255),
+                      element_name VARCHAR(250)
+                  ) AS
+$$
+BEGIN
+    RETURN QUERY SELECT
+                     x.project,
+                     x.id,
+                     x.label,
+                     e.element_name
+                 FROM
+                     xnat_experimentdata x
+                         LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+                 WHERE NOT object_exists_in_table(x.id, e.element_name);
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.resolve_orphaned_data()
+    RETURNS TABLE (
+                      project               VARCHAR(255),
+                      id                    VARCHAR(255),
+                      label                 VARCHAR(255),
+                      actual_element_name   VARCHAR(250),
+                      expected_element_name VARCHAR(255)
+                  ) AS
+$$
+BEGIN
+    RETURN QUERY WITH
+                     data_types AS (SELECT * FROM secured_identified_data_types)
+                 SELECT
+                     o.project,
+                     o.id,
+                     o.label,
+                     o.element_name AS actual_element_name,
+                     t.element_name AS located_element_name
+                 FROM
+                     find_orphaned_data() o
+                         LEFT JOIN data_types t ON o.element_name != t.element_name
+                 WHERE object_exists_in_table(o.id, t.element_name);
+END
+$$
+    LANGUAGE plpgsql;

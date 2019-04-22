@@ -80,7 +80,7 @@ import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
-@SuppressWarnings({"Duplicates", "SqlDialectInspection", "SqlNoDataSourceInspection"})
+@SuppressWarnings({"Duplicates", "SqlNoDataSourceInspection"})
 @Service("groupsAndPermissionsCache")
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
@@ -990,7 +990,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return Collections.emptyMap();
         }
 
-        final String cacheId  = getCacheIdForUserElements(username, READABLE);
+        final String cacheId = getCacheIdForUserElements(username, READABLE);
 
         // Check whether the element types are cached and, if so, return that.
         log.trace("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
@@ -1732,11 +1732,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final DateFormat   DATE_FORMAT   = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
 
-    private static final String QUERY_GET_GROUPS_FOR_USER            = "SELECT groupid " +
-                                                                       "FROM xdat_user_groupid xug " +
-                                                                       "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
-                                                                       "WHERE xu.login = :username " +
-                                                                       "ORDER BY groupid";
     private static final String QUERY_GET_GROUP_FOR_USER_AND_TAG     = "SELECT id " +
                                                                        "FROM xdat_usergroup xug " +
                                                                        "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +

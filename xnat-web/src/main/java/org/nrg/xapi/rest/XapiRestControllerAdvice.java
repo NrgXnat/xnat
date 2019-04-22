@@ -139,6 +139,9 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<?> handleIOException(final HttpServletRequest request, final IOException exception) {
+        if (StringUtils.contains(exception.getClass().getName(), "ClientAbortException")) {
+            return getExceptionResponseEntity(request, BAD_REQUEST, exception, "The client : " + exception.getMessage());
+        }
         return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "There was an error reading or writing the requested resource: " + exception.getMessage());
     }
 

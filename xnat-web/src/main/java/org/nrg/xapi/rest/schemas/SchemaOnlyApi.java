@@ -30,7 +30,7 @@ import static org.nrg.xft.schema.impl.DefaultDataTypeSchemaService.getSchemaPath
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
-@Api("XNAT Data Type Schemas API")
+@Api(value = "XNAT Data Type Schemas API", hidden = true)
 @XapiRestController
 @RequestMapping(value = "/")
 @Slf4j
@@ -46,7 +46,7 @@ public class SchemaOnlyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{schema:[A-z0-9-_].xsd}", produces = APPLICATION_XML_VALUE, method = GET)
+    @XapiRequestMapping(value = "{schema:^[A-z0-9-_.]+\\.xsd$}", produces = APPLICATION_XML_VALUE, method = GET)
     public String getRequestedDataTypeSchema(@PathVariable("schema") final String schema) throws NotFoundException {
         final String document = _schemaService.getSchemaContents(schema);
         if (StringUtils.isBlank(document)) {
@@ -60,7 +60,7 @@ public class SchemaOnlyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{namespace}/{schema:[A-z0-9-_].xsd}", produces = APPLICATION_XML_VALUE, method = GET)
+    @XapiRequestMapping(value = "{namespace}/{schema:^[A-z0-9-_.]+\\.xsd$}", produces = APPLICATION_XML_VALUE, method = GET)
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
     public String getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws NotFoundException {
         final String document = _schemaService.getSchemaContents(namespace, schema);

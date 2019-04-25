@@ -1435,6 +1435,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "600")
+    public int getSessionArchiveTimeoutInterval() {
+        return getIntegerValue("sessionArchiveTimeoutInterval");
+    }
+
+    public void setSessionArchiveTimeoutInterval(final int sessionArchiveTimeoutInterval) {
+        try {
+            setIntegerValue(sessionArchiveTimeoutInterval, "sessionArchiveTimeoutInterval");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'sessionArchiveTimeoutInterval': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "15 minutes")
     public String getSessionTimeout() {
         return getValue("sessionTimeout");

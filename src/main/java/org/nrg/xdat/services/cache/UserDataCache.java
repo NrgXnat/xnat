@@ -18,7 +18,7 @@ public interface UserDataCache extends XnatCache {
      * Options for file operations.
      */
     enum Options {
-        CreateFolder,
+        Folder,
         Overwrite,
         Append,
         DeleteOnExit
@@ -68,7 +68,7 @@ public interface UserDataCache extends XnatCache {
      * Returns a file object for the submitted path under the {@link #getUserDataCache(UserI) user's cache folder}.
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * If the specified path is hierarchical, e.g. foo/bar.txt, all folders are created under the user's cache folder if they
-     * don't already exist. If the {@link Options#CreateFolder} option is specified, all elements in the path are created,
+     * don't already exist. If the {@link Options#Folder} option is specified, all elements in the path are created,
      * but if not the <b>path</b> is considered to be a file, in which case the file itself is not created if it does not
      * already exist.
      *
@@ -89,7 +89,7 @@ public interface UserDataCache extends XnatCache {
      * Returns a file object for the submitted path under the {@link #getUserDataCache(UserI) user's cache folder}.
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * If the specified path is hierarchical, e.g. foo/bar.txt, all folders are created under the user's cache folder if they
-     * don't already exist. If the {@link Options#CreateFolder} option is specified, all elements in the path are created,
+     * don't already exist. If the {@link Options#Folder} option is specified, all elements in the path are created,
      * but if not the <b>path</b> is considered to be a file, in which case the file itself is not created if it does not
      * already exist.
      *
@@ -111,7 +111,7 @@ public interface UserDataCache extends XnatCache {
      * Returns a file object for the submitted path under the {@link #getUserDataCache(UserI) user's cache folder}.
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * If the specified path is hierarchical, e.g. foo/bar.txt, all folders are created under the user's cache folder if they
-     * don't already exist. If the {@link Options#CreateFolder} option is specified, all elements in the path are created,
+     * don't already exist. If the {@link Options#Folder} option is specified, all elements in the path are created,
      * but if not the <b>path</b> is considered to be a file, in which case the file itself is not created if it does not
      * already exist.
      *
@@ -133,7 +133,7 @@ public interface UserDataCache extends XnatCache {
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * The <b>path</b> is considered to be a file: if the value is hierarchical, e.g. foo/bar.txt, the specified folders are
      * created under the user's cache folder if they don't already exist. However, the file itself is not created if it
-     * does not already exist. The {@link Options#CreateFolder} option is ignored for this method.
+     * does not already exist. The {@link Options#Folder} option is ignored for this method.
      *
      * @param user    The user object.
      * @param path    The path to the requested file.
@@ -153,7 +153,7 @@ public interface UserDataCache extends XnatCache {
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * The <b>path</b> is considered to be a file: if the value is hierarchical, e.g. foo/bar.txt, the specified folders are
      * created under the user's cache folder if they don't already exist. However, the file itself is not created if it
-     * does not already exist. The {@link Options#CreateFolder} option is ignored for this method.
+     * does not already exist. The {@link Options#Folder} option is ignored for this method.
      *
      * @param username The username.
      * @param path     The path to the requested file.
@@ -174,7 +174,7 @@ public interface UserDataCache extends XnatCache {
      * Note that the submitted <b>path</b> should be relative: if the path is absolute, this method throws an exception.
      * The <b>path</b> is considered to be a file: if the value is hierarchical, e.g. foo/bar.txt, the specified folders are
      * created under the user's cache folder if they don't already exist. However, the file itself is not created if it
-     * does not already exist. The {@link Options#CreateFolder} option is ignored for this method.
+     * does not already exist. The {@link Options#Folder} option is ignored for this method.
      *
      * @param userId  The ID of the user.
      * @param path    The path to the requested file.

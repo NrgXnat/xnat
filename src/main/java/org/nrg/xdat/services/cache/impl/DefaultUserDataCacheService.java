@@ -100,29 +100,33 @@ public class DefaultUserDataCacheService implements UserDataCache {
         if (path.isAbsolute()) {
             throw new IllegalArgumentException("The specified path is absolute, but must be relative: " + path.toString());
         }
-        final File requested = getUserDataCache(userId).resolve(path).toFile();
+        final File    requested = getUserDataCache(userId).resolve(path).toFile();
+        final boolean asFolder  = ArrayUtils.contains(options, Options.Folder);
         if (requested.exists()) {
-            final boolean asFolder = ArrayUtils.contains(options, Options.CreateFolder);
             if (requested.isDirectory()) {
                 if (!asFolder) {
-                    throw new IllegalArgumentException("User " + Users.getUsername(userId) + "requested the path \"" + path.toString() + "\" as a file but that already exists as a folder.");
+                    throw new IllegalArgumentException("User " + Users.getUsername(userId) + " requested the path \"" + path.toString() + "\" as a file but that already exists as a folder.");
                 }
                 log.trace("User with ID {} requested the path \"{}\" as a folder, returning existing folder.", userId, path);
             } else {
                 if (asFolder) {
-                    throw new IllegalArgumentException("User " + Users.getUsername(userId) + "requested the path \"" + path.toString() + "\" as a file but that already exists as a folder.");
+                    throw new IllegalArgumentException("User " + Users.getUsername(userId) + " requested the path \"" + path.toString() + "\" as a file but that already exists as a folder.");
                 }
                 log.trace("User with ID {} requested the path \"{}\" as a file, returning existing file.", userId, path);
             }
-        } else if (path.getNameCount() > 1) {
-            final File parent = requested.getParentFile();
-            if (parent.exists()) {
-                if (parent.isFile()) {
+            return requested;
+        }
+        // Create all the folders required to write a file. If this was requested as a folder, we'll create everything, but if not
+        // we'll create the parent folder(s).
+        if (asFolder || path.getNameCount() > 1) {
+            final File target = asFolder ? requested : requested.getParentFile();
+            if (target.exists()) {
+                if (target.isFile()) {
                     throw new IllegalArgumentException("The parent of the specified path already exists as a file, can't get it as a folder in which to create the file: " + path.toString());
                 }
                 log.trace("User with ID {} requested the path \"{}\" as a file, that file doesn't exist but its parent does.", userId, path);
             } else {
-                if (!parent.mkdirs()) {
+                if (!target.mkdirs()) {
                     log.warn("User with ID {} requested a data cache file at {}, but it looks like I couldn't create the parent folder. Things might get weird. ", userId, path);
                 } else {
                     log.trace("User with ID {} requested the path \"{}\" as a file, that file  and at least its immediate parent doesn't exist, so created the parent folder.", userId, path);
@@ -162,7 +166,7 @@ public class DefaultUserDataCacheService implements UserDataCache {
     public OutputStream openUserDataCacheFileForWrite(final int userId, @NotNull final Path path, final Options... options) throws IllegalArgumentException {
         // Suppress warning about returning null in non-null-annotated method, because we know this is not going to be null.
         //noinspection ConstantConditions
-        return getOutputStreamNoException(getUserDataCacheFile(userId, path, ArrayUtils.contains(options, Options.CreateFolder) ? ArrayUtils.removeElement(options, Options.CreateFolder) : options));
+        return getOutputStreamNoException(getUserDataCacheFile(userId, path, ArrayUtils.contains(options, Options.Folder) ? ArrayUtils.removeElement(options, Options.Folder) : options));
     }
 
     /**

@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
@@ -185,6 +186,22 @@ public class XDAT implements Initializable, Configurable{
 		}
 	}
 
+	public static int getIntSiteConfigurationProperty(final String property) {
+		try {
+			return NumberUtils.toInt(getSiteConfigurationProperty(property));
+		} catch (ConfigServiceException e) {
+			throw new RuntimeException("Ran into an error trying to retrieve the site configuration property \"" + property + "\"", e);
+		}
+	}
+
+	public static int getIntSiteConfigurationProperty(final String property, final int defaultValue) {
+		try {
+			return NumberUtils.toInt(getSiteConfigurationProperty(property), defaultValue);
+		} catch (RuntimeException | ConfigServiceException e) {
+			return defaultValue;
+		}
+	}
+
 	public static String safeSiteConfigProperty(final String property, final String defaultValue) {
 		try {
 			return getSiteConfigurationProperty(property, defaultValue);
@@ -340,7 +357,9 @@ public class XDAT implements Initializable, Configurable{
             _configFilesLocation = FileUtils.AppendSlash(location);
         }
 
-		XFT.init(overrideConfigFilesLocation ? FileUtils.AppendSlash(location) : _configFilesLocation);
+		final String exact = overrideConfigFilesLocation ? FileUtils.AppendSlash(location) : _configFilesLocation;
+        assert exact != null;
+		XFT.init(exact);
 
 		if (allowDBAccess && hasUsers()) {
 			try {

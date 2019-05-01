@@ -1526,19 +1526,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
     
     @NrgPreference(defaultValue = "true")
-    public boolean getUiAutoRefreshCatalog() {
-        return getBooleanValue("uiAutoRefreshCatalog");
-    }
-
-    public void setUiAutoRefreshCatalog(final boolean uiAutoRefreshCatalog) {
-        try {
-            setBooleanValue(uiAutoRefreshCatalog, "uiAutoRefreshCatalog");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAutoRefreshCatalog': something is very wrong here.", e);
-        }
-    }
-    
-    @NrgPreference(defaultValue = "true")
     public boolean getUiShowCachedFileCounts() {
         return getBooleanValue("uiShowCachedFileCounts");
     }

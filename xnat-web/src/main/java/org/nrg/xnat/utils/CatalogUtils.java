@@ -39,16 +39,17 @@ import org.nrg.xnat.services.archive.FilesystemService;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.*;
-import java.nio.channels.OverlappingFileLockException;
+import java.nio.channels.Channels;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.*;
-import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -231,7 +232,7 @@ public class CatalogUtils {
     }
 
     /**
-     * The same as {@link #getRelativePathForCatalogEntry(CatEntryI entry)}, but if cachePath and ID are both blank and
+     * The same as {@link #getRelativePathForCatalogEntry(CatEntryI)}, but if cachePath and ID are both blank and
      * a catalog path is provided, try to get a relative path by relativizing the URI against the catalog path
      *
      * @param entry the catalog entry
@@ -1462,53 +1463,34 @@ public class CatalogUtils {
 
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums,
                                           Map<String, Map<String, Integer>> audit_summary) throws Exception {
+
+        if (!dest.getParentFile().exists()) {
+            if (!dest.getParentFile().mkdirs() && !dest.getParentFile().exists()) {
+                throw new IOException("Failed to create required directory: " + dest.getParentFile().getAbsolutePath());
+            }
+        }
+
         if (calculateChecksums) {
             CatalogUtils.calculateResourceChecksums(xml, dest);
         }
 
-        if (!dest.getParentFile().exists()) {
-            if (!dest.getParentFile().mkdirs() && !dest.getParentFile().exists()) {
-                throw new Exception("Failed to create required directory: " + dest.getParentFile().getAbsolutePath());
-            }
-        }
-
         refreshAuditSummary(xml, audit_summary);
 
-        doWrite(xml, dest, Calendar.getInstance().getTimeInMillis());
-    }
-
-    /**
-     * Attempt to write to the file. If I cannot get the lock, retry. After 2 min of trying (unsuccessfully),
-     * throw Exception.
-     *
-     * Why is this needed? If another thread has a write lock on this file, an OverlappingFileLockException will be thrown when
-     * we try to acquire the lock. Rather than aborting, we want to wait and retry (reopen output stream, retry for lock).
-     * But not forever! (Throw an exception after 2min.)
-     *
-     * @param xml       the catalog
-     * @param dest      the file destination
-     * @param startTime time we started trying to write
-     * @throws Exception if we cannot get the lock in 2 min
-     */
-    private static void doWrite(CatCatalogI xml, File dest, long startTime) throws Exception {
-        try(final FileOutputStream fos = new FileOutputStream(dest)) {
+        try (FileChannel fc = FileChannel.open(dest.toPath(), StandardOpenOption.WRITE)) {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest,
+                    fc, false);
+            fl.tryLock(5L, TimeUnit.MINUTES);
             try {
-                final FileLock fl = fos.getChannel().lock();
-                try {
-                    final OutputStreamWriter fw = new OutputStreamWriter(fos);
-                    xml.toXML(fw);
-                    fw.flush();
-                } finally {
-                    fl.release();
-                }
-            } catch (OverlappingFileLockException e) {
-                if (Calendar.getInstance().getTimeInMillis() - startTime > 120000) {
-                    //Trying for 2 min to write to the file, throw an exception
-                    throw new Exception("Unable to get a write lock on " + dest.getAbsolutePath());
-                }
-                Thread.sleep(5000); //sleep 5s
-                doWrite(xml, dest, startTime);
+                final OutputStreamWriter fw = new OutputStreamWriter(Channels.newOutputStream(fc));
+                xml.toXML(fw);
+                fw.flush();
+            } finally {
+                fl.unlock();
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(dest);
             }
+        } catch (Exception e) {
+            log.error("Error writing catalog file", e);
+            throw e;
         }
     }
 
@@ -1538,13 +1520,7 @@ public class CatalogUtils {
             }
 
             try {
-                if (!f.getParentFile().mkdirs() && !f.getParentFile().exists()) {
-                    throw new Exception("Failed to create required directory: " + f.getParentFile().getAbsolutePath());
-                }
-
-                FileWriter fw = new FileWriter(f);
-                cat.toXML(fw, true);
-                fw.close();
+                writeCatalogToFile(cat, f);
             } catch (IOException exception) {
                 log.error("Error writing to the folder: " + f.getParentFile().getAbsolutePath(), exception);
             } catch (Exception exception) {
@@ -1555,19 +1531,28 @@ public class CatalogUtils {
         return f;
     }
 
+    @Nullable
     public static CatCatalogBean getCatalog(File catalogFile) {
         if (!catalogFile.exists()) return null;
-        try {
-            InputStream fis = new FileInputStream(catalogFile);
-            if (catalogFile.getName().endsWith(".gz")) {
-                fis = new GZIPInputStream(fis);
-            }
+        InputStream inputStream = null;
+        try (FileChannel fc = FileChannel.open(catalogFile.toPath())) {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogFile,
+                    fc, true);
 
+            inputStream = Channels.newInputStream(fc);
+            if (catalogFile.getName().endsWith(".gz")) {
+                inputStream = new GZIPInputStream(inputStream);
+            }
+            XDATXMLReader reader = new XDATXMLReader();
             BaseElement base;
 
-            XDATXMLReader reader = new XDATXMLReader();
-            base = reader.parse(fis);
-
+            fl.tryLock(5L, TimeUnit.MINUTES);
+            try {
+                base = reader.parse(inputStream);
+            } finally {
+                fl.unlock();
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogFile);
+            }
             if (base instanceof CatCatalogBean) {
                 return (CatCatalogBean) base;
             }
@@ -1577,6 +1562,12 @@ public class CatalogUtils {
             log.error("Error occurred reading file: " + catalogFile, exception);
         } catch (SAXException exception) {
             log.error("Error processing XML in file: " + catalogFile, exception);
+        } finally {
+            try {
+                if (inputStream != null) inputStream.close();
+            } catch (IOException e) {
+                // Ignore
+            }
         }
 
         return null;
@@ -1612,44 +1603,21 @@ public class CatalogUtils {
         return getCleanCatalog(rootPath, resource, includeFullPaths, null, null);
     }
 
-    public static CatCatalogBean getCleanCatalog(String rootPath, XnatResourcecatalogI resource, boolean includeFullPaths, UserI user, EventMetaI c) {
-        File catalogFile = null;
-        try {
-            catalogFile = handleCatalogFile(rootPath, resource);
+    public static CatCatalogBean getCleanCatalog(String rootPath, XnatResourcecatalogI resource,
+                                                 boolean includeFullPaths, UserI user, EventMetaI c) {
+        File catalogFile = handleCatalogFile(rootPath, resource);
+        CatCatalogBean cat = getCatalog(catalogFile);
 
-            InputStream fis = new FileInputStream(catalogFile);
-            if (catalogFile.getName().endsWith(".gz")) {
-                fis = new GZIPInputStream(fis);
-            }
-
-            BaseElement base;
-
-            XDATXMLReader reader = new XDATXMLReader();
-            base = reader.parse(fis);
-
+        if (cat != null) {
             String parentPath = catalogFile.getParent();
-
-            if (base instanceof CatCatalogBean) {
-                CatCatalogBean cat = (CatCatalogBean) base;
-                formalizeCatalog(cat, parentPath, user, c);
-
-                if (includeFullPaths) {
-                    CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
-                    mf.setName("CATALOG_LOCATION");
-                    mf.setMetafield(parentPath);
-                    cat.addMetafields_metafield(mf);
-                }
-
-                return cat;
+            formalizeCatalog(cat, parentPath, user, c);
+            if (includeFullPaths) {
+                CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
+                mf.setName("CATALOG_LOCATION");
+                mf.setMetafield(parentPath);
+                cat.addMetafields_metafield(mf);
             }
-        } catch (FileNotFoundException exception) {
-            log.error("Couldn't find file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
-        } catch (SAXException exception) {
-            log.error("Couldn't parse file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
-        } catch (IOException exception) {
-            log.error("Couldn't parse or unzip file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
-        } catch (Exception exception) {
-            log.error("Unknown error handling file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            return cat;
         }
 
         return null;
@@ -1982,7 +1950,7 @@ public class CatalogUtils {
         }
     }
 
-    private static File handleCatalogFile(final String rootPath, final XnatResourcecatalogI resource) throws Exception {
+    private static File handleCatalogFile(final String rootPath, final XnatResourcecatalogI resource) {
         File catalog = CatalogUtils.getCatalogFile(rootPath, resource);
         if (catalog.getName().endsWith(".gz")) {
             try {

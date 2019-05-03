@@ -7,29 +7,54 @@
  * Released under the Simplified BSD.
  */
 
-plugins {
-    id "eclipse"
-    id "groovy"
-    id "idea"
-    id "jacoco"
-    id "java"
-    id "maven"
-    id "maven-publish"
-    id "war"
-    id "com.bmuschko.cargo" version "2.4"
-    id "com.bmuschko.tomcat" version "2.5"
-    id "com.palantir.git-version" version "0.12.0-rc2"
-    id "io.franzbecker.gradle-lombok" version "1.14"
-    id "io.spring.dependency-management" version "1.0.6.RELEASE"
+buildscript {
+    ext {
+        vXnat = "1.7.6-SNAPSHOT"
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
+            name "XNAT Release Repository"
+        }
+        maven {
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
+            name "XNAT Snapshot Repository"
+        }
+    }
+    dependencies {
+        classpath "com.bmuschko:gradle-cargo-plugin:2.6.1"
+        classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
+        classpath "io.franzbecker:gradle-lombok:2.1"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.7.RELEASE"
+    }
 }
 
 group "org.nrg.xnat"
-version = "1.7.6-SNAPSHOT"
+version = vXnat
+
+apply plugin: "com.bmuschko.cargo"
+apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.palantir.git-version"
+apply plugin: "eclipse"
+apply plugin: "groovy"
+apply plugin: "idea"
+apply plugin: "io.franzbecker.gradle-lombok"
+apply plugin: "io.spring.dependency-management"
+apply plugin: "jacoco"
+apply plugin: "java-library"
+apply plugin: "maven"
+apply plugin: "maven-publish"
+apply plugin: "war"
 
 repositories {
     mavenLocal()
     maven { url "https://www.dcm4che.org/maven2/" }
-    maven { url "http://maven.imagej.net/content/groups/public" }
     jcenter()
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
@@ -96,6 +121,7 @@ configurations {
         exclude group: "commons-betwixt"
         exclude group: "commons-dbcp"
         exclude group: "commons-email"
+        exclude group: "commons-logging"
         exclude group: "commons-messenger"
         exclude group: "commons-pool"
         exclude group: "edu.ucar", module: "netcdf"
@@ -119,6 +145,7 @@ configurations {
         exclude group: "jms", module: "jms"
         exclude group: "jndi"
         exclude group: "jython"
+        exclude group: "log4j", module: "log4j"
         exclude group: "mockobjects"
         exclude group: "mysql"
         exclude group: "net.sf.saxon", module: "Saxon-B"
@@ -133,7 +160,7 @@ configurations {
         exclude group: "org.nrg", module: "plexiviewer"
         exclude group: "org.nrg.xdat", module: "beans"
         exclude group: "org.nrg.xnat", module: "web"
-        exclude group: "org.python"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "quartz"
         exclude group: "resources", module: "resources"
         exclude group: "servletapi"
@@ -149,22 +176,25 @@ configurations {
 }
 
 dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${project.version}"
-}
-
-lombok {
-    version = dependencyManagement.importedProperties["lombok.version"] as String
-    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
+    mavenBom "org.nrg:parent:${vXnat}"
 }
 
 dependencies {
     // NRG dependencies first.
+    api "org.nrg.xdat:core"
+    api "org.nrg.xnat:xnat-data-models"
+    api "org.nrg:framework"
+    api "org.springframework.security:spring-security-ldap"
+    api "org.springframework.security.oauth:spring-security-oauth2"
+    api "org.springframework.security:spring-security-jwt"
+    api "org.springframework:spring-web"
+    api "org.springframework:spring-jms"
+    api "org.springframework:spring-jdbc"
+    api "org.springframework:spring-beans"
+    api "org.springframework:spring-context"
+    api "org.springframework:spring-core"
+
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models") {
-        transitive = false
-    }
-    implementation "org.nrg.xdat:core"
-    implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"
@@ -204,17 +234,12 @@ dependencies {
     implementation "dcm4che:dcm4che-net"
 
     implementation "org.springframework:spring-aop"
-    implementation "org.springframework:spring-beans"
     implementation "org.springframework:spring-context-support"
-    implementation "org.springframework:spring-context"
-    implementation "org.springframework:spring-core"
-    implementation "org.springframework:spring-jdbc"
     implementation "org.springframework:spring-jms"
     implementation "org.springframework:spring-messaging"
     implementation "org.springframework:spring-orm"
     implementation "org.springframework:spring-oxm"
     implementation "org.springframework:spring-tx"
-    implementation "org.springframework:spring-web"
     implementation "org.springframework:spring-webmvc"
 
     implementation "io.springfox:springfox-swagger2"
@@ -223,11 +248,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-acl"
     implementation "org.springframework.security:spring-security-aspects"
     implementation "org.springframework.security:spring-security-config"
-    implementation "org.springframework.security:spring-security-ldap"
     implementation "org.springframework.security:spring-security-taglibs"
     implementation "org.springframework.ldap:spring-ldap-core"
-    implementation "org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE"
-    implementation "org.springframework.security:spring-security-jwt:1.0.8.RELEASE"
 
     implementation "org.hibernate:hibernate-core"
     implementation "org.hibernate:hibernate-ehcache"
@@ -286,16 +308,19 @@ dependencies {
     implementation "org.apache.xmlbeans:xmlbeans-xpath"
     implementation "org.apache.xbean:xbean-spring"
     implementation "net.java.dev.msv:xsdlib"
+    implementation "javax.servlet:jstl"
+    implementation "com.google.code.gson:gson"
+    implementation "com.google.guava:guava"
 
     implementation "org.postgresql:postgresql"
 
     implementation "org.slf4j:slf4j-api"
-    implementation "org.slf4j:slf4j-log4j12"
     implementation "org.slf4j:jul-to-slf4j"
-    implementation "log4j:log4j"
-    implementation "javax.servlet:jstl"
-    implementation "com.google.code.gson:gson"
-    implementation "com.google.guava:guava"
+    implementation "org.slf4j:jcl-over-slf4j"
+    implementation "org.slf4j:log4j-over-slf4j"
+    implementation "ch.qos.logback:logback-classic"
+    implementation "ch.qos.logback:logback-core"
+    implementation "net.logstash.logback:logstash-logback-encoder"
 
     compileOnly "com.google.code.findbugs:jsr305"
 
@@ -311,6 +336,7 @@ dependencies {
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
+    runtimeOnly "org.python:jython-standalone"
 
     providedCompile "javax.servlet:javax.servlet-api"
 
@@ -319,7 +345,11 @@ dependencies {
             "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
-            "org.codehaus.cargo:cargo-ant"
+          "org.codehaus.cargo:cargo-ant",
+          "org.slf4j:jcl-over-slf4j",
+          "org.slf4j:slf4j-api",
+          "ch.qos.logback:logback-classic",
+          "ch.qos.logback:logback-core"
 
     testCompile "org.nrg:test"
     testCompile "junit:junit"
@@ -329,12 +359,16 @@ dependencies {
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
 
+lombok {
+    version = dependencyManagement.importedProperties["lombok.version"] as String
+    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
+}
+
 tomcatRun.contextPath = "/"
 tomcatRunWar.contextPath = "/"
 
 [tomcatRun, tomcatRunWar].each { task ->
-    // TODO: This can be configured with an external folder reference to be used for loading XNAT modules.
-    task.additionalRuntimeResources << file("/Users/rherrick/xnat/config/plugins")
+    task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
 }
 
 task deployToTomcat(type: Copy, dependsOn: war) {
@@ -460,6 +494,10 @@ task javadocJar(type: Jar) {
 }
 
 publishing.publications {
+    mavenWeb(MavenPublication) {
+        from components.web
+        artifactId = "xnat-web"
+    }
     mavenJava(MavenPublication) {
         from components.java
 

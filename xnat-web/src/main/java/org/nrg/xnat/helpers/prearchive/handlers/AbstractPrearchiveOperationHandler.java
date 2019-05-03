@@ -9,86 +9,144 @@
 
 package org.nrg.xnat.helpers.prearchive.handlers;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.archive.Operation;
+import org.nrg.xnat.event.archive.ArchiveEvent;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
-import org.reflections.Reflections;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-public abstract class AbstractPrearchiveOperationHandler {
+import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
 
-    public AbstractPrearchiveOperationHandler(final PrearchiveOperationRequest request) throws Exception {
-        _user = Users.getUser(request.getUser().getUsername());
+@Getter(PROTECTED)
+@Accessors(prefix = "_")
+@Slf4j
+public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOperationHandler {
+    protected AbstractPrearchiveOperationHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider) {
+        _eventService = eventService;
+        _userProvider = userProvider;
+        _username = request.getUsername();
         _sessionData = request.getSessionData();
         _sessionDir = request.getSessionDir();
-        _parameters.clear();
-        _parameters.putAll(request.getParameters());
+        _parameters = new HashMap<>(ObjectUtils.defaultIfNull(request.getParameters(), Collections.<String, Object>emptyMap()));
+        _operation = getConfiguredOperation();
     }
 
-    public static AbstractPrearchiveOperationHandler getHandler(final PrearchiveOperationRequest request) {
-        if (_handlers.size() == 0) {
-            synchronized (_handlers) {
-                final Reflections reflections = new Reflections(AbstractPrearchiveOperationHandler.class.getPackage().getName());
-                final Set<Class<? extends AbstractPrearchiveOperationHandler>> handlers = reflections.getSubTypesOf(AbstractPrearchiveOperationHandler.class);
-                for (final Class<? extends AbstractPrearchiveOperationHandler> handler : handlers) {
-                    try {
-                        if (_log.isDebugEnabled()) {
-                            _log.debug("Found handler for {} operation: {}", handler.getAnnotation(Handles.class).value(), handler.getName());
-                        }
-                        _handlers.put(handler.getAnnotation(Handles.class).value(), handler.getConstructor(PrearchiveOperationRequest.class));
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException("No proper constructor found for " + handler.getName() + " class. It must have a constructor that accepts a " + AbstractPrearchiveOperationHandler.class.getName() + " object.");
-                    }
-                }
-            }
-        }
-        final String operation = request.getOperation();
-        final Constructor<? extends AbstractPrearchiveOperationHandler> constructor = _handlers.get(operation);
-        if (constructor == null) {
-            throw new RuntimeException("No handler found for operation " + operation + ". Please check your classpath.");
-        }
-        try {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found handler for operation {}, creating with request type {}", operation, request.getClass().getName());
-            }
-            return constructor.newInstance(request);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("An error occurred trying to instantiate a prearchive operation handler.", e);
-        }
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     public abstract void execute() throws Exception;
 
+    @JsonIgnore
     protected UserI getUser() {
+        if (_user == null) {
+            if (StringUtils.isNotBlank(_username)) {
+                try {
+                    _user = Users.getUser(_username);
+                } catch (UserInitException | UserNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                _user = _userProvider.get();
+            }
+        }
         return _user;
     }
 
-    protected SessionData getSessionData() {
-        return _sessionData;
+    protected void progress(final int progress) {
+        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData));
     }
 
-    protected File getSessionDir() {
-        return _sessionDir;
+    protected void progress(final int progress, final String message) {
+        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData, message));
     }
 
-    protected Map<String, String> getParameters() {
-        return _parameters;
+    protected void completed() {
+        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData));
     }
 
-    private final static Logger _log = LoggerFactory.getLogger(AbstractPrearchiveOperationHandler.class);
-    private final static Map<String, Constructor<? extends AbstractPrearchiveOperationHandler>> _handlers = new HashMap<>();
+    protected void completed(final String message) {
+        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData, message));
+    }
 
-    private final UserI _user;
-    private final SessionData _sessionData;
-    private final File _sessionDir;
-    private final Map<String, String> _parameters = new HashMap<>();
+    protected void failed() {
+        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData));
+    }
+
+    protected void failed(final String message) {
+        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData, message));
+    }
+
+    /**
+     * Allows users to pass XML paths as parameters.  The values supplied are copied into the loaded session.
+     *
+     * @param folder The folder containing the prearchive session XML.
+     *
+     * @throws IOException              When an error occurs reading or writing data.
+     * @throws SAXException             When an error occurs parsing the session XML.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException   When a specified field isn't found on the object.
+     * @throws InvalidValueException    When an invalid value is specified for item properties.
+     */
+    protected void populateAdditionalFields(final File folder) throws IOException, SAXException, ElementNotFoundException, FieldNotFoundException, InvalidValueException {
+        //prepare params by removing non xml path names
+        final Map<String, Object> cleaned = XMLPathShortcuts.identifyUsableFields(getParameters(), XMLPathShortcuts.EXPERIMENT_DATA, false);
+
+        if (!cleaned.isEmpty()) {
+            final SAXReader reader = new SAXReader(getUser());
+            final File      xml    = folder.getParentFile().toPath().resolve(folder.getName() + ".xml").toFile();
+            final XFTItem   item   = reader.parse(xml.getAbsolutePath());
+            item.setProperties(cleaned, true);
+            try (final FileWriter writer = new FileWriter(xml)) {
+                item.toXML(writer, false);
+            }
+        }
+    }
+
+    private Operation getConfiguredOperation() {
+        final Handles annotation = getClass().getAnnotation(Handles.class);
+        if (annotation == null) {
+            log.warn("The class {} extends AbstractPrearchiveOperationHandler, but doesn't include the @Handles annotation.", getClass().getName());
+            return null;
+        }
+        return annotation.value();
+    }
+
+    @Getter(PRIVATE)
+    private final NrgEventServiceI _eventService;
+    @Getter(PRIVATE)
+    private final XnatUserProvider _userProvider;
+
+    private final String              _username;
+    private final SessionData         _sessionData;
+    private final File                _sessionDir;
+    private final Map<String, Object> _parameters;
+    private final Operation           _operation;
+
+    private UserI _user;
 }

@@ -446,6 +446,20 @@ generalSecuritySettings:
                 provide? Disabling this removes the "Find my study" feature and can help prevent users
                 from stealing another user's data. But it can also make it harder for users to get their
                 data into XNAT and increase the burden on site administrators.
+        displayHostName:
+            kind: panel.select.single
+            name: displayHostName
+            label: "Display host name<br>in footer?"
+            options:
+                always: "Always"
+                multinode: "When multinode"
+                never: "Never"
+            description: >
+                Should the host name for this server be displayed in the page footer? When set to <b>Always</b>
+                the host name is always displayed even in a single-server deployment. When set to <b>Multinode</b>,
+                the host name is automatically displayed when XNAT nodes detect a multi-server configuration, but
+                is otherwise not displayed. When set to <b>Never</b>, the host name is not displayed even in a
+                multinode configuration.
         ipsThatCanSendEmailsThroughRest:
             kind: panel.input.text
             name: ipsThatCanSendEmailsThroughRest

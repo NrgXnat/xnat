@@ -11,11 +11,12 @@ package org.nrg.xnat.helpers.prearchive;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.restlet.XNATApplication;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Map;
+import java.util.MissingFormatArgumentException;
+import java.util.Objects;
 
 public class SessionDataTriple implements Serializable {
     public SessionDataTriple() {
@@ -28,15 +29,19 @@ public class SessionDataTriple implements Serializable {
         setProject(project);
     }
 
-    public static SessionDataTriple fromMap(Map<String, String> m) {
-        return new SessionDataTriple().setFolderName(m.get("SESSION_LABEL"))
-                                      .setProject(m.get("PROJECT_ID"))
-                                      .setTimestamp(m.get("SESSION_TIMESTAMP"));
+    public static SessionDataTriple fromMap(final Map<String, String> attributes) {
+        return new SessionDataTriple().setFolderName(attributes.get("SESSION_LABEL"))
+                                      .setProject(attributes.get("PROJECT_ID"))
+                                      .setTimestamp(attributes.get("SESSION_TIMESTAMP"));
     }
 
     public static SessionDataTriple fromURI(final String uri) throws MalformedURLException {
-        final PrearcUriParserUtils.SessionParser parser = new PrearcUriParserUtils.SessionParser(new PrearcUriParserUtils.UriParser(XNATApplication.PREARC_SESSION_URI));
-        return SessionDataTriple.fromMap(parser.readUri(uri));
+        try {
+            final PrearcUriParserUtils.SessionParser parser = new PrearcUriParserUtils.SessionParser(new PrearcUriParserUtils.UriParser(XNATApplication.PREARC_SESSION_URI));
+            return SessionDataTriple.fromMap(parser.readUri(uri));
+        } catch (MissingFormatArgumentException e) {
+            throw new MalformedURLException(uri);
+        }
     }
 
     public static SessionDataTriple fromPrearcSession(final PrearcSession session) {
@@ -117,9 +122,7 @@ public class SessionDataTriple implements Serializable {
                  && (_timestamp != null
                      ? _timestamp.equals(that._timestamp)
                      : that._timestamp == null
-                       && (_project != null
-                           ? _project.equals(that._project)
-                           : that._project == null));
+                       && (Objects.equals(_project, that._project)));
     }
 
     @Override

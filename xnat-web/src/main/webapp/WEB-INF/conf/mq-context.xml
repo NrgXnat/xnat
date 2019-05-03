@@ -73,7 +73,9 @@
     <bean id="defaultRequestListener" class="org.nrg.xnat.services.messaging.DefaultRequestListener" />
     <bean id="automatedScriptRequestListener" class="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequestListener" />
     <bean id="moveStoredFileRequestListener" class="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener" />
-    <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" />
+    <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" >
+        <constructor-arg ref="prearchiveOperationHandlerResolver"/>
+    </bean>
     <bean id="initializeGroupRequestListener"  class="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener" />
     <bean id="dicomInboxImportRequestListener"  class="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequestListener" />
 

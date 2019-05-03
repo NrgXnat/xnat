@@ -147,6 +147,11 @@ public class HibernateXnatNodeInfoService extends AbstractHibernateEntityService
 		
 	}
 
+	@Override
+	public List<XnatNodeInfo> getXnatNodeInfoByNodeId(final String nodeId) {
+		return getDao().getXnatNodeInfoListByNodeId(nodeId);
+	}
+
 	/* (non-Javadoc)
 	 * @see org.nrg.xnat.node.services.XnatNodeInfoService#getXnatNodeInfoByNodeIdAndHostname(java.lang.String, java.lang.String)
 	 */

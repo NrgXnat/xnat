@@ -13,6 +13,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.twmacinta.util.MD5;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -33,10 +34,7 @@ import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
-import org.nrg.xnat.restlet.files.utils.RestFileUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
@@ -46,17 +44,23 @@ import java.net.URLDecoder;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
  * @author timo
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "UnusedReturnValue"})
+@Slf4j
 public class CatalogUtils {
-
-    public final static String[] FILE_HEADERS = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest"};
+    public final static String[] FILE_HEADERS        = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest"};
     public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest"};
+
+    public static final String PROJECT_PATH  = "projectPath";
+    public static final String ABSOLUTE_PATH = "absolutePath";
+    public static final String LOCATOR       = "locator";
+    public static final String URI           = "URI";
 
     public static boolean getChecksumConfiguration(final XnatProjectdata project) throws ConfigServiceException {
         final String projectId = project.getId();
@@ -76,10 +80,10 @@ public class CatalogUtils {
         if (_checksumConfig == null) {
             String checksumProperty = XDAT.getSiteConfigurationProperty("checksums");
             if (!StringUtils.isBlank(checksumProperty)) {
-                _checksumConfig = Boolean.parseBoolean(checksumProperty);
+                _checksumConfig = new AtomicBoolean(Boolean.parseBoolean(checksumProperty));
             }
         }
-        return _checksumConfig;
+        return _checksumConfig.get();
     }
 
     /**
@@ -91,15 +95,21 @@ public class CatalogUtils {
      * @return The previous value for the cached checksum configuration setting.
      */
     public static Boolean setChecksumConfiguration(boolean checksumConfig) {
-        Boolean hold = _checksumConfig;
-        _checksumConfig = checksumConfig;
-        return hold;
+        return _checksumConfig.getAndSet(checksumConfig);
     }
 
     public static void calculateResourceChecksums(final CatCatalogI cat, final File f) {
         for (CatEntryI entry : cat.getEntries_entry()) {
             CatalogUtils.setChecksum(entry, f.getParent());
         }
+    }
+
+    public static CatEntryI getEntryByURIOrId(final CatCatalogBean catalogBean, final String filePath) {
+        final CatEntryI entry = CatalogUtils.getEntryByURI(catalogBean, filePath);
+        if (entry != null) {
+            return entry;
+        }
+        return CatalogUtils.getEntryById(catalogBean, filePath);
     }
 
     /**
@@ -138,15 +148,15 @@ public class CatalogUtils {
         try {
             return MD5.asHex(MD5.getHash(file));
         } catch (IOException e) {
-            logger.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
+            log.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
             return "";
         }
     }
 
-    public static List<Object[]> getEntryDetails(CatCatalogI cat, String parentPath, String uriPath, XnatResource _resource, boolean includeFile, final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
-        final ArrayList<Object[]> al = new ArrayList<>();
+    public static List<Object[]> getEntryDetails(final CatCatalogI cat, final String parentPath, final String uriPath, final XnatResource _resource, final boolean includeFile, final CatEntryFilterI filter, final XnatProjectdata proj, final String locator) {
+        final List<Object[]> catalogEntries = new ArrayList<>();
         for (final CatCatalogI subset : cat.getSets_entryset()) {
-            al.addAll(getEntryDetails(subset, parentPath, uriPath, _resource, includeFile, filter, proj, locator));
+            catalogEntries.addAll(getEntryDetails(subset, parentPath, uriPath, _resource, includeFile, filter, proj, locator));
         }
 
         for (final CatEntryI entry : cat.getEntries_entry()) {
@@ -154,14 +164,17 @@ public class CatalogUtils {
                 final List<Object> row = Lists.newArrayList();
                 final String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
                 final File file = getFileOnLocalFileSystem(entryPath);
-                assert file != null;
+                if (file == null) {
+                    log.warn("The catalog {} contains an invalid entry with the path {}. Please check and/or refresh the catalog.", cat.getName(), entryPath);
+                    continue;
+                }
                 row.add(file.getName());
                 row.add(includeFile ? 0 : file.length());
-                if (locator.equalsIgnoreCase("URI")) {
+                if (locator.equalsIgnoreCase(URI)) {
                     row.add(FileUtils.IsAbsolutePath(entry.getUri()) ? uriPath + "/" + entry.getId() : uriPath + "/" + entry.getUri());
-                } else if (locator.equalsIgnoreCase("absolutePath")) {
+                } else if (locator.equalsIgnoreCase(ABSOLUTE_PATH)) {
                     row.add(entryPath);
-                } else if (locator.equalsIgnoreCase("projectPath")) {
+                } else if (locator.equalsIgnoreCase(PROJECT_PATH)) {
                     row.add(entryPath.substring(proj.getRootArchivePath().substring(0, proj.getRootArchivePath().lastIndexOf(proj.getId())).length()));
                 } else {
                     row.add("");
@@ -182,11 +195,11 @@ public class CatalogUtils {
                     row.add(file);
                 }
                 row.add(entry.getDigest());
-                al.add(row.toArray());
+                catalogEntries.add(row.toArray());
             }
         }
 
-        return al;
+        return catalogEntries;
     }
 
     /**
@@ -212,6 +225,7 @@ public class CatalogUtils {
      * @param rawSize   The size of the files that compose the object.
      * @return A formatted display of the file statistics.
      */
+    @SuppressWarnings("unused")
     public static String formatFileStats(final String label, final long fileCount, final Object rawSize) {
         long size = 0;
         if (rawSize != null) {
@@ -227,6 +241,7 @@ public class CatalogUtils {
         return String.format("%s: %s in %s files", label, formatSize(size), fileCount);
     }
 
+    @SuppressWarnings("unused")
     public static Map<File, CatEntryI> getCatalogEntriesForFiles(final String rootPath, final XnatResourcecatalog catalog, final List<File> files) {
         final File catFile = catalog.getCatalogFile(rootPath);
         final String parentPath = catFile.getParent();
@@ -262,7 +277,7 @@ public class CatalogUtils {
                     return entry;
                 }
             } catch (Exception exception) {
-                logger.error("Error occurred filtering catalog entry: " + entry, exception);
+                log.error("Error occurred filtering catalog entry: " + entry, exception);
             }
         }
 
@@ -283,7 +298,7 @@ public class CatalogUtils {
 
                 }
             } catch (Exception exception) {
-                logger.error("Error occurred filtering catalog entry: " + entry, exception);
+                log.error("Error occurred filtering catalog entry: " + entry, exception);
             }
         }
 
@@ -362,7 +377,7 @@ public class CatalogUtils {
                     entries.add(entry);
                 }
             } catch (Exception exception) {
-                logger.error("Error occurred testing catalog entry: " + entry, exception);
+                log.error("Error occurred testing catalog entry: " + entry, exception);
             }
         }
         return entries;
@@ -455,6 +470,27 @@ public class CatalogUtils {
         }
 
         return null;
+    }
+
+    /**
+     * Adds the {@link #RELATIVE_PATH relative path} and {@link #SIZE size} metafields to the submitted {@link CatEntryBean catalog entry bean}.
+     *
+     * @param entry    The catalog entry bean.
+     * @param relative The relative path to the bean's associated resources.
+     * @param size     The total size of the bean's associated resources.
+     */
+    public static void setCatEntryBeanMetafields(final CatEntryBean entry, final String relative, final String size) {
+        entry.setCachepath(relative);
+
+        final CatEntryMetafieldBean relativePathMetafield = new CatEntryMetafieldBean();
+        relativePathMetafield.setMetafield(relative);
+        relativePathMetafield.setName(RELATIVE_PATH);
+        entry.addMetafields_metafield(relativePathMetafield);
+
+        final CatEntryMetafieldBean sizeMetafield = new CatEntryMetafieldBean();
+        sizeMetafield.setMetafield(size);
+        sizeMetafield.setName(SIZE);
+        entry.addMetafields_metafield(sizeMetafield);
     }
 
     @SuppressWarnings("unused")
@@ -589,8 +625,8 @@ public class CatalogUtils {
             String compression_method = (filename.contains(".")) ? filename.substring(filename.lastIndexOf(".")) : "";
 
             if (extract && (compression_method.equalsIgnoreCase(".tar") || compression_method.equalsIgnoreCase(".gz") || compression_method.equalsIgnoreCase(".zip") || compression_method.equalsIgnoreCase(".zar"))) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Found archive file " + filename);
+                if (log.isDebugEnabled()) {
+                    log.debug("Found archive file " + filename);
                 }
 
                 File destinationDir = catFile.getParentFile();
@@ -656,18 +692,17 @@ public class CatalogUtils {
                         throw new Exception("Failed to create required directory: " + saveTo.getParentFile().getAbsolutePath());
                     }
 
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Saving filename " + filename + " to file " + saveTo.getAbsolutePath());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Saving filename " + filename + " to file " + saveTo.getAbsolutePath());
                     }
 
                     fileWriter.write(saveTo);
 
                     if (saveTo.isDirectory()) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Found a directory: " + saveTo.getAbsolutePath());
+                        if (log.isDebugEnabled()) {
+                            log.debug("Found a directory: " + saveTo.getAbsolutePath());
                         }
 
-                        @SuppressWarnings("unchecked")
                         final Iterator<File> iterator = org.apache.commons.io.FileUtils.iterateFiles(saveTo, null, true);
                         while (iterator.hasNext()) {
                             final File movedF = iterator.next();
@@ -677,8 +712,8 @@ public class CatalogUtils {
                         }
 
                     } else {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Updating catalog entry for file " + saveTo.getAbsolutePath());
+                        if (log.isDebugEnabled()) {
+                            log.debug("Updating catalog entry for file " + saveTo.getAbsolutePath());
                         }
                         updateEntry(cat, instance, saveTo, info, ci);
                     }
@@ -686,8 +721,8 @@ public class CatalogUtils {
             }
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Writing catalog file " + catFile.getAbsolutePath() + " with " + cat.getEntries_entry().size() + " total entries");
+        if (log.isDebugEnabled()) {
+            log.debug("Writing catalog file " + catFile.getAbsolutePath() + " with " + cat.getEntries_entry().size() + " total entries");
         }
 
         writeCatalogToFile(cat, catFile);
@@ -828,9 +863,9 @@ public class CatalogUtils {
                 cat.toXML(fw, true);
                 fw.close();
             } catch (IOException exception) {
-                logger.error("Error writing to the folder: " + f.getParentFile().getAbsolutePath(), exception);
+                log.error("Error writing to the folder: " + f.getParentFile().getAbsolutePath(), exception);
             } catch (Exception exception) {
-                logger.error("Error creating the folder: " + f.getParentFile().getAbsolutePath(), exception);
+                log.error("Error creating the folder: " + f.getParentFile().getAbsolutePath(), exception);
             }
         }
 
@@ -854,11 +889,11 @@ public class CatalogUtils {
                 return (CatCatalogBean) base;
             }
         } catch (FileNotFoundException exception) {
-            logger.error("Couldn't find file: " + catalogFile, exception);
+            log.error("Couldn't find file: " + catalogFile, exception);
         } catch (IOException exception) {
-            logger.error("Error occurred reading file: " + catalogFile, exception);
+            log.error("Error occurred reading file: " + catalogFile, exception);
         } catch (SAXException exception) {
-            logger.error("Error processing XML in file: " + catalogFile, exception);
+            log.error("Error processing XML in file: " + catalogFile, exception);
         }
 
         return null;
@@ -880,11 +915,11 @@ public class CatalogUtils {
                 catalogFile = CatalogUtils.getCatalogFile(rootPath, resource);
             }
         } catch (FileNotFoundException exception) {
-            logger.error("Couldn't find file: " + catalogFile, exception);
+            log.error("Couldn't find file: " + catalogFile, exception);
         } catch (IOException exception) {
-            logger.error("Error occurred reading file: " + catalogFile, exception);
+            log.error("Error occurred reading file: " + catalogFile, exception);
         } catch (Exception exception) {
-            logger.error("Unknown exception reading file at: " + rootPath, exception);
+            log.error("Unknown exception reading file at: " + rootPath, exception);
         }
 
         return catalogFile != null ? getCatalog(catalogFile) : null;
@@ -925,13 +960,13 @@ public class CatalogUtils {
                 return cat;
             }
         } catch (FileNotFoundException exception) {
-            logger.error("Couldn't find file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't find file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (SAXException exception) {
-            logger.error("Couldn't parse file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't parse file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (IOException exception) {
-            logger.error("Couldn't parse or unzip file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't parse or unzip file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (Exception exception) {
-            logger.error("Unknown error handling file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Unknown error handling file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
         }
 
         return null;
@@ -1051,9 +1086,9 @@ public class CatalogUtils {
 
     public static Boolean maintainFileHistory() {
         if (_maintainFileHistory == null) {
-            _maintainFileHistory = XDAT.getBoolSiteConfigurationProperty("audit.maintain-file-history", false);
+            _maintainFileHistory = new AtomicBoolean(XDAT.getBoolSiteConfigurationProperty("audit.maintain-file-history", false));
         }
-        return _maintainFileHistory;
+        return _maintainFileHistory.get();
     }
 
     public static void moveToHistory(File catFile, File f, CatEntryBean entry, EventMetaI ci) throws Exception {
@@ -1082,11 +1117,14 @@ public class CatalogUtils {
         CatCatalogBean newCat;
         if (newCatFile.exists()) {
             newCat = CatalogUtils.getCatalog(newCatFile);
+            if (newCat == null) {
+                log.warn("Tried to create a new catalog based on the file {} but it's null. Check the logs for errors that may have caused this issue.", newCatFile);
+                return;
+            }
         } else {
             newCat = new CatCatalogBean();
         }
 
-        assert newCat != null;
         newCat.addEntries_entry(newEntryBean);
 
         CatalogUtils.writeCatalogToFile(newCat, newCatFile);
@@ -1100,8 +1138,8 @@ public class CatalogUtils {
         while (table.hasMoreRows()) {
             Object[] old = table.nextRow();
             Object[] _new = new Object[11];
-            if (logger.isDebugEnabled()) {
-                logger.debug("Found resource with ID: " + old[0] + "(" + old[1] + ")");
+            if (log.isDebugEnabled()) {
+                log.debug("Found resource with ID: " + old[0] + "(" + old[1] + ")");
             }
             _new[0] = old[0];
             _new[1] = old[1];
@@ -1111,7 +1149,10 @@ public class CatalogUtils {
             _new[5] = old[5];
 
             XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(old[0], user, false);
-            assert res != null;
+            if (res == null) {
+                log.warn("User {} tried to get an abstract resource for the ID {}, but that was null.", user.getUsername(), old[0]);
+                continue;
+            }
 
             if (cacheFileStats) {
                 if (res.getFileCount() == null) {
@@ -1124,9 +1165,9 @@ public class CatalogUtils {
                     res.save(user, true, false, null);
                 } catch (Exception exception) {
                     if (res instanceof XnatResourcecatalog) {
-                        logger.error("Failed to save updates to resource catalog: " + res.getLabel(), exception);
+                        log.error("Failed to save updates to resource catalog: " + res.getLabel(), exception);
                     } else {
-                        logger.error("Failed to save updates to abstract resource: " + res.getXnatAbstractresourceId(), exception);
+                        log.error("Failed to save updates to abstract resource: " + res.getXnatAbstractresourceId(), exception);
                     }
                 }
             }
@@ -1201,15 +1242,15 @@ public class CatalogUtils {
         return sb.toString();
     }
 
-    private static Map<String, Map<String, Integer>> convertAuditToMap(String audit) {
+    private static Map<String, Map<String, Integer>> convertAuditToMap(final String audit) {
         Map<String, Map<String, Integer>> summary = new HashMap<>();
-        for (String changeSet : audit.split("|")) {
-            String[] split1 = changeSet.split("=");
+        for (final String changeSet : audit.split("\\|")) {
+            final String[] split1 = changeSet.split("=");
             if (split1.length > 1) {
-                String key = split1[0];
-                Map<String, Integer> counts = new HashMap<>();
-                for (String operation : split1[1].split(";")) {
-                    String[] entry = operation.split(":");
+                final String key = split1[0];
+                final Map<String, Integer> counts = new HashMap<>();
+                for (final String operation : split1[1].split(";")) {
+                    final String[] entry = operation.split(":");
                     counts.put(entry[0], Integer.valueOf(entry[1]));
                 }
                 summary.put(key, counts);
@@ -1238,16 +1279,16 @@ public class CatalogUtils {
         }
     }
 
-    private static File handleCatalogFile(final String rootPath, final XnatResourcecatalogI resource) throws Exception {
+    private static File handleCatalogFile(final String rootPath, final XnatResourcecatalogI resource) {
         File catalog = CatalogUtils.getCatalogFile(rootPath, resource);
         if (catalog.getName().endsWith(".gz")) {
             try {
                 FileUtils.GUnzipFiles(catalog);
                 catalog = CatalogUtils.getCatalogFile(rootPath, resource);
             } catch (FileNotFoundException exception) {
-                logger.error("Couldn't find file: " + catalog, exception);
+                log.error("Couldn't find file: " + catalog, exception);
             } catch (IOException exception) {
-                logger.error("Error occurred reading file: " + catalog, exception);
+                log.error("Error occurred reading file: " + catalog, exception);
             }
         }
         return catalog;
@@ -1262,7 +1303,6 @@ public class CatalogUtils {
      * @param event_id event id for transaction
      * @return true if the cat was modified (and needs to be saved).
      */
-    @SuppressWarnings("unchecked")
     public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, UserI user, Number event_id) {
         //list of all files in the catalog folder
         final Collection<File> files = org.apache.commons.io.FileUtils.listFiles(catFile.getParentFile(), null, true);
@@ -1306,7 +1346,7 @@ public class CatalogUtils {
                         modified = true;
                     } catch (Exception exception) {
                         //this shouldn't happen
-                        logger.error("Something very weird occurred when adding catalog entries", exception);
+                        log.error("Something very weird occurred when adding catalog entries", exception);
                     }
                 }
 
@@ -1340,7 +1380,6 @@ public class CatalogUtils {
         final List<String> unreferenced = Lists.newArrayList();
 
         //list of all files in the catalog folder
-        @SuppressWarnings("unchecked")
         final String[] files = catFolder.list();
 
         //identify the catalog XMLs in this folder
@@ -1419,7 +1458,7 @@ public class CatalogUtils {
                         toRemove.add(entry);
                         modified = true;
                     } else {
-                        logger.error("Missing Resource:" + entryPath);
+                        log.error("Missing Resource:" + entryPath);
                     }
                 }
             }
@@ -1438,8 +1477,9 @@ public class CatalogUtils {
         return modified;
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(CatalogUtils.class);
+    private static final String RELATIVE_PATH = "RELATIVE_PATH";
+    private static final String SIZE          = "SIZE";
 
-    private static Boolean _maintainFileHistory = null;
-    private static Boolean _checksumConfig = null;
+    private static AtomicBoolean _maintainFileHistory = null;
+    private static AtomicBoolean _checksumConfig      = null;
 }

@@ -9,58 +9,54 @@
 
 package org.nrg.xnat.services.messaging.prearchive;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.archive.Operation;
+import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 
+@Getter
+@Accessors(prefix = "_")
+@RequiredArgsConstructor
+@Slf4j
 public class PrearchiveOperationRequest implements Serializable {
-
     /**
      * Used to store the project ID of the destination project for move operations.
      */
-    public static final String PARAM_DESTINATION = "destination";
+    public static final String PARAM_DESTINATION         = "destination";
+    public static final String PARAM_OVERRIDE_EXCEPTIONS = "overrideExceptions";
+    public static final String PARAM_ALLOW_SESSION_MERGE = "allowSessionMerge";
 
-    public PrearchiveOperationRequest(final UserI user, final SessionData sessionData, final File sessionDir, final String operations) {
-        this(user, sessionData, sessionDir, operations, null);
+    public PrearchiveOperationRequest(final UserI user, final Operation operation, final PrearcSession session) throws Exception {
+        this(user.getUsername(), operation, session.getSessionData(), session.getSessionDir(), session.getAdditionalValues());
     }
 
-    public PrearchiveOperationRequest(final UserI user, final SessionData sessionData, final File sessionDir, final String operation, final Map<String, String> parameters) {
-        _user = user;
-        _sessionData = sessionData;
-        _sessionDir = sessionDir;
-        _operation = operation;
-        _parameters = parameters == null ? new HashMap<String, String>() : new HashMap<>(parameters);
+    public PrearchiveOperationRequest(final UserI user, final Operation operation, final SessionData sessionData, final File sessionDir) {
+        this(user.getUsername(), operation, sessionData, sessionDir, null);
     }
 
-    public UserI getUser() {
-        return _user;
+    public PrearchiveOperationRequest(final UserI user, final Operation operation, final SessionData sessionData, final File sessionDir, final Map<String, Object> parameters) {
+        this(user.getUsername(), operation, sessionData, sessionDir, parameters);
     }
 
-    public SessionData getSessionData() {
-        return _sessionData;
+    public PrearchiveOperationRequest(final String username, final Operation operation, final PrearcSession session) throws Exception {
+        this(username, operation, session.getSessionData(), session.getSessionDir(), session.getAdditionalValues());
     }
 
-    public File getSessionDir() {
-        return _sessionDir;
+    public PrearchiveOperationRequest(final String username, final Operation operation, final SessionData sessionData, final File sessionDir) {
+        this(username, operation, sessionData, sessionDir, null);
     }
 
-    public String getOperation() {
-        return _operation;
-    }
-
-    public Map<String, String> getParameters() {
-        return new HashMap<>(_parameters);
-    }
-
-    private static final long serialVersionUID = -6953780271999788326L;
-
-    private final UserI _user;
-    private final SessionData _sessionData;
-    private final File _sessionDir;
-    private final String _operation;
-    private final Map<String, String> _parameters;
+    private final String              _username;
+    private final Operation           _operation;
+    private final SessionData         _sessionData;
+    private final File                _sessionDir;
+    private final Map<String, Object> _parameters;
 }

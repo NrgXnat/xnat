@@ -9,15 +9,9 @@
 
 package org.nrg.xnat.services;
 
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
-import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -31,27 +25,32 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
 /**
  * @author timo
  *
  */
+@Slf4j
 public class SessionUtils {
-
-    static org.apache.log4j.Logger logger = Logger.getLogger(SessionUtils.class);
     public ArrayList getSessionScanIds(String _id) throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","SessionUtils:getSessionScanIds",_id);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext, "SessionUtils:getSessionScanIds", _id);
         ArrayList al = new ArrayList();
         try {
-            MessageContext mc = AxisEngine.getCurrentMessageContext();
-            UserI user =(UserI) mc.getSession().get("user");
+            UserI user =(UserI) messageContext.getSession().get("user");
             if(user!=null){
                 if (_username != null && _password !=null)
                 {
                     user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
-                    mc.getSession().invalidate();
+                    messageContext.getSession().invalidate();
                 }
             }
             
@@ -111,27 +110,26 @@ public class SessionUtils {
 			
             al.trimToSize();
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (DBPoolException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (SQLException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FailedLoginException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         }
         return al;
     }
-    
     
     public static ArrayList GetSessionScanIds(String _id) throws RemoteException
     {

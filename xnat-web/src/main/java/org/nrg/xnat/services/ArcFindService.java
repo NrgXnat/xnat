@@ -9,15 +9,9 @@
 
 package org.nrg.xnat.services;
 
-import java.io.File;
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.AxisEngine;
-import org.apache.log4j.Logger;
+import org.apache.axis.MessageContext;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -34,13 +28,21 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 
+import java.io.File;
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+
+@Slf4j
 public class ArcFindService {
-    static org.apache.log4j.Logger logger = Logger.getLogger(ArcFindService.class);
     public Object[] execute(String _field,String _comparison,Object _value,String projectId) throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","ArcFindService",_value.toString());
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext, "ArcFindService", _value.toString());
         try {
             UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             if (user == null)
@@ -49,65 +51,65 @@ public class ArcFindService {
             }
             return execute(user,_field,_comparison,_value,projectId);
         } catch (RemoteException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (DBPoolException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (SQLException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FailedLoginException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         }
     }
 
-    public Object[] execute(String session_id,String _field,String _comparison,Object _value,String projectId) throws RemoteException
+    public Object[] execute(String sessionId, String _field, String _comparison, Object _value, String projectId) throws RemoteException
     {
-        AccessLogger.LogServiceAccess(session_id,"","ArcFindService",_value.toString());
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final UserI          user           = (UserI) messageContext.getSession().get("user");
+        if (user == null) {
+            throw new RemoteException("Invalid Session: " + sessionId);
+        }
+        AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "ArcFindService", _value.toString());
         try {
-            UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
-            if (user == null)
-            {
-                throw new Exception("Invalid Session: "+session_id);
-            }
             return execute(user,_field,_comparison,_value,projectId);
         } catch (RemoteException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (DBPoolException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (SQLException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (FailedLoginException e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("",e);
             throw new RemoteException("",e);
         }
     }
@@ -116,7 +118,7 @@ public class ArcFindService {
     {
         boolean preLoad =true;
         
-        XnatProjectdata project = (XnatProjectdata)XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
+        XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
         
         if (_field.startsWith("xnat:projectData") || _field.startsWith("xnat:Project") || _field.startsWith("Project"))
         {
@@ -124,9 +126,9 @@ public class ArcFindService {
         }
         ItemCollection items = ItemSearch.GetItems(_field, _comparison, _value, user, preLoad);
         
-        ArrayList<String> url = new ArrayList<String>();
-        ArrayList<String> relative = new ArrayList<String>();
-        ArrayList<Long> size = new ArrayList<Long>();
+        ArrayList<String> url = new ArrayList<>();
+        ArrayList<String> relative = new ArrayList<>();
+        ArrayList<Long> size = new ArrayList<>();
         
         Iterator iter = items.iterator();
         while (iter.hasNext()){
@@ -135,7 +137,7 @@ public class ArcFindService {
             
             for (String key : hash.keySet()){
                 XFTItem resource = hash.get(key);
-                ItemI om = BaseElement.GetGeneratedItem((XFTItem)resource);
+                ItemI om = BaseElement.GetGeneratedItem(resource);
                 if (om instanceof XnatAbstractresource){
                     XnatAbstractresource resourceA = (XnatAbstractresource)om;
                     ArrayList<File> files = resourceA.getCorrespondingFiles(project.getRootArchivePath());
@@ -147,21 +149,19 @@ public class ArcFindService {
                         url.add("project/" + projectId + "/xmlpath/" + xPath + "/file/" + i);
                         
                         String path = f.getAbsolutePath();
-                        if (path.indexOf(File.separator + projectId)!=-1){
+                        if (path.contains(File.separator + projectId)){
                             path = path.substring(path.indexOf(File.separator + projectId) + 1);
                         }
                         relative.add(path);
                         
-                        size.add(new Long(f.length()));
+                        size.add(f.length());
                     }
                     
                 }
             }
         }
         
-        Object[] al = new Object[]{url,relative,size};
-        
-        return al;
+        return new Object[]{url,relative,size};
     }
     
     public static Object[] Execute(String _field,String _comparison,Object _value,String projectId) throws java.rmi.RemoteException 

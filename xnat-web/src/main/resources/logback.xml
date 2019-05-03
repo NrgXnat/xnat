@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    <!-- Stop output INFO at start -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+
+    <!--
+        By default, the logstash appender is a NOPAppender and does nothing. You can define logstash
+        to use something like LogstashTcpSocketAppender to send logging to an ELK service. The appender
+        below is an example of a working Logstash configuration, presuming you have the xnat.logstash.url
+        environment property defined somewhere and the value indicates an operational Elastic service.
+
+        <appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <destination>${xnat.logstash.url}</destination>
+             <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+        </appender>
+        <appender name="logstash" class="ch.qos.logback.core.helpers.NOPAppender"/>
+    -->
+
+    <appender name="xdat" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/xdat.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/xdat.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="security" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/security.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/security.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="cache" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/cache.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/cache.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="events" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${xnat.home}/logs/events.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/events.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="restlet" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/restlet.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/restlet.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="spring" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/spring.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/spring.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="configuration" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/configuration.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/configuration.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="xapi" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/xapi.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/xapi.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="pipeline" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/pipeline.log</File>
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/pipeline.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="automation" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/automation.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/automation.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="jms" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/jms.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/jms.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="orm" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/orm.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/orm.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="access" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/access.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/access.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="launch" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/launch.log</File>
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/launch.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="scheduler" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/scheduler.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/scheduler.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="axis" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/axis.log</File>
+        <Append>true</Append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/axis.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="identifiers" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/identifiers.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/identifiers.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="anon" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/anon.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/anon.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="dicom" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/dicom.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/dicom.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="velocity" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/velocity.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/velocity.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="xnatfs" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${xnat.home}/logs/xnatfs.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/xnatfs.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="tasks" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${xnat.home}/logs/tasks.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/tasks.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="runnable" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/runnable.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/runnable.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="turbine" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/turbine.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/turbine.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="app" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${xnat.home}/logs/application.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/application.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="prearchive" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/prearchive.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/prearchive.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="sql" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/sql.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/sql.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="RECEIVED" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/received.log</File>
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/received.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="avalon" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${xnat.home}/logs/avalon.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/avalon.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <root level="ERROR">
+        <appender-ref ref="app"/>
+    </root>
+    <logger name="org.nrg.xft.search" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.nrg.xnat.security" additivity="false" level="WARN">
+        <appender-ref ref="security"/>
+    </logger>
+    <logger name="org.apache.xalan" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="net.sf.ehcache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.nrg.xnat.event" additivity="false" level="WARN">
+        <appender-ref ref="events"/>
+    </logger>
+    <logger name="org.nrg.xnat.restlet" additivity="false" level="WARN">
+        <appender-ref ref="restlet"/>
+    </logger>
+    <logger name="org.springframework.context" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.xnat.configuration" additivity="false" level="WARN">
+        <appender-ref ref="configuration"/>
+    </logger>
+    <logger name="org.nrg.xnat.web" additivity="false" level="WARN">
+        <appender-ref ref="xapi"/>
+    </logger>
+    <logger name="org.apache.bcel" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.nrg.xft.event" additivity="false" level="WARN">
+        <appender-ref ref="events"/>
+    </logger>
+    <logger name="org.nrg.xdat.preferences" additivity="false" level="WARN">
+        <appender-ref ref="configuration"/>
+    </logger>
+    <logger name="org.nrg.pipeline" additivity="false" level="ERROR">
+        <appender-ref ref="pipeline"/>
+    </logger>
+    <logger name="net.sf.saxon" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.nrg.automation" additivity="false" level="ERROR">
+        <appender-ref ref="automation"/>
+    </logger>
+    <logger name="org.springframework.jms" additivity="false" level="WARN">
+        <appender-ref ref="jms"/>
+    </logger>
+    <logger name="org.springframework.dao" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.springframework.security" additivity="false" level="WARN">
+        <appender-ref ref="security"/>
+    </logger>
+    <logger name="org.nrg.xdat" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.apache.xml" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.springframework.beans" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.springframework.web" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.xdat.turbine.utils.AccessLogger" additivity="false" level="INFO">
+        <appender-ref ref="access"/>
+    </logger>
+    <logger name="org.springframework.http" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.pipeline.launch" additivity="false" level="INFO">
+        <appender-ref ref="launch"/>
+    </logger>
+    <logger name="org.springframework.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.nrg.xft" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.springframework.mail" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.schedule" additivity="false" level="WARN">
+        <appender-ref ref="scheduler"/>
+    </logger>
+    <logger name="org.springframework.jdbc" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.nrg.xapi" additivity="false" level="WARN">
+        <appender-ref ref="xapi"/>
+    </logger>
+    <logger name="org.apache.xpath" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.apache.axis" additivity="false" level="ERROR">
+        <appender-ref ref="axis"/>
+    </logger>
+    <logger name="org.nrg.xnat.services.logging" additivity="false" level="INFO">
+        <appender-ref ref="app"/>
+    </logger>
+    <logger name="org.nrg.xnat.services.messaging" additivity="false" level="WARN">
+        <appender-ref ref="jms"/>
+    </logger>
+    <logger name="org.nrg.dcm.id" additivity="false" level="WARN">
+        <appender-ref ref="identifiers"/>
+    </logger>
+    <logger name="org.nrg.dcm.edit" additivity="false" level="WARN">
+        <appender-ref ref="anon"/>
+    </logger>
+    <logger name="org.apache.regexp" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.nrg.framework.services.NrgEventService" additivity="false" level="WARN">
+        <appender-ref ref="events"/>
+    </logger>
+    <logger name="org.nrg.dcm" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
+    <logger name="velocity" additivity="false" level="ERROR">
+        <appender-ref ref="velocity"/>
+    </logger>
+    <logger name="org.springframework.oxm" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.xnat.xnatfs" additivity="false" level="ERROR">
+        <appender-ref ref="xnatfs"/>
+    </logger>
+    <logger name="org.nrg.xdat.security" additivity="false" level="WARN">
+        <appender-ref ref="security"/>
+    </logger>
+    <logger name="org.nrg.xnat.task" additivity="false" level="WARN">
+        <appender-ref ref="tasks"/>
+    </logger>
+    <logger name="RUNNABLE" additivity="false" level="WARN">
+        <appender-ref ref="runnable"/>
+    </logger>
+    <logger name="org.apache.turbine" additivity="false" level="ERROR">
+        <appender-ref ref="turbine"/>
+    </logger>
+    <logger name="org.springframework.stereotype" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.xnat.initialization" additivity="false" level="WARN">
+        <appender-ref ref="configuration"/>
+    </logger>
+    <logger name="org.apache.fop" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.springframework.transaction" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.nrg.xnat" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.apache.turbine.app.xnat17" additivity="false" level="ERROR">
+        <appender-ref ref="app"/>
+    </logger>
+    <logger name="org.nrg.xnat.node" additivity="false" level="WARN">
+        <appender-ref ref="tasks"/>
+    </logger>
+    <logger name="org.springframework.ldap" additivity="false" level="WARN">
+        <appender-ref ref="security"/>
+    </logger>
+    <logger name="org.springframework.scheduling" additivity="false" level="WARN">
+        <appender-ref ref="scheduler"/>
+    </logger>
+    <logger name="org.nrg.xnat.services.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.springframework.orm" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.nrg.framework.orm" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.dcm4che" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
+    <logger name="org.springframework.util" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.xnat.helpers.prearchive" additivity="false" level="WARN">
+        <appender-ref ref="prearchive"/>
+    </logger>
+    <logger name="org.nrg.xft.db.PoolDBUtils" additivity="false" level="ERROR">
+        <appender-ref ref="sql"/>
+    </logger>
+    <logger name="org.nrg.xnat.received" additivity="false" level="INFO">
+        <appender-ref ref="RECEIVED"/>
+    </logger>
+    <logger name="org.springframework.core" additivity="false" level="WARN">
+        <appender-ref ref="spring"/>
+    </logger>
+    <logger name="org.nrg.xnat.initialization.tasks" additivity="false" level="WARN">
+        <appender-ref ref="tasks"/>
+    </logger>
+    <logger name="avalon" additivity="false" level="ERROR">
+        <appender-ref ref="avalon"/>
+    </logger>
+    <logger name="org.nrg.xnat.turbine" additivity="false" level="ERROR">
+        <appender-ref ref="turbine"/>
+    </logger>
+</configuration>

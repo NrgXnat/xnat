@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.archive;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -20,16 +21,14 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
+import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -43,9 +42,8 @@ import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariabl
 /**
  * @author Timothy R Olsen
  */
+@Slf4j
 public class FinishImageUpload extends StatusProducer implements Callable<String>, StatusProducerI {
-    private static final Logger logger = LoggerFactory.getLogger(FinishImageUpload.class);
-
     private final PrearcSession       session;
     private final URIManager.DataURIA destination;
     private final boolean             overrideExceptions, allowSessionMerge, inline;
@@ -59,6 +57,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
         this.allowSessionMerge = allowSessionMerge;
         this.user = user;
         this.inline = inline;
+        log.debug("Created FinishImageUpload object to complete archiving session {} to {}", session, destination);
     }
 
     @Override
@@ -67,6 +66,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
             if (isAutoArchive(session, destination)) {
                 if (inline) {
                     //This is being done as part of a parent transaction and should not manage prearc cache state.
+                    log.debug("Completing inline archive operation to auto-archive session {} to {}", session, destination);
                     final Map<String, Object> sessionValues = removePrearcVariables(session.getAdditionalValues());
                     return ListenerUtils.addListeners(this, new PrearcSessionArchiver(session,
                                                                                       user,
@@ -77,6 +77,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                                                                                       isOverwriteFiles(session)))
                                         .call();
                 } else {
+                    log.debug("Completing archive operation to auto-archive session {} to {}", session, destination);
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {
                         boolean override = overrideExceptions, append = allowSessionMerge;
 
@@ -90,14 +91,10 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                                         append = false;
                                         break;
                                     case AutoArchive:
-                                        override = false;
-                                        append = true;
-                                        break;
                                     case AutoArchiveOverwrite:
                                         override = false;
                                         append = true;
                                         //theoretically we could also set overwrite_files to true here.  But, that is handled by the isOverwriteFiles method which allows for other methods of specifying the value
-                                        break;
                                 }
                             }
                         }
@@ -110,12 +107,11 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                 populateAdditionalFields(session.getSessionDir());
                 return session.getUrl();
             }
-
         } catch (ActionException e) {
-            logger.error("", e);
+            log.error("", e);
             throw e;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
             throw new ServerException(e);
         }
     }
@@ -129,7 +125,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
 
         if (cleaned.size() > 0) {
             final SAXReader reader = new SAXReader(user);
-            final File xml = new File(sessionDIR.getParentFile(), sessionDIR.getName() + ".xml");
+            final File      xml    = new File(sessionDIR.getParentFile(), sessionDIR.getName() + ".xml");
 
             try {
                 XFTItem item = reader.parse(xml.getAbsolutePath());
@@ -141,19 +137,10 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                     throw new ClientException("unable to map parameters to valid xml path: ", e);
                 }
 
-                FileWriter fw = null;
-                try {
-                    fw = new FileWriter(xml);
-                    item.toXML(fw, false);
+                try (final FileWriter writer = new FileWriter(xml)) {
+                    item.toXML(writer, false);
                 } catch (IllegalArgumentException | IOException | SAXException e) {
                     throw new ServerException(e);
-                } finally {
-                    try {
-                        if (fw != null) {
-                            fw.close();
-                        }
-                    } catch (IOException ignored) {
-                    }
                 }
             } catch (IOException | SAXException e1) {
                 throw new ServerException(e1);
@@ -182,18 +169,18 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
         final SessionData sessionData = session.getSessionData();
         if (sessionData != null) {
             PrearchiveCode sessionAutoArcSetting = sessionData.getAutoArchive();
-            if (sessionAutoArcSetting != null && (sessionAutoArcSetting == PrearchiveCode.AutoArchive || sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite)) {
+            if ((sessionAutoArcSetting == PrearchiveCode.AutoArchive || sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite)) {
                 return setArchiveReason(session, true);
             }
         }
 
-        if (destination != null && destination instanceof URIManager.ArchiveURI) {
+        if (destination instanceof URIManager.ArchiveURI) {
             setArchiveReason(session, false);
             return true;
         }
 
         // If the user has specified auto-archive, override the project setting.
-        Boolean userArchiveSetting = isAutoArchive(session.getAdditionalValues());
+        final Boolean userArchiveSetting = isAutoArchive(session.getAdditionalValues());
         if (null != userArchiveSetting) {
             return setArchiveReason(session, userArchiveSetting);
         }
@@ -246,15 +233,11 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
         }
 
         final SessionData sessionData = session.getSessionData();
-        if (sessionData != null) {
-            PrearchiveCode sessionAutoArcSetting = sessionData.getAutoArchive();
-            if (sessionAutoArcSetting != null && sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite) {
-                return true;
-            }
+        if (sessionData != null && sessionData.getAutoArchive() == PrearchiveCode.AutoArchiveOverwrite) {
+            return true;
         }
 
         final Integer code = ArcSpecManager.GetInstance().getPrearchiveCodeForProject(session.getProject());
         return code != null && code.equals(PrearchiveCode.AutoArchiveOverwrite.getCode());
-
     }
 }

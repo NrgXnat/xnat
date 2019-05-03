@@ -9,7 +9,6 @@
 
 package org.nrg.xapi.rest.schemas;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
@@ -22,6 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.authorization.GuestUserAccessXapiAuthorization;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
@@ -34,11 +36,10 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.initialization.tasks.InitializeXftElementsTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +52,7 @@ import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
-@Api(description = "XNAT Data Type Schemas API")
+@Api("XNAT Data Type Schemas API")
 @XapiRestController
 @RequestMapping(value = "/schemas")
 @Slf4j
@@ -96,13 +97,20 @@ public class SchemaApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<List<String>> getAllDataTypeSchemas() throws IOException {
-        final List<String> schemas = new ArrayList<>();
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd")) {
-            final Set<String> schemaPath = new LinkedHashSet<>(Arrays.asList(FilenameUtils.removeExtension(resource.getURI().toString().replaceAll("^.*/schemas/", "")).split("/")));
-            schemas.add(Joiner.on("/").join(schemaPath));
+    public List<String> getAllDataTypeSchemas() throws InitializationException {
+        try {
+            final List<String> schemas = new ArrayList<>();
+            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd")) {
+                try {
+                    schemas.add(StringUtils.join(new LinkedHashSet<>(Arrays.asList(FilenameUtils.removeExtension(resource.getURI().toString().replaceAll("^.*/schemas/", "")).split("/"))), "/"));
+                } catch (IOException e) {
+                    log.error("Couldn't get a URI for the resource \"{}\", skipping", resource);
+                }
+            }
+            return schemas;
+        } catch (IOException e) {
+            throw new InitializationException("Couldn't retrieve schema resources from the classpath using pattern: \"classpath*:schemas/*/*.xsd\"");
         }
-        return new ResponseEntity<>(schemas, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Returns the requested XNAT data-type schema.", notes = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd. This function returns the schema named SCHEMA.xsd in the folder named SCHEMA. You can use the function that allows you to specify the namespace as well if the folder name differs from the schema name. This tells you nothing about whether the data types defined in the schemas are active or configured.", response = String.class)
@@ -111,7 +119,7 @@ public class SchemaApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{schema}", produces = {MediaType.APPLICATION_XML_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<String> getRequestedDataTypeSchema(@PathVariable("schema") final String schema) throws IOException {
+    public String getRequestedDataTypeSchema(@PathVariable("schema") final String schema) throws IOException, NotFoundException, InsufficientPrivilegesException {
         return getRequestedDataTypeSchema(schema, schema);
     }
 
@@ -122,21 +130,21 @@ public class SchemaApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{namespace}/{schema}", produces = {MediaType.APPLICATION_XML_VALUE}, method = {RequestMethod.GET})
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
-    public ResponseEntity<String> getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws IOException {
+    public String getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws IOException, NotFoundException, InsufficientPrivilegesException {
         final Resource resource = BasicXnatResourceLocator.getResource("classpath:schemas/" + namespace + "/" + schema + ".xsd");
         if (resource == null || !resource.exists()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new NotFoundException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
         }
         if (!resource.isReadable()) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            throw new InsufficientPrivilegesException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
         }
         try (final InputStream input = resource.getInputStream()) {
-            return new ResponseEntity<>(new Scanner(input, "UTF-8").useDelimiter("\\A").next(), HttpStatus.OK);
+            return new Scanner(input, "UTF-8").useDelimiter("\\A").next();
         }
     }
 
-    @ApiOperation(value = "Gets a list of the available data types on the system, preceded by a timestamp indicating when the list of data types was generated.",
-                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).  The first element in this list is a timestamp indicating when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
+    @ApiOperation(value = "Gets a list of the available data types on the system.",
+                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
                   response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -145,12 +153,12 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<Set<String>> getAllElementTypes() {
-        return ResponseEntity.ok(_elementTypes);
+    public Set<String> getAllElementTypes() {
+        return _elementTypes;
     }
 
     @ApiOperation(value = "Gets a map of the available data types on the system along with the various data type element names and types. This map includes a timestamp indicating when the list of data types was generated using the key \"timestamp\".",
-                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).  The first element in this list is a timestamp indicating when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
+                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/names/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs). The timestamp element in this list indicates when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
                   response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -159,12 +167,12 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/names/all", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<SetMultimap<String, String>> getAllElementTypeNames() {
-        return ResponseEntity.ok(_elementNames);
+    public SetMultimap<String, String> getAllElementTypeNames() {
+        return _elementNames;
     }
 
-    @ApiOperation(value = "Gets a map of the available data types on the system along with the various data type element names and types. This map includes a timestamp indicating when the list of data types was generated using the key \"timestamp\".",
-                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).  The first element in this list is a timestamp indicating when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
+    @ApiOperation(value = "Gets the various data type element names and types for the specified data type.",
+                  notes = "The available data types that can be used as parameters for this call can be retrieved by calling /xapi/access/datatypes/names/all. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
                   response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -173,8 +181,8 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/names/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<SetMultimap<String, String>> getSpecifiedElementTypeNames(@ApiParam("The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
-        return ResponseEntity.ok(getElementNames(dataType));
+    public SetMultimap<String, String> getSpecifiedElementTypeNames(@ApiParam("The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
+        return getElementNames(dataType);
     }
 
     @ApiOperation(value = "Gets information about the requested data types.",
@@ -187,13 +195,8 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/names", consumes = {APPLICATION_JSON_VALUE, APPLICATION_JSON_UTF8_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<SetMultimap<String, String>> getSpecifiedElementTypeNamesFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException {
-        final List<String> elementNames = getElementNamesFromTypeAndTypes((List) attributes.get("dataTypes"), (String) attributes.get("dataType"));
-        if (elementNames.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
-        return ResponseEntity.ok(getElementNames(elementNames));
+    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
+        return getDataTypeMaps(getElementNamesFromTypeAndTypes((List) attributes.get("dataTypes"), (String) attributes.get("dataType")));
     }
 
     @ApiOperation(value = "Gets information about the requested data type.",
@@ -206,13 +209,8 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/names", consumes = {APPLICATION_FORM_URLENCODED_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<SetMultimap<String, String>> getSpecifiedElementTypeNamesFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException {
-        final List<String> elementNames = getElementNamesFromTypeAndTypes(dataTypes, dataType);
-        if (elementNames.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
-        return ResponseEntity.ok(getElementNames(elementNames));
+    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
+        return getDataTypeMaps(getElementNamesFromTypeAndTypes(dataTypes, dataType));
     }
 
     @ApiOperation(value = "Gets a map of all available data types on the system with the full element definition.",
@@ -225,12 +223,12 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/elements/all", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<Map<String, GenericWrapperElement>> getAllElements() {
-        return ResponseEntity.ok(_elements);
+    public Map<String, GenericWrapperElement> getAllElements() {
+        return _elements;
     }
 
     @ApiOperation(value = "Gets information about the requested data type.",
-                  notes = "The available data types from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
+                  notes = "The available data types from the call /xapi/access/datatypes/elements/all can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
                   response = GenericWrapperElement.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -239,8 +237,8 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/elements/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<Map<String, GenericWrapperElement>> getSpecifiedElement(@ApiParam("The data type to be retrieved.") @PathVariable final String dataType) throws NotFoundException {
-        return ResponseEntity.ok(getElement(dataType));
+    public Map<String, GenericWrapperElement> getSpecifiedElement(@ApiParam("The data type to be retrieved.") @PathVariable final String dataType) throws NotFoundException {
+        return getElement(dataType);
     }
 
     @ApiOperation(value = "Gets the requested data types.",
@@ -253,13 +251,8 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/elements", consumes = {APPLICATION_JSON_VALUE, APPLICATION_JSON_UTF8_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<Map<String, GenericWrapperElement>> getSpecifiedElementsFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException {
-        final List<String> elementNames = getElementNamesFromTypeAndTypes((List) attributes.get("dataTypes"), (String) attributes.get("dataType"));
-        if (elementNames.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
-        return ResponseEntity.ok(getElements(elementNames));
+    public Map<String, GenericWrapperElement> getSpecifiedElementsFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
+        return getElementMaps(getElementNamesFromTypeAndTypes((List) attributes.get("dataTypes"), (String) attributes.get("dataType")));
     }
 
     @ApiOperation(value = "Gets information about the requested data type.",
@@ -272,15 +265,11 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/elements", consumes = {APPLICATION_FORM_URLENCODED_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<Map<String, GenericWrapperElement>> getSpecifiedElementsFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException {
-        final List<String> elementNames = getElementNamesFromTypeAndTypes(dataTypes, dataType);
-        if (elementNames.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
-        return ResponseEntity.ok(getElements(elementNames));
+    public Map<String, GenericWrapperElement> getSpecifiedElementsFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
+        return getElementMaps(getElementNamesFromTypeAndTypes(dataTypes, dataType));
     }
 
+    @Nonnull
     private List<String> getElementNamesFromTypeAndTypes(final List dataTypes, final String dataType) {
         final List<String> allDataTypes = new ArrayList<>();
         if (dataTypes != null) {
@@ -295,6 +284,24 @@ public class SchemaApi extends AbstractXapiRestController {
             allDataTypes.add(dataType);
         }
         return allDataTypes;
+    }
+
+    @Nonnull
+    private Map<String, GenericWrapperElement> getElementMaps(final List<String> elementNames) throws DataFormatException, NotFoundException {
+        if (elementNames.isEmpty()) {
+            throw new DataFormatException("No data-type names found on the request: must specify one of \"dataType\" or \"dataTypes\"");
+        }
+        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
+        return getElements(elementNames);
+    }
+
+    @Nonnull
+    private SetMultimap<String, String> getDataTypeMaps(final List<String> elementNames) throws DataFormatException, NotFoundException {
+        if (elementNames.isEmpty()) {
+            throw new DataFormatException("No data-type names found on the request: must specify one of \"dataType\" or \"dataTypes\"");
+        }
+        log.info("Getting the data types {}", StringUtils.join(elementNames, ", "));
+        return getElementNames(elementNames);
     }
 
     private SetMultimap<String, String> getElementNames(final String elementName) throws NotFoundException {

@@ -153,10 +153,10 @@ public class CatalogUtils {
         }
     }
 
-    public static List<Object[]> getEntryDetails(CatCatalogI cat, String parentPath, String uriPath, XnatResource _resource, boolean includeFile, final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
-        final ArrayList<Object[]> al = new ArrayList<>();
+    public static List<Object[]> getEntryDetails(final CatCatalogI cat, final String parentPath, final String uriPath, final XnatResource _resource, final boolean includeFile, final CatEntryFilterI filter, final XnatProjectdata proj, final String locator) {
+        final List<Object[]> catalogEntries = new ArrayList<>();
         for (final CatCatalogI subset : cat.getSets_entryset()) {
-            al.addAll(getEntryDetails(subset, parentPath, uriPath, _resource, includeFile, filter, proj, locator));
+            catalogEntries.addAll(getEntryDetails(subset, parentPath, uriPath, _resource, includeFile, filter, proj, locator));
         }
 
         for (final CatEntryI entry : cat.getEntries_entry()) {
@@ -164,7 +164,10 @@ public class CatalogUtils {
                 final List<Object> row = Lists.newArrayList();
                 final String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
                 final File file = getFileOnLocalFileSystem(entryPath);
-                assert file != null;
+                if (file == null) {
+                    log.warn("The catalog {} contains an invalid entry with the path {}. Please check and/or refresh the catalog.", cat.getName(), entryPath);
+                    continue;
+                }
                 row.add(file.getName());
                 row.add(includeFile ? 0 : file.length());
                 if (locator.equalsIgnoreCase(URI)) {
@@ -192,11 +195,11 @@ public class CatalogUtils {
                     row.add(file);
                 }
                 row.add(entry.getDigest());
-                al.add(row.toArray());
+                catalogEntries.add(row.toArray());
             }
         }
 
-        return al;
+        return catalogEntries;
     }
 
     /**
@@ -222,6 +225,7 @@ public class CatalogUtils {
      * @param rawSize   The size of the files that compose the object.
      * @return A formatted display of the file statistics.
      */
+    @SuppressWarnings("unused")
     public static String formatFileStats(final String label, final long fileCount, final Object rawSize) {
         long size = 0;
         if (rawSize != null) {
@@ -237,6 +241,7 @@ public class CatalogUtils {
         return String.format("%s: %s in %s files", label, formatSize(size), fileCount);
     }
 
+    @SuppressWarnings("unused")
     public static Map<File, CatEntryI> getCatalogEntriesForFiles(final String rootPath, final XnatResourcecatalog catalog, final List<File> files) {
         final File catFile = catalog.getCatalogFile(rootPath);
         final String parentPath = catFile.getParent();
@@ -955,11 +960,11 @@ public class CatalogUtils {
                 return cat;
             }
         } catch (FileNotFoundException exception) {
-            log.error("Couldn't find file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't find file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (SAXException exception) {
-            log.error("Couldn't parse file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't parse file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (IOException exception) {
-            log.error("Couldn't parse or unzip file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Couldn't parse or unzip file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (Exception exception) {
             log.error("Unknown error handling file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
         }
@@ -1112,11 +1117,14 @@ public class CatalogUtils {
         CatCatalogBean newCat;
         if (newCatFile.exists()) {
             newCat = CatalogUtils.getCatalog(newCatFile);
+            if (newCat == null) {
+                log.warn("Tried to create a new catalog based on the file {} but it's null. Check the logs for errors that may have caused this issue.", newCatFile);
+                return;
+            }
         } else {
             newCat = new CatCatalogBean();
         }
 
-        assert newCat != null;
         newCat.addEntries_entry(newEntryBean);
 
         CatalogUtils.writeCatalogToFile(newCat, newCatFile);
@@ -1141,7 +1149,10 @@ public class CatalogUtils {
             _new[5] = old[5];
 
             XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(old[0], user, false);
-            assert res != null;
+            if (res == null) {
+                log.warn("User {} tried to get an abstract resource for the ID {}, but that was null.", user.getUsername(), old[0]);
+                continue;
+            }
 
             if (cacheFileStats) {
                 if (res.getFileCount() == null) {
@@ -1231,9 +1242,9 @@ public class CatalogUtils {
         return sb.toString();
     }
 
-    private static Map<String, Map<String, Integer>> convertAuditToMap(String audit) {
+    private static Map<String, Map<String, Integer>> convertAuditToMap(final String audit) {
         Map<String, Map<String, Integer>> summary = new HashMap<>();
-        for (final String changeSet : audit.split("|")) {
+        for (final String changeSet : audit.split("\\|")) {
             final String[] split1 = changeSet.split("=");
             if (split1.length > 1) {
                 final String key = split1[0];

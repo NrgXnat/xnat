@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -71,7 +72,7 @@ public class TestThreadAndProcessFileLock {
         File copyLoc = new File(copiedFile.replace(".xml", Thread.currentThread().getName() + ".xml"));
         Files.copy(file.toPath(), copyLoc.toPath(), StandardCopyOption.REPLACE_EXISTING);
         CatCatalogBean cat = CatalogUtils.getCatalog(file);
-        CatalogUtils.writeCatalogToFile(cat, file, false, new HashMap<>());
+        CatalogUtils.writeCatalogToFile(cat, file, false, new HashMap<String, Map<String,Integer>>());
         assertTrue(org.apache.commons.io.FileUtils.contentEquals(file, copyLoc));
         CatCatalogBean cat2 = CatalogUtils.getCatalog(file);
         assertEquals(cat.toString(), cat2.toString());

@@ -149,6 +149,7 @@ body.xnat div.xmodal .panel-body { padding: 0 ; }
     width: 100%; margin-top: -6px; padding: 5px 7px; box-sizing: border-box;
     font-family: Courier, monospace; font-weight: normal;
 }
+.panel .panel-element select {overflow: auto;}
 
 .panel .input-bundle { margin-top: 10px; }
 

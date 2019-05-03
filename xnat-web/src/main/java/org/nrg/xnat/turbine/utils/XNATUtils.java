@@ -412,22 +412,6 @@ public class XNATUtils {
     }
 
 
-    protected static File GetFileOnLocalFileSystem(String fullPath) {
-        File f = new File(fullPath);
-        if (!f.exists()){
-            if (!fullPath.endsWith(".gz")){
-            	f= new File(fullPath + ".gz");
-            	if (!f.exists()){
-            		return null;
-            	}
-            }else{
-                return null;
-            }
-        }
-        
-        return f;
-    }
-    
     public static boolean isNull(String s){
     	if(s==null){
     		return true;

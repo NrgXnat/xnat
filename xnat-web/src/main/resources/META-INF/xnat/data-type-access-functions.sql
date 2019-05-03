@@ -76,6 +76,27 @@ CREATE OR REPLACE VIEW public.secured_identified_data_types AS
             LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND column_name = 'id'
     WHERE c.column_name IS NOT NULL;
 
+CREATE OR REPLACE VIEW public.scan_data_types AS
+    WITH
+        data_elements AS (SELECT
+                              element_name,
+                              regexp_replace(element_name, '[^A-z0-9]', '_', 'g') AS table_name
+                          FROM
+                              xdat_meta_element
+                          WHERE
+                                  lower(element_name) LIKE '%scan%' AND element_name ~ '^([^:]+:[^_]+)$')
+    SELECT DISTINCT
+        element_name,
+        table_name
+    FROM
+        (SELECT
+             e.element_name,
+             e.table_name
+         FROM
+             data_elements e
+                 LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND (column_name = 'id' OR column_name LIKE '%_id')
+         WHERE c.column_name IS NOT NULL) SOURCE;
+
 CREATE OR REPLACE FUNCTION create_public_element_access_for_data_type(elementName VARCHAR(255))
   RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -364,6 +385,111 @@ BEGIN
                      find_orphaned_data() o
                          LEFT JOIN data_types t ON o.element_name != t.element_name
                  WHERE object_exists_in_table(o.id, t.element_name);
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.scan_exists_in_table(xnat_imagescandata_id INTEGER, data_type TEXT)
+    RETURNS BOOLEAN AS
+$$
+DECLARE
+    exists_in_table BOOLEAN;
+BEGIN
+    EXECUTE format('SELECT EXISTS(SELECT TRUE FROM %s WHERE xnat_imagescandata_id = %s)', regexp_replace(data_type, '[^A-z0-9]', '_', 'g'), xnat_imagescandata_id) INTO exists_in_table;
+    RETURN exists_in_table;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.find_orphaned_scans()
+    RETURNS TABLE (
+                      project VARCHAR(255),
+                      label VARCHAR(255),
+                      id VARCHAR(255),
+                      xnat_imagescandata_id INTEGER,
+                      modality VARCHAR(255),
+                      type VARCHAR(255),
+                      series_description VARCHAR(255),
+                      element_name VARCHAR(250)
+                  ) AS
+$$
+BEGIN
+    RETURN QUERY SELECT
+                     s.project,
+                     x.label,
+                     s.id,
+                     s.xnat_imagescandata_id,
+                     s.modality,
+                     s.type,
+                     s.series_description,
+                     e.element_name
+                 FROM
+                     xnat_imagescandata s
+                         LEFT JOIN xdat_meta_element e ON s.extension = e.xdat_meta_element_id
+                         LEFT JOIN xnat_imagesessiondata i ON s.image_session_id = i.id
+                         LEFT JOIN xnat_experimentdata x ON i.id = x.id
+                 WHERE NOT scan_exists_in_table(s.xnat_imagescandata_id, e.element_name);
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.resolve_orphaned_scans()
+    RETURNS TABLE (
+                      project VARCHAR(255),
+                      label VARCHAR(255),
+                      id VARCHAR(255),
+                      xnat_imagescandata_id INTEGER,
+                      modality VARCHAR(255),
+                      type VARCHAR(255),
+                      series_description VARCHAR(255),
+                      actual_element_name VARCHAR(250),
+                      expected_element_name VARCHAR(255)
+                  ) AS
+$$
+BEGIN
+    RETURN QUERY WITH
+                     data_types AS (SELECT *
+                                    FROM
+                                        scan_data_types t
+                                            LEFT JOIN information_schema.columns c ON lower(t.table_name) = lower(c.table_name)
+                                    WHERE element_name LIKE '%ScanData%' AND element_name NOT LIKE 'xnat:imageScanData%' AND column_name = 'xnat_imagescandata_id')
+                 SELECT
+                     o.project,
+                     o.label,
+                     o.id,
+                     o.xnat_imagescandata_id,
+                     o.modality,
+                     o.type,
+                     o.series_description,
+                     o.element_name AS actual_element_name,
+                     t.element_name AS located_element_name
+                 FROM
+                     find_orphaned_scans() o
+                         LEFT JOIN data_types t ON o.element_name != t.element_name
+                 WHERE scan_exists_in_table(o.xnat_imagescandata_id, t.element_name);
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.fix_orphaned_scans()
+    RETURNS INTEGER AS
+$$
+DECLARE
+    fixed_orphan_count INTEGER;
+BEGIN
+    UPDATE xnat_imagescandata s
+    SET
+        extension = orphans.xdat_meta_element_id
+    FROM
+        (SELECT
+             o.xnat_imagescandata_id,
+             m.xdat_meta_element_id
+         FROM
+             resolve_orphaned_scans() o
+                 LEFT JOIN xdat_meta_element m ON o.expected_element_name = m.element_name) orphans
+    WHERE s.xnat_imagescandata_id = orphans.xnat_imagescandata_id;
+    GET DIAGNOSTICS fixed_orphan_count = ROW_COUNT;
+    RETURN fixed_orphan_count;
 END
 $$
     LANGUAGE plpgsql;

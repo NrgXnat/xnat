@@ -43,6 +43,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -166,6 +167,11 @@ public abstract class SecureResource extends Resource {
             getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Named parameter JDBC template was not properly initialized.");
         }
+        _userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
+        if (_userDataCache == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
+            throw new NrgServiceRuntimeException("ERROR: User data cache was not properly initialized.");
+        }
 
         requested_format = getQueryVariable("format");
 
@@ -277,6 +283,10 @@ public abstract class SecureResource extends Resource {
 
     protected NamedParameterJdbcTemplate getTemplate() {
         return _template;
+    }
+
+    protected UserDataCache getUserDataCache() {
+        return _userDataCache;
     }
 
     private Form _body;
@@ -1923,4 +1933,5 @@ public abstract class SecureResource extends Resource {
     private final UserI                      _user;
     private final SerializerService          _serializer;
     private final NamedParameterJdbcTemplate _template;
+    private final UserDataCache              _userDataCache;
 }

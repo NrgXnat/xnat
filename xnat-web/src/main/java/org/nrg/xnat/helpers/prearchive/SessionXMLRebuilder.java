@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers.prearchive;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.task.XnatTask;
 import org.nrg.framework.task.services.XnatTaskService;
@@ -29,6 +30,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
+
+import static org.nrg.xnat.archive.Operation.Rebuild;
 
 /**
  * The Class SessionXMLRebuilder.
@@ -100,7 +103,7 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                                     log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, setting status to QUEUED_BUILDING", updatedSessionCount, sessionData.toString(), diff, _interval);
                                     if (PrearcDatabase.setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING)) {
                                         log.debug("Creating JMS queue entry for {} to archive {}", user.getUsername(), sessionData.getExternalUrl());
-                                        final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, sessionData, sessionDir, "Rebuild");
+                                        final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir);
                                         XDAT.sendJmsRequest(_jmsTemplate, request);
                                     } else {
                                         log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", sessionData.toString());
@@ -135,13 +138,10 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                 log.error("", e);
             }
         } catch (final NrgServiceRuntimeException e) {
-            switch (e.getServiceError()) {
-                case UserServiceError:
-                    log.warn("The user for running the session XML rebuilder process could not be initialized. This probably means the system is still initializing. Check the database if this is not the case.");
-                    break;
-                default:
-                    throw e;
+            if (e.getServiceError() != NrgServiceError.UserServiceError) {
+                throw e;
             }
+            log.warn("The user for running the session XML rebuilder process could not be initialized. This probably means the system is still initializing. Check the database if this is not the case.");
         } catch (final Exception e) {
             log.error("An unknown error occurred", e);
         }
@@ -156,8 +156,7 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
      * @return the double
      */
     public static double diffInMinutes(long start, long end) {
-        double seconds = Math.floor((end - start) / 1000);
-        return Math.floor(seconds / 60);
+        return Math.floor(Math.floor((end - start) / 1000) / 60);
     }
 
     private final Provider<UserI> _provider;

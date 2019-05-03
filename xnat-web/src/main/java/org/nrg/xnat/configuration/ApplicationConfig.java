@@ -16,6 +16,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -27,6 +28,8 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
+import org.nrg.xnat.helpers.prearchive.handlers.DefaultPrearchiveOperationHandlerResolver;
+import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolver;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
@@ -204,6 +207,11 @@ public class ApplicationConfig {
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
         return new ImporterHandlerPackages(new HashSet<>(Arrays.asList("org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive")));
+    }
+
+    @Bean
+    public PrearchiveOperationHandlerResolver prearchiveOperationHandlerResolver(final NrgEventServiceI eventService, final XnatUserProvider receivedFileUserProvider) {
+        return new DefaultPrearchiveOperationHandlerResolver(eventService, receivedFileUserProvider);
     }
 
     @Bean

@@ -47,7 +47,7 @@ apply plugin: "idea"
 apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "io.spring.dependency-management"
 apply plugin: "jacoco"
-apply plugin: "java"
+apply plugin: "java-library"
 apply plugin: "maven"
 apply plugin: "maven-publish"
 apply plugin: "war"
@@ -181,12 +181,20 @@ dependencyManagement.imports {
 
 dependencies {
     // NRG dependencies first.
+    api "org.nrg.xdat:core"
+    api "org.nrg.xnat:xnat-data-models"
+    api "org.nrg:framework"
+    api "org.springframework.security:spring-security-ldap"
+    api "org.springframework.security.oauth:spring-security-oauth2"
+    api "org.springframework.security:spring-security-jwt"
+    api "org.springframework:spring-web"
+    api "org.springframework:spring-jms"
+    api "org.springframework:spring-jdbc"
+    api "org.springframework:spring-beans"
+    api "org.springframework:spring-context"
+    api "org.springframework:spring-core"
+
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models") {
-        transitive = false
-    }
-    implementation "org.nrg.xdat:core"
-    implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"
@@ -226,17 +234,12 @@ dependencies {
     implementation "dcm4che:dcm4che-net"
 
     implementation "org.springframework:spring-aop"
-    implementation "org.springframework:spring-beans"
     implementation "org.springframework:spring-context-support"
-    implementation "org.springframework:spring-context"
-    implementation "org.springframework:spring-core"
-    implementation "org.springframework:spring-jdbc"
     implementation "org.springframework:spring-jms"
     implementation "org.springframework:spring-messaging"
     implementation "org.springframework:spring-orm"
     implementation "org.springframework:spring-oxm"
     implementation "org.springframework:spring-tx"
-    implementation "org.springframework:spring-web"
     implementation "org.springframework:spring-webmvc"
 
     implementation "io.springfox:springfox-swagger2"
@@ -245,11 +248,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-acl"
     implementation "org.springframework.security:spring-security-aspects"
     implementation "org.springframework.security:spring-security-config"
-    implementation "org.springframework.security:spring-security-ldap"
     implementation "org.springframework.security:spring-security-taglibs"
     implementation "org.springframework.ldap:spring-ldap-core"
-    implementation "org.springframework.security.oauth:spring-security-oauth2"
-    implementation "org.springframework.security:spring-security-jwt"
 
     implementation "org.hibernate:hibernate-core"
     implementation "org.hibernate:hibernate-ehcache"

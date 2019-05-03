@@ -26,6 +26,7 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
@@ -206,6 +207,24 @@ public class PrearcUtils {
         final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
         assert userHelperService != null;
         return Roles.isSiteAdmin(user) || projectId != null && userHelperService.hasEditAccessToSessionDataByTag(projectId);
+    }
+
+    /**
+     * Retrieves the File reference to the prearchive root directory for the
+     * named project.
+     * <p/>
+     * 4/30/12- removed requirement that user object be not null.  null users are allowed here for administrative code that happens outside the permissions structure (like logging).
+     * 4/30/12- refactored to prevent unnecessary database queries
+     *
+     * @param username    Name of the user getting the directory.
+     * @param project Project abbreviation or alias
+     * @return prearchive root directory
+     * @throws ResourceException if the named project does not exist, or if the user does not
+     *                           have create permission for it, or if the prearchive directory
+     *                           does not exist.
+     */
+    public static File getPrearcDir(final String username, final String project, final boolean allowUnassigned) throws Exception {
+        return getPrearcDir(StringUtils.isNotBlank(username) ? Users.getUser(username) : null, project, allowUnassigned);
     }
 
     /**

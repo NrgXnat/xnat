@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class DefaultLoggingService implements LoggingService {
     @Autowired
-    public DefaultLoggingService(final Path xnatHome, final DocumentBuilder builder, final Transformer transformer, final XnatPluginBeanManager beans) throws IOException, SAXException, JoranException {
+    public DefaultLoggingService(final Path xnatHome, final DocumentBuilder builder, final Transformer transformer, final XnatPluginBeanManager beans) throws IOException, SAXException {
         INSTANCE = this;
 
         _xnatHome = xnatHome;
@@ -178,11 +178,17 @@ public class DefaultLoggingService implements LoggingService {
         }
     }
 
-    private void attachPluginLogConfigurations() throws IOException, JoranException {
+    private void attachPluginLogConfigurations() {
         if (!_pluginLogConfigurations.isEmpty()) {
             for (final String pluginId : _pluginLogConfigurations.keySet()) {
                 final Resource resource = _pluginLogConfigurations.get(pluginId);
-                _initializer.configureByResource(resource.getURL());
+                try {
+                    _initializer.configureByResource(resource.getURL());
+                } catch (JoranException e) {
+                    log.error("An error occurred parsing the configured resource {} for plugin {}. Skipping this configuration.", resource, pluginId, e);
+                } catch (IOException e) {
+                    log.error("An error occurred parsing the resource URL {} for plugin {}. Skipping this configuration.", resource, pluginId, e);
+                }
             }
         }
     }

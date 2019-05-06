@@ -20,6 +20,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -30,8 +31,8 @@ import static org.nrg.xnat.archive.Operation.Archive;
 @Accessors(prefix = "_")
 @Slf4j
 public class PrearchiveArchiveHandler extends AbstractPrearchiveOperationHandler {
-    public PrearchiveArchiveHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider) throws Exception {
-        super(request, eventService, userProvider);
+    public PrearchiveArchiveHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) throws Exception {
+        super(request, eventService, userProvider, importRequestService);
         _session = new PrearcSession(request, getUser());
         _destination = UriParserUtils.parseURI((String) getParameters().get(PrearchiveOperationRequest.PARAM_DESTINATION));
         _overrideExceptions = isBooleanParameter(PrearchiveOperationRequest.PARAM_OVERRIDE_EXCEPTIONS);

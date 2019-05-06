@@ -10,6 +10,7 @@
 package org.nrg.xnat.archive;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.zip.ZipOutputStream;
 
@@ -48,7 +50,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
     private static final String CLEANUP_PARAMETER = "cleanupAfterImport";
     //private static final org.apache.commons.logging.Log _logger = org.apache.commons.logging.LogFactory.getLog(DicomInboxImporter.class);
 
-    public DicomInboxImporter(final Object listener, final UserI user, @SuppressWarnings("unused") final FileWriterWrapperI writer, final Map<String, Object> parameters) throws ClientException, ConfigServiceException {
+    public DicomInboxImporter(final Object listener, final UserI user, @SuppressWarnings("unused") final FileWriterWrapperI writer, final Map<String, Object> parameters) {
         super(listener, user);
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);
         _user = user;
@@ -66,14 +68,14 @@ public final class DicomInboxImporter extends ImporterHandlerA {
     	}
     	final File parent = pFile.getParentFile();
     	// Create a subdirectory for the file and move it there.
-    	String dirName = pFn.split(Pattern.quote("."))[0];
-    	boolean exists = true;
-    	while (exists) {
+    	String              dirName = pFn.split(Pattern.quote("."))[0];
+    	final AtomicBoolean exists  = new AtomicBoolean(true);
+    	while (exists.get()) {
     		final File subDir = new File(parent, dirName);
     		if (!subDir.exists()) {
-    			exists = false;
+    			exists.set(false);
     			if (!subDir.mkdir()) {
-    				throw new ClientException("Couldn't create subdiretory for archive file - " + subDir.getAbsolutePath());
+    				throw new ClientException("Couldn't create subdirectory for archive file - " + subDir.getAbsolutePath());
     			}
     			try {
 					ZipI zipper = null;
@@ -106,12 +108,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 	}
     
 	private boolean hasArchiveExtension(final String lowCaseFileName) {
-		for (final String ext : Arrays.asList(ARCHIVE_EXTENSIONS)) {
-			if (lowCaseFileName.endsWith(ext)) {
-				return true;
-			}
-		}
-		return false;
+    	return StringUtils.endsWithAny(lowCaseFileName, ARCHIVE_EXTENSIONS);
 	}    
     
     /**
@@ -137,7 +134,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 
 		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
 		final String parameter = String.valueOf(_parameters.get("path"));
-		String normalizedPath = parameter==null?"":parameter.toString();
+		String normalizedPath = parameter==null? "": parameter;
 		normalizedPath = Paths.get(normalizedPath).normalize().toString();
 		if(!normalizedPath.startsWith(inboxPath)){
 			//Specified directory is not within inbox directory.
@@ -149,8 +146,8 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		pathFromRequest = pathFromRequest.replaceFirst("^\\\\", "");
 		pathFromRequest = pathFromRequest.replaceFirst("^/", "");
 		int backslashIndex = pathFromRequest.indexOf('\\');
-		int forwardslashIndex = pathFromRequest.indexOf('/');
-		int slashIndex = ((backslashIndex<forwardslashIndex&&backslashIndex!=-1)?backslashIndex:forwardslashIndex);
+		int forwardSlashIndex = pathFromRequest.indexOf('/');
+		int slashIndex = ((backslashIndex<forwardSlashIndex&&backslashIndex!=-1)?backslashIndex:forwardSlashIndex);
 		String inboxSubdirectory = pathFromRequest;
 		if(slashIndex>-1) {
 			inboxSubdirectory = pathFromRequest.substring(0, slashIndex);
@@ -159,7 +156,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		try {
 			_sessionPath = (Paths.get(normalizedPath)).toFile();
 		}
-		catch(Exception e){
+		catch(Exception ignored){
 
 		}
 		if (!_sessionPath.exists()) {
@@ -196,13 +193,13 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 			_parameters.remove("session");
 
 			String expt_label = (String)_parameters.get(URIManager.EXPT_LABEL);
-			if(SessionImporter.getExperimentByIdorLabel(projectFromRequest, expt_label, _user)!=null){
+			if(SessionImporter.getExperimentByIdOrLabel(projectFromRequest, expt_label, _user)!=null){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Experiment with that label already exists in that project.");
 			}
 		}
 		else if(_parameters.containsKey("session")){
 			String sess = (String)_parameters.get("session");
-			if(SessionImporter.getExperimentByIdorLabel(projectFromRequest, sess, _user)!=null){
+			if(SessionImporter.getExperimentByIdOrLabel(projectFromRequest, sess, _user)!=null){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already exists in that project.");
 			}
 			_parameters.put(URIManager.EXPT_LABEL, sess);

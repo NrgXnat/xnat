@@ -21,6 +21,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 
 import java.io.File;
@@ -31,8 +32,8 @@ import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequ
 @Handles(Move)
 @Slf4j
 public class PrearchiveMoveHandler extends AbstractPrearchiveOperationHandler {
-    public PrearchiveMoveHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider) {
-        super(request, eventService, userProvider);
+    public PrearchiveMoveHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
+        super(request, eventService, userProvider, importRequestService);
     }
 
     @Override

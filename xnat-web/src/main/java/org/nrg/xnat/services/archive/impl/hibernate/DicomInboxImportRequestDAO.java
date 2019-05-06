@@ -9,18 +9,19 @@
 
 package org.nrg.xnat.services.archive.impl.hibernate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Completed;
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Failed;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxImportRequest> {
@@ -30,45 +31,39 @@ public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxI
     public DicomInboxImportRequest findById(final long id) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("id", id));
-        List<DicomInboxImportRequest> reqs = criteria.list();
-        if(reqs!=null && reqs.size()>0){
+        final List<DicomInboxImportRequest> reqs = criteria.list();
+        if (reqs != null && !reqs.isEmpty()) {
             return reqs.get(0);
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequests() {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
-        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
-        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-        //noinspection unchecked
-        return (List<DicomInboxImportRequest>) criteria.list();
+        return findDicomInboxInportRequests(null, true);
     }
 
-    @SuppressWarnings("unchecked")
     @Transactional
-    public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(String username) {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
-        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
-        criteria.add(Restrictions.eq("username", username));
-        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-        //noinspection unchecked
-        return (List<DicomInboxImportRequest>) criteria.list();
+    public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(final String username) {
+        return findDicomInboxInportRequests(username, true);
     }
 
-    @SuppressWarnings("unchecked")
     @Transactional
-    public List<DicomInboxImportRequest> findAllDicomInboxImportRequestsForUser(String username) {
+    public List<DicomInboxImportRequest> findAllDicomInboxImportRequestsForUser(final String username) {
+        return findDicomInboxInportRequests(username, false);
+    }
+
+    private List<DicomInboxImportRequest> findDicomInboxInportRequests(final String username, final boolean limitToOutstanding) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
-        criteria.add(Restrictions.eq("username", username));
         criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+        if (limitToOutstanding) {
+            criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
+        }
+        if (StringUtils.isNotBlank(username)) {
+            criteria.add(Restrictions.eq("username", username));
+        }
         //noinspection unchecked
         return (List<DicomInboxImportRequest>) criteria.list();
     }

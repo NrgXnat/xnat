@@ -9,17 +9,14 @@
 
 package org.nrg.xnat.services.messaging.archive;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -27,12 +24,14 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.file.StoredFile;
+import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
-import org.restlet.data.Status;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
@@ -47,14 +46,11 @@ import java.util.*;
 @Slf4j
 @Component
 public final class DicomInboxImportRequestListener {
-	
     @Autowired
     public DicomInboxImportRequestListener(final DicomInboxImportRequestService service,
-                                           final SiteConfigPreferences preferences,
                                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> identifiers,
                                            final Map<String, DicomFileNamer> namers) {
         _service = service;
-        _preferences = preferences;
         _identifiers = identifiers;
         _namers = namers;
     }
@@ -104,31 +100,32 @@ public final class DicomInboxImportRequestListener {
                 namer = _namers.get("dicomFileNamer");
             }
 
-            final DicomInboxImportRequestImporter importer = new DicomInboxImportRequestImporter(user, _service, Paths.get(_preferences.getInboxPath()), request, identifier, namer);
-            final List<String> uris = importer.call();
-            importer.close();
-            if (log.isDebugEnabled()) {
-                final StringBuilder message = new StringBuilder("Processed ").append(uris.size()).append(" URIs:\n");
+            try (final DicomInboxImportRequestImporter importer = new DicomInboxImportRequestImporter(user, _service, request, identifier, namer)) {
+                final List<String> uris = importer.call();
+                if (log.isDebugEnabled()) {
+                    final StringBuilder message = new StringBuilder("Processed ").append(uris.size()).append(" URIs:\n");
+                    for (final String uri : uris) {
+                        message.append(" * ").append(uri).append("\n");
+                    }
+                    log.debug(message.toString());
+                }
+
                 for (final String uri : uris) {
-                    message.append(" * ").append(uri).append("\n");
-                }
-                log.debug(message.toString());
-            }
+                    final Map<String, Object> properties = PrearcUtils.parseURI(uri);
+                    final String              project    = (String) properties.get(URIManager.PROJECT_ID);
+                    final String              timestamp  = (String) properties.get(PrearcUtils.PREARC_TIMESTAMP);
+                    final String              session    = (String) properties.get(PrearcUtils.PREARC_SESSION_FOLDER);
 
-            for (final String uri : uris) {
-                final Map<String, Object> properties = PrearcUtils.parseURI(uri);
-                final String              project    = (String) properties.get(URIManager.PROJECT_ID);
-                final String              timestamp  = (String) properties.get(PrearcUtils.PREARC_TIMESTAMP);
-                final String              session    = (String) properties.get(PrearcUtils.PREARC_SESSION_FOLDER);
+                    final Map<String, Object> rebuildParameters = new HashMap<>(parameters);
+                    rebuildParameters.put(URIManager.PROJECT_ID, project);
+                    rebuildParameters.put(PrearcUtils.PREARC_TIMESTAMP, timestamp);
+                    rebuildParameters.put(PrearcUtils.PREARC_SESSION_FOLDER, session);
+                    rebuildParameters.put(DicomInboxImportRequest.IMPORT_REQUEST_ID, request.getId());
 
-                final Pair<String, Status> results = PrearcUtils.commitPrearcSession(user, project, timestamp, session, parameters);
-                if (results != null) {
-                    _service.complete(request, "Completed importing request with results: " + Joiner.on(", ").join(uris));
-                } else {
-                    _service.fail(request, "The session for the request " + sessionPath + " was locked.");
+                    final PrearchiveOperationRequest rebuild = new PrearchiveOperationRequest(user, Operation.Rebuild, new PrearcSession(project, timestamp, session, rebuildParameters, user));
+                    XDAT.sendJmsRequest(rebuild);
                 }
             }
-            
         } catch (FileNotFoundException e) {
             // This is a little weird: in the importer class, if the specified session path can't be found, it throws a
             // FNF exception with the bad path. If it finds the path but the path indicates something that's not a
@@ -150,11 +147,10 @@ public final class DicomInboxImportRequestListener {
     }
 
     private class DicomInboxImportRequestImporter extends ImporterHandlerA implements FileVisitor<Path> {
-        DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final Path inboxPath, final DicomInboxImportRequest request, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer) throws FileNotFoundException {
+        DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final DicomInboxImportRequest request, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer) throws FileNotFoundException {
             super(null, user);
             _dicomFiles = 0;
             _service = service;
-            _inboxPath = inboxPath;
             _request = request;
             _user = user;
             _parameters = request.getObjectParametersMap();
@@ -183,10 +179,9 @@ public final class DicomInboxImportRequestListener {
             _service.setToImporting(_request);
             try {
                 Files.walkFileTree(_sessionPath.toPath(), WALKER_OPTIONS, Integer.MAX_VALUE, this);
-                if(_dicomFiles==0){
+                if (_dicomFiles == 0) {
                     _service.fail(_request, "No valid DICOM files found for the specified session :" + _request.getSessionPath());
-                }
-                else {
+                } else {
                     log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
                     _service.setToProcessed(_request);
                     if (_request.getCleanupAfterImport() && isInboxDirectory()) {
@@ -201,26 +196,26 @@ public final class DicomInboxImportRequestListener {
         }
 
         private boolean isInboxDirectory() {
-        	final String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
-        	if (inboxPath == null || inboxPath.length()<1) {
-        		return false;
-        	}
-        	final File inboxFile = new File(inboxPath);
-        	if (!inboxFile.exists() && inboxFile.isDirectory()) {
-        		return false;
-        	}
-        	File parentFile = _sessionPath.getParentFile();
-        	while (parentFile != null) {
-        		if (parentFile.equals(inboxFile)) {
-        			return true;
-        		}
-        		parentFile = parentFile.getParentFile();
-        	}
-        	log.warn("Inbox cleanup requested, but file location is not under the configured inbox (" + inboxPath + ").  Files not removed.");
-			return false;
-		}
+            final String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
+            if (inboxPath == null || inboxPath.length() < 1) {
+                return false;
+            }
+            final File inboxFile = new File(inboxPath);
+            if (!inboxFile.exists() && inboxFile.isDirectory()) {
+                return false;
+            }
+            File parentFile = _sessionPath.getParentFile();
+            while (parentFile != null) {
+                if (parentFile.equals(inboxFile)) {
+                    return true;
+                }
+                parentFile = parentFile.getParentFile();
+            }
+            log.warn("Inbox cleanup requested, but file location is not under the configured inbox (" + inboxPath + ").  Files not removed.");
+            return false;
+        }
 
-		@Override
+        @Override
         public FileVisitResult preVisitDirectory(final Path folder, final BasicFileAttributes attributes) {
             Objects.requireNonNull(folder);
             Objects.requireNonNull(attributes);
@@ -264,18 +259,14 @@ public final class DicomInboxImportRequestListener {
         private final Set<String> _fileUris   = new LinkedHashSet<>();
 
         private final DicomInboxImportRequestService _service;
-        @SuppressWarnings("unused")
-		private final Path                           _inboxPath;
         private final DicomInboxImportRequest        _request;
         private final UserI                          _user;
         private final Map<String, Object>            _parameters;
         private final File                           _sessionPath;
     }
 
-    private       DicomInboxImportRequestService                      _service;
-    private final SiteConfigPreferences                               _preferences;
-    private       Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
-    private       Map<String, DicomFileNamer>                         _namers;
-    private       int                                                 _dicomFiles;
-	
+    private DicomInboxImportRequestService                      _service;
+    private Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
+    private Map<String, DicomFileNamer>                         _namers;
+    private int                                                 _dicomFiles;
 }

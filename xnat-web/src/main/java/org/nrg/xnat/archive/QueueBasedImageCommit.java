@@ -178,8 +178,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     @Getter(PUBLIC)
     private final String _session;
     @Getter(value = PUBLIC, lazy = true)
-    private final @NonNull
-                  String _archiveOperationId = XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session);
+    private final @NonNull String _archiveOperationId = XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session);
 
     private final UserI                _user;
     private final PrearcSession        _prearcSession;

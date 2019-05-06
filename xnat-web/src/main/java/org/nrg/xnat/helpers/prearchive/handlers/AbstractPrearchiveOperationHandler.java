@@ -30,6 +30,8 @@ import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.event.archive.ArchiveEvent;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.xml.sax.SAXException;
 
@@ -47,14 +49,16 @@ import static lombok.AccessLevel.PROTECTED;
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOperationHandler {
-    protected AbstractPrearchiveOperationHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider) {
+    protected AbstractPrearchiveOperationHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
         _eventService = eventService;
         _userProvider = userProvider;
+        _importRequestService = importRequestService;
         _username = request.getUsername();
         _sessionData = request.getSessionData();
         _sessionDir = request.getSessionDir();
         _parameters = new HashMap<>(ObjectUtils.defaultIfNull(request.getParameters(), Collections.<String, Object>emptyMap()));
         _operation = getConfiguredOperation();
+        _requestId = request.getParameters().containsKey(DicomInboxImportRequest.IMPORT_REQUEST_ID) ? (Long) request.getParameters().get(DicomInboxImportRequest.IMPORT_REQUEST_ID) : -1;
     }
 
     /**
@@ -80,26 +84,57 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
 
     protected void progress(final int progress) {
         getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData));
+        if (_requestId > 0) {
+            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
+            if (request != null) {
+                _importRequestService.setToImporting(request);
+            }
+        }
     }
 
     protected void progress(final int progress, final String message) {
         getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData, message));
+        progress(progress);
     }
 
     protected void completed() {
         getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData));
+        if (_requestId > 0) {
+            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
+            if (request != null) {
+                _importRequestService.complete(request);
+            }
+        }
     }
 
     protected void completed(final String message) {
         getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData, message));
+        if (_requestId > 0) {
+            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
+            if (request != null) {
+                _importRequestService.complete(request, message);
+            }
+        }
     }
 
     protected void failed() {
         getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData));
+        if (_requestId > 0) {
+            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
+            if (request != null) {
+                _importRequestService.fail(request, "Unknown");
+            }
+        }
     }
 
     protected void failed(final String message) {
         getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData, message));
+        if (_requestId > 0) {
+            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
+            if (request != null) {
+                _importRequestService.fail(request, message);
+            }
+        }
     }
 
     /**
@@ -142,11 +177,13 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     @Getter(PRIVATE)
     private final XnatUserProvider _userProvider;
 
-    private final String              _username;
-    private final SessionData         _sessionData;
-    private final File                _sessionDir;
-    private final Map<String, Object> _parameters;
-    private final Operation           _operation;
+    private final String                         _username;
+    private final SessionData                    _sessionData;
+    private final File                           _sessionDir;
+    private final Map<String, Object>            _parameters;
+    private final Operation                      _operation;
+    private final DicomInboxImportRequestService _importRequestService;
+    private final long                           _requestId;
 
     private UserI _user;
 }

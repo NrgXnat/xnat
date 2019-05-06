@@ -39,6 +39,7 @@ import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -210,8 +211,8 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public PrearchiveOperationHandlerResolver prearchiveOperationHandlerResolver(final NrgEventServiceI eventService, final XnatUserProvider receivedFileUserProvider) {
-        return new DefaultPrearchiveOperationHandlerResolver(eventService, receivedFileUserProvider);
+    public PrearchiveOperationHandlerResolver prearchiveOperationHandlerResolver(final NrgEventServiceI eventService, final XnatUserProvider receivedFileUserProvider, final DicomInboxImportRequestService importRequestService) {
+        return new DefaultPrearchiveOperationHandlerResolver(eventService, receivedFileUserProvider, importRequestService);
     }
 
     @Bean

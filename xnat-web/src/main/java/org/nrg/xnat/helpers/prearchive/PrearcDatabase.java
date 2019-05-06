@@ -2398,6 +2398,9 @@ public final class PrearcDatabase {
             Object o = null;
             try {
                 o = this.op();
+            } catch (SessionException e) {
+                // Don't log session exceptions: they should be handled by whoever called this.
+                throw e;
             } catch (Exception e) {
                 log.error("", e);
                 throw e;

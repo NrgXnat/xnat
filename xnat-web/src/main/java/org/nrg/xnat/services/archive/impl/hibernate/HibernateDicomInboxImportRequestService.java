@@ -16,9 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status;
-import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.slf4j.helpers.MessageFormatter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,19 +36,19 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 public class HibernateDicomInboxImportRequestService extends AbstractHibernateEntityService<DicomInboxImportRequest, DicomInboxImportRequestDAO> implements DicomInboxImportRequestService {
     @Override
     public List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequests() {
-        log.debug("Getting outstanding DICOM inbox import request");
+        log.debug("Getting all outstanding DICOM inbox import requests");
         return getDao().findAllOutstandingDicomInboxImportRequests();
     }
 
     @Override
-    public List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequestsForUser(String username) {
-        log.debug("Getting outstanding DICOM inbox import request for user");
+    public List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequestsForUser(final String username) {
+        log.debug("Getting outstanding DICOM inbox import requests for user {}", username);
         return getDao().findAllOutstandingDicomInboxImportRequestsForUser(username);
     }
 
     @Override
-    public List<DicomInboxImportRequest> getDicomInboxImportRequestsForUser(String username) {
-        log.debug("Getting outstanding DICOM inbox import request for user");
+    public List<DicomInboxImportRequest> getDicomInboxImportRequestsForUser(final String username) {
+        log.debug("Getting all DICOM inbox import requests for user {}", username);
         return getDao().findAllDicomInboxImportRequestsForUser(username);
     }
 
@@ -57,41 +57,34 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
         return getDao().findById(id);
     }
 
-    @Override
     public void setStatus(final DicomInboxImportRequest request, final Status status) {
         log.debug("Setting status of request {} to {}", request.getId(), status);
         request.setStatus(status);
         update(request);
     }
 
-    @Override
     public void setToAccepted(final DicomInboxImportRequest request) {
         setStatus(request, Accepted);
     }
 
-    @Override
     public void setToProcessed(final DicomInboxImportRequest request) {
         setStatus(request, Processed);
     }
 
-    @Override
     public void setToImporting(final DicomInboxImportRequest request) {
         setStatus(request, Importing);
     }
 
-    @Override
     public void complete(final DicomInboxImportRequest request) {
         complete(request, null);
     }
 
-    @Override
     public void complete(final DicomInboxImportRequest request, final String message, final String... parameters) {
         request.setStatus(Completed);
-        request.setResolution(format(message, parameters));
+        request.setResolution(message == null ? null : format(message, parameters));
         update(request);
     }
 
-    @Override
     public void fail(final DicomInboxImportRequest request, final String message, final String... parameters) {
         if (StringUtils.isBlank(message)) {
             throw new NrgServiceRuntimeException("No message set for failure of request, you must provide a reason for failures!");

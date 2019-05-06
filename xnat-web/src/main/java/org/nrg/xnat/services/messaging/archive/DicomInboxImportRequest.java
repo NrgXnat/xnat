@@ -17,10 +17,10 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 @Table
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class DicomInboxImportRequest extends AbstractHibernateEntity {
-	
-	private static final long serialVersionUID = -3293317266317350423L;
 
-	public enum Status {
+    public static final String IMPORT_REQUEST_ID = "importRequestId";
+
+    public enum Status {
         Queued,
         Trawling,
         Importing,
@@ -39,33 +39,13 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
         setStatus(Queued);
     }
 
-    public DicomInboxImportRequest(String username, Map<String, String> parameters, String sessionPath, org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status status, Boolean cleanupAfterImport, String resolution) {
+    public DicomInboxImportRequest(final String username, final Map<String, String> parameters, final String sessionPath, final Status status, final boolean cleanupAfterImport, final String resolution) {
         this.username = username;
         this.parameters = parameters;
         this.sessionPath = sessionPath;
         this.status = status;
         this.cleanupAfterImport = cleanupAfterImport;
         this.resolution = resolution;
-    }
-
-    private String username;
-
-    private Map<String, String> parameters = new HashMap<>();
-
-    private String sessionPath;
-
-    private Status status = Queued;
-
-    private Boolean cleanupAfterImport = true;
-
-    @Column(length = 4096)
-    private String resolution;
-
-    // Must provide the public getParameters() method explicitly (i.e. without Lombok) in order for Hibernate
-    // to properly determine the type of the parameters map.
-    @ElementCollection(fetch = FetchType.EAGER)
-    public Map<String, String> getParameters() {
-        return parameters;
     }
 
     /**
@@ -112,6 +92,14 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
         this.username = username;
     }
 
+
+    // Must provide the public getParameters() method explicitly (i.e. without Lombok) in order for Hibernate
+    // to properly determine the type of the parameters map.
+    @ElementCollection(fetch = FetchType.EAGER)
+    public Map<String, String> getParameters() {
+        return parameters;
+    }
+
     public void setParameters(Map<String, String> parameters) {
         this.parameters = parameters;
     }
@@ -124,11 +112,11 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
         this.sessionPath = sessionPath;
     }
 
-    public org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 
@@ -147,4 +135,60 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
     public void setResolution(String resolution) {
         this.resolution = resolution;
     }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder sessionPath(String sessionPath) {
+            this.sessionPath = sessionPath;
+            return this;
+        }
+
+        public Builder status(Status status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder cleanupAfterImport(final boolean cleanupAfterImport) {
+            this.cleanupAfterImport = cleanupAfterImport;
+            return this;
+        }
+
+        public Builder resolution(final String resolution) {
+            this.resolution = resolution;
+            return this;
+        }
+
+        public Builder parameters(final Map<String, String> parameters) {
+            this.parameters.clear();
+            this.parameters.putAll(parameters);
+            return this;
+        }
+
+        public DicomInboxImportRequest build() {
+            return new DicomInboxImportRequest(username, parameters, sessionPath, status, cleanupAfterImport, resolution);
+        }
+
+        private String              username;
+        private String              sessionPath;
+        private Status              status             = Queued;
+        private boolean             cleanupAfterImport = true;
+        private String              resolution;
+        private Map<String, String> parameters         = new HashMap<>();
+    }
+
+    private String username;
+    private String sessionPath;
+    private Status status = Queued;
+    private boolean cleanupAfterImport = true;
+    @Column(length = 4096)
+    private String resolution;
+    private Map<String, String> parameters = new HashMap<>();
 }

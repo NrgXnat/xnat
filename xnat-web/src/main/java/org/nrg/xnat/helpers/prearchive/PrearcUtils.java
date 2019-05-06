@@ -9,15 +9,11 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.config.entities.Configuration;
-import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
@@ -30,19 +26,15 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
-import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder.Session;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.restlet.actions.PrearcImporterA;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,11 +65,6 @@ public class PrearcUtils {
     public static final String PREARC_TIMESTAMP = "PREARC_TIMESTAMP";
 
     public static final String PREARC_SESSION_FOLDER = "PREARC_SESSION_FOLDER";
-
-    public static final String VISIT = "VISIT";
-    public static final String PROTOCOL = "PROTOCOL";
-    public static final String TIMEZONE = "TIMEZONE";
-    public static final String SOURCE = "SOURCE";
 
     public static String getSeparatePetMr() {
         final String siteWide = XDAT.getSiteConfigPreferences().getSitewidePetMr();
@@ -217,7 +204,6 @@ public class PrearcUtils {
 
     public static boolean canModify(final UserI user, final String projectId) throws Exception {
         final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-        assert userHelperService != null;
         return Roles.isSiteAdmin(user) || projectId != null && userHelperService.hasEditAccessToSessionDataByTag(projectId);
     }
 
@@ -366,37 +352,6 @@ public class PrearcUtils {
         return d.list(DirectoryFileFilter.INSTANCE);
     }
 
-
-    public static String buildPrearcSession(final File sessionDir, final UserI user, final String session, final String timestamp, final String project, final Map<String, Object> params) throws Exception {
-        if (PrearcDatabase.setStatus(session, timestamp, project, PrearcUtils.PrearcStatus.BUILDING)) {
-            PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
-            PrearcUtils.resetStatus(user, project, timestamp, session, true);
-            return PrearcUtils.buildURI(project, timestamp, session);
-        }
-        return null;
-    }
-
-    public static Pair<String, Status> commitPrearcSession(final UserI user, final String project, final String timestamp, final String session, final Map<String, Object> params) throws Exception {
-        return commitPrearcSession(user, project, timestamp, session, getPrearcSessionDir(user, project, timestamp, session, true), params);
-    }
-
-    public static Pair<String, Status> commitPrearcSession(final UserI user, final String project, final String timestamp, final String session, final File sessionDir, final Map<String, Object> params) throws Exception {
-        if (PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.BUILDING)) {
-            final SessionData sd = PrearcDatabase.getSession(session, timestamp, project);
-            if (null == sd.getAutoArchive() && !Strings.isNullOrEmpty(project)) {
-                final XnatProjectdata p = XnatProjectdata.getProjectByIDorAlias(project, user, false);
-                PrearcDatabase.setAutoArchive(session, timestamp, project, PrearchiveCode.code(p.getArcSpecification().getPrearchiveCode()));
-            }
-            PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
-            PrearcUtils.resetStatus(user, project, timestamp, session, true);
-
-            try (final FinishImageUpload uploader = new FinishImageUpload(null, user, new PrearcImporterA.PrearcSession(project, timestamp, session, params, user), null, false, true, false)) {
-                return new ImmutablePair<>(uploader.call(), uploader.isAutoArchive() ? Status.REDIRECTION_PERMANENT : Status.SUCCESS_OK);
-            }
-        }
-        return null;
-    }
-
     private static final Pattern TSDIR_SECONDS_PATTERN = Pattern.compile("[0-9]{8}_[0-9]{6}");
     private static final String TSDIR_SECONDS_FORMAT = "yyyyMMdd_HHmmss";
 
@@ -521,7 +476,7 @@ public class PrearcUtils {
     public static File getPrearcSessionDir(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
         if (user == null || timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: user %s; timestamp %s; session %s",
-                    user, timestamp, session));
+                                                             user, timestamp, session));
         }
         return new File(new File(getPrearcDir(user, project, allowUnassigned), timestamp), session);
     }
@@ -532,7 +487,7 @@ public class PrearcUtils {
 
         public boolean accept(final File f) {
             return scanCatalogPattern.matcher(f.getName()).matches()
-                    || conversionLogPattern.matcher(f.getName()).matches();
+                   || conversionLogPattern.matcher(f.getName()).matches();
         }
     };
 
@@ -636,7 +591,7 @@ public class PrearcUtils {
     private static File getLogDir(final String project, final String timestamp, final String session) throws Exception {
         if (timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: timestamp %s; session %s",
-                    timestamp, session));
+                                                             timestamp, session));
         }
         final XnatUserProvider provider = XDAT.getContextService().getBeanSafely("receivedFileUserProvider", XnatUserProvider.class);
         final UserI receivedFileUser = provider != null ? provider.get() : Users.getUser(XDAT.getSiteConfigurationProperty("receivedFileUser"));

@@ -111,5 +111,5 @@ public class ArchiveEvent implements ArchiveEventI {
     private final          String    _message;
 
     @Getter(lazy = true)
-    private final @NonNull String    _archiveEventId = XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session);
+    private final @NonNull String _archiveEventId = XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session);
 }

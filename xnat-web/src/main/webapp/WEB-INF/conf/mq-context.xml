@@ -76,8 +76,7 @@
     <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" >
         <constructor-arg ref="prearchiveOperationHandlerResolver"/>
     </bean>
-    <bean id="initializeGroupRequestListener"  class="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener" />
-    <bean id="dicomInboxImportRequestListener"  class="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequestListener" />
+    <bean id="initializeGroupRequestListener" class="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener" />
 
     <!-- listeners for new request types go here -->
     <bean id="dlqMessageListener" class="org.nrg.framework.messaging.DlqListener">

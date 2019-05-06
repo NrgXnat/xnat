@@ -20,6 +20,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 
 import java.io.File;
@@ -31,8 +32,8 @@ import static org.nrg.xnat.archive.Operation.Separate;
 @Handles(Separate)
 @Slf4j
 public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationHandler {
-    public PrearchiveSeparatePetMrHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider) {
-        super(request, eventService, userProvider);
+    public PrearchiveSeparatePetMrHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
+        super(request, eventService, userProvider, importRequestService);
     }
 
     @Override

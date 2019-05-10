@@ -82,7 +82,7 @@
             if (!/FORM/i.test(rootNode.nodeName)) {
                 rootNode = rootNode.form;
             }
-            formValues = getFormValues(rootNode, nodeCallback, useAttribute, getDisabled);
+            formValues = getFormValues(rootNode, skipEmpty, nodeCallback, useAttribute, getDisabled);
         }
 
         return processNameValues(formValues, skipEmpty, delimiter);
@@ -236,17 +236,17 @@
     }
 
 
-    function getFormValues(rootNode, nodeCallback, useAttribute, getDisabled){
+    function getFormValues(rootNode, skipEmpty, nodeCallback, useAttribute, getDisabled){
         var result = extractNodeValues(rootNode, nodeCallback, useAttribute, getDisabled);
-        return result.length > 0 ? result : getSubFormValues(rootNode, nodeCallback, useAttribute, getDisabled);
+        return result.length > 0 ? result : getSubFormValues(rootNode, skipEmpty, nodeCallback, useAttribute, getDisabled);
     }
 
 
-    function getSubFormValues(rootNode, nodeCallback, useAttribute, getDisabled){
+    function getSubFormValues(rootNode, skipEmpty, nodeCallback, useAttribute, getDisabled){
         var result      = [],
             currentNode = rootNode.firstChild;
 
-        while (currentNode && currentNode.value !== '') {
+        while (currentNode && (!skipEmpty || currentNode.value !== '')) {
             result      = result.concat(extractNodeValues(currentNode, nodeCallback, useAttribute, getDisabled));
             currentNode = currentNode.nextSibling;
         }

@@ -50,7 +50,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = "1.7.5.RAD2"
+version = "1.7.5.RAD3"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -203,6 +203,13 @@ configurations {
 
 dependencyManagement.imports {
     mavenBom "org.nrg:parent:${vXnat}"
+}
+
+def vMockito = '1.10.19'
+def vPowerMock = '1.7.0'
+
+configurations.all {
+    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
 }
 
 dependencies {
@@ -373,6 +380,10 @@ dependencies {
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
     testCompile "org.assertj:assertj-core"
+    testCompile "org.hamcrest:hamcrest-library"
+    testCompile "org.mockito:mockito-core"
+    testCompile "org.powermock:powermock-module-junit4:${vPowerMock}"
+    testCompile "org.powermock:powermock-api-mockito:${vPowerMock}"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

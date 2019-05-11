@@ -2,14 +2,12 @@ package org.nrg.xnat.services.archive;
 
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
-@Service
 public interface FilesystemService {
     String separator = File.separator;
 

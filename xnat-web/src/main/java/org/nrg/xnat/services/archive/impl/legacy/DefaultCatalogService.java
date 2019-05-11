@@ -37,6 +37,7 @@ import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -53,6 +54,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -76,6 +78,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.MalformedURLException;
@@ -553,6 +556,56 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void pullResourceCatalogsToDestination(UserI user, String resourceUriStr, String destinationDir)
+            throws ServerException, ClientException {
+
+        final URIManager.DataURIA uri;
+        try {
+            uri = UriParserUtils.parseURI(resourceUriStr);
+        } catch (MalformedURLException e) {
+            throw new ClientException("Invalid Resource URI:" + resourceUriStr);
+        }
+
+        if (!(uri instanceof URIManager.ArchiveItemURI)) {
+            throw new ClientException("Invalid Resource URI:" + resourceUriStr);
+        }
+
+        final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
+        final ArchivableItem            item        = resourceURI.getSecurityItem();
+
+        checkPermissionsOnItem(user, item, SecurityManager.READ, resourceUriStr);
+
+        if (item == null) {
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                    "No matching archivable item for resource " + resourceUriStr);
+        }
+
+        //if we are referencing a specific catalog, make sure it doesn't actually reference an individual file.
+        if (resourceURI instanceof ResourceURII) {
+            final String resourceFilePath = ((ResourceURII) resourceURI).getResourceFilePath();
+            if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
+                throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                        "This operation cannot be performed directly on a file URL");
+            }
+        }
+
+        String archivePath;
+        try {
+            archivePath = item.getExpectedCurrentDirectory().toString();
+        } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
+            throw new ServerException("Cannot determine archive path for item " + item.getId());
+        }
+
+        List<XnatAbstractresourceI> resources = resourceURI.getResources(true);
+        for (final XnatAbstractresourceI resource : resources) {
+            pullResourceCatalog((XnatAbstractresource) resource, archivePath, destinationDir);
+        }
+    }
+
     private void refreshResourceCatalog(final UserI user, final String parentURI, XnatResourcecatalog catalog,
                                         @Nullable Integer parentEventId, final Operation... operations) throws ServerException, ClientException {
         _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog, parentEventId);
@@ -648,7 +701,7 @@ public class DefaultCatalogService implements CatalogService {
 
             //Can the user edit the catalog?
             final EventDetails event = new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS, "Catalog modified", "Added to catalog for resource " + resourceURI.getUri(), "");
-            checkEditPermissionsOnItem(user, item, catalogResource);
+            checkPermissionsOnItem(user, item, SecurityManager.EDIT, catalogResource);
 
             try {
                 final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, item.getItem(), event);
@@ -980,7 +1033,7 @@ public class DefaultCatalogService implements CatalogService {
             final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
             final ArchivableItem            item        = resourceURI.getSecurityItem();
 
-            checkEditPermissionsOnItem(user, item, resourcePath);
+            checkPermissionsOnItem(user, item, SecurityManager.EDIT, resourcePath);
 
             if (item != null) {
                 PersistentWorkflowI workflow = null;
@@ -1271,6 +1324,29 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
+    private void pullResourceCatalog(final XnatAbstractresource resource,
+                                     final String parentPath,
+                                     final String parentDestPath) throws ServerException {
+        if (!(resource instanceof XnatResourcecatalog)) {
+            throw new ServerException("Resource " + resource + " is not a catalog");
+        }
+        final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
+        final File catFile = CatalogUtils.getCatalogFile(parentPath, catRes);
+        final CatCatalogBean cat = CatalogUtils.getCatalog(catFile);
+        final String catPath = catFile.getParent();
+
+        if (cat == null) {
+            throw new ServerException("Unable to load catalog file " + catFile);
+        }
+
+        // Get relative path of this resource relative to the parent, append this to the parentDestPath
+        String resourceDestPath = Paths.get(parentDestPath)
+                .resolve(Paths.get(parentPath).relativize(Paths.get(catPath)))
+                .toString();
+
+        CatalogUtils.pullCatalogToDestination(cat, catPath, resourceDestPath);
+    }
+
     private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
         long startTime=Calendar.getInstance().getTimeInMillis();
 
@@ -1296,9 +1372,8 @@ public class DefaultCatalogService implements CatalogService {
                         throw new ServerException("An error occurred writing the catalog file " + catFile.getAbsolutePath(), e);
                     }
                 }
-
-            }  else{
-            	log.error("Unable to load Catalog file");
+            } else {
+                throw new ServerException("Unable to load catalog file");
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {
@@ -1308,9 +1383,13 @@ public class DefaultCatalogService implements CatalogService {
                     throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
                 }
             }
+        } else {
+            throw new ServerException("Resource " + resource + " is not a catalog");
         }
+
         log.info("refreshResourceCatalog runtime: "+(Calendar.getInstance().getTimeInMillis() - startTime)+"ms");
     }
+
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
         final Cache.ValueWrapper cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
@@ -1743,19 +1822,24 @@ public class DefaultCatalogService implements CatalogService {
     /**
      * Check that user can edit item, throw exception if not
      *
-     * @param user
-     * @param item
-     * @param resourceName
+     * @param user the user
+     * @param item the item
+     * @param accessType the access type
+     * @param resourceName the resource name
      */
-    public void checkEditPermissionsOnItem(final UserI user, final ArchivableItem item, final String resourceName) throws ServerException, ClientException {
+    public void checkPermissionsOnItem(final UserI user, final ArchivableItem item,
+                                       @Nonnull final String accessType, final String resourceName)
+            throws ServerException, ClientException {
         try {
-            if (!Permissions.canEdit(user, item)) {
-                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to edit the resource " + resourceName);
+            if (!Permissions.can(user, item, accessType)) {
+                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
+                        " does not have permission to " + accessType + " the resource " + resourceName);
             }
         } catch (ClientException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + resourceName);
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
+                    user.getLogin() + " permissions for resource " + resourceName);
         }
     }
 

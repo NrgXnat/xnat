@@ -253,6 +253,25 @@ public class CatalogUtils {
         return StringUtils.defaultIfBlank(relPath, uri);
     }
 
+    /**
+     * Get catalog entry details
+     * @param cat           the catalog bean
+     * @param parentPath    the parent directory path
+     * @param uriPath       the parent uri
+     * @param _resource     the catalog resource
+     * @param includeFile   T/F include java file object (includes pulling file if not local)
+     * @param filter        catalog entry filter
+     * @param proj          the project
+     * @param locator       desired locator string, one of URI (uriPath + /RELPATH), absolutePath (path to entry,
+     *                      may be remote URL), projectPath (path to entry relative to proj archive path, may be remote
+     *                      URL)
+     *
+     * @return list of object arrays containing:
+     *  0: name, 1: size, 2: URI/absolutePath/projectPath (based on locator input string), 3: label,
+     *  4: cav of fields and tags, 5: format, 6: content, 7: abstract resource id, 8: file object if includeFile,
+     *  8 or 9: MD5 digest
+     *  (see also CatalogUtils.FILE_HEADERS_W_FILE / CatalogUtils.FILE_HEADERS)
+     */
     public static List<Object[]> getEntryDetails(@Nonnull CatCatalogI cat, String parentPath, String uriPath,
                                                  XnatResource _resource, boolean includeFile,
                                                  final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
@@ -287,6 +306,8 @@ public class CatalogUtils {
                     }
                 }
                 row.add(name);
+                //TODO Why are we always setting size = 0 when includeFile = true? This looks broken, but I'm not going
+                // to fix it in case things are coded against it as-is
                 row.add(includeFile ? 0 : size);
                 if (locator.equalsIgnoreCase("URI")) {
                     row.add(FileUtils.AppendSlash(uriPath, "") + getRelativePathForCatalogEntry(entry, parentPath));
@@ -701,14 +722,15 @@ public class CatalogUtils {
      * @param pull true if files should be pulled from remote
      * @param prefix prefix path that will be prepended to map keys
      * @param addUriAndRelative true if a given catalog entry should have 2 map entries if URI field is not a relative path
-     *                          (one for URI, one for relative path)
+     *                          (one for URI, one for relative path) - useful when adding a new entry and wanting to confirm
+     *                          it doesn't already exist (by URI) and, provided not, that the relative path isn't already in use
      * @return map
      */
     public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull, String prefix,
                                                             boolean addUriAndRelative) {
         HashMap<String, Object[]> catalog_map = new HashMap<>();
         for (CatCatalogI subset : cat.getSets_entryset()) {
-            catalog_map.putAll(buildCatalogMap(subset, catPath));
+            catalog_map.putAll(buildCatalogMap(subset, catPath, pull, prefix, addUriAndRelative));
         }
 
         prefix = StringUtils.defaultString(prefix, "");
@@ -740,6 +762,22 @@ public class CatalogUtils {
             catalog_map.put(FileUtils.AppendRootPath(prefix, relativePath), map_entry);
         }
         return catalog_map;
+    }
+
+    /**
+     * Pull any missing files into destCatPath
+     * @param cat           the catalog bean
+     * @param catPath       path to the catalog
+     * @param destCatPath   desired output location
+     */
+    public static void pullCatalogToDestination(CatCatalogI cat, String catPath, String destCatPath) {
+        for (CatCatalogI subset : cat.getSets_entryset()) {
+            pullCatalogToDestination(subset, catPath, destCatPath);
+        }
+
+        for (CatEntryI entry : cat.getEntries_entry()) {
+            getFile(entry, catPath, destCatPath); //pulls from remote FS if needed
+        }
     }
 
     public interface CatEntryFilterI {
@@ -815,21 +853,43 @@ public class CatalogUtils {
     }
 
     /**
-     * Gets file from file system.  This method supports relative or absolute or URL paths in the CatEntryI. It also supports files that are gzipped on the file system, but don't include .gz in the catalog URI (this used to be very common).
+     * Gets file from file system.  This method supports relative or absolute or URL paths in the CatEntryI. It also
+     * supports files that are gzipped on the file system, but don't include .gz in the catalog URI (this used to be
+     * very common).
      *
      * @param entry      Catalog Entry for file to be retrieved
      * @param parentPath Path to catalog file directory
      * @return File object represented by CatEntryI
      */
     public static File getFile(CatEntryI entry, String parentPath) {
+        return getFile(entry, parentPath, null);
+    }
+
+    /**
+     * Gets file from file system and put it in destParentPath.  This method supports relative or absolute or URL paths
+     * in the CatEntryI. It also supports files that are gzipped on the file system, but don't include .gz in the
+     * catalog URI (this used to be very common).
+     *
+     * @param entry             Catalog Entry for file to be retrieved
+     * @param parentPath        Path to catalog file directory
+     * @param destParentPath    Path to catalog file directory desired output location
+     * @return File object represented by CatEntryI
+     */
+    public static File getFile(CatEntryI entry, String parentPath, @Nullable String destParentPath) {
+        if (destParentPath == null) {
+            destParentPath = parentPath;
+        }
+
         // If the URI is an absolute path, entryPath = URI
         String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
 
-        // For a local file, entryPath = entryPathLocal
-        String entryPathLocal = entryPath;
+        // For a local file with destParentPath = parentPath, entryPath = entryPathLocal
+        String entryPathLocal;
         if (FileUtils.IsUrl(entryPath, true)) {
             String relPath = getRelativePathForCatalogEntry(entry, parentPath);
-            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(parentPath, relPath), "\\", "/");
+            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, relPath), "\\", "/");
+        } else {
+            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, entry.getUri()), "\\", "/");
         }
 
         return getFileOnLocalFileSystem(entryPath, entryPathLocal);
@@ -1017,8 +1077,11 @@ public class CatalogUtils {
      * @return File
      */
     @Nullable
-    public static File getFileOnLocalFileSystem(String uri, String localPath) {
-        File f = getFileOnLocalFileSystemOrig(uri);
+    public static File getFileOnLocalFileSystem(String uri, @Nullable String localPath) {
+        if (StringUtils.isBlank(localPath)) {
+            localPath = uri;
+        }
+        File f = getFileOnLocalFileSystemOrig(localPath);
         if (f == null) {
             //Try to pull from other filesystem if uri is a local path or a supported URL
             List<FilesystemService> fsList = getFilesystemServices();

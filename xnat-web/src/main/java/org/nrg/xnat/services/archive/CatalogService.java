@@ -291,6 +291,29 @@ public interface CatalogService {
                                               @Nullable Integer parentEventId, final Map<String, String> parameters) throws Exception;
 
     /**
+     * Pulls all files for specified resource <strong>into an arbitrary location</strong> using catalog refresh logic.
+     * Useful for pulling any remote files into partially populated location.
+     *
+     * The resource should be identified by standard archive-relative paths, e.g.:
+     *
+     * <pre>
+     * {@code
+     * /archive/experiments/XNAT_E0001
+     * /archive/projects/XNAT_01/subjects/XNAT_01_01
+     * }
+     * </pre>
+     *
+     * @param user              The user performing the operation.
+     * @param resourceUri       The path to the resource to be refreshed.
+     * @param destinationDir    The path to the destination
+     *
+     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
+     * @throws ServerException When an error occurs in the system during the refresh operation.
+     */
+    void pullResourceCatalogsToDestination(final UserI user, final String resourceUri, final String destinationDir)
+            throws ServerException, ClientException;
+
+    /**
      * Refreshes the catalog for the specified resource. The resource should be identified by standard archive-relative
      * paths, e.g.:
      *

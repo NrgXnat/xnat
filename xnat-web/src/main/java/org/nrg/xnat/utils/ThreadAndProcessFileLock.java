@@ -8,10 +8,11 @@ package org.nrg.xnat.utils;
  *
  * <p>
  *
- * The inter-process locking is done using Java NIO file locks. However, "file
+ * The inter-process locking is done using Java NIO file locks on a dummy file (so we
+ * don't have to open a channel prior to having the lock). Because "file
  * locks are held on behalf of the entire Java virtual machine. They are not
  * suitable for controlling access to a file by multiple threads within the same
- * virtual machine.
+ * virtual machine", we need another solution for intra-process (aka inter-thread) locking.
  *
  * <p>
  *
@@ -20,12 +21,19 @@ package org.nrg.xnat.utils;
  * this sharing, a static mapping of files -> ThreadAndProcessFileLock instances has to
  * be maintained and synchronized on.
  *
+ * <p>
+ *
+ * See also https://github.com/SunLabsAST/Minion/blob/master/src/com/sun/labs/minion/util/FileLock.java
+ *
  */
 
+import com.google.common.base.MoreObjects;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -47,15 +55,14 @@ public class ThreadAndProcessFileLock {
     private final static Map<File, AtomicInteger> accessorCount = new HashMap<>();
 
     public synchronized static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
-                                                                       FileChannel channel,
-                                                                       boolean readOnly) {
+                                                                       boolean readOnly) throws IOException {
         ThreadAndProcessFileLock lock;
         if (lockMap.containsKey(file)) {
             // Another thread is accessing this file, too. Use its ReadWriteLock
-            lock = new ThreadAndProcessFileLock(lockMap.get(file), channel, readOnly);
+            lock = new ThreadAndProcessFileLock(lockMap.get(file), file, readOnly);
             accessorCount.get(file).incrementAndGet();
         } else {
-            lock = new ThreadAndProcessFileLock(channel, readOnly);
+            lock = new ThreadAndProcessFileLock(file, readOnly);
             lockMap.put(file, lock);
             accessorCount.put(file, new AtomicInteger(1));
         }
@@ -72,14 +79,16 @@ public class ThreadAndProcessFileLock {
         }
     }
 
-    // The channel for the java.nio.FileLock
+    // The dummy file on which we synchronize for inter-process
+    private File dummyFile;
+    private RandomAccessFile dummyRAF;
     private FileChannel channel;
 
     // Are we just trying to read?
     private boolean readOnly;
 
     // For managing inter-process reading & writing
-    private FileLock fileLock;
+    @Nullable private FileLock fileLock;
 
     // For managing inter-thread reading & writing, shared between instances
     private final ReadWriteLock mutex;
@@ -92,25 +101,32 @@ public class ThreadAndProcessFileLock {
      * (per readOnly parameter) java.nio.channels.FileLock on the channel. This <em><b>does not</b></em>
      * fileLock the file; use the <code>acquireLock</code> method for that.
      *
-     * @param channel The channel that we want to lock
+     * @param file the file
      * @param readOnly Is this a readonly lock?
      */
-    public ThreadAndProcessFileLock(FileChannel channel, boolean readOnly) {
-        this(null, channel, readOnly);
+    public ThreadAndProcessFileLock(File file, boolean readOnly) throws IOException {
+        this(null, file, readOnly);
     }
 
     /**
      * Creates a ThreadAndProcessFileLock that will share a ReadWriteLock with another ThreadAndProcessFileLock instance
      *
+     * @param file the file
      * @param l the ThreadAndProcessFileLock whose ReadWriteLock we want to share
-     * @param channel The channel that we want to lock
      * @param readOnly Is this a readonly lock?
      */
-    public ThreadAndProcessFileLock(ThreadAndProcessFileLock l, FileChannel channel, boolean readOnly) {
+    public ThreadAndProcessFileLock(ThreadAndProcessFileLock l, File file, boolean readOnly) throws IOException {
+        // Have to share the mutex for thread locking
         this.mutex = l == null ? new ReentrantReadWriteLock() : l.mutex;
-        this.channel = channel;
-        this.readOnly = readOnly;
         this.threadLock = readOnly ? mutex.readLock() : mutex.writeLock();
+        this.readOnly = readOnly;
+
+        // Open channel on the dummy file to synchronize across processes
+        this.dummyFile = new File(file.getParent(), "." + file.getName() + ".lock");
+        this.dummyRAF = new RandomAccessFile(this.dummyFile, "rw"); // "rw" bc "r" errors out if file DNE
+        this.channel = this.dummyRAF.getChannel();
+
+        // Store the inter-process file channel file lock so we can unlock it
         this.fileLock = null;
     }
 
@@ -150,11 +166,17 @@ public class ThreadAndProcessFileLock {
      * @throws IOException when the fileLock cannot be released.
      */
     public void unlock() throws IOException {
-        threadLock.unlock();
+        try {
+            if (dummyFile.exists()) dummyFile.delete();
+            if (channel.isOpen()) channel.close();
+            dummyRAF.close();
+        } catch (IOException e) {
+            // ignore, just trying to cleanup
+        }
 
         if (fileLock != null) {
             try {
-                fileLock.release();
+                fileLock.release(); // Is released when we close the channel, but just in case...
                 fileLock = null;
             } catch (ClosedChannelException e) {
                 fileLock = null;
@@ -162,6 +184,8 @@ public class ThreadAndProcessFileLock {
                 throw new IOException("Unable to release fileLock " + fileLock, e);
             }
         }
+
+        threadLock.unlock();
     }
 
     /**
@@ -170,6 +194,7 @@ public class ThreadAndProcessFileLock {
      * otherwise.
      */
     public boolean tryFileLock() throws IOException {
+        if (channel == null) return false;
         try {
             fileLock = channel.tryLock(0L, Long.MAX_VALUE, readOnly);
         } catch (OverlappingFileLockException ole) {
@@ -179,6 +204,15 @@ public class ThreadAndProcessFileLock {
         return fileLock != null;
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("readonly", readOnly)
+                .add("fileLock", fileLock)
+                .add("mutex", mutex)
+                .add("threadlock", threadLock)
+                .toString();
+    }
 }
 
 

@@ -42,7 +42,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.*;
-import java.nio.channels.Channels;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.ByteBuffer;
@@ -1476,21 +1475,23 @@ public class CatalogUtils {
 
         refreshAuditSummary(xml, audit_summary);
 
-        try (FileChannel fc = FileChannel.open(dest.toPath(), StandardOpenOption.WRITE)) {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest,
-                    fc, false);
-            fl.tryLock(5L, TimeUnit.MINUTES);
-            try {
-                final OutputStreamWriter fw = new OutputStreamWriter(Channels.newOutputStream(fc));
+        try {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest, false);
+            fl.tryLock(2L, TimeUnit.MINUTES);
+            //log.trace(System.currentTimeMillis() + " writer start: " + fl.toString());
+            try (final FileOutputStream fos = new FileOutputStream(dest)) {
+                final OutputStreamWriter fw = new OutputStreamWriter(fos);
                 xml.toXML(fw);
                 fw.flush();
             } finally {
                 fl.unlock();
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(dest);
+                //log.trace(System.currentTimeMillis() + " writer finish: " + fl.toString());
             }
         } catch (Exception e) {
             log.error("Error writing catalog file", e);
             throw e;
+        } finally {
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(dest);
         }
     }
 
@@ -1535,39 +1536,41 @@ public class CatalogUtils {
     public static CatCatalogBean getCatalog(File catalogFile) {
         if (!catalogFile.exists()) return null;
         InputStream inputStream = null;
-        try (FileChannel fc = FileChannel.open(catalogFile.toPath())) {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogFile,
-                    fc, true);
+        try {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogFile, true);
+            fl.tryLock(2L, TimeUnit.MINUTES);
+            //log.trace(System.currentTimeMillis() + " reader start: " + fl.toString());
+            try (FileInputStream fis = new FileInputStream(catalogFile)) {
+                if (catalogFile.getName().endsWith(".gz")) {
+                    inputStream = new GZIPInputStream(fis);
+                } else {
+                    inputStream = fis;
+                }
 
-            inputStream = Channels.newInputStream(fc);
-            if (catalogFile.getName().endsWith(".gz")) {
-                inputStream = new GZIPInputStream(inputStream);
-            }
-            XDATXMLReader reader = new XDATXMLReader();
-            BaseElement base;
-
-            fl.tryLock(5L, TimeUnit.MINUTES);
-            try {
-                base = reader.parse(inputStream);
+                XDATXMLReader reader = new XDATXMLReader();
+                BaseElement base = reader.parse(inputStream);
+                if (base instanceof CatCatalogBean) {
+                    return (CatCatalogBean) base;
+                }
+            } catch (FileNotFoundException exception) {
+                log.error("Couldn't find file: {}", catalogFile, exception);
+            } catch (IOException exception) {
+                log.error("Error occurred reading file: {}", catalogFile, exception);
+            } catch (SAXException exception) {
+                log.error("Error processing XML in file: {}", catalogFile, exception);
             } finally {
+                try {
+                    if (inputStream != null) inputStream.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
                 fl.unlock();
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogFile);
+                //log.trace(System.currentTimeMillis() + " reader finish: " + fl.toString());
             }
-            if (base instanceof CatCatalogBean) {
-                return (CatCatalogBean) base;
-            }
-        } catch (FileNotFoundException exception) {
-            log.error("Couldn't find file: " + catalogFile, exception);
-        } catch (IOException exception) {
-            log.error("Error occurred reading file: " + catalogFile, exception);
-        } catch (SAXException exception) {
-            log.error("Error processing XML in file: " + catalogFile, exception);
+        } catch (IOException e) {
+            log.error("Unable to obtain read lock for file: {}", catalogFile, e);
         } finally {
-            try {
-                if (inputStream != null) inputStream.close();
-            } catch (IOException e) {
-                // Ignore
-            }
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogFile);
         }
 
         return null;

@@ -15,6 +15,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.authorization.XapiAuthorization;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
@@ -109,7 +110,7 @@ public class XapiRequestMappingAspect {
         return null;
     }
 
-    private void evaluate(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws InsufficientPrivilegesException, NotAuthenticatedException {
+    private void evaluate(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws InsufficientPrivilegesException, NotAuthenticatedException, NotFoundException {
         final HttpServletRequest request    = getRequest();
         final String             requestUrl = AccessLogger.getFullRequestUrl(request);
 

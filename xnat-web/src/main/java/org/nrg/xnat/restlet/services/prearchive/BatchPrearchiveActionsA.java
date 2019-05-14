@@ -19,9 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -31,7 +35,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.utils.functions.UriToSessionDataTriple;
-import org.nrg.xnat.utils.predicates.ProjectPermissionPredicate;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -283,12 +286,8 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         return representTable(table, mediaType, new Hashtable<String, Object>());
     }
 
-    protected static SessionDataTriple buildSessionDataTriple(final String uri) throws MalformedURLException {
-        return SessionDataTriple.fromURI(uri);
-    }
-
     protected static List<String> getDeniedProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
-        return Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), new ProjectPermissionPredicate(user)));
+        return Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit)));
     }
 
     private static final Function<SessionDataTriple, String> FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID = new Function<SessionDataTriple, String>() {

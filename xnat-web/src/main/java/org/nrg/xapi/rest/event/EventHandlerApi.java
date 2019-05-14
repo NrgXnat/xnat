@@ -9,19 +9,14 @@
 
 package org.nrg.xapi.rest.event;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
-import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
-
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
+import com.google.common.collect.Lists;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import javassist.Modifier;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationEventIdsIds;
@@ -36,13 +31,11 @@ import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.model.event.EventClassInfo;
 import org.nrg.xapi.model.event.EventHandlerFilterInfo;
 import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.ProjectId;
+import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.io.Resource;
@@ -54,19 +47,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import javassist.Modifier;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
 
 /**
  * The Class EventHandlerApi.
  */
-@Api(description = "The XNAT Event Handler API")
+@Api("The XNAT Event Handler API")
 @XapiRestController
+@Slf4j
 public class EventHandlerApi extends AbstractXapiRestController {
     @Autowired
     public EventHandlerApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final HibernateAutomationFiltersService filtersService, final HibernateAutomationEventIdsIdsService eventIdsService) {
@@ -86,11 +80,11 @@ public class EventHandlerApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"/projects/{projectId}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Edit)
     @ResponseBody
-    public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable("projectId") @ProjectId final String projectId) {
+    public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable @Project final String projectId) {
         try {
             return new ResponseEntity<>(getEventInfoList(projectId), HttpStatus.OK);
         } catch (Throwable t) {
-            _log.error("EventHandlerApi exception:  " + t.toString());
+            log.error("EventHandlerApi exception:  " + t.toString());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -108,29 +102,30 @@ public class EventHandlerApi extends AbstractXapiRestController {
         try {
             return new ResponseEntity<>(getEventInfoList(null), HttpStatus.OK);
         } catch (Throwable t) {
-            _log.error("EventHandlerApi exception:  " + t.toString());
+            log.error("EventHandlerApi exception:  " + t.toString());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-	
-	/**
-	 * Gets the event handler.
-	 *
-	 * @param triggerId the trigger id
-	 * @return the event handler
-	 */
-	@XapiRequestMapping(value = { "/eventHandlers/{triggerId}" }, produces = {
-			MediaType.APPLICATION_JSON_VALUE }, method = RequestMethod.GET)
-	public ResponseEntity<ScriptTrigger> getEventHandler(@PathVariable("triggerId") final String triggerId) {
-		try {
-			ScriptTriggerService _scriptTriggerService = XDAT.getContextService().getBean(ScriptTriggerService.class);
-			ScriptTrigger scriptTrigger = _scriptTriggerService.getByTriggerId(triggerId);
-			return new ResponseEntity<>(scriptTrigger, HttpStatus.OK);
-		} catch (Throwable t) {
-			_log.error("EventHandlerApi exception:  " + t.toString());
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+
+    /**
+     * Gets the event handler.
+     *
+     * @param triggerId the trigger id
+     *
+     * @return the event handler
+     */
+    @XapiRequestMapping(value = {"/eventHandlers/{triggerId}"}, produces = {
+            MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    public ResponseEntity<ScriptTrigger> getEventHandler(@PathVariable final String triggerId) {
+        try {
+            ScriptTriggerService _scriptTriggerService = XDAT.getContextService().getBean(ScriptTriggerService.class);
+            ScriptTrigger        scriptTrigger         = _scriptTriggerService.getByTriggerId(triggerId);
+            return new ResponseEntity<>(scriptTrigger, HttpStatus.OK);
+        } catch (Throwable t) {
+            log.error("EventHandlerApi exception:  " + t.toString());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * Gets the event info list.
@@ -140,12 +135,12 @@ public class EventHandlerApi extends AbstractXapiRestController {
      * @return the event info list
      */
     private List<EventClassInfo> getEventInfoList(String projectId) {
-        final List<EventClassInfo> eventInfoList = Lists.newArrayList();
-        final List<AutomationEventIdsIds> eventIdsList = _eventIdsService.getEventIds(projectId, false, MAX_EVENT_IDS_LIST);
-        final List<AutomationFilters> filtersList = _filtersService.getAutomationFilters(projectId, false);
+        final List<EventClassInfo>        eventInfoList = Lists.newArrayList();
+        final List<AutomationEventIdsIds> eventIdsList  = _eventIdsService.getEventIds(projectId, false, MAX_EVENT_IDS_LIST);
+        final List<AutomationFilters>     filtersList   = _filtersService.getAutomationFilters(projectId, false);
         for (final String className : getEventClassList(eventIdsList)) {
-            final EventClassInfo eci = new EventClassInfo(className);
-            final List<String> eventIds = eci.getEventIds();
+            final EventClassInfo                      eci              = new EventClassInfo(className);
+            final List<String>                        eventIds         = eci.getEventIds();
             final Map<String, EventHandlerFilterInfo> filterableFields = eci.getFilterableFieldsMap();
             if (eci.getIncludeEventIdsFromDatabase()) {
                 for (final AutomationEventIdsIds autoIds : eventIdsList) {
@@ -158,24 +153,22 @@ public class EventHandlerApi extends AbstractXapiRestController {
             }
             Collections.sort(eventIds);
             try {
-                for (final Method method : Arrays.asList(Class.forName(className).getMethods())) {
-                    if (method.isAnnotationPresent(Filterable.class) && method.getName().substring(0, 3).equalsIgnoreCase("get")) {
-                        final char c[] = method.getName().substring(3).toCharArray();
-                        c[0] = Character.toLowerCase(c[0]);
-                        final String column = new String(c);
-                        final Annotation anno = AnnotationUtils.findAnnotation(method, Filterable.class);
+                for (final Method method : Class.forName(className).getMethods()) {
+                    if (method.isAnnotationPresent(Filterable.class) && StringUtils.startsWithIgnoreCase(method.getName(), "get")) {
+                        final String     column = StringUtils.uncapitalize(method.getName().substring(3));
+                        final Annotation anno   = AnnotationUtils.findAnnotation(method, Filterable.class);
 
-                        final Object annoInitialValuesObj = AnnotationUtils.getValue(anno, "initialValues");
-                        final String[] annoInitialValues = (annoInitialValuesObj != null && annoInitialValuesObj instanceof String[]) ? (String[]) annoInitialValuesObj : new String[]{};
+                        final Object   annoInitialValuesObj = AnnotationUtils.getValue(anno, "initialValues");
+                        final String[] annoInitialValues    = (annoInitialValuesObj instanceof String[]) ? (String[]) annoInitialValuesObj : new String[]{};
 
                         final Object annoDefaultValueObj = AnnotationUtils.getValue(anno, "defaultValue");
-                        final String annoDefaultValue = (annoDefaultValueObj != null) ? annoDefaultValueObj.toString() : "";
+                        final String annoDefaultValue    = (annoDefaultValueObj != null) ? annoDefaultValueObj.toString() : "";
 
                         final Object annoFilterRequired = AnnotationUtils.getValue(anno, "filterRequired");
-                        boolean filterRequired = !(annoFilterRequired == null || !(annoFilterRequired instanceof Boolean)) && (boolean) annoFilterRequired;
+                        boolean      filterRequired     = annoFilterRequired instanceof Boolean && (boolean) annoFilterRequired;
 
                         final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
-                        boolean includeValuesFromDatabase = (annoIncludeValuesFromDatabase == null || !(annoIncludeValuesFromDatabase instanceof Boolean)) || (boolean) annoIncludeValuesFromDatabase;
+                        boolean      includeValuesFromDatabase     = (!(annoIncludeValuesFromDatabase instanceof Boolean)) || (boolean) annoIncludeValuesFromDatabase;
                         if (!filterableFields.containsKey(column)) {
                             EventHandlerFilterInfo filterInfo = new EventHandlerFilterInfo();
                             filterInfo.setFilterValues(new ArrayList<String>());
@@ -209,7 +202,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
                 for (final AutomationFilters autoFilters : filtersList) {
                     if (!filterableFields.containsKey(autoFilters.getField())) {
                         EventHandlerFilterInfo filterInfo = new EventHandlerFilterInfo();
-                        final List<String> valueList = Lists.newArrayList(autoFilters.getValues());
+                        final List<String>     valueList  = Lists.newArrayList(autoFilters.getValues());
                         filterInfo.setFilterValues(valueList);
                         filterInfo.setFilterRequired(false);
                         filterInfo.setIncludeValuesFromDatabase(true);
@@ -246,9 +239,9 @@ public class EventHandlerApi extends AbstractXapiRestController {
                 if (!properties.containsKey(EventClass.EVENT_CLASS)) {
                     continue;
                 }
-                final String clssStr = properties.get(EventClass.EVENT_CLASS).toString();
+                final String className = properties.get(EventClass.EVENT_CLASS).toString();
                 try {
-                    final Class<?> clazz = Class.forName(clssStr);
+                    final Class<?> clazz = Class.forName(className);
                     if (AutomationEventImplementerI.class.isAssignableFrom(clazz) && !clazz.isInterface() &&
                         !Modifier.isAbstract(clazz.getModifiers())) {
                         if (!classList.contains(clazz.getName())) {
@@ -256,11 +249,11 @@ public class EventHandlerApi extends AbstractXapiRestController {
                         }
                     }
                 } catch (ClassNotFoundException cex) {
-                    _log.debug("Could not load class for class name (" + clssStr + ")");
+                    log.debug("Could not load class for class name ({})", className);
                 }
             }
         } catch (IOException e) {
-            _log.debug("Could not load event class properties resources (META-INF/xnat/event/*-event.properties)");
+            log.debug("Could not load event class properties resources (META-INF/xnat/event/*-event.properties)");
         }
         // I think for now we'll not pull from the database if we've found event classes.  If the database
         // contains any thing different, it should only be event classes that are no longer available.
@@ -273,11 +266,6 @@ public class EventHandlerApi extends AbstractXapiRestController {
         }
         return classList;
     }
-
-    /**
-     * The Constant _log.
-     */
-    private static final Logger _log = LoggerFactory.getLogger(EventHandlerApi.class);
 
     /**
      * The maximum number of event IDs to return for each event class in each project.

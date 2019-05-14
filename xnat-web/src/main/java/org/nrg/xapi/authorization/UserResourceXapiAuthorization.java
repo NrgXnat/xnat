@@ -1,14 +1,18 @@
 package org.nrg.xapi.authorization;
 
+import org.aspectj.lang.JoinPoint;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -29,25 +33,25 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
      *
      * <ol>
      * <li>
-     *     If user list access is not restricted to administrators, then any authenticated user can access the list.
+     * If user list access is not restricted to administrators, then any authenticated user can access the list.
      * </li>
      * <li>
-     *     If user list access is restricted to administrators, this method checks for any {@link Username}-
-     *     annotated parameters for the {@link XapiRequestMapping}-annotated method. If the current user's name
-     *     appears in that list, that user can access the method in spite of not being an administrator.
+     * If user list access is restricted to administrators, this method checks for any {@link Username}-
+     * annotated parameters for the {@link XapiRequestMapping}-annotated method. If the current user's name
+     * appears in that list, that user can access the method in spite of not being an administrator.
      * </li>
      * <li>
-     *     Otherwise, only users with administrator privileges can access the list.
+     * Otherwise, only users with administrator privileges can access the list.
      * </li>
      * </ol>
      */
     @Override
-    protected boolean checkImpl() {
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
         // Otherwise, verify that user list access is not restricted to admins OR this user is an admin OR this
         // user appears in any usernames specified in the method parameters.
         return !_restrictUserListAccessToAdmins
-               || Roles.isSiteAdmin(getUser())
-               || getUsernames(getJoinPoint()).contains(getUsername());
+               || Roles.isSiteAdmin(user)
+               || getUsernames(joinPoint).contains(user.getUsername());
     }
 
     @Override

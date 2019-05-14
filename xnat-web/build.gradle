@@ -462,6 +462,10 @@ war {
     }
 }
 
+test {
+  environment "xnat.home", "${buildDir}/test"
+}
+
 jacoco {
     toolVersion = dependencyManagement.importedProperties["jacoco.version"] as String
 }

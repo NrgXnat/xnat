@@ -18,7 +18,7 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.rest.AbstractXapiProjectRestController;
-import org.nrg.xapi.rest.ProjectId;
+import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -35,7 +35,7 @@ import java.io.IOException;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 
-@Api(description = "XNAT DICOM Anonymization API")
+@Api("XNAT DICOM Anonymization API")
 @XapiRestController
 @RequestMapping(value = "/anonymize")
 @Slf4j
@@ -108,7 +108,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Read)
     @ResponseBody
-    public ResponseEntity<String> getProjectAnonScript(@PathVariable("projectId") @ProjectId final String projectId) throws NrgServiceException, NoContentException {
+    public ResponseEntity<String> getProjectAnonScript(@PathVariable("projectId") @Project final String projectId) throws NrgServiceException, NoContentException {
         final String script = _anonUtils.getProjectScript(projectId);
         if (StringUtils.isBlank(script)) {
             throw new NoContentException("There's no anonymization script associated with the project " + projectId);
@@ -124,7 +124,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @XapiRequestMapping(value = "projects/{projectId}", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Delete)
     public ResponseEntity<Void> setProjectAnonScript(@ApiParam(value = "Indicates the ID of the project to be enabled or disabled.", required = true)
                                                          @PathVariable("projectId")
-                                                         @ProjectId final String projectId,
+                                                         @Project final String projectId,
                                                      @ApiParam(value = "Whether the specified project's anonymization script should be enabled or disabled.", required = true)
                                                      @RequestBody final String script) {
         try {
@@ -141,7 +141,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Read)
-    public ResponseEntity<Boolean> isProjectAnonScriptEnabled(@PathVariable("projectId") @ProjectId final String projectId) {
+    public ResponseEntity<Boolean> isProjectAnonScriptEnabled(@PathVariable("projectId") @Project final String projectId) {
         return new ResponseEntity<>(_anonUtils.isProjectScriptEnabled(projectId), HttpStatus.OK);
     }
 
@@ -150,7 +150,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Delete)
-    public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") @ProjectId final String projectId,
+    public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") @Project final String projectId,
                                                             @RequestParam(required= false, defaultValue = "true") final boolean enable) throws NrgServiceException {
         if (enable) {
             _anonUtils.enableProjectSpecific(getSessionUser().getUsername(), projectId);

@@ -253,7 +253,7 @@ public class CatalogUtils {
         return StringUtils.defaultIfBlank(relPath, uri);
     }
 
-    public static List<Object[]> getEntryDetails(CatCatalogI cat, String parentPath, String uriPath,
+    public static List<Object[]> getEntryDetails(@Nonnull CatCatalogI cat, String parentPath, String uriPath,
                                                  XnatResource _resource, boolean includeFile,
                                                  final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
         final ArrayList<Object[]> al = new ArrayList<>();
@@ -278,9 +278,13 @@ public class CatalogUtils {
                 File file = null;
                 if (includeFile || StringUtils.isEmpty(size) || StringUtils.isEmpty(name)) {
                     file = getFile(entry, parentPath);
-                    assert file != null;
-                    name = file.getName();
-                    size = String.valueOf(file.length());
+                    if (file != null) {
+                        name = file.getName();
+                        size = String.valueOf(file.length());
+                    } else {
+                        log.error("Unable to locate file for catalog entry {}. Using metadata from catalog for " +
+                                "now, but catalog {}/{} should probably be refreshed", entry, parentPath, cat.getId());
+                    }
                 }
                 row.add(name);
                 row.add(includeFile ? 0 : size);
@@ -1012,6 +1016,7 @@ public class CatalogUtils {
      * @param localPath the local path to put file, can be empty
      * @return File
      */
+    @Nullable
     public static File getFileOnLocalFileSystem(String uri, String localPath) {
         File f = getFileOnLocalFileSystemOrig(uri);
         if (f == null) {
@@ -1775,7 +1780,10 @@ public class CatalogUtils {
             newCat = new CatCatalogBean();
         }
 
-        assert newCat != null;
+        if (newCat == null) {
+            throw new Exception("Catalog bean corresponding to " + newCatFile.getAbsolutePath() + " is null, " +
+                    "have your admin check utils.log for the cause");
+        }
         newCat.addEntries_entry(newEntryBean);
 
         CatalogUtils.writeCatalogToFile(newCat, newCatFile);
@@ -1800,7 +1808,10 @@ public class CatalogUtils {
             _new[5] = old[5];
 
             XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(old[0], user, false);
-            assert res != null;
+            if (res == null) {
+                log.error("XnatAbstractresource {} is null", old[0]);
+                continue;
+            }
 
             if (cacheFileStats) {
                 if (res.getFileCount() == null) {

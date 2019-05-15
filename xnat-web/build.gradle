@@ -463,7 +463,7 @@ war {
 }
 
 test {
-  environment "xnat.home", "${buildDir}/test"
+    systemProperties["xnat.home"] = "${buildDir}/tmp/test"
 }
 
 jacoco {

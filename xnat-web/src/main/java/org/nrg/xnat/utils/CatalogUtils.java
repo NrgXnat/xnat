@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.twmacinta.util.MD5;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -48,10 +49,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static org.apache.commons.io.FileUtils.listFiles;
+
 /**
  * @author timo
  */
-@SuppressWarnings({"deprecation", "UnusedReturnValue"})
+@SuppressWarnings({"deprecation", "UnusedReturnValue", "Duplicates"})
 @Slf4j
 public class CatalogUtils {
     public final static String[] FILE_HEADERS        = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest"};
@@ -78,7 +81,7 @@ public class CatalogUtils {
 
     public static Boolean getChecksumConfiguration() throws ConfigServiceException {
         if (_checksumConfig == null) {
-            String checksumProperty = XDAT.getSiteConfigurationProperty("checksums");
+            final String checksumProperty = XDAT.getSiteConfigurationProperty("checksums");
             if (!StringUtils.isBlank(checksumProperty)) {
                 _checksumConfig = new AtomicBoolean(Boolean.parseBoolean(checksumProperty));
             }
@@ -148,7 +151,7 @@ public class CatalogUtils {
         try {
             return MD5.asHex(MD5.getHash(file));
         } catch (IOException e) {
-            log.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
+            log.error("An error occurred calculating the checksum for a file at the path: {}", file.getPath(), e);
             return "";
         }
     }
@@ -165,7 +168,7 @@ public class CatalogUtils {
                 final String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
                 final File file = getFileOnLocalFileSystem(entryPath);
                 if (file == null) {
-                    log.warn("The catalog {} contains an invalid entry with the path {}. Please check and/or refresh the catalog.", cat.getName(), entryPath);
+                    log.warn("The catalog located at {} contains an invalid entry with the path {}. Please check and/or refresh the catalog.", _resource.getUri(), entryPath);
                     continue;
                 }
                 row.add(file.getName());
@@ -277,7 +280,7 @@ public class CatalogUtils {
                     return entry;
                 }
             } catch (Exception exception) {
-                log.error("Error occurred filtering catalog entry: " + entry, exception);
+                log.error("Error occurred filtering catalog entry: {}", entry, exception);
             }
         }
 
@@ -298,7 +301,7 @@ public class CatalogUtils {
 
                 }
             } catch (Exception exception) {
-                log.error("Error occurred filtering catalog entry: " + entry, exception);
+                log.error("Error occurred filtering catalog entry: {}", entry, exception);
             }
         }
 
@@ -377,7 +380,7 @@ public class CatalogUtils {
                     entries.add(entry);
                 }
             } catch (Exception exception) {
-                log.error("Error occurred testing catalog entry: " + entry, exception);
+                log.error("Error occurred testing catalog entry: {}", entry, exception);
             }
         }
         return entries;
@@ -611,54 +614,38 @@ public class CatalogUtils {
         List<String> duplicates = new ArrayList<>();
 
         for (FileWriterWrapperI fileWriter : fileWriters) {
-            String filename = fileWriter.getName();
+            final String filename    = StringUtils.substringAfterLast(StringUtils.substringAfterLast(fileWriter.getName(), "\\"), "/");
+            final String compression = FilenameUtils.getExtension(filename);
 
-            int index = filename.lastIndexOf('\\');
-            if (index < filename.lastIndexOf('/')) {
-                index = filename.lastIndexOf('/');
-            }
-
-            if (index > 0) {
-                filename = filename.substring(index + 1);
-            }
-
-            String compression_method = (filename.contains(".")) ? filename.substring(filename.lastIndexOf(".")) : "";
-
-            if (extract && (compression_method.equalsIgnoreCase(".tar") || compression_method.equalsIgnoreCase(".gz") || compression_method.equalsIgnoreCase(".zip") || compression_method.equalsIgnoreCase(".zar"))) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Found archive file " + filename);
-                }
-
-                File destinationDir = catFile.getParentFile();
-                final InputStream is = fileWriter.getInputStream();
+            if (extract && StringUtils.equalsAnyIgnoreCase(compression, "tar", "gz", "zip", "zar")) {
+                log.debug("Found archive file {}", filename);
 
                 ZipI zipper;
-                if (compression_method.equalsIgnoreCase(".tar")) {
+                if (compression.equalsIgnoreCase(".tar")) {
                     zipper = new TarUtils();
-                } else if (compression_method.equalsIgnoreCase(".gz")) {
+                } else if (compression.equalsIgnoreCase(".gz")) {
                     zipper = new TarUtils();
                     zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
                 } else {
                     zipper = new ZipUtils();
                 }
 
-                @SuppressWarnings("unchecked")
-                final List<File> files = zipper.extract(is, destinationDir.getAbsolutePath(), overwrite, ci);
+                final File destinationDir = catFile.getParentFile();
+                try (final InputStream input = fileWriter.getInputStream()) {
+                    @SuppressWarnings("unchecked") final List<File> files = zipper.extract(input, destinationDir.getAbsolutePath(), overwrite, ci);
+                    for (final File file : files) {
+                        if (!file.isDirectory()) {
+                            final String relative = destinationDir.toURI().relativize(file.toURI()).getPath();
+                            final CatEntryI entry = getEntryByURI(cat, relative);
+                            if (entry == null) {
+                                final CatEntryBean newEntry = new CatEntryBean();
+                                newEntry.setUri(relative);
+                                newEntry.setName(file.getName());
 
-                for (final File f : files) {
-                    if (!f.isDirectory()) {
-                        final String relative = destinationDir.toURI().relativize(f.toURI()).getPath();
+                                configureEntry(newEntry, info, false);
 
-                        final CatEntryI e = getEntryByURI(cat, relative);
-
-                        if (e == null) {
-                            final CatEntryBean newEntry = new CatEntryBean();
-                            newEntry.setUri(relative);
-                            newEntry.setName(f.getName());
-
-                            configureEntry(newEntry, info, false);
-
-                            cat.addEntries_entry(newEntry);
+                                cat.addEntries_entry(newEntry);
+                            }
                         }
                     }
                 }
@@ -666,7 +653,7 @@ public class CatalogUtils {
                     duplicates.addAll(zipper.getDuplicates());
                 }
             } else {
-                File parentFolder = new File(parentPath);
+                final File parentFolder = new File(parentPath);
                 final String instance;
                 if (!StringUtils.isBlank(fileWriter.getNestedPath())) {
                     instance = makePath(fileWriter.getNestedPath(), filename);
@@ -684,46 +671,35 @@ public class CatalogUtils {
                     duplicates.add(instance);
                 } else {
                     if (saveTo.exists()) {
-                        final CatEntryBean e = (CatEntryBean) getEntryByURI(cat, instance);
-                        CatalogUtils.moveToHistory(catFile, saveTo, e, ci);
+                        final CatEntryBean entry = (CatEntryBean) getEntryByURI(cat, instance);
+                        CatalogUtils.moveToHistory(catFile, saveTo, entry, ci);
                     }
 
                     if (!saveTo.getParentFile().mkdirs() && !saveTo.getParentFile().exists()) {
                         throw new Exception("Failed to create required directory: " + saveTo.getParentFile().getAbsolutePath());
                     }
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Saving filename " + filename + " to file " + saveTo.getAbsolutePath());
-                    }
+                    log.debug("Saving filename {} to file {}", filename, saveTo.getAbsolutePath());
 
                     fileWriter.write(saveTo);
 
                     if (saveTo.isDirectory()) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Found a directory: " + saveTo.getAbsolutePath());
+                        log.debug("Found a directory: {}", saveTo.getAbsolutePath());
+
+                        for (final File movedFile : listFiles(saveTo, null, true)) {
+                            final String relativePath = instance + "/" + FileUtils.RelativizePath(saveTo, movedFile).replace('\\', '/');
+                            log.debug("Updating catalog entry to: {}", relativePath);
+                            updateEntry(cat, relativePath, movedFile, info, ci);
                         }
-
-                        final Iterator<File> iterator = org.apache.commons.io.FileUtils.iterateFiles(saveTo, null, true);
-                        while (iterator.hasNext()) {
-                            final File movedF = iterator.next();
-
-                            String relativePath = instance + "/" + FileUtils.RelativizePath(saveTo, movedF).replace('\\', '/');
-                            updateEntry(cat, relativePath, movedF, info, ci);
-                        }
-
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Updating catalog entry for file " + saveTo.getAbsolutePath());
-                        }
+                        log.debug("Updating catalog entry for file {}", saveTo.getAbsolutePath());
                         updateEntry(cat, instance, saveTo, info, ci);
                     }
                 }
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Writing catalog file " + catFile.getAbsolutePath() + " with " + cat.getEntries_entry().size() + " total entries");
-        }
+        log.debug("Writing catalog file {} with {} total entries", catFile.getAbsolutePath(), cat.getEntries_entry().size());
 
         writeCatalogToFile(cat, catFile);
 
@@ -863,9 +839,9 @@ public class CatalogUtils {
                 cat.toXML(fw, true);
                 fw.close();
             } catch (IOException exception) {
-                log.error("Error writing to the folder: " + f.getParentFile().getAbsolutePath(), exception);
+                log.error("Error writing to the folder: {}", f.getParentFile().getAbsolutePath(), exception);
             } catch (Exception exception) {
-                log.error("Error creating the folder: " + f.getParentFile().getAbsolutePath(), exception);
+                log.error("Error creating the folder: {}", f.getParentFile().getAbsolutePath(), exception);
             }
         }
 
@@ -889,11 +865,11 @@ public class CatalogUtils {
                 return (CatCatalogBean) base;
             }
         } catch (FileNotFoundException exception) {
-            log.error("Couldn't find file: " + catalogFile, exception);
+            log.error("Couldn't find file: {}", catalogFile, exception);
         } catch (IOException exception) {
-            log.error("Error occurred reading file: " + catalogFile, exception);
+            log.error("Error occurred reading file: {}", catalogFile, exception);
         } catch (SAXException exception) {
-            log.error("Error processing XML in file: " + catalogFile, exception);
+            log.error("Error processing XML in file: {}", catalogFile, exception);
         }
 
         return null;
@@ -915,11 +891,11 @@ public class CatalogUtils {
                 catalogFile = CatalogUtils.getCatalogFile(rootPath, resource);
             }
         } catch (FileNotFoundException exception) {
-            log.error("Couldn't find file: " + catalogFile, exception);
+            log.error("Couldn't find file: {}", catalogFile, exception);
         } catch (IOException exception) {
-            log.error("Error occurred reading file: " + catalogFile, exception);
+            log.error("Error occurred reading file: {}", catalogFile, exception);
         } catch (Exception exception) {
-            log.error("Unknown exception reading file at: " + rootPath, exception);
+            log.error("Unknown exception reading file at: {}", rootPath, exception);
         }
 
         return catalogFile != null ? getCatalog(catalogFile) : null;
@@ -966,7 +942,7 @@ public class CatalogUtils {
         } catch (IOException exception) {
             log.error("Couldn't parse or unzip file indicated by {}", catalogFile.getAbsolutePath(), exception);
         } catch (Exception exception) {
-            log.error("Unknown error handling file " + (catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location"), exception);
+            log.error("Unknown error handling file {}", catalogFile != null ? "indicated by " + catalogFile.getAbsolutePath() : "of unknown location", exception);
         }
 
         return null;
@@ -983,7 +959,7 @@ public class CatalogUtils {
      */
     public static boolean formalizeCatalog(final CatCatalogI cat, final String catPath, UserI user, EventMetaI now) {
         return formalizeCatalog(cat, catPath, user, now, false, false);
-        //default to false for checksums for now.  Maybe it should use the default setting for the server.  But, this runs everytime a catalog xml is loaded.  So, it will get re-run over and over.  Not sure we want to add that amount of processing.
+        //default to false for checksums for now.  Maybe it should use the default setting for the server.  But, this runs every time a catalog xml is loaded.  So, it will get re-run over and over.  Not sure we want to add that amount of processing.
     }
 
     /**
@@ -1138,9 +1114,8 @@ public class CatalogUtils {
         while (table.hasMoreRows()) {
             Object[] old = table.nextRow();
             Object[] _new = new Object[11];
-            if (log.isDebugEnabled()) {
-                log.debug("Found resource with ID: " + old[0] + "(" + old[1] + ")");
-            }
+            log.debug("Found resource with ID: {}({})", old[0], old[1]);
+
             _new[0] = old[0];
             _new[1] = old[1];
             _new[2] = old[2];
@@ -1165,9 +1140,9 @@ public class CatalogUtils {
                     res.save(user, true, false, null);
                 } catch (Exception exception) {
                     if (res instanceof XnatResourcecatalog) {
-                        log.error("Failed to save updates to resource catalog: " + res.getLabel(), exception);
+                        log.error("Failed to save updates to resource catalog: {}", res.getLabel(), exception);
                     } else {
-                        log.error("Failed to save updates to abstract resource: " + res.getXnatAbstractresourceId(), exception);
+                        log.error("Failed to save updates to abstract resource: {}", res.getXnatAbstractresourceId(), exception);
                     }
                 }
             }
@@ -1286,9 +1261,9 @@ public class CatalogUtils {
                 FileUtils.GUnzipFiles(catalog);
                 catalog = CatalogUtils.getCatalogFile(rootPath, resource);
             } catch (FileNotFoundException exception) {
-                log.error("Couldn't find file: " + catalog, exception);
+                log.error("Couldn't find file: {}", catalog, exception);
             } catch (IOException exception) {
-                log.error("Error occurred reading file: " + catalog, exception);
+                log.error("Error occurred reading file: {}", catalog, exception);
             }
         }
         return catalog;
@@ -1305,7 +1280,7 @@ public class CatalogUtils {
      */
     public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, UserI user, Number event_id) {
         //list of all files in the catalog folder
-        final Collection<File> files = org.apache.commons.io.FileUtils.listFiles(catFile.getParentFile(), null, true);
+        final Collection<File> files = listFiles(catFile.getParentFile(), null, true);
 
         //verify that there is only one catalog xml in this directory
         //fail if more then one is present -- otherwise they will be merged.
@@ -1458,7 +1433,7 @@ public class CatalogUtils {
                         toRemove.add(entry);
                         modified = true;
                     } else {
-                        log.error("Missing Resource:" + entryPath);
+                        log.warn("The catalog with ID {} located in the folder {} contains an invalid entry with the path {}. Please check and/or refresh the catalog.", cat.getId(), catPath, entryPath);
                     }
                 }
             }
@@ -1468,8 +1443,8 @@ public class CatalogUtils {
             }
         }
 
-        if (toRemove.size() > 0) {
-            for (CatEntryI entry : toRemove) {
+        if (!toRemove.isEmpty()) {
+            for (final CatEntryI entry : toRemove) {
                 CatalogUtils.removeEntry(cat, entry);
             }
         }

@@ -1286,7 +1286,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public String wrapPartialDataURI(String uri) {
-        return "/data" + uri;
+        return StringUtils.prependIfMissing(uri, "/data");
     }
 
     public void setResponseStatus(final ActionException e) {

@@ -144,7 +144,7 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 				}
 			}
 		}
-		log.warn("Invalid XnatTaskExecutionResolver configuration for task (CLASS=?).");
+		log.warn("Invalid XnatTaskExecutionResolver configuration for task (CLASS={}).", clazz);
 		return null;
 	}
 

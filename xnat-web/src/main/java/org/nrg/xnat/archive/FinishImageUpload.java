@@ -104,7 +104,12 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                     }
                 }
             } else {
-                populateAdditionalFields(session.getSessionDir());
+                try {
+                    session.populateAdditionalFields(user);
+                } catch (ClientException e) {
+                    failed("unable to map parameters to valid xml path: " + e.getMessage());
+                    throw e;
+                }
                 return session.getUrl();
             }
         } catch (ActionException e) {
@@ -113,38 +118,6 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
         } catch (Exception e) {
             log.error("", e);
             throw new ServerException(e);
-        }
-    }
-
-    /**
-     * This method will allow users to pass xml path as parameters.  The values supplied will be copied into the loaded session.
-     */
-    private void populateAdditionalFields(final File sessionDIR) throws ActionException {
-        //prepare params by removing non xml path names
-        final Map<String, Object> cleaned = XMLPathShortcuts.identifyUsableFields(session.getAdditionalValues(), XMLPathShortcuts.EXPERIMENT_DATA, false);
-
-        if (cleaned.size() > 0) {
-            final SAXReader reader = new SAXReader(user);
-            final File      xml    = new File(sessionDIR.getParentFile(), sessionDIR.getName() + ".xml");
-
-            try {
-                XFTItem item = reader.parse(xml.getAbsolutePath());
-
-                try {
-                    item.setProperties(cleaned, true);
-                } catch (Exception e) {
-                    failed("unable to map parameters to valid xml path: " + e.getMessage());
-                    throw new ClientException("unable to map parameters to valid xml path: ", e);
-                }
-
-                try (final FileWriter writer = new FileWriter(xml)) {
-                    item.toXML(writer, false);
-                } catch (IllegalArgumentException | IOException | SAXException e) {
-                    throw new ServerException(e);
-                }
-            } catch (IOException | SAXException e1) {
-                throw new ServerException(e1);
-            }
         }
     }
 

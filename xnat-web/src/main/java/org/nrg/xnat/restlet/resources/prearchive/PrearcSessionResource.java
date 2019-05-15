@@ -10,7 +10,6 @@
 package org.nrg.xnat.restlet.resources.prearchive;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,9 +44,11 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.restlet.data.MediaType.*;
+import static org.restlet.data.Status.*;
+
 @Slf4j
 public final class PrearcSessionResource extends SecureResource {
-
     /**
      * Initializes the restlet.
      *
@@ -59,8 +60,8 @@ public final class PrearcSessionResource extends SecureResource {
         super(context, request, response);
 
         // Project, timestamp, session are explicit in the request
-        final String p = (String) getParameter(request, PROJECT_ATTR);
-        project = p.equalsIgnoreCase(PrearcUtils.COMMON) ? null : p;
+        final String projectId = (String) getParameter(request, PROJECT_ATTR);
+        project = projectId.equalsIgnoreCase(PrearcUtils.COMMON) ? null : projectId;
         timestamp = (String) getParameter(request, SESSION_TIMESTAMP);
         session = (String) getParameter(request, SESSION_LABEL);
         getVariants().addAll(MEDIA_TYPES);
@@ -94,32 +95,23 @@ public final class PrearcSessionResource extends SecureResource {
         try {
             sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, false);
         } catch (InvalidPermissionException e) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
             return null;
         } catch (Exception e) {
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
             return null;
         }
 
-        String screen=getQueryVariable("screen");
-        String popup=StringUtils.equalsIgnoreCase(getQueryVariable("popup"), "true") ? "true":"false";
-
-        final MediaType mt = overrideVariant(variant);
+        final MediaType mediaType = overrideVariant(variant);
 
         //add GET support for log files
-        if(StringUtils.isNotEmpty(filepath)){
-            if(filepath.startsWith("logs/") && filepath.length()>5){
-                final String logId=filepath.substring(5);
-
-                final String contents;
-                if(logId.equals("last")){
-                    contents=PrearcUtils.getLastLog(project, timestamp, session);
-                }else{
-                    contents=PrearcUtils.getLog(project, timestamp, session,logId);
-                }
-
-                return new StringRepresentation(contents, mt);
-            }else if(filepath.equals("logs")){
+        if (StringUtils.isNotEmpty(filepath)) {
+            if (filepath.startsWith("logs/") && filepath.length() > 5) {
+                final String logId    = filepath.substring(5);
+                final String contents = logId.equals("last") ? PrearcUtils.getLastLog(project, timestamp, session) : PrearcUtils.getLog(project, timestamp, session, logId);
+                return new StringRepresentation(contents, mediaType);
+            }
+            if (filepath.equals("logs")) {
                 final XFTTable tb=new XFTTable();
                 if(getQueryVariable("template")==null || getQueryVariable("template").equals("details")){
                     tb.initTable(new String[]{"id","date","entry"});
@@ -136,7 +128,7 @@ public final class PrearcSessionResource extends SecureResource {
                         tb.sort("date","ASC");
                         tb.resetRowCursor();
                     } catch (IOException e) {
-                        getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                        getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
                         return null;
                     }
                 }else{
@@ -149,64 +141,59 @@ public final class PrearcSessionResource extends SecureResource {
                         }
                     }
                 }
-
-
-                return representTable(tb,mt,new Hashtable<String,Object>());
+                return representTable(tb, mediaType, new Hashtable<String, Object>());
             }
         }
 
-        if (MediaType.TEXT_HTML.equals(mt) || StringUtils.isNotEmpty(screen))
-        {
+        final String screen = getQueryVariable("screen");
+        if (TEXT_HTML.equals(mediaType) || StringUtils.isNotEmpty(screen)) {
             // Return the session XML, if it exists
-
-            if(StringUtils.isEmpty(screen)){
-                screen="XDATScreen_brief_xnat_imageSessionData.vm";
-            }else if (screen.equals("XDATScreen_uploaded_xnat_imageSessionData.vm")){
+            if (screen.equals("XDATScreen_uploaded_xnat_imageSessionData.vm")){
                 if(project==null){
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Projects in the unassigned folder cannot be archived.");
+                    getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Projects in the unassigned folder cannot be archived.");
                     return null;
                 }
-                getResponse().redirectSeeOther(getContextPath()+String.format("/app/action/LoadImageData/project/%s/timestamp/%s/folder/%s/popup/%s",project,timestamp,session,popup));
+                getResponse().redirectSeeOther(getContextPath() + String.format("/app/action/LoadImageData/project/%s/timestamp/%s/folder/%s/popup/%s", project, timestamp, session, StringUtils.equalsIgnoreCase(getQueryVariable("popup"), "true") ? "true" : "false"));
                 return null;
             }
 
             try {
-                Map<String,Object> params=Maps.newHashMap();
-                for(String key: getQueryVariableKeys()){
+                final Map<String,Object> params = new HashMap<>();
+                for(final String key: getQueryVariableKeys()){
                     params.put(key, getQueryVariable(key));
                 }
                 params.put("project",project);
                 params.put("timestamp",timestamp);
                 params.put("folder",session);
-                return new StandardTurbineScreen(MediaType.TEXT_HTML, getRequest(), user, screen, params);
+                return new StandardTurbineScreen(TEXT_HTML, getRequest(), user, StringUtils.defaultIfBlank(screen, "XDATScreen_brief_xnat_imageSessionData.vm"), params);
             } catch (TurbineException e) {
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
                 return null;
             }
 
-        }else if (MediaType.TEXT_XML.equals(mt)) {
+        } else if (TEXT_XML.equals(mediaType)) {
             // Return the session XML, if it exists
             final File sessionXML = new File(sessionDir.getPath() + ".xml");
             if (!sessionXML.isFile()) {
-                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,	"The named session exists, but its XNAT session document is not available. The session is likely invalid or incomplete.");
+                getResponse().setStatus(CLIENT_ERROR_NOT_FOUND, "The named session exists, but its XNAT session document is not available. The session is likely invalid or incomplete.");
                 return null;
             }
             return new FileRepresentation(sessionXML, variant.getMediaType(), 0);
-        } else if (MediaType.APPLICATION_JSON.equals(mt)) {
+        } else if (APPLICATION_JSON.equals(mediaType)) {
             final List<SessionDataTriple> triples = new ArrayList<>();
             triples.add(new SessionDataTriple(sessionDir.getName(), timestamp, project));
             XFTTable table = null;
             try {
                 table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(triples));
             } catch (Exception e) {
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
             }
-            return representTable(table, MediaType.APPLICATION_JSON, new Hashtable<String,Object>());
+            return representTable(table, APPLICATION_JSON, new Hashtable<String,Object>());
         }
-        else if (MediaType.APPLICATION_GNU_ZIP.equals(mt) || MediaType.APPLICATION_ZIP.equals(mt)) {
+        else if (APPLICATION_GNU_ZIP.equals(mediaType) || APPLICATION_ZIP.equals(mediaType)) {
             final ZipRepresentation zip;
             try{
-                zip = new ZipRepresentation(mt, sessionDir.getName(),identifyCompression(null));
+                zip = new ZipRepresentation(mediaType, sessionDir.getName(),identifyCompression(null));
             } catch (ActionException e) {
                 log.error("", e);
                 setResponseStatus(e);
@@ -215,7 +202,7 @@ public final class PrearcSessionResource extends SecureResource {
             zip.addFolder(sessionDir.getName(), sessionDir);
             return zip;
         } else {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Requested type " + mt + " is not supported");
+            getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, "Requested type " + mediaType + " is not supported");
             return null;
         }
     }
@@ -238,7 +225,7 @@ public final class PrearcSessionResource extends SecureResource {
             getResponse().setStatus(e1.getStatus(), e1);
         } catch (IOException e) {
             log.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
         }
 
         final File sessionDir;
@@ -247,11 +234,11 @@ public final class PrearcSessionResource extends SecureResource {
             sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, true);
         } catch (InvalidPermissionException e) {
             log.error("", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
             return;
         } catch (Exception e) {
             log.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
             return;
         }
 
@@ -283,14 +270,14 @@ public final class PrearcSessionResource extends SecureResource {
                 } else {
                     message = "User " + getUser().getUsername() + " requested an unsupported action on prearchive session: " + action;
                 }
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, message);
+                getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, message);
         }
     }
 
     @Override
     public void handleDelete() {
     	if(StringUtils.isNotEmpty(filepath)){
-    		getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "");
+    		getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, "");
     		return;
     	}
 
@@ -300,17 +287,17 @@ public final class PrearcSessionResource extends SecureResource {
             PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, false);
         } catch (InvalidPermissionException e) {
             log.error("", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
             return;
         } catch (Exception e) {
             log.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
             return;
         }
 
         try {
             if(!PrearcUtils.canModify(user, project)){
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
+                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
                 return;
             }
 
@@ -320,7 +307,7 @@ public final class PrearcSessionResource extends SecureResource {
             getResponse().setStatus(getStatusForSessionException(e.getError()), e.getMessage());
         } catch (Exception e) {
             log.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
         }
     }
 
@@ -329,18 +316,18 @@ public final class PrearcSessionResource extends SecureResource {
             if (PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.BUILDING)) {
                 PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
                 PrearcUtils.resetStatus(user, project, timestamp, session, true);
-                returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
+                returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), TEXT_URI_LIST, SUCCESS_OK);
             } else {
-                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "session document locked");
+                getResponse().setStatus(CLIENT_ERROR_CONFLICT, "session document locked");
             }
         } catch (InvalidPermissionException e) {
             log.error("", e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
         } catch (Exception e) {
             log.error("", e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         }
     }
 
@@ -348,15 +335,15 @@ public final class PrearcSessionResource extends SecureResource {
         try {
             final String tag= getQueryVariable("tag");
             PrearcUtils.resetStatus(user, project, timestamp, session, tag, true);
-            returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
+            returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), TEXT_URI_LIST, SUCCESS_OK);
         } catch (InvalidPermissionException e) {
             log.error("", e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
         } catch (Exception e) {
             log.error("", e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         }
     }
 
@@ -369,21 +356,21 @@ public final class PrearcSessionResource extends SecureResource {
 
         try {
             if(!PrearcUtils.canModify(user, newProj)){
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
+                getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
                 return;
             }
             if(PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.MOVING)){
                 PrearcDatabase.moveToProject(session, timestamp, (project==null)?"Unassigned":project, newProj);
-                returnString(wrapPartialDataURI(PrearcUtils.buildURI(newProj,timestamp,session)), MediaType.TEXT_URI_LIST, Status.REDIRECTION_PERMANENT);
+                returnString(wrapPartialDataURI(PrearcUtils.buildURI(newProj,timestamp,session)), TEXT_URI_LIST, REDIRECTION_PERMANENT);
             }
         } catch (SyncFailedException e) {
             log.error("An error occurred trying to sync the prearchive session {}/{}/{}", project, timestamp, session, e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         } catch (SQLException e) {
             log.error("An error occurred trying to read from or write to the database when processing the prearchive session {}/{}/{}", project, timestamp, session, e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         } catch (SessionException e) {
             log.warn("An error occurred trying to access the prearchive session {}/{}/{}: [{}] {}", project, timestamp, session, e.getError(), e.getMessage());
             PrearcUtils.log(project, timestamp, session, e);
@@ -391,35 +378,37 @@ public final class PrearcSessionResource extends SecureResource {
         } catch (Exception e) {
             log.error("", e);
             PrearcUtils.log(project, timestamp, session, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         }
     }
 
     private void postActionCommit(final File sessionDir, final UserI user) {
         try {
             if (PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.BUILDING)) {
-                final SessionData sd = PrearcDatabase.getSession(session, timestamp, project);
-                if (null == sd.getAutoArchive() && !Strings.isNullOrEmpty(project)) {
-                    final XnatProjectdata p = XnatProjectdata.getProjectByIDorAlias(project, user, false);
-                    PrearcDatabase.setAutoArchive(session, timestamp, project, PrearchiveCode.code(p.getArcSpecification().getPrearchiveCode()));
+                final SessionData sessionData = PrearcDatabase.getSession(session, timestamp, project);
+                if (null == sessionData.getAutoArchive() && !Strings.isNullOrEmpty(project)) {
+                    PrearcDatabase.setAutoArchive(session, timestamp, project, PrearchiveCode.code(XnatProjectdata.getProjectByIDorAlias(project, user, false).getArcSpecification().getPrearchiveCode()));
                 }
                 PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
                 PrearcUtils.resetStatus(user, project, timestamp, session, true);
 
                 final PrearcSession prearcSession = new PrearcSession(project, timestamp, session, params, user);
-                try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession, null, false, true)) {
-                    final String result = uploader.submitSync();
-                    final String uri    = wrapPartialDataURI(result);
-                    if (StringUtils.isBlank(uri)) {
-                        getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "The session " + prearcSession.toString() + " did not return a valid data URI.");
-                    } else if (prearcSession.isAutoArchive()) {
-                        returnString(uri, Status.REDIRECTION_PERMANENT);
-                    } else {
-                        returnString(uri, MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
+                if (prearcSession.isAutoArchive()) {
+                    try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession, null, false, true)) {
+                        final String result = uploader.submitSync();
+                        final String uri    = wrapPartialDataURI(result);
+                        if (StringUtils.isBlank(uri)) {
+                            getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + prearcSession.toString() + " did not return a valid data URI.");
+                        } else {
+                            returnString(uri, REDIRECTION_PERMANENT);
+                        }
                     }
+                } else {
+                    prearcSession.populateAdditionalFields(user);
+                    returnString(prearcSession.getUrl(), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
                 }
             } else {
-                getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "session document locked");
+                getResponse().setStatus(CLIENT_ERROR_CONFLICT, "session document locked");
             }
         } catch (SessionException e) {
             log.warn("An error occurred trying to access the prearchive session {}/{}/{}: [{}] {}", project, timestamp, session, e.getError(), e.getMessage());
@@ -429,17 +418,17 @@ public final class PrearcSessionResource extends SecureResource {
             setResponseStatus(e);
         } catch (InvalidPermissionException e) {
             log.error("", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
         } catch (SyncFailedException e) {
             log.error("", e);
             if(e.getCause()!=null && e.getCause() instanceof ActionException){
                 setResponseStatus((ActionException)e.getCause());
             }else{
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
             }
         } catch (Exception e) {
             log.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
         }
     }
 
@@ -448,29 +437,29 @@ public final class PrearcSessionResource extends SecureResource {
             PrearcDatabase.setStatus(session, timestamp, project, (String) params.get("status"));
         }
         catch (Exception e) {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
+            getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, e.getMessage());
         }
     }
 
     private static Status getStatusForSessionException(final SessionException.Error error) {
         switch (error) {
             case DoesntExist:
-                return Status.CLIENT_ERROR_NOT_FOUND;
+                return CLIENT_ERROR_NOT_FOUND;
 
             case AlreadyExists:
-                return Status.CLIENT_ERROR_CONFLICT;
+                return CLIENT_ERROR_CONFLICT;
 
             case InvalidStatus:
             case InvalidSession:
             case NoProjectSpecified:
-                return Status.CLIENT_ERROR_BAD_REQUEST;
+                return CLIENT_ERROR_BAD_REQUEST;
 
             default:
-                return Status.SERVER_ERROR_INTERNAL;
+                return SERVER_ERROR_INTERNAL;
         }
     }
 
-    private static final List<Variant> MEDIA_TYPES = Arrays.asList(new Variant(MediaType.TEXT_XML), new Variant(MediaType.APPLICATION_ZIP), new Variant(MediaType.APPLICATION_GNU_ZIP), new Variant(MediaType.TEXT_HTML));
+    private static final List<Variant> MEDIA_TYPES = Arrays.asList(new Variant(TEXT_XML), new Variant(APPLICATION_ZIP), new Variant(APPLICATION_GNU_ZIP), new Variant(TEXT_HTML));
 
     private static final String PROJECT_ATTR       = "PROJECT_ID";
     private static final String SESSION_TIMESTAMP  = "SESSION_TIMESTAMP";

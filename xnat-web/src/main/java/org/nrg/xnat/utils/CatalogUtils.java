@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import com.twmacinta.util.MD5;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -44,6 +45,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
@@ -614,7 +616,7 @@ public class CatalogUtils {
         List<String> duplicates = new ArrayList<>();
 
         for (FileWriterWrapperI fileWriter : fileWriters) {
-            final String filename    = StringUtils.substringAfterLast(StringUtils.substringAfterLast(fileWriter.getName(), "\\"), "/");
+            final String filename    = Paths.get(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
             final String compression = FilenameUtils.getExtension(filename);
 
             if (extract && StringUtils.equalsAnyIgnoreCase(compression, "tar", "gz", "zip", "zar")) {

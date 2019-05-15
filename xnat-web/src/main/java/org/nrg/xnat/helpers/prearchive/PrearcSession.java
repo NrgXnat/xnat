@@ -7,15 +7,24 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ActionException;
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -139,6 +148,34 @@ public class PrearcSession {
         }
 
         return autoArchive;
+    }
+
+    public void populateAdditionalFields(final UserI user) throws ActionException {
+        //prepare params by removing non xml path names
+        final Map<String, Object> cleaned = XMLPathShortcuts.identifyUsableFields(getAdditionalValues(), XMLPathShortcuts.EXPERIMENT_DATA, false);
+
+        if (cleaned.size() > 0) {
+            final SAXReader reader = new SAXReader(user);
+            final File      xml    = new File(getSessionDir().getParentFile(), getSessionDir().getName() + ".xml");
+
+            try {
+                XFTItem item = reader.parse(xml.getAbsolutePath());
+
+                try {
+                    item.setProperties(cleaned, true);
+                } catch (Exception e) {
+                    throw new ClientException("unable to map parameters to valid xml path: ", e);
+                }
+
+                try (final FileWriter writer = new FileWriter(xml)) {
+                    item.toXML(writer, false);
+                } catch (IllegalArgumentException | IOException | SAXException e) {
+                    throw new ServerException(e);
+                }
+            } catch (IOException | SAXException e1) {
+                throw new ServerException(e1);
+            }
+        }
     }
 
     private boolean hasOverwriteFilesProperty() {

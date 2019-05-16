@@ -97,12 +97,12 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
 
             _projectId = PrearcImporterHelper.identifyProject(_additionalValues);
 
-            if ((StringUtils.isAnyBlank(_projectId, _timestamp) || _sessionFolder == null) && _sources == null) {
+            if ((StringUtils.isAnyBlank(_projectId, _timestamp) || _sessionFolder.isEmpty()) && _sources.isEmpty()) {
                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unknown prearchive session.");
                 return;
             }
 
-            if (_sources != null) {
+            if (!_sources.isEmpty()) {
                 for (final String source : _sources) {
                     final URIManager.DataURIA data;
                     try {

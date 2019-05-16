@@ -68,7 +68,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
         _inline = inline;
         _overrideExceptions = overrideExceptions;
         _allowSessionMerge = allowSessionMerge;
-        _parameters = new HashMap<>();
+        _parameters = new HashMap<>(session.getAdditionalValues());
         _parameters.put(PARAM_ALLOW_SESSION_MERGE, allowSessionMerge);
         _parameters.put(PARAM_OVERRIDE_EXCEPTIONS, overrideExceptions);
         if (destination != null) {

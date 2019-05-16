@@ -81,7 +81,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
                         // we don't want to autoarchive a session that's just being rebuilt
                         // but we still want to autoarchive sessions that just came from RECEIVING STATE
                         final PrearcSession session = new PrearcSession(getSessionData().getProject(), getSessionData().getTimestamp(), getSessionData().getFolderName(), null, getUser());
-                        if (receiving || !session.isAutoArchive()) {
+                        if (receiving || session.isAutoArchive()) {
                             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters());
                             XDAT.sendJmsRequest(request);
                         }

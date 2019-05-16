@@ -10,6 +10,7 @@
 package org.nrg.xnat.restlet.services.prearchive;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.Getter;
@@ -287,7 +288,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
     }
 
     protected static List<String> getDeniedProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
-        return Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit)));
+        return Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), Predicates.not(new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit))));
     }
 
     private static final Function<SessionDataTriple, String> FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID = new Function<SessionDataTriple, String>() {

@@ -405,7 +405,7 @@ public final class PrearcSessionResource extends SecureResource {
                     }
                 } else {
                     prearcSession.populateAdditionalFields(user);
-                    returnString(prearcSession.getUrl(), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
+                    returnString(wrapPartialDataURI(prearcSession.getUrl()), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
                 }
             } else {
                 getResponse().setStatus(CLIENT_ERROR_CONFLICT, "session document locked");

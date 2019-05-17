@@ -39,11 +39,9 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
-import org.nrg.xnat.archive.QueueBasedImageCommit;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
-import org.nrg.xnat.restlet.services.Archiver;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.restlet.data.Status;
@@ -61,6 +59,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
 
 @Slf4j
@@ -1040,7 +1039,7 @@ public final class PrearcDatabase {
             new LockAndSync<Void>(session, timestamp, project, sd.getStatus()) {
                 Void extSync() throws SyncFailedException {
                     final Map<String, String> params = new LinkedHashMap<>();
-                    if (!Strings.isNullOrEmpty(project) && !PrearcUtils.COMMON.equals(project)) {
+                    if (!Strings.isNullOrEmpty(project) && !UNASSIGNED.equals(project)) {
                         params.put("project", project);
                         params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
                     } else {

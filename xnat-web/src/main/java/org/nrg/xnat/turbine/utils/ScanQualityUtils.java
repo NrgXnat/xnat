@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public final class ScanQualityUtils {
     private static final List<String> DEFAULT_LABELS = new ArrayList<String>();
     static {
@@ -40,7 +42,7 @@ public final class ScanQualityUtils {
     public static List<String> getQualityLabels(final String project, final UserI user) {
         final ConfigService configService = XDAT.getConfigService();
         final String projectId;
-        if (Strings.isNullOrEmpty(project) || StringUtils.equals("Unassigned",project)) {
+        if (Strings.isNullOrEmpty(project) || StringUtils.equals(UNASSIGNED, project)) {
             projectId = null;
         } else {
             final XnatProjectdata projectData = XnatProjectdata.getXnatProjectdatasById(project, user, false);

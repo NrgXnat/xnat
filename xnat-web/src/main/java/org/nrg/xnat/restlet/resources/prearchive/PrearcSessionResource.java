@@ -44,6 +44,7 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.restlet.data.MediaType.*;
 import static org.restlet.data.Status.*;
 
@@ -61,7 +62,7 @@ public final class PrearcSessionResource extends SecureResource {
 
         // Project, timestamp, session are explicit in the request
         final String projectId = (String) getParameter(request, PROJECT_ATTR);
-        project = projectId.equalsIgnoreCase(PrearcUtils.COMMON) ? null : projectId;
+        project = projectId.equalsIgnoreCase(UNASSIGNED) ? null : projectId;
         timestamp = (String) getParameter(request, SESSION_TIMESTAMP);
         session = (String) getParameter(request, SESSION_LABEL);
         getVariants().addAll(MEDIA_TYPES);
@@ -360,7 +361,7 @@ public final class PrearcSessionResource extends SecureResource {
                 return;
             }
             if(PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.MOVING)){
-                PrearcDatabase.moveToProject(session, timestamp, (project==null)?"Unassigned":project, newProj);
+                PrearcDatabase.moveToProject(session, timestamp, (project == null) ? UNASSIGNED : project, newProj);
                 returnString(wrapPartialDataURI(PrearcUtils.buildURI(newProj,timestamp,session)), TEXT_URI_LIST, REDIRECTION_PERMANENT);
             }
         } catch (SyncFailedException e) {

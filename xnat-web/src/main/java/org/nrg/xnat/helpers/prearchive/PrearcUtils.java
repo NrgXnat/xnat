@@ -54,9 +54,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public class PrearcUtils {
     private final static Logger logger = LoggerFactory.getLogger(PrearcUtils.class);
-    public static final String COMMON = "Unassigned";
 
     public static final String APPEND = "append";
 
@@ -195,7 +196,7 @@ public class PrearcUtils {
     }
 
     private static String cleanProject(final String p) {
-        if (COMMON.equals(p)) {
+        if (UNASSIGNED.equals(p)) {
             return null;
         } else {
             return p;
@@ -242,11 +243,11 @@ public class PrearcUtils {
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
         String prearcPath;
         String prearchRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
-        if (project == null || project.equals(COMMON)) {
+        if (project == null || project.equals(UNASSIGNED)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
                 prearcPath = prearchRootPref;
             } else {
-                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, COMMON);
+                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);
             }
         } else {
             //Refactored to remove unnecessary database hits.  It only needs to hit the xnat_projectdata table if the query is using a project alias rather than a project id.  TO
@@ -331,7 +332,7 @@ public class PrearcUtils {
         boolean valid = true;
         try {
             if (null == project) {
-                PrearcUtils.getPrearcDir(user, PrearcUtils.COMMON, allowUnassigned);
+                PrearcUtils.getPrearcDir(user, UNASSIGNED, allowUnassigned);
             } else {
                 PrearcUtils.getPrearcDir(user, project, allowUnassigned);
             }
@@ -550,7 +551,7 @@ public class PrearcUtils {
     }
 
     public static String buildURI(final String project, final String timestamp, final String folderName) {
-        return StringUtils.join("/prearchive/projects/", (project == null) ? PrearcUtils.COMMON : project, "/", timestamp, "/", folderName);
+        return StringUtils.join("/prearchive/projects/", (project == null) ? UNASSIGNED : project, "/", timestamp, "/", folderName);
     }
 
     public static XFTTable convertArrayLtoTable(ArrayList<ArrayList<Object>> rows) {
@@ -574,7 +575,7 @@ public class PrearcUtils {
     public static final String TEMP_UNPACK = "temp-unpack";
 
     public static boolean isUnassigned(final SessionData sd) {
-        return StringUtils.isEmpty(sd.getProject()) || sd.getProject().equals(COMMON);
+        return StringUtils.isEmpty(sd.getProject()) || sd.getProject().equals(UNASSIGNED);
     }
 
     /*******************

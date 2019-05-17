@@ -12,15 +12,11 @@ package org.nrg.xnat.restlet.services.prearchive;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
+import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 
 import java.io.File;
 import java.util.HashMap;
@@ -28,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.nrg.xnat.archive.Operation.Move;
+import static org.restlet.data.Status.*;
 
 /**
  * @author tolsen01
@@ -84,9 +81,36 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
 
                     XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
                 }
+            } catch (SessionException e) {
+                switch (e.getError()) {
+                    case AlreadyExists:
+                        getResponse().setStatus(CLIENT_ERROR_CONFLICT, "A prearchive resource with session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " already exists in the project " + triple.getProject());
+                        break;
+
+                    case DoesntExist:
+                        getResponse().setStatus(CLIENT_ERROR_NOT_FOUND, "No prearchive resource with session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " exists in the project " + triple.getProject());
+                        break;
+
+                    case NoProjectSpecified:
+                        getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, "No project specified to move session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp());
+                        break;
+
+                    case InvalidStatus:
+                        getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Can't move session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject() + " as it has an invalid status");
+                        break;
+
+                    case InvalidSession:
+                        getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "The session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject() + " is invalid (it's not missing, but something's wrong with it)");
+                        break;
+
+                    case DatabaseError:
+                        getResponse().setStatus(SERVER_ERROR_INTERNAL, e, "A database error occurred trying to move the session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject());
+                        break;
+                }
+                return;
             } catch (Exception e) {
                 log.error("", e);
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
                 return;
             }
         }

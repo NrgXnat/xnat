@@ -17,7 +17,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
@@ -210,6 +213,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
     protected void initialize() {
         log.trace("Now in initialize() stub");
     }
+
     /**
      * Provides a method to implement custom processing for completing the archive operation for a single
      * prearchive session.
@@ -263,13 +267,21 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
             return null;
         }
 
-        final UserI user = getUser();
-        final List<String> denied = getDeniedProjectsFromPrearcSources(user, triples);
+        final UserI                            user             = getUser();
+        final Pair<List<String>, List<String>> deniedAndMissing = getDeniedAndMissingProjectsFromPrearcSources(user, triples);
+        final List<String>                     denied           = deniedAndMissing.getLeft();
+        final List<String>                     missing          = deniedAndMissing.getRight();
         if (!denied.isEmpty()) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
+            if (!missing.isEmpty()) {
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", ") + ". Also found one or more missing projects: " + StringUtils.join(missing, ", ") + ".");
+            } else {
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
+            }
             return null;
         }
-
+        if (!missing.isEmpty()) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "One or more specified projects does not exist: " + StringUtils.join(missing, ", ") + ".");
+        }
         return triples;
     }
 
@@ -287,8 +299,11 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         return representTable(table, mediaType, new Hashtable<String, Object>());
     }
 
-    protected static List<String> getDeniedProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
-        return Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), Predicates.not(new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit))));
+    protected static Pair<List<String>, List<String>> getDeniedAndMissingProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
+        final ProjectAccessPredicate predicate = new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit);
+        final List<String>           denied    = Lists.newArrayList(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), Predicates.not(predicate)));
+        final List<String>           missing   = predicate.getMissing();
+        return ImmutablePair.of(ListUtils.removeAll(denied, missing), missing);
     }
 
     private static final Function<SessionDataTriple, String> FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID = new Function<SessionDataTriple, String>() {

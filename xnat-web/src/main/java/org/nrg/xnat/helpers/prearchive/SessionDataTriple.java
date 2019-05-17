@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.MissingFormatArgumentException;
 import java.util.Objects;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public class SessionDataTriple implements Serializable {
     public SessionDataTriple() {
         // Default constructor
@@ -90,7 +92,7 @@ public class SessionDataTriple implements Serializable {
         if (StringUtils.isNotBlank(project)) {
             _project = project;
         } else {
-            _project = PrearcUtils.COMMON;
+            _project = UNASSIGNED;
         }
         return this;
     }

@@ -38,9 +38,8 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.*;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 @Getter
@@ -148,20 +147,39 @@ public class DatabaseHelper {
      *
      * @throws SQLException If an error occurs while accessing the database.
      */
-    public boolean tablesExistInSchema(final String schema, final String... tables) throws SQLException {
+    public boolean tablesExistInSchema(final @Nullable String schema, final @Nonnull String... tables) throws SQLException {
+        return locateDatabaseSchemas(schema, tables).containsAll(Arrays.asList(tables));
+    }
+
+    @Nonnull
+    public List<String> locateDatabaseSchemas(final @Nullable String schema, final @Nonnull String... names) throws SQLException {
+        final List<String> located       = new ArrayList<>();
+        final String       schemaPattern = StringUtils.defaultIfBlank(schema, "public");
+
         try (final Connection connection = _jdbcTemplate.getDataSource().getConnection()) {
-            for (final String table : tables) {
-                try (final ResultSet results = connection.getMetaData().getTables("catalog", schema, table, SEARCHABLE_TABLE_TYPES)) {
-                    // As soon as we find one that doesn't exist...
-                    if (!results.next()) {
-                        // The exist fails, so return false.
-                        return false;
+            for (final String name : names) {
+                final DatabaseMetaData metaData = connection.getMetaData();
+                try (final ResultSet tablesAndViews = metaData.getTables("catalog", schemaPattern, name, SEARCHABLE_TABLE_TYPES)) {
+                    if (tablesAndViews.next()) {
+                        do {
+                            located.add(tablesAndViews.getString("TABLE_NAME"));
+                        } while (tablesAndViews.next());
+                    } else {
+                        try (final ResultSet functions = metaData.getFunctions("catalog", schemaPattern, name)) {
+                            if (functions.next()) {
+                                final String columnName = findColumnName(functions, "PROCEDURE_NAME", "FUNCTION_NAME");
+                                do {
+                                    located.add(functions.getString(columnName));
+                                } while (functions.next());
+                            } else {
+                                log.info("Didn't find any tables, views, or functions for name {}", name);
+                            }
+                        }
                     }
                 }
             }
-            // If we made it this far, all of the specified tables exist, return true.
-            return true;
         }
+        return located;
     }
 
     /**
@@ -319,7 +337,7 @@ public class DatabaseHelper {
     }
 
     public <T> T callFunction(final String function, final SqlParameterSource parameters, final Class<? extends T> returnType) {
-        final SimpleJdbcCall call = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
+        final SimpleJdbcCall      call    = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
         final Map<String, Object> payload = call.execute(parameters);
         if (payload.containsKey("returnvalue")) {
             //noinspection unchecked
@@ -403,6 +421,26 @@ public class DatabaseHelper {
         private final String _dataType;
     }
 
+    @Nullable
+    private static String findColumnName(final @Nonnull ResultSet results, final @Nonnull String... names) throws SQLException {
+        final String[] columnNames = getColumnNames(results).toArray(new String[0]);
+        for (final String name : names) {
+            if (StringUtils.equalsAnyIgnoreCase(name, columnNames)) {
+                return name;
+            }
+        }
+        return null;
+    }
+
+    private static List<String> getColumnNames(final ResultSet results) throws SQLException {
+        final ResultSetMetaData metadata    = results.getMetaData();
+        final List<String>      columnNames = new ArrayList<>();
+        for (int index = 1; index <= metadata.getColumnCount(); index++) {
+            columnNames.add(metadata.getColumnName(index));
+        }
+        return columnNames;
+    }
+
     @SuppressWarnings("SameParameterValue")
     private String logMessage(final String message) {
         return logMessage(message, null);
@@ -418,7 +456,7 @@ public class DatabaseHelper {
         }
     }
 
-    private static final String[] SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEWS"};
+    private static final String[] SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
 
     private final JdbcTemplate               _jdbcTemplate;
     private final NamedParameterJdbcTemplate _parameterizedTemplate;

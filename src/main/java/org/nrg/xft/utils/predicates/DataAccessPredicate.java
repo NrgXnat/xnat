@@ -12,14 +12,8 @@ import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
@@ -62,22 +56,35 @@ public abstract class DataAccessPredicate implements Predicate<String> {
         return !getMissing().isEmpty() || !getFailed().isEmpty();
     }
 
-    protected void verifyProjectExists(final String project) throws NotFoundException {
-        if (!getTemplate().queryForObject(QUERY_PROJECT_EXISTS, new MapSqlParameterSource("project", project), Boolean.class)) {
-            throw new NotFoundException("No project with ID \"" + project + "\" exists");
+    protected Map<String, String> verifyProjectSubjectExists(final String project, final String subject) throws NotFoundException {
+        final Map<String, String> parameters = ImmutableMap.of("project", project, "subject", subject);
+        if (!getTemplate().queryForObject(QUERY_PROJECT_SUBJECT_EXISTS, parameters, Boolean.class)) {
+            throw new NotFoundException("No such project \"" + project + "\" and subject \"" + subject + "\" exist");
         }
+        return parameters;
     }
 
-    protected SqlParameterSource verifySubjectExists(final String subject) throws NotFoundException {
-        final MapSqlParameterSource parameters = new MapSqlParameterSource("subject", subject);
-        final String                query;
-        final boolean               hasProject = StringUtils.isNotBlank(_project);
+    protected Map<String, String> verifyProjectExists(final String project) throws NotFoundException {
+        final Map<String, String> parameters = ImmutableMap.of("project", project);
+        if (!getTemplate().queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class)) {
+            throw new NotFoundException("No project with ID \"" + project + "\" exists");
+        }
+        return parameters;
+    }
+
+    protected Map<String, String> verifySubjectExists(final String subject) throws NotFoundException {
+        final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        builder.put("subject", subject);
+
+        final String  query;
+        final boolean hasProject = StringUtils.isNotBlank(_project);
         if (hasProject) {
-            parameters.addValue("project", _project);
+            builder.put("project", _project);
             query = QUERY_PROJECT_SUBJECT_EXISTS;
         } else {
             query = QUERY_SUBJECT_EXISTS;
         }
+        final ImmutableMap<String, String> parameters = builder.build();
         if (!getTemplate().queryForObject(query, parameters, Boolean.class)) {
             throw new NotFoundException(hasProject ? "No subject with ID or label \"" + subject + "\" exists in the project \"" + _project + "\"" : "No subject with ID \"" + subject + "\" exists");
         }
@@ -104,30 +111,20 @@ public abstract class DataAccessPredicate implements Predicate<String> {
     }
 
     private Pair<Map<String, String>, String> validate(final String project, final String subject) throws NotFoundException {
+        final boolean hasProject = StringUtils.isNotBlank(project);
+        final boolean hasSubject = StringUtils.isNotBlank(subject);
+
         final Map<String, String> parameters;
         final String              query;
-        if (project != null && subject != null) {
-            if (!getTemplate().queryForObject(QUERY_PROJECT_SUBJECT_EXISTS, new MapSqlParameterSource("project", project).addValue("subject", subject), Boolean.class)) {
-                throw new NotFoundException("No such project \"" + project + "\" and subject \"" + subject + "\" exist");
-            }
-            parameters = ImmutableMap.of("project", project, "subject", subject);
+        if (hasProject && hasSubject) {
+            parameters = verifyProjectSubjectExists(project, subject);
             query = QUERY_PROJECT_SUBJECT_EXPERIMENT;
-        } else if (project != null) {
-            verifyProjectExists(project);
-            parameters = ImmutableMap.of("project", project);
+        } else if (hasProject) {
+            parameters = verifyProjectExists(project);
             query = QUERY_PROJECT_EXPERIMENT;
-        } else if (subject != null) {
-            final String foundProject = getTemplate().query(QUERY_SUBJECT, verifySubjectExists(subject), new ResultSetExtractor<String>() {
-                @Override
-                public String extractData(final ResultSet resultSet) throws SQLException, DataAccessException {
-                    if (!resultSet.next()) {
-                        return null;
-                    }
-                    return resultSet.getString("project");
-                }
-            });
-            parameters = ImmutableMap.of("project", foundProject, "subject", subject);
-            query = QUERY_PROJECT_SUBJECT_EXPERIMENT;
+        } else if (hasSubject) {
+            parameters = verifySubjectExists(subject);
+            query = QUERY_SUBJECT_EXPERIMENT;
         } else {
             parameters = Collections.emptyMap();
             query = QUERY_EXPERIMENT;
@@ -187,6 +184,23 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                           "WHERE " +
                                                                           "    (((expt.id = :experiment OR expt.label = :experiment) AND expt.project = :project) OR " +
                                                                           "     ((share.sharing_share_xnat_experimentda_id = :experiment OR share.label = :experiment) AND share.project = :project))";
+    private static final String QUERY_SUBJECT_EXPERIMENT                = "SELECT  " +
+                                                                          "    subject.project AS project,  " +
+                                                                          "    assessor.subject_id AS subject_id,  " +
+                                                                          "    subject.label AS subject_label,  " +
+                                                                          "    expt.id AS experiment_id,  " +
+                                                                          "    expt.label AS experiment_label,  " +
+                                                                          "    xme.element_name AS data_type,  " +
+                                                                          "    xme.element_name || '/project' AS secured_property  " +
+                                                                          "FROM  " +
+                                                                          "    xnat_experimentdata expt  " +
+                                                                          "    LEFT JOIN xnat_subjectassessordata assessor ON assessor.id = expt.id  " +
+                                                                          "    LEFT JOIN xnat_subjectdata subject ON assessor.subject_id = subject.id  " +
+                                                                          "    LEFT JOIN xnat_projectdata project ON subject.project = project.id  " +
+                                                                          "    LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id  " +
+                                                                          "WHERE  " +
+                                                                          "    subject.id = :subject AND  " +
+                                                                          "    (expt.id = :experiment OR expt.label = :experiment)";
     private static final String QUERY_PROJECT_SUBJECT_EXPERIMENT        = QUERY_PROJECT_EXPERIMENT + " AND " +
                                                                           "    (((subject.id = :subject OR subject.label = :subject) AND subject.project = :project) OR " +
                                                                           "     ((part.subject_id = :subject OR part.label = :subject) AND part.project = :project))";

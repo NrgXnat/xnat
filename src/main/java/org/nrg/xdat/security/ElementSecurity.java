@@ -71,6 +71,7 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 
 /**
@@ -108,7 +109,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * Reviews the classpath for additional data model definitions.  If those definitions
-     * contain references to new data types (that haven't been registerd already), they
+     * contain references to new data types (that haven't been registered already), they
      * will be registered now.
      *
      * @return Returns true if any new data model definitions were found.
@@ -119,11 +120,10 @@ public class ElementSecurity extends ItemWrapper {
         final Map<String, ElementSecurity> elements            = GetElementSecurities();
         final List<String>                 newTypes            = new ArrayList<>();
         final JdbcTemplate                 template            = XDAT.getContextService().getBean(JdbcTemplate.class);
-        final TransactionTemplate          transactionTemplate = XDAT.getContextService().getBean(TransactionTemplate.class);
         final XnatPluginBeanManager        beanManager         = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
-        final DatabaseHelper               helper              = new DatabaseHelper(template, transactionTemplate);
+        final DatabaseHelper               helper              = XDAT.getContextService().getBean(DatabaseHelper.class);
 
-        helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", "data_type_views_%");
+        helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
 
         for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
             for (final String securedElements : dataModelDefinition.getSecuredElements()) {
@@ -1278,9 +1278,9 @@ public class ElementSecurity extends ItemWrapper {
             return;
         }
 
-        final boolean result = getDatabaseHelper().callFunction("create_new_data_type_permissions", new MapSqlParameterSource("elementName", elementName), Boolean.class);
+        final boolean result = getDatabaseHelper().callFunction("data_type_fns_create_new_permissions", new MapSqlParameterSource("elementName", elementName), Boolean.class);
         if (!result) {
-            log.warn("Got result of false from create_new_data_type_permissions function call. Please check other logs to determine if there's an error.");
+            log.warn("Got result of false from data_type_fns_create_new_permissions function call. Please check other logs to determine if there's an error.");
         }
 
         try {

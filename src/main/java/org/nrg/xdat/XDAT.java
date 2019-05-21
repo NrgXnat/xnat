@@ -100,8 +100,8 @@ public class XDAT implements Initializable, Configurable{
 	public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
 	public static final String IP_WHITELIST_PATH               = "/system/ipWhitelist";
 	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-
-	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+    public static final String[] DATA_TYPE_ACCESS_FUNCTIONS = new String[]{"data_type_views_element_access", "data_type_views_mismatched_mapping_elements", "data_type_views_missing_mapping_elements", "data_type_views_orphaned_field_sets", "data_type_views_secured_identified_data_types", "data_type_views_scan_data_types", "data_type_views_experiments_without_data_type", "data_type_fns_create_public_element_access", "data_type_fns_create_new_security", "data_type_fns_create_new_permissions", "data_type_fns_fix_missing_public_element_access_mappings", "data_type_fns_fix_mismatched_permissions", "data_type_fns_drop_xnat_hash_indices", "data_type_fns_object_exists_in_table", "data_type_fns_find_orphaned_data", "data_type_fns_resolve_orphaned_data", "data_type_fns_scan_exists_in_table", "data_type_fns_find_orphaned_scans", "data_type_fns_resolve_orphaned_scans", "data_type_fns_fix_orphaned_scans", "data_type_fns_correct_experiment_extension"};
+    private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
 
 	private static ContextService             _contextService;
 	private static DataSource                 _dataSource;

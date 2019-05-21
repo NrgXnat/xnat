@@ -16,20 +16,20 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
 
 @Component
 @Slf4j
 public class FixMismatchedMappingElements extends AbstractInitializingTask {
     @Autowired
-    public FixMismatchedMappingElements(final XnatAppInfo appInfo, final NamedParameterJdbcTemplate template, final TransactionTemplate transactionTemplate) {
+    public FixMismatchedMappingElements(final XnatAppInfo appInfo, final DatabaseHelper helper) {
         _appInfo = appInfo;
-        _helper = new DatabaseHelper(template, transactionTemplate);
+        _helper = helper;
     }
 
     @Override
@@ -47,10 +47,10 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
                     throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
                 Users.getGuest();
-                _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", "data_type_views_%");
+                _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");
-                _helper.callFunction("fix_mismatched_data_type_permissions", Boolean.class);
-                _helper.callFunction("fix_missing_public_element_access_mappings", Boolean.class);
+                _helper.callFunction("data_type_fns_fix_mismatched_permissions", Boolean.class);
+                _helper.callFunction("data_type_fns_fix_missing_public_element_access_mappings", Boolean.class);
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_search.xs_item_access'.", e);
             } catch (UserNotFoundException e) {

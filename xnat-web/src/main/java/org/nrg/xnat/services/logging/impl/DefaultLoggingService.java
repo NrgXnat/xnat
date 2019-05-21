@@ -56,7 +56,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 @Service
@@ -231,7 +230,7 @@ public class DefaultLoggingService implements LoggingService {
 
         final Map<String, XnatPluginBean> loggingBeans   = new HashMap<>(Maps.filterValues(beanMap, HAS_LOGGING_CONFIG_PREDICATE));
         final Map<String, Resource>       configurations = new HashMap<>();
-        final AtomicInteger               convertedCount = new AtomicInteger();
+        final List<String>                converted      = new ArrayList<>();
         for (final String pluginId : loggingBeans.keySet()) {
             final XnatPluginBean bean              = loggingBeans.get(pluginId);
             final String         configurationFile = bean.getLogConfigurationFile();
@@ -241,8 +240,13 @@ public class DefaultLoggingService implements LoggingService {
                     configurations.put(pluginId, resource);
                 } else if (StringUtils.endsWith(resource.getFilename(), ".properties")) {
                     log.debug("Found a properties-based logging configuration for the plugin \"{}\", translating to logback format.", pluginId);
-                    configurations.put(pluginId, convertPropertiesLogConfig(pluginId, resource, convertedLogConfigFolder));
-                    convertedCount.incrementAndGet();
+                    final Resource convertedLogResource = convertPropertiesLogConfig(pluginId, resource, convertedLogConfigFolder);
+                    if (convertedLogResource == null) {
+                        log.warn("Something went wrong trying to convert the log4j configuration for plugin with ID {}. Check the logs for errors that may indicate the cause.", pluginId);
+                    } else {
+                        configurations.put(pluginId, convertedLogResource);
+                        converted.add(convertedLogResource.getFilename());
+                    }
                 } else {
                     log.warn("I don't recognize the format of the logging configuration for the plugin \"{}\", ignoring.", pluginId);
                 }
@@ -254,11 +258,16 @@ public class DefaultLoggingService implements LoggingService {
             log.debug("No plugin log configurations found, deleting unused temporary folder.");
             Files.deleteIfExists(convertedLogConfigFolder);
         } else {
-            log.info("Found {} plugin logging configurations total. Found {} using log4j properties format, which were converted to logback XML format and placed in the folder: {}", configurations.size(), convertedCount.get(), convertedLogConfigFolder);
+            if (converted.isEmpty()) {
+                log.debug("Loaded {} logging configurations from plugins", configurations.size());
+            } else {
+                log.info("Found {} plugin logging configurations total, with {} using log4j properties format. These were converted to logback XML format and placed in the folder {}: {}", configurations.size(), converted.size(), convertedLogConfigFolder, StringUtils.join(converted, ", "));
+            }
         }
         return configurations;
     }
 
+    @Nullable
     private Resource convertPropertiesLogConfig(final String pluginId, final Resource resource, final Path convertedLogConfigFolder) {
         final Properties properties = new Properties();
         try {

@@ -50,7 +50,6 @@ import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -63,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -76,6 +76,7 @@ import java.util.regex.Pattern;
 
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
+import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
@@ -85,7 +86,7 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
     @Autowired
-    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate) throws SQLException {
+    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final DatabaseHelper helper) throws SQLException {
         super(cacheManager,
               XftItemEventCriteria.builder().xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME).actions(CREATE, UPDATE, DELETE).build(),
               XftItemEventCriteria.builder().xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME).xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME).actions(CREATE, DELETE, SHARE).build(),
@@ -94,7 +95,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
         _template = template;
         _jmsTemplate = jmsTemplate;
-        _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+        _helper = helper;
         _totalCounts = new HashMap<>();
         _missingElements = new HashMap<>();
         _userChecks = new ConcurrentHashMap<>();
@@ -1380,7 +1381,27 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectCount);
         final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
         for (final Map<String, Object> elementCount : elementCounts) {
-            _totalCounts.put((String) elementCount.get("element_name"), (Long) elementCount.get("count"));
+            final String elementName = (String) elementCount.get("element_name");
+            final Long   count       = (Long) elementCount.get("count");
+            if (StringUtils.isBlank(elementName)) {
+                try {
+                    _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
+                    final List<Map<String, Object>> orphans = _template.queryForList(QUERY_ORPHANED_EXPERIMENTS, EmptySqlParameterSource.INSTANCE);
+                    log.warn("Found {} elements that are not associated with a valid data type:\n\n{}\n\nYou can correct some of these orphaned experiments by running the query:\n\n{}\n\nAny experiment IDs and data types returned from that query indicate data types that can not be resolved on the system (i.e. they don't exist in the primary data-type table).", count, StringUtils.join(Lists.transform(orphans, new Function<Map<String, Object>, String>() {
+                        @Override
+                        public String apply(final Map<String, Object> experiment) {
+                            final String experimentId = (String) experiment.get("experiment_id");
+                            final String dataType     = (String) experiment.get("data_type");
+                            final int    extensionId  = (Integer) experiment.get("xdat_meta_element_id");
+                            return " * " + experimentId + " was a " + dataType + ", " + (extensionId >= 0 ? "should be extension ID " + extensionId : "data type doesn't appear in xdat_meta_element table");
+                        }
+                    }), "\n"), QUERY_CORRECT_ORPHANED_EXPERIMENTS);
+                } catch (SQLException | IOException e) {
+                    log.error("An error occurred trying to check the database for the data type access functions. This occurred while trying to locate experiments with invalid data types.", e);
+                }
+            } else {
+                _totalCounts.put(elementName, count);
+            }
         }
     }
 
@@ -1891,6 +1912,17 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                        "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
                                                                        "GROUP BY " +
                                                                        "  element_name";
+    private static final String QUERY_ORPHANED_EXPERIMENTS           = "SELECT " +
+                                                                       "    experiment_id, " +
+                                                                       "    data_type, " +
+                                                                       "    coalesce(xdat_meta_element_id, -1) AS xdat_meta_element_id " +
+                                                                       "FROM " +
+                                                                       "    data_type_views_experiments_without_data_type";
+    private static final String QUERY_CORRECT_ORPHANED_EXPERIMENTS   = "SELECT\n" +
+                                                                       "    orphaned_experiment,\n" +
+                                                                       "    original_data_type\n" +
+                                                                       "FROM\n" +
+                                                                       "    data_type_fns_correct_experiment_extension()";
     private static final String GUEST_USERNAME                       = "guest";
     private static final String ACTIONS_PREFIX                       = "actions";
     private static final String TAG_PREFIX                           = "tag";

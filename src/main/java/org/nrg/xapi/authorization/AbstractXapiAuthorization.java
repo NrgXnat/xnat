@@ -8,7 +8,6 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
-import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.*;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xft.XFTItem;
@@ -28,12 +27,12 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
  */
 @Slf4j
 public abstract class AbstractXapiAuthorization implements XapiAuthorization {
-    protected abstract boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws NotFoundException;
+    protected abstract boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException;
 
     protected abstract boolean considerGuests();
 
     @Override
-    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException, NotFoundException {
+    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException {
         // We can just cut everything off if the user is a guest: it can't be admin, auth, user, edit, coll, member, owner.
         // However, if accessLevel is something else, and considerGuests returns true, we should not cut things off
         //noinspection deprecation

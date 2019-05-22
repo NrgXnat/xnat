@@ -4,6 +4,7 @@ import com.google.common.collect.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -33,7 +34,7 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
     }
 
     @Override
-    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws NotFoundException {
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException {
         final List<String> projects       = getProjects(joinPoint);
         final boolean      hasProjects    = !projects.isEmpty();
         final List<String> subjects       = getSubjects(joinPoint);
@@ -52,15 +53,19 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
         final String              project = projects.isEmpty() ? null : projects.get(0);
         final DataAccessPredicate predicate;
         final List<String>        targets;
-        if (hasProjects && !hasSubjects && !hasExperiments) {
-            predicate = new ProjectAccessPredicate(_service, _template, user, accessLevel);
-            targets = projects;
-        } else if (hasSubjects && !hasExperiments) {
-            predicate = new SubjectAccessPredicate(_service, _template, user, accessLevel, project);
-            targets = subjects;
-        } else {
-            predicate = new ExperimentAccessPredicate(_service, _template, user, accessLevel, project, subjects.isEmpty() ? null : subjects.get(0));
-            targets = experiments;
+        try {
+            if (hasProjects && !hasSubjects && !hasExperiments) {
+                targets = projects;
+                predicate = new ProjectAccessPredicate(_service, _template, user, accessLevel);
+            } else if (hasSubjects && !hasExperiments) {
+                targets = subjects;
+                predicate = new SubjectAccessPredicate(_service, _template, user, accessLevel, project);
+            } else {
+                targets = experiments;
+                predicate = new ExperimentAccessPredicate(_service, _template, user, accessLevel, project, subjects.isEmpty() ? null : subjects.get(0));
+            }
+        } catch (NotFoundException e) {
+            throw new InsufficientPrivilegesException("Insufficient privileges to access the requested items");
         }
         final boolean checked = Iterables.all(targets, predicate);
         if (predicate.hasErrorState()) {
@@ -71,7 +76,7 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
                 }
             }
             if (!predicate.getMissing().isEmpty()) {
-                throw new NotFoundException("Failed to find the following items: " + StringUtils.join(predicate.getMissing()));
+                throw new InsufficientPrivilegesException("Access denied for the following items: " + StringUtils.join(predicate.getMissing()));
             }
         }
         return checked;

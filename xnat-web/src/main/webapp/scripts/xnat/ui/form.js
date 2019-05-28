@@ -246,7 +246,10 @@ var XNAT = getObject(XNAT);
             }
 
         });
-        return firstDefined(data,'');
+        if (typeof data === 'object') {
+            return '';
+        }
+        return data;
     }
 
     function setFieldValues(inputs, data){

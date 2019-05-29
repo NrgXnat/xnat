@@ -222,12 +222,14 @@ var XNAT = getObject(XNAT);
         var delimiter = ':'; // See line 645 xhr.js
         var arrayItemRegexp = /\[([0-9]*)\]/;
         var matches, arrNm, idx;
+        var mod = false;
         $.each(name.split(delimiter), function(i, item) {
             matches = arrayItemRegexp.exec(item);
             if (matches === null) {
                 // Not an array
                 if (data.hasOwnProperty(item)) {
                     data = data[item];
+                    mod = true;
                 } else {
                     return ''; // we can't find this key, not sure what to do so just return empty string
                 }
@@ -239,6 +241,7 @@ var XNAT = getObject(XNAT);
                     idx = matches[1];
                     if (idx && Array.isArray(data)) {
                         data = data[idx];
+                        mod = true;
                     }
                 } else {
                     return ''; // we can't find this key, not sure what to do so just return empty string
@@ -246,7 +249,7 @@ var XNAT = getObject(XNAT);
             }
 
         });
-        if (typeof data === 'object') {
+        if (!mod) {
             return '';
         }
         return data;

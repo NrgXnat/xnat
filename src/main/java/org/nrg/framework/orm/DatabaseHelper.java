@@ -19,6 +19,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.postgresql.util.PGInterval;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
@@ -358,10 +359,14 @@ public class DatabaseHelper {
      */
     public void checkForTablesAndViewsInit(final String scriptUrl, final String... tableSpecs) throws SQLException, IOException {
         if (!tablesExist(tableSpecs)) {
-            final String script = IOUtils.toString(BasicXnatResourceLocator.getResource(scriptUrl).getInputStream(), Charset.defaultCharset());
-            log.info("Initializing tables/functions for patterns '{}' with SQL: {}", StringUtils.join(tableSpecs, ", "), script);
-            executeScript(script);
+            executeScript(BasicXnatResourceLocator.getResource(scriptUrl));
         }
+    }
+
+    public void executeScript(final Resource resource) throws IOException {
+        final String script = IOUtils.toString(resource.getInputStream(), Charset.defaultCharset());
+        log.debug("Executing SQL:\n{}", script);
+        executeScript(script);
     }
 
     // TODO: Convert this to return the List<Pair<Integer,String>> rather than String. The catch is that the executeTransaction() method can be genericized without affecting the returned logMessage() values.

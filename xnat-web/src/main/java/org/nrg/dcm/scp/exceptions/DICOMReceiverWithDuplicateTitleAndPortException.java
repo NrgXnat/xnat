@@ -9,7 +9,10 @@
 
 package org.nrg.dcm.scp.exceptions;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -21,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
+@Getter
+@Accessors(prefix = "_")
 public class DICOMReceiverWithDuplicateTitleAndPortException extends NrgServiceException {
     public DICOMReceiverWithDuplicateTitleAndPortException(@Nonnull final String aeTitle, @Nonnull final Integer port) {
         super(NrgServiceError.AlreadyInitialized);
@@ -46,14 +51,10 @@ public class DICOMReceiverWithDuplicateTitleAndPortException extends NrgServiceE
         return _duplicates.isEmpty() ? 0 : _duplicates.get(0).getRight();
     }
 
-    public List<ImmutablePair<String, Integer>> getDuplicates() {
-        return _duplicates;
-    }
-
     @Override
     public String toString() {
         return "Tried to create or update a DICOM SCP receiver with the title and port " + getAeTitle() + ":" + getPort() + ", but a receiver with the same title and port already exists.";
     }
 
-    private final List<ImmutablePair<String, Integer>> _duplicates = new ArrayList<>();
+    private final List<Pair<String, Integer>> _duplicates = new ArrayList<>();
 }

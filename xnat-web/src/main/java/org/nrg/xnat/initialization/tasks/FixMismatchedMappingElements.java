@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -20,8 +21,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.sql.SQLException;
-
-import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
 
 @Component
 @Slf4j
@@ -47,10 +46,20 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
                     throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
                 Users.getGuest();
-                _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
+                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/data-type-access-functions.sql"));
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");
-                _helper.callFunction("data_type_fns_fix_mismatched_permissions", Boolean.class);
-                _helper.callFunction("data_type_fns_fix_missing_public_element_access_mappings", Boolean.class);
+                final int mismatched = _helper.callFunction("data_type_fns_fix_mismatched_permissions", Integer.class);
+                if (mismatched > 0) {
+                    log.warn("Found and fixed {} mismatched data-type permissions", mismatched);
+                }
+                final Integer missing = _helper.callFunction("data_type_fns_fix_missing_public_element_access_mappings", Integer.class);
+                if (missing > 0) {
+                    log.warn("Found and fixed {} missing data-type permission mappings", missing);
+                }
+                final int corrected = _helper.callFunction("data_type_fns_correct_group_permissions", Integer.class);
+                if (corrected > 0) {
+                    log.warn("Found and fixed {} misconfigured data-type permission mappings", corrected);
+                }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_search.xs_item_access'.", e);
             } catch (UserNotFoundException e) {

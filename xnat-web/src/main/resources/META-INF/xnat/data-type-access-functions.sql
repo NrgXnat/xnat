@@ -26,6 +26,7 @@ DROP FUNCTION IF EXISTS public.data_type_fns_find_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_resolve_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_fix_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_experiment_extension();
+DROP FUNCTION IF EXISTS public.data_type_fns_correct_group_permissions();
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -37,6 +38,7 @@ DROP VIEW IF EXISTS public.data_type_views_secured_identified_data_types;
 DROP VIEW IF EXISTS public.data_type_views_scan_data_types;
 DROP VIEW IF EXISTS public.data_type_views_get_xnat_hash_indices;
 DROP VIEW IF EXISTS public.data_type_views_experiments_without_data_type;
+DROP VIEW IF EXISTS public.data_type_views_member_edit_permissions;
 
 CREATE OR REPLACE VIEW public.data_type_views_element_access AS
 SELECT
@@ -81,23 +83,24 @@ CREATE OR REPLACE VIEW public.data_type_views_missing_mapping_elements AS
                                            FROM
                                                data_type_views_element_access
                                            WHERE
-                                                   element_name != 'xnat:projectData' AND
-                                                   entity = 'user:guest')
+                                               element_name != 'xnat:projectData' AND
+                                               entity = 'user:guest')
     SELECT
         f.primary_security_field AS field,
-        field_value,
-        xdat_field_mapping_set_id
+        m.field_value,
+        m.xdat_field_mapping_set_id
     FROM
         xdat_primary_security_field f
-            LEFT JOIN public_project_access_mappings m ON f.primary_security_fields_primary_element_name = element_name
+        LEFT JOIN public_project_access_mappings m ON f.primary_security_fields_primary_element_name = element_name
     WHERE
-            f.primary_security_fields_primary_element_name != 'xnat:projectData' AND
+        f.primary_security_fields_primary_element_name != 'xnat:projectData' AND
+        m.xdat_field_mapping_set_id IS NOT NULL AND
         (m.field_value IS NULL OR
          (f.primary_security_fields_primary_element_name, f.primary_security_field) NOT IN (SELECT
                                                                                                 m.element_name,
-                                                                                                public_project_access_mappings.field
+                                                                                                m.field
                                                                                             FROM
-                                                                                                public_project_access_mappings));
+                                                                                                public_project_access_mappings m));
 
 CREATE OR REPLACE VIEW public.data_type_views_orphaned_field_sets AS
 SELECT
@@ -163,6 +166,21 @@ GROUP BY
     e.id,
     w.data_type,
     xme.xdat_meta_element_id;
+
+CREATE OR REPLACE VIEW public.data_type_views_member_edit_permissions AS
+SELECT
+    m.xdat_field_mapping_id AS field_map_id,
+    m.field_value AS project_id,
+    g.id AS group_id
+FROM
+    xdat_field_mapping m
+        LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+        LEFT JOIN xdat_element_access e ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = e.xdat_element_access_id
+        LEFT JOIN xdat_usergroup g ON e.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+WHERE
+        m.field = 'xnat:projectData/ID' AND
+        m.edit_element = 1 AND
+        g.id LIKE '%_member';
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_create_public_element_access(elementName VARCHAR(255))
     RETURNS BOOLEAN
@@ -288,7 +306,7 @@ BEGIN
         xdat_usergroup_id
     FROM
         xdat_usergroup g
-            LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id AND a.element_name = elementName
+        LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id AND a.element_name = elementName
     WHERE
         a.element_name IS NULL AND
         (g.tag IS NOT NULL OR id = 'ALL_DATA_ADMIN' OR id = 'ALL_DATA_ACCESS');
@@ -299,9 +317,9 @@ BEGIN
         xdat_element_access_id
     FROM
         xdat_element_access a
-            LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+        LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
     WHERE
-            a.element_name = elementName AND
+        a.element_name = elementName AND
         s.method IS NULL;
 
     INSERT INTO xdat_field_mapping (field_value, field, create_element, read_element, edit_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id)
@@ -380,18 +398,18 @@ END
 $_$;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_fix_missing_public_element_access_mappings()
-    RETURNS BOOLEAN
+    RETURNS INTEGER
     LANGUAGE plpgsql
 AS
 $_$
 DECLARE
-    has_missing_mappings BOOLEAN;
+    has_missing_mappings INTEGER;
 BEGIN
     SELECT
-            count(*) > 0 INTO has_missing_mappings
+        count(*) INTO has_missing_mappings
     FROM
         data_type_views_missing_mapping_elements;
-    IF has_missing_mappings
+    IF has_missing_mappings > 0
     THEN
         INSERT INTO xdat_field_mapping (field, field_value, create_element, read_element, edit_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id)
         SELECT
@@ -431,18 +449,18 @@ END
 $_$;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_fix_mismatched_permissions()
-    RETURNS BOOLEAN
+    RETURNS INTEGER
     LANGUAGE plpgsql
 AS
 $_$
 DECLARE
-    has_mismatches BOOLEAN;
-    has_missing    BOOLEAN;
+    has_mismatches INTEGER;
+    has_missing    INTEGER;
     data_type      VARCHAR(255);
 BEGIN
-    SELECT count(*) > 0 INTO has_mismatches FROM data_type_views_mismatched_mapping_elements;
-    SELECT count(*) > 0 INTO has_missing FROM data_type_views_missing_mapping_elements;
-    IF has_mismatches OR has_missing
+    SELECT count(*) INTO has_mismatches FROM data_type_views_mismatched_mapping_elements;
+    SELECT count(*) INTO has_missing FROM data_type_views_missing_mapping_elements;
+    IF has_mismatches > 0 OR has_missing > 0
     THEN
         DELETE FROM xdat_field_mapping WHERE xdat_field_mapping_id IN (SELECT id FROM data_type_views_mismatched_mapping_elements);
         DELETE FROM xdat_field_mapping_set WHERE xdat_field_mapping_set_id IN (SELECT id FROM data_type_views_orphaned_field_sets);
@@ -451,7 +469,7 @@ BEGIN
                 PERFORM data_type_fns_create_new_permissions(data_type);
             END LOOP;
     END IF;
-    RETURN has_mismatches OR has_missing;
+    RETURN (has_mismatches + has_missing);
 END
 $_$;
 
@@ -672,4 +690,24 @@ BEGIN
                  WHERE xdat_meta_element_id IS NULL;
 END
 $$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_correct_group_permissions()
+    RETURNS INTEGER
+AS
+$_$
+DECLARE
+    current_index RECORD;
+    total_count   INTEGER := 0;
+BEGIN
+    FOR current_index IN SELECT * FROM data_type_views_member_edit_permissions
+        LOOP
+            total_count := total_count + 1;
+            RAISE NOTICE '%. Disabling edit permissions for field mapping set ID % for project % group %', total_count, current_index.field_map_id, current_index.project_id, current_index.group_id;
+            UPDATE xdat_field_mapping SET edit_element = 0 WHERE xdat_field_mapping_id = current_index.field_map_id;
+        END LOOP;
+
+    RETURN total_count;
+END;
+$_$
     LANGUAGE plpgsql;

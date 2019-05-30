@@ -145,4 +145,5 @@ public class XnatHttpUtils {
         // JAVA8: This should be a default method implementation on the ArchiveOperationListener interface, probably as toString().
         return StringUtils.isNotBlank(project) ? StringUtils.joinWith("/", project, timestamp, session) : session;
     }
+
 }

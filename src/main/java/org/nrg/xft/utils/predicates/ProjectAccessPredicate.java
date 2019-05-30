@@ -22,7 +22,7 @@ public class ProjectAccessPredicate extends DataAccessPredicate {
     }
 
     @Override
-    public boolean apply(final String project) {
+    protected boolean applyImpl(final String project) {
         try {
             final UserI user = getUser();
             if (StringUtils.equalsIgnoreCase(UNASSIGNED, project)) {

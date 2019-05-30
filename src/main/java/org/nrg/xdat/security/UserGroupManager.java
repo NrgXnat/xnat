@@ -10,6 +10,8 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +44,9 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
@@ -51,6 +56,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -183,7 +189,7 @@ public class UserGroupManager implements UserGroupServiceI {
             removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
             XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, ImmutableMap.of(OPERATION, OPERATION_REMOVE_USERS, USERS, Collections.singleton(user.getUsername())));
         } catch (Exception e) {
-            log.error("Tried and failed to remove the user '{}' from group '{}': {}", user.getUsername(), groupId);
+            log.error("Tried and failed to remove the user '{}' from group '{}'", user.getUsername(), groupId, e);
         }
     }
 
@@ -198,7 +204,7 @@ public class UserGroupManager implements UserGroupServiceI {
                     removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
                     return username;
                 } catch (Exception e) {
-                    log.error("An error occurred trying to remove the user '{}' from the group '{}'", username);
+                    log.error("An error occurred trying to remove the user '{}' from the group '{}'", username, groupId, e);
                     failed.add(username);
                     return null;
                 }
@@ -602,88 +608,86 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
-    private boolean setPermissions(XdatUsergroup impl, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, UserI user, boolean includesModification, EventMetaI c) {
+    private boolean setPermissions(final XdatUsergroup usergroup, final String elementName, final String primarySecurityField, final String value, final Boolean create, final Boolean read, final Boolean delete, final Boolean edit, final Boolean activate, final boolean activateChanges, final UserI user, final boolean includesModification, final EventMetaI eventMeta) {
         try {
-
-            XdatElementAccess ea = null;
-            for (XdatElementAccess temp : impl.getElementAccess()) {
-                if (temp.getElementName().equals(elementName)) {
-                    ea = temp;
-                    break;
+            final XdatElementAccess elementAccess = Iterables.find(usergroup.getElementAccess(), new Predicate<XdatElementAccess>() {
+                @Override
+                public boolean apply(final XdatElementAccess elementAccess) {
+                    return StringUtils.equals(elementName, elementAccess.getElementName());
                 }
+            }, getNewElementAccess(user, elementName, usergroup.getXdatUsergroupId()));
+
+            if (elementAccess == null) {
+                // This probably will never happen since we're creating a default value if one's not found, but still...
+                throw new IllegalArgumentException("Couldn't create an element access object on data type " + elementName + " for group " + usergroup.getId());
             }
 
-            if (ea == null) {
-                ea = new XdatElementAccess(user);
-                ea.setElementName(elementName);
-                ea.setProperty("xdat_usergroup_xdat_usergroup_id", impl.getXdatUsergroupId());
-            }
-
-            final XdatFieldMappingSet fms = ea.getOrCreateFieldMappingSet(user);
-
-            XdatFieldMapping fm = null;
-
-            for (final XdatFieldMapping mapping : fms.getAllow()) {
-                if (mapping.getFieldValue().equals(value) && mapping.getField().equals(psf)) {
-                    fm = mapping;
-                    break;
+            final XdatFieldMappingSet fieldMappingSet = elementAccess.getOrCreateFieldMappingSet(user);
+            final Optional<XdatFieldMapping> optional = Iterables.tryFind(fieldMappingSet.getAllow(), new Predicate<XdatFieldMapping>() {
+                @Override
+                public boolean apply(final XdatFieldMapping mapping) {
+                    return mapping.getFieldValue().equals(value) && mapping.getField().equals(primarySecurityField);
                 }
-            }
+            });
 
-            if (fm == null) {
-                if (create || read || edit || delete || activate) {
-                    fm = new XdatFieldMapping(user);
-                } else {
+            final XdatFieldMapping fieldMapping;
+            if (!optional.isPresent()) {
+                if (!(create || read || edit || delete || activate)) {
                     return false;
                 }
+                fieldMapping = new XdatFieldMapping(user);
             } else if (!includesModification) {
-                if (!(create || read || edit || delete || activate)) {
-                    if (fms.getAllow().size() == 1) {
-                        SaveItemHelper.authorizedDelete(fms.getItem(), user, c);
-                        return true;
-                    } else {
-                        SaveItemHelper.authorizedDelete(fm.getItem(), user, c);
-                        return true;
-                    }
+                if (create || read || edit || delete || activate) {
+                    return false;
                 }
-                return false;
+                SaveItemHelper.authorizedDelete(fieldMappingSet.getAllow().size() == 1 ? fieldMappingSet.getItem() : optional.get().getItem(), user, eventMeta);
+                return true;
+            } else {
+                fieldMapping = optional.get();
             }
 
-            fm.init(psf, value, create, read, delete, edit, activate);
+            fieldMapping.init(primarySecurityField, value, create, read, delete, edit, activate);
+            fieldMappingSet.setAllow(fieldMapping);
 
-            fms.setAllow(fm);
-
-            if (fms.getXdatFieldMappingSetId() != null) {
-                fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
+            if (fieldMappingSet.getXdatFieldMappingSetId() != null) {
+                fieldMapping.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fieldMappingSet.getXdatFieldMappingSetId());
 
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fm, user, true, false, true, false, c);
-                    fm.activate(user);
+                    SaveItemHelper.authorizedSave(fieldMapping, user, true, false, true, false, eventMeta);
+                    fieldMapping.activate(user);
                 } else {
-                    SaveItemHelper.authorizedSave(fm, user, true, false, false, false, c);
+                    SaveItemHelper.authorizedSave(fieldMapping, user, true, false, false, false, eventMeta);
                 }
-            } else if (ea.getXdatElementAccessId() != null) {
-                fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
+            } else if (elementAccess.getXdatElementAccessId() != null) {
+                fieldMappingSet.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", elementAccess.getXdatElementAccessId());
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fms, user, true, false, true, false, c);
-                    fms.activate(user);
+                    SaveItemHelper.authorizedSave(fieldMappingSet, user, true, false, true, false, eventMeta);
+                    fieldMappingSet.activate(user);
                 } else {
-                    SaveItemHelper.authorizedSave(fms, user, true, false, false, false, c);
+                    SaveItemHelper.authorizedSave(fieldMappingSet, user, true, false, false, false, eventMeta);
                 }
             } else {
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(ea, user, true, false, true, false, c);
-                    ea.activate(user);
+                    SaveItemHelper.authorizedSave(elementAccess, user, true, false, true, false, eventMeta);
+                    elementAccess.activate(user);
                 } else {
-                    SaveItemHelper.authorizedSave(ea, user, true, false, false, false, c);
+                    SaveItemHelper.authorizedSave(elementAccess, user, true, false, false, false, eventMeta);
                 }
-                impl.setElementAccess(ea);
+                usergroup.setElementAccess(elementAccess);
             }
         } catch (Exception e) {
             log.error("", e);
         }
 
         return true;
+    }
+
+    @Nonnull
+    private XdatElementAccess getNewElementAccess(final UserI user, final String elementName, final Integer xdatUsergroupId) throws ElementNotFoundException, FieldNotFoundException, XFTInitException, org.nrg.xft.exception.InvalidValueException {
+        final XdatElementAccess elementAccess = new XdatElementAccess(user);
+        elementAccess.setElementName(elementName);
+        elementAccess.setProperty("xdat_usergroup_xdat_usergroup_id", xdatUsergroupId);
+        return elementAccess;
     }
 
     private void initPermissions(UserGroupI group, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, List<ElementSecurity> ess, String value, UserI authenticatedUser) {

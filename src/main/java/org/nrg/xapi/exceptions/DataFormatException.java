@@ -10,22 +10,22 @@
 package org.nrg.xapi.exceptions;
 
 import com.google.common.base.Joiner;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
+@Getter
+@Accessors(prefix = "_")
 public class DataFormatException extends XapiException {
-    private final List<String>        _missing = new ArrayList<>();
-    private final List<String>        _unknown = new ArrayList<>();
-    private final Map<String, String> _invalid = new HashMap<>();
-
     public DataFormatException() {
         this("There was an error with the submitted data");
     }
@@ -34,58 +34,33 @@ public class DataFormatException extends XapiException {
         super(HttpStatus.BAD_REQUEST, message);
     }
 
-    public List<String> getMissingFields() {
-        return _missing;
+    public void addMissingField(final String missing) {
+        _missingFields.add(missing);
     }
 
-    public void setMissing(final List<String> missing) {
-        _missing.clear();
-        _missing.addAll(missing);
+    @SuppressWarnings("unused")
+    public void addUnknownField(final String unknown) {
+        _unknownFields.add(unknown);
     }
 
-    public void addMissing(final String missing) {
-        _missing.add(missing);
+    public void addInvalidField(final String invalid) {
+        _invalidFields.put(invalid, "Invalid " + invalid + " format");
     }
 
-    public List<String> getUnknownFields() {
-        return _unknown;
-    }
-
-    public void setUnknown(final List<String> unknown) {
-        _unknown.clear();
-        _unknown.addAll(unknown);
-    }
-
-    public void addUnknown(final String unknown) {
-        _unknown.add(unknown);
-    }
-
-    public Map<String, String> getInvalidFields() {
-        return _invalid;
-    }
-
-    public void setInvalid(final Map<String, String> invalid) {
-        _invalid.clear();
-        _invalid.putAll(invalid);
-    }
-
-    public void addInvalid(final String invalid) {
-        _invalid.put(invalid, "Invalid " + invalid + " format");
-    }
-
-    public void addInvalid(final String invalid, final String message) {
-        _invalid.put(invalid, message);
+    @SuppressWarnings("unused")
+    public void addInvalidField(final String invalid, final String message) {
+        _invalidFields.put(invalid, message);
     }
 
     public boolean hasDataFormatErrors() {
-        return !_missing.isEmpty() || !_unknown.isEmpty() || !_invalid.isEmpty();
+        return !_missingFields.isEmpty() || !_unknownFields.isEmpty() || !_invalidFields.isEmpty();
     }
 
     public void validateBlankAndRegex(final String property, final String value, final Pattern regex) {
         if (StringUtils.isBlank(value)) {
-            addMissing(property);
+            addMissingField(property);
         } else if (!regex.matcher(value).matches()) {
-            addInvalid(property);
+            addInvalidField(property);
         }
     }
 
@@ -93,18 +68,22 @@ public class DataFormatException extends XapiException {
     public String getMessage() {
         final StringBuilder buffer = new StringBuilder(super.getMessage());
         buffer.append("\n");
-        if (_missing.size() > 0) {
-            buffer.append(" * Missing fields: ").append(Joiner.on(", ").join(_missing)).append("\n");
+        if (_missingFields.size() > 0) {
+            buffer.append(" * Missing fields: ").append(Joiner.on(", ").join(_missingFields)).append("\n");
         }
-        if (_unknown.size() > 0) {
-            buffer.append(" * Unknown fields: ").append(Joiner.on(", ").join(_unknown)).append("\n");
+        if (_unknownFields.size() > 0) {
+            buffer.append(" * Unknown fields: ").append(Joiner.on(", ").join(_unknownFields)).append("\n");
         }
-        if (_invalid.size() > 0) {
+        if (_invalidFields.size() > 0) {
             buffer.append(" * Invalid fields:\n");
-            for (final String invalid : _invalid.keySet()) {
-                buffer.append("    - ").append(invalid).append(": ").append(_invalid.get(invalid)).append("\n");
+            for (final String invalid : _invalidFields.keySet()) {
+                buffer.append("    - ").append(invalid).append(": ").append(_invalidFields.get(invalid)).append("\n");
             }
         }
         return buffer.toString();
     }
+
+    private final Set<String>         _missingFields = new HashSet<>();
+    private final Set<String>         _unknownFields = new HashSet<>();
+    private final Map<String, String> _invalidFields = new HashMap<>();
 }

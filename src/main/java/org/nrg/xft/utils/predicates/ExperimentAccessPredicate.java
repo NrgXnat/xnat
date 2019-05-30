@@ -25,7 +25,7 @@ public class ExperimentAccessPredicate extends DataAccessPredicate {
     }
 
     @Override
-    public boolean apply(final String experiment) {
+    protected boolean applyImpl(final String experiment) {
         final UserI                user     = getUser();
         final Pair<String, String> dataType = getDataType(experiment);
         if (dataType == null) {

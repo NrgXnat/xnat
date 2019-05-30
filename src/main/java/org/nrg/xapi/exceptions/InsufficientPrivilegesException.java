@@ -10,6 +10,8 @@
 package org.nrg.xapi.exceptions;
 
 import com.google.common.base.Joiner;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -20,6 +22,8 @@ import java.util.Set;
 
 @SuppressWarnings({"Duplicates", "unused"})
 @ResponseStatus(HttpStatus.FORBIDDEN)
+@Getter
+@Accessors(prefix = "_")
 public class InsufficientPrivilegesException extends XapiException {
     public InsufficientPrivilegesException(final String username) {
         super(HttpStatus.FORBIDDEN, username);
@@ -96,10 +100,6 @@ public class InsufficientPrivilegesException extends XapiException {
         }
     }
 
-    public String getUsername() {
-        return _username;
-    }
-
     public String getResource() {
         switch (_resources.size()) {
             case 0:
@@ -111,10 +111,6 @@ public class InsufficientPrivilegesException extends XapiException {
             default:
                 return Joiner.on(", ").join(_resources);
         }
-    }
-
-    public Set<String> getResources() {
-        return _resources;
     }
 
     private static final String MESSAGE_USERNAME_PROJECT           = "The user %s has insufficient privileges for the requested operation on project %s.";

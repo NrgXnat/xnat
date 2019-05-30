@@ -18,7 +18,7 @@ public class SubjectAccessPredicate extends DataAccessPredicate {
     }
 
     @Override
-    public boolean apply(final String subject) {
+    protected boolean applyImpl(final String subject) {
         final UserI user = getUser();
         try {
             verifySubjectExists(subject);

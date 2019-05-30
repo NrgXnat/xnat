@@ -8,8 +8,10 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.*;
 import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -27,22 +29,36 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
  */
 @Slf4j
 public abstract class AbstractXapiAuthorization implements XapiAuthorization {
-    protected abstract boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException;
+    protected abstract boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotFoundException;
 
     protected abstract boolean considerGuests();
 
     @Override
-    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException {
+    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException, NotFoundException {
         // We can just cut everything off if the user is a guest: it can't be admin, auth, user, edit, coll, member, owner.
         // However, if accessLevel is something else, and considerGuests returns true, we should not cut things off
+        final boolean isGuest = user.isGuest();
         //noinspection deprecation
-        if ((!considerGuests() || accessLevel.equalsAny(Admin, Authenticated, User, Edit, Collaborator, Member, Owner)) && user.isGuest()) {
+        if ((!considerGuests() || accessLevel.equalsAny(Admin, Authenticated, DataAdmin, DataAccess, User, Edit, Delete, Collaborator, Member, Owner)) && isGuest) {
             throw new NotAuthenticatedException(request.getRequestURL().toString());
         }
 
         // If access level is administrator, all we need to do is check whether this user is an administrator.
-        if (!checkImpl(accessLevel, joinPoint, user, request)) {
-            throw new InsufficientPrivilegesException(user.getUsername(), request.getRequestURI());
+        try {
+            if (!checkImpl(accessLevel, joinPoint, user, request)) {
+                if (isGuest) {
+                    throw new NotAuthenticatedException(request.getRequestURI());
+                }
+                throw new InsufficientPrivilegesException(user.getUsername(), request.getRequestURI());
+            }
+        } catch (NotFoundException e) {
+            if (isGuest) {
+                throw new NotAuthenticatedException(request.getRequestURI());
+            }
+            if (!Groups.hasAllDataAccess(user)) {
+                throw new InsufficientPrivilegesException(user.getUsername(), request.getRequestURI());
+            }
+            throw e;
         }
     }
 

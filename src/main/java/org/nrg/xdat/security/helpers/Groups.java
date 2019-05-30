@@ -441,7 +441,7 @@ public class Groups {
      */
     @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectMemberGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
-        return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }
 
     /**

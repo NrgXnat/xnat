@@ -2,9 +2,11 @@ package org.nrg.xft.utils.predicates;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,11 +51,19 @@ public abstract class DataAccessPredicate implements Predicate<String> {
         _query = validated.getRight();
     }
 
+    protected abstract boolean applyImpl(final String objectId);
+
     @Override
-    public abstract boolean apply(final String objectId);
+    public boolean apply(final String objectId) {
+        final boolean accessible = applyImpl(objectId);
+        if (!accessible && !getMissing().contains(objectId)) {
+            getDenied().add(objectId);
+        }
+        return accessible;
+    }
 
     public boolean hasErrorState() {
-        return !getMissing().isEmpty() || !getFailed().isEmpty();
+        return !getDenied().isEmpty() || !getMissing().isEmpty() || !getFailed().isEmpty();
     }
 
     protected Map<String, String> verifyProjectSubjectExists(final String project, final String subject) throws NotFoundException {
@@ -211,6 +221,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
     private static final String QUERY_PROJECT_EXPERIMENT_EXISTS         = getExistsQuery(QUERY_PROJECT_EXPERIMENT);
     private static final String QUERY_PROJECT_SUBJECT_EXPERIMENT_EXISTS = getExistsQuery(QUERY_PROJECT_SUBJECT_EXPERIMENT);
 
+    private final List<String>           _denied  = new ArrayList<>();
     private final List<String>           _missing = new ArrayList<>();
     private final Map<String, Throwable> _failed  = new HashMap<>();
 

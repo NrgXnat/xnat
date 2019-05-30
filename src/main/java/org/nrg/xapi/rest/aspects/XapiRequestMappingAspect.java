@@ -1,7 +1,5 @@
 package org.nrg.xapi.rest.aspects;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.aspectj.lang.JoinPoint;
@@ -12,6 +10,7 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xapi.XapiUtils;
 import org.nrg.xapi.authorization.XapiAuthorization;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
@@ -34,11 +33,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
+import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
 
 /**
  * The aspect to handle the {@link XapiRequestMapping} annotation.
@@ -47,22 +45,19 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @Component
 @Slf4j
 public class XapiRequestMappingAspect {
-
-    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     public XapiRequestMappingAspect(final SiteConfigPreferences preferences, final List<XapiAuthorization> authorizers) {
         _preferences = preferences;
         for (final XapiAuthorization authorizer : authorizers) {
             _authorizers.put(authorizer.getClass(), authorizer);
         }
+        _realm = XapiUtils.getWwwAuthenticateBasicHeaderValue(_preferences.getSiteId());
     }
 
-    @SuppressWarnings("unused")
     public void setOpenUrls(final List<String> openUrls) {
         _openUrls.addAll(openUrls);
     }
 
-    @SuppressWarnings("unused")
     public void setAdminUrls(final List<String> adminUrls) {
         _adminUrls.addAll(adminUrls);
     }
@@ -102,8 +97,8 @@ public class XapiRequestMappingAspect {
             AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), FORBIDDEN);
         } catch (NotAuthenticatedException e) {
             final HttpServletResponse response = getResponse();
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader(WWW_AUTH_HEADER, "Basic realm=\"" + _preferences.getSiteId() + "\"");
+            response.setStatus(UNAUTHORIZED_VALUE);
+            response.setHeader(WWW_AUTHENTICATE, _realm);
             final UserI user = XDAT.getUserDetails();
             AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), UNAUTHORIZED);
         }
@@ -117,7 +112,7 @@ public class XapiRequestMappingAspect {
         final UserI user = XDAT.getUserDetails();
         if (user == null) {
             AccessLogger.LogResourceAccess("", request, requestUrl, UNAUTHORIZED);
-            throw new InsufficientPrivilegesException("User principal couldn't be found.");
+            throw new NotAuthenticatedException("User principal couldn't be found.");
         }
 
         final String username = user.getUsername();
@@ -192,15 +187,16 @@ public class XapiRequestMappingAspect {
         return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
     }
 
-    private static final AntPathMatcher PATH_MATCHER    = new AntPathMatcher();
-    private static final String         WWW_AUTH_HEADER = "WWW-Authenticate";
-    private static final String         UNAUTHORIZED    = HttpStatus.UNAUTHORIZED.toString();
-    private static final String         FORBIDDEN       = HttpStatus.FORBIDDEN.toString();
+    private static final AntPathMatcher PATH_MATCHER       = new AntPathMatcher();
+    private static final String         UNAUTHORIZED       = HttpStatus.UNAUTHORIZED.toString();
+    private static final int            UNAUTHORIZED_VALUE = HttpStatus.UNAUTHORIZED.value();
+    private static final String         FORBIDDEN          = HttpStatus.FORBIDDEN.toString();
 
     private final SiteConfigPreferences _preferences;
+    private final String                _realm;
 
-    private final Map<Class<? extends XapiAuthorization>, XapiAuthorization> _authorizers = Maps.newHashMap();
-    private final List<String>                                               _openUrls    = Lists.newArrayList();
-    private final List<String>                                               _adminUrls   = Lists.newArrayList();
-    private final List<String>                                               _initUrls    = Lists.newArrayList();
+    private final Map<Class<? extends XapiAuthorization>, XapiAuthorization> _authorizers = new HashMap<>();
+    private final List<String>                                               _openUrls    = new ArrayList<>();
+    private final List<String>                                               _adminUrls   = new ArrayList<>();
+    private final List<String>                                               _initUrls    = new ArrayList<>();
 }

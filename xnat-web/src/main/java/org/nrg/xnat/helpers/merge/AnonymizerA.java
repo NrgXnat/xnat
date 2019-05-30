@@ -66,9 +66,6 @@ public abstract class AnonymizerA implements Callable<Boolean> {
             if (isEnabled()) {
                 final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
                 service.anonymize(files, getProjectName(), getSubject(), getLabel(), id, script, record);
-                // Delete files on remote filesystems, would prefer to reupload (a.k.a., move), but anonymize doesn't
-                // return the new file list. Files will get pushed back to remote (provided it's an archiver) during cleanup
-                CatalogUtils.deleteRemoteFile(files);
             } else {
                 // anonymization is disabled.
                 if (_log.isDebugEnabled()) {

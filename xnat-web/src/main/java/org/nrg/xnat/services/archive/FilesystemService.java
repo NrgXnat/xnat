@@ -1,12 +1,15 @@
 package org.nrg.xnat.services.archive;
 
+import org.nrg.action.ServerException;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xft.security.UserI;
+import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.InputStream;
-import java.util.List;
 
 public interface FilesystemService {
     String separator = File.separator;
@@ -21,131 +24,107 @@ public interface FilesystemService {
     /**
      * If filesystem needs to be activated via preferences (and reactivated if these change), use this method.
      *
-     * @param preferences
+     * @param preferences the fs service preference bean
      */
     void activate(AbstractPreferenceBean preferences);
 
     /**
-     * Retrieves the file indicated by inputPath (URL or local path)
+     * Does the filesystem service support the provided url
+     * @param url the url
+     * @return T/F
+     */
+    boolean supportsUrl(String url);
+
+    /**
+     * Retrieves an input stream for the file indicated by url
      *
-     * @param inputPath may be a URL or may be an absolute local path
+     * @param url may be a URL or may be an absolute local path
      * @return File
      * @throws Exception if issue
      */
-    InputStream getInputStream(String inputPath) throws Exception;
+    InputStream getInputStream(String url) throws Exception;
 
     /**
-     * Retrieves the file indicated by inputPath (URL or local path)
+     * Retrieves the file indicated by url, and saves it to destinationPath
      *
-     * @param inputPath may be a URL or may be an absolute local path
-     * @return File
-     */
-    File get(String inputPath);
-
-    /**
-     * Retrieves the file indicated by inputPath (URL or local path), and saves it to destinationPath
-     *
-     * @param inputPath may be a URL or may be an absolute local path
+     * @param url may be a URL or may be an absolute local path
+     * @param localPath absolute local path within archive where file would be located
      * @param destinationPath absolute local path to which file ought to be saved
      * @return File
      */
-    File get(String inputPath, String destinationPath);
+    File pullFile(String url, String localPath, String destinationPath);
 
     /**
      * Archives the file to remote filesystem
      *
      * @param file the file to archive
-     * @return boolean for success
-     */
-    boolean put(File file);
-
-    /**
-     * Archives the file to remote filesystem based on remote URI, not local path
-     *
-     * @param file the file to archive
-     * @param remoteUri the remote URI
+     * @param url the remote url
      * @return boolean for successfully pushed
      */
-    boolean put(File file, String remoteUri);
+    boolean pushFile(File file, String url);
 
     /**
-     * Deletes the file (indicated by a local absolutePath) on remote filesystem
-     *
-     * @param absolutePath absolute local path
-     * @return true if file successfully deleted OR file doesn't exist
+     * Blocking pull resource files to destination
+     * @param resource          the resource
+     * @param item              the security item for the resource
+     * @param itemArchivePath   the archive path for the security item of the resource
+     * @param parentDestPath    the destination path
+     * @param user              the user
+     * @return true if pulled, false otherwise (aka if resource isn't archived with this filesystem)
+     * @throws ServerException exceptions from remote FS API
      */
-    boolean delete(String absolutePath);
+    boolean pullResource(final XnatResourcecatalogI resource,
+                         final ArchivableItem item,
+                         final String itemArchivePath,
+                         final String parentDestPath,
+                         final UserI user) throws ServerException;
 
     /**
-     * Deletes the remoteURI (corresponding to local absolutePath) on remote filesystem
-     *
-     * @param absolutePath absolute local path
-     * @param remoteUri the remote URI
-     * @return true if file successfully deleted OR file doesn't exist
+     * Non-blocking pull resource files to destination
+     * @param resource          the resource
+     * @param item              the security item for the resource
+     * @param itemArchivePath   the archive path for the security item of the resource
+     * @param parentDestPath    the destination path
+     * @param user              the user
+     * @return pull tracking object
+     * @throws ServerException exceptions from remote FS API
      */
-    boolean delete(String absolutePath, String remoteUri);
+    Object initiatePullResource(final XnatResourcecatalogI resource,
+                                          final ArchivableItem item,
+                                          final String itemArchivePath,
+                                          final String parentDestPath,
+                                          final UserI user) throws ServerException;
 
     /**
-     * Moves the file on remote filesystem. Not supported for full URL catalog entries.
+     * Poll progress of non-blocking download of directory from remote filesystem
      *
-     * @param originalPath old absolute local path
-     * @param newFile moved file (already moved locally)
-     * @return success if file successfully moved OR file not on that filesystem
+     * @param progressTracker object needed for tracking pull progress or null
+     * @return bytes downloaded out of total as percentage, -1 for failure, 101 for completed
+     * @throws ServerException exceptions from remote FS API
      */
-    boolean move(String originalPath, File newFile);
+    double pollPullResource(Object progressTracker) throws ServerException;
 
     /**
-     * Retrieves the directory indicated by directoryPath. Should NOT overwrite local files.
-     *
-     * @param directoryPath absolute local path
-     * @return boolean for success OR doesn't exist
+     * Does the filesystem have remote files for this resource?
+     * @param resource  the resource
+     * @return T/F
      */
-    boolean getDirectory(String directoryPath);
+    boolean containsFilesForResource(final XnatResourcecatalogI resource);
 
     /**
-     * Copies the directory to new location on remote filesystem, doesn't change local filesystem
+     * Retrieves the metadata for the file indicated url
      *
-     * @param currentPath current absolute local path
-     * @param newPath new absolute local path
-     * @return boolean for success OR doesn't exist
-     */
-    boolean copyDirectory(String currentPath, String newPath);
-
-    /**
-     * Deletes the directory (indicated by a local absolutePath) on remote filesystem
-     *
-     * @param directoryPath absolute local path
-     */
-    void deleteDirectory(String directoryPath);
-
-    /**
-     * Returns a list of supported URL protocols or null if none
-     *
-     * @return list of URL protocols that can be passed into the get method for this filesystem service
-     */
-    List<String> supportedUrlProtocols();
-
-    /**
-     * Retrieves the metadata for the file indicated inputPath (URL or local path)
-     *
-     * @param inputPath may be a URL or may be an absolute local path
+     * @param url may be a URL or may be an absolute local path
+     * @param catalogPath is parent path of catalog file (used to determine local path)
      * @return CatalogUtils.CatalogEntryAttributes
      */
-    CatalogUtils.CatalogEntryAttributes getMetadata(String inputPath);
+    @Nullable
+    CatalogUtils.CatalogEntryAttributes getMetadata(String url, String catalogPath);
 
     /**
-     * Retrieves the metadata for the file indicated inputPath (URL or local path)
-     *
-     * @param inputPath may be a URL or may be an absolute local path
-     * @param catalogPath is parent path of catalog file (used to set ID relative to catalogPath)
-     * @return CatalogUtils.CatalogEntryAttributes
+     * Make a URI on the remote filesystem based on local absolute path
+     * @param absoluteLocalPath the local path
+     * @return the remote URI
      */
-    CatalogUtils.CatalogEntryAttributes getMetadata(String inputPath, String catalogPath);
-
-    /**
-     * Returns a list of all files AND DIRECTORIES within root, <strong>directories must end with "/"</strong>
-     * @param root  the topmost directory
-     * @return      list of subdirs & files
-     */
-    List<String> listAllFiles(@Nullable String root);
+    String makeUriFromLocal(String absoluteLocalPath);
 }

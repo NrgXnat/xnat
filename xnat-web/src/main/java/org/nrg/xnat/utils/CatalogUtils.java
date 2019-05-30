@@ -764,21 +764,6 @@ public class CatalogUtils {
         return catalog_map;
     }
 
-    /**
-     * Pull any missing files into destCatPath
-     * @param cat           the catalog bean
-     * @param catPath       path to the catalog
-     * @param destCatPath   desired output location
-     */
-    public static void pullCatalogToDestination(CatCatalogI cat, String catPath, String destCatPath) {
-        for (CatCatalogI subset : cat.getSets_entryset()) {
-            pullCatalogToDestination(subset, catPath, destCatPath);
-        }
-
-        for (CatEntryI entry : cat.getEntries_entry()) {
-            getFile(entry, catPath, destCatPath); //pulls from remote FS if needed
-        }
-    }
 
     public interface CatEntryFilterI {
         boolean accept(final CatEntryI entry);
@@ -861,6 +846,7 @@ public class CatalogUtils {
      * @param parentPath Path to catalog file directory
      * @return File object represented by CatEntryI
      */
+    @Nullable
     public static File getFile(CatEntryI entry, String parentPath) {
         return getFile(entry, parentPath, null);
     }
@@ -875,24 +861,40 @@ public class CatalogUtils {
      * @param destParentPath    Path to catalog file directory desired output location
      * @return File object represented by CatEntryI
      */
+    @Nullable
     public static File getFile(CatEntryI entry, String parentPath, @Nullable String destParentPath) {
         if (destParentPath == null) {
             destParentPath = parentPath;
         }
 
-        // If the URI is an absolute path, entryPath = URI
-        String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
+        CatalogEntryPathInfo info = new CatalogEntryPathInfo(entry, parentPath, destParentPath);
 
-        // For a local file with destParentPath = parentPath, entryPath = entryPathLocal
-        String entryPathLocal;
-        if (FileUtils.IsUrl(entryPath, true)) {
-            String relPath = getRelativePathForCatalogEntry(entry, parentPath);
-            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, relPath), "\\", "/");
-        } else {
-            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, entry.getUri()), "\\", "/");
+        return getFileOnLocalFileSystem(info.entryPath, info.entryPathLocal, info.entryPathDest);
+    }
+
+    public static class CatalogEntryPathInfo {
+        public String entryPath;            // may be full archive-local path or uri
+        public String entryPathLocal;       // full archive-local path
+        public String entryPathDest;        // full path to destination location
+        public String catalogRelativePath;  // path relative to catalog
+
+        public CatalogEntryPathInfo(CatEntryI entry, String parentPath, String destParentPath) {
+            String uri = entry.getUri();
+            if (FileUtils.IsUrl(uri, true)) {
+                catalogRelativePath = getRelativePathForCatalogEntry(entry, parentPath);
+                entryPath = uri;
+            } else {
+                catalogRelativePath = uri;
+                entryPath = null;
+            }
+
+            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(parentPath, catalogRelativePath), "\\", "/");
+            entryPathDest = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, catalogRelativePath), "\\", "/");
+
+            if (entryPath == null) {
+                entryPath = entryPathLocal;
+            }
         }
-
-        return getFileOnLocalFileSystem(entryPath, entryPathLocal);
     }
 
     public static Stats getFileStats(CatCatalogI cat, String parentPath) {
@@ -1073,27 +1075,40 @@ public class CatalogUtils {
      * If the input is a URL, we'll try to pull that, too.
      *
      * @param uri the uri
-     * @param localPath the local path to put file, can be empty
+     * @param localPath the local path to put file, can be null
      * @return File
      */
     @Nullable
     public static File getFileOnLocalFileSystem(String uri, @Nullable String localPath) {
+        return getFileOnLocalFileSystem(uri, localPath, null);
+    }
+
+    /**
+     * getFileOnLocalFileSystem will return the local file if it exists. If not, it will check
+     * if any alternative filesystems have been configured via service and if so, try pulling the file from there.
+     * If the input is a URL, we'll try to pull that, too.
+     *
+     * @param uri the uri
+     * @param localPath the archive-local path for file, can be null
+     * @param destPath any arbitrary local path for file, can be null
+     * @return File
+     */
+    @Nullable
+    public static File getFileOnLocalFileSystem(String uri, @Nullable String localPath, @Nullable String destPath) {
         if (StringUtils.isBlank(localPath)) {
             localPath = uri;
         }
-        File f = getFileOnLocalFileSystemOrig(localPath);
+        if (StringUtils.isBlank(destPath)) {
+            destPath = localPath;
+        }
+        File f = getFileOnLocalFileSystemOrig(destPath);
         if (f == null) {
-            //Try to pull from other filesystem if uri is a local path or a supported URL
-            List<FilesystemService> fsList = getFilesystemServices();
-            String protocol = UrlUtils.GetUrlProtocol(uri);
-            for (FilesystemService fs : fsList) {
-                if (protocol == null || fs.supportedUrlProtocols().contains(protocol)) {
-                    f = fs.get(uri, localPath);
+            //Try to pull from other filesystem if uri is remote and supported
+            for (FilesystemService fs : getFilesystemServices()) {
+                if (FileUtils.IsUrl(uri, true) && fs.supportsUrl(uri)) {
+                    f = fs.pullFile(uri, localPath, destPath);
                     if (f != null) break;
                 }
-            }
-            if (f == null && FileUtils.IsUrl(uri)) {
-                f = UrlUtils.downloadUrl(uri, localPath);
             }
         }
         return f;
@@ -1126,109 +1141,6 @@ public class CatalogUtils {
         }
 
         return f;
-    }
-
-    /**
-     * Download directory from remote filesystem
-     * @param directoryPath absolute local path
-     * @return success
-     */
-    public static boolean getRemoteDirectory(String directoryPath) {
-        boolean success = true;
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //get from any filesystem that has it, will overwrite
-            // note that "true" is returned if not on external system
-            success &= fs.getDirectory(directoryPath);
-        }
-        return success;
-    }
-
-    /**
-     * Copy directory on remote filesystem, nothing changes locally
-     * @param currentPath current path (on local FS)
-     * @param newPath new path (on local FS)
-     * @return success
-     */
-    public static boolean copyRemoteDirectory(String currentPath, String newPath) {
-        boolean success = true;
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //copy on all filesystems that (might) have it
-            //note that "true" is returned if not on external system
-            success &= fs.copyDirectory(currentPath, newPath);
-        }
-        return success;
-    }
-
-    /**
-     * Delete directory from remote filesystem
-     * @param directoryPath absolute local path
-     */
-    public static void deleteRemoteDirectory(String directoryPath) {
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //delete from all filesystems that (might) have it
-            fs.deleteDirectory(directoryPath);
-        }
-    }
-
-    /**
-     * Delete files from remote filesystem
-     * @param files list of local files
-     */
-    public static void deleteRemoteFile(List<File> files) {
-        for (File file : files) {
-            deleteRemoteFile(file, null);
-        }
-    }
-
-    /**
-     * Delete file from remote filesystem
-     * @param file local file
-     */
-    public static void deleteRemoteFile(File file, String remoteUri) {
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //delete from all filesystems that (might) have it
-            if (!fs.delete(file.getAbsolutePath(), remoteUri)) {
-                log.warn("Error attempting to delete file " + file.getAbsolutePath() + " on " + fs);
-            }
-        }
-    }
-
-    /**
-     * Move file on remote filesystem
-     * @param oldPath original local path
-     * @param newFile new file object
-     */
-    public static void moveRemoteFile(String oldPath, File newFile) {
-        List<FilesystemService> fsList = CatalogUtils.getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //move on any filesystems that have it
-            if (!fs.move(oldPath, newFile)) {
-                log.warn("Unable to move " + oldPath + " to " +
-                        newFile.getAbsolutePath() + " on " + fs);
-            }
-        }
-    }
-
-    /**
-     * Push file to remote filesystem based on URI
-     * @param file the file object
-     * @param remoteUri the remote URI
-     * @return true if file pushed, false otherwise
-     */
-    public static boolean putRemoteFile(File file, String remoteUri) {
-        if (!FileUtils.IsUrl(remoteUri, true)) return false;
-        boolean pushed = false;
-        List<FilesystemService> fsList = CatalogUtils.getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            if (fs.supportedUrlProtocols().contains(UrlUtils.GetUrlProtocol(remoteUri))) {
-                if (pushed = fs.put(file, remoteUri)) break;
-            }
-        }
-        return pushed;
     }
 
     public static void configureEntry(final CatEntryBean newEntry, final XnatResourceInfo info, boolean modified) {
@@ -1545,7 +1457,7 @@ public class CatalogUtils {
 
         try {
             final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest, false);
-            fl.tryLock(2L, TimeUnit.MINUTES);
+            fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace(System.currentTimeMillis() + " writer start: " + fl.toString());
             try (final FileOutputStream fos = new FileOutputStream(dest)) {
                 final OutputStreamWriter fw = new OutputStreamWriter(fos);

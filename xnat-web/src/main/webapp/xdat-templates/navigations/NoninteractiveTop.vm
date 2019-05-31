@@ -21,7 +21,9 @@ $page.setBgColor($ui.bgcolor)
                 #set($username = $user.getUsername())
                 #if($username != "" && $username != "guest")
                     ## use default timout value from web.xml as the starting text in the "timeLeft" element
-                    <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                    #if(!$hideUserInfo)
+                        <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                    #end
                     <script>
                         window.loggedIn = true;
                         window.isGuest = realValue('$!user.isGuest()');

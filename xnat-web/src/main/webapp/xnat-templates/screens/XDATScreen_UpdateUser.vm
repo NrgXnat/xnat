@@ -38,6 +38,8 @@
         #parse("screens/XDATScreen_password.vm")
     </div>
 
+    #addGlobalCustomScreens("userProfile")
+        
     <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
     <script src="$content.getURI("/scripts/xnat/app/userCacheManagement.js")"></script>
 
@@ -47,6 +49,8 @@
     </script>
     <div class="clearfix clear"></div>
 ##    #parse("screens/XDATScreen_aliasTokens.vm")
+
+
 #end
 
 

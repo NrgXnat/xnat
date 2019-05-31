@@ -52,7 +52,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
-        final UserI user = XDAT.getUserDetails();
+        UserI user = XDAT.getUserDetails();
         if(user == null || user.getUsername().equalsIgnoreCase("guest")) {
            // If the user isn't authenticated, we need to setup the page with
            // Noninteractive.vm and hide the "Manage user Login and Profile" section. 
@@ -156,9 +156,9 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             data.getSession().setAttribute("forgot", true);
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
                             if(userID!=null){
-                                UserI validatedUser = Users.getUser(userID);
-                                XDAT.loginUser(data, validatedUser, true);
-                                context.put("user", validatedUser);
+                                user = Users.getUser(userID);
+                                XDAT.loginUser(data, user, true);
+                                context.put("user", user);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");

@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;
@@ -35,7 +36,7 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.services.archive.FilesystemService;
+import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
@@ -1045,31 +1046,6 @@ public class CatalogUtils {
     }
 
     /**
-     * Get configured filesystem services
-     * @return List of active FilesystemService instances (empty list if none)
-     */
-    public static List<FilesystemService> getFilesystemServices() {
-        //If alternate filesystem configured via plugin and active, return it
-        Map<String, FilesystemService> fsMap = XDAT.getContextService().getBeansOfType(FilesystemService.class);
-        List<FilesystemService> fsList = new ArrayList<>();
-        if (fsMap == null) return fsList;
-        for (FilesystemService fs : fsMap.values()) {
-            if (fs.isActive()) {
-                fsList.add(fs);
-            }
-        }
-        return fsList;
-    }
-
-    /**
-     * Does this XNAT instance have configured, active filesystem services?
-     * @return T/F
-     */
-    public static boolean hasActiveExternalFilesystem() {
-        return !getFilesystemServices().isEmpty();
-    }
-
-    /**
      * getFileOnLocalFileSystem will return the local file if it exists. If not, it will check
      * if any alternative filesystems have been configured via service and if so, try pulling the file from there.
      * If the input is a URL, we'll try to pull that, too.
@@ -1103,12 +1079,9 @@ public class CatalogUtils {
         }
         File f = getFileOnLocalFileSystemOrig(destPath);
         if (f == null) {
-            //Try to pull from other filesystem if uri is remote and supported
-            for (FilesystemService fs : getFilesystemServices()) {
-                if (FileUtils.IsUrl(uri, true) && fs.supportsUrl(uri)) {
-                    f = fs.pullFile(uri, localPath, destPath);
-                    if (f != null) break;
-                }
+            RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
+            if (remoteFilesService != null) {
+                f = remoteFilesService.pullFile(uri, localPath, destPath);
             }
         }
         return f;

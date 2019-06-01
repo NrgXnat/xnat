@@ -59,12 +59,11 @@ import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
 import org.nrg.xnat.services.archive.CatalogService;
-import org.nrg.xnat.services.archive.FilesystemService;
+import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -108,8 +107,8 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Autowired(required = false)
-    public void setFilesystemServices(final List<FilesystemService> filesystemServices) {
-        _filesystemServices = filesystemServices;
+    public void setFilesystemServices(final RemoteFilesService remoteFilesService) {
+        _remoteFilesService = remoteFilesService;
     }
 
     @Override
@@ -669,7 +668,7 @@ public class DefaultCatalogService implements CatalogService {
     public void pullResourceCatalogsToDestination(UserI user, String uriString, @Nullable String destinationDir)
             throws ServerException, ClientException {
 
-        if (_filesystemServices.isEmpty()) {
+        if (_remoteFilesService == null) {
             throw new ServerException("No remote filesystems configured for this site; all catalogs must be local");
         }
 
@@ -680,29 +679,14 @@ public class DefaultCatalogService implements CatalogService {
 
         checkPermissionsOnItem(user, item, SecurityManager.READ, uriString);
 
-        String itemArchivePath;
-        try {
-            itemArchivePath = item.getExpectedCurrentDirectory().getAbsolutePath();
-        } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
-            throw new ServerException("Cannot determine archive path for item " + item.getId());
+        XnatAbstractresourceI catRes = resourceData.getCatalogResource();
+        List<XnatAbstractresourceI> resources;
+        if (catRes != null) {
+            resources = Collections.singletonList(catRes);
+        } else {
+            resources = resourceURI.getResources(true);
         }
-
-        if (destinationDir == null) {
-            destinationDir = itemArchivePath;
-        }
-
-        List<XnatAbstractresourceI> resources = resourceURI.getResources(true);
-        for (final XnatAbstractresourceI resource : resources) {
-            if (!(resource instanceof XnatResourcecatalogI)) {
-                continue;
-            }
-            for (FilesystemService fs : _filesystemServices) {
-                if (fs.isActive() && fs.pullResource((XnatResourcecatalogI) resource, item, itemArchivePath,
-                        destinationDir, user)) {
-                    break;
-                }
-            }
-        }
+        _remoteFilesService.pullItem(item, resources, user, destinationDir);
     }
 
     /**
@@ -710,23 +694,28 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public boolean hasRemoteFiles(final UserI user, final String uriString) throws ClientException, ServerException {
-        if (_filesystemServices.isEmpty()) {
+        if (_remoteFilesService == null) {
             return false;
         }
 
-        final ResourceData resourceData = getResourceDataFromUri(uriString, true);
-
+        final ResourceData resourceData = getResourceDataFromUri(uriString);
         checkPermissionsOnItem(user, resourceData.getItem(), SecurityManager.READ, uriString);
-
-        boolean remoteFiles = false;
-        for (FilesystemService fs : _filesystemServices) {
-            XnatResourcecatalogI resource = resourceData.getCatalogResource();
-            if (fs.isActive() && fs.containsFilesForResource(resource)) {
-                remoteFiles = true;
-                break;
+        XnatResourcecatalogI catRes = resourceData.getCatalogResource();
+        if (catRes != null) {
+            // catalog resource, just check it
+            return _remoteFilesService.catalogHasRemoteFiles(resourceData.getCatalogResource());
+        } else {
+            // other kind of resource (mr session, etc), check it's children for anything remote
+            for (final XnatAbstractresourceI resource : resourceData.getXnatUri().getResources(true)) {
+                if (!(resource instanceof XnatResourcecatalogI)) {
+                    continue;
+                }
+                if (_remoteFilesService.catalogHasRemoteFiles((XnatResourcecatalogI) resource)) {
+                    return true;
+                }
             }
+            return false;
         }
-        return remoteFiles;
     }
 
     public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception {
@@ -949,7 +938,7 @@ public class DefaultCatalogService implements CatalogService {
 
         PersistentWorkflowI workflow = null;
         try {
-            ResourceData resourceData = getResourceDataFromUri(resourcePath, true);
+            ResourceData resourceData = getResourceDataFromUri(resourcePath);
             final URIManager.ArchiveItemURI resourceURI = resourceData.getXnatUri();
             final ArchivableItem            item        = resourceData.getItem();
 
@@ -1844,5 +1833,5 @@ public class DefaultCatalogService implements CatalogService {
 
     private final NamedParameterJdbcTemplate    _parameterized;
     private final Cache                         _cache;
-    private List<FilesystemService>             _filesystemServices = new ArrayList<>();
+    private RemoteFilesService                  _remoteFilesService = null;
 }

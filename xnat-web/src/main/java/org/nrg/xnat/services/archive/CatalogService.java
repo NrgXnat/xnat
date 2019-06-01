@@ -481,7 +481,9 @@ public interface CatalogService {
     /**
      * Does the resource indicated by the uriString have remote files
      * @param user      The user performing the operation.
-     * @param uriString The uri for the resource
+     * @param uriString     the uri string, identified by standard archive-relative paths, such as
+     *                      /archive/experiments/XNAT_E0001
+     *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
      * @return T/F
      */
     boolean hasRemoteFiles(final UserI user, final String uriString) throws ClientException, ServerException;

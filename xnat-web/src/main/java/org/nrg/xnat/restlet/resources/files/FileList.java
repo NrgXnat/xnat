@@ -56,7 +56,7 @@ import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.services.messaging.file.MoveStoredFileRequest;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.nrg.xnat.utils.CatalogUtils.CatEntryFilterI;
+import org.nrg.xnat.utils.CatalogUtils.*;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -144,13 +144,7 @@ public class FileList extends XNATCatalogTemplate {
                 resource = getResources().get(0);
             }
 
-            filePath = getRequest().getResourceRef().getRemainingPart();
-            if (StringUtils.contains(filePath, "?")) {
-                filePath = StringUtils.substringBefore(filePath, "?");
-            }
-            if (StringUtils.startsWith(filePath, "/")) {
-                filePath = filePath.substring(1);
-            }
+            filePath = StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?");
 
             getVariants().addAll(VARIANTS);
         } catch (Exception e) {
@@ -338,7 +332,7 @@ public class FileList extends XNATCatalogTemplate {
 
                         final ResourceModifierA resourceModifier = buildResourceModifier(overwrite, updateMeta);
                         final String            projectId        = proj.getId();
-                        if (!async || StringUtils.isEmpty(reference)) {
+                        if (!async || StringUtils.isBlank(reference)) {
                             final List<String> duplicates = resourceModifier.addFile(writers, resourceIdentifier, type, filePath, buildResourceInfo(updateMeta), extract);
                             if (!overwrite && duplicates.size() > 0) {
                                 getResponse().setStatus(Status.SUCCESS_OK);
@@ -376,7 +370,7 @@ public class FileList extends XNATCatalogTemplate {
                         throw e;
                     }
 
-                    if (StringUtils.isEmpty(reference) && workflow != null && isNew) {
+                    if (StringUtils.isBlank(reference) && workflow != null && isNew) {
                         WorkflowUtils.complete(workflow, eventMeta);
                     }
                 }
@@ -610,13 +604,7 @@ public class FileList extends XNATCatalogTemplate {
             }
         }
 
-        String downloadName;
-        if (security != null) {
-            downloadName = ((ArchivableItem) security).getArchiveDirectoryName();
-        } else {
-            downloadName = getSessionMaps().get(Integer.toString(0));
-        }
-
+        final String downloadName = security != null ? ((ArchivableItem) security).getArchiveDirectoryName() : getSessionMaps().get(Integer.toString(0));
         if (mediaType.equals(MediaType.APPLICATION_ZIP)) {
             setContentDisposition(downloadName + ".zip");
         } else if (mediaType.equals(MediaType.APPLICATION_GNU_TAR)) {
@@ -625,57 +613,51 @@ public class FileList extends XNATCatalogTemplate {
             setContentDisposition(downloadName + ".tar");
         }
 
-        if (StringUtils.isEmpty(filePath) && index == null) {
+        if (StringUtils.isBlank(filePath) && index == null) {
             final Pair<Hashtable<String, Object>, Map<String, Map<String, String>>> parametersAndProperties = getDefaultParametersAndColumnProperties();
             parametersAndProperties.getRight().get(URI).put("serverRoot", StringUtils.removeEnd(StringUtils.removeEnd(getRequest().getRootRef().getPath(), "/data"), "/REST"));
             return representTable(table, mediaType, parametersAndProperties.getLeft(), parametersAndProperties.getRight(), getSessionMaps());
-        } else {
-            if (index != null && table.rows().size() > index) {
-                file = (File) table.rows().get(index)[8];
-            }
+        }
+        if (index != null && table.rows().size() > index) {
+            file = (File) table.rows().get(index)[8];
+        }
 
-            if (file == null || !file.exists()) {
-                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
-                return null;
-            }
+        if (file == null || !file.exists()) {
+            getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+            return null;
+        }
 
-            final String name = file.getName();
+        final String name = file.getName();
 
-            //return file
-            if (fileList.size() > 0) {
-                if ((mediaType.equals(MediaType.APPLICATION_ZIP) && !name.toLowerCase().endsWith(".zip"))
-                    || (mediaType.equals(MediaType.APPLICATION_GNU_TAR) && !name.toLowerCase().endsWith(".tar.gz"))
-                    || (mediaType.equals(MediaType.APPLICATION_TAR) && !name.toLowerCase().endsWith(".tar"))) {
-                    final ZipRepresentation rep;
-                    try {
-                        rep = new ZipRepresentation(mediaType, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
-                    } catch (ActionException e) {
-                        logger.error("", e);
-                        setResponseStatus(e);
-                        return null;
-                    }
-                    for (String fn : fileList.keySet()) {
-                        rep.addEntry(fn, fileList.get(fn));
-                    }
-                    return rep;
+        //return file
+        final boolean mismatchedExtension = mediaType.equals(MediaType.APPLICATION_ZIP) && !name.toLowerCase().endsWith(".zip") ||
+                                            mediaType.equals(MediaType.APPLICATION_GNU_TAR) && !name.toLowerCase().endsWith(".tar.gz") ||
+                                            mediaType.equals(MediaType.APPLICATION_TAR) && !name.toLowerCase().endsWith(".tar");
+        if (fileList.isEmpty()) {
+            if (mismatchedExtension) {
+                try {
+                    final ZipRepresentation representation = new ZipRepresentation(mediaType, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
+                    representation.addEntry(name, file);
+                    return representation;
+                } catch (ActionException e) {
+                    logger.error("", e);
+                    setResponseStatus(e);
+                    return null;
                 }
             } else {
-                if ((mediaType.equals(MediaType.APPLICATION_ZIP) && !name.toLowerCase().endsWith(".zip"))
-                    || (mediaType.equals(MediaType.APPLICATION_GNU_TAR) && !name.toLowerCase().endsWith(".tar.gz"))
-                    || (mediaType.equals(MediaType.APPLICATION_TAR) && !name.toLowerCase().endsWith(".tar"))) {
-                    final ZipRepresentation rep;
-                    try {
-                        rep = new ZipRepresentation(mediaType, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
-                    } catch (ActionException e) {
-                        logger.error("", e);
-                        setResponseStatus(e);
-                        return null;
-                    }
-                    rep.addEntry(name, file);
-                    return rep;
-                } else {
-                    return getFileRepresentation(file, mediaType);
+                return getFileRepresentation(file, mediaType);
+            }
+        }
+        if (mismatchedExtension) {
+            try {
+                final ZipRepresentation representation = new ZipRepresentation(mediaType, ((ArchivableItem) security).getArchiveDirectoryName(), identifyCompression(null));
+                for (final String filename : fileList.keySet()) {
+                    representation.addEntry(filename, fileList.get(filename));
                 }
+                return representation;
+            } catch (ActionException e) {
+                logger.error("", e);
+                setResponseStatus(e);
             }
         }
         return null;
@@ -704,15 +686,12 @@ public class FileList extends XNATCatalogTemplate {
             final CatCatalogBean      cat         = catResource.getCleanCatalog(proj.getRootArchivePath(), includeRoot, null, null);
             final String              parentPath  = catResource.getCatalogFile(proj.getRootArchivePath()).getParent();
 
-            if (StringUtils.isEmpty(filePath) && index == null) {
-                String baseURI = getBaseURI();
-
+            if (StringUtils.isBlank(filePath) && index == null) {
                 if (cat != null) {
-                    table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
+                    table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, getBaseURI() + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
                 }
             } else {
-
-                String zipEntry = null;
+                String zipEntryName = null;
 
                 CatEntryI entry;
                 if (index != null) {
@@ -733,8 +712,8 @@ public class FileList extends XNATCatalogTemplate {
                         final boolean containsExtensionSlash = StringUtils.containsIgnoreCase(filePath, extension + "/");
                         if (containsExtensionBang || containsExtensionSlash) {
                             final String[] atoms = StringUtils.splitByWholeSeparator(filePath, extension + (containsExtensionBang ? "!" : "/"));
-                            filePath = atoms[0];
-                            zipEntry = atoms[1];
+                            filePath = atoms[0] + extension;
+                            zipEntryName = atoms[1];
                             break;
                         }
                     }
@@ -756,76 +735,66 @@ public class FileList extends XNATCatalogTemplate {
                     getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                     return new StringRepresentation("");
                 } else {
-                    if (FileUtils.IsAbsolutePath(entry.getUri())) {
-                        file = new File(entry.getUri());
-                    } else {
-                        file = new File(parentPath, entry.getUri());
+                    file = FileUtils.IsAbsolutePath(entry.getUri()) ? new File(entry.getUri()) : new File(parentPath, entry.getUri());
+
+                    if (!file.exists()) { // If file does not exist
+                        getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                        return new StringRepresentation("");
                     }
 
-                    if (file.exists()) {
-                        String fName;
-                        if (zipEntry == null) {
-                            fName = file.getName().toLowerCase();
-                        } else {
-                            fName = zipEntry.toLowerCase();
-                        }
-
-                        if (mediaType.equals(MediaType.IMAGE_JPEG) && Dcm2Jpg.isDicom(file)) {
-                            try {
-                                return new InputRepresentation(new ByteArrayInputStream(Dcm2Jpg.convert(file)), mediaType);
-                            } catch (IOException e) {
-                                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to convert this file to jpeg : " + e.getMessage());
-                                return new StringRepresentation("");
-                            }
-                        }
-
+                    if (mediaType.equals(MediaType.IMAGE_JPEG) && Dcm2Jpg.isDicom(file)) {
                         try {
-                            // If the user is requesting a file within the zip archive
-                            if (zipEntry != null) {
-                                // Get the zip entry requested
-                                ZipFile  zF = new ZipFile(file);
-                                ZipEntry zE = zF.getEntry(URLDecoder.decode(zipEntry, "UTF-8"));
-                                if (zE == null) {
-                                    getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
-                                    return new StringRepresentation("");
-                                } else { // Return the requested zip entry
-                                    return new InputRepresentation(zF.getInputStream(zE), buildMediaType(mediaType, fName));
-                                }
-                                // If the user is requesting a list of the contents within the zip file
-                            } else if (listContents && isFileZipArchive(fName)) {
-                                // Get the contents of the zip file
-                                ZipFile                         zF      = new ZipFile(file);
-                                Enumeration<? extends ZipEntry> entries = zF.entries();
+                            return new InputRepresentation(new ByteArrayInputStream(Dcm2Jpg.convert(file)), mediaType);
+                        } catch (IOException e) {
+                            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to convert this file to jpeg : " + e.getMessage());
+                            return new StringRepresentation("");
+                        }
+                    }
 
-                                // Create a new XFTTable with File Name and Size columns
-                                XFTTable t = new XFTTable();
-                                t.initTable(new String[]{"File Name", "Size"});
+                    final String filename = (zipEntryName == null ? file.getName() : zipEntryName).toLowerCase();
+
+                    try {
+                        // If the user is requesting a file within the zip archive
+                        if (zipEntryName != null) {
+                            // Get the zip entry requested
+                            final ZipFile  zipFile  = new ZipFile(file);
+                            final ZipEntry zipEntry = zipFile.getEntry(URLDecoder.decode(zipEntryName, "UTF-8"));
+                            if (zipEntry == null) {
+                                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                                return new StringRepresentation("");
+                            } else { // Return the requested zip entry
+                                return new InputRepresentation(zipFile.getInputStream(zipEntry), buildMediaType(mediaType, filename));
+                            }
+                            // If the user is requesting a list of the contents within the zip file
+                        } else if (listContents && isFileZipArchive(filename)) {
+                            // Create a new XFTTable with File Name and Size columns
+                            final XFTTable fileTable = new XFTTable();
+                            fileTable.initTable(new String[]{"File Name", "Size"});
+
+                            // Get the contents of the zip file
+                            try (final ZipFile zipFile = new ZipFile(file)) {
+                                final Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
 
                                 // Populate table rows and add the row to the table
-                                while (entries.hasMoreElements()) {
-                                    ZipEntry zE = entries.nextElement();
-                                    t.rows().add(new Object[]{zE.getName(), zE.getSize()});
+                                while (zipEntries.hasMoreElements()) {
+                                    final ZipEntry zipEntry = zipEntries.nextElement();
+                                    fileTable.rows().add(new Object[]{zipEntry.getName(), zipEntry.getSize()});
                                 }
-                                zF.close();
-
-                                // Set the table, if t has rows
-                                if (t.rows().size() != 0) {
-                                    table = t;  // table gets passed into representTable() below
-                                }
-                            } else {
-                                // Return the requested file
-                                return getFileRepresentation(file, buildMediaType(mediaType, fName));
                             }
-                        } catch (ZipException e) {
-                            getResponse().setStatus(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, e.getMessage());
-                            return new StringRepresentation("");
-                        } catch (IOException e) {
-                            getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, e.getMessage());
-                            return new StringRepresentation("");
-                        }
 
-                    } else { // If file does not exist
-                        getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                            // Set the table if we got any rows
+                            if (!fileTable.rows().isEmpty()) {
+                                table = fileTable;  // table gets passed into representTable() below
+                            }
+                        } else {
+                            // Return the requested file
+                            return getFileRepresentation(file, buildMediaType(mediaType, filename));
+                        }
+                    } catch (ZipException e) {
+                        getResponse().setStatus(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, e.getMessage());
+                        return new StringRepresentation("");
+                    } catch (IOException e) {
+                        getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, e.getMessage());
                         return new StringRepresentation("");
                     }
                 }

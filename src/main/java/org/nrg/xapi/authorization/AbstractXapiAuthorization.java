@@ -142,8 +142,10 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
             return Collections.emptyList();
         }
 
-        final String singular = StringUtils.uncapitalize(annotation.getSimpleName());
-        final String plural   = singular + "s";
+        final String singular   = StringUtils.uncapitalize(annotation.getSimpleName());
+        final String plural     = singular + "s";
+        final String singularId = StringUtils.uncapitalize(annotation.getSimpleName()) + "Id";
+        final String pluralIds  = singularId + "s";
 
         if (candidate instanceof Map) {
             final Map map = (Map) candidate;
@@ -151,11 +153,19 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
                 //noinspection unchecked
                 return (List<String>) map.get(plural);
             }
+            if (map.containsKey(pluralIds)) {
+                //noinspection unchecked
+                return (List<String>) map.get(pluralIds);
+            }
             if (map.containsKey(singular)) {
                 return Collections.singletonList((String) map.get(singular));
             }
+            if (map.containsKey(singularId)) {
+                return Collections.singletonList((String) map.get(singularId));
+            }
         }
-        throw new RuntimeException("Found parameter " + parameterIndex + " annotated with @" + annotation.getSimpleName() + " for the method " + joinPoint.getSignature().getName() + " but the annotated parameter is not a String, List of strings, or a map containing a key named " + singular + " or " + plural + ".");
+
+        throw new RuntimeException("Found parameter at index " + parameterIndex + " annotated with @" + annotation.getSimpleName() + " for the method " + joinPoint.getSignature().getDeclaringTypeName() + "." + joinPoint.getSignature().getName() + "() but the annotated parameter is not a String, List of strings, or a map containing a key named " + singular + " or " + plural + ".");
     }
 
     public static int getAnnotatedParameterIndex(final Method method, final Class<? extends Annotation> annotation) {

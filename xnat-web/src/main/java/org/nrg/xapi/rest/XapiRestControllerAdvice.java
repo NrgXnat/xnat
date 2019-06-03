@@ -173,17 +173,10 @@ public class XapiRestControllerAdvice {
         }
 
         final ResponseEntity.BodyBuilder builder = ResponseEntity.status(resolvedStatus);
-        if (isBlank(resolvedMessage)) {
-            builder.contentLength(0);
-        } else {
-            builder.contentType(MediaType.TEXT_PLAIN).contentLength(resolvedMessage.length()).body(resolvedMessage);
-        }
-
         if (status == UNAUTHORIZED) {
             builder.headers(_realm);
         }
-
-        return builder.build();
+        return isBlank(resolvedMessage) ? builder.contentLength(0).build() : builder.contentType(MediaType.TEXT_PLAIN).contentLength(resolvedMessage.length()).body(resolvedMessage);
     }
 
     private HttpStatus getExceptionResponseStatus(final Exception exception) {

@@ -1185,17 +1185,18 @@ public abstract class SecureResource extends Resource {
         }
     }
 
-    public void loadParams(final String _json) throws ClientException {
+    public void loadParams(final String json) throws ClientException {
         try {
-            final JSONObject json = new JSONObject(_json);
-            String[] keys = JSONObject.getNames(json);
+            final JSONObject jsonObject = new JSONObject(json);
+            final String[]   keys = JSONObject.getNames(jsonObject);
             if (keys != null) {
                 for (final String key : keys) {
-                    handleParam(key, TurbineUtils.escapeParam(json.get(key)));
+                    final Object jsonValue = jsonObject.get(key);
+                    handleParam(key, TurbineUtils.escapeParam(jsonValue != null ? jsonValue.toString() : null));
                 }
             }
         } catch (JSONException e) {
-            logger.error("invalid JSON message " + _json, e);
+            logger.error("invalid JSON message: " + json, e);
         } catch (NullPointerException e) {
             logger.error("", e);
         }

@@ -153,7 +153,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
             }
             return uri;
         } catch (InterruptedException | ExecutionException e) {
-            log.error("An error occurred while trying to archive the session " + getPrearcSession().toString());
+            log.error("An error occurred while trying to archive the session {}", getPrearcSession().toString(), e);
             return null;
         }
     }

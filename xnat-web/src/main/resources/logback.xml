@@ -320,7 +320,7 @@
     <logger name="org.nrg.xnat.restlet" additivity="false" level="WARN">
         <appender-ref ref="restlet"/>
     </logger>
-    <logger name="org.springframework.context" additivity="false" level="WARN">
+    <logger name="org.springframework.context" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.xnat.configuration" additivity="false" level="WARN">
@@ -347,13 +347,13 @@
     <logger name="org.nrg.automation" additivity="false" level="ERROR">
         <appender-ref ref="automation"/>
     </logger>
-    <logger name="org.springframework.jms" additivity="false" level="WARN">
+    <logger name="org.springframework.jms" additivity="false" level="ERROR">
         <appender-ref ref="jms"/>
     </logger>
-    <logger name="org.springframework.dao" additivity="false" level="WARN">
+    <logger name="org.springframework.dao" additivity="false" level="ERROR">
         <appender-ref ref="orm"/>
     </logger>
-    <logger name="org.springframework.security" additivity="false" level="WARN">
+    <logger name="org.springframework.security" additivity="false" level="ERROR">
         <appender-ref ref="security"/>
     </logger>
     <logger name="org.nrg.xdat" additivity="false" level="ERROR">
@@ -362,34 +362,34 @@
     <logger name="org.apache.xml" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
-    <logger name="org.springframework.beans" additivity="false" level="WARN">
+    <logger name="org.springframework.beans" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
-    <logger name="org.springframework.web" additivity="false" level="WARN">
+    <logger name="org.springframework.web" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.xdat.turbine.utils.AccessLogger" additivity="false" level="INFO">
         <appender-ref ref="access"/>
     </logger>
-    <logger name="org.springframework.http" additivity="false" level="WARN">
+    <logger name="org.springframework.http" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.pipeline.launch" additivity="false" level="INFO">
         <appender-ref ref="launch"/>
     </logger>
-    <logger name="org.springframework.cache" additivity="false" level="WARN">
+    <logger name="org.springframework.cache" additivity="false" level="ERROR">
         <appender-ref ref="cache"/>
     </logger>
     <logger name="org.nrg.xft" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
-    <logger name="org.springframework.mail" additivity="false" level="WARN">
+    <logger name="org.springframework.mail" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.schedule" additivity="false" level="WARN">
         <appender-ref ref="scheduler"/>
     </logger>
-    <logger name="org.springframework.jdbc" additivity="false" level="WARN">
+    <logger name="org.springframework.jdbc" additivity="false" level="ERROR">
         <appender-ref ref="orm"/>
     </logger>
     <logger name="org.nrg.xapi" additivity="false" level="WARN">
@@ -425,7 +425,7 @@
     <logger name="velocity" additivity="false" level="ERROR">
         <appender-ref ref="velocity"/>
     </logger>
-    <logger name="org.springframework.oxm" additivity="false" level="WARN">
+    <logger name="org.springframework.oxm" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.xnat.xnatfs" additivity="false" level="ERROR">
@@ -443,7 +443,7 @@
     <logger name="org.apache.turbine" additivity="false" level="ERROR">
         <appender-ref ref="turbine"/>
     </logger>
-    <logger name="org.springframework.stereotype" additivity="false" level="WARN">
+    <logger name="org.springframework.stereotype" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.xnat.initialization" additivity="false" level="WARN">
@@ -452,7 +452,7 @@
     <logger name="org.apache.fop" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
-    <logger name="org.springframework.transaction" additivity="false" level="WARN">
+    <logger name="org.springframework.transaction" additivity="false" level="ERROR">
         <appender-ref ref="orm"/>
     </logger>
     <logger name="org.nrg.xnat" additivity="false" level="ERROR">
@@ -467,16 +467,16 @@
     <logger name="org.nrg.xnat.node" additivity="false" level="WARN">
         <appender-ref ref="tasks"/>
     </logger>
-    <logger name="org.springframework.ldap" additivity="false" level="WARN">
+    <logger name="org.springframework.ldap" additivity="false" level="ERROR">
         <appender-ref ref="security"/>
     </logger>
-    <logger name="org.springframework.scheduling" additivity="false" level="WARN">
+    <logger name="org.springframework.scheduling" additivity="false" level="ERROR">
         <appender-ref ref="scheduler"/>
     </logger>
     <logger name="org.nrg.xnat.services.cache" additivity="false" level="WARN">
         <appender-ref ref="cache"/>
     </logger>
-    <logger name="org.springframework.orm" additivity="false" level="WARN">
+    <logger name="org.springframework.orm" additivity="false" level="ERROR">
         <appender-ref ref="orm"/>
     </logger>
     <logger name="org.nrg.framework.orm" additivity="false" level="WARN">
@@ -485,7 +485,7 @@
     <logger name="org.dcm4che" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
     </logger>
-    <logger name="org.springframework.util" additivity="false" level="WARN">
+    <logger name="org.springframework.util" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.xnat.helpers.prearchive" additivity="false" level="WARN">
@@ -497,7 +497,7 @@
     <logger name="org.nrg.xnat.received" additivity="false" level="INFO">
         <appender-ref ref="RECEIVED"/>
     </logger>
-    <logger name="org.springframework.core" additivity="false" level="WARN">
+    <logger name="org.springframework.core" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
     <logger name="org.nrg.xnat.initialization.tasks" additivity="false" level="WARN">

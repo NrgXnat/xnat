@@ -99,18 +99,8 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
 
                             if (diff >= _interval && !PrearcUtils.isSessionReceiving(triple)) {
                                 updatedSessionCount++;
-                                try {
-                                    log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, setting status to QUEUED_BUILDING", updatedSessionCount, sessionData.toString(), diff, _interval);
-                                    if (PrearcDatabase.setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING)) {
-                                        log.debug("Creating JMS queue entry for {} to archive {}", user.getUsername(), sessionData.getExternalUrl());
-                                        final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir);
-                                        XDAT.sendJmsRequest(_jmsTemplate, request);
-                                    } else {
-                                        log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", sessionData.toString());
-                                    }
-                                } catch (Exception exception) {
-                                    log.error("Error when setting prearchive session status to QUEUED", exception);
-                                }
+                                log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, creating JMS queue entry for {} to archive {}", updatedSessionCount, sessionData.toString(), diff, _interval, user.getUsername(), sessionData.getExternalUrl());
+                                XDAT.sendJmsRequest(_jmsTemplate, new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir));
                             } else if (diff >= (_interval * 10)) {
                                 log.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
                             } else if (diff < _interval) {

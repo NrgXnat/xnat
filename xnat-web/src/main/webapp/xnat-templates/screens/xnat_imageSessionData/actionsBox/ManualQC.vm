@@ -1,11 +1,11 @@
 ##Copyright 2012 Radiologics, Inc
 ##Developer: Tim Olsen tim@radiologics.com
-
-## CIRRUS-131: Shouldn't be able to add Manual QC if session is obsolete
-#if($om.getItem().getStatus()!="obsolete")
-	#if($turbineUtils.canEdit($user,"xnat:qcManualAssessorData/project", $project.getId()))
-		<li class="yuimenuitem manual_qc $!li_class">
-			<A HREF="${link.setAction("XDATActionRouter").addPathInfo("xdataction","XDATScreen_edit_xnat_qcManualAssessorData").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}" ><div class="ic"><img border="0" src="$content.getURI("images/e.gif")"/></div><div class="ic_spacer">&nbsp;</div>Add QC Entry</a>
-		</li>
+#if($siteConfig.getBooleanValue("uiShowAddManualQCAction"))
+	#if($om.getItem().getStatus()!="obsolete")
+		#if($turbineUtils.canEdit($user,"xnat:qcManualAssessorData/project", $project.getId()))
+			<li class="yuimenuitem manual_qc $!li_class">
+				<A HREF="${link.setAction("XDATActionRouter").addPathInfo("xdataction","XDATScreen_edit_xnat_qcManualAssessorData").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}" ><div class="ic"><img border="0" src="$content.getURI("images/e.gif")"/></div><div class="ic_spacer">&nbsp;</div>Add QC Entry</a>
+			</li>
+		#end
 	#end
 #end

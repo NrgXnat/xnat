@@ -15,7 +15,6 @@ import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;
@@ -704,37 +703,36 @@ public class CatalogUtils {
     }
 
     public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath) {
-        return buildCatalogMap(cat, catPath, true);
+        return buildCatalogMap(cat, catPath, "", false);
     }
 
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull) {
-        return buildCatalogMap(cat, catPath, pull, "", false);
-    }
-
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull, String prefix) {
-        return buildCatalogMap(cat, catPath, pull, prefix, false);
+    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, String prefix) {
+        return buildCatalogMap(cat, catPath, prefix, false);
     }
 
     /**
      * HashMap with key = path relative to catalog (or URI if useUri=T) and value=Object[]:
      *     map_entry[0] is the catalog entry
      *     map_entry[1] is the catalog or entryset containing the above catalog entry
-     *     map_entry[2] is a bool for existing on filesystem <strong>meant for use by other methods, always false upon return of this method</strong>
+     *     map_entry[2] is a bool for existing on filesystem
+     *          <strong>meant for use by other methods, set to false for non-remote files upon return of this method
+     *          (remote URLs will be checked here)</strong>
      *
      * @param cat the catalog bean
      * @param catPath the catalog parent path (path to dir containing catalog)
-     * @param pull true if files should be pulled from remote
      * @param prefix prefix path that will be prepended to map keys
      * @param addUriAndRelative true if a given catalog entry should have 2 map entries if URI field is not a relative path
      *                          (one for URI, one for relative path) - useful when adding a new entry and wanting to confirm
      *                          it doesn't already exist (by URI) and, provided not, that the relative path isn't already in use
      * @return map
      */
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull, String prefix,
+    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, String prefix,
                                                             boolean addUriAndRelative) {
+
         HashMap<String, Object[]> catalog_map = new HashMap<>();
+        RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
         for (CatCatalogI subset : cat.getSets_entryset()) {
-            catalog_map.putAll(buildCatalogMap(subset, catPath, pull, prefix, addUriAndRelative));
+            catalog_map.putAll(buildCatalogMap(subset, catPath, prefix, addUriAndRelative));
         }
 
         prefix = StringUtils.defaultString(prefix, "");
@@ -745,12 +743,9 @@ public class CatalogUtils {
             //map_entry[2] is a bool for existing on filesystem
             Object[] map_entry = new Object[]{entry, cat, false};
 
-            File f = null;
             String uri = entry.getUri();
-            if (pull) {
-                f = getFile(entry, catPath); //pulls from remote FS
-            } else if (FileUtils.IsUrl(uri, true)) {
-                map_entry[2] = true; // Consider remote file to exist even if it's not in the archive
+            if (FileUtils.IsUrl(uri, true)) {
+                map_entry[2] = remoteFilesService != null && remoteFilesService.canPullFile(uri);
             }
 
             // Want the HashMap key to be the relative path on the filesystem (or the URI if requested).
@@ -758,12 +753,7 @@ public class CatalogUtils {
             // the cachePath if it's a URL). Still, we default to URI (see getRelativePathForCatalogEntry)
             // for backward compatibility (old IDs not set correctly)
             String relativePath;
-            // relativePath should be set to the same thing regardless of which of these we use
-            if (f != null) {
-                relativePath = Paths.get(catPath).relativize(f.toPath()).toString();
-            } else {
-                relativePath = getRelativePathForCatalogEntry(entry, catPath);
-            }
+            relativePath = getRelativePathForCatalogEntry(entry, catPath);
             if (addUriAndRelative && !uri.equals(relativePath)) {
                 catalog_map.put(uri, map_entry);
             }

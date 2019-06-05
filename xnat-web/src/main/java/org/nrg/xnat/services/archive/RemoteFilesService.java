@@ -24,6 +24,13 @@ public interface RemoteFilesService {
     File pullFile(String url, String localPath, String destinationPath);
 
     /**
+     * Is the url accessible from XNAT?
+     * @param url the url
+     * @return T/F if we can HEAD the url
+     */
+    boolean canPullFile(String url);
+
+    /**
      * Does the catalog resource have remote files?
      *
      * @param resource the resource

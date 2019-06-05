@@ -476,12 +476,15 @@ public class CatalogUtils {
             entry.setCreatedeventid(eventId.toString());
             mod = true;
         }
-        if (StringUtils.isEmpty(entry.getId()) ||
-                FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getId().equals(relativePath)) {
+        String id = entry.getId();
+        String cachePath = entry.getCachepath();
+        if (StringUtils.isEmpty(id) ||
+                FileUtils.IsAbsolutePath(entry.getUri()) && !id.equals(relativePath)) {
             entry.setId(relativePath);
             mod = true;
         }
-        if (FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getCachepath().equals(relativePath)) {
+        if (StringUtils.isEmpty(cachePath) ||
+                FileUtils.IsAbsolutePath(entry.getUri()) && !cachePath.equals(relativePath)) {
             entry.setCachepath(relativePath);
             mod = true;
         }
@@ -743,13 +746,17 @@ public class CatalogUtils {
             Object[] map_entry = new Object[]{entry, cat, false};
 
             File f = null;
-            if (pull) f = getFile(entry, catPath); //pulls from remote FS
+            String uri = entry.getUri();
+            if (pull) {
+                f = getFile(entry, catPath); //pulls from remote FS
+            } else if (FileUtils.IsUrl(uri, true)) {
+                map_entry[2] = true; // Consider remote file to exist even if it's not in the archive
+            }
 
             // Want the HashMap key to be the relative path on the filesystem (or the URI if requested).
             // Originally/by default, this is the URI, but now we support URL paths as URIs, it should be the ID (and
             // the cachePath if it's a URL). Still, we default to URI (see getRelativePathForCatalogEntry)
             // for backward compatibility (old IDs not set correctly)
-            String uri = entry.getUri();
             String relativePath;
             // relativePath should be set to the same thing regardless of which of these we use
             if (f != null) {
@@ -1835,6 +1842,8 @@ public class CatalogUtils {
         newEntry.setId(id);
         if (StringUtils.isNotBlank(relativePath)) {
             newEntry.setCachepath(relativePath);
+        } else {
+            newEntry.setCachepath(id);
         }
         setMetaFieldByName(newEntry, SIZE_METAFIELD, Long.toString(size));
         configureEntry(newEntry, info, false);

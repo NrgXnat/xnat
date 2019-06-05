@@ -107,7 +107,7 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Autowired(required = false)
-    public void setFilesystemServices(final RemoteFilesService remoteFilesService) {
+    public void setRemoteFilesService(final RemoteFilesService remoteFilesService) {
         _remoteFilesService = remoteFilesService;
     }
 
@@ -408,8 +408,23 @@ public class DefaultCatalogService implements CatalogService {
                                                               @Nullable Integer parentEventId, final String label,
                                                               final String description, final String format,
                                                               final String content, final String... tags) throws Exception {
-        final XnatResourcecatalog catalog = createResourceCatalog(user, label, description, format, content, tags);
-        insertResourceCatalog(user, parentUri, catalog, parentEventId);
+        // Test if catalog already exists
+        XnatResourcecatalog catalog = null;
+        ResourceData resourceData = getResourceDataFromUri(parentUri);
+        for (XnatAbstractresourceI res : resourceData.getXnatUri().getResources(true)) {
+            if (!(res instanceof XnatResourcecatalog)) {
+                continue;
+            }
+            if (res.getLabel().equals(label)) {
+                catalog = (XnatResourcecatalog) res;
+                break;
+            }
+        }
+        // If it doesn't exist, create it
+        if (catalog == null) {
+            catalog = createResourceCatalog(user, label, description, format, content, tags);
+            insertResourceCatalog(user, parentUri, catalog, parentEventId);
+        }
         return catalog;
     }
 

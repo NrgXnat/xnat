@@ -16,19 +16,27 @@ public interface RemoteFilesService {
      * Retrieves the file indicated by url, and saves it to destinationPath
      *
      * @param url may be a URL or may be an absolute local path
-     * @param localPath absolute local path within archive where file would be located
      * @param destinationPath absolute local path to which file ought to be saved
      * @return File or null if url isn't accessible from any configured remote filesystem
      */
     @Nullable
-    File pullFile(String url, String localPath, String destinationPath);
+    File pullFile(String url, String destinationPath);
 
     /**
-     * Is the url accessible from XNAT?
+     * Is the url accessible?
+     *
      * @param url the url
      * @return T/F if we can HEAD the url
      */
     boolean canPullFile(String url);
+
+    /**
+     * Delete file at url on remote filesystem
+     *
+     * @param url the url
+     * @return true if file successfully deleted
+     */
+    boolean deleteFile(String url);
 
     /**
      * Does the catalog resource have remote files?

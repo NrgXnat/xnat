@@ -866,32 +866,24 @@ public class CatalogUtils {
         }
 
         CatalogEntryPathInfo info = new CatalogEntryPathInfo(entry, parentPath, destParentPath);
-
-        return getFileOnLocalFileSystem(info.entryPath, info.entryPathLocal, info.entryPathDest);
+        return getFileOnLocalFileSystem(info.entryPath, info.entryPathDest);
     }
 
     public static class CatalogEntryPathInfo {
         public String entryPath;            // may be full archive-local path or uri
-        public String entryPathLocal;       // full archive-local path
         public String entryPathDest;        // full path to destination location
         public String catalogRelativePath;  // path relative to catalog
 
         public CatalogEntryPathInfo(CatEntryI entry, String parentPath, String destParentPath) {
             String uri = entry.getUri();
+            catalogRelativePath = getRelativePathForCatalogEntry(entry, parentPath);
             if (FileUtils.IsUrl(uri, true)) {
-                catalogRelativePath = getRelativePathForCatalogEntry(entry, parentPath);
                 entryPath = uri;
             } else {
-                catalogRelativePath = uri;
-                entryPath = null;
+                entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, catalogRelativePath),
+                        "\\", "/");
             }
-
-            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(parentPath, catalogRelativePath), "\\", "/");
             entryPathDest = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, catalogRelativePath), "\\", "/");
-
-            if (entryPath == null) {
-                entryPath = entryPathLocal;
-            }
         }
     }
 
@@ -1048,47 +1040,35 @@ public class CatalogUtils {
      * If the input is a URL, we'll try to pull that, too.
      *
      * @param uri the uri
-     * @param localPath the local path to put file, can be null
-     * @return File
-     */
-    @Nullable
-    public static File getFileOnLocalFileSystem(String uri, @Nullable String localPath) {
-        return getFileOnLocalFileSystem(uri, localPath, null);
-    }
-
-    /**
-     * getFileOnLocalFileSystem will return the local file if it exists. If not, it will check
-     * if any alternative filesystems have been configured via service and if so, try pulling the file from there.
-     * If the input is a URL, we'll try to pull that, too.
-     *
-     * @param uri the uri
-     * @param localPath the archive-local path for file, can be null
      * @param destPath any arbitrary local path for file, can be null
      * @return File
      */
     @Nullable
-    public static File getFileOnLocalFileSystem(String uri, @Nullable String localPath, @Nullable String destPath) {
-        if (StringUtils.isBlank(localPath)) {
-            localPath = uri;
-        }
+    public static File getFileOnLocalFileSystem(String uri,
+                                                @Nullable String destPath) {
         if (StringUtils.isBlank(destPath)) {
-            destPath = localPath;
+            if (FileUtils.IsUrl(uri, true)) {
+                log.error("Cannot pull remote URI {} without a destination path", uri);
+                return null;
+            }
+            destPath = uri;
         }
+
         File f = getFileOnLocalFileSystemOrig(destPath);
         if (f == null) {
             RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
             if (remoteFilesService != null) {
-                f = remoteFilesService.pullFile(uri, localPath, destPath);
+                f = remoteFilesService.pullFile(uri, destPath);
             }
         }
         return f;
     }
 
     /**
-     * See {@link #getFileOnLocalFileSystem(String, String)}, localPath set to empty string
+     * See {@link #getFileOnLocalFileSystem(String, String)}, destPath set to null
      */
     public static File getFileOnLocalFileSystem(String fullPath) {
-        return getFileOnLocalFileSystem(fullPath,"");
+        return getFileOnLocalFileSystem(fullPath,null);
     }
 
     /**
@@ -1111,6 +1091,23 @@ public class CatalogUtils {
         }
 
         return f;
+    }
+
+    /**
+     * Delete file locally and also at URL if provided.
+     *
+     * @param f     the file
+     * @param url   the url or null
+     * @return true if file deleted, false otherwise
+     */
+    public static boolean deleteFile(File f, @Nullable String url) {
+        boolean success = !f.exists() || f.delete();
+        RemoteFilesService remoteFilesService;
+        if (StringUtils.isBlank(url) ||
+                (remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class)) == null) {
+            return success;
+        }
+        return success & remoteFilesService.deleteFile(url);
     }
 
     public static void configureEntry(final CatEntryBean newEntry, final XnatResourceInfo info, boolean modified) {

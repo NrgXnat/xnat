@@ -1056,7 +1056,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (guestBrowseableElementDisplays != null) {
             return guestBrowseableElementDisplays;
         }
-        return resetBrowseableElementDisplays(_guest);
+        return resetBrowseableElementDisplays(getGuest());
     }
 
     private void clearAllUserProjectAccess() {

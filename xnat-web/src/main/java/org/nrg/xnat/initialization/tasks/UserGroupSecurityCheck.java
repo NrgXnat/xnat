@@ -27,7 +27,6 @@ import java.util.List;
  * Checks whether the site contains any user groups containing underscores. If so, an email is sent to the site admin
  * informing them of the security risk of this.
  */
-@SuppressWarnings("SqlDialectInspection")
 @Component
 @Slf4j
 public class UserGroupSecurityCheck extends AbstractInitializingTask {

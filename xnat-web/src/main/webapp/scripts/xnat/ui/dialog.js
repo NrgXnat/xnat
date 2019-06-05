@@ -882,6 +882,10 @@ window.xmodal = getObject(window.xmodal);
         this.ready(function(){
             // destroy by default when calling .close() method
             var _destroy = firstDefined(destroy, true);
+            if (this.nuke === false || this.destroyOnClose === false) {
+                // explicit "do not destroy"
+                _destroy = false;
+            }
 
             if (isFunction(this.onClose)) {
                 this.onCloseResult = this.onClose.call(this, this);
@@ -907,7 +911,7 @@ window.xmodal = getObject(window.xmodal);
 
             // TODO: to destroy or not to destroy?
             // TODO: ANSWER - ALWAYS DESTROY ON CLOSE
-            if (this.nuke || this.destroyOnClose || _destroy) {
+            if (_destroy) {
                 this.destroy();
             }
         });

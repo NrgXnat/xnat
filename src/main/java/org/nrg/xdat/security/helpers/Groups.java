@@ -12,6 +12,7 @@ package org.nrg.xdat.security.helpers;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.ecs.xhtml.meta;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -425,6 +426,11 @@ public class Groups {
      */
     @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectOwnerGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
+        /*
+        read_element	edit_element	create_element	delete_element	active_element	attributes
+        1	1	1	1	1	xnat:projectData/ID, %/project
+        1	0	0	0	1	%/sharing/share/project
+        */
         return getUserGroupService().createOrUpdateGroup(projectId + "_" + OWNER_GROUP, OWNER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user, Collections.singletonList(user));
     }
 
@@ -441,7 +447,13 @@ public class Groups {
      */
     @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectMemberGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
-        return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
+        /*
+        read_element	edit_element	create_element	delete_element	active_element	array_agg
+        1	0	0	0	0	xnat:projectData/ID
+        1	0	0	0	1	%/sharing/share/project
+        1	1	1	0	1	%/project
+        */
+        return getUserGroupService().createOrUpdateGroup(projectId + "_" + MEMBER_GROUP, MEMBER_NAME, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }
 
     /**
@@ -457,6 +469,11 @@ public class Groups {
      */
     @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateProjectCollaboratorGroup(final String projectId, final List<ElementSecurity> securedElements, final UserI user) throws Exception {
+        /*
+        read_element	edit_element	create_element	delete_element	active_element	array_agg
+        1	0	0	0	0	xnat:projectData/ID
+        1	0	0	0	1	%/sharing/share/project,%/project
+        */
         return getUserGroupService().createOrUpdateGroup(projectId + "_" + COLLABORATOR_GROUP, COLLABORATOR_NAME, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, securedElements, projectId, user);
     }
 

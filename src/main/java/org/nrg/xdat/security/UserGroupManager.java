@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -57,7 +58,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -233,6 +238,11 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    public UserGroupI createGroup(final String id, final String displayName, final List<PermissionsOptions> permissionsOptions, final boolean activateChanges, final List<ElementSecurity> ess, final String tag, final UserI authenticatedUser, final List<UserI> users) {
+        return null;
+    }
+
+    @Override
     public UserGroupI createGroup(final String groupId, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, final List<UserI> users) {
         final XdatUsergroup group = new XdatUsergroup(authenticatedUser);
 
@@ -353,6 +363,11 @@ public class UserGroupManager implements UserGroupServiceI {
 
         log.debug("Updated group {} in {} ms", id, Calendar.getInstance().getTimeInMillis() - start);
         return new UserGroup(group, _template);
+    }
+
+    @Override
+    public UserGroupI createOrUpdateGroup(final String id, final String displayName, final List<PermissionsOptions> permissionsOptions, final boolean activateChanges, final List<ElementSecurity> ess, final String tag, final UserI authenticatedUser, final List<UserI> users) throws Exception {
+        return null;
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -690,17 +705,17 @@ public class UserGroupManager implements UserGroupServiceI {
         return elementAccess;
     }
 
-    private void initPermissions(UserGroupI group, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, List<ElementSecurity> ess, String value, UserI authenticatedUser) {
+    private void initPermissions(final UserGroupI group, final boolean create, final boolean read, final boolean delete, final boolean edit, final boolean activate, final List<ElementSecurity> elementSecurities, final String value, final UserI authenticatedUser) {
         try {
             if (checkVelocityInit() && Velocity.resourceExists("/screens/" + NEW_GROUP_PERMS_TEMPLATE)) {
                 final VelocityContext context = new VelocityContext();
                 context.put("group", group);
-                context.put("create", (create) ? "1" : "0");
-                context.put("read", (read) ? "1" : "0");
-                context.put("delete", (delete) ? "1" : "0");
-                context.put("edit", (edit) ? "1" : "0");
-                context.put("activate", (activate) ? "1" : "0");
-                context.put("ess", ess);
+                context.put("create", create ? "1" : "0");
+                context.put("read", read ? "1" : "0");
+                context.put("delete", delete ? "1" : "0");
+                context.put("edit", edit ? "1" : "0");
+                context.put("activate", activate ? "1" : "0");
+                context.put("elementSecurities", elementSecurities);
                 context.put("value", value);
                 context.put("user", authenticatedUser);
 
@@ -708,7 +723,12 @@ public class UserGroupManager implements UserGroupServiceI {
                 final Template     template = Velocity.getTemplate("/screens/" + NEW_GROUP_PERMS_TEMPLATE);
                 template.merge(context, writer);
 
-                PoolDBUtils.ExecuteBatch(XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";"), null, authenticatedUser.getUsername());
+                final List<String> queries   = XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";");
+                final File sql = new File("/data/xnat/cache/group-perms-" + group.getId() + ".sql");
+                try (final FileWriter sqlOutput = new FileWriter(sql)) {
+                    IOUtils.copy(new StringReader(StringUtils.join(queries, "\n")), sqlOutput);
+                }
+                PoolDBUtils.ExecuteBatch(queries, null, authenticatedUser.getUsername());
             }
         } catch (Exception ignored) {
         }

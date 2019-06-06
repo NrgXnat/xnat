@@ -26,6 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
@@ -58,16 +60,13 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.framework.orm.DatabaseHelper.getFunctionParameterSource;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
@@ -77,10 +76,14 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
     @Autowired
-    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final DataTypeAwareEventService eventService) {
+    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final DataTypeAwareEventService eventService, final DatabaseHelper helper) throws IOException {
         _cache = cache;
         _template = template;
         _eventService = eventService;
+        _helper = helper;
+
+        // Loads the project group database functions.
+        _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
     }
 
     @Override
@@ -238,11 +241,6 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI createGroup(final String id, final String displayName, final List<PermissionsOptions> permissionsOptions, final boolean activateChanges, final List<ElementSecurity> ess, final String tag, final UserI authenticatedUser, final List<UserI> users) {
-        return null;
-    }
-
-    @Override
     public UserGroupI createGroup(final String groupId, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, final List<UserI> users) {
         final XdatUsergroup group = new XdatUsergroup(authenticatedUser);
 
@@ -366,8 +364,13 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI createOrUpdateGroup(final String id, final String displayName, final List<PermissionsOptions> permissionsOptions, final boolean activateChanges, final List<ElementSecurity> ess, final String tag, final UserI authenticatedUser, final List<UserI> users) throws Exception {
-        return null;
+    public List<UserGroupI> createOrUpdateProjectGroups(final String projectId, final UserI user) {
+        return Lists.transform(_helper.callFunction("project_groups_create_groups_and_permissions", getFunctionParameterSource("projectId", projectId)), new Function<Map<String, Object>, UserGroupI>() {
+            @Override
+            public UserGroupI apply(final Map<String, Object> group) {
+                return getGroup((String) group.get("group_id"));
+            }
+        });
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -753,4 +756,5 @@ public class UserGroupManager implements UserGroupServiceI {
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;
     private final DataTypeAwareEventService  _eventService;
+    private final DatabaseHelper             _helper;
 }

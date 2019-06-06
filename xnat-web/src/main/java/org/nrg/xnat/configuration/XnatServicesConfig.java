@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
@@ -19,6 +20,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+
+import java.io.IOException;
 
 /**
  * This configuration manages configuration and instantiation of core XNAT/XDAT/XFT services.
@@ -36,7 +39,7 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
-        return new UserGroupManager(cache, template, eventService);
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template, final DatabaseHelper helper) throws IOException {
+        return new UserGroupManager(cache, template, eventService, helper);
     }
 }

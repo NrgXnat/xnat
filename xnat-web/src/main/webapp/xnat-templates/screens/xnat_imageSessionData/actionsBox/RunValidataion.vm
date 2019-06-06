@@ -1,5 +1,5 @@
 <!-- Sequence: 100 -->
-#set($pipeline=$om.canRunPipeline($data.getSession().getAttribute("user"),"ProtocolCheck"))
+#set($pipeline=$om.canRunPipeline($user,"ProtocolCheck"))
 #if($pipeline)
   <!--<li class="yuimenuitem $!li_class">
 	<A HREF="${link.setPage("PipelineScreen_protocolcheck.vm").addPathInfo("schema_type","$element.getFullXMLName()").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}" ><div class="ic"><img border="0" src="$content.getURI("images/e.gif")"/></div><div class="ic_spacer">&nbsp;</div>Validate Protocol</a>

@@ -35,7 +35,7 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.services.archive.FilesystemService;
+import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
@@ -253,6 +253,25 @@ public class CatalogUtils {
         return StringUtils.defaultIfBlank(relPath, uri);
     }
 
+    /**
+     * Get catalog entry details
+     * @param cat           the catalog bean
+     * @param parentPath    the parent directory path
+     * @param uriPath       the parent uri
+     * @param _resource     the catalog resource
+     * @param includeFile   T/F include java file object (includes pulling file if not local)
+     * @param filter        catalog entry filter
+     * @param proj          the project
+     * @param locator       desired locator string, one of URI (uriPath + /RELPATH), absolutePath (path to entry,
+     *                      may be remote URL), projectPath (path to entry relative to proj archive path, may be remote
+     *                      URL)
+     *
+     * @return list of object arrays containing:
+     *  0: name, 1: size, 2: URI/absolutePath/projectPath (based on locator input string), 3: label,
+     *  4: cav of fields and tags, 5: format, 6: content, 7: abstract resource id, 8: file object if includeFile,
+     *  8 or 9: MD5 digest
+     *  (see also CatalogUtils.FILE_HEADERS_W_FILE / CatalogUtils.FILE_HEADERS)
+     */
     public static List<Object[]> getEntryDetails(@Nonnull CatCatalogI cat, String parentPath, String uriPath,
                                                  XnatResource _resource, boolean includeFile,
                                                  final CatEntryFilterI filter, XnatProjectdata proj, String locator) {
@@ -287,6 +306,8 @@ public class CatalogUtils {
                     }
                 }
                 row.add(name);
+                //TODO Why are we always setting size = 0 when includeFile = true? This looks broken, but I'm not going
+                // to fix it in case things are coded against it as-is
                 row.add(includeFile ? 0 : size);
                 if (locator.equalsIgnoreCase("URI")) {
                     row.add(FileUtils.AppendSlash(uriPath, "") + getRelativePathForCatalogEntry(entry, parentPath));
@@ -454,12 +475,15 @@ public class CatalogUtils {
             entry.setCreatedeventid(eventId.toString());
             mod = true;
         }
-        if (StringUtils.isEmpty(entry.getId()) ||
-                FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getId().equals(relativePath)) {
+        String id = entry.getId();
+        String cachePath = entry.getCachepath();
+        if (StringUtils.isEmpty(id) ||
+                FileUtils.IsAbsolutePath(entry.getUri()) && !id.equals(relativePath)) {
             entry.setId(relativePath);
             mod = true;
         }
-        if (FileUtils.IsAbsolutePath(entry.getUri()) && !entry.getCachepath().equals(relativePath)) {
+        if (StringUtils.isEmpty(cachePath) ||
+                FileUtils.IsAbsolutePath(entry.getUri()) && !cachePath.equals(relativePath)) {
             entry.setCachepath(relativePath);
             mod = true;
         }
@@ -679,36 +703,36 @@ public class CatalogUtils {
     }
 
     public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath) {
-        return buildCatalogMap(cat, catPath, true);
+        return buildCatalogMap(cat, catPath, "", false);
     }
 
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull) {
-        return buildCatalogMap(cat, catPath, pull, "", false);
-    }
-
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull, String prefix) {
-        return buildCatalogMap(cat, catPath, pull, prefix, false);
+    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, String prefix) {
+        return buildCatalogMap(cat, catPath, prefix, false);
     }
 
     /**
      * HashMap with key = path relative to catalog (or URI if useUri=T) and value=Object[]:
      *     map_entry[0] is the catalog entry
      *     map_entry[1] is the catalog or entryset containing the above catalog entry
-     *     map_entry[2] is a bool for existing on filesystem <strong>meant for use by other methods, always false upon return of this method</strong>
+     *     map_entry[2] is a bool for existing on filesystem
+     *          <strong>meant for use by other methods, set to false for non-remote files upon return of this method
+     *          (remote URLs will be checked here)</strong>
      *
      * @param cat the catalog bean
      * @param catPath the catalog parent path (path to dir containing catalog)
-     * @param pull true if files should be pulled from remote
      * @param prefix prefix path that will be prepended to map keys
      * @param addUriAndRelative true if a given catalog entry should have 2 map entries if URI field is not a relative path
-     *                          (one for URI, one for relative path)
+     *                          (one for URI, one for relative path) - useful when adding a new entry and wanting to confirm
+     *                          it doesn't already exist (by URI) and, provided not, that the relative path isn't already in use
      * @return map
      */
-    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, boolean pull, String prefix,
+    public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath, String prefix,
                                                             boolean addUriAndRelative) {
+
         HashMap<String, Object[]> catalog_map = new HashMap<>();
+        RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
         for (CatCatalogI subset : cat.getSets_entryset()) {
-            catalog_map.putAll(buildCatalogMap(subset, catPath));
+            catalog_map.putAll(buildCatalogMap(subset, catPath, prefix, addUriAndRelative));
         }
 
         prefix = StringUtils.defaultString(prefix, "");
@@ -719,21 +743,17 @@ public class CatalogUtils {
             //map_entry[2] is a bool for existing on filesystem
             Object[] map_entry = new Object[]{entry, cat, false};
 
-            File f = null;
-            if (pull) f = getFile(entry, catPath); //pulls from remote FS
+            String uri = entry.getUri();
+            if (FileUtils.IsUrl(uri, true)) {
+                map_entry[2] = remoteFilesService != null && remoteFilesService.canPullFile(uri);
+            }
 
             // Want the HashMap key to be the relative path on the filesystem (or the URI if requested).
             // Originally/by default, this is the URI, but now we support URL paths as URIs, it should be the ID (and
             // the cachePath if it's a URL). Still, we default to URI (see getRelativePathForCatalogEntry)
             // for backward compatibility (old IDs not set correctly)
-            String uri = entry.getUri();
             String relativePath;
-            // relativePath should be set to the same thing regardless of which of these we use
-            if (f != null) {
-                relativePath = Paths.get(catPath).relativize(f.toPath()).toString();
-            } else {
-                relativePath = getRelativePathForCatalogEntry(entry, catPath);
-            }
+            relativePath = getRelativePathForCatalogEntry(entry, catPath);
             if (addUriAndRelative && !uri.equals(relativePath)) {
                 catalog_map.put(uri, map_entry);
             }
@@ -741,6 +761,7 @@ public class CatalogUtils {
         }
         return catalog_map;
     }
+
 
     public interface CatEntryFilterI {
         boolean accept(final CatEntryI entry);
@@ -815,24 +836,55 @@ public class CatalogUtils {
     }
 
     /**
-     * Gets file from file system.  This method supports relative or absolute or URL paths in the CatEntryI. It also supports files that are gzipped on the file system, but don't include .gz in the catalog URI (this used to be very common).
+     * Gets file from file system.  This method supports relative or absolute or URL paths in the CatEntryI. It also
+     * supports files that are gzipped on the file system, but don't include .gz in the catalog URI (this used to be
+     * very common).
      *
      * @param entry      Catalog Entry for file to be retrieved
      * @param parentPath Path to catalog file directory
      * @return File object represented by CatEntryI
      */
+    @Nullable
     public static File getFile(CatEntryI entry, String parentPath) {
-        // If the URI is an absolute path, entryPath = URI
-        String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
+        return getFile(entry, parentPath, null);
+    }
 
-        // For a local file, entryPath = entryPathLocal
-        String entryPathLocal = entryPath;
-        if (FileUtils.IsUrl(entryPath, true)) {
-            String relPath = getRelativePathForCatalogEntry(entry, parentPath);
-            entryPathLocal = StringUtils.replace(FileUtils.AppendRootPath(parentPath, relPath), "\\", "/");
+    /**
+     * Gets file from file system and put it in destParentPath.  This method supports relative or absolute or URL paths
+     * in the CatEntryI. It also supports files that are gzipped on the file system, but don't include .gz in the
+     * catalog URI (this used to be very common).
+     *
+     * @param entry             Catalog Entry for file to be retrieved
+     * @param parentPath        Path to catalog file directory
+     * @param destParentPath    Path to catalog file directory desired output location
+     * @return File object represented by CatEntryI
+     */
+    @Nullable
+    public static File getFile(CatEntryI entry, String parentPath, @Nullable String destParentPath) {
+        if (destParentPath == null) {
+            destParentPath = parentPath;
         }
 
-        return getFileOnLocalFileSystem(entryPath, entryPathLocal);
+        CatalogEntryPathInfo info = new CatalogEntryPathInfo(entry, parentPath, destParentPath);
+        return getFileOnLocalFileSystem(info.entryPath, info.entryPathDest);
+    }
+
+    public static class CatalogEntryPathInfo {
+        public String entryPath;            // may be full archive-local path or uri
+        public String entryPathDest;        // full path to destination location
+        public String catalogRelativePath;  // path relative to catalog
+
+        public CatalogEntryPathInfo(CatEntryI entry, String parentPath, String destParentPath) {
+            String uri = entry.getUri();
+            catalogRelativePath = getRelativePathForCatalogEntry(entry, parentPath);
+            if (FileUtils.IsUrl(uri, true)) {
+                entryPath = uri;
+            } else {
+                entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, catalogRelativePath),
+                        "\\", "/");
+            }
+            entryPathDest = StringUtils.replace(FileUtils.AppendRootPath(destParentPath, catalogRelativePath), "\\", "/");
+        }
     }
 
     public static Stats getFileStats(CatCatalogI cat, String parentPath) {
@@ -983,64 +1035,40 @@ public class CatalogUtils {
     }
 
     /**
-     * Get configured filesystem services
-     * @return List of active FilesystemService instances (empty list if none)
-     */
-    public static List<FilesystemService> getFilesystemServices() {
-        //If alternate filesystem configured via plugin and active, return it
-        Map<String, FilesystemService> fsMap = XDAT.getContextService().getBeansOfType(FilesystemService.class);
-        List<FilesystemService> fsList = new ArrayList<>();
-        if (fsMap == null) return fsList;
-        for (FilesystemService fs : fsMap.values()) {
-            if (fs.isActive()) {
-                fsList.add(fs);
-            }
-        }
-        return fsList;
-    }
-
-    /**
-     * Does this XNAT instance have configured, active filesystem services?
-     * @return T/F
-     */
-    public static boolean hasActiveExternalFilesystem() {
-        return !getFilesystemServices().isEmpty();
-    }
-
-    /**
      * getFileOnLocalFileSystem will return the local file if it exists. If not, it will check
      * if any alternative filesystems have been configured via service and if so, try pulling the file from there.
      * If the input is a URL, we'll try to pull that, too.
      *
      * @param uri the uri
-     * @param localPath the local path to put file, can be empty
+     * @param destPath any arbitrary local path for file, can be null
      * @return File
      */
     @Nullable
-    public static File getFileOnLocalFileSystem(String uri, String localPath) {
-        File f = getFileOnLocalFileSystemOrig(uri);
-        if (f == null) {
-            //Try to pull from other filesystem if uri is a local path or a supported URL
-            List<FilesystemService> fsList = getFilesystemServices();
-            String protocol = UrlUtils.GetUrlProtocol(uri);
-            for (FilesystemService fs : fsList) {
-                if (protocol == null || fs.supportedUrlProtocols().contains(protocol)) {
-                    f = fs.get(uri, localPath);
-                    if (f != null) break;
-                }
+    public static File getFileOnLocalFileSystem(String uri,
+                                                @Nullable String destPath) {
+        if (StringUtils.isBlank(destPath)) {
+            if (FileUtils.IsUrl(uri, true)) {
+                log.error("Cannot pull remote URI {} without a destination path", uri);
+                return null;
             }
-            if (f == null && FileUtils.IsUrl(uri)) {
-                f = UrlUtils.downloadUrl(uri, localPath);
+            destPath = uri;
+        }
+
+        File f = getFileOnLocalFileSystemOrig(destPath);
+        if (f == null) {
+            RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
+            if (remoteFilesService != null) {
+                f = remoteFilesService.pullFile(uri, destPath);
             }
         }
         return f;
     }
 
     /**
-     * See {@link #getFileOnLocalFileSystem(String, String)}, localPath set to empty string
+     * See {@link #getFileOnLocalFileSystem(String, String)}, destPath set to null
      */
     public static File getFileOnLocalFileSystem(String fullPath) {
-        return getFileOnLocalFileSystem(fullPath,"");
+        return getFileOnLocalFileSystem(fullPath,null);
     }
 
     /**
@@ -1066,106 +1094,20 @@ public class CatalogUtils {
     }
 
     /**
-     * Download directory from remote filesystem
-     * @param directoryPath absolute local path
-     * @return success
+     * Delete file locally and also at URL if provided.
+     *
+     * @param f     the file
+     * @param url   the url or null
+     * @return true if file deleted, false otherwise
      */
-    public static boolean getRemoteDirectory(String directoryPath) {
-        boolean success = true;
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //get from any filesystem that has it, will overwrite
-            // note that "true" is returned if not on external system
-            success &= fs.getDirectory(directoryPath);
+    public static boolean deleteFile(File f, @Nullable String url) {
+        boolean success = !f.exists() || f.delete();
+        RemoteFilesService remoteFilesService;
+        if (StringUtils.isBlank(url) ||
+                (remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class)) == null) {
+            return success;
         }
-        return success;
-    }
-
-    /**
-     * Copy directory on remote filesystem, nothing changes locally
-     * @param currentPath current path (on local FS)
-     * @param newPath new path (on local FS)
-     * @return success
-     */
-    public static boolean copyRemoteDirectory(String currentPath, String newPath) {
-        boolean success = true;
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //copy on all filesystems that (might) have it
-            //note that "true" is returned if not on external system
-            success &= fs.copyDirectory(currentPath, newPath);
-        }
-        return success;
-    }
-
-    /**
-     * Delete directory from remote filesystem
-     * @param directoryPath absolute local path
-     */
-    public static void deleteRemoteDirectory(String directoryPath) {
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //delete from all filesystems that (might) have it
-            fs.deleteDirectory(directoryPath);
-        }
-    }
-
-    /**
-     * Delete files from remote filesystem
-     * @param files list of local files
-     */
-    public static void deleteRemoteFile(List<File> files) {
-        for (File file : files) {
-            deleteRemoteFile(file, null);
-        }
-    }
-
-    /**
-     * Delete file from remote filesystem
-     * @param file local file
-     */
-    public static void deleteRemoteFile(File file, String remoteUri) {
-        List<FilesystemService> fsList = getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //delete from all filesystems that (might) have it
-            if (!fs.delete(file.getAbsolutePath(), remoteUri)) {
-                log.warn("Error attempting to delete file " + file.getAbsolutePath() + " on " + fs);
-            }
-        }
-    }
-
-    /**
-     * Move file on remote filesystem
-     * @param oldPath original local path
-     * @param newFile new file object
-     */
-    public static void moveRemoteFile(String oldPath, File newFile) {
-        List<FilesystemService> fsList = CatalogUtils.getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            //move on any filesystems that have it
-            if (!fs.move(oldPath, newFile)) {
-                log.warn("Unable to move " + oldPath + " to " +
-                        newFile.getAbsolutePath() + " on " + fs);
-            }
-        }
-    }
-
-    /**
-     * Push file to remote filesystem based on URI
-     * @param file the file object
-     * @param remoteUri the remote URI
-     * @return true if file pushed, false otherwise
-     */
-    public static boolean putRemoteFile(File file, String remoteUri) {
-        if (!FileUtils.IsUrl(remoteUri, true)) return false;
-        boolean pushed = false;
-        List<FilesystemService> fsList = CatalogUtils.getFilesystemServices();
-        for (FilesystemService fs : fsList) {
-            if (fs.supportedUrlProtocols().contains(UrlUtils.GetUrlProtocol(remoteUri))) {
-                if (pushed = fs.put(file, remoteUri)) break;
-            }
-        }
-        return pushed;
+        return success & remoteFilesService.deleteFile(url);
     }
 
     public static void configureEntry(final CatEntryBean newEntry, final XnatResourceInfo info, boolean modified) {
@@ -1482,7 +1424,7 @@ public class CatalogUtils {
 
         try {
             final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest, false);
-            fl.tryLock(2L, TimeUnit.MINUTES);
+            fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace(System.currentTimeMillis() + " writer start: " + fl.toString());
             try (final FileOutputStream fos = new FileOutputStream(dest)) {
                 final OutputStreamWriter fw = new OutputStreamWriter(fos);
@@ -1887,6 +1829,8 @@ public class CatalogUtils {
         newEntry.setId(id);
         if (StringUtils.isNotBlank(relativePath)) {
             newEntry.setCachepath(relativePath);
+        } else {
+            newEntry.setCachepath(id);
         }
         setMetaFieldByName(newEntry, SIZE_METAFIELD, Long.toString(size));
         configureEntry(newEntry, info, false);

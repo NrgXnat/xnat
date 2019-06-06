@@ -127,7 +127,7 @@ public class XnatTaskApi extends AbstractXapiRestController {
 							properties.put("configurationElementsYaml", configEleJson);
 						}
 					} catch (ClassNotFoundException e) {
-						_log.trace("Could not find class for class value in task properties file (class=?)", properties.getProperty(XnatTask.CLASS));
+						_log.trace("Could not find class for class value in task properties file (class={})", properties.getProperty(XnatTask.CLASS));
 					}
                 }
                 taskList.add(properties);

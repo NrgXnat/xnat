@@ -482,9 +482,9 @@ public class FileList extends XNATCatalogTemplate {
                                 CatalogUtils.moveToHistory(catFile, file, (CatEntryBean) entry, ci);
 
                                 if (!isQueryVariableFalse("removeFiles")) {
-                                    CatalogUtils.deleteRemoteFile(file, entry.getUri());
-                                    if (!file.delete()) {
-                                        log.warn("Error attempting to delete physical file for deleted resource: " + file.getAbsolutePath());
+                                    if (!CatalogUtils.deleteFile(file, entry.getUri())) {
+                                        log.warn("Error attempting to delete physical (and/or possibly remote) file " +
+                                                "for deleted resource: {}", file.getAbsolutePath());
                                     }
                                 }
 

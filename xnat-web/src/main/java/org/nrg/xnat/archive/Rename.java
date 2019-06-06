@@ -173,12 +173,6 @@ public class Rename  implements Callable<File>{
 				//Copy files to new location
 				this.updateStep(workflow, setStep(STEP.COPY_DIR));
 				if (moveFiles) {
-					if (!CatalogUtils.copyRemoteDirectory(oldArchive, newArchive)) {
-						//If remote copy fails, pull everything down to local so it'll be pushed properly during cleanup
-						if (!CatalogUtils.getRemoteDirectory(oldArchive)) {
-							throw new Exception("Issue copying and pulling files from remote filesystem");
-						}
-					}
 					org.nrg.xft.utils.FileUtils.CopyDir(oldSessionDir, newSessionDir,false);
 				}
 
@@ -210,7 +204,6 @@ public class Rename  implements Callable<File>{
 				//If successful, move old directory to cache)
 				this.updateStep(workflow, setStep(STEP.DELETE_OLD_DIR));
 				if (moveFiles) {
-					CatalogUtils.deleteRemoteDirectory(oldSessionDir.getAbsolutePath());
 					org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), SUCCESSFUL_RENAMES, oldSessionDir);
 				}
 
@@ -222,7 +215,6 @@ public class Rename  implements Callable<File>{
 					try {
 						if (moveFiles) {
 							org.nrg.xnat.utils.FileUtils.moveToCache(project.getId(), FAILED_RENAME, newSessionDir);
-							CatalogUtils.deleteRemoteDirectory(newSessionDir.getAbsolutePath());
 						}
 					} catch (IOException e1) {
 						log.error("Issue caching rename failure", e1);

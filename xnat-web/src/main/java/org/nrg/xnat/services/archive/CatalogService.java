@@ -17,7 +17,10 @@ import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.archive.ResourceData;
+import org.nrg.xnat.turbine.utils.ArchivableItem;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -187,10 +190,6 @@ public interface CatalogService {
      */
     XnatResourcecatalog createResourceCatalog(final UserI user, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
-    XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri, @Nullable Integer parentEventId,
-                                                       final String label, final String description, final String format,
-                                                       final String content, final String... tags) throws Exception;
-
 
     /**
      * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
@@ -290,6 +289,26 @@ public interface CatalogService {
     XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog,
                                               @Nullable Integer parentEventId, final Map<String, String> parameters) throws Exception;
 
+
+    /**
+     * Creates a new resource catalog with the indicated attributes and inserts it into the resource specified by the
+     * parent URI parameter.
+     *
+     * @param user              The user creating the resource catalog.
+     * @param parentUri         The URI for the resource parent.
+     * @param parentEventId     EventId from parent workflow if it exists
+     * @param label             The label for the new resource.
+     * @param description       The description of the new resource.
+     * @param format            The format of the new resource.
+     * @param content           The content type of the new resource.
+     * @param tags              One or more tags for the new resource.
+     * @return The newly created, inserted resource catalog.
+     * @throws Exception Thrown when an error occurs at some stage of creating or inserting the resource catalog.
+     */
+    XnatResourcecatalog createAndInsertResourceCatalog(final UserI user, final String parentUri, @Nullable Integer parentEventId,
+                                                       final String label, final String description, final String format,
+                                                       final String content, final String... tags) throws Exception;
+
     /**
      * Refreshes the catalog for the specified resource. The resource should be identified by standard archive-relative
      * paths, e.g.:
@@ -376,22 +395,6 @@ public interface CatalogService {
     void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException;
 
     /**
-     *
-     * Adds the listed URLs into an existing resource catalog. If you wish to add local files to an existing resource catalog,
-     * copy them into the resource and then run {@link #refreshResourceCatalog(UserI, String, Operation...)}.
-     *
-     * @param user              The user running the operation.
-     * @param catalogResource   The URI of the resource catalog.
-     * @param urls              URLs to add to the catalog (key=URL, value=desired relative path)
-     * @param create            True: catalog should be created if it doesn't exist
-     *
-     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
-     * @throws ServerException When an error occurs in the system during the refresh operation.
-     */
-    void addToResourceCatalog(final UserI user, final String catalogResource, final Map<String, String> urls, boolean create)
-            throws ServerException, ClientException;
-
-    /**
      * Inserts the XML object into the XNAT data store. The submitted XML is validated and inserted (created or updated as appropriate). The contents of the parameters map
      * can contain the following parameters:
      *
@@ -416,4 +419,72 @@ public interface CatalogService {
      * @throws Exception When an error occurs during object creation or update.
      */
     XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception;
+
+
+    /**
+     * Get ResourceData object based on a URI string
+     * @param uriString     the uri string, identified by standard archive-relative paths, such as
+     *                      /archive/experiments/XNAT_E0001
+     *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
+     * @return ResourceData
+     * @throws ClientException for invalid URI
+     */
+    ResourceData getResourceDataFromUri(String uriString) throws ClientException;
+
+    /**
+     * Get ResourceData object based on a URI string
+     * @param uriString     the uri string, identified by standard archive-relative paths, such as
+     *                      /archive/experiments/XNAT_E0001
+     *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
+     * @param catalogOnly   boolean indicating if you are expecting a single catalog at this URI
+     * @return ResourceData
+     * @throws ClientException for invalid URI or if catalogOnly, when multiple resources or non-catalog resources
+     * are found at the URI
+     */
+    ResourceData getResourceDataFromUri(String uriString, boolean catalogOnly) throws ClientException;
+
+    /**
+     * Check that user can edit item, throw exception if not
+     *
+     * @param user the user
+     * @param item the item
+     * @param accessType the access type
+     * @param resourceName the resource name
+     */
+    void checkPermissionsOnItem(final UserI user, final ArchivableItem item, @Nonnull final String accessType,
+                                final String resourceName)
+            throws ServerException, ClientException;
+
+    /**
+     * Pulls all files for specified resource <strong>into an arbitrary location</strong>.
+     * Useful for pulling any remote files into partially populated location.
+     *
+     * The resource should be identified by standard archive-relative paths, e.g.:
+     *
+     * <pre>
+     * {@code
+     * /archive/experiments/XNAT_E0001
+     * /archive/projects/XNAT_01/subjects/XNAT_01_01
+     * }
+     * </pre>
+     *
+     * @param user              The user performing the operation.
+     * @param uriString         The uri for the resource
+     * @param destinationDir    The path to the destination
+     *
+     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
+     * @throws ServerException When an error occurs in the system during the refresh operation.
+     */
+    void pullResourceCatalogsToDestination(final UserI user, final String uriString, final String destinationDir)
+            throws ServerException, ClientException;
+
+    /**
+     * Does the resource indicated by the uriString have remote files
+     * @param user      The user performing the operation.
+     * @param uriString     the uri string, identified by standard archive-relative paths, such as
+     *                      /archive/experiments/XNAT_E0001
+     *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
+     * @return T/F
+     */
+    boolean hasRemoteFiles(final UserI user, final String uriString) throws ClientException, ServerException;
 }

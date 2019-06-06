@@ -10,19 +10,25 @@
 package org.nrg.framework.orm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.postgresql.util.PGInterval;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -347,6 +353,39 @@ public class DatabaseHelper {
         return null;
     }
 
+    public List<Map<String, Object>> callFunction(final String function, final LinkedHashMap<String, Object> arguments) {
+        return _parameterizedTemplate.queryForList(generateFunctionSql(function, arguments), arguments);
+    }
+
+    public <T> List<T> callFunction(final String function, final LinkedHashMap<String, Object> arguments, final Class<T> elementType) {
+        return _parameterizedTemplate.query(generateFunctionSql(function, arguments), arguments, BeanPropertyRowMapper.newInstance(elementType));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name, final Object value) {
+        return getFunctionParameterSource(ImmutablePair.of(name, value));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2, final String name3, final Object value3) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2), ImmutablePair.of(name3, value3));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2, final String name3, final Object value3, final String name4, final Object value4) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2), ImmutablePair.of(name3, value3), ImmutablePair.of(name4, value4));
+    }
+
+    @SafeVarargs
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final Pair<String, Object>... pairs) {
+        final LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        for (final Pair<String, Object> pair : pairs) {
+            parameters.put(pair.getKey(), pair.getValue());
+        }
+        return parameters;
+    }
+
     /**
      * Checks whether the tables and views specified by the <b>tableSpecs</b> parameter(s) exist in the database. If one or more of the
      * specified tables and/or views does not exist, a script is loaded from the specified URL and executed.
@@ -426,6 +465,11 @@ public class DatabaseHelper {
         private final String _dataType;
     }
 
+    @Nonnull
+    private static String generateFunctionSql(final @Nonnull String function, final @Nonnull LinkedHashMap<String, Object> arguments) {
+        return "SELECT * FROM " + function + " (" + StringUtils.join(Iterables.transform(arguments.keySet(), PREFIX_COLON), ", ") + ")";
+    }
+
     @Nullable
     private static String findColumnName(final @Nonnull ResultSet results, final @Nonnull String... names) throws SQLException {
         final String[] columnNames = getColumnNames(results).toArray(new String[0]);
@@ -461,7 +505,13 @@ public class DatabaseHelper {
         }
     }
 
-    private static final String[] SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
+    private static final String[]                 SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
+    private static final Function<String, String> PREFIX_COLON           = new Function<String, String>() {
+        @Override
+        public String apply(final String name) {
+            return ":" + name;
+        }
+    };
 
     private final JdbcTemplate               _jdbcTemplate;
     private final NamedParameterJdbcTemplate _parameterizedTemplate;

@@ -59,7 +59,7 @@
         </div> 
     </div> 
     
-    <script src="$content.getURI("scripts/pipeline/RunValidation.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/pipeline/RunValidation.js")"></script>
     <script type="text/javascript" >
         XNAT.app.protChk.expt_id='$!om.getId()';
         XNAT.app.protChk.project='$!om.getProject()';

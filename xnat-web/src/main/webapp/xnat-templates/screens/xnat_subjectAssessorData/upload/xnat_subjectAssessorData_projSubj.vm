@@ -31,15 +31,14 @@
     <td>
         <select id="$!item.getXSIType()/subject_id" name="$!item.getXSIType()/subject_id"></select>
         #if(!$preventSubject)
-         &nbsp; <a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject():</a>
+         &nbsp; <a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject()</a>
         #end
     </td>
-
 
 </tr>
 <tr>
     <td align="left" colspan="3">
-        <div style="color:red" id="subj_msg"></div>
+        <div style="color:rgb(204, 102, 102)" id="subj_msg"></div>
     </td>
 </tr>
 

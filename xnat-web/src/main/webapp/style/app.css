@@ -1681,7 +1681,7 @@ body.modal-popup #xnat_power {
 /* overrides to make this thing look better? */
 .yui-skin-sam .yui-panel-container {
     padding: 0 1px;
-    /* z-index: 999999991 !important; */
+    z-index: 999999991 !important; 
 }
 
 .yui-skin-sam .yuimenubarnav .yuimenubaritemlabel {

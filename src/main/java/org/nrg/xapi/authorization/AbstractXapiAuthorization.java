@@ -2,7 +2,6 @@ package org.nrg.xapi.authorization;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -70,7 +69,8 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         @SuppressWarnings("deprecation") final List<String> projectIds = getAnnotatedParameters(joinPoint, ProjectId.class);
         if (!projectIds.isEmpty()) {
             log.warn("You are using a plugin that uses the deprecated @ProjectId annotation. Please check for an updated version of the plugin, as this deprecated annotation may not be supported in future versions of XNAT.");
-            return new ArrayList<>(CollectionUtils.union(projectIds, getAnnotatedParameters(joinPoint, Project.class)));
+            projectIds.addAll(getAnnotatedParameters(joinPoint, Project.class));
+            return new ArrayList<>(new HashSet<>(projectIds));
         } else {
             // TODO: Eventually this should be the only call in here once we remove @ProjectId
             return getAnnotatedParameters(joinPoint, Project.class);

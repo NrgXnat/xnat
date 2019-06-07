@@ -41,6 +41,7 @@ import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -55,6 +56,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -84,6 +86,16 @@ public class UserGroupManager implements UserGroupServiceI {
 
         // Loads the project group database functions.
         _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
+    }
+
+    public static List<String> formatIrregularProjectGroups(final List<Map<String, Object>> irregulars) {
+        return Lists.transform(irregulars, new Function<Map<String, Object>, String>() {
+            @Override
+            public String apply(final Map<String, Object> mapping) {
+                //noinspection RedundantCast
+                return String.format(IRREGULAR_MAPPING_NOTE, mapping.get("id"), (int) mapping.get("xdat_field_mapping_id"), mapping.get("field"), mapping.get("mismatched_values"));
+            }
+        });
     }
 
     @Override
@@ -316,7 +328,7 @@ public class UserGroupManager implements UserGroupServiceI {
         //this means the group previously existed, and this is an update rather than an init.
         //the logic here will be way more intrusive (and expensive)
         //it will end up checking every individual permission setting (using very inefficient code)
-        final ArrayList<XdatUsergroup> groups   = XdatUsergroup.getXdatUsergroupsByField(XdatUsergroup.SCHEMA_ELEMENT_NAME + ".ID", id, authenticatedUser, true);
+        final ArrayList<XdatUsergroup> groups = XdatUsergroup.getXdatUsergroupsByField(XdatUsergroup.SCHEMA_ELEMENT_NAME + ".ID", id, authenticatedUser, true);
 
         if (groups.isEmpty()) {
             throw new Exception("Count didn't match query results");
@@ -365,12 +377,28 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public List<UserGroupI> createOrUpdateProjectGroups(final String projectId, final UserI user) {
-        return Lists.transform(_helper.callFunction("project_groups_create_groups_and_permissions", getFunctionParameterSource("projectId", projectId)), new Function<Map<String, Object>, UserGroupI>() {
-            @Override
-            public UserGroupI apply(final Map<String, Object> group) {
-                return getGroup((String) group.get("group_id"));
+        try {
+            return Lists.transform(_helper.callFunction("project_groups_create_groups_and_permissions", getFunctionParameterSource("projectId", projectId)), new Function<Map<String, Object>, UserGroupI>() {
+                @Override
+                public UserGroupI apply(final Map<String, Object> group) {
+                    return getGroup((String) group.get("group_id"));
+                }
+            });
+        } finally {
+            for (final String dataType : PROJECT_GROUP_DATA_TYPES) {
+                DBAction.InsertMetaDatas(dataType);
             }
-        });
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> findIrregularProjectGroups() {
+        return _template.queryForList("SELECT tag, id, xdat_field_mapping_id, field, mismatched_values, mismatched_read_value, mismatched_edit_value, mismatched_create_value, mismatched_delete_value, mismatched_active_value FROM project_groups_find_irregular_settings", EmptySqlParameterSource.INSTANCE);
+    }
+
+    @Override
+    public List<Integer> fixIrregularProjectGroups() {
+        return _helper.getJdbcTemplate().queryForList("SELECT * FROM project_groups_fix_irregular_settings()", Integer.class);
     }
 
     @SuppressWarnings("RedundantThrows")
@@ -491,7 +519,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }
 
         if (!Roles.isSiteAdmin(user)) {
-            final String tag;
+            final String                  tag;
             final List<XdatElementAccess> access = xdatGroup.getElementAccess();
             // If there's no element access set up, we'll use the tag: this is a new group and access will be added.
             if (access.isEmpty()) {
@@ -726,8 +754,8 @@ public class UserGroupManager implements UserGroupServiceI {
                 final Template     template = Velocity.getTemplate("/screens/" + NEW_GROUP_PERMS_TEMPLATE);
                 template.merge(context, writer);
 
-                final List<String> queries   = XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";");
-                final File sql = new File("/data/xnat/cache/group-perms-" + group.getId() + ".sql");
+                final List<String> queries = XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";");
+                final File         sql     = new File("/data/xnat/cache/group-perms-" + group.getId() + ".sql");
                 try (final FileWriter sqlOutput = new FileWriter(sql)) {
                     IOUtils.copy(new StringReader(StringUtils.join(queries, "\n")), sqlOutput);
                 }
@@ -746,12 +774,14 @@ public class UserGroupManager implements UserGroupServiceI {
         }
     }
 
-    private static final String QUERY_CHECK_GROUP_EXISTS  = "SELECT EXISTS(SELECT TRUE FROM xdat_usergroup WHERE id = :groupId) AS exists";
-    private static final String ALL_GROUPS_QUERY          = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
-    private static final String QUERY_GET_PRIMARY_KEY     = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
-    private static final String CONFIRM_QUERY             = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+    private static final String QUERY_CHECK_GROUP_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_usergroup WHERE id = :groupId) AS exists";
+    private static final String ALL_GROUPS_QUERY         = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
+    private static final String QUERY_GET_PRIMARY_KEY    = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
+    private static final String CONFIRM_QUERY            = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+    private static final String IRREGULAR_MAPPING_NOTE   = "Group \"%s\" (%d) has irregular permission settings for the data-type field \"%s\": %s";
 
-    private static final String NEW_GROUP_PERMS_TEMPLATE  = "new_group_permissions.vm";
+    private static final String       NEW_GROUP_PERMS_TEMPLATE = "new_group_permissions.vm";
+    private static final List<String> PROJECT_GROUP_DATA_TYPES = Arrays.asList(XdatUsergroup.SCHEMA_ELEMENT_NAME, XdatElementAccess.SCHEMA_ELEMENT_NAME, XdatFieldMappingSet.SCHEMA_ELEMENT_NAME, XdatFieldMapping.SCHEMA_ELEMENT_NAME);
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;

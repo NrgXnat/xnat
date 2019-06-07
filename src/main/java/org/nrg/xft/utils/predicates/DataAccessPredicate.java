@@ -2,11 +2,9 @@ package org.nrg.xft.utils.predicates;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;

@@ -122,6 +122,10 @@ public interface UserGroupServiceI {
 	 */
 	List<UserGroupI> getAllGroups();
 
+	List<Map<String, Object>> findIrregularProjectGroups();
+
+	List<Integer> fixIrregularProjectGroups();
+
 	/**
 	 * Get groups that have the specified tag.
 	 * @param tag    The tag to search for.

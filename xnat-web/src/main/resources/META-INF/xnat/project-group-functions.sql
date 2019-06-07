@@ -8,6 +8,131 @@ DROP FUNCTION IF EXISTS public.project_groups_get_mappings(projectId VARCHAR(255
 DROP FUNCTION IF EXISTS public.project_groups_create_mappings(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_get_groups_and_permissions(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_create_groups_and_permissions(projectId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.project_groups_fix_irregular_settings();
+DROP FUNCTION IF EXISTS public.project_groups_get_setting_flip_value(element_name VARCHAR(255), mismatched_value INTEGER);
+DROP VIEW IF EXISTS public.project_groups_find_irregular_settings;
+
+CREATE OR REPLACE VIEW public.project_groups_find_irregular_settings AS
+SELECT
+    tag,
+    id,
+    xdat_field_mapping_id,
+    field,
+    concat_ws(', ', mismatched_read, mismatched_edit, mismatched_create, mismatched_delete, mismatched_active) AS mismatched_values,
+    mismatched_read_value,
+    mismatched_edit_value,
+    mismatched_create_value,
+    mismatched_delete_value,
+    mismatched_active_value
+FROM
+    (WITH
+         secured_elements AS
+             (SELECT
+                  e.element_name
+              FROM
+                  xdat_element_security e
+              WHERE secure = 1),
+         project_ids AS
+             (SELECT
+                  id
+              FROM
+                  xnat_projectdata),
+         default_perms AS
+             (SELECT *
+              FROM
+                  (VALUES
+                   ('project', 'Owners', 1, 1, 1, 1, 1),
+                   ('project', 'Members', 1, 0, 0, 0, 0),
+                   ('project', 'Collaborators', 1, 0, 0, 0, 0),
+                   ('data', 'Owners', 1, 1, 1, 1, 1),
+                   ('data', 'Members', 1, 1, 1, 0, 1),
+                   ('data', 'Collaborators', 1, 0, 0, 0, 1),
+                   ('shared', 'Owners', 1, 0, 0, 0, 1),
+                   ('shared', 'Members', 1, 0, 0, 0, 1),
+                   ('shared', 'Collaborators', 1, 0, 0, 0, 1)) AS default_perms(scope, display_name, read_element, edit_element, create_element, delete_element, active_element))
+     SELECT
+         g.tag,
+         g.id,
+         m.xdat_field_mapping_id,
+         m.field,
+         CASE WHEN m.read_element != p.read_element THEN m.read_element ELSE NULL END AS mismatched_read_value,
+         CASE WHEN m.edit_element != p.edit_element THEN m.edit_element ELSE NULL END AS mismatched_edit_value,
+         CASE WHEN m.create_element != p.create_element THEN m.create_element ELSE NULL END AS mismatched_create_value,
+         CASE WHEN m.delete_element != p.delete_element THEN m.delete_element ELSE NULL END AS mismatched_delete_value,
+         CASE WHEN m.active_element != p.active_element THEN m.active_element ELSE NULL END AS mismatched_active_value,
+         CASE WHEN m.read_element != p.read_element THEN 'read' ELSE NULL END AS mismatched_read,
+         CASE WHEN m.edit_element != p.edit_element THEN 'edit' ELSE NULL END AS mismatched_edit,
+         CASE WHEN m.create_element != p.create_element THEN 'create' ELSE NULL END AS mismatched_create,
+         CASE WHEN m.delete_element != p.delete_element THEN 'delete' ELSE NULL END AS mismatched_delete,
+         CASE WHEN m.active_element != p.active_element THEN 'active' ELSE NULL END AS mismatched_active
+     FROM
+         xdat_field_mapping m
+         LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+         LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
+         LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+         LEFT JOIN default_perms p ON g.displayname = p.display_name AND p.scope = 'project'
+     WHERE
+             g.displayname IN ('Owners', 'Members', 'Collaborators') AND
+             g.tag IN (SELECT id FROM project_ids) AND
+             m.field = 'xnat:projectData/ID' AND
+             (m.read_element != p.read_element OR m.edit_element != p.edit_element OR m.create_element != p.create_element OR m.delete_element != p.delete_element OR m.active_element != p.active_element)
+     UNION
+     SELECT
+         g.tag,
+         g.id,
+         m.xdat_field_mapping_id,
+         m.field,
+         CASE WHEN m.read_element != p.read_element THEN m.read_element ELSE NULL END AS mismatched_read_value,
+         CASE WHEN m.edit_element != p.edit_element THEN m.edit_element ELSE NULL END AS mismatched_edit_value,
+         CASE WHEN m.create_element != p.create_element THEN m.create_element ELSE NULL END AS mismatched_create_value,
+         CASE WHEN m.delete_element != p.delete_element THEN m.delete_element ELSE NULL END AS mismatched_delete_value,
+         CASE WHEN m.active_element != p.active_element THEN m.active_element ELSE NULL END AS mismatched_active_value,
+         CASE WHEN m.read_element != p.read_element THEN 'read' ELSE NULL END AS mismatched_read,
+         CASE WHEN m.edit_element != p.edit_element THEN 'edit' ELSE NULL END AS mismatched_edit,
+         CASE WHEN m.create_element != p.create_element THEN 'create' ELSE NULL END AS mismatched_create,
+         CASE WHEN m.delete_element != p.delete_element THEN 'delete' ELSE NULL END AS mismatched_delete,
+         CASE WHEN m.active_element != p.active_element THEN 'active' ELSE NULL END AS mismatched_active
+     FROM
+         xdat_field_mapping m
+         LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+         LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
+         LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+         LEFT JOIN default_perms p ON g.displayname = p.display_name AND p.scope = 'data'
+     WHERE
+             g.displayname IN ('Owners', 'Members', 'Collaborators') AND
+             g.tag IN (SELECT id FROM project_ids) AND
+             m.field != 'xnat:projectData/ID' AND
+             m.field NOT LIKE '%/sharing/share/project' AND
+             m.field_value != '*' AND
+             (m.read_element != p.read_element OR m.edit_element != p.edit_element OR m.create_element != p.create_element OR m.delete_element != p.delete_element OR m.active_element != p.active_element)
+     UNION
+     SELECT
+         g.tag,
+         g.id,
+         m.xdat_field_mapping_id,
+         m.field,
+         CASE WHEN m.read_element != p.read_element THEN m.read_element ELSE NULL END AS mismatched_read_value,
+         CASE WHEN m.edit_element != p.edit_element THEN m.edit_element ELSE NULL END AS mismatched_edit_value,
+         CASE WHEN m.create_element != p.create_element THEN m.create_element ELSE NULL END AS mismatched_create_value,
+         CASE WHEN m.delete_element != p.delete_element THEN m.delete_element ELSE NULL END AS mismatched_delete_value,
+         CASE WHEN m.active_element != p.active_element THEN m.active_element ELSE NULL END AS mismatched_active_value,
+         CASE WHEN m.read_element != p.read_element THEN 'read' ELSE NULL END AS mismatched_read,
+         CASE WHEN m.edit_element != p.edit_element THEN 'edit' ELSE NULL END AS mismatched_edit,
+         CASE WHEN m.create_element != p.create_element THEN 'create' ELSE NULL END AS mismatched_create,
+         CASE WHEN m.delete_element != p.delete_element THEN 'delete' ELSE NULL END AS mismatched_delete,
+         CASE WHEN m.active_element != p.active_element THEN 'active' ELSE NULL END AS mismatched_active
+     FROM
+         xdat_field_mapping m
+         LEFT JOIN xdat_field_mapping_set S ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = S.xdat_field_mapping_set_id
+         LEFT JOIN xdat_element_access a ON S.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
+         LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+         LEFT JOIN default_perms p ON g.displayname = p.display_name AND p.scope = 'shared'
+     WHERE
+             g.displayname IN ('Owners', 'Members', 'Collaborators') AND
+             g.tag IN (SELECT id FROM project_ids) AND
+             m.field LIKE '%/sharing/share/project' AND
+             m.field_value != '*' AND
+             (m.read_element != p.read_element OR m.edit_element != p.edit_element OR m.create_element != p.create_element OR m.delete_element != p.delete_element OR m.active_element != p.active_element)) mismatched;
 
 CREATE OR REPLACE FUNCTION public.project_groups_get_groups(projectId VARCHAR(255))
     RETURNS TABLE
@@ -47,8 +172,8 @@ BEGIN
     WITH
         project_groups AS (SELECT group_name FROM (VALUES ('Owner'), ('Member'), ('Collaborator')) AS project_groups(group_name))
     INSERT
-    INTO xdat_usergroup (id, displayname, tag
-    )
+    INTO
+        xdat_usergroup (id, displayname, tag)
     SELECT
                 projectId || '_' || lower(group_name),
                 group_name || 's',
@@ -121,8 +246,8 @@ BEGIN
                                    g.tag = projectId AND
                                    g.displayname IN ('Owners', 'Members', 'Collaborators'))
     INSERT
-    INTO xdat_element_access (element_name, xdat_usergroup_xdat_usergroup_id
-    )
+    INTO
+        xdat_element_access (element_name, xdat_usergroup_xdat_usergroup_id)
     SELECT
         t.element_name,
         g.xdat_usergroup_id
@@ -310,8 +435,8 @@ BEGIN
                                ('Members', 1, 0, 0, 0, 0),
                                ('Collaborators', 1, 0, 0, 0, 0)) AS project_perms(display_name, read_element, edit_element, create_element, delete_element, active_element))
     INSERT
-    INTO xdat_field_mapping (field, field_value, read_element, edit_element, create_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id
-    )
+    INTO
+        xdat_field_mapping (field, field_value, read_element, edit_element, create_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id)
     SELECT
         'xnat:projectData/ID' AS field,
         g.tag,
@@ -340,7 +465,7 @@ BEGIN
                                 (VALUES
                                  ('Owners', 1, 1, 1, 1, 1),
                                  ('Members', 1, 1, 1, 0, 1),
-                                 ('Collaborators', 1, 0, 0, 0, 1)) AS project_perms(display_name, read_element, edit_element, create_element, delete_element, active_element))
+                                 ('Collaborators', 1, 0, 0, 0, 1)) AS data_type_perms(display_name, read_element, edit_element, create_element, delete_element, active_element))
     INSERT
     INTO xdat_field_mapping (field, field_value, read_element, edit_element, create_element, delete_element, active_element, comparison_type, xdat_field_mapping_set_xdat_field_mapping_set_id)
     SELECT
@@ -432,7 +557,7 @@ BEGIN
             f.create_element::BOOLEAN AS can_create,
             f.delete_element::BOOLEAN AS can_delete,
             f.active_element::BOOLEAN AS can_active,
-            array_to_string(array_agg(f.field), ', ', '<NULL>') AS fields
+            array_to_string(array_agg(f.field ORDER BY f.field), ', ', '<NULL>') AS fields
         FROM
             xdat_usergroup g
             LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id
@@ -475,5 +600,54 @@ BEGIN
     RETURN QUERY
         SELECT * FROM project_groups_get_groups_and_permissions(projectId);
 END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.project_groups_get_setting_flip_value(element_name VARCHAR(255), mismatched_value INTEGER)
+    RETURNS VARCHAR(255)
+AS
+$$
+BEGIN
+    IF mismatched_value IS NULL
+    THEN
+        RETURN NULL;
+    ELSEIF mismatched_value = 1
+    THEN
+        RETURN element_name || '_element = 0';
+    END IF;
+    RETURN element_name || '_element = 1';
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.project_groups_fix_irregular_settings()
+    RETURNS SETOF INTEGER
+AS
+$$
+BEGIN
+    DECLARE
+        current_index RECORD;
+    BEGIN
+        FOR current_index IN SELECT * FROM project_groups_find_irregular_settings
+            LOOP
+                DECLARE
+                    update_sql TEXT;
+                BEGIN
+                    update_sql := format('UPDATE xdat_field_mapping SET %s WHERE xdat_field_mapping_id = %s',
+                                         concat_ws(', ',
+                                                   project_groups_get_setting_flip_value('read', current_index.mismatched_read_value),
+                                                   project_groups_get_setting_flip_value('edit', current_index.mismatched_edit_value),
+                                                   project_groups_get_setting_flip_value('create', current_index.mismatched_create_value),
+                                                   project_groups_get_setting_flip_value('delete', current_index.mismatched_delete_value),
+                                                   project_groups_get_setting_flip_value('active', current_index.mismatched_active_value)),
+                                         current_index.xdat_field_mapping_id);
+                    RAISE NOTICE 'Fixing irregular permissions for field mapping % with SQL: %', current_index.xdat_field_mapping_id, update_sql;
+                    EXECUTE update_sql;
+                END;
+                RETURN NEXT current_index.xdat_field_mapping_id;
+            END LOOP;
+    END;
+    RETURN;
+END;
 $$
     LANGUAGE plpgsql;

@@ -28,7 +28,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -361,6 +360,10 @@ public class DatabaseHelper {
         return _parameterizedTemplate.query(generateFunctionSql(function, arguments), arguments, BeanPropertyRowMapper.newInstance(elementType));
     }
 
+    public static LinkedHashMap<String, Object> getFunctionParameterSource() {
+        return EMPTY_PARAM_SOURCE;
+    }
+
     public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name, final Object value) {
         return getFunctionParameterSource(ImmutablePair.of(name, value));
     }
@@ -505,13 +508,15 @@ public class DatabaseHelper {
         }
     }
 
-    private static final String[]                 SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
-    private static final Function<String, String> PREFIX_COLON           = new Function<String, String>() {
+    private static final String[]                      SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
+    private static final Function<String, String>      PREFIX_COLON           = new Function<String, String>() {
         @Override
         public String apply(final String name) {
             return ":" + name;
         }
     };
+
+    private static final LinkedHashMap<String, Object> EMPTY_PARAM_SOURCE     = new LinkedHashMap<>();
 
     private final JdbcTemplate               _jdbcTemplate;
     private final NamedParameterJdbcTemplate _parameterizedTemplate;

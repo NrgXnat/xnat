@@ -157,10 +157,11 @@ public final class UriParserUtils {
                     } else if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                         log.debug("Found an XFTItem object of type xnat:xnat:imageScanData (actually {}) with ID '{}'", item.getXSIType(), itemId);
                         parameters.put(XnatImagescandata.SCHEMA_ELEMENT_NAME, itemId);
+                        parameters.put(XnatExperimentdata.SCHEMA_ELEMENT_NAME, item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID"));
                     } else {
                         log.error("Found XFTItem of type {} with ID '{}', I don't know how to deal with this in the current context, so I'm ignoring it.", item.getXSIType(), itemId);
                     }
-                } catch (XFTInitException | ElementNotFoundException e) {
+                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
                     log.error("An error occurred trying to retrieve the ID value for the XFT item of type {} with primary key: {}", ((XFTItem) object).getXSIType(), ((XFTItem) object).getPK().toString());
                 }
             } else if (XnatProjectdata.class.isAssignableFrom(objectClass)) {
@@ -184,9 +185,11 @@ public final class UriParserUtils {
                 log.debug("Found an XnatReconstructedimagedata object with ID '{}'", id);
                 parameters.put(XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME, id);
             } else if (XnatImagescandata.class.isAssignableFrom(objectClass)) {
-                final String id = ((XnatImagescandata) object).getId();
+                XnatImagescandata scan = (XnatImagescandata) object;
+                final String id = scan.getId();
                 log.debug("Found an XnatImagescandata object (actually {}) with ID '{}'", objectClass.getName(), id);
                 parameters.put(XnatImagescandata.SCHEMA_ELEMENT_NAME, id);
+                parameters.put(XnatExperimentdata.SCHEMA_ELEMENT_NAME, scan.getImageSessionId());
             } else if (object instanceof String) {
                 final String value = (String) object;
                 final String name  = StringUtils.equalsAny(value, "in", "out") ? "type" : "xname";

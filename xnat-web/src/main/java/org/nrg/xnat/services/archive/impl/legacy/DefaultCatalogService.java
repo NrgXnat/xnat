@@ -778,7 +778,7 @@ public class DefaultCatalogService implements CatalogService {
                 final String primaryKey = item.getIDValue();
                 final String xsiType    = item.getXSIType();
 
-                final boolean isCreate;
+                boolean isCreate;
                 if (isExperiment) {
                     final String persistedXsiType = getXsiTypeForExperimentId(primaryKey);
                     isCreate = StringUtils.isBlank(persistedXsiType);
@@ -807,14 +807,19 @@ public class DefaultCatalogService implements CatalogService {
                         PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                     }
 
+                    String eventItemIdValue = null;
+                    String eventItemXsiType = null;
                     if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                         final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
                         if (parentId != null) {
-                            final XnatExperimentdata parent = XnatImagesessiondata.getXnatExperimentdatasById(parentId, XDAT.getUserDetails(), false);
+                            final XnatExperimentdata parent = XnatImagesessiondata.getXnatExperimentdatasById(parentId, user, false);
                             if (parent != null) {
                                 final XnatImagesessiondata session = (XnatImagesessiondata) parent;
                                 session.addScans_scan(new XnatImagescandata(item));
                                 SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
+                                eventItemIdValue = session.getItem().getIDValue();
+                                eventItemXsiType = session.getXSIType();
+                                isCreate = false;
                             }
                         }
                     } else if (!isProject || !isCreate) {
@@ -838,14 +843,16 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     // The previous primary key could have been blank, so we need to get it again.
-                    final String idValue = item.getIDValue();
+                    eventItemIdValue = StringUtils.defaultIfBlank(eventItemIdValue, item.getIDValue());
+                    eventItemXsiType = StringUtils.defaultIfBlank(eventItemXsiType, xsiType);
 
                     // Project create fires its own event, so we only use this one if this isn't a project create operation.
                     if (!(isProject && isCreate)) {
-                        XDAT.triggerXftItemEvent(xsiType, idValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
+                        XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,
+                                isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
                     }
 
-                    log.debug("Item '{}' of type {} successfully stored", xsiType, idValue);
+                    log.debug("Item '{}' of type {} successfully stored", eventItemXsiType, eventItemIdValue);
 
                     final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
                     if (StringUtils.equalsIgnoreCase(schemaElement.getGenericXFTElement().getType().getLocalPrefix(), "xdat") || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(), "xnat:investigatorData", "xnat:projectData")) {

@@ -50,11 +50,17 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
             log.info("This service is the primary XNAT node, checking for mismatched field mapping elements.");
 
             try {
-                if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
-                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
+                if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_element_security", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_element_security\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
                 Users.getGuest();
                 _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/data-type-access-functions.sql"));
+
+                // Loads the project group database functions. Not directly related to fixing
+                // mismatched mapping elements, but this requires most of the same tables exist
+                // before being run so letting it do double duty.
+                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
+
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");
                 final int mismatched = _helper.callFunction("data_type_fns_fix_mismatched_permissions", Integer.class);
                 if (mismatched > 0) {

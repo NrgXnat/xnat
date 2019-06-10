@@ -14,10 +14,7 @@ import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.model.users.ElementDisplayModel;
-import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.AuthDelegate;
-import org.nrg.xapi.rest.Username;
-import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xapi.rest.*;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
@@ -208,6 +205,18 @@ public class DataAccessApi extends AbstractXapiRestController {
         _cache.clearUserCache(username);
 
         return ResponseEntity.ok().build();
+    }
+
+    @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
+                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "permissions/group/{projectId}", restrictTo = Admin)
+    @ResponseBody
+    public List<Map<String, Object>> getProjectPermissions(final @PathVariable @Project String projectId) {
+        return _groupService.getProjectGroupPermissions(projectId);
     }
 
     @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)

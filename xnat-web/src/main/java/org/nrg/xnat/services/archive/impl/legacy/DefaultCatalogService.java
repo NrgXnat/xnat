@@ -733,143 +733,181 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception {
+    @Override
+    public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion,
+                                   final Map<String, ?> parameters) throws Exception {
+        return insertXmlObject(user, input, allowDataDeletion, parameters, null);
+    }
+
+    @Override
+    public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion,
+                                   final Map<String, ?> parameters, @Nullable Integer parentEventId) throws Exception {
         final File temporary = File.createTempFile("xml-import", ".xml");
         try {
             try (final FileWriter writer = new FileWriter(temporary)) {
                 IOUtils.copy(input, writer, Charset.defaultCharset());
             }
-
             log.debug("Copied XML to temporary file {}", temporary.getPath());
-
-            try (final FileInputStream validatorInput = new FileInputStream(temporary)) {
-                final XMLValidator.ValidationHandler handler = new XMLValidator().validateInputStream(validatorInput);
-                if (!handler.assertValid()) {
-                    throw handler.getErrors().get(0);
-                }
-            }
-
-            try (final FileInputStream parserInput = new FileInputStream(temporary)) {
-                final SAXReader reader = new SAXReader(user);
-                final XFTItem   item   = reader.parse(parserInput);
-
-                final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
-                final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
-                final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
-                // if (!isProject && !isSubject && !isExperiment) {
-                //     throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + item.getXSIType() + "' but that isn't a project, subject, or experiment.");
-                // }
-
-                final ValidationResults validation = XFTValidator.Validate(item);
-
-                // An invalid object could be legit valid if the only validation failure is the lack of ID and this is a new experiment
-                // or subject, so let's check for that scenario.
-                final boolean generateId;
-                if (!validation.isValid() &&
-                    validation.getResults().size() == 1 &&
-                    validation.hasField("ID") &&
-                    (isExperiment || isSubject)) {
-                    generateId = true;
-                    validation.removeResult("ID");
-                } else {
-                    generateId = false;
-                }
-
-                final String primaryKey = item.getIDValue();
-                final String xsiType    = item.getXSIType();
-
-                boolean isCreate;
-                if (isExperiment) {
-                    final String persistedXsiType = getXsiTypeForExperimentId(primaryKey);
-                    isCreate = StringUtils.isBlank(persistedXsiType);
-                    if (!isCreate && !item.instanceOf(persistedXsiType)) {
-                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" + xsiType + "' and ID '" + primaryKey + "', but that ID already exists with type '" + persistedXsiType + "', which is not compatible.");
-                    }
-                } else if (isSubject) {
-                    isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
-                } else if (isProject) {
-                    isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
-                } else {
-                    // For items other than projects, subjects, and experiments, e.g. stored searches,
-                    final String table  = item.getGenericSchemaElement().getSQLName();
-                    final String column = StringUtils.defaultIfBlank(item.getPKString(), "id").split("=")[0];
-                    isCreate = !checkObjectExists(table, column, primaryKey);
-                }
-
-                log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(), isCreate ? "create" : "update");
-
-                if (validation.isValid()) {
-                    log.info("Validation: PASSED");
-
-                    final boolean quarantine = item.getGenericSchemaElement().isQuarantine();
-
-                    if (item.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME) || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-                        PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
-                    }
-
-                    String eventItemIdValue = null;
-                    String eventItemXsiType = null;
-                    if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
-                        final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
-                        if (parentId != null) {
-                            final XnatExperimentdata parent = XnatImagesessiondata.getXnatExperimentdatasById(parentId, user, false);
-                            if (parent != null) {
-                                final XnatImagesessiondata session = (XnatImagesessiondata) parent;
-                                session.addScans_scan(new XnatImagescandata(item));
-                                SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
-                                eventItemIdValue = session.getItem().getIDValue();
-                                eventItemXsiType = session.getXSIType();
-                                isCreate = false;
-                            }
-                        }
-                    } else if (!isProject || !isCreate) {
-                        if (generateId) {
-                            if (isExperiment) {
-                                item.setProperty(XnatExperimentdata.SCHEMA_ELEMENT_NAME + "/ID", XnatExperimentdata.CreateNewID());
-                            } else {
-                                item.setProperty(XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/ID", XnatSubjectdata.CreateNewID());
-                            }
-                        }
-                        try {
-                            SaveItemHelper.unauthorizedSave(item, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
-                        } catch (ClientException e) {
-                            log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
-                            throw e;
-                        }
-                    } else {
-                        final XnatProjectdata project   = new XnatProjectdata(item);
-                        final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(), newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
-                        XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
-                    }
-
-                    // The previous primary key could have been blank, so we need to get it again.
-                    eventItemIdValue = StringUtils.defaultIfBlank(eventItemIdValue, item.getIDValue());
-                    eventItemXsiType = StringUtils.defaultIfBlank(eventItemXsiType, xsiType);
-
-                    // Project create fires its own event, so we only use this one if this isn't a project create operation.
-                    if (!(isProject && isCreate)) {
-                        XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,
-                                isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
-                    }
-
-                    log.debug("Item '{}' of type {} successfully stored", eventItemXsiType, eventItemIdValue);
-
-                    final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
-                    if (StringUtils.equalsIgnoreCase(schemaElement.getGenericXFTElement().getType().getLocalPrefix(), "xdat") || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(), "xnat:investigatorData", "xnat:projectData")) {
-                        ElementSecurity.refresh();
-                    }
-
-                    return item;
-                } else {
-                    throw new ValidationException(validation);
-                }
-            }
+            return insertXmlObject(user, temporary, allowDataDeletion, parameters, parentEventId);
         } finally {
             if (temporary.delete()) {
                 log.debug("Successfully deleted temporary file at {}", temporary.getPath());
             } else {
                 log.debug("Something failed when trying to delete temporary file at {}", temporary.getPath());
             }
+        }
+
+    }
+
+    @Override
+    public XFTItem insertXmlObject(final UserI user, final File inputFile, final boolean allowDataDeletion,
+                                   final Map<String, ?> parameters, @Nullable Integer parentEventId) throws Exception {
+
+        try (final FileInputStream validatorInput = new FileInputStream(inputFile)) {
+            final XMLValidator.ValidationHandler handler = new XMLValidator().validateInputStream(validatorInput);
+            if (!handler.assertValid()) {
+                throw handler.getErrors().get(0);
+            }
+        }
+
+        try (final FileInputStream parserInput = new FileInputStream(inputFile)) {
+            final SAXReader reader = new SAXReader(user);
+            final XFTItem   item   = reader.parse(parserInput);
+
+            final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
+            final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
+
+            final ValidationResults validation = XFTValidator.Validate(item);
+
+            // An "invalid" object could actually be valid if it is a new experiment or subject and the only
+            // validation failure is the lack of ID, so let's check for that scenario.
+            final boolean generateId;
+            if ((isExperiment || isSubject) &&
+                    !validation.isValid() && validation.getResults().size() == 1 && validation.hasField("ID")) {
+                generateId = true;
+                validation.removeResult("ID");
+            } else {
+                generateId = false;
+            }
+
+            final String primaryKey = item.getIDValue();
+            final String xsiType    = item.getXSIType();
+
+            boolean isCreate;
+            if (isExperiment) {
+                final String persistedXsiType = getXsiTypeForExperimentId(primaryKey);
+                isCreate = StringUtils.isBlank(persistedXsiType);
+                if (!isCreate && !item.instanceOf(persistedXsiType)) {
+                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" +
+                            xsiType + "' and ID '" + primaryKey + "', but that ID already exists with type '" +
+                            persistedXsiType + "', which is not compatible.");
+                }
+            } else if (isSubject) {
+                isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
+            } else if (isProject) {
+                isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
+            } else {
+                // For items other than projects, subjects, and experiments, e.g. stored searches
+                final String table  = item.getGenericSchemaElement().getSQLName();
+                final String column = StringUtils.defaultIfBlank(item.getPKString(), "id").split("=")[0];
+                isCreate = !checkObjectExists(table, column, primaryKey);
+            }
+
+            log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(),
+                    isCreate ? "create" : "update");
+
+            if (!validation.isValid()) {
+                throw new ValidationException(validation);
+            }
+
+            log.info("Validation: PASSED");
+
+            final boolean quarantine = item.getGenericSchemaElement().isQuarantine();
+
+            String eventItemIdValue = primaryKey;
+            String eventItemXsiType = xsiType;
+            if (isProject && isCreate) {
+                // Project creation
+                final XnatProjectdata project   = new XnatProjectdata(item);
+                final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
+                        user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(),
+                        newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
+                XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
+            } else {
+                EventDetails event = newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters);
+                EventMetaI eventMetaI = null;
+                if (parentEventId != null || item.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)
+                        || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
+                    try {
+                        PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
+                                user, item.getItem(), event);
+                        if (workflow != null) {
+                            eventMetaI = workflow.buildEvent();
+                        }
+                    } catch (Exception e) {
+                        //Ignore, instead create workflow within save methods
+                    }
+                }
+
+                if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
+                    final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME +
+                            "/image_session_ID");
+                    if (parentId != null) {
+                        final XnatExperimentdata parent =
+                                XnatImagesessiondata.getXnatExperimentdatasById(parentId, user, false);
+                        if (parent != null) {
+                            final XnatImagesessiondata session = (XnatImagesessiondata) parent;
+                            session.addScans_scan(new XnatImagescandata(item));
+                            if (eventMetaI != null) {
+                                SaveItemHelper.authorizedSave(session, user, false, quarantine,
+                                        false, allowDataDeletion, eventMetaI);
+                            } else {
+                                SaveItemHelper.authorizedSave(session, user, false, quarantine
+                                        , false, allowDataDeletion, event);
+                            }
+                            eventItemIdValue = session.getId();
+                            eventItemXsiType = session.getXSIType();
+                            isCreate = false;
+                        }
+                    }
+                } else {
+                    if (generateId) {
+                        if (isExperiment) {
+                            item.setProperty(XnatExperimentdata.SCHEMA_ELEMENT_NAME + "/ID", XnatExperimentdata.CreateNewID());
+                        } else {
+                            item.setProperty(XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/ID", XnatSubjectdata.CreateNewID());
+                        }
+                        eventItemIdValue = item.getIDValue();
+                    }
+                    try {
+                        if (eventMetaI != null) {
+                            SaveItemHelper.unauthorizedSave(item, user, false, quarantine,
+                                    false, allowDataDeletion, eventMetaI);
+                        } else {
+                            SaveItemHelper.unauthorizedSave(item, user, false, quarantine,
+                                    false, allowDataDeletion, event);
+                        }
+                    } catch (ClientException e) {
+                        log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
+                        throw e;
+                    }
+                }
+
+                XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,
+                        isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
+            }
+
+            log.debug("Item '{}' of type {} successfully stored", eventItemXsiType, eventItemIdValue);
+
+            final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
+            if (StringUtils.equalsIgnoreCase(schemaElement.getGenericXFTElement().getType().getLocalPrefix(), "xdat")
+                    || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(),
+                    "xnat:investigatorData", "xnat:projectData")) {
+                ElementSecurity.refresh();
+            }
+
+            return item;
         }
     }
 

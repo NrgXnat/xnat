@@ -122,6 +122,8 @@ public interface UserGroupServiceI {
 	 */
 	List<UserGroupI> getAllGroups();
 
+	List<Map<String, Object>> getProjectGroupPermissions(String projectId);
+
 	List<Map<String, Object>> findIrregularProjectGroups();
 
 	List<Integer> fixIrregularProjectGroups();

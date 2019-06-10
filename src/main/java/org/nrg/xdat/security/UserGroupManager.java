@@ -83,9 +83,6 @@ public class UserGroupManager implements UserGroupServiceI {
         _template = template;
         _eventService = eventService;
         _helper = helper;
-
-        // Loads the project group database functions.
-        _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
     }
 
     public static List<String> formatIrregularProjectGroups(final List<Map<String, Object>> irregulars) {
@@ -389,6 +386,11 @@ public class UserGroupManager implements UserGroupServiceI {
                 DBAction.InsertMetaDatas(dataType);
             }
         }
+    }
+
+    @Override
+    public List<Map<String, Object>> getProjectGroupPermissions(final String projectId) {
+        return _helper.callFunction("project_groups_get_groups_and_permissions", getFunctionParameterSource("projectId", projectId));
     }
 
     @Override

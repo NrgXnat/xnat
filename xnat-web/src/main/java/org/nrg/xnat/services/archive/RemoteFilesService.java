@@ -3,7 +3,6 @@ package org.nrg.xnat.services.archive;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
@@ -47,7 +46,7 @@ public interface RemoteFilesService {
      * @param resource the resource
      * @return T/F
      */
-    boolean catalogHasRemoteFiles(final XnatResourcecatalogI resource);
+    boolean catalogHasRemoteFiles(final XnatResourcecatalog resource);
 
     /**
      * Blocking pull item's files to destination.

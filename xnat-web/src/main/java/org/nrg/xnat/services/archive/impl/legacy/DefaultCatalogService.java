@@ -760,10 +760,10 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             // other kind of resource (mr session, etc), check it's children for anything remote
             for (final XnatAbstractresourceI resource : resourceData.getXnatUri().getResources(true)) {
-                if (!(resource instanceof XnatResourcecatalogI)) {
+                if (!(resource instanceof XnatResourcecatalog)) {
                     continue;
                 }
-                if (_remoteFilesService.catalogHasRemoteFiles((XnatResourcecatalogI) resource)) {
+                if (_remoteFilesService.catalogHasRemoteFiles((XnatResourcecatalog) resource)) {
                     return true;
                 }
             }

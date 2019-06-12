@@ -170,17 +170,27 @@ AS
 $$
 BEGIN
     WITH
-        project_groups AS (SELECT group_name FROM (VALUES ('Owner'), ('Member'), ('Collaborator')) AS project_groups(group_name))
+        group_defs AS
+            (WITH
+                 project_groups AS (SELECT group_name FROM (VALUES ('Owner'), ('Member'), ('Collaborator')) AS project_groups(group_name))
+             SELECT
+                 projectId || '_' || lower(group_name) AS group_id,
+                 group_name || 's' AS group_display_name,
+                 projectId AS group_tag
+             FROM
+                 project_groups)
     INSERT
     INTO
         xdat_usergroup (id, displayname, tag)
     SELECT
-                projectId || '_' || lower(group_name),
-                group_name || 's',
-                projectId
+        group_id,
+        group_display_name,
+        group_tag
     FROM
-        project_groups
-    ON CONFLICT DO NOTHING;
+        group_defs d
+        LEFT JOIN xdat_usergroup g ON g.id = d.group_id
+    WHERE
+        g.id IS NULL;
 
     RETURN QUERY
         SELECT
@@ -237,24 +247,33 @@ AS
 $$
 BEGIN
     WITH
-        secured_data_types AS (SELECT s.element_name FROM xdat_element_security s WHERE s.secure = 1),
-        project_groups AS (SELECT
-                               g.xdat_usergroup_id
-                           FROM
-                               xdat_usergroup g
-                           WHERE
-                                   g.tag = projectId AND
-                                   g.displayname IN ('Owners', 'Members', 'Collaborators'))
+        element_defs AS
+            (WITH
+                secured_data_types AS (SELECT s.element_name FROM xdat_element_security s WHERE s.secure = 1),
+                project_groups AS (SELECT
+                                       g.xdat_usergroup_id
+                                   FROM
+                                       xdat_usergroup g
+                                   WHERE
+                                       g.tag = projectId AND
+                                       g.displayname IN ('Owners', 'Members', 'Collaborators'))
+             SELECT
+                 t.element_name AS group_element_name,
+                 g.xdat_usergroup_id AS group_id
+             FROM
+                 secured_data_types t,
+                 project_groups g)
     INSERT
     INTO
         xdat_element_access (element_name, xdat_usergroup_xdat_usergroup_id)
     SELECT
-        t.element_name,
-        g.xdat_usergroup_id
+        group_element_name,
+        group_id
     FROM
-        secured_data_types t,
-        project_groups g
-    ON CONFLICT DO NOTHING;
+        element_defs d
+        LEFT JOIN xdat_element_access a ON d.group_element_name = a.element_name AND d.group_id = a.xdat_usergroup_xdat_usergroup_id
+    WHERE
+        a.xdat_element_access_id IS NULL;
 
     RETURN QUERY
         SELECT

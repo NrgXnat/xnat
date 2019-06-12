@@ -91,35 +91,29 @@ public class CatalogUtils {
         public XnatResourcecatalog catRes;
         public File catFile;
         public String catPath;
-        public CatCatalogBean catBean;
-
-        public CatalogData() {}
-
-        public CatalogData(XnatResourcecatalog catRes, File catFile, String catPath, CatCatalogBean catBean) {
-            this.catRes = catRes;
-            this.catFile = catFile;
-            this.catPath = catPath;
-            this.catBean = catBean;
-        }
+        @Nonnull public CatCatalogBean catBean;
     }
 
-    public static CatalogData getCatalogData(ArchivableItem item, XnatResourcecatalog catRes)
-            throws ServerException {
-
+    public static CatalogData getCatalogData(ArchivableItem item, XnatResourcecatalog catRes) throws ServerException {
         String archivePath;
         try {
             archivePath = item.getArchiveRootPath();
         } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
             throw new ServerException("Unable to determine item archive root path for " + item.getId());
         }
+        return getCatalogData(archivePath, catRes);
+    }
+
+    public static CatalogData getCatalogData(String archivePath, XnatResourcecatalog catRes) throws ServerException {
         CatalogData cd = new CatalogData();
         cd.catRes   = catRes;
         cd.catFile  = getCatalogFile(archivePath, catRes);
         cd.catPath  = cd.catFile.getParent();
-        cd.catBean = getCatalog(cd.catFile);
-        if (cd.catBean == null) {
+        CatCatalogBean cat = getCatalog(cd.catFile);
+        if (cat == null) {
             throw new ServerException("No catalog at " + cd.catFile);
         }
+        cd.catBean = cat;
         return cd;
     }
 
@@ -517,8 +511,8 @@ public class CatalogUtils {
      * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
      * @param populateStats         updates file count & size for catRes in XNAT db
      * @param checksums             computes/updates checksums
-     * @return new Object[] { modified, audit_summary }     modified: true if cat modified and needs save
-     *                                                      audit_summary: audit hashmap
+     * @return new Object[] { modified, auditSummary }     modified: true if cat modified and needs save
+     *                                                     auditSummary: audit hashmap
      */
     public static Object[] refreshCatalog(XnatResourcecatalog catRes, final File catFile, final CatCatalogBean cat,
                                          final UserI user, final Number eventId,
@@ -652,16 +646,16 @@ public class CatalogUtils {
             }
         }
 
-        //Add to audit_summary
-        Map<String, Map<String, Integer>> audit_summary = new HashMap<>();
+        //Add to auditSummary
+        Map<String, Map<String, Integer>> auditSummary = new HashMap<>();
         if (nremoved > 0)
-            addAuditEntry(audit_summary, eventIdInt, now, ChangeSummaryBuilderA.REMOVED, nremoved);
+            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.REMOVED, nremoved);
         int nmod = modded.get();
         if (nmod > 0)
-            addAuditEntry(audit_summary, eventIdInt, now, ChangeSummaryBuilderA.MODIFIED, nmod);
+            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.MODIFIED, nmod);
         int nadded = added.get();
         if (nadded > 0)
-            addAuditEntry(audit_summary, eventIdInt, now, ChangeSummaryBuilderA.ADDED, nadded);
+            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.ADDED, nadded);
 
         //Update resource with new file count & size
         // This is going to implicitly removeMissingFiles, since file count & size attributes are computed
@@ -681,7 +675,7 @@ public class CatalogUtils {
                 modified = true;
             }
         }
-        return new Object[]{ modified, audit_summary};
+        return new Object[]{ modified, auditSummary};
     }
 
     public static HashMap<String, Object[]> buildCatalogMap(CatCatalogI cat, String catPath) {
@@ -1341,16 +1335,16 @@ public class CatalogUtils {
         return field;
     }
 
-    public static void refreshAuditSummary(CatCatalogI cat, Map<String, Map<String, Integer>> audit_summary) {
+    public static void refreshAuditSummary(CatCatalogI cat, Map<String, Map<String, Integer>> auditSummary) {
         CatCatalogMetafieldI field = getAuditField(cat);
-        if (audit_summary == null) {
+        if (auditSummary == null) {
             //TODO right now, this removes any "deleted" audit entries, perhaps it should build off of any existing audit tag
             //rebuild from each catalog entry
-            audit_summary = buildAuditSummary(cat);
-            field.setMetafield(convertAuditToString(audit_summary));
+            auditSummary = buildAuditSummary(cat);
+            field.setMetafield(convertAuditToString(auditSummary));
         } else {
             String prev_audit = StringUtils.defaultIfBlank(field.getMetafield(),"");
-            String cur_audit = convertAuditToString(audit_summary);
+            String cur_audit = convertAuditToString(auditSummary);
             if (!prev_audit.isEmpty() && !cur_audit.isEmpty()) {
                 prev_audit+="|";
             }
@@ -1406,7 +1400,7 @@ public class CatalogUtils {
     }
 
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums,
-                                          Map<String, Map<String, Integer>> audit_summary) throws Exception {
+                                          Map<String, Map<String, Integer>> auditSummary) throws Exception {
 
         if (!dest.getParentFile().exists()) {
             if (!dest.getParentFile().mkdirs() && !dest.getParentFile().exists()) {
@@ -1418,7 +1412,7 @@ public class CatalogUtils {
             CatalogUtils.calculateResourceChecksums(xml, dest);
         }
 
-        refreshAuditSummary(xml, audit_summary);
+        refreshAuditSummary(xml, auditSummary);
 
         try {
             final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(dest, false);

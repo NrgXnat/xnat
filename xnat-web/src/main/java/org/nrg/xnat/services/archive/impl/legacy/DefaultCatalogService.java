@@ -1318,29 +1318,26 @@ public class DefaultCatalogService implements CatalogService {
         long startTime=Calendar.getInstance().getTimeInMillis();
 
     	if (resource instanceof XnatResourcecatalog) {
-            final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
-            final File catFile = CatalogUtils.getCatalogFile(projectPath, catRes);
-            final CatCatalogBean cat = CatalogUtils.getCatalog(catFile);
-            
-            if (cat != null) {
-                Object[] refresh_info = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
-                        addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
-                boolean modified = (boolean) refresh_info[0];
-                Map<String, Map<String, Integer>> audit_summary = (Map<String, Map<String, Integer>>) refresh_info[1];
+    	    final CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(projectPath,
+                    (XnatResourcecatalog) resource);
+            Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData.catRes, catalogData.catFile,
+                    catalogData.catBean, user, now.getEventId(), addUnreferencedFiles, removeMissingFiles,
+                    populateStats, checksums);
+            boolean modified = (boolean) refreshInfo[0];
+            Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
 
-                if (modified) {
-                    try {
-                        //checksums and audit_summary computed in CatalogUtils.refreshCatalog
-                        CatalogUtils.writeCatalogToFile(cat, catFile, false, audit_summary);
-                        if (populateStats) {
-                            resource.save(user, false, false, now);
-                        }
-                    } catch (Exception e) {
-                        throw new ServerException("An error occurred writing the catalog file " + catFile.getAbsolutePath(), e);
+            if (modified) {
+                try {
+                    //checksums and auditSummary computed in CatalogUtils.refreshCatalog
+                    CatalogUtils.writeCatalogToFile(catalogData.catBean, catalogData.catFile,
+                            false, auditSummary);
+                    if (populateStats) {
+                        resource.save(user, false, false, now);
                     }
+                } catch (Exception e) {
+                    throw new ServerException("An error occurred writing the catalog file " +
+                            catalogData.catFile.getAbsolutePath(), e);
                 }
-            } else {
-                throw new ServerException("Unable to load catalog file");
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {

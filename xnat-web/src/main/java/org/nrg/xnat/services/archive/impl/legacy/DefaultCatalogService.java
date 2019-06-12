@@ -95,6 +95,8 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
 /**
  * {@inheritDoc}
  */
+
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @Service
 @Slf4j
 public class DefaultCatalogService implements CatalogService {
@@ -327,8 +329,22 @@ public class DefaultCatalogService implements CatalogService {
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
                                                @Nullable Integer parentEventId, final boolean preserveDirectories,
-                                               final String label, final String description,
-                                               final String format, final String content, final String... tags) throws Exception {
+                                               final String label, final String description, final String format,
+                                               final String content, final String... tags) throws Exception {
+        return insertResources(user, parentUri, resources, null, false, false,
+                label, description, format, content, tags);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
+                                        @Nullable Integer parentEventId, final boolean preserveDirectories,
+                                        final boolean uploadToRemote, final String label, final String description,
+                                        final String format, final String content, final String... tags)
+            throws Exception {
+
         long startTime = Calendar.getInstance().getTimeInMillis();
     	final Collection<File> missing = Lists.newArrayList();
         for (final File source : resources) {
@@ -342,20 +358,42 @@ public class DefaultCatalogService implements CatalogService {
 
         final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, parentEventId, label,
                 description, format, content, tags);
-        final File destination = new File(catalog.getUri()).getParentFile();
-        for (final File source : resources) {
-            if (source.isDirectory() && preserveDirectories) {
-                FileUtils.copyDirectoryToDirectory(source, destination);
-            } else if (source.isDirectory() && !preserveDirectories) {
-                FileUtils.copyDirectory(source, destination);
-            } else {
-                FileUtils.copyFileToDirectory(source, destination);
+
+        boolean doLocalAdd = !uploadToRemote;
+        if (uploadToRemote) {
+            try {
+                if (_remoteFilesService == null) {
+                    throw new ServerException("No remote filesystems configured for this site; " +
+                            "all catalogs must be local");
+                }
+                ArchivableItem item = getResourceDataFromUri(parentUri).getItem();
+                _remoteFilesService.pushFilesAndAddUrlsToCatalog(user, item, catalog, resources, preserveDirectories,
+                        parentEventId);
+            } catch (Exception e) {
+                // For any exception, default to local add
+                log.error("Error uploading {} to remote and adding to {} by URL", resources, catalog.getUri(), e);
+                doLocalAdd = true;
             }
         }
-        log.error("{}-Copied files from Build to Archive in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
-        startTime = Calendar.getInstance().getTimeInMillis();
-        refreshResourceCatalog(user, parentUri, catalog, parentEventId);
-        log.error("{}-Refreshed Catalog in {} ms",destination.getAbsolutePath().hashCode(),((Calendar.getInstance().getTimeInMillis()-startTime)));
+
+        if (doLocalAdd) {
+            final File destination = new File(catalog.getUri()).getParentFile();
+            for (final File source : resources) {
+                if (source.isDirectory() && preserveDirectories) {
+                    FileUtils.copyDirectoryToDirectory(source, destination);
+                } else if (source.isDirectory() && !preserveDirectories) {
+                    FileUtils.copyDirectory(source, destination);
+                } else {
+                    FileUtils.copyFileToDirectory(source, destination);
+                }
+            }
+            log.debug("{}-Copied files from Build to Archive in {} ms", destination.getAbsolutePath().hashCode(),
+                    ((Calendar.getInstance().getTimeInMillis() - startTime)));
+            startTime = Calendar.getInstance().getTimeInMillis();
+            refreshResourceCatalog(user, parentUri, catalog, parentEventId);
+            log.debug("{}-Refreshed Catalog in {} ms", destination.getAbsolutePath().hashCode(),
+                    ((Calendar.getInstance().getTimeInMillis() - startTime)));
+        }
         
         return catalog;
     }
@@ -411,7 +449,7 @@ public class DefaultCatalogService implements CatalogService {
         // Test if catalog already exists
         XnatResourcecatalog catalog = null;
         ResourceData resourceData = getResourceDataFromUri(parentUri);
-        for (XnatAbstractresourceI res : resourceData.getXnatUri().getResources(true)) {
+        for (XnatAbstractresourceI res : resourceData.getXnatUri().getResources(false)) {
             if (!(res instanceof XnatResourcecatalog)) {
                 continue;
             }
@@ -648,7 +686,7 @@ public class DefaultCatalogService implements CatalogService {
                     + uriString);
         }
 
-        XnatResourcecatalogI catRes = null;
+        XnatResourcecatalog catRes = null;
         if (catalogOnly) {
             //Is it a single, catalog resource?
             if (!(xnatUri instanceof ResourceURII)) {
@@ -665,11 +703,11 @@ public class DefaultCatalogService implements CatalogService {
             XnatAbstractresourceI resource = ((ResourceURII) xnatUri).getXnatResource();
             // Allow a null resource, only throw exception if we have a non-catalog resource
             if (resource != null) {
-                if (!(resource instanceof XnatResourcecatalogI)) {
+                if (!(resource instanceof XnatResourcecatalog)) {
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
                             " doesn't refer to a catalog.");
                 }
-                catRes = (XnatResourcecatalogI) resource;
+                catRes = (XnatResourcecatalog) resource;
             }
         }
 
@@ -722,10 +760,10 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             // other kind of resource (mr session, etc), check it's children for anything remote
             for (final XnatAbstractresourceI resource : resourceData.getXnatUri().getResources(true)) {
-                if (!(resource instanceof XnatResourcecatalogI)) {
+                if (!(resource instanceof XnatResourcecatalog)) {
                     continue;
                 }
-                if (_remoteFilesService.catalogHasRemoteFiles((XnatResourcecatalogI) resource)) {
+                if (_remoteFilesService.catalogHasRemoteFiles((XnatResourcecatalog) resource)) {
                     return true;
                 }
             }
@@ -915,7 +953,8 @@ public class DefaultCatalogService implements CatalogService {
         try {
             return _parameterized.queryForObject(Permissions.getObjectExistsQuery(table, column, "objectId"), new MapSqlParameterSource("objectId", primaryKey), Boolean.class);
         } catch (BadSqlGrammarException e) {
-            log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. Returning false.", e);
+            log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. " +
+                    "Returning false.", table, column, primaryKey, e);
             return false;
         }
     }
@@ -1279,29 +1318,26 @@ public class DefaultCatalogService implements CatalogService {
         long startTime=Calendar.getInstance().getTimeInMillis();
 
     	if (resource instanceof XnatResourcecatalog) {
-            final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
-            final File catFile = CatalogUtils.getCatalogFile(projectPath, catRes);
-            final CatCatalogBean cat = CatalogUtils.getCatalog(catFile);
-            
-            if (cat != null) {
-                Object[] refresh_info = CatalogUtils.refreshCatalog(catRes, catFile, cat, user, now.getEventId(),
-                        addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
-                boolean modified = (boolean) refresh_info[0];
-                Map<String, Map<String, Integer>> audit_summary = (Map<String, Map<String, Integer>>) refresh_info[1];
+    	    final CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(projectPath,
+                    (XnatResourcecatalog) resource);
+            Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData.catRes, catalogData.catFile,
+                    catalogData.catBean, user, now.getEventId(), addUnreferencedFiles, removeMissingFiles,
+                    populateStats, checksums);
+            boolean modified = (boolean) refreshInfo[0];
+            Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
 
-                if (modified) {
-                    try {
-                        //checksums and audit_summary computed in CatalogUtils.refreshCatalog
-                        CatalogUtils.writeCatalogToFile(cat, catFile, false, audit_summary);
-                        if (populateStats) {
-                            resource.save(user, false, false, now);
-                        }
-                    } catch (Exception e) {
-                        throw new ServerException("An error occurred writing the catalog file " + catFile.getAbsolutePath(), e);
+            if (modified) {
+                try {
+                    //checksums and auditSummary computed in CatalogUtils.refreshCatalog
+                    CatalogUtils.writeCatalogToFile(catalogData.catBean, catalogData.catFile,
+                            false, auditSummary);
+                    if (populateStats) {
+                        resource.save(user, false, false, now);
                     }
+                } catch (Exception e) {
+                    throw new ServerException("An error occurred writing the catalog file " +
+                            catalogData.catFile.getAbsolutePath(), e);
                 }
-            } else {
-                throw new ServerException("Unable to load catalog file");
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {
@@ -1754,13 +1790,14 @@ public class DefaultCatalogService implements CatalogService {
         try {
             if (!Permissions.can(user, item, accessType)) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
-                        " does not have permission to " + accessType + " the resource " + resourceName);
+                        " does not have permission to " + accessType + " the resource " + resourceName + " for item " +
+                        item.getId());
             }
         } catch (ClientException e) {
             throw e;
         } catch (Exception e) {
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
-                    user.getLogin() + " permissions for resource " + resourceName);
+                    user.getLogin() + " permissions for resource " + resourceName + " for item " + item.getId());
         }
     }
 

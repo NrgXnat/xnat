@@ -50,7 +50,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = "1.7.5.RAD5"
+version = "1.7.5.RAD6"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"

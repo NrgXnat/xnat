@@ -172,6 +172,38 @@ public interface CatalogService {
                                         final String content, final String... tags) throws Exception;
 
     /**
+     * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive
+     * space of the parent data object and have the same name as the catalog. The contents of the locations specified by
+     * the sources parameters are copied into the resource folder.
+     * * If the source is a file, that file is copied into the resource folder.
+     * * If the source is a directory, and preserveDirectories=true, the directory and its contents are copied in.
+     *      If preserveDirectories=false, only that directory's contents&emdash;that is,
+     *      not the directory itself&emdash;are copied into the resource folder.
+     * * If uploadToRemote=true, files will be uploaded to a remote filesystem and added to the catalog by remote URL
+     *
+     * @param user                  The user creating the catalog.
+     * @param parentUri             The URI of the resource parent.
+     * @param resources             The files and/or folders to copy into the resource folder.
+     * @param parentEventId         Nullable parent event id to prevent new workflow entry from being created
+     * @param preserveDirectories   Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
+     * @param uploadToRemote        True if upload to remote filesystem ought to be attempted (will fallback on local)
+     * @param label                 The label for the new resource catalog.
+     * @param description           The description of the resource catalog.
+     * @param format                The format of the data in the resource catalog.
+     * @param content               The content of the data in the resource catalog.
+     * @param tags                  Tags for categorizing the data in the resource catalog.
+     *
+     * @return The newly created {@link XnatResourcecatalog} object representing the new resource.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
+                                        @Nullable Integer parentEventId, final boolean preserveDirectories,
+                                        final boolean uploadToRemote, final String label, final String description,
+                                        final String format, final String content, final String... tags)
+            throws Exception;
+
+    /**
      * Creates a new resource catalog with the indicated attributes. The new resource catalog is not associated with any
      * particular resource or entity on the system, is not persisted to the database, and doesn't have any related files
      * in the archive. To store the catalog to the system, you can use the {@link #insertResourceCatalog(UserI, String,
@@ -506,7 +538,7 @@ public interface CatalogService {
      * @param user the user
      * @param item the item
      * @param accessType the access type
-     * @param resourceName the resource name
+     * @param resourceName the resource name, just used for logging currently
      */
     void checkPermissionsOnItem(final UserI user, final ArchivableItem item, @Nonnull final String accessType,
                                 final String resourceName)
@@ -530,7 +562,7 @@ public interface CatalogService {
      * @param destinationDir    The path to the destination
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
-     * @throws ServerException When an error occurs in the system during the refresh operation.
+     * @throws ServerException When an error occurs in the system during the pull operation.
      */
     void pullResourceCatalogsToDestination(final UserI user, final String uriString, final String destinationDir)
             throws ServerException, ClientException;

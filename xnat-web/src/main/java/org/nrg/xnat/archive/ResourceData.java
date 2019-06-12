@@ -1,6 +1,6 @@
 package org.nrg.xnat.archive;
 
-import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
@@ -9,13 +9,13 @@ import javax.annotation.Nullable;
 public class ResourceData {
     private URIManager.DataURIA uri;
     private URIManager.ArchiveItemURI xnatUri;
-    private XnatResourcecatalogI catalogResource;
+    private XnatResourcecatalog catalogResource;
     private ArchivableItem item;
 
     public ResourceData(URIManager.DataURIA uri,
                         URIManager.ArchiveItemURI xnatUri,
                         ArchivableItem item,
-                        @Nullable XnatResourcecatalogI catalogResource) {
+                        @Nullable XnatResourcecatalog catalogResource) {
         this.uri = uri;
         this.xnatUri = xnatUri;
         this.catalogResource = catalogResource;
@@ -38,11 +38,11 @@ public class ResourceData {
         this.xnatUri = xnatUri;
     }
 
-    public XnatResourcecatalogI getCatalogResource() {
+    public XnatResourcecatalog getCatalogResource() {
         return catalogResource;
     }
 
-    public void setCatalogResource(XnatResourcecatalogI catalogResource) {
+    public void setCatalogResource(XnatResourcecatalog catalogResource) {
         this.catalogResource = catalogResource;
     }
 

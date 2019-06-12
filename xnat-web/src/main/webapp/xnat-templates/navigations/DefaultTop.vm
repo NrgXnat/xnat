@@ -307,7 +307,7 @@
             })
         </script>
     #end
-
+    #addGlobalCustomScreens("topBarAlerts")
     <a id="header_logo" href="$link.setPage("Index.vm")" style="display:none;">
         #parse("/screens/Logo.vm")
     </a>

@@ -1,13 +1,16 @@
 package org.nrg.xnat.services.archive;
 
+import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 public interface RemoteFilesService {
@@ -58,4 +61,20 @@ public interface RemoteFilesService {
                   final List<XnatAbstractresourceI> resources,
                   final UserI user,
                   @Nullable String itemDestPath) throws ServerException;
+
+
+    /**
+     * Push files to remote filesystem and add URLs to catalog
+     * @param user          The user
+     * @param item          The item whose security settings we'll use to allow/deny the operation
+     * @param catalog       The catalog resource
+     * @param files         Collection of files/dirs to push
+     * @param preserveDirectories   If true, files are added to catalog with relative directory paths; if false,
+     *                              we attmept to use only names
+     * @param parentEventId Nullable eventId for parent workflow
+     */
+    void pushFilesAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
+                                      final XnatResourcecatalog catalog, final Collection<File> files,
+                                      final boolean preserveDirectories, @Nullable Integer parentEventId)
+            throws ClientException, ServerException;
 }

@@ -82,13 +82,13 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                 if (file instanceof XnatResourcecatalog) {
                     XnatResourcecatalog res = (XnatResourcecatalog) file;
                     try {
-                        File           f   = CatalogUtils.getCatalogFile(root, res);
-                        CatCatalogBean cat = CatalogUtils.getCatalog(root, res);
-                        if (CatalogUtils.formalizeCatalog(cat, f.getParentFile().getAbsolutePath(), user, c, checksums, false)) {
-                            CatalogUtils.writeCatalogToFile(cat, f, checksums);
+                        CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(root, res);
+                        if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, user, c, checksums,
+                                false)) {
+                            CatalogUtils.writeCatalogToFile(catalogData, checksums);
                         }
                     } catch (Exception exception) {
-                        logger.error("An error occurred trying to write catalog data for " + ((XnatResourcecatalog) file).getUri(), exception);
+                        logger.error("An error occurred trying to write catalog data for {}", ((XnatResourcecatalog) file).getUri(), exception);
                     }
                 }
             }

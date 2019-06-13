@@ -3,7 +3,9 @@ package org.nrg.xnat.utils;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.test.workers.resources.ResourceManager;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -20,6 +22,7 @@ import org.powermock.reflect.Whitebox;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,22 +96,55 @@ public class TestThreadAndProcessFileLock {
         // This operates on a separate file from testDcm/testDcmRepeat so it doesn't change their data mid-test
         File outfile = new File(TMPDIR,"tmp_dcm_catalog_alt.xml");
         Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        CatCatalogBean cat = CatalogUtils.getCatalog(outfile);
-        int size = cat.getEntries_entry().size();
-        CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(cat, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
+        CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(outfile);
+        int size = catalogData.catBean.getEntries_entry().size();
+        CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData.catBean, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
         assertNotNull(entry);
-        CatalogUtils.removeEntry(cat, entry);
-        CatalogUtils.writeCatalogToFile(cat, outfile);
+        CatalogUtils.removeEntry(catalogData.catBean, entry);
+        CatalogUtils.writeCatalogToFile(catalogData);
+
+        CatalogUtils.CatalogData catalogData2 = CatalogUtils.getCatalogData(outfile);
+        assertThat(catalogData2.catBean.getEntries_entry().size(), is(size-1));
+        entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData2.catBean, "TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm");
+        assertNotNull(entry);
+        CatalogUtils.removeEntry(catalogData2.catBean, entry);
+        CatalogUtils.writeCatalogToFile(catalogData2);
         CatCatalogBean cat2 = CatalogUtils.getCatalog(outfile);
         assertNotNull(cat2);
-        assertThat(cat2.getEntries_entry().size(), is(size-1));
-        entry = (CatEntryBean) CatalogUtils.getEntryByURI(cat, "TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm");
-        assertNotNull(entry);
-        CatalogUtils.removeEntry(cat, entry);
-        CatalogUtils.writeCatalogToFile(cat, outfile);
-        cat2 = CatalogUtils.getCatalog(outfile);
-        assertNotNull(cat2);
         assertThat(cat2.getEntries_entry().size(), is(size-2));
+    }
+
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
+    public void testConcurrentWriteThrowsException() throws Exception {
+        // This operates on a separate file from testDcm/testDcmRepeat so it doesn't change their data mid-test
+        File outfile = new File(TMPDIR,"tmp_dcm_catalog_alt2.xml");
+        Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        // Read in the catalog and do things
+        CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(outfile);
+        CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData.catBean, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
+        assertNotNull(entry);
+        CatalogUtils.removeEntry(catalogData.catBean, entry);
+
+        // While one process/thread/user is doing things, another reads the unchanged catalog
+        CatalogUtils.CatalogData catalogData2 = CatalogUtils.getCatalogData(outfile);
+
+        // The original process/thread/user writes the modified catalog
+        CatalogUtils.writeCatalogToFile(catalogData);
+
+        // The second is still doing his thing, unaware that the catalog file has changed
+        entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData2.catBean, "TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm");
+        assertNotNull(entry);
+        CatalogUtils.removeEntry(catalogData2.catBean, entry);
+
+        // And when the second process/thread/user tries to write his version of the catalog, an exception should be thrown
+        exceptionRule.expect(ConcurrentModificationException.class);
+        exceptionRule.expectMessage("Another thread or process modified " + catalogData2.catFile +
+                " since I last read it. To avoid overwriting changes, I'm throwing an exception.");
+        CatalogUtils.writeCatalogToFile(catalogData2);
     }
 
     private void doReadWrite(File file, String copiedFile) throws Exception {
@@ -118,15 +154,14 @@ public class TestThreadAndProcessFileLock {
         assertTrue(org.apache.commons.io.FileUtils.contentEqualsIgnoreEOL(file, copyLoc, null)); // DUMMY CHECK
 
         // Read the shared file
-        CatCatalogBean cat = CatalogUtils.getCatalog(file);
-        assertNotNull(cat);
+        CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(file);
 
         // Write to the shared file
-        CatalogUtils.writeCatalogToFile(cat, file, false, new HashMap<String, Map<String,Integer>>());
+        CatalogUtils.writeCatalogToFile(catalogData, false, new HashMap<String, Map<String,Integer>>());
 
         // Read it again
         CatCatalogBean cat2 = CatalogUtils.getCatalog(file);
         assertNotNull(cat2);
-        assertEquals(cat.toString(), cat2.toString());
+        assertEquals(catalogData.catBean.toString(), cat2.toString());
     }
 }

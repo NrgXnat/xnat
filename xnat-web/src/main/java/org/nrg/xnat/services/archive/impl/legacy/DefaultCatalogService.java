@@ -1359,8 +1359,7 @@ public class DefaultCatalogService implements CatalogService {
             if (modified) {
                 try {
                     //checksums and auditSummary computed in CatalogUtils.refreshCatalog
-                    CatalogUtils.writeCatalogToFile(catalogData.catBean, catalogData.catFile,
-                            false, auditSummary);
+                    CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
                     if (populateStats) {
                         resource.save(user, false, false, now);
                     }

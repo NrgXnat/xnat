@@ -27,6 +27,9 @@ DROP FUNCTION IF EXISTS public.data_type_fns_resolve_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_fix_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_experiment_extension();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_group_permissions();
+DROP FUNCTION IF EXISTS public.data_type_fns_can(username VARCHAR(255), entityId VARCHAR(255), ACTION VARCHAR(15));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -473,6 +476,18 @@ BEGIN
 END
 $_$;
 
+-- Gets all hash indices in the public schema along with the CREATE INDEX
+-- statements required to regenerate the indices.
+CREATE OR REPLACE VIEW public.data_type_views_get_xnat_hash_indices AS
+SELECT
+  indexname,
+  regexp_replace(indexdef, E'[\n\r]+', ' ', 'g') AS recreate
+FROM
+  pg_indexes
+WHERE
+    indexdef LIKE '%hash%' AND
+    schemaname = 'public';
+
 -- Drops all hash indices as returned with the get_hash_indices view. The
 -- recreate parameter is true by default and indicates whether each index
 -- should be regenerated once it's been dropped.
@@ -710,4 +725,120 @@ BEGIN
     RETURN total_count;
 END;
 $_$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_projects(entityId VARCHAR(255))
+    RETURNS TABLE (
+                      field_value VARCHAR(255),
+                      field       VARCHAR(255))
+AS
+$$
+DECLARE
+    found_entity_id BOOLEAN;
+BEGIN
+    SELECT EXISTS(SELECT TRUE FROM xnat_experimentdata WHERE id = entityId) INTO found_entity_id;
+    IF found_entity_id
+    THEN
+        RETURN QUERY
+            SELECT
+                x.project AS field_value,
+                (e.element_name || '/project')::VARCHAR(255) AS field
+            FROM
+                xnat_experimentdata x
+                LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+            WHERE id = entityId
+            UNION
+            SELECT
+                s.project AS field_value,
+                e.element_name || '/sharing/share/project' AS field
+            FROM
+                xnat_experimentdata_share s
+                LEFT JOIN xnat_experimentdata x ON s.sharing_share_xnat_experimentda_id = x.id
+                LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+            WHERE sharing_share_xnat_experimentda_id = entityId;
+    END IF;
+
+    SELECT EXISTS(SELECT TRUE FROM xnat_subjectdata WHERE id = entityId) INTO found_entity_id;
+    IF found_entity_id
+    THEN
+        RETURN QUERY
+            SELECT
+                project AS field_value,
+                'xnat:subjectData/project'::VARCHAR(255) AS field
+            FROM
+                xnat_subjectdata
+            WHERE id = entityId
+            UNION
+            SELECT
+                project AS field_value,
+                'xnat:subjectData/sharing/share/project'::VARCHAR(255) AS field
+            FROM
+                xnat_projectparticipant
+            WHERE subject_id = entityId;
+    END IF;
+
+    SELECT EXISTS(SELECT TRUE FROM xnat_projectdata WHERE id = entityId) INTO found_entity_id;
+    IF found_entity_id
+    THEN
+        RETURN QUERY
+            SELECT
+                id AS field_value,
+                'xnat:projectData/ID'::VARCHAR(255) AS field
+            FROM
+                xnat_projectdata
+            WHERE id = entityId;
+    END IF;
+
+    RETURN;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255))
+    RETURNS TABLE (
+                      id         VARCHAR(255),
+                      field      VARCHAR(255),
+                      can_read   BOOLEAN,
+                      can_edit   BOOLEAN,
+                      can_create BOOLEAN,
+                      can_delete BOOLEAN,
+                      can_active BOOLEAN)
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT
+            g.id,
+            m.field,
+            m.read_element::BOOLEAN,
+            m.edit_element::BOOLEAN,
+            m.create_element::BOOLEAN,
+            m.delete_element::BOOLEAN,
+            m.active_element::BOOLEAN
+        FROM
+            xdat_field_mapping m
+            LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+            LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
+            LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+            LEFT JOIN xdat_user_groupid i ON g.id = i.groupid
+            LEFT JOIN xdat_user u ON i.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id
+            LEFT JOIN (SELECT * FROM data_type_fns_get_entity_projects(entityId)) p ON m.field = p.field AND m.field_value IN (p.field_value, '*')
+        WHERE
+            p.field IS NOT NULL AND
+            u.login = username;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), entityId VARCHAR(255), action VARCHAR(15))
+    RETURNS BOOLEAN
+AS
+$$
+DECLARE
+    found_can BOOLEAN;
+BEGIN
+    EXECUTE format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'')', action, action, username, entityId) INTO found_can;
+    RETURN found_can;
+END
+$$
     LANGUAGE plpgsql;

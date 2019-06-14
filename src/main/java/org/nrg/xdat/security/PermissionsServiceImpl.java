@@ -35,6 +35,7 @@ import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -55,9 +56,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xdat.security.SecurityManager.EDIT;
+import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xft.event.XftItemEvent.builder;
-import static org.nrg.xft.event.XftItemEventI.DELETE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
@@ -133,7 +133,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canCreate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.CREATE, root, values);
+        return securityCheck(user, CREATE, root, values);
     }
 
     @Override
@@ -287,7 +287,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canCreate(UserI user, ItemI item) throws Exception {
-        return can(user, item, SecurityManager.CREATE);
+        return can(user, item, CREATE);
     }
 
     @Override
@@ -329,7 +329,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canCreate(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.CREATE);
+        return can(user, xmlPath, value, CREATE);
     }
 
     @Override
@@ -340,6 +340,31 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
         return can(user, xmlPath, value, SecurityManager.DELETE);
+    }
+
+    @Override
+    public boolean canRead(final UserI user, final String entityId) {
+        return can(user.getUsername(), entityId, READ);
+    }
+
+    @Override
+    public boolean canEdit(final UserI user, final String entityId) {
+        return can(user.getUsername(), entityId, EDIT);
+    }
+
+    @Override
+    public boolean canCreate(final UserI user, final String entityId) {
+        return can(user.getUsername(), entityId, CREATE);
+    }
+
+    @Override
+    public boolean canDelete(final UserI user, final String entityId) {
+        return can(user.getUsername(), entityId, DELETE);
+    }
+
+    @Override
+    public boolean canActivate(final UserI user, final String entityId) {
+        return can(user.getUsername(), entityId, ACTIVATE);
     }
 
     @Override
@@ -503,6 +528,30 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public List<String> getUserOwnedProjects(final String username) {
         return _cache.getProjectsForUser(username, SecurityManager.DELETE);
+    }
+
+    private boolean can(final String username, final String entityId, final String action) {
+        final String query;
+        switch (action) {
+            case SecurityManager.READ:
+                query = QUERY_CAN_USER_READ_ID;
+                break;
+            case EDIT:
+                query = QUERY_CAN_USER_EDIT_ID;
+                break;
+            case CREATE:
+                query = QUERY_CAN_USER_CREATE_ID;
+                break;
+            case DELETE:
+                query = QUERY_CAN_USER_DELETE_ID;
+                break;
+            case ACTIVATE:
+                query = QUERY_CAN_USER_ACTIVE_ID;
+                break;
+            default:
+                throw new IllegalArgumentException("Action must be one of read, edit, create, delete, or active. Invalid: " + action);
+        }
+        return _template.queryForObject(query, new MapSqlParameterSource("username", username).addValue("entityId", entityId), Boolean.class);
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -681,7 +730,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 final Integer fieldMappingId = _template.queryForObject(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", fieldName).addValue("projectId", fieldValue), Integer.class);
                 deleteFieldMappings(Collections.singletonList(fieldMappingId), affected, ci);
                 if (triggerEvent) {
-                    _eventService.triggerEvent(builder().xsiType(XdatFieldMapping.SCHEMA_ELEMENT_NAME).id(fieldMappingId.toString()).action(DELETE).build());
+                    _eventService.triggerEvent(builder().xsiType(XdatFieldMapping.SCHEMA_ELEMENT_NAME).id(fieldMappingId.toString()).action(XftItemEventI.DELETE).build());
                 }
                 return;
             }
@@ -917,6 +966,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                                                      "  active_element = 1 " +
                                                                      "WHERE " +
                                                                      "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String QUERY_GET_USER_PERMS_FOR_ID        = "SELECT * FROM data_type_fns_get_entity_permissions(:username, :entityId)";
+    private static final String QUERY_CAN_USER_READ_ID             = "SELECT data_type_fns_can(:username, :entityId, 'read') AS can_read";
+    private static final String QUERY_CAN_USER_EDIT_ID             = "SELECT data_type_fns_can(:username, :entityId, 'edit') AS can_edit";
+    private static final String QUERY_CAN_USER_CREATE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'create') AS can_create";
+    private static final String QUERY_CAN_USER_DELETE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'delete') AS can_delete";
+    private static final String QUERY_CAN_USER_ACTIVE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'active') AS can_active";
 
     private final DataTypeAwareEventService  _eventService;
     private final NamedParameterJdbcTemplate _template;

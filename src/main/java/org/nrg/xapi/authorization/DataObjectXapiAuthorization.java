@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
-import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -34,7 +33,7 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
     }
 
     @Override
-    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws NotFoundException, InsufficientPrivilegesException {
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws NotFoundException {
         final List<String> projects       = getProjects(joinPoint);
         final boolean      hasProjects    = !projects.isEmpty();
         final List<String> subjects       = getSubjects(joinPoint);
@@ -74,12 +73,12 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
             }
             if (!predicate.getMissing().isEmpty()) {
                 final String missing = StringUtils.join(predicate.getMissing(),", ");
-                log.warn("User {} requested the following items that don't exist: {}", user.getUsername(), missing);
+                log.info("User {} requested the following items that don't exist: {}", user.getUsername(), missing);
                 throw new NotFoundException("The following item(s) don't exist: " + missing);
             }
             if (!predicate.getDenied().isEmpty()) {
                 final String denied = StringUtils.join(predicate.getDenied(), ", ");
-                log.warn("User {} requested access to the following items but was denied: {}", user.getUsername(), denied);
+                log.info("User {} requested access to the following items but was denied: {}", user.getUsername(), denied);
             }
         }
         return checked;

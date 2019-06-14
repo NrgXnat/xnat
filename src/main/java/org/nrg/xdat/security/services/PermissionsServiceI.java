@@ -280,6 +280,66 @@ public interface PermissionsServiceI {
     boolean canDelete(UserI user, String xmlPath, Object value) throws Exception;
 
     /**
+     * Indicates whether the user read the subject or experiment with the specified ID.
+     *
+     * @param user     The user for which to retrieve permissions.
+     * @param entityId Represents the ID of the subject or experiment object.
+     *
+     * @return True if the user can perform the specified action for the XML path and value, false otherwise.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    boolean canRead(final UserI user, final String entityId) throws Exception;
+
+    /**
+     * Indicates whether the user edit the subject or experiment with the specified ID.
+     *
+     * @param user     The user for which to retrieve permissions.
+     * @param entityId Represents the ID of the subject or experiment object.
+     *
+     * @return True if the user can perform the specified action for the XML path and value, false otherwise.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    boolean canEdit(final UserI user, final String entityId) throws Exception;
+
+    /**
+     * Indicates whether the user create the subject or experiment with the specified ID.
+     *
+     * @param user     The user for which to retrieve permissions.
+     * @param entityId Represents the ID of the subject or experiment object.
+     *
+     * @return True if the user can perform the specified action for the XML path and value, false otherwise.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    boolean canCreate(final UserI user, final String entityId) throws Exception;
+
+    /**
+     * Indicates whether the user delete the subject or experiment with the specified ID.
+     *
+     * @param user     The user for which to retrieve permissions.
+     * @param entityId Represents the ID of the subject or experiment object.
+     *
+     * @return True if the user can perform the specified action for the XML path and value, false otherwise.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    boolean canDelete(final UserI user, final String entityId) throws Exception;
+
+    /**
+     * Indicates whether the user activate the subject or experiment with the specified ID.
+     *
+     * @param user     The user for which to retrieve permissions.
+     * @param entityId Represents the ID of the subject or experiment object.
+     *
+     * @return True if the user can perform the specified action for the XML path and value, false otherwise.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    boolean canActivate(final UserI user, final String entityId) throws Exception;
+
+    /**
      * Can the user create/update this item and potentially all of its descendants
      *
      * @param user    The user for which to retrieve permissions.

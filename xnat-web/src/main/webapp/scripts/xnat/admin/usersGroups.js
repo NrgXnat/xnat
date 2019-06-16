@@ -790,7 +790,7 @@ var XNAT = getObject(XNAT);
                     autocomplete: 'off',
                     data: { message: passwordComplexityMessage }
                 };
-                obj.validate = 'required pattern:'+passwordComplexity+' max-length:255'
+                obj.validate = 'allow-empty pattern:'+passwordComplexity+' max-length:255'
             }
             return obj;
         }

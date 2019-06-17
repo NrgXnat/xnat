@@ -40,8 +40,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA.UpdateMeta;
@@ -446,39 +444,9 @@ public class FileList extends XNATCatalogTemplate {
                 }
             }
 
-            final CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(proj.getRootArchivePath(),
+            final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(proj.getRootArchivePath(),
                     (XnatResourcecatalog) resource);
-
-            Collection<CatEntryI> entries = new ArrayList<>();
-            CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData.catBean, filePath);
-            if (e != null) {
-                entries.add(e);
-            }
-            if (entries.size() == 0) {
-                e = (CatEntryBean) CatalogUtils.getEntryById(catalogData.catBean, filePath);
-                if (e != null) {
-                    entries.add(e);
-                }
-            }
-
-            if (entries.size() == 0 && filePath.endsWith("/")) {
-                final CatalogUtils.CatEntryFilterI folderFilter = new CatalogUtils.CatEntryFilterI() {
-                    @Override
-                    public boolean accept(CatEntryI entry) {
-                        String relPath = CatalogUtils.getRelativePathForCatalogEntry(entry);
-                        return relPath.startsWith(filePath);
-                    }
-                };
-
-                entries.addAll(CatalogUtils.getEntriesByFilter(catalogData.catBean, folderFilter));
-            }
-
-            if (entries.isEmpty() && filePath.endsWith("*")) {
-                StringBuilder regex = new StringBuilder(filePath);
-                int lastIndex = filePath.lastIndexOf("*");
-                regex.replace(lastIndex, lastIndex + 1, ".*");
-                entries.addAll(CatalogUtils.getEntriesByRegex(catalogData.catBean, regex.toString()));
-            }
+            final Collection<CatEntryI> entries = CatalogUtils.findCatEntriesWithinPath(filePath, catalogData);
 
             if (entries.isEmpty()) {
                 getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND,
@@ -495,7 +463,6 @@ public class FileList extends XNATCatalogTemplate {
                     CatalogUtils.CatalogEntryPathInfo info = new CatalogUtils.CatalogEntryPathInfo(entry,
                             catalogData.catPath);
                     historyMap.put(entry, new File(info.entryPathDest));
-                    catalogData.catBean.getEntries_entry().remove(entry);
                     catSize -= CatalogUtils.getCatalogEntrySize(entry);
                 }
 
@@ -508,7 +475,10 @@ public class FileList extends XNATCatalogTemplate {
                 CatalogUtils.addAuditEntry(auditSummary, Integer.parseInt(ci.getEventId().toString()),
                         Calendar.getInstance().getTime(), ChangeSummaryBuilderA.REMOVED, nremoved);
 
-                // Write to the catalog, maintain history if appropriate
+                // Perform remove on the catalog bean
+                catalogData.catBean.getEntries_entry().removeAll(entries);
+
+                // Write updated bean to the catalog, maintain history if appropriate, and remove files if requested
                 CatalogUtils.saveUpdatedCatalog(catalogData, auditSummary, catSize, fileCount, ci, user,
                         historyMap, !isQueryVariableFalse("removeFiles"));
 

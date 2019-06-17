@@ -180,7 +180,7 @@ public abstract class ResourceModifierA implements Serializable {
 
         File saveTo = new File(new File(destPath, catId), catId + "_catalog.xml");
 
-        CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(saveTo, resource, catId);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(saveTo, resource, catId);
 
         CatalogUtils.writeCatalogToFile(catalogData);
 

@@ -1344,15 +1344,17 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
-        long startTime=Calendar.getInstance().getTimeInMillis();
+    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath,
+                                        final boolean populateStats, final boolean checksums,
+                                        final boolean removeMissingFiles, final boolean addUnreferencedFiles,
+                                        final UserI user, final EventMetaI now) throws ServerException {
+        long startTime = Calendar.getInstance().getTimeInMillis();
 
     	if (resource instanceof XnatResourcecatalog) {
-    	    final CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(projectPath,
+    	    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
                     (XnatResourcecatalog) resource);
-            Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData.catRes, catalogData.catFile,
-                    catalogData.catBean, user, now.getEventId(), addUnreferencedFiles, removeMissingFiles,
-                    populateStats, checksums);
+            Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
+                    addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
             boolean modified = (boolean) refreshInfo[0];
             Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
 
@@ -1373,14 +1375,15 @@ public class DefaultCatalogService implements CatalogService {
                 try {
                     resource.save(user, false, false, now);
                 } catch (Exception e) {
-                    throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
+                    throw new ServerException("An error occurred saving the resource " +
+                            resource.getFullPath(projectPath), e);
                 }
             }
         } else {
             throw new ServerException("Resource " + resource + " is not a catalog");
         }
 
-        log.info("refreshResourceCatalog runtime: "+(Calendar.getInstance().getTimeInMillis() - startTime)+"ms");
+        log.debug("refreshResourceCatalog runtime: " + (Calendar.getInstance().getTimeInMillis() - startTime) + "ms");
     }
 
 

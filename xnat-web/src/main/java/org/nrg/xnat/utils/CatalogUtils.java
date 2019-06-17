@@ -88,93 +88,162 @@ public class CatalogUtils {
     }
 
     public static class CatalogData {
-        @Nullable public XnatResourcecatalog catRes = null;
+        @Nullable
+        public XnatResourcecatalog catRes = null;
+
+        @Nonnull
         public File catFile;
-        @Nullable public String catFileChecksum = null;
+
+        @Nullable
+        public String catFileChecksum = null;
+
+        @Nonnull
         public String catPath;
-        @Nonnull public CatCatalogBean catBean;
-        public boolean needsBean = false;
 
-        public CatalogData() {}
+        @Nonnull
+        public CatCatalogBean catBean;
 
-        public CatalogData(File catFile) {
-            this.catFile = catFile;
-            this.needsBean = true;
+        public CatalogData(@Nonnull File catFile) throws ServerException {
+            this(catFile, true);
         }
 
-        public CatalogData(@Nonnull CatCatalogBean catBean, File catFile, @Nullable String catFileChecksum) {
+        public CatalogData(@Nonnull File catFile, boolean create) throws ServerException {
+            this(catFile, null, null, create);
+        }
+
+        public CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes) throws ServerException {
+            this(catFile, catRes, null);
+        }
+
+        public CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes,
+                           @Nullable String catId) throws ServerException {
+            this(catFile, catRes, catId, true);
+        }
+
+        public CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes,
+                           @Nullable String catId, boolean create) throws ServerException {
+            this.catFile = catFile;
+            this.catPath  = this.catFile.getParent();
+            this.catRes = catRes;
+            if (this.catFile.exists()) {
+                CatCatalogBean cat = null;
+                InputStream inputStream = null;
+                try {
+                    final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
+                    fl.tryLock(2L, TimeUnit.MINUTES);
+                    //log.trace(System.currentTimeMillis() + " reader start: " + fl.toString());
+                    try (FileInputStream fis = new FileInputStream(catFile)) {
+                        if (catFile.getName().endsWith(".gz")) {
+                            inputStream = new GZIPInputStream(fis);
+                        } else {
+                            inputStream = fis;
+                        }
+
+                        XDATXMLReader reader = new XDATXMLReader();
+                        BaseElement base = reader.parse(inputStream);
+                        if (base instanceof CatCatalogBean) {
+                            cat = (CatCatalogBean) base;
+                            catFileChecksum = getHash(catFile, false);
+                            if (StringUtils.isBlank(catFileChecksum)) {
+                                throw new ServerException("Unable to compute checksum for " + catFile +
+                                        ". This will be needed to safely write the catalog");
+                            }
+                        }
+                    } catch (FileNotFoundException exception) {
+                        log.error("Couldn't find file: {}", catFile, exception);
+                    } catch (IOException exception) {
+                        log.error("Error occurred reading file: {}", catFile, exception);
+                    } catch (SAXException exception) {
+                        log.error("Error processing XML in file: {}", catFile, exception);
+                    } finally {
+                        try {
+                            if (inputStream != null) inputStream.close();
+                        } catch (IOException e) {
+                            // Ignore
+                        }
+                        fl.unlock();
+                        //log.trace(System.currentTimeMillis() + " reader finish: " + fl.toString());
+                    }
+                } catch (IOException e) {
+                    log.error("Unable to obtain read lock for file: {}", catFile, e);
+                } finally {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                }
+
+                if (cat == null) {
+                    throw new ServerException("No catalog bean stored in " + catFile);
+                } else {
+                    catBean = cat;
+                }
+            } else if (create) {
+                CatCatalogBean cat = new CatCatalogBean();
+                if (StringUtils.isNotBlank(catId)) cat.setId(catId);
+                this.catBean  = cat;
+            } else {
+                throw new ServerException(this.catFile.getAbsolutePath() + " doesn't exist");
+            }
+        }
+
+        public CatalogData(@Nonnull CatCatalogBean catBean, @Nonnull File catFile, @Nullable String catFileChecksum) {
             this.catBean = catBean;
             this.catFile = catFile;
             this.catFileChecksum = catFileChecksum;
             this.catPath = catFile.getParent();
         }
-    }
 
-
-    public static CatalogData getCatalogData(ArchivableItem item, XnatResourcecatalog catRes) throws ServerException {
-        String archivePath;
-        try {
-            archivePath = item.getArchiveRootPath();
-        } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
-            throw new ServerException("Unable to determine item archive root path for " + item.getId());
-        }
-        return getCatalogData(archivePath, catRes);
-    }
-
-    public static CatalogData getCatalogData(String archivePath, XnatResourcecatalog catRes) throws ServerException {
-        CatalogData cd = getOrCreateCatalogData(archivePath, catRes);
-        if (cd.needsBean) {
-            CatCatalogBean cat = getCatalog(cd.catFile);
-            if (cat == null) {
-                throw new ServerException("No catalog at " + cd.catFile);
+        @Nonnull
+        public static CatalogData getOrCreate(ArchivableItem item, final XnatResourcecatalogI resource)
+                throws ServerException {
+            String archivePath;
+            try {
+                archivePath = item.getArchiveRootPath();
+            } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
+                throw new ServerException("Unable to determine item archive root path for " + item.getId());
             }
-            cd.catBean = cat;
+            return getOrCreate(archivePath, resource);
         }
-        cd.catPath  = cd.catFile.getParent();
-        cd.catRes   = catRes;
 
-        cd.catFileChecksum = getHash(cd.catFile);
-        if (StringUtils.isBlank(cd.catFileChecksum)) {
-            throw new ServerException("Unable to compute checksum for " + cd.catFile + ". This is needed to safely " +
-                    "write the catalog");
-        }
-        return cd;
-    }
+        @Nonnull
+        public static CatalogData getOrCreate(final String rootPath, final XnatResourcecatalogI resource)
+            throws ServerException {
 
+            String fullPath = getFullPath(rootPath, resource);
+            if (fullPath.endsWith("\\")) {
+                fullPath = fullPath.substring(0, fullPath.length() - 1);
+            }
+            if (fullPath.endsWith("/")) {
+                fullPath = fullPath.substring(0, fullPath.length() - 1);
+            }
 
-    public static CatalogData getCatalogData(File catFile) throws ServerException {
-        return getCatalogData(catFile, null);
-    }
+            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
+                    (XnatResourcecatalog) resource : null;
 
-    public static CatalogData getCatalogData(File catFile, @Nullable XnatResourcecatalog catRes) throws ServerException {
-        return getCatalogData(catFile, catRes, null);
-    }
+            File f = new File(fullPath);
+            if (f.exists()) {
+                return new CatalogData(f, catRes, null, false);
+            }
 
-    public static CatalogData getCatalogData(File catFile, @Nullable XnatResourcecatalog catRes,
-                                             @Nullable String catId) throws ServerException {
-        CatalogData cd = new CatalogData();
-        CatCatalogBean cat;
-        if (catFile.exists()) {
-            cat = getCatalog(catFile);
-        } else {
-            cat = new CatCatalogBean();
-            if (StringUtils.isNotBlank(catId)) cat.setId(catId);
+            f = new File(fullPath + ".gz");
+            if (f.exists()) {
+                return new CatalogData(f, catRes, null, false);
+            }
+
+            String catId = resource.getLabel() != null ? resource.getLabel() :
+                    Long.toString(Calendar.getInstance().getTimeInMillis());
+
+            f = new File(fullPath);
+            try {
+                CatalogData catalogData = new CatalogData(f, catRes, catId);
+                writeCatalogToFile(catalogData);
+                return catalogData;
+            } catch (IOException e) {
+                log.error("Error writing to the folder: {}", f.getParentFile().getAbsolutePath(), e);
+                throw new ServerException(e);
+            } catch (Exception e) {
+                log.error("Error creating the folder: {}", f.getParentFile().getAbsolutePath(), e);
+                throw new ServerException(e);
+            }
         }
-        if (cat == null) {
-            throw new ServerException("Catalog bean corresponding to " + catFile.getAbsolutePath() +
-                    " is null, have your admin check utils.log for the cause");
-        }
-        cd.catFile = catFile;
-        cd.catBean  = cat;
-        cd.catPath  = cd.catFile.getParent();
-        if (cd.catFile.exists() && StringUtils.isBlank((cd.catFileChecksum = getHash(cd.catFile)))) {
-            throw new ServerException("Unable to compute checksum for " + cd.catFile + ". This is needed to safely " +
-                    "write the catalog");
-        }
-        if (catRes != null) {
-            cd.catRes = catRes;
-        }
-        return cd;
     }
 
     public static boolean getChecksumConfiguration(final XnatProjectdata project) throws ConfigServiceException {
@@ -251,6 +320,9 @@ public class CatalogUtils {
      * currently XNAT only supports MD5 hashes. If an error occurs while calculating the checksum, the error is
      * logged and this method returns an empty string.
      *
+     * Note that this method will attempt to obtain a read lock for this file. If you already have the lock, use
+     * {@link #getHash(File, boolean)}
+     *
      * @param file The file for which the checksum should be calculated.
      *
      * @return The checksum for the file if successful, an empty string otherwise.
@@ -264,46 +336,61 @@ public class CatalogUtils {
         //    return "";
         //}
         //faster to use java's MD5 than FastMD5 (com.twmacinta.util.MD5) library
-        return getFileHash(file.getAbsolutePath(), file.length());
+        return getHash(file, true);
     }
 
     /**
-     * Speed up getHash using java7, allow for use of other hashing algorithms
+     * Calculates a checksum hash for the submitted file based on the currently configured hash algorithm. Note that
+     * currently XNAT only supports MD5 hashes. If an error occurs while calculating the checksum, the error is
+     * logged and this method returns an empty string.
+     *
+     * @param file The file for which the checksum should be calculated.
+     * @param needLock set to false if you already have a lock for the file (attempting to acquire another would
+     *                 result in deadlock)
+     * @return The checksum for the file if successful, an empty string otherwise.
      */
     @Nonnull
-    private static String getFileHash(String filepath, long size) {
-        return getFileHash(filepath, size, "MD5");
+    public static String getHash(File file, boolean needLock) {
+        return getHash(file, needLock, "MD5");
     }
 
     @Nonnull
-    private static String getFileHash(String filepath, long size, String hash_type) {
+    private static String getHash(File file, boolean needLock, String hash_type) {
         String digest = "";
-        int buf_size;
-        if (size < 512) {
-            buf_size = 512;
-        } else if (size > 65536) {
-            buf_size = 65536;
-        } else {
-            buf_size = (int) size;
-        }
         try {
-            //read into buffer and update md5
             MessageDigest md5 = MessageDigest.getInstance(hash_type);
-            RandomAccessFile store = new RandomAccessFile(filepath, "r");
-            FileChannel channel = store.getChannel();
-            ByteBuffer buffer = ByteBuffer.allocate(buf_size);
-            channel.read(buffer);
-            buffer.flip();
-            md5.update(buffer);
-            channel.close();
-            store.close();
 
-            //compute hex
-            digest = Hex.encodeHexString(md5.digest());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Unsupported hashing algorithm " + hash_type, e);
+            //read into buffer and update md5
+            try {
+                ThreadAndProcessFileLock fl = null;
+                if (needLock) {
+                    fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
+                    fl.tryLock(10L, TimeUnit.SECONDS);
+                }
+                try (RandomAccessFile store = new RandomAccessFile(file, "r");
+                     FileChannel channel = store.getChannel()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(1024);
+                    while (channel.read(buffer) > 0) {
+                        buffer.flip();
+                        md5.update(buffer);
+                        buffer.clear();
+                    }
+
+                    //compute hex
+                    digest = Hex.encodeHexString(md5.digest());
+
+                } catch (IOException e) {
+                    log.error("Error computing file hash for {}", file.getAbsolutePath(), e);
+                } finally {
+                    if (needLock) fl.unlock();
+                }
+            } catch (IOException e) {
+                log.error("Unable to obtain read lock for file {}", file.getAbsolutePath(), e);
+            } finally {
+                if (needLock) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+            }
+        } catch(NoSuchAlgorithmException e){
+            log.error("Unsupported hashing algorithm {}", hash_type, e);
         }
         return digest;
     }
@@ -567,11 +654,9 @@ public class CatalogUtils {
      * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
      *  removes any that have been deleted, computes checksums, and updates catalog stats.
      *
-     * @param catRes                catalog resource
-     * @param catFile               path to catalog xml file
-     * @param cat                   content of catalog xml file
+     * @param catalogData           catalog data object
      * @param user                  user for transaction
-     * @param eventId               event id for transaction
+     * @param eventMeta             event for transaction
      * @param addUnreferencedFiles  adds files not referenced in catalog
      * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
      * @param populateStats         updates file count & size for catRes in XNAT db
@@ -579,16 +664,13 @@ public class CatalogUtils {
      * @return new Object[] { modified, auditSummary }     modified: true if cat modified and needs save
      *                                                     auditSummary: audit hashmap
      */
-    public static Object[] refreshCatalog(XnatResourcecatalog catRes, final File catFile, final CatCatalogBean cat,
-                                          final UserI user, final Number eventId,
+    public static Object[] refreshCatalog(final CatalogData catalogData, final UserI user, final EventMetaI eventMeta,
                                           final boolean addUnreferencedFiles, final boolean removeMissingFiles,
                                           final boolean populateStats, final boolean checksums) {
 
-        final Path catalogPath = catFile.getParentFile().toPath();
-        final String catalogDirectory = catFile.getParent();
-        final Date now = Calendar.getInstance().getTime();
+        final Date now = eventMeta.getEventDate();
+        final int eventId = eventMeta.getEventId().intValue();
         boolean modified;
-        final int eventIdInt = eventId.intValue();
 
         final AtomicInteger rtn = new AtomicInteger(0);
         final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null,
@@ -599,23 +681,24 @@ public class CatalogUtils {
         final AtomicInteger modded = new AtomicInteger(0);
 
         //For resource stats
-        final AtomicLong size = new AtomicLong(catRes.getFileSize() == null ? 0 : (Long) catRes.getFileSize());
-        final AtomicInteger count = new AtomicInteger(catRes.getFileCount());
+        final AtomicLong size = new AtomicLong(catalogData.catRes.getFileSize() == null ? 0 :
+                (Long) catalogData.catRes.getFileSize());
+        final AtomicInteger count = new AtomicInteger(catalogData.catRes.getFileCount());
 
         //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
-        //The below pulls all files into local FS, we may want to change this if it's too slow
-        final HashMap<String, CatalogMapEntry> catalogMap = buildCatalogMap(cat, catalogDirectory);
+        final HashMap<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
 
+        final Path catalogPath = Paths.get(catalogData.catPath);
         try {
-            Files.walkFileTree(catFile.getParentFile().toPath(), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(catalogPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     long delta;
                     boolean mod = false;
                     File f = file.toFile();
 
-                    if (f.equals(catFile) || f.isHidden()) {
+                    if (f.equals(catalogData.catFile) || f.isHidden()) {
                         //don't add the catalog xml, ignore hidden files
                         return FileVisitResult.CONTINUE;
                     }
@@ -639,15 +722,15 @@ public class CatalogUtils {
                             // Already included in count
                             size.getAndAdd(delta);
                         }
-                        mod = updateExistingCatEntry(mapEntry.entry, f, absolutePath, relative, attrs.size(), checksums, user,
-                                eventIdInt, now);
+                        mod = updateExistingCatEntry(mapEntry.entry, null, relative, f.getName(), attrs.size(),
+                                checksums ? getHash(f) : null, eventMeta);
                         if (mod) modded.getAndIncrement();
                     } else {
                         if (addUnreferencedFiles) {
                             //this used to be run as part of writeCatalogFile
-                            String digest = checksums ? getFileHash(absolutePath, attrs.size()) : null;
+                            String digest = checksums ? getHash(f) : null;
 
-                            populateAndAddCatEntry(cat, relative, relative, f.getName(),
+                            populateAndAddCatEntry(catalogData.catBean, relative, relative, f.getName(),
                                     attrs.size(), info, digest);
 
                             mod = true;
@@ -718,13 +801,13 @@ public class CatalogUtils {
         //Add to auditSummary
         Map<String, Map<String, Integer>> auditSummary = new HashMap<>();
         if (nremoved > 0)
-            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.REMOVED, nremoved);
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.REMOVED, nremoved);
         int nmod = modded.get();
         if (nmod > 0)
-            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.MODIFIED, nmod);
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.MODIFIED, nmod);
         int nadded = added.get();
         if (nadded > 0)
-            addAuditEntry(auditSummary, eventIdInt, now, ChangeSummaryBuilderA.ADDED, nadded);
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.ADDED, nadded);
 
         //Update resource with new file count & size
         // This is going to implicitly removeMissingFiles, since file count & size attributes are computed
@@ -734,13 +817,13 @@ public class CatalogUtils {
         if (populateStats) {
             Integer c = count.get();
             Long s = size.get();
-            if (!c.equals(catRes.getFileCount())) {
-                catRes.setFileCount(c);
+            if (!c.equals(catalogData.catRes.getFileCount())) {
+                catalogData.catRes.setFileCount(c);
                 modified = true;
             }
 
-            if (!s.equals(catRes.getFileSize())) {
-                catRes.setFileSize(s);
+            if (!s.equals(catalogData.catRes.getFileSize())) {
+                catalogData.catRes.setFileSize(s);
                 modified = true;
             }
         }
@@ -765,40 +848,57 @@ public class CatalogUtils {
         }
     }
 
+    /**
+     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * and value=CatalogMapEntry
+     *
+     * @param catalogData the catalog data object
+     * @return map
+     */
     public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData) {
-        return buildCatalogMap(catalogData.catBean, catalogData.catPath);
-    }
-
-    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat, String catPath) {
-        return buildCatalogMap(cat, catPath, "", false);
-    }
-
-    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat, String catPath, String prefix) {
-        return buildCatalogMap(cat, catPath, prefix, false);
+        return buildCatalogMap(catalogData, false);
     }
 
     /**
-     * HashMap with key = path relative to catalog (or URI if useUri=T) and value=CatalogMapEntry
+     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * and value=CatalogMapEntry
+     *
+     * @param catalogData the catalog data object
+     * @param bothUriAndLocalPathAsKeys true if a given catalog entry should have 2 map entries if URI field is not a
+     *                                  relative path (one for URI, one for relative path - or absolute path if
+     *                                  absoluteLocalPathAsKey=true. This is useful when adding a new entry and wanting
+     *                                  to confirm it doesn't already exist (by URI) and, provided not, that the relative
+     *                                  path isn't already in use
+     * @return map
+     */
+    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData,
+                                                                   boolean bothUriAndLocalPathAsKeys) {
+        return buildCatalogMap(catalogData.catBean, catalogData.catPath, bothUriAndLocalPathAsKeys);
+    }
+
+    /**
+     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * and value=CatalogMapEntry
      *
      * @param cat the catalog bean
      * @param catPath the catalog parent path (path to dir containing catalog)
-     * @param prefix prefix path that will be prepended to map keys
-     * @param addUriToMap true if a given catalog entry should have 2 map entries if URI field is not a relative path
-     *                    (one for URI, one for relative path - default is to just have the latter). This is useful
-     *                    when adding a new entry and wanting to confirm it doesn't already exist (by URI) and,
-     *                    provided not, that the relative path isn't already in use
+     * @param bothUriAndLocalPathAsKeys true if a given catalog entry should have 2 map entries if URI field is not a
+     *                                  relative path (one for URI, one for relative path - or absolute path if
+     *                                  absoluteLocalPathAsKey=true. This is useful when adding a new entry and wanting
+     *                                  to confirm it doesn't already exist (by URI) and, provided not, that the relative
+     *                                  path isn't already in use
      * @return map
      */
-    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat, String catPath, String prefix,
-                                                            boolean addUriToMap) {
+    private static HashMap<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat,
+                                                                    String catPath,
+                                                                    boolean bothUriAndLocalPathAsKeys) {
 
         HashMap<String, CatalogMapEntry> catalogMap = new HashMap<>();
         RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
         for (CatCatalogI subset : cat.getSets_entryset()) {
-            catalogMap.putAll(buildCatalogMap(subset, catPath, prefix, addUriToMap));
+            catalogMap.putAll(buildCatalogMap(subset, catPath, bothUriAndLocalPathAsKeys));
         }
 
-        prefix = StringUtils.defaultString(prefix, "");
         List<CatEntryI> entries = cat.getEntries_entry();
         for (CatEntryI entry : entries) {
             CatalogMapEntry mapEntry = new CatalogMapEntry(entry, cat, false);
@@ -808,16 +908,12 @@ public class CatalogUtils {
                 mapEntry.entryExists = remoteFilesService != null && remoteFilesService.canPullFile(uri);
             }
 
-            // Want the HashMap key to be the relative path on the filesystem (or the URI if requested).
-            // Originally/by default, this is the URI, but now we support URL paths as URIs, it should be the ID (and
-            // the cachePath if it's a URL). Still, we default to URI (see getRelativePathForCatalogEntry)
-            // for backward compatibility (old IDs not set correctly)
-            String relativePath;
-            relativePath = getRelativePathForCatalogEntry(entry, catPath);
-            if (addUriToMap && !uri.equals(relativePath)) {
+            // Determine the catalog-relative path on the filesystem.
+            String relPath = getRelativePathForCatalogEntry(entry, catPath);
+            if (bothUriAndLocalPathAsKeys && !uri.equals(relPath)) {
                 catalogMap.put(uri, mapEntry);
             }
-            catalogMap.put(FileUtils.AppendRootPath(prefix, relativePath), mapEntry);
+            catalogMap.put(relPath, mapEntry);
         }
         return catalogMap;
     }
@@ -846,7 +942,7 @@ public class CatalogUtils {
 
         CatalogData historyCatalogData = null;
         if (maintainFileHistory()) {
-            historyCatalogData = getCatalogData(FileUtils.BuildHistoryFile(catalogData.catFile,
+            historyCatalogData = new CatalogData(FileUtils.BuildHistoryFile(catalogData.catFile,
                     EventUtils.getTimestamp(eventMeta)));
         }
 
@@ -1331,7 +1427,7 @@ public class CatalogUtils {
                                                  final boolean overwrite,
                                                  final EventMetaI ci) throws Exception {
 
-        final CatalogData catalogData = getCatalogData(proj.getRootArchivePath(), catResource);
+        final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource);
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
         File destinationDir = catalogData.catFile.getParentFile();
 
@@ -1380,7 +1476,7 @@ public class CatalogUtils {
 
                         if (overwrite || !catalogMap.containsKey(relativePath)) {
                             CatEntryI entry = catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry;
-                            addOrUpdateEntry(catalogData, entry, relativePath, f, info, ci);
+                            addOrUpdateEntry(catalogData, entry, relativePath, relativePath, f, info, ci);
                         }
                     }
                 }
@@ -1425,13 +1521,13 @@ public class CatalogUtils {
                             String relativePath = instance + "/" +
                                     FileUtils.RelativizePath(saveTo, f).replace('\\', '/');
                             CatEntryI entry = catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry;
-                            addOrUpdateEntry(catalogData, entry, relativePath, f, info, ci);
+                            addOrUpdateEntry(catalogData, entry, relativePath, relativePath, f, info, ci);
                         }
 
                     } else {
                         log.debug("Adding or updating catalog entry for file {}", saveTo.getAbsolutePath());
                         CatEntryI entry = catalogMap.get(instance) == null ? null : catalogMap.get(instance).entry;
-                        addOrUpdateEntry(catalogData, entry, instance, saveTo, info, ci);
+                        addOrUpdateEntry(catalogData, entry, instance, instance, saveTo, info, ci);
                     }
                 }
             }
@@ -1588,14 +1684,19 @@ public class CatalogUtils {
                     false);
             fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace(System.currentTimeMillis() + " writer start: " + fl.toString());
-            if (catalogData.catFile.exists() && !getHash(catalogData.catFile).equals(catalogData.catFileChecksum)) {
-                throw new ConcurrentModificationException("Another thread or process modified " + catalogData.catFile +
-                        " since I last read it. To avoid overwriting changes, I'm throwing an exception.");
-            }
-            try (final FileOutputStream fos = new FileOutputStream(catalogData.catFile)) {
-                final OutputStreamWriter fw = new OutputStreamWriter(fos);
-                catalogData.catBean.toXML(fw);
-                fw.flush();
+            try {
+                // Now that we have the lock, let's be sure no one changed the file contents since we last read it
+                if (catalogData.catFile.exists() &&
+                        !getHash(catalogData.catFile, false).equals(catalogData.catFileChecksum)) {
+                    throw new ConcurrentModificationException("Another thread or process modified " +
+                            catalogData.catFile + " since I last read it. To avoid overwriting changes, " +
+                            "I'm throwing an exception.");
+                }
+                try (final FileOutputStream fos = new FileOutputStream(catalogData.catFile)) {
+                    final OutputStreamWriter fw = new OutputStreamWriter(fos);
+                    catalogData.catBean.toXML(fw);
+                    fw.flush();
+                }
             } finally {
                 fl.unlock();
                 //log.trace(System.currentTimeMillis() + " writer finish: " + fl.toString());
@@ -1610,91 +1711,23 @@ public class CatalogUtils {
 
     @Nullable
     public static File getCatalogFile(final String rootPath, final XnatResourcecatalogI resource) {
-        return getOrCreateCatalogData(rootPath, resource).catFile;
-    }
-
-    @Nonnull
-    public static CatalogData getOrCreateCatalogData(final String rootPath, final XnatResourcecatalogI resource) {
-
-        String fullPath = getFullPath(rootPath, resource);
-        if (fullPath.endsWith("\\")) {
-            fullPath = fullPath.substring(0, fullPath.length() - 1);
-        }
-        if (fullPath.endsWith("/")) {
-            fullPath = fullPath.substring(0, fullPath.length() - 1);
-        }
-
-        File f = new File(fullPath);
-        if (f.exists()) {
-            return new CatalogData(f);
-        }
-
-        f = new File(fullPath + ".gz");
-        if (f.exists()) {
-            return new CatalogData(f);
-        }
-
-        String catId = resource.getLabel() != null ? resource.getLabel() :
-                Long.toString(Calendar.getInstance().getTimeInMillis());
-
-        f = new File(fullPath);
         try {
-            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
-                    (XnatResourcecatalog) resource : null;
-            CatalogUtils.CatalogData catalogData = CatalogUtils.getCatalogData(f, catRes, catId);
-            CatalogUtils.writeCatalogToFile(catalogData);
-            return catalogData;
-        } catch (IOException exception) {
-            log.error("Error writing to the folder: {}", f.getParentFile().getAbsolutePath(), exception);
-        } catch (Exception exception) {
-            log.error("Error creating the folder: {}", f.getParentFile().getAbsolutePath(), exception);
+            return CatalogData.getOrCreate(rootPath, resource).catFile;
+        } catch (ServerException e) {
+            log.error(e.getMessage(), e);
+            return null;
         }
-
-        return new CatalogData();
     }
 
     @Nullable
     public static CatCatalogBean getCatalog(File catalogFile) {
-        if (!catalogFile.exists()) return null;
-        InputStream inputStream = null;
         try {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogFile, true);
-            fl.tryLock(2L, TimeUnit.MINUTES);
-            //log.trace(System.currentTimeMillis() + " reader start: " + fl.toString());
-            try (FileInputStream fis = new FileInputStream(catalogFile)) {
-                if (catalogFile.getName().endsWith(".gz")) {
-                    inputStream = new GZIPInputStream(fis);
-                } else {
-                    inputStream = fis;
-                }
-
-                XDATXMLReader reader = new XDATXMLReader();
-                BaseElement base = reader.parse(inputStream);
-                if (base instanceof CatCatalogBean) {
-                    return (CatCatalogBean) base;
-                }
-            } catch (FileNotFoundException exception) {
-                log.error("Couldn't find file: {}", catalogFile, exception);
-            } catch (IOException exception) {
-                log.error("Error occurred reading file: {}", catalogFile, exception);
-            } catch (SAXException exception) {
-                log.error("Error processing XML in file: {}", catalogFile, exception);
-            } finally {
-                try {
-                    if (inputStream != null) inputStream.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-                fl.unlock();
-                //log.trace(System.currentTimeMillis() + " reader finish: " + fl.toString());
-            }
-        } catch (IOException e) {
-            log.error("Unable to obtain read lock for file: {}", catalogFile, e);
-        } finally {
-            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogFile);
+            CatalogData catalogData = new CatalogData(catalogFile, false);
+            return catalogData.catBean;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return null;
         }
-
-        return null;
     }
 
     /**
@@ -1888,7 +1921,7 @@ public class CatalogUtils {
             }
         }
 
-        CatalogData catalogData = getCatalogData(FileUtils.BuildHistoryFile(catFile, EventUtils.getTimestamp(ci)));
+        CatalogData catalogData = new CatalogData(FileUtils.BuildHistoryFile(catFile, EventUtils.getTimestamp(ci)));
         catalogData.catBean.addEntries_entry(newEntryBean);
 
         CatalogUtils.writeCatalogToFile(catalogData);
@@ -2019,72 +2052,64 @@ public class CatalogUtils {
                 attr.relativePath, attr.name, attr.size, info, attr.md5, attr.relativePath);
     }
 
-    private static void addOrUpdateEntry(CatalogData catalogData, @Nullable CatEntryI entry, String relativePath,
-                                         File f, XnatResourceInfo info, EventMetaI ci) {
+    public static void addOrUpdateEntry(CatalogData catalogData, @Nullable CatEntryI entry, String uri,
+                                        String relativePath, File f, XnatResourceInfo info, EventMetaI ci) {
         if (entry == null) {
-            populateAndAddCatEntry(catalogData.catBean, relativePath, relativePath, f.getName(), f.length(), info);
+            populateAndAddCatEntry(catalogData.catBean, uri, relativePath, f.getName(), f.length(), info);
         } else {
             try {
                 CatalogUtils.moveToHistory(catalogData.catFile, f, (CatEntryBean) entry, ci);
             } catch (Exception e) {
                 log.error("Error moving file {} from entry {} to history", f, entry, e);
             }
-            boolean checksums;
+            String digest = null;
             try {
-                checksums = getChecksumConfiguration();
+                digest = getChecksumConfiguration() ? getHash(f) : null;
             } catch (ConfigServiceException e) {
-                checksums = false;
+                // Ignore
             }
-            updateExistingCatEntry(entry, f, f.getAbsolutePath(), relativePath, f.length(), checksums, ci);
+            updateExistingCatEntry(entry, uri, relativePath, f.getName(), f.length(), digest, ci);
         }
     }
 
-    public static void updateExistingCatEntryUsingAttributes(final CatEntryI entry,
-                                                             @Nullable String uri,
-                                                             final CatalogEntryAttributes attr,
-                                                             XnatResourceInfo info) {
-        if (StringUtils.isBlank(uri)) {
-            uri = attr.relativePath;
-        }
-        entry.setUri(uri);
-        entry.setId(attr.relativePath);
-        entry.setCachepath(attr.relativePath);
-        entry.setDigest(attr.md5);
+    public static boolean updateExistingCatEntry(final CatEntryI entry,
+                                                 @Nullable String uri,
+                                                 final CatalogEntryAttributes attr,
+                                                 final EventMetaI eventMeta) {
+        return updateExistingCatEntry(entry, StringUtils.defaultIfBlank(uri, attr.relativePath),
+                attr.relativePath, attr.name, attr.size, attr.md5, eventMeta);
+    }
+
+    public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,
+                                                 final EventMetaI eventMeta) {
+        String digest = null;
         try {
-            setMetaFieldByName(entry, SIZE_METAFIELD, Long.toString(attr.size));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (info.getUser() != null) {
-            entry.setModifiedby(info.getUser().getUsername());
-        }
-        if (info.getLastModified() != null) {
-            if (entry instanceof CatEntryBean) {
-                ((CatEntryBean) entry).setModifiedtime(info.getLastModified());
-            } else {
-                entry.setModifiedtime(info.getLastModified());
+            if (getChecksumConfiguration()) {
+                digest = getHash(f);
             }
+        } catch (ConfigServiceException e) {
+            //Ignore
         }
-        if (info.getEvent_id() != null) {
-            entry.setModifiedeventid(Integer.parseInt(info.getEvent_id().toString()));
-        }
+        return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest,
+                eventMeta);
     }
 
-    public static boolean updateExistingCatEntry(CatEntryI entry, File f, String absolutePath, String relativePath,
-                                                 long fsize, final boolean checksums, final EventMetaI eventMetaI) {
-        return updateExistingCatEntry(entry, f, absolutePath, relativePath, fsize, checksums, eventMetaI.getUser(),
-                eventMetaI.getEventId().intValue(), eventMetaI.getEventDate());
-    }
-
-
-    public static boolean updateExistingCatEntry(CatEntryI entry, File f, String absolutePath, String relativePath,
-                                                 long fsize, final boolean checksums,
-                                                 UserI user, Integer eventIdInt, Date now) {
+    public static boolean updateExistingCatEntry(CatEntryI entry, @Nullable String uri, String relativePath, String name,
+                                                 long fsize, @Nullable String digest, final EventMetaI eventMeta) {
 
         boolean mod = false;
 
+        if (StringUtils.isNotBlank(uri) && !uri.equals(entry.getUri())) {
+            entry.setUri(uri);
+            mod = true;
+        }
+
         //logic mimics CatalogUtils.formalizeCatalog(cat, catFile.getParent(), user, now, checksums, removeMissingFiles);
         //older catalog files might have missing entries?
+        UserI user = eventMeta.getUser();
+        Date now = eventMeta.getEventDate();
+        Integer eventId = eventMeta.getEventId() != null ? eventMeta.getEventId().intValue() : null;
+
         if (entry.getCreatedby() == null && user != null) {
             entry.setCreatedby(user.getUsername());
             mod = true;
@@ -2098,31 +2123,29 @@ public class CatalogUtils {
             }
             mod = true;
         }
-        if (entry.getCreatedeventid() == null && eventIdInt != null) {
-            entry.setCreatedeventid(eventIdInt);
+        if (entry.getCreatedeventid() == null && eventId != null) {
+            entry.setCreatedeventid(eventId);
             mod = true;
         }
-        String id = entry.getId();
-        String cachePath = entry.getCachepath();
-        if (StringUtils.isEmpty(id) ||
-                FileUtils.IsAbsolutePath(entry.getUri()) && !id.equals(relativePath)) {
+        if (!relativePath.equals(entry.getId())) {
             entry.setId(relativePath);
             mod = true;
         }
-        if (StringUtils.isEmpty(cachePath) ||
-                FileUtils.IsAbsolutePath(entry.getUri()) && !cachePath.equals(relativePath)) {
+        if (!relativePath.equals(entry.getCachepath())) {
             entry.setCachepath(relativePath);
             mod = true;
         }
-        if (StringUtils.isEmpty(entry.getName())) {
-            entry.setName(f.getName());
+        if (!name.equals(entry.getName())) {
+            entry.setName(name);
             mod = true;
         }
+
         // CatDcmentryBeans fail to set format correctly because it's not in their xml
         if (entry.getClass().equals(CatDcmentryBean.class)) {
             entry.setFormat("DICOM");
             mod = true;
         }
+
         //Set size
         if (setMetaFieldByName(entry, SIZE_METAFIELD, Long.toString(fsize))) {
             mod = true;
@@ -2130,16 +2153,13 @@ public class CatalogUtils {
 
         //this used to be run as part of writeCatalogFile
         //however, that code didn't update checksums if they'd changed
-        if (checksums) {
-            String digest = getFileHash(absolutePath, fsize);
-            if (!StringUtils.isEmpty(digest) && !digest.equals(entry.getDigest())) {
-                entry.setDigest(digest);
-                mod = true;
-            }
+        if (StringUtils.isNotBlank(digest) && !digest.equals(entry.getDigest())) {
+            entry.setDigest(digest);
+            mod = true;
         }
 
         if (mod) {
-            if (eventIdInt != null) entry.setModifiedeventid(eventIdInt);
+            if (eventId != null) entry.setModifiedeventid(eventId);
             if (user != null) entry.setModifiedby(user.getUsername());
             if (entry instanceof CatEntryBean) {
                 // This method throws illegal arg exception on CatEntryBean objects
@@ -2152,6 +2172,26 @@ public class CatalogUtils {
         return mod;
     }
 
+    public static Collection<CatEntryI> findCatEntriesWithinPath(String path,
+                                                                 CatalogData catalogData) {
+
+        final Map<String, CatalogMapEntry> catalogMapByRelPath = buildCatalogMap(catalogData);
+
+        Collection<CatEntryI> entries = new ArrayList<>();
+
+        String regex = null;
+        if (path.endsWith("*")) {
+            regex = path.replaceAll("\\*$", ".*");
+        }
+
+        for (String key : catalogMapByRelPath.keySet()) {
+            if (key.equals(path) || key.startsWith(path) || (regex != null && key.matches(regex))) {
+                entries.add(catalogMapByRelPath.get(key).entry);
+            }
+        }
+
+        return entries;
+    }
 
     private static String convertAuditToString(Map<String, Map<String, Integer>> summary) {
         StringBuilder sb = new StringBuilder();

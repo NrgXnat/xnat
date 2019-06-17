@@ -173,11 +173,6 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
                     return;
                 }
 
-                if (!PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Operation already in progress on this prearchive entry.");
-                    return;
-                }
-
                 finishSingleSessionArchive(session);
             } else {
                 finishNonSingleSessionUpload(sessions);

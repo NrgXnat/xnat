@@ -15,7 +15,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.status.StatusListenerI;
-import org.nrg.xft.event.EventUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.QueueBasedImageCommit;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -23,19 +23,24 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.services.prearchive.BatchPrearchiveActionsA;
-import org.nrg.xnat.restlet.util.RequestUtil;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.xft.event.EventUtils.EVENT_REASON;
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.APPEND;
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.DELETE;
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.ARCHIVING;
+import static org.nrg.xnat.restlet.util.RequestUtil.TRUE;
+import static org.restlet.data.MediaType.TEXT_URI_LIST;
+import static org.restlet.data.Status.*;
 
 @Getter(PROTECTED)
 @Setter(PROTECTED)
@@ -67,7 +72,7 @@ public class Archiver extends BatchPrearchiveActionsA {
                 getSessionFolder().add((String) value);
                 break;
             case OVERWRITE_FILES:
-                _overwriteFiles = StringUtils.equalsIgnoreCase((String) value, RequestUtil.TRUE);
+                _overwriteFiles = StringUtils.equalsIgnoreCase((String) value, TRUE);
                 break;
             case OVERWRITE:
                 _overwriteV = (String) value;
@@ -76,7 +81,7 @@ public class Archiver extends BatchPrearchiveActionsA {
                 setDestination((String) value);
                 break;
             case REDIRECT2:
-                _redirect = StringUtils.equalsIgnoreCase((String) value, RequestUtil.TRUE);
+                _redirect = StringUtils.equalsIgnoreCase((String) value, TRUE);
                 break;
             case SRC:
                 super.handleParam(key, value);
@@ -88,51 +93,71 @@ public class Archiver extends BatchPrearchiveActionsA {
     }
 
     protected void initialize() {
-        if (StringUtils.equalsIgnoreCase(_overwriteV, PrearcUtils.APPEND)) {
-            _allowDataDeletion = false;
-            _overwrite = true;
-        } else if (StringUtils.equalsIgnoreCase(_overwriteV, PrearcUtils.DELETE)) {
-            _allowDataDeletion = true;
-            _overwrite = true;
-        } else {
-            _allowDataDeletion = false;
-            _overwrite = false;
+        switch (StringUtils.lowerCase(StringUtils.defaultIfBlank(_overwriteV, ""))) {
+            case APPEND:
+                _allowDataDeletion = false;
+                _overwrite = true;
+                break;
+
+            case DELETE:
+                _allowDataDeletion = true;
+                _overwrite = true;
+                break;
+
+            default:
+                _allowDataDeletion = false;
+                _overwrite = false;
         }
     }
 
     protected void finishSingleSessionArchive(final PrearcSession session) throws Exception {
+        if (!setSessionArchiveStatus(session)) {
+            return;
+        }
         session.setArchiveReason(false);
         try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), false, true)) {
             final String uri = uploader.submitSync();
             if (StringUtils.isBlank(uri)) {
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not return a valid data URI.");
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not return a valid data URI.");
                 return;
             }
             if (_redirect || session.isAutoArchive()) {
-                getResponse().redirectSeeOther(getContextPath() + uri);
+                getResponse().redirectSeeOther(XDAT.getSiteUrl() + uri);
             } else {
-                getResponse().setEntity(uri + CRLF, MediaType.TEXT_URI_LIST);
-                getResponse().setStatus(Status.SUCCESS_OK);
+                getResponse().setEntity(uri + CRLF, TEXT_URI_LIST);
+                getResponse().setStatus(SUCCESS_OK);
             }
         } catch (TimeoutException e) {
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not complete within the configured timeout interval.");
+            getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not complete within the configured timeout interval.");
         }
     }
 
     protected void finishNonSingleSessionUpload(final List<PrearcSession> sessions) throws Exception {
         if (!PrearcUtils.canModify(getUser(), sessions.get(0).getProject())) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
             return;
         }
 
+        final List<PrearcSession> prearcSessions = new ArrayList<>();
         for (final PrearcSession prearcSession : sessions) {
-            if (!prearcSession.getAdditionalValues().containsKey(EventUtils.EVENT_REASON)) {
-                prearcSession.getAdditionalValues().put(EventUtils.EVENT_REASON, "Batch archive");
+            if (setSessionArchiveStatus(prearcSession)) {
+                prearcSessions.add(prearcSession);
+                if (!prearcSession.getAdditionalValues().containsKey(EVENT_REASON)) {
+                    prearcSession.getAdditionalValues().put(EVENT_REASON, "Batch archive");
+                }
             }
         }
 
-        final Map<SessionDataTriple, Boolean> archivedSessions = PrearcDatabase.archive(sessions, _allowDataDeletion, _overwrite, _overwriteFiles, getUser(), Collections.<StatusListenerI>emptySet());
+        final Map<SessionDataTriple, Boolean> archivedSessions = PrearcDatabase.archive(prearcSessions, _allowDataDeletion, _overwrite, _overwriteFiles, getUser(), Collections.<StatusListenerI>emptySet());
         getResponse().setEntity(updatedStatusRepresentation(archivedSessions.keySet(), overrideVariant(getPreferredVariant())));
+    }
+
+    private boolean setSessionArchiveStatus(final PrearcSession session) throws Exception {
+        if (!PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), ARCHIVING)) {
+            getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Operation already in progress on this prearchive entry.");
+            return false;
+        }
+        return true;
     }
 
     private String  _overwriteV = null;

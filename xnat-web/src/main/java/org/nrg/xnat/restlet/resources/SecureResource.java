@@ -79,6 +79,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.restlet.util.SecureResourceParameterMapper;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
@@ -1382,19 +1383,7 @@ public abstract class SecureResource extends Resource {
         final EventMetaI          ci       = workflow.buildEvent();
 
         try {
-            if (isQueryVariableTrue("removeFiles")) {
-                final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
-
-                for (XFTItem resource : hash) {
-                    ItemI om = BaseElement.GetGeneratedItem(resource);
-                    if (om instanceof XnatAbstractresource) {
-                        XnatAbstractresource resourceA = (XnatAbstractresource) om;
-                        resourceA.deleteWithBackup(parent.getArchiveRootPath(), user, ci);
-                    }
-                }
-            }
-            DBAction.DeleteItem(item.getItem().getCurrentDBVersion(), user, ci, false);
-
+            XNATUtils.delete(parent, item, ci, isQueryVariableTrue("removeFiles"));
             WorkflowUtils.complete(workflow, ci);
         } catch (Exception e) {
             WorkflowUtils.fail(workflow, ci);

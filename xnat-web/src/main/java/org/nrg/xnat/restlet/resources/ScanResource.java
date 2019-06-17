@@ -33,6 +33,7 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.PullScanDataFromHeaders;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -287,20 +288,7 @@ public class ScanResource extends ItemResource {
             delete(session, scan, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(scan.getXSIType())));
 
             // Above "delete" removes resources, but leaves dangling scan directory
-            final Path scanDirPath = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
-            final File scanDir = scanDirPath == null ? null : scanDirPath.toFile();
-            if (scanDir != null && scanDir.isDirectory() && scanDir.exists()) {
-                scanDir.delete();
-
-                // Now we have deleted the scan directory. If that was the last one, also remove the SCANS directory.
-                final File scansDir = scanDir.getParentFile();
-                if (scansDir != null && scansDir.isDirectory() && scansDir.exists()) {
-                    final String[] otherScansInScansDir = scansDir.list();
-                    if (otherScansInScansDir != null && otherScansInScansDir.length == 0) {
-                        scansDir.delete();
-                    }
-                }
-            }
+            XNATUtils.removeScanDir(session, scan);
 
         } catch (SQLException e) {
             logger.error("There was an error running a query.", e);

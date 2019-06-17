@@ -12,10 +12,10 @@ package org.nrg.xnat.turbine.utils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -25,12 +25,8 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.CatEntryMetafieldBean;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatMrsessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -38,12 +34,21 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.event.EventDetails;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.nrg.xnat.utils.WorkflowUtils;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author Tim
@@ -205,6 +210,62 @@ public class XNATUtils {
             return null;
         }
     }
+
+    public static void removeScanDir(XnatImagesessiondata session, XnatImagescandata scan) throws InvalidArchiveStructure, BaseXnatExperimentdata.UnknownPrimaryProjectException {
+        // Above "delete" removes resources, but leaves dangling scan directory
+        final Path scanDirPath = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
+        final File scanDir = scanDirPath == null ? null : scanDirPath.toFile();
+        if (scanDir != null && scanDir.isDirectory() && scanDir.exists()) {
+            scanDir.delete();
+
+            // Now we have deleted the scan directory. If that was the last one, also remove the SCANS directory.
+            final File scansDir = scanDir.getParentFile();
+            if (scansDir != null && scansDir.isDirectory() && scansDir.exists()) {
+                final String[] otherScansInScansDir = scansDir.list();
+                if (otherScansInScansDir != null && otherScansInScansDir.length == 0) {
+                    scansDir.delete();
+                }
+            }
+        }
+    }
+
+    public static void removeScanFromSessionAndDeleteFiles(XnatImagesessiondata session, XnatImagescandata scan,
+                                                           UserI user, @Nullable EventMetaI eventMetaI) throws Exception {
+        PersistentWorkflowI workflow = null;
+        if (eventMetaI == null) {
+            EventDetails event = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE,
+                    EventUtils.getDeleteAction(scan.getXSIType()), "Remove scan from session", "");
+            workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, session.getItem(), event);
+            eventMetaI = workflow.buildEvent();
+        }
+        try {
+            delete(session, scan, eventMetaI, true);
+            removeScanDir(session, scan);
+            if (workflow != null) WorkflowUtils.complete(workflow, eventMetaI);
+        } catch (Exception e) {
+            if (workflow != null) WorkflowUtils.fail(workflow, eventMetaI);
+            throw e;
+        }
+    }
+
+    public static void delete(ArchivableItem parent, ItemI item, @Nonnull EventMetaI ci, boolean removeFiles)
+            throws Exception {
+        UserI user = ci.getUser();
+        if (removeFiles) {
+            final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
+
+            for (XFTItem resource : hash) {
+                ItemI om = BaseElement.GetGeneratedItem(resource);
+                if (om instanceof XnatAbstractresource) {
+                    XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                    resourceA.deleteWithBackup(parent.getArchiveRootPath(), user, ci);
+                }
+            }
+        }
+        SaveItemHelper.authorizedDelete(item.getItem(), user, ci);
+    }
+
+
 //    
 //    public String getCurrentArchiveFolder() throws org.nrg.xnat.exceptions.UndefinedArchive,org.nrg.xnat.exceptions.InvalidArchiveStructure,IOException{
 //        String arcpath = XFT.GetArchiveRootPath();

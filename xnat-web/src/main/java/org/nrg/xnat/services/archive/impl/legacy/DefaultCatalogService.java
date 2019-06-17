@@ -65,6 +65,7 @@ import org.nrg.xnat.helpers.uri.archive.*;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
@@ -758,7 +759,7 @@ public class DefaultCatalogService implements CatalogService {
             // catalog resource, just check it
             return _remoteFilesService.catalogHasRemoteFiles(resourceData.getCatalogResource());
         } else {
-            // other kind of resource (mr session, etc), check it's children for anything remote
+            // other kind of resource (mr session, etc), check its children for anything remote
             for (final XnatAbstractresourceI resource : resourceData.getXnatUri().getResources(true)) {
                 if (!(resource instanceof XnatResourcecatalog)) {
                     continue;
@@ -812,9 +813,10 @@ public class DefaultCatalogService implements CatalogService {
             final SAXReader reader = new SAXReader(user);
             final XFTItem   item   = reader.parse(parserInput);
 
-            final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
-            final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
-            final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isExperiment  = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
+            final boolean isSubject     = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isProject     = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isScan        = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
 
             final ValidationResults validation = XFTValidator.Validate(item);
 
@@ -845,6 +847,9 @@ public class DefaultCatalogService implements CatalogService {
                 isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
             } else if (isProject) {
                 isCreate = !Permissions.verifyProjectExists(_parameterized, primaryKey);
+            } else if (isScan) {
+                // We actually operate on a session, so it's always an update
+                isCreate = false;
             } else {
                 // For items other than projects, subjects, and experiments, e.g. stored searches
                 final String table  = item.getGenericSchemaElement().getSQLName();
@@ -888,27 +893,52 @@ public class DefaultCatalogService implements CatalogService {
                     }
                 }
 
-                if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
+                if (isScan) {
                     final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME +
                             "/image_session_ID");
-                    if (parentId != null) {
-                        final XnatExperimentdata parent =
-                                XnatImagesessiondata.getXnatExperimentdatasById(parentId, user, false);
-                        if (parent != null) {
-                            final XnatImagesessiondata session = (XnatImagesessiondata) parent;
-                            session.addScans_scan(new XnatImagescandata(item));
-                            if (eventMetaI != null) {
-                                SaveItemHelper.authorizedSave(session, user, false, quarantine,
-                                        false, allowDataDeletion, eventMetaI);
-                            } else {
-                                SaveItemHelper.authorizedSave(session, user, false, quarantine
-                                        , false, allowDataDeletion, event);
+
+                    final XnatExperimentdata parent;
+                    if (parentId == null || (parent =
+                            XnatExperimentdata.getXnatExperimentdatasById(parentId, user, false)) == null
+                            || !(parent instanceof XnatImagesessiondata)) {
+                        throw new ClientException("Cannot insert scan: image_session_ID is not populated or " +
+                                "doesn't refer to a valid image session");
+                    }
+                    XnatImagesessiondata session = (XnatImagesessiondata) parent;
+                    final String scanId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/ID");
+                    XnatImagescandata scan = session.getScanById(scanId);
+                    if (scan != null) {
+                        if (allowDataDeletion) {
+                            // Authorize
+                            boolean preventDel = !StringUtils.contains(XDAT.getSiteConfigurationProperty(
+                                    "security.prevent-data-deletion-override", "[]"),
+                                    session.getItem().getStatus()) && XDAT.getBoolSiteConfigurationProperty(
+                                            "security.prevent-data-deletion", false);
+
+                            if (!Permissions.canDelete(user, session) || preventDel) {
+                                throw new ClientException("User account doesn't have permission to modify session " +
+                                        parentId + " to replace scan " + scanId + " and/or deletion disabled for session");
                             }
-                            eventItemIdValue = session.getId();
-                            eventItemXsiType = session.getXSIType();
-                            isCreate = false;
+
+                            // Delete
+                            XNATUtils.removeScanFromSessionAndDeleteFiles(session, scan, user, eventMetaI);
+                            // Refresh session object after deleting scan
+                            session = (XnatImagesessiondata) XnatExperimentdata.getXnatExperimentdatasById(parentId, user, false);
+                        } else {
+                            throw new ClientException("Cannot insert scan into session " + parentId + ": ID " +
+                                    scanId + "in use. Rerun with allowDataDeletion or choose a new ID");
                         }
                     }
+                    session.addScans_scan(new XnatImagescandata(item));
+                    if (eventMetaI != null) {
+                        SaveItemHelper.unauthorizedSave(session, user, false, quarantine,
+                                false, allowDataDeletion, eventMetaI);
+                    } else {
+                        SaveItemHelper.unauthorizedSave(session, user, false, quarantine,
+                                false, allowDataDeletion, event);
+                    }
+                    eventItemIdValue = session.getId();
+                    eventItemXsiType = session.getXSIType();
                 } else {
                     if (generateId) {
                         if (isExperiment) {

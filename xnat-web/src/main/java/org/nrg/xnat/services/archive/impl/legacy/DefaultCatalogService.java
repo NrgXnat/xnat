@@ -1383,7 +1383,7 @@ public class DefaultCatalogService implements CatalogService {
             throw new ServerException("Resource " + resource + " is not a catalog");
         }
 
-        log.debug("refreshResourceCatalog runtime: " + (Calendar.getInstance().getTimeInMillis() - startTime) + "ms");
+        log.debug("refreshResourceCatalog runtime: {} ms", (Calendar.getInstance().getTimeInMillis() - startTime));
     }
 
 

@@ -1697,6 +1697,8 @@ public class CatalogUtils {
                     catalogData.catBean.toXML(fw);
                     fw.flush();
                 }
+                // update checksum after we write so this catalogData object will allow a future write
+                catalogData.catFileChecksum = getHash(catalogData.catFile, false);
             } finally {
                 fl.unlock();
                 //log.trace(System.currentTimeMillis() + " writer finish: " + fl.toString());

@@ -2,16 +2,20 @@ package org.nrg.xnat.utils;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.nrg.test.workers.resources.ResourceManager;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.ClassMappingFactory;
+import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.junit.ConcurrentJunitRunner;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -178,6 +182,27 @@ public class TestThreadAndProcessFileLock {
         exceptionRule.expectMessage(    "Another thread or process modified " + catalogData2.catFile +
                 " since I last read it. To avoid overwriting changes, I'm throwing an exception.");
         CatalogUtils.writeCatalogToFile(catalogData2);
+    }
+
+    @Test
+    public void testRewriteOnSameObject() throws Exception {
+        // This operates on a separate file from testDcm/testDcmRepeat so it doesn't change their data mid-test
+        File outfile = new File(TMPDIR,"testRewriteOnSameObject_catalog.xml");
+        String fakeName = "testRewriteOnSameObject.txt";
+        File fakeFile = new File(TMPDIR, fakeName);
+        fakeFile.createNewFile();
+
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile); //creates catalog
+        CatalogUtils.writeCatalogToFile(catalogData); //saves new & empty catalog
+        XnatResourceInfo mockInfo = Mockito.mock(XnatResourceInfo.class);
+        CatalogUtils.addOrUpdateEntry(catalogData, null, fakeName, fakeName,
+                fakeFile, mockInfo, null);
+        // main test is to ensure that no exception is thrown here
+        CatalogUtils.writeCatalogToFile(catalogData);
+
+        // but then also, let's check that we added the item
+        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile);
+        assertThat(catalogData2.catBean.getEntries_entry(), Matchers.<CatEntryI>hasSize(1));
     }
 
     private void doReadWrite(File file) throws Exception {

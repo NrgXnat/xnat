@@ -174,19 +174,15 @@ public abstract class ResourceModifierA implements Serializable {
     private boolean createCatalog(XnatResourcecatalog resource, XnatResourceInfo info) throws Exception {
         CatalogUtils.configureEntry(resource, info, user);
 
-        final String dest_path = this.buildDestinationPath();
+        final String destPath = this.buildDestinationPath();
 
-        CatCatalogBean cat = new CatCatalogBean();
-        if (resource.getLabel() != null) {
-            cat.setId(resource.getLabel());
-        } else {
-            cat.setId(getDefaultUID());
-        }
+        String catId = resource.getLabel() != null ? resource.getLabel() : getDefaultUID();
 
-        File saveTo = new File(new File(dest_path, cat.getId()), cat.getId() + "_catalog.xml");
-        saveTo.getParentFile().mkdirs();
+        File saveTo = new File(new File(destPath, catId), catId + "_catalog.xml");
 
-        CatalogUtils.writeCatalogToFile(cat, saveTo);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(saveTo, resource, catId);
+
+        CatalogUtils.writeCatalogToFile(catalogData);
 
         resource.setUri(saveTo.getAbsolutePath());
 

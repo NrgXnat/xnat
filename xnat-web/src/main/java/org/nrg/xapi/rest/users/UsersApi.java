@@ -280,7 +280,7 @@ public class UsersApi extends AbstractXapiRestController {
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
 
-            if (model.isVerified() && model.isEnabled()) {
+            if (BooleanUtils.isTrue(model.isVerified()) && BooleanUtils.isTrue(model.isEnabled())) {
                 //When a user is enabled and verified, send a new user email
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());

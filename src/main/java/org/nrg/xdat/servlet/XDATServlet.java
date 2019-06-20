@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.servlet;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
@@ -420,7 +419,7 @@ public class XDATServlet extends HttpServlet {
      * Tests each resource to see if the name matches the pattern for SQL initialization resources, init_XXX_NNN.sql,
      * where XXX is some string to indicate the purpose of the initialization and NNN is a three-digit ordinal value
      * indicating the script's place in the initialization order.
-     *
+     * <p>
      * Once the resources have been filtered and any non-compliant resources have been removed and logged, the list is
      * sorted based on the resources' ordinal values.
      *
@@ -471,16 +470,39 @@ public class XDATServlet extends HttpServlet {
             }
         }
 
-        final String sqlLogFile = properties.getProperty("xnat.database.sql.log.file", Paths.get(properties.getProperty("xnat.database.sql.log.folder", XDAT.getContextService().getBean("xnatHome").toString()), "xnat-${timestamp}.sql").toString());
-        if (!BooleanUtils.toBoolean(properties.getProperty("xnat.database.sql.log", BooleanUtils.toStringTrueFalse(StringUtils.isNotBlank(sqlLogFile))))) {
-            logger.debug("Either xnat.database.sql.log doesn't exist and no value is set for xnat.database.sql.log.file or xnat.database.sql.log.folder OR xnat.database.sql.log is set to false, so no generated SQL log path considered.");
+        final Boolean shouldLogSql = BooleanUtils.toBooleanObject(properties.getProperty("xnat.database.sql.log"));
+        final String  sqlLogFile   = properties.getProperty("xnat.database.sql.log.file");
+        final String  sqlLogFolder = properties.getProperty("xnat.database.sql.log.folder");
+
+        if (BooleanUtils.isFalse(shouldLogSql) || shouldLogSql == null && StringUtils.isAllBlank(sqlLogFile, sqlLogFolder)) {
+            logger.debug("Either xnat.database.sql.log is set to false or xnat.database.sql.log isn't set at all and no value is set for xnat.database.sql.log.file or xnat.database.sql.log.folder, so no generated SQL log path considered.");
             return null;
         }
+        if (StringUtils.isNoneBlank(sqlLogFile, sqlLogFolder)) {
+            logger.warn("Found values for both \"xnat.database.sql.log.file\" and \"xnat.database.sql.log.folder\". You should only specify one of these properties. Using the value for \"xnat.database.sql.log.file\": {}", sqlLogFile);
+        }
 
-        final String timestamp           = DateUtils.getMsTimestamp();
-        final Path   generatedSqlLogPath = Paths.get(StringSubstitutor.replace(sqlLogFile, ImmutableMap.<String, Object>of("timestamp", timestamp)));
-        logger.info("Found path specified for generated SQL log path: {}", generatedSqlLogPath);
-        return generatedSqlLogPath;
+        final Path sqlLogFilePath;
+        if (StringUtils.isNotBlank(sqlLogFile)) {
+            final Path path = Paths.get(sqlLogFile);
+            if (path.isAbsolute()) {
+                sqlLogFilePath = path;
+            } else {
+                sqlLogFilePath = getSqlLogFolder(sqlLogFolder).resolve(sqlLogFile);
+            }
+        } else {
+            sqlLogFilePath = getSqlLogFolder(sqlLogFolder).resolve(getGeneratedSqlLogFilename());
+        }
+
+        logger.info("Found path specified for generated SQL log path: {}", sqlLogFilePath);
+        return sqlLogFilePath;
+    }
+
+    private static Path getSqlLogFolder(final String configuredSqlLogFolder) {
+        if (StringUtils.isNotBlank(configuredSqlLogFolder)) {
+            return Paths.get(configuredSqlLogFolder);
+        }
+        return ((Path) XDAT.getContextService().getBean("xnatHome")).resolve("sql");
     }
 
     private static String getGeneratedSqlLogFilename() {
@@ -505,43 +527,43 @@ public class XDATServlet extends HttpServlet {
     private List<String> getViewDropSql(String user) {
         final List<String> dropSql = Lists.newArrayList();
         dropSql.add(
-                "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-                "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-                "BEGIN " +
-                "RETURN QUERY " +
-                "SELECT " +
-                "n.nspname AS table_schema, " +
-                "c.relname AS view_name " +
-                "FROM pg_catalog.pg_class c " +
-                "LEFT JOIN pg_catalog.pg_namespace n " +
-                "ON (n.oid = c.relnamespace) " +
-                "WHERE c.relkind = 'v' " +
-                "AND c.relowner = (SELECT usesysid " +
-                "FROM pg_catalog.pg_user " +
-                "WHERE usename = $1); " +
-                "END$$ LANGUAGE plpgsql;");
+            "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
+            "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+            "BEGIN " +
+            "RETURN QUERY " +
+            "SELECT " +
+            "n.nspname AS table_schema, " +
+            "c.relname AS view_name " +
+            "FROM pg_catalog.pg_class c " +
+            "LEFT JOIN pg_catalog.pg_namespace n " +
+            "ON (n.oid = c.relnamespace) " +
+            "WHERE c.relkind = 'v' " +
+            "AND c.relowner = (SELECT usesysid " +
+            "FROM pg_catalog.pg_user " +
+            "WHERE usename = $1); " +
+            "END$$ LANGUAGE plpgsql;");
         dropSql.add(
-                "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-                "RETURNS INTEGER AS $$ " +
-                "DECLARE " +
-                "r RECORD; " +
-                "s TEXT; " +
-                "c INTEGER := 0; " +
-                "BEGIN " +
-                "RAISE NOTICE 'Dropping views for user %', $1; " +
-                "FOR r IN " +
-                "SELECT * FROM find_user_views($1) " +
-                "LOOP " +
-                "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-                "EXECUTE s; " +
-                "c := c + 1; " +
-                "RAISE NOTICE 's = % ', S; " +
-                "END LOOP; " +
-                "RETURN c; " +
-                "END$$ LANGUAGE plpgsql;"
+            "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
+            "RETURNS INTEGER AS $$ " +
+            "DECLARE " +
+            "r RECORD; " +
+            "s TEXT; " +
+            "c INTEGER := 0; " +
+            "BEGIN " +
+            "RAISE NOTICE 'Dropping views for user %', $1; " +
+            "FOR r IN " +
+            "SELECT * FROM find_user_views($1) " +
+            "LOOP " +
+            "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+            "EXECUTE s; " +
+            "c := c + 1; " +
+            "RAISE NOTICE 's = % ', S; " +
+            "END LOOP; " +
+            "RETURN c; " +
+            "END$$ LANGUAGE plpgsql;"
                    );
         dropSql.add(
-                "SELECT drop_user_views('" + user + "');"
+            "SELECT drop_user_views('" + user + "');"
                    );
         return dropSql;
     }

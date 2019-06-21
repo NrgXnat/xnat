@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 public class ResourceData {
     private URIManager.DataURIA uri;
     private URIManager.ArchiveItemURI xnatUri;
-    private XnatResourcecatalog catalogResource;
+    @Nullable private XnatResourcecatalog catalogResource;
     private ArchivableItem item;
 
     public ResourceData(URIManager.DataURIA uri,
@@ -38,11 +38,12 @@ public class ResourceData {
         this.xnatUri = xnatUri;
     }
 
+    @Nullable
     public XnatResourcecatalog getCatalogResource() {
         return catalogResource;
     }
 
-    public void setCatalogResource(XnatResourcecatalog catalogResource) {
+    public void setCatalogResource(@Nullable XnatResourcecatalog catalogResource) {
         this.catalogResource = catalogResource;
     }
 
@@ -52,5 +53,15 @@ public class ResourceData {
 
     public void setItem(ArchivableItem item) {
         this.item = item;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (!(o instanceof ResourceData)) return false;
+        ResourceData other = (ResourceData) o;
+        return item.equals(other.getItem()) && uri.equals(other.getUri()) && xnatUri.equals(other.getXnatUri()) &&
+                (catalogResource == null && other.getCatalogResource() == null
+                        || catalogResource.equals(other.getCatalogResource()));
     }
 }

@@ -7,8 +7,10 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,10 +21,11 @@ public interface RemoteFilesService {
      *
      * @param url may be a URL or may be an absolute local path
      * @param destinationPath absolute local path to which file ought to be saved
-     * @return File or null if url isn't accessible from any configured remote filesystem
+     * @return File
+     * @throws FileNotFoundException if url isn't accessible from any configured remote filesystem (use FNF because it doesn't require loading exceptions from the plugin)
      */
-    @Nullable
-    File pullFile(String url, String destinationPath);
+    @Nonnull
+    File pullFile(String url, String destinationPath) throws FileNotFoundException;
 
     /**
      * Is the url accessible?
@@ -50,17 +53,18 @@ public interface RemoteFilesService {
 
     /**
      * Blocking pull item's files to destination.
-     * @param item              the security item
-     * @param resources         list of item's resources to pull (to obtain all resources for item, use resourceURI.getResources(true))
-     * @param user              the user
-     * @param itemDestPath      the destination path equivalent of item's archive path, null to use item's archive path
-     * @throws ServerException  if remote resources aren't able to be pulled
+     * @param item                  the security item
+     * @param resources             list of item's resources to pull (to obtain all resources for item, use resourceURI.getResources(true))
+     * @param user                  the user
+     * @param archiveRelativeDir    the XNAT archive-relative directory or null to use expected current directory for item
+     * @param destinationDir        the destination path equivalent of archiveRelativeDir, null to use archiveRelativeDir
+     * @throws ServerException      if remote resources aren't able to be pulled
      */
     void pullItem(final ArchivableItem item,
                   final List<XnatAbstractresourceI> resources,
                   final UserI user,
-                  @Nullable String itemDestPath) throws ServerException;
-
+                  @Nullable String archiveRelativeDir,
+                  @Nullable String destinationDir) throws ServerException;
 
     /**
      * Push files to remote filesystem and add URLs to catalog

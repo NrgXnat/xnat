@@ -688,28 +688,29 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         XnatResourcecatalog catRes = null;
-        if (catalogOnly) {
-            //Is it a single, catalog resource?
-            if (!(xnatUri instanceof ResourceURII)) {
+
+        // Is it a catalog resource?
+        if (xnatUri instanceof ResourceURII) {
+            // Make sure we don't have the path to a file
+            final String resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
+            if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                        " doesn't refer to a single resource.");
-            } else {
-                final String resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
-                if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
-                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                            " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
-                }
+                        " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
             }
 
             XnatAbstractresourceI resource = ((ResourceURII) xnatUri).getXnatResource();
-            // Allow a null resource, only throw exception if we have a non-catalog resource
+            // Allow a null resource; throw exception if we've specified catalogOnly and we have a non-catalog resource
             if (resource != null) {
-                if (!(resource instanceof XnatResourcecatalog)) {
+                if (resource instanceof XnatResourcecatalog) {
+                    catRes = (XnatResourcecatalog) resource;
+                } else if (catalogOnly) {
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
                             " doesn't refer to a catalog.");
                 }
-                catRes = (XnatResourcecatalog) resource;
             }
+        } else if (catalogOnly) {
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
+                    " doesn't refer to a resource.");
         }
 
         return new ResourceData(uri, xnatUri, item, catRes);
@@ -719,7 +720,9 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void pullResourceCatalogsToDestination(UserI user, String uriString, @Nullable String destinationDir)
+    public void pullResourceCatalogsToDestination(final UserI user, final String uriString,
+                                                  final String archiveRelativeDir,
+                                                  @Nullable final String destinationDir)
             throws ServerException, ClientException {
 
         if (_remoteFilesService == null) {
@@ -740,7 +743,7 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             resources = resourceURI.getResources(true);
         }
-        _remoteFilesService.pullItem(item, resources, user, destinationDir);
+        _remoteFilesService.pullItem(item, resources, user, archiveRelativeDir, destinationDir);
     }
 
     /**
@@ -754,10 +757,10 @@ public class DefaultCatalogService implements CatalogService {
 
         final ResourceData resourceData = getResourceDataFromUri(uriString);
         checkPermissionsOnItem(user, resourceData.getItem(), SecurityManager.READ, uriString);
-        XnatResourcecatalogI catRes = resourceData.getCatalogResource();
+        XnatResourcecatalog catRes = resourceData.getCatalogResource();
         if (catRes != null) {
             // catalog resource, just check it
-            return _remoteFilesService.catalogHasRemoteFiles(resourceData.getCatalogResource());
+            return _remoteFilesService.catalogHasRemoteFiles(catRes);
         } else {
             // other kind of resource (mr session, etc), check its children for anything remote
             for (final XnatAbstractresourceI resource : resourceData.getXnatUri().getResources(true)) {

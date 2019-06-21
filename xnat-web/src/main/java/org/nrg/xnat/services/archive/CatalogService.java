@@ -557,14 +557,19 @@ public interface CatalogService {
      * }
      * </pre>
      *
-     * @param user              The user performing the operation.
-     * @param uriString         The uri for the resource
-     * @param destinationDir    The path to the destination
+     * @param user                  The user performing the operation.
+     * @param uriString             The uri
+     * @param archiveRelativeDir    The archive-relative directory for the resource corresponding to uriString
+     * @param destinationDir        The path to the destination or null to pull to archive. The destinationDir will be
+     *                              populated with subdirectories as appropriate. For example, if uriString is a session,
+     *                              the destinationDir would be the equivalent of archiveRelativeDir, and would be
+     *                              populated to contain e.g., RESOURCES/ and SCANS/.
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the pull operation.
      */
-    void pullResourceCatalogsToDestination(final UserI user, final String uriString, final String destinationDir)
+    void pullResourceCatalogsToDestination(final UserI user, final String uriString, final String archiveRelativeDir,
+                                           @Nullable final String destinationDir)
             throws ServerException, ClientException;
 
     /**

@@ -1317,7 +1317,12 @@ public class CatalogUtils {
         if (f == null) {
             RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
             if (remoteFilesService != null) {
-                f = remoteFilesService.pullFile(uri, destPath);
+                try {
+                    f = remoteFilesService.pullFile(uri, destPath);
+                } catch (FileNotFoundException e) {
+                    log.error(e.getMessage(), e);
+                    f = null;
+                }
             }
         }
         return f;

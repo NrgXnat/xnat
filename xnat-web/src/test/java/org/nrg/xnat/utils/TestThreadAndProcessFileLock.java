@@ -29,6 +29,7 @@ import java.nio.file.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -72,7 +73,7 @@ public class TestThreadAndProcessFileLock {
         // Stub getChecksumConfiguration check
         PowerMockito.spy(CatalogUtils.class);
         //doReturn(false).when(CatalogUtils.class, "getChecksumConfiguration"); // doesn't work, not sure why
-        Whitebox.setInternalState(CatalogUtils.class, "_checksumConfig", false);
+        Whitebox.setInternalState(CatalogUtils.class, "_checksumConfig", new AtomicBoolean(false));
     }
 
     private static void rewriteFileWithCatalogUtils(File catFile) throws Exception {

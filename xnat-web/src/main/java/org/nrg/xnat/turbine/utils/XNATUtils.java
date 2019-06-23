@@ -24,7 +24,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
-import org.nrg.xdat.bean.CatEntryMetafieldBean;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.ElementSecurity;
@@ -417,21 +416,11 @@ public class XNATUtils {
                             }
                         }
                         
-                        entry.setCachepath(path);
                         entry.setName(f.getName());
-                        
-                        CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(path);
-                        meta.setName("RELATIVE_PATH");
-                        entry.addMetafields_metafield(meta);
-                        
-                        meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(new Long(f.length()).toString());
-                        meta.setName("SIZE");
-                        entry.addMetafields_metafield(meta);
-
+                        CatalogUtils.setCatEntryBeanMetafields(entry, path,
+                                Long.toString(f.length()));
                         catalog.addEntries_entry(entry);
-                        
+
                     }
                     if (om instanceof XnatResourcecatalog){
                         File f = ((XnatResourcecatalog)om).getCatalogFile(project.getRootArchivePath());
@@ -450,18 +439,9 @@ public class XNATUtils {
                             }
                         }
                         
-                        entry.setCachepath(path);
                         entry.setName(f.getName());
-                        
-                        CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(path);
-                        meta.setName("RELATIVE_PATH");
-                        entry.addMetafields_metafield(meta);
-                        
-                        meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(new Long(f.length()).toString());
-                        meta.setName("SIZE");
-                        entry.addMetafields_metafield(meta);
+                        CatalogUtils.setCatEntryBeanMetafields(entry, path,
+                                Long.toString(f.length()));
 
                         catalog.addEntries_entry(entry);
                     }

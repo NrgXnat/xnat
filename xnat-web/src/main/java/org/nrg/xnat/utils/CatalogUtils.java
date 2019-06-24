@@ -707,7 +707,7 @@ public class CatalogUtils {
 
         //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
-        final HashMap<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
+        final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
 
         final Path catalogPath = Paths.get(catalogData.catPath);
         try {
@@ -869,18 +869,18 @@ public class CatalogUtils {
     }
 
     /**
-     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * Map with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
      * and value=CatalogMapEntry
      *
      * @param catalogData the catalog data object
      * @return map
      */
-    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData) {
+    public static Map<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData) {
         return buildCatalogMap(catalogData, false);
     }
 
     /**
-     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * Map with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
      * and value=CatalogMapEntry
      *
      * @param catalogData the catalog data object
@@ -891,13 +891,13 @@ public class CatalogUtils {
      *                                  path isn't already in use
      * @return map
      */
-    public static HashMap<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData,
+    public static Map<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData,
                                                                    boolean bothUriAndLocalPathAsKeys) {
         return buildCatalogMap(catalogData.catBean, catalogData.catPath, bothUriAndLocalPathAsKeys);
     }
 
     /**
-     * HashMap with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
+     * Map with key = path relative to catalog (or absolute path if absoluteLocalPathAsKey=T or URI if uriOnlyAsKey=T)
      * and value=CatalogMapEntry
      *
      * @param cat the catalog bean
@@ -909,11 +909,11 @@ public class CatalogUtils {
      *                                  path isn't already in use
      * @return map
      */
-    private static HashMap<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat,
+    private static Map<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat,
                                                                     String catPath,
                                                                     boolean bothUriAndLocalPathAsKeys) {
 
-        HashMap<String, CatalogMapEntry> catalogMap = new HashMap<>();
+        Map<String, CatalogMapEntry> catalogMap = new HashMap<>();
         RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);
         for (CatCatalogI subset : cat.getSets_entryset()) {
             catalogMap.putAll(buildCatalogMap(subset, catPath, bothUriAndLocalPathAsKeys));

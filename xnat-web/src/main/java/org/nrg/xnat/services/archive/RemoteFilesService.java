@@ -55,14 +55,12 @@ public interface RemoteFilesService {
      * Blocking pull item's files to destination.
      * @param item                  the security item
      * @param resources             list of item's resources to pull (to obtain all resources for item, use resourceURI.getResources(true))
-     * @param user                  the user
      * @param archiveRelativeDir    the XNAT archive-relative directory or null to use expected current directory for item
      * @param destinationDir        the destination path equivalent of archiveRelativeDir, null to use archiveRelativeDir
      * @throws ServerException      if remote resources aren't able to be pulled
      */
     void pullItem(final ArchivableItem item,
                   final List<XnatAbstractresourceI> resources,
-                  final UserI user,
                   @Nullable String archiveRelativeDir,
                   @Nullable String destinationDir) throws ServerException;
 

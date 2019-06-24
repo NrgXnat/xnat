@@ -743,7 +743,7 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             resources = resourceURI.getResources(true);
         }
-        _remoteFilesService.pullItem(item, resources, user, archiveRelativeDir, destinationDir);
+        _remoteFilesService.pullItem(item, resources, archiveRelativeDir, destinationDir);
     }
 
     /**

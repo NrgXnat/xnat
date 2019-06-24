@@ -545,8 +545,8 @@ public interface CatalogService {
             throws ServerException, ClientException;
 
     /**
-     * Pulls all files for specified resource <strong>into an arbitrary location</strong>.
-     * Useful for pulling any remote files into partially populated location.
+     * Pulls all files for specified resource <strong>into an arbitrary location</strong>. It will first copy files that
+     * exist in the XNAT archive, then it will attempt to pull any missing files from remote filesystems
      *
      * The resource should be identified by standard archive-relative paths, e.g.:
      *
@@ -564,6 +564,7 @@ public interface CatalogService {
      *                              populated with subdirectories as appropriate. For example, if uriString is a session,
      *                              the destinationDir would be the equivalent of archiveRelativeDir, and would be
      *                              populated to contain e.g., RESOURCES/ and SCANS/.
+     *                              <strong>Conflicting files in the destinationDir WILL BE OVERWRITTEN</strong>
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the pull operation.

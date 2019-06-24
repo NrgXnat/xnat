@@ -28,8 +28,11 @@ DROP FUNCTION IF EXISTS public.data_type_fns_fix_orphaned_scans();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_experiment_extension();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_group_permissions();
 DROP FUNCTION IF EXISTS public.data_type_fns_can(username VARCHAR(255), entityId VARCHAR(255), ACTION VARCHAR(15));
+DROP FUNCTION IF EXISTS public.data_type_fns_can(username VARCHAR(255), ACTION VARCHAR(15), entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255));
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -61,20 +64,20 @@ SELECT
     m.xdat_field_mapping_id
 FROM
     xdat_element_access a
-        LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
-        LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
-        LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
-        LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id;
+    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
+    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id;
 
 CREATE OR REPLACE VIEW public.data_type_views_mismatched_mapping_elements AS
 SELECT
     m.xdat_field_mapping_id AS id
 FROM
     xdat_field_mapping m
-        LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
-        LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
+    LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+    LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
 WHERE
-        m.field NOT LIKE a.element_name || '%';
+    m.field NOT LIKE a.element_name || '%';
 
 CREATE OR REPLACE VIEW public.data_type_views_missing_mapping_elements AS
     WITH
@@ -110,8 +113,8 @@ SELECT
     s.xdat_field_mapping_set_id AS id
 FROM
     xdat_element_access a
-        LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
-        LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
 WHERE
     s.xdat_field_mapping_set_id IS NOT NULL AND
     m.xdat_field_mapping_id IS NULL;
@@ -124,13 +127,13 @@ CREATE OR REPLACE VIEW public.data_type_views_secured_identified_data_types AS
                             FROM
                                 xdat_element_security s
                             WHERE
-                                    s.secure = 1)
+                                s.secure = 1)
     SELECT
         e.element_name,
         e.table_name
     FROM
         secure_elements e
-            LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND column_name = 'id'
+        LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND column_name = 'id'
     WHERE c.column_name IS NOT NULL;
 
 CREATE OR REPLACE VIEW public.data_type_views_scan_data_types AS
@@ -141,7 +144,7 @@ CREATE OR REPLACE VIEW public.data_type_views_scan_data_types AS
                           FROM
                               xdat_meta_element
                           WHERE
-                                  lower(element_name) LIKE '%scan%' AND element_name ~ '^([^:]+:[^_]+)$')
+                              lower(element_name) LIKE '%scan%' AND element_name ~ '^([^:]+:[^_]+)$')
     SELECT DISTINCT
         element_name,
         table_name
@@ -151,7 +154,7 @@ CREATE OR REPLACE VIEW public.data_type_views_scan_data_types AS
              e.table_name
          FROM
              data_elements e
-                 LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND (column_name = 'id' OR column_name LIKE '%_id')
+             LEFT JOIN information_schema.columns c ON lower(e.table_name) = lower(c.table_name) AND (column_name = 'id' OR column_name LIKE '%_id')
          WHERE c.column_name IS NOT NULL) SOURCE;
 
 CREATE OR REPLACE VIEW public.data_type_views_experiments_without_data_type AS
@@ -161,9 +164,9 @@ SELECT DISTINCT
     xme.xdat_meta_element_id AS xdat_meta_element_id
 FROM
     xnat_experimentdata e
-        LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id
-        LEFT JOIN wrk_workflowdata w ON e.id = w.id
-        LEFT JOIN xdat_meta_element xme ON w.data_type = xme.element_name
+    LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id
+    LEFT JOIN wrk_workflowdata w ON e.id = w.id
+    LEFT JOIN xdat_meta_element xme ON w.data_type = xme.element_name
 WHERE m.element_name IS NULL
 GROUP BY
     e.id,
@@ -177,13 +180,13 @@ SELECT
     g.id AS group_id
 FROM
     xdat_field_mapping m
-        LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
-        LEFT JOIN xdat_element_access e ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = e.xdat_element_access_id
-        LEFT JOIN xdat_usergroup g ON e.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+    LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
+    LEFT JOIN xdat_element_access e ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = e.xdat_element_access_id
+    LEFT JOIN xdat_usergroup g ON e.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
 WHERE
-        m.field = 'xnat:projectData/ID' AND
-        m.edit_element = 1 AND
-        g.id LIKE '%_member';
+    m.field = 'xnat:projectData/ID' AND
+    m.edit_element = 1 AND
+    g.id LIKE '%_member';
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_create_public_element_access(elementName VARCHAR(255))
     RETURNS BOOLEAN
@@ -198,10 +201,10 @@ BEGIN
         u.xdat_user_id
     FROM
         xdat_user u
-            LEFT JOIN xdat_element_access a ON u.xdat_user_id = a.xdat_user_xdat_user_id AND a.element_name = elementName
+        LEFT JOIN xdat_element_access a ON u.xdat_user_id = a.xdat_user_xdat_user_id AND a.element_name = elementName
     WHERE
         a.element_name IS NULL AND
-            u.login = 'guest';
+        u.login = 'guest';
 
     -- Creates a new field mapping set associated with the element access entry created above.
     -- The SELECT query finds the element access entry ID by searching for the entry with the
@@ -212,9 +215,9 @@ BEGIN
         a.xdat_element_access_id
     FROM
         xdat_element_access a
-            LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+        LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
     WHERE
-            a.element_name = elementName AND
+        a.element_name = elementName AND
         s.method IS NULL;
 
     -- Create the field mapping entries associated with the field mapping set created above. The WITH query
@@ -228,7 +231,7 @@ BEGIN
                             FROM
                                 project_access
                             WHERE
-                                    accessibility = 'public')
+                                accessibility = 'public')
     SELECT
         f.primary_security_field,
         p.project,
@@ -242,12 +245,12 @@ BEGIN
     FROM
         public_projects p,
         xdat_element_access a
-            LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
-            LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
-            LEFT JOIN xdat_primary_security_field f ON a.element_name = f.primary_security_fields_primary_element_name
+        LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+        LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
+        LEFT JOIN xdat_primary_security_field f ON a.element_name = f.primary_security_fields_primary_element_name
     WHERE
-            a.element_name = elementName AND
-            u.login = 'guest';
+        a.element_name = elementName AND
+        u.login = 'guest';
 
     RETURN TRUE;
 END
@@ -284,13 +287,13 @@ BEGIN
     FROM
         xdat_element_security
     WHERE
-            element_name = 'xnat:mrSessionData';
+        element_name = 'xnat:mrSessionData';
     INSERT INTO xdat_primary_security_field (primary_security_field, primary_security_fields_primary_element_name)
     VALUES
-    (elementName || '/project', elementName);
+        (elementName || '/project', elementName);
     INSERT INTO xdat_primary_security_field (primary_security_field, primary_security_fields_primary_element_name)
     VALUES
-    (elementName || '/sharing/share/project', elementName);
+        (elementName || '/sharing/share/project', elementName);
     RETURN elementName;
 END
 $_$;
@@ -352,11 +355,11 @@ BEGIN
                                        active_shared
                                    FROM
                                        (VALUES
-                                        ('Owners', 1, 1, 1, 1, 1, 0, 1, 0, 0, 1),
-                                        ('Members', 1, 1, 1, 0, 0, 0, 1, 0, 0, 0),
-                                        ('Collaborators', 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
-                                        ('ALL_DATA_ADMIN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-                                        ('ALL_DATA_ACCESS', 0, 1, 0, 0, 1, 0, 1, 0, 0, 1)) AS groupNames (groupNameOrId, create_element, read_element, edit_element, delete_element, active_element, create_shared, read_shared, edit_shared, delete_shared, active_shared))
+                                            ('Owners', 1, 1, 1, 1, 1, 0, 1, 0, 0, 1),
+                                            ('Members', 1, 1, 1, 0, 0, 0, 1, 0, 0, 0),
+                                            ('Collaborators', 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
+                                            ('ALL_DATA_ADMIN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                                            ('ALL_DATA_ACCESS', 0, 1, 0, 0, 1, 0, 1, 0, 0, 1)) AS groupNames (groupNameOrId, create_element, read_element, edit_element, delete_element, active_element, create_shared, read_shared, edit_shared, delete_shared, active_shared))
          SELECT
              f.primary_security_field AS field,
              f.primary_security_field LIKE '%/sharing/share/project' AS is_shared,
@@ -376,21 +379,22 @@ BEGIN
          FROM
              group_permissions p,
              xdat_usergroup g
-                 LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id AND a.element_name = elementName
-                 LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
-                 LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
-                 LEFT JOIN xdat_primary_security_field f ON a.element_name = f.primary_security_fields_primary_element_name
+             LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id AND a.element_name = elementName
+             LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+             LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+             LEFT JOIN xdat_primary_security_field f ON a.element_name = f.primary_security_fields_primary_element_name
          WHERE
-                 groupNameOrId IN (g.displayname, g.id) AND
+             groupNameOrId IN (g.displayname, g.id) AND
              m.field IS NULL AND
              (g.tag IS NOT NULL OR g.id IN ('ALL_DATA_ADMIN', 'ALL_DATA_ACCESS'))) m;
 
     SELECT
-            count(*) > 0 INTO has_public_projects
+        count(*) > 0
+    INTO has_public_projects
     FROM
         project_access
     WHERE
-            accessibility = 'public';
+        accessibility = 'public';
 
     IF has_public_projects
     THEN
@@ -409,7 +413,8 @@ DECLARE
     has_missing_mappings INTEGER;
 BEGIN
     SELECT
-        count(*) INTO has_missing_mappings
+        count(*)
+    INTO has_missing_mappings
     FROM
         data_type_views_missing_mapping_elements;
     IF has_missing_mappings > 0
@@ -445,7 +450,7 @@ BEGIN
             project_access a
         WHERE
             e.field_value IS NULL AND
-                a.accessibility = 'public';
+            a.accessibility = 'public';
     END IF;
     RETURN has_missing_mappings;
 END
@@ -480,10 +485,10 @@ $_$;
 -- statements required to regenerate the indices.
 CREATE OR REPLACE VIEW public.data_type_views_get_xnat_hash_indices AS
 SELECT
-  indexname,
-  regexp_replace(indexdef, E'[\n\r]+', ' ', 'g') AS recreate
+    indexname,
+    regexp_replace(indexdef, E'[\n\r]+', ' ', 'g') AS recreate
 FROM
-  pg_indexes
+    pg_indexes
 WHERE
     indexdef LIKE '%hash%' AND
     schemaname = 'public';
@@ -530,11 +535,11 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_data()
     RETURNS TABLE (
-                      project VARCHAR(255),
-                      id VARCHAR(255),
-                      label VARCHAR(255),
-                      element_name VARCHAR(250)
-                  ) AS
+        project      VARCHAR(255),
+        id           VARCHAR(255),
+        label        VARCHAR(255),
+        element_name VARCHAR(250))
+AS
 $$
 BEGIN
     RETURN QUERY SELECT
@@ -544,7 +549,7 @@ BEGIN
                      e.element_name
                  FROM
                      xnat_experimentdata x
-                         LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+                     LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
                  WHERE NOT data_type_fns_object_exists_in_table(x.id, e.element_name);
 END
 $$
@@ -552,12 +557,12 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_data()
     RETURNS TABLE (
-                      project VARCHAR(255),
-                      id VARCHAR(255),
-                      label VARCHAR(255),
-                      actual_element_name VARCHAR(250),
-                      expected_element_name VARCHAR(255)
-                  ) AS
+        project               VARCHAR(255),
+        id                    VARCHAR(255),
+        label                 VARCHAR(255),
+        actual_element_name   VARCHAR(250),
+        expected_element_name VARCHAR(255))
+AS
 $$
 BEGIN
     RETURN QUERY WITH
@@ -570,7 +575,7 @@ BEGIN
                      t.element_name AS located_element_name
                  FROM
                      data_type_fns_find_orphaned_data() o
-                         LEFT JOIN data_types t ON o.element_name != t.element_name
+                     LEFT JOIN data_types t ON o.element_name != t.element_name
                  WHERE data_type_fns_object_exists_in_table(o.id, t.element_name);
 END
 $$
@@ -590,15 +595,15 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_scans()
     RETURNS TABLE (
-                      project VARCHAR(255),
-                      label VARCHAR(255),
-                      id VARCHAR(255),
-                      xnat_imagescandata_id INTEGER,
-                      modality VARCHAR(255),
-                      type VARCHAR(255),
-                      series_description VARCHAR(255),
-                      element_name VARCHAR(250)
-                  ) AS
+        project               VARCHAR(255),
+        label                 VARCHAR(255),
+        id                    VARCHAR(255),
+        xnat_imagescandata_id INTEGER,
+        modality              VARCHAR(255),
+        type                  VARCHAR(255),
+        series_description    VARCHAR(255),
+        element_name          VARCHAR(250))
+AS
 $$
 BEGIN
     RETURN QUERY SELECT
@@ -612,9 +617,9 @@ BEGIN
                      e.element_name
                  FROM
                      xnat_imagescandata s
-                         LEFT JOIN xdat_meta_element e ON s.extension = e.xdat_meta_element_id
-                         LEFT JOIN xnat_imagesessiondata i ON s.image_session_id = i.id
-                         LEFT JOIN xnat_experimentdata x ON i.id = x.id
+                     LEFT JOIN xdat_meta_element e ON s.extension = e.xdat_meta_element_id
+                     LEFT JOIN xnat_imagesessiondata i ON s.image_session_id = i.id
+                     LEFT JOIN xnat_experimentdata x ON i.id = x.id
                  WHERE NOT data_type_fns_scan_exists_in_table(s.xnat_imagescandata_id, e.element_name);
 END
 $$
@@ -622,23 +627,23 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_scans()
     RETURNS TABLE (
-                      project VARCHAR(255),
-                      label VARCHAR(255),
-                      id VARCHAR(255),
-                      xnat_imagescandata_id INTEGER,
-                      modality VARCHAR(255),
-                      type VARCHAR(255),
-                      series_description VARCHAR(255),
-                      actual_element_name VARCHAR(250),
-                      expected_element_name VARCHAR(255)
-                  ) AS
+        project               VARCHAR(255),
+        label                 VARCHAR(255),
+        id                    VARCHAR(255),
+        xnat_imagescandata_id INTEGER,
+        modality              VARCHAR(255),
+        type                  VARCHAR(255),
+        series_description    VARCHAR(255),
+        actual_element_name   VARCHAR(250),
+        expected_element_name VARCHAR(255))
+AS
 $$
 BEGIN
     RETURN QUERY WITH
                      data_types AS (SELECT *
                                     FROM
                                         data_type_views_scan_data_types t
-                                            LEFT JOIN information_schema.columns c ON lower(t.table_name) = lower(c.table_name)
+                                        LEFT JOIN information_schema.columns c ON lower(t.table_name) = lower(c.table_name)
                                     WHERE element_name LIKE '%ScanData%' AND element_name NOT LIKE 'xnat:imageScanData%' AND column_name = 'xnat_imagescandata_id')
                  SELECT
                      o.project,
@@ -652,7 +657,7 @@ BEGIN
                      t.element_name AS located_element_name
                  FROM
                      data_type_fns_find_orphaned_scans() o
-                         LEFT JOIN data_types t ON o.element_name != t.element_name
+                     LEFT JOIN data_types t ON o.element_name != t.element_name
                  WHERE data_type_fns_scan_exists_in_table(o.xnat_imagescandata_id, t.element_name);
 END
 $$
@@ -673,7 +678,7 @@ BEGIN
              m.xdat_meta_element_id
          FROM
              data_type_fns_resolve_orphaned_scans() o
-                 LEFT JOIN xdat_meta_element m ON o.expected_element_name = m.element_name) orphans
+             LEFT JOIN xdat_meta_element m ON o.expected_element_name = m.element_name) orphans
     WHERE s.xnat_imagescandata_id = orphans.xnat_imagescandata_id;
     GET DIAGNOSTICS fixed_orphan_count = ROW_COUNT;
     RETURN fixed_orphan_count;
@@ -683,9 +688,9 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_correct_experiment_extension()
     RETURNS TABLE (
-                      orphaned_experiment VARCHAR(255),
-                      original_data_type VARCHAR(255)
-                  ) AS
+        orphaned_experiment VARCHAR(255),
+        original_data_type  VARCHAR(255))
+AS
 $$
 BEGIN
     WITH
@@ -727,17 +732,30 @@ END;
 $_$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_projects(entityId VARCHAR(255))
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS TABLE (
-                      field_value VARCHAR(255),
-                      field       VARCHAR(255))
+        field_value VARCHAR(255),
+        field       VARCHAR(255))
 AS
 $$
 DECLARE
-    found_entity_id BOOLEAN;
+    resolvedEntityId VARCHAR(255) DEFAULT NULL;
 BEGIN
-    SELECT EXISTS(SELECT TRUE FROM xnat_experimentdata WHERE id = entityId) INTO found_entity_id;
-    IF found_entity_id
+    IF projectId IS NULL
+    THEN
+        SELECT id FROM xnat_experimentdata WHERE id = entityId INTO resolvedEntityId;
+    ELSE
+        SELECT
+            x.id
+        FROM
+            xnat_experimentdata x
+            LEFT JOIN xnat_experimentdata_share s ON x.id = s.sharing_share_xnat_experimentda_id
+        WHERE
+            (x.label = entityId OR x.id = entityId) AND x.project = projectId OR
+            (s.label = entityId OR s.sharing_share_xnat_experimentda_id = entityId) AND s.project = projectId
+        INTO resolvedEntityId;
+    END IF;
+    IF resolvedEntityId IS NOT NULL
     THEN
         RETURN QUERY
             SELECT
@@ -746,7 +764,7 @@ BEGIN
             FROM
                 xnat_experimentdata x
                 LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
-            WHERE id = entityId
+            WHERE id = resolvedEntityId
             UNION
             SELECT
                 s.project AS field_value,
@@ -755,11 +773,24 @@ BEGIN
                 xnat_experimentdata_share s
                 LEFT JOIN xnat_experimentdata x ON s.sharing_share_xnat_experimentda_id = x.id
                 LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
-            WHERE sharing_share_xnat_experimentda_id = entityId;
+            WHERE sharing_share_xnat_experimentda_id = resolvedEntityId;
     END IF;
 
-    SELECT EXISTS(SELECT TRUE FROM xnat_subjectdata WHERE id = entityId) INTO found_entity_id;
-    IF found_entity_id
+    IF projectId IS NULL
+    THEN
+        SELECT id FROM xnat_subjectdata WHERE id = entityId INTO resolvedEntityId;
+    ELSE
+        SELECT
+            s.id
+        FROM
+            xnat_subjectdata s
+            LEFT JOIN xnat_projectparticipant p ON s.id = p.subject_id
+        WHERE
+            (s.label = entityId OR s.id = entityId) AND s.project = projectId OR
+            (p.label = entityId OR p.subject_id = entityId) AND p.project = projectId
+        INTO resolvedEntityId;
+    END IF;
+    IF resolvedEntityId IS NOT NULL
     THEN
         RETURN QUERY
             SELECT
@@ -767,18 +798,18 @@ BEGIN
                 'xnat:subjectData/project'::VARCHAR(255) AS field
             FROM
                 xnat_subjectdata
-            WHERE id = entityId
+            WHERE id = resolvedEntityId
             UNION
             SELECT
                 project AS field_value,
                 'xnat:subjectData/sharing/share/project'::VARCHAR(255) AS field
             FROM
                 xnat_projectparticipant
-            WHERE subject_id = entityId;
+            WHERE subject_id = resolvedEntityId;
     END IF;
 
-    SELECT EXISTS(SELECT TRUE FROM xnat_projectdata WHERE id = entityId) INTO found_entity_id;
-    IF found_entity_id
+    SELECT id FROM xnat_projectdata WHERE id = entityId INTO resolvedEntityId;
+    IF resolvedEntityId IS NOT NULL
     THEN
         RETURN QUERY
             SELECT
@@ -786,7 +817,7 @@ BEGIN
                 'xnat:projectData/ID'::VARCHAR(255) AS field
             FROM
                 xnat_projectdata
-            WHERE id = entityId;
+            WHERE id = resolvedEntityId;
     END IF;
 
     RETURN;
@@ -794,21 +825,21 @@ END
 $$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255))
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS TABLE (
-                      id         VARCHAR(255),
-                      field      VARCHAR(255),
-                      can_read   BOOLEAN,
-                      can_edit   BOOLEAN,
-                      can_create BOOLEAN,
-                      can_delete BOOLEAN,
-                      can_active BOOLEAN)
+        id         VARCHAR(255),
+        field      VARCHAR(255),
+        can_read   BOOLEAN,
+        can_edit   BOOLEAN,
+        can_create BOOLEAN,
+        can_delete BOOLEAN,
+        can_active BOOLEAN)
 AS
 $$
 BEGIN
     RETURN QUERY
         SELECT
-            g.id,
+            coalesce(g.id, u.login) AS id,
             m.field,
             m.read_element::BOOLEAN,
             m.edit_element::BOOLEAN,
@@ -820,24 +851,32 @@ BEGIN
             LEFT JOIN xdat_field_mapping_set s ON m.xdat_field_mapping_set_xdat_field_mapping_set_id = s.xdat_field_mapping_set_id
             LEFT JOIN xdat_element_access a ON s.permissions_allow_set_xdat_elem_xdat_element_access_id = a.xdat_element_access_id
             LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
-            LEFT JOIN xdat_user_groupid i ON g.id = i.groupid
-            LEFT JOIN xdat_user u ON i.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id
-            LEFT JOIN (SELECT * FROM data_type_fns_get_entity_projects(entityId)) p ON m.field = p.field AND m.field_value IN (p.field_value, '*')
+            LEFT JOIN xdat_user_groupid gi ON g.id = gi.groupid
+            LEFT JOIN xdat_user gu ON gi.groups_groupid_xdat_user_xdat_user_id = gu.xdat_user_id
+            LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
+            LEFT JOIN (SELECT * FROM data_type_fns_get_entity_projects(entityId, projectId)) p ON m.field = p.field AND m.field_value IN (p.field_value, '*')
         WHERE
             p.field IS NOT NULL AND
-            u.login = username;
+            (gu.login = username OR u.login IS NOT NULL);
 END
 $$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), entityId VARCHAR(255), action VARCHAR(15))
+CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS BOOLEAN
 AS
 $$
 DECLARE
+    query     VARCHAR(255);
     found_can BOOLEAN;
 BEGIN
-    EXECUTE format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'')', action, action, username, entityId) INTO found_can;
+    IF projectId IS NULL
+    THEN
+        query := format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'')', action, action, username, entityId);
+    ELSE
+        query := format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'', ''%s'')', action, action, username, entityId, projectId);
+    END IF;
+    EXECUTE query INTO found_can;
     RETURN found_can;
 END
 $$

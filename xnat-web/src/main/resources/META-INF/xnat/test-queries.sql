@@ -1,0 +1,147 @@
+-- To utilize this test query, create the following data context:
+--
+-- Create a public project (:publicProjectId)
+-- Create two private projects
+-- In the first private project (:sourceProjectId) create a subject (:sourceSubjectLabel and :subjectId) and an experiment (:sourceExptLabel and :experimentId)
+-- Share the subject (:sharedSubjectLabel) and experiment (:sharedExptLabel) from the first private project into the second private project (:sharedProjectId)
+-- Create three users and add them as members of the first private project, making them :owner, :member, and :collaborator respectively
+-- Make all three users collaborators on the second private project
+-- Run the query.
+--
+-- If all goes well, you'll get an empty string. If all DOESN'T go well, you'll get a comma-separated list of each scenario that failed.
+SELECT
+    concat_ws(', ',
+              CASE WHEN (owner_errors <> '') IS NOT TRUE THEN NULL ELSE owner_errors END,
+              CASE WHEN (member_errors <> '') IS NOT TRUE THEN NULL ELSE member_errors END,
+              CASE WHEN (collab_errors <> '') IS NOT TRUE THEN NULL ELSE collab_errors END) AS all_errors
+FROM
+    (SELECT
+         (SELECT
+              concat_ws(', ', owner_read_public, owner_edit_public, owner_read_xnat_01, owner_edit_xnat_01, owner_read_xnat_01_01, owner_edit_xnat_01_01, owner_delete_xnat_01_01, owner_read_xnat_01_01_mr_1,
+                        owner_edit_xnat_01_01_mr_1, owner_delete_xnat_01_01_mr_1, owner_read_xnat_01_xnat_s00002, owner_edit_xnat_01_xnat_s00002, owner_delete_xnat_01_xnat_s00002, owner_read_xnat_01_xnat_e00002,
+                        owner_edit_xnat_01_xnat_e00002, owner_delete_xnat_01_xnat_e00002, owner_read_xnat_02, owner_edit_xnat_02, owner_read_xnat_02_01, owner_edit_xnat_02_01, owner_delete_xnat_02_01,
+                        owner_read_xnat_02_01_mr_1, owner_edit_xnat_02_01_mr_1, owner_delete_xnat_02_01_mr_1, owner_read_xnat_02_xnat_s00002, owner_edit_xnat_02_xnat_s00002, owner_delete_xnat_02_xnat_s00002,
+                        owner_read_xnat_02_xnat_e00002, owner_edit_xnat_02_xnat_e00002, owner_delete_xnat_02_xnat_e00002, owner_read_xnat_01_xnat_02_01, owner_edit_xnat_01_xnat_02_01, owner_read_xnat_02_xnat_01_01,
+                        owner_edit_xnat_02_xnat_01_01)
+          FROM
+              (SELECT
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :publicProjectId) = TRUE) THEN NULL ELSE 'owner_read_public' END AS owner_read_public,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :publicProjectId) = FALSE) THEN NULL ELSE 'owner_edit_public' END AS owner_edit_public,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_01' END AS owner_read_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_01' END AS owner_edit_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_01_01' END AS owner_read_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_01_01' END AS owner_edit_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_01_01' END AS owner_delete_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_01_01_mr_1' END AS owner_read_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_01_01_mr_1' END AS owner_edit_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_01_01_mr_1' END AS owner_delete_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_01_xnat_s00002' END AS owner_read_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_01_xnat_s00002' END AS owner_edit_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_01_xnat_s00002' END AS owner_delete_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_01_xnat_e00002' END AS owner_read_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_01_xnat_e00002' END AS owner_edit_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_01_xnat_e00002' END AS owner_delete_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_02' END AS owner_read_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sharedProjectId) = FALSE) THEN NULL ELSE 'owner_edit_xnat_02' END AS owner_edit_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_02_01' END AS owner_read_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_02_01' END AS owner_edit_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_02_01' END AS owner_delete_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_02_01_mr_1' END AS owner_read_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_02_01_mr_1' END AS owner_edit_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_02_01_mr_1' END AS owner_delete_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_02_xnat_s00002' END AS owner_read_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_02_xnat_s00002' END AS owner_edit_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_02_xnat_s00002' END AS owner_delete_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_read_xnat_02_xnat_e00002' END AS owner_read_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_edit_xnat_02_xnat_e00002' END AS owner_edit_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'delete', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'owner_delete_xnat_02_xnat_e00002' END AS owner_delete_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sharedSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'owner_read_xnat_01_xnat_02_01' END AS owner_read_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sharedExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'owner_edit_xnat_01_xnat_02_01' END AS owner_edit_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'read', :sourceSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'owner_read_xnat_02_xnat_01_01' END AS owner_read_xnat_02_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:owner, 'edit', :sourceExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'owner_edit_xnat_02_xnat_01_01' END AS owner_edit_xnat_02_xnat_01_01) owner_results) AS owner_errors,
+         (SELECT
+              concat_ws(', ', member_read_public, member_edit_public, member_read_xnat_01, member_edit_xnat_01, member_read_xnat_01_01, member_edit_xnat_01_01, member_delete_xnat_01_01,
+                        member_read_xnat_01_01_mr_1, member_edit_xnat_01_01_mr_1, member_delete_xnat_01_01_mr_1, member_read_xnat_01_xnat_s00002, member_edit_xnat_01_xnat_s00002, member_delete_xnat_01_xnat_s00002,
+                        member_read_xnat_01_xnat_e00002, member_edit_xnat_01_xnat_e00002, member_delete_xnat_01_xnat_e00002, member_read_xnat_02, member_edit_xnat_02, member_read_xnat_02_01, member_edit_xnat_02_01,
+                        member_delete_xnat_02_01, member_read_xnat_02_01_mr_1, member_edit_xnat_02_01_mr_1, member_delete_xnat_02_01_mr_1, member_read_xnat_02_xnat_s00002, member_edit_xnat_02_xnat_s00002,
+                        member_delete_xnat_02_xnat_s00002, member_read_xnat_02_xnat_e00002, member_edit_xnat_02_xnat_e00002, member_delete_xnat_02_xnat_e00002, member_read_xnat_01_xnat_02_01, member_edit_xnat_01_xnat_02_01,
+                        member_read_xnat_02_xnat_01_01, member_edit_xnat_02_xnat_01_01)
+          FROM
+              (SELECT
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :publicProjectId) = TRUE) THEN NULL ELSE 'member_read_public' END AS member_read_public,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :publicProjectId) = FALSE) THEN NULL ELSE 'member_edit_public' END AS member_edit_public,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sourceProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_01' END AS member_read_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sourceProjectId) = FALSE) THEN NULL ELSE 'member_edit_xnat_01' END AS member_edit_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_01_01' END AS member_read_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_01_01' END AS member_edit_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :sourceSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_01_01' END AS member_delete_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_01_01_mr_1' END AS member_read_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_01_01_mr_1' END AS member_edit_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :sourceExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_01_01_mr_1' END AS member_delete_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_01_xnat_s00002' END AS member_read_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_01_xnat_s00002' END AS member_edit_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :subjectId, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_01_xnat_s00002' END AS member_delete_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_01_xnat_e00002' END AS member_read_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_01_xnat_e00002' END AS member_edit_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :experimentId, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_01_xnat_e00002' END AS member_delete_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sharedProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_02' END AS member_read_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sharedProjectId) = FALSE) THEN NULL ELSE 'member_edit_xnat_02' END AS member_edit_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_02_01' END AS member_read_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_02_01' END AS member_edit_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :sharedSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_02_01' END AS member_delete_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_02_01_mr_1' END AS member_read_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_02_01_mr_1' END AS member_edit_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :sharedExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_02_01_mr_1' END AS member_delete_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_02_xnat_s00002' END AS member_read_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_02_xnat_s00002' END AS member_edit_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :subjectId, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_02_xnat_s00002' END AS member_delete_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_read_xnat_02_xnat_e00002' END AS member_read_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'member_edit_xnat_02_xnat_e00002' END AS member_edit_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'delete', :experimentId, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_delete_xnat_02_xnat_e00002' END AS member_delete_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sharedSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_read_xnat_01_xnat_02_01' END AS member_read_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sharedExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'member_edit_xnat_01_xnat_02_01' END AS member_edit_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'read', :sourceSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_read_xnat_02_xnat_01_01' END AS member_read_xnat_02_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:member, 'edit', :sourceExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'member_edit_xnat_02_xnat_01_01' END AS member_edit_xnat_02_xnat_01_01) member_results) AS member_errors,
+         (SELECT
+              concat_ws(', ', collab_read_public, collab_edit_public, collab_read_xnat_01, collab_edit_xnat_01, collab_read_xnat_01_01, collab_edit_xnat_01_01, collab_delete_xnat_01_01,
+                        collab_read_xnat_01_01_mr_1, collab_edit_xnat_01_01_mr_1, collab_delete_xnat_01_01_mr_1, collab_read_xnat_01_xnat_s00002, collab_edit_xnat_01_xnat_s00002, collab_delete_xnat_01_xnat_s00002,
+                        collab_read_xnat_01_xnat_e00002, collab_edit_xnat_01_xnat_e00002, collab_delete_xnat_01_xnat_e00002, collab_read_xnat_02, collab_edit_xnat_02, collab_read_xnat_02_01, collab_edit_xnat_02_01,
+                        collab_delete_xnat_02_01, collab_read_xnat_02_01_mr_1, collab_edit_xnat_02_01_mr_1, collab_delete_xnat_02_01_mr_1, collab_read_xnat_02_xnat_s00002, collab_edit_xnat_02_xnat_s00002,
+                        collab_delete_xnat_02_xnat_s00002, collab_read_xnat_02_xnat_e00002, collab_edit_xnat_02_xnat_e00002, collab_delete_xnat_02_xnat_e00002, collab_read_xnat_01_xnat_02_01,
+                        collab_edit_xnat_01_xnat_02_01, collab_read_xnat_02_xnat_01_01, collab_edit_xnat_02_xnat_01_01)
+          FROM
+              (SELECT
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :publicProjectId) = TRUE) THEN NULL ELSE 'collab_read_public' END AS collab_read_public,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :publicProjectId) = FALSE) THEN NULL ELSE 'collab_edit_public' END AS collab_edit_public,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sourceProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_01' END AS collab_read_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01' END AS collab_edit_xnat_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sourceSubjectLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_01_01' END AS collab_read_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sourceSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01_01' END AS collab_edit_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :sourceSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_01_01' END AS collab_delete_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sourceExptLabel, :sourceProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_01_01_mr_1' END AS collab_read_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sourceExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01_01_mr_1' END AS collab_edit_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :sourceExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_01_01_mr_1' END AS collab_delete_xnat_01_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :subjectId, :sourceProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_01_xnat_s00002' END AS collab_read_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :subjectId, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01_xnat_s00002' END AS collab_edit_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :subjectId, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_01_xnat_s00002' END AS collab_delete_xnat_01_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :experimentId, :sourceProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_01_xnat_e00002' END AS collab_read_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :experimentId, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01_xnat_e00002' END AS collab_edit_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :experimentId, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_01_xnat_e00002' END AS collab_delete_xnat_01_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sharedProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_02' END AS collab_read_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02' END AS collab_edit_xnat_02,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sharedSubjectLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_02_01' END AS collab_read_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sharedSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02_01' END AS collab_edit_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :sharedSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_02_01' END AS collab_delete_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sharedExptLabel, :sharedProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_02_01_mr_1' END AS collab_read_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sharedExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02_01_mr_1' END AS collab_edit_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :sharedExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_02_01_mr_1' END AS collab_delete_xnat_02_01_mr_1,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :subjectId, :sharedProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_02_xnat_s00002' END AS collab_read_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :subjectId, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02_xnat_s00002' END AS collab_edit_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :subjectId, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_02_xnat_s00002' END AS collab_delete_xnat_02_xnat_s00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :experimentId, :sharedProjectId) = TRUE) THEN NULL ELSE 'collab_read_xnat_02_xnat_e00002' END AS collab_read_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :experimentId, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02_xnat_e00002' END AS collab_edit_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'delete', :experimentId, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_delete_xnat_02_xnat_e00002' END AS collab_delete_xnat_02_xnat_e00002,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sharedSubjectLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_read_xnat_01_xnat_02_01' END AS collab_read_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sharedExptLabel, :sourceProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_01_xnat_02_01' END AS collab_edit_xnat_01_xnat_02_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'read', :sourceSubjectLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_read_xnat_02_xnat_01_01' END AS collab_read_xnat_02_xnat_01_01,
+                   CASE WHEN (SELECT data_type_fns_can(:collaborator, 'edit', :sourceExptLabel, :sharedProjectId) = FALSE) THEN NULL ELSE 'collab_edit_xnat_02_xnat_01_01' END AS collab_edit_xnat_02_xnat_01_01) collab_results) AS collab_errors) all_errors;

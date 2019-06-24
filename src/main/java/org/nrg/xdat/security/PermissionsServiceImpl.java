@@ -50,6 +50,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -344,27 +345,52 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(final UserI user, final String entityId) {
-        return can(user.getUsername(), entityId, READ);
+        return can(user.getUsername(), READ, null, entityId);
     }
 
     @Override
     public boolean canEdit(final UserI user, final String entityId) {
-        return can(user.getUsername(), entityId, EDIT);
+        return can(user.getUsername(), EDIT, null, entityId);
     }
 
     @Override
     public boolean canCreate(final UserI user, final String entityId) {
-        return can(user.getUsername(), entityId, CREATE);
+        return can(user.getUsername(), CREATE, null, entityId);
     }
 
     @Override
     public boolean canDelete(final UserI user, final String entityId) {
-        return can(user.getUsername(), entityId, DELETE);
+        return can(user.getUsername(), DELETE, null, entityId);
     }
 
     @Override
     public boolean canActivate(final UserI user, final String entityId) {
-        return can(user.getUsername(), entityId, ACTIVATE);
+        return can(user.getUsername(), ACTIVATE, null, entityId);
+    }
+
+    @Override
+    public boolean canRead(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), READ, project, entityId);
+    }
+
+    @Override
+    public boolean canEdit(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), EDIT, project, entityId);
+    }
+
+    @Override
+    public boolean canCreate(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), CREATE, project, entityId);
+    }
+
+    @Override
+    public boolean canDelete(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), DELETE, project, entityId);
+    }
+
+    @Override
+    public boolean canActivate(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), ACTIVATE, project, entityId);
     }
 
     @Override
@@ -530,28 +556,33 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _cache.getProjectsForUser(username, SecurityManager.DELETE);
     }
 
-    private boolean can(final String username, final String entityId, final String action) {
-        final String query;
+    private boolean can(final @Nonnull String username, final @Nonnull String action, final @Nullable String projectId, final @Nonnull String entityId) {
+        final boolean hasProjectId = StringUtils.isNotBlank(projectId);
+        final String  query;
         switch (action) {
             case SecurityManager.READ:
-                query = QUERY_CAN_USER_READ_ID;
+                query = hasProjectId ? QUERY_CAN_USER_READ_ID_IN_PROJECT : QUERY_CAN_USER_READ_ID;
                 break;
             case EDIT:
-                query = QUERY_CAN_USER_EDIT_ID;
+                query = hasProjectId ? QUERY_CAN_USER_EDIT_ID_IN_PROJECT : QUERY_CAN_USER_EDIT_ID;
                 break;
             case CREATE:
-                query = QUERY_CAN_USER_CREATE_ID;
+                query = hasProjectId ? QUERY_CAN_USER_CREATE_ID_IN_PROJECT : QUERY_CAN_USER_CREATE_ID;
                 break;
             case DELETE:
-                query = QUERY_CAN_USER_DELETE_ID;
+                query = hasProjectId ? QUERY_CAN_USER_DELETE_ID_IN_PROJECT : QUERY_CAN_USER_DELETE_ID;
                 break;
             case ACTIVATE:
-                query = QUERY_CAN_USER_ACTIVE_ID;
+                query = hasProjectId ? QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT : QUERY_CAN_USER_ACTIVE_ID;
                 break;
             default:
                 throw new IllegalArgumentException("Action must be one of read, edit, create, delete, or active. Invalid: " + action);
         }
-        return _template.queryForObject(query, new MapSqlParameterSource("username", username).addValue("entityId", entityId), Boolean.class);
+        final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username).addValue("entityId", entityId);
+        if (hasProjectId) {
+            parameters.addValue("projectId", projectId);
+        }
+        return _template.queryForObject(query, parameters, Boolean.class);
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -896,82 +927,87 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
     }
 
-    private static final String GUEST_USERNAME                     = "guest";
-    private static final String QUERY_USER_ELEMENT_ACCESS          = "SELECT  " +
-                                                                     "  xdat_element_access_id  " +
-                                                                     "FROM  " +
-                                                                     "  xdat_element_access a  " +
-                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id  " +
-                                                                     "    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id  " +
-                                                                     "WHERE  " +
-                                                                     "  a.element_name = :elementName AND  " +
-                                                                     "  (u.login = :identifier OR g.id = :identifier)";
-    private static final String QUERY_USER_READABLE_ELEMENTS       = "SELECT " +
-                                                                     "  a.element_name, " +
-                                                                     "  m.field, " +
-                                                                     "  m.field_value " +
-                                                                     "FROM xdat_user u " +
-                                                                     "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
-                                                                     "  LEFT JOIN xdat_usergroup g on i.groupid = g.id " +
-                                                                     "  LEFT JOIN xdat_element_access a on (xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
-                                                                     "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "  LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  m.field_value != '*' AND " +
-                                                                     "  m.read_element = 1 AND " +
-                                                                     "  u.login IN ('guest', '%s')";
-    private static final String QUERY_FIELD_MAPPING                = "SELECT " +
-                                                                     "  m.xdat_field_mapping_id AS fieldMappingId " +
-                                                                     "FROM " +
-                                                                     "  xdat_element_access a " +
-                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  u.login = 'guest' AND " +
-                                                                     "  m.field = :field AND " +
-                                                                     "  m.field_value = :projectId";
-    private static final String QUERY_FIELD_MAPPING_EXISTS         = "SELECT EXISTS(" + QUERY_FIELD_MAPPING + ")";
-    private static final String QUERY_FIND_ORPHAN_ELEMENT_ACCESS   = "SELECT " +
-                                                                     "  a.xdat_element_access_id " +
-                                                                     "FROM " +
-                                                                     "  xdat_element_access a " +
-                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "WHERE " +
-                                                                     "  s.permissions_allow_set_xdat_elem_xdat_element_access_id IS NULL";
-    private static final String QUERY_FIND_ORPHAN_MAPPING_SETS     = "SELECT " +
-                                                                     "  s.xdat_field_mapping_set_id " +
-                                                                     "FROM " +
-                                                                     "  xdat_field_mapping_set s " +
-                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
-    private static final String QUERY_MAKE_FIELD_MAPPING_PROTECTED = "UPDATE " +
-                                                                     "  xdat_field_mapping " +
-                                                                     "SET " +
-                                                                     "  create_element = 0, " +
-                                                                     "  read_element = 1, " +
-                                                                     "  edit_element = 0, " +
-                                                                     "  delete_element = 0, " +
-                                                                     "  active_element = 0 " +
-                                                                     "WHERE " +
-                                                                     "  xdat_field_mapping_id = :fieldMappingId";
-    private static final String QUERY_MAKE_FIELD_MAPPING_PUBLIC    = "UPDATE " +
-                                                                     "  xdat_field_mapping " +
-                                                                     "SET " +
-                                                                     "  create_element = 0, " +
-                                                                     "  read_element = 1, " +
-                                                                     "  edit_element = 0, " +
-                                                                     "  delete_element = 0, " +
-                                                                     "  active_element = 1 " +
-                                                                     "WHERE " +
-                                                                     "  xdat_field_mapping_id = :fieldMappingId";
-    private static final String QUERY_GET_USER_PERMS_FOR_ID        = "SELECT * FROM data_type_fns_get_entity_permissions(:username, :entityId)";
-    private static final String QUERY_CAN_USER_READ_ID             = "SELECT data_type_fns_can(:username, :entityId, 'read') AS can_read";
-    private static final String QUERY_CAN_USER_EDIT_ID             = "SELECT data_type_fns_can(:username, :entityId, 'edit') AS can_edit";
-    private static final String QUERY_CAN_USER_CREATE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'create') AS can_create";
-    private static final String QUERY_CAN_USER_DELETE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'delete') AS can_delete";
-    private static final String QUERY_CAN_USER_ACTIVE_ID           = "SELECT data_type_fns_can(:username, :entityId, 'active') AS can_active";
+    private static final String GUEST_USERNAME                      = "guest";
+    private static final String QUERY_USER_ELEMENT_ACCESS           = "SELECT  " +
+                                                                      "  xdat_element_access_id  " +
+                                                                      "FROM  " +
+                                                                      "  xdat_element_access a  " +
+                                                                      "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id  " +
+                                                                      "    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id  " +
+                                                                      "WHERE  " +
+                                                                      "  a.element_name = :elementName AND  " +
+                                                                      "  (u.login = :identifier OR g.id = :identifier)";
+    private static final String QUERY_USER_READABLE_ELEMENTS        = "SELECT " +
+                                                                      "  a.element_name, " +
+                                                                      "  m.field, " +
+                                                                      "  m.field_value " +
+                                                                      "FROM xdat_user u " +
+                                                                      "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
+                                                                      "  LEFT JOIN xdat_usergroup g on i.groupid = g.id " +
+                                                                      "  LEFT JOIN xdat_element_access a on (xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
+                                                                      "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "  LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  m.field_value != '*' AND " +
+                                                                      "  m.read_element = 1 AND " +
+                                                                      "  u.login IN ('guest', '%s')";
+    private static final String QUERY_FIELD_MAPPING                 = "SELECT " +
+                                                                      "  m.xdat_field_mapping_id AS fieldMappingId " +
+                                                                      "FROM " +
+                                                                      "  xdat_element_access a " +
+                                                                      "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                                      "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  u.login = 'guest' AND " +
+                                                                      "  m.field = :field AND " +
+                                                                      "  m.field_value = :projectId";
+    private static final String QUERY_FIELD_MAPPING_EXISTS          = "SELECT EXISTS(" + QUERY_FIELD_MAPPING + ")";
+    private static final String QUERY_FIND_ORPHAN_ELEMENT_ACCESS    = "SELECT " +
+                                                                      "  a.xdat_element_access_id " +
+                                                                      "FROM " +
+                                                                      "  xdat_element_access a " +
+                                                                      "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "WHERE " +
+                                                                      "  s.permissions_allow_set_xdat_elem_xdat_element_access_id IS NULL";
+    private static final String QUERY_FIND_ORPHAN_MAPPING_SETS      = "SELECT " +
+                                                                      "  s.xdat_field_mapping_set_id " +
+                                                                      "FROM " +
+                                                                      "  xdat_field_mapping_set s " +
+                                                                      "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
+    private static final String QUERY_MAKE_FIELD_MAPPING_PROTECTED  = "UPDATE " +
+                                                                      "  xdat_field_mapping " +
+                                                                      "SET " +
+                                                                      "  create_element = 0, " +
+                                                                      "  read_element = 1, " +
+                                                                      "  edit_element = 0, " +
+                                                                      "  delete_element = 0, " +
+                                                                      "  active_element = 0 " +
+                                                                      "WHERE " +
+                                                                      "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String QUERY_MAKE_FIELD_MAPPING_PUBLIC     = "UPDATE " +
+                                                                      "  xdat_field_mapping " +
+                                                                      "SET " +
+                                                                      "  create_element = 0, " +
+                                                                      "  read_element = 1, " +
+                                                                      "  edit_element = 0, " +
+                                                                      "  delete_element = 0, " +
+                                                                      "  active_element = 1 " +
+                                                                      "WHERE " +
+                                                                      "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String QUERY_GET_USER_PERMS_FOR_ID         = "SELECT * FROM data_type_fns_get_entity_permissions(:username, :entityId)";
+    private static final String QUERY_CAN_USER_READ_ID              = "SELECT data_type_fns_can(:username, 'read', :entityId) AS can_read";
+    private static final String QUERY_CAN_USER_EDIT_ID              = "SELECT data_type_fns_can(:username, 'edit', :entityId) AS can_edit";
+    private static final String QUERY_CAN_USER_CREATE_ID            = "SELECT data_type_fns_can(:username, 'create', :entityId) AS can_create";
+    private static final String QUERY_CAN_USER_DELETE_ID            = "SELECT data_type_fns_can(:username, 'delete', :entityId) AS can_delete";
+    private static final String QUERY_CAN_USER_ACTIVE_ID            = "SELECT data_type_fns_can(:username, 'active', :entityId) AS can_active";
+    private static final String QUERY_CAN_USER_READ_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'read', :entityId, :projectId) AS can_read";
+    private static final String QUERY_CAN_USER_EDIT_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'edit', :entityId, :projectId) AS can_edit";
+    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'create', :entityId, :projectId) AS can_create";
+    private static final String QUERY_CAN_USER_DELETE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'delete', :entityId, :projectId) AS can_delete";
+    private static final String QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'active', :entityId, :projectId) AS can_active";
 
     private final DataTypeAwareEventService  _eventService;
     private final NamedParameterJdbcTemplate _template;

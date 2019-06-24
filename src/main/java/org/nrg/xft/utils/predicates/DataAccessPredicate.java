@@ -164,17 +164,17 @@ public abstract class DataAccessPredicate implements Predicate<String> {
      * @throws Exception When an error occurs.
      */
     protected boolean evaluate(final UserI user, final Map<String, Object> properties, final String entityId) throws Exception {
-        if (StringUtils.isNotBlank(getProject())) {
-            final String securedProperty = (String) properties.get("secured_property");
+        final String projectId = getProject();
+        if (StringUtils.isNotBlank(projectId)) {
             switch (getAccessLevel()) {
                 case Delete:
-                    return getService().canDelete(user, securedProperty, getProject());
+                    return getService().canDelete(user, getProject(), entityId);
 
                 case Edit:
-                    return getService().canEdit(user, securedProperty, getProject());
+                    return getService().canEdit(user, getProject(), entityId);
 
                 default:
-                    return getService().canRead(user, securedProperty, getProject());
+                    return getService().canRead(user, getProject(), entityId);
             }
         }
         final String primaryId;

@@ -282,7 +282,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
 
     private static final String QUERY_PROJECT                    = "SELECT " +
                                                                    "    id AS project_id, " +
-                                                                   "    CASE WHEN :access = 'read' THEN 'xnat:subjectData/property' ELSE 'xnat:projectData/ID' END AS secured_property " +
+                                                                   "    CASE WHEN :access = 'read' THEN 'xnat:subjectData/project' ELSE 'xnat:projectData/ID' END AS secured_property " +
                                                                    "FROM " +
                                                                    "    xnat_projectdata " +
                                                                    "WHERE id = :prj";

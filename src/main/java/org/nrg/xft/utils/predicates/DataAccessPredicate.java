@@ -286,7 +286,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "FROM " +
                                                                    "    xnat_projectdata " +
                                                                    "WHERE id = :prj";
-    private static final String QUERY_SUBJECT                    = "SELECT id AS subject_id, 'xnat:subjectData/project' AS secured_property FROM xnat_subjectdata WHERE id = :subj";
+    private static final String QUERY_SUBJECT                    = "SELECT id AS subject_id FROM xnat_subjectdata WHERE id = :subj";
     private static final String QUERY_EXPERIMENT                 = "SELECT " +
                                                                    "    e.id AS experiment_id, " +
                                                                    "    e.label AS experiment_label, " +

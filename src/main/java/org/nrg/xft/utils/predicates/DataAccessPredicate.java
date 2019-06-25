@@ -188,15 +188,29 @@ public abstract class DataAccessPredicate implements Predicate<String> {
             default:
                 primaryId = (String) properties.get("experiment_id");
         }
-        switch (getAccessLevel()) {
-            case Delete:
-                return getService().canDelete(user, primaryId);
+        if (properties.containsKey("secured_property")) {
+            final String securedProperty = (String) properties.get("secured_property");
+            switch (getAccessLevel()) {
+                case Delete:
+                    return getService().canDelete(user, securedProperty, (Object) primaryId);
 
-            case Edit:
-                return getService().canEdit(user, primaryId);
+                case Edit:
+                    return getService().canEdit(user, securedProperty, (Object) primaryId);
 
-            default:
-                return getService().canRead(user, primaryId);
+                default:
+                    return getService().canRead(user, securedProperty, (Object) primaryId);
+            }
+        } else {
+            switch (getAccessLevel()) {
+                case Delete:
+                    return getService().canDelete(user, primaryId);
+
+                case Edit:
+                    return getService().canEdit(user, primaryId);
+
+                default:
+                    return getService().canRead(user, primaryId);
+            }
         }
     }
 

@@ -9,6 +9,7 @@
 
 ##Section of Manage tab that starts the Project Resource Configuration dialog
 <!-- Sequence: 100 -->
+#if($user.checkFeature($om,"configurable_resource_uploader"))
 #if($data.getSession().getAttribute("userHelper").canCreate($project))
 <h3>Project Resource Settings</h3>
 <div>
@@ -192,4 +193,5 @@
 
         </style>
 </div>
+#end
 #end

@@ -701,9 +701,8 @@ public class CatalogUtils {
         final AtomicInteger modded = new AtomicInteger(0);
 
         //For resource stats
-        final AtomicLong size = new AtomicLong(catalogData.catRes.getFileSize() == null ? 0 :
-                (Long) catalogData.catRes.getFileSize());
-        final AtomicInteger count = new AtomicInteger(catalogData.catRes.getFileCount());
+        final AtomicLong size = new AtomicLong(0);
+        final AtomicInteger count = new AtomicInteger(0);
 
         //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
@@ -714,7 +713,6 @@ public class CatalogUtils {
             Files.walkFileTree(catalogPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    long delta;
                     boolean mod = false;
                     File f = file.toFile();
 
@@ -732,16 +730,11 @@ public class CatalogUtils {
                     }
 
                     //check if file exists in catalog already
-                    final String absolutePath = f.getAbsolutePath();
                     final String relative = catalogPath.relativize(f.toPath()).toString();
 
                     if (catalogMap.containsKey(relative)) {
                         CatalogMapEntry mapEntry = catalogMap.get(relative);
                         mapEntry.entryExists = true; //mark that file exists
-                        if (populateStats && (delta = attrs.size() - getCatalogEntrySize(mapEntry.entry)) != 0) {
-                            // Already included in count
-                            size.getAndAdd(delta);
-                        }
                         mod = updateExistingCatEntry(mapEntry.entry, null, relative, f.getName(), attrs.size(),
                                 checksums ? getHash(f) : null, eventMeta);
                         if (mod) modded.getAndIncrement();
@@ -750,24 +743,16 @@ public class CatalogUtils {
                             //this used to be run as part of writeCatalogFile
                             String digest = checksums ? getHash(f) : null;
 
-                            populateAndAddCatEntry(catalogData.catBean, relative, relative, f.getName(),
-                                    attrs.size(), info, digest);
+                            CatEntryBean entry = populateAndAddCatEntry(catalogData.catBean, relative, relative,
+                                    f.getName(), attrs.size(), info, digest);
+                            catalogMap.put(relative, new CatalogMapEntry(entry, catalogData.catBean, true));
 
                             mod = true;
-
-                            //this used to be run as populateStats
-                            //this conditional has to be inside the "addUnreferencedFiles" conditional so that the stats
-                            //don't go out of sync with the catalog (if files aren't added, they shouldn't be recounted)
-                            if (populateStats) {
-                                size.getAndAdd(attrs.size());
-                                count.getAndIncrement();
-                            }
-
                             added.getAndIncrement();
                         }
                     }
 
-                    //if we traverse any file and modify its entry, set rtn=1
+                    //if we traverse any file and add or modify its entry, set rtn=1
                     //if no file entries are modified during the whole walk, rtn will remain 0
                     if (mod) rtn.set(1);
 
@@ -803,9 +788,14 @@ public class CatalogUtils {
         modified = rtn_val == 1;
 
         int nremoved = 0;
-        if (removeMissingFiles) {
+        if (removeMissingFiles || populateStats) {
             for (CatalogMapEntry mapEntry : catalogMap.values()) {
-                if (!mapEntry.entryExists) {
+                if (mapEntry.entryExists) {
+                    if (populateStats) {
+                        size.getAndAdd(getCatalogEntrySize(mapEntry.entry));
+                        count.getAndIncrement();
+                    }
+                } else if (removeMissingFiles) {
                     //File wasn't visited, doesn't exist, remove from catalog
                     mapEntry.catalog.getEntries_entry().remove(mapEntry.entry);
                     modified = true;
@@ -834,7 +824,7 @@ public class CatalogUtils {
         // while walking the file tree. If removeMissingFiles isn't specified, file count & size
         // won't match the catalog xml. This has always been the case, since you can't compute file size for
         // a non-existent file. It used to implicitly addUnreferencedFiles, too (see populateStats method).
-        if (populateStats) {
+        if (populateStats && catalogData.catRes != null) {
             Integer c = count.get();
             Long s = size.get();
             if (!c.equals(catalogData.catRes.getFileCount())) {
@@ -892,7 +882,7 @@ public class CatalogUtils {
      * @return map
      */
     public static Map<String, CatalogMapEntry> buildCatalogMap(CatalogData catalogData,
-                                                                   boolean bothUriAndLocalPathAsKeys) {
+                                                               boolean bothUriAndLocalPathAsKeys) {
         return buildCatalogMap(catalogData.catBean, catalogData.catPath, bothUriAndLocalPathAsKeys);
     }
 
@@ -910,8 +900,8 @@ public class CatalogUtils {
      * @return map
      */
     private static Map<String, CatalogMapEntry> buildCatalogMap(CatCatalogI cat,
-                                                                    String catPath,
-                                                                    boolean bothUriAndLocalPathAsKeys) {
+                                                                String catPath,
+                                                                boolean bothUriAndLocalPathAsKeys) {
 
         Map<String, CatalogMapEntry> catalogMap = new HashMap<>();
         RemoteFilesService remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class);

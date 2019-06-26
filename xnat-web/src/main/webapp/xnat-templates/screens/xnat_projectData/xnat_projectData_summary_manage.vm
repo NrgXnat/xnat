@@ -451,6 +451,7 @@
         </script>
     </div>
 
+#if(!$siteConfig.getBooleanValue("uiHideProjectManageEventHandlers"))
     <h3>Event Handlers</h3>
     <div id="events_list" style="min-height:120px;">
         ##<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
@@ -475,6 +476,7 @@
             <button type="button" id="import_event_handlers" class="btn1" style="font-size:12px;">Import Event Handlers</button>
         #end
     </div>
+#end
 
     #addCustomScreens($project.getXSIType() "report/manage_tab")
 

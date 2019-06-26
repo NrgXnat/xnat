@@ -10,7 +10,7 @@
 #end
 $sectionTitle
 
-#if(!$siteConfig.getBooleanValue("hideXnatDesktopClientDownload"))
+#if(!$siteConfig.getBooleanValue("uiHideXnatDesktopClientDownload"))
     <h3>Use the new XNAT Desktop Client for Uploads and Downloads</h3>
     <p style="width: 500px">
         The new <a href="https://download.xnat.org/desktop-client/" target="_blank" style="font-weight: bold">XNAT Desktop Client</a>,
@@ -29,7 +29,7 @@ $sectionTitle
     </p>
 #end
 
-#if(!$siteConfig.getBooleanValue("hideXnatUploadAssistantDownload"))
+#if(!$siteConfig.getBooleanValue("uiHideXnatUploadAssistantDownload"))
     <h3>Download the XNAT Upload Assistant</h3>
     <p style="width: 500px">
         You can upload DICOM and ECAT files using the <a href="https://download.xnat.org/upload-assistant/" target="_blank" style="font-weight: bold">XNAT Upload Assistant</a>.

@@ -298,18 +298,22 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "WHERE " +
                                                                    "    e.id = :experiment";
     private static final String QUERY_PROJECT_SUBJECT            = "SELECT " +
-                                                                   "    p.id AS project_id, " +
-                                                                   "    COALESCE(s.id, ss.id) AS subject_id, " +
-                                                                   "    COALESCE(pp.label, s.label) AS subject_label, " +
-                                                                   "    'xnat:subjectData' || CASE WHEN pp.project = :prj THEN '/sharing/share/project' ELSE '/project' END AS secured_property " +
+                                                                   "    s.id, " +
+                                                                   "    p.id " +
                                                                    "FROM " +
-                                                                   "    xnat_projectdata p " +
-                                                                   "    LEFT JOIN xnat_subjectdata s ON p.id = s.project " +
-                                                                   "    LEFT JOIN xnat_projectparticipant pp ON p.id = pp.project " +
-                                                                   "    LEFT JOIN xnat_subjectdata ss ON pp.subject_id = ss.id " +
+                                                                   "    xnat_subjectdata s " +
+                                                                   "    LEFT JOIN xnat_projectdata p ON s.project = p.id " +
                                                                    "WHERE " +
-                                                                   "    (pp.project = :prj AND (pp.label = :subj OR pp.subject_id = :subj)) OR " +
-                                                                   "    (s.project = :prj AND (s.label = :subj OR s.id = :subj))";
+                                                                   "    (s.id = :subj OR s.label = :subj) AND p.id = :prj " +
+                                                                   "UNION " +
+                                                                   "SELECT " +
+                                                                   "    pp.subject_id, " +
+                                                                   "    p.id " +
+                                                                   "FROM " +
+                                                                   "    xnat_projectparticipant pp " +
+                                                                   "    LEFT JOIN xnat_projectdata p ON pp.project = p.id " +
+                                                                   "WHERE " +
+                                                                   "    (pp.subject_id = :subj OR pp.label = :subj) AND p.id = :prj; ";
     private static final String QUERY_PROJECT_EXPERIMENT         = "SELECT " +
                                                                    "    COALESCE(p.project, s.project) AS project_id, " +
                                                                    "    COALESCE(p.label, s.label) AS subject_label, " +

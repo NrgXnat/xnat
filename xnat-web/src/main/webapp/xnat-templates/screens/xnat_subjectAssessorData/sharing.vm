@@ -142,25 +142,32 @@ $om.getAssessmentCount($pp.getProperty("project"))
       cancelAction: function(){}
       });
     });
-				
-				function restShare(){
-				  if(document.getElementById("s_projects").selectedIndex>0){
-   window.Sharer=new RestSharer(_a,{defaultHeight:450,defaultWidth:700,project:{id:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].value,label:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].text}});
-   window.Sharer.init();
-   window.Sharer.oncomplete.subscribe(function(e,args){
-     var newSP={id:window.Sharer.config.project.id,
-     name:window.Sharer.config.project.label,
-     label:args[0],
-     group:"",
-     expts:0};
-		window.cfDT.addRow(newSP);
-		XNAT.app.shared_projects.push(newSP);
-     document.getElementById("s_projects").remove(document.getElementById("s_projects").selectedIndex);
-     document.getElementById("s_projects").selectedIndex=0;
-     refreshSharing();
-		   },this,this);
-				  }else{
-                      xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().toLowerCase().");
-				  }
-				}
+
+function restShare(){
+	if(document.getElementById("s_projects").selectedIndex>0){
+		window.Sharer=new RestSharer(_a,{defaultHeight:450,defaultWidth:700,project:{id:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].value,label:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].text}});
+		window.Sharer.init();
+		
+		window.Sharer.oncomplete.subscribe(function(e,args){
+			if(args[1] != "$displayManager.getSingularDisplayNameForElement($om.getXSIType())"){
+				return; // Don't update the table if we shared an assessor of this data type 
+			}
+			var newSP ={ 
+				id:window.Sharer.config.project.id,
+				name:window.Sharer.config.project.label,
+				label:args[0],
+				group:"",
+				expts:0
+			};
+		
+			window.cfDT.addRow(newSP);
+			XNAT.app.shared_projects.push(newSP);
+			document.getElementById("s_projects").remove(document.getElementById("s_projects").selectedIndex);
+			document.getElementById("s_projects").selectedIndex=0;
+			refreshSharing();
+		},this,this);
+	}else{
+		xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().toLowerCase().");
+	}
+}
 </script>

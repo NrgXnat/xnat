@@ -734,8 +734,9 @@ $_$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS TABLE (
-        field_value VARCHAR(255),
-        field       VARCHAR(255))
+        field_value  VARCHAR(255),
+        element_name VARCHAR(255),
+        field        VARCHAR(255))
 AS
 $$
 DECLARE
@@ -760,6 +761,7 @@ BEGIN
         RETURN QUERY
             SELECT
                 x.project AS field_value,
+                e.element_name::VARCHAR(255),
                 (e.element_name || '/project')::VARCHAR(255) AS field
             FROM
                 xnat_experimentdata x
@@ -768,6 +770,7 @@ BEGIN
             UNION
             SELECT
                 s.project AS field_value,
+                e.element_name::VARCHAR(255),
                 e.element_name || '/sharing/share/project' AS field
             FROM
                 xnat_experimentdata_share s
@@ -795,6 +798,7 @@ BEGIN
         RETURN QUERY
             SELECT
                 project AS field_value,
+                'xnat:subjectData'::VARCHAR(255) AS element_name,
                 'xnat:subjectData/project'::VARCHAR(255) AS field
             FROM
                 xnat_subjectdata
@@ -802,6 +806,7 @@ BEGIN
             UNION
             SELECT
                 project AS field_value,
+                'xnat:subjectData'::VARCHAR(255) AS element_name,
                 'xnat:subjectData/sharing/share/project'::VARCHAR(255) AS field
             FROM
                 xnat_projectparticipant
@@ -814,6 +819,7 @@ BEGIN
         RETURN QUERY
             SELECT
                 id AS field_value,
+                'xnat:projectData'::VARCHAR(255) AS element_name,
                 'xnat:projectData/ID'::VARCHAR(255) AS field
             FROM
                 xnat_projectdata
@@ -827,20 +833,24 @@ $$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS TABLE (
-        id         VARCHAR(255),
-        field      VARCHAR(255),
-        can_read   BOOLEAN,
-        can_edit   BOOLEAN,
-        can_create BOOLEAN,
-        can_delete BOOLEAN,
-        can_active BOOLEAN)
+        id          VARCHAR(255),
+        field       VARCHAR(255),
+        field_value VARCHAR(255),
+        can_read    BOOLEAN,
+        can_edit    BOOLEAN,
+        can_create  BOOLEAN,
+        can_delete  BOOLEAN,
+        can_active  BOOLEAN)
 AS
 $$
 BEGIN
     RETURN QUERY
+        WITH
+            entity_projects AS (SELECT * FROM data_type_fns_get_entity_projects(entityId, projectId))
         SELECT
-            coalesce(g.id, u.login) AS id,
+            coalesce(g.id, u.login, gu.login) AS id,
             m.field,
+            m.field_value,
             m.read_element::BOOLEAN,
             m.edit_element::BOOLEAN,
             m.create_element::BOOLEAN,
@@ -854,10 +864,10 @@ BEGIN
             LEFT JOIN xdat_user_groupid gi ON g.id = gi.groupid
             LEFT JOIN xdat_user gu ON gi.groups_groupid_xdat_user_xdat_user_id = gu.xdat_user_id
             LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id
-            LEFT JOIN (SELECT * FROM data_type_fns_get_entity_projects(entityId, projectId)) p ON m.field = p.field AND m.field_value IN (p.field_value, '*')
+            LEFT JOIN entity_projects p ON m.field = p.field AND m.field_value IN (p.field_value, '*')
         WHERE
             p.field IS NOT NULL AND
-            (gu.login = username OR u.login IS NOT NULL);
+            (gu.login = username OR u.login IN ('guest', username));
 END
 $$
     LANGUAGE plpgsql;
@@ -867,14 +877,15 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), actio
 AS
 $$
 DECLARE
-    query     VARCHAR(255);
+    query     TEXT;
     found_can BOOLEAN;
 BEGIN
     IF projectId IS NULL
     THEN
-        query := format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'')', action, action, username, entityId);
+        query := format('SELECT coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s FROM data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'')', action, username, entityId);
     ELSE
-        query := format('SELECT coalesce(bool_or(can_%s), FALSE) AS can_%s FROM data_type_fns_get_entity_permissions(''%s'', ''%s'', ''%s'')', action, action, username, entityId, projectId);
+        query := format('WITH permissions AS (SELECT coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s, array_agg(field_value) AS projects FROM data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'', ''%4$s'')) ' ||
+                        'SELECT CASE WHEN ARRAY [''%4$s''::VARCHAR(255), ''*''::VARCHAR(255)] && projects THEN p.can_%1$s ELSE FALSE END AS can_%1$s FROM permissions p', action, username, entityId, projectId);
     END IF;
     EXECUTE query INTO found_can;
     RETURN found_can;

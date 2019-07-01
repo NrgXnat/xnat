@@ -313,7 +313,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "    xnat_projectparticipant pp " +
                                                                    "    LEFT JOIN xnat_projectdata p ON pp.project = p.id " +
                                                                    "WHERE " +
-                                                                   "    (pp.subject_id = :subj OR pp.label = :subj) AND p.id = :prj; ";
+                                                                   "    (pp.subject_id = :subj OR pp.label = :subj) AND p.id = :prj";
     private static final String QUERY_PROJECT_EXPERIMENT         = "SELECT " +
                                                                    "    COALESCE(p.project, s.project) AS project_id, " +
                                                                    "    COALESCE(p.label, s.label) AS subject_label, " +

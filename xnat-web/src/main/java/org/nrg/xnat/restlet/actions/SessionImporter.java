@@ -15,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
@@ -160,6 +161,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			Map<String,Object> prearc_parameters= new HashMap<>(params);
 			
 			//check for existing session by URI
+			this.processing("Determining destination");
 			if(destination!=null){
 				if(destination instanceof URIManager.PrearchiveURI){
 					prearc_parameters.putAll(destination.getProps());
@@ -243,21 +245,24 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			}
 			
 			//import to prearchive, code allows for merging new files into a pre-existing session directory
+			this.processing("Beginning import");
 			final List<PrearcSession> sessions=importToPrearc(this,(String)params.remove(PrearcImporterA.PREARC_IMPORTER_ATTR),uID,user,fw,prearc_parameters,allowSessionMerge,overrideExceptions);
 			
 			if(sessions.size()==0){
-				failed("Upload did not include parseable files for session generation.");
-				throw new ClientException("Upload did not include parseable files for session generation.");
+				failed("Upload did not include parsable files for session generation.");
+				throw new ClientException("Upload did not include parsable files for session generation.");
 			}
 			
 			//if prearc=destination, then return
-			if(destination!=null && destination instanceof URIManager.PrearchiveURI){
+			if (destination instanceof URIManager.PrearchiveURI) {
 				this.completed("Successfully uploaded " + sessions.size() +" sessions to the prearchive.");
 				resetStatus(sessions);
-				return returnURLs(sessions);
+				List<String> urls = returnURLs(sessions);
+				//Hack to indicate completion
+				this.completed("XXXPrearchive:" + Joiner.on(";").join(urls));
+				return urls;
 			}
 
-			
 			//if unknown destination, only one session supported
 			if(sessions.size()>1){
 				resetStatus(sessions);
@@ -269,11 +274,15 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			session.getAdditionalValues().putAll(params);
 				
 			try {
+				this.processing("Populating session");
 				final FinishImageUpload finisher=ListenerUtils.addListeners(this, new FinishImageUpload(this.uID, user, session,destination, overrideExceptions,allowSessionMerge,true));
 				XnatImagesessiondata s = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
+
+				this.processing("Performing anonymization");
 				SiteWideAnonymizer site_wide = new SiteWideAnonymizer(s, true);
 				site_wide.call();
 				if(finisher.isAutoArchive()){
+					this.processing("Archiving");
                     final ArrayList<String> urls = new ArrayList<String>() {{
                         add(finisher.call());
                     }};
@@ -282,11 +291,16 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                         final File sessionDir = session.getSessionDir();
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, sessionData, sessionDir, "Delete"));
                     }
+                    //Hack to indicate completion
+                    this.completed("XXXArchive:" + Joiner.on(";").join(urls));
                     return urls;
                 }else{
 					this.completed("Successfully uploaded " + sessions.size() +" sessions to the prearchive.");
 					resetStatus(sessions);
-					return returnURLs(sessions);
+					List<String> urls = returnURLs(sessions);
+					//Hack to indicate completion
+					this.completed("XXXPrearchive:" + Joiner.on(";").join(urls));
+					return urls;
 				}
 			} catch (Exception e) {
 				resetStatus(sessions);
@@ -300,18 +314,23 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			}
 			
 		} catch (ClientException | ServerException e) {
-			this.failed(e.getMessage());
+			//Hack to indicate completion
+			this.failed("XXX" + e.getMessage());
 			throw e;
 		} catch (IOException e) {
 			logger.error("",e);
-			this.failed(e.getMessage());
+			//Hack to indicate completion
+			this.failed("XXX" + e.getMessage());
 			throw new ServerException(e.getMessage(),e);
 		} catch (SAXException e) {
 			logger.error("",e);
-			this.failed(e.getMessage());
+			//Hack to indicate completion
+			this.failed("XXX" + e.getMessage());
 			throw new ClientException(e.getMessage(),e);
 		} catch (Throwable e) {
 			logger.error("",e);
+			//Hack to indicate completion
+			this.failed("XXX" + e.getMessage());
 			throw new ServerException(e.getMessage(),new Exception());
 		}
 	}

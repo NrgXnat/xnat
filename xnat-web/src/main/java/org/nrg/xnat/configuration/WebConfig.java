@@ -21,6 +21,7 @@ import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
 import org.nrg.xnat.web.http.AsyncLifecycleMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -54,8 +55,10 @@ import java.util.Map;
 @ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Autowired
-    public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder, final ThreadPoolExecutorFactoryBean factoryBean, final AsyncOperationsPreferences preferences) {
-        _threadPoolFactory = factoryBean;
+    public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder,
+                     @Qualifier("threadPoolExecutorFactoryBean") final ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean,
+                     final AsyncOperationsPreferences preferences) {
+        _threadPoolFactory = threadPoolExecutorFactoryBean;
         _preferences = preferences;
         _objectMapper = objectMapperBuilder.build();
         _objectMapper.getFactory().setCharacterEscapes(CHARACTER_ESCAPES);

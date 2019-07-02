@@ -29,6 +29,8 @@ DROP FUNCTION IF EXISTS public.data_type_fns_correct_experiment_extension();
 DROP FUNCTION IF EXISTS public.data_type_fns_correct_group_permissions();
 DROP FUNCTION IF EXISTS public.data_type_fns_can(username VARCHAR(255), entityId VARCHAR(255), ACTION VARCHAR(15));
 DROP FUNCTION IF EXISTS public.data_type_fns_can(username VARCHAR(255), ACTION VARCHAR(15), entityId VARCHAR(255), projectId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_secured_property_permissions(username VARCHAR(255), projectId VARCHAR(255), securedProperty VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_can_action_entity(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
@@ -872,22 +874,94 @@ END
 $$
     LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION public.data_type_fns_can_action_entity(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255))
+    RETURNS BOOLEAN
+AS
+$$
+DECLARE
+    found_can BOOLEAN;
+BEGIN
+    EXECUTE format('SELECT coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s FROM data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'')', action, username, entityId)
+        INTO found_can;
+    RETURN found_can;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_secured_property_permissions(username VARCHAR(255), projectId VARCHAR(255), securedProperty VARCHAR(255))
+    RETURNS TABLE (
+        can_read   BOOLEAN,
+        can_edit   BOOLEAN,
+        can_create BOOLEAN,
+        can_delete BOOLEAN,
+        can_active BOOLEAN)
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT
+            coalesce(bool_or(read_element::BOOLEAN), FALSE) AS can_read,
+            coalesce(bool_or(edit_element::BOOLEAN), FALSE) AS can_edit,
+            coalesce(bool_or(create_element::BOOLEAN), FALSE) AS can_create,
+            coalesce(bool_or(delete_element::BOOLEAN), FALSE) AS can_delete,
+            coalesce(bool_or(active_element::BOOLEAN), FALSE) AS can_active
+        FROM
+            xdat_user u
+            LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id
+            LEFT JOIN xdat_usergroup g ON i.groupid = g.id
+            LEFT JOIN xdat_element_access a ON u.xdat_user_id = a.xdat_user_xdat_user_id OR g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id
+            LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+            LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+        WHERE
+                u.login = username AND
+                m.field_value IN (projectId, '*') AND
+                m.field = securedProperty;
+END
+$$
+    LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS BOOLEAN
 AS
 $$
 DECLARE
-    query     TEXT;
-    found_can BOOLEAN;
+    found_can    BOOLEAN;
+    field_count  INTEGER;
+    fields       TEXT;
+    field_values TEXT;
 BEGIN
     IF projectId IS NULL
     THEN
-        query := format('SELECT coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s FROM data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'')', action, username, entityId);
+        SELECT * FROM data_type_fns_can_action_entity(username, action, entityId) INTO found_can;
     ELSE
-        query := format('WITH permissions AS (SELECT coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s, array_agg(field_value) AS projects FROM data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'', ''%4$s'')) ' ||
-                        'SELECT CASE WHEN ARRAY [''%4$s''::VARCHAR(255), ''*''::VARCHAR(255)] && projects THEN p.can_%1$s ELSE FALSE END AS can_%1$s FROM permissions p', action, username, entityId, projectId);
+        EXECUTE format('WITH ' ||
+                       '    permissions AS ' ||
+                       '        (SELECT ' ||
+                       '             cardinality(array_agg(DISTINCT field)) AS field_count, ' ||
+                       '             array_to_string(array_agg(DISTINCT field), '' '') AS fields, ' ||
+                       '             array_to_string(array_agg(DISTINCT field_value), '' '') AS field_values, ' ||
+                       '             coalesce(bool_or(can_%1$s), FALSE) AS can_%1$s, ' ||
+                       '             array_agg(field_value) AS projects ' ||
+                       '         FROM ' ||
+                       '             data_type_fns_get_entity_permissions(''%2$s'', ''%3$s'', ''%4$s'')) ' ||
+                       'SELECT ' ||
+                       '    p.field_count, ' ||
+                       '    p.fields, ' ||
+                       '    p.field_values, ' ||
+                       '    CASE WHEN ARRAY [''XNAT_02''::VARCHAR(255), ''*''::VARCHAR(255)] && projects THEN p.can_%1$s ELSE FALSE END AS can_%1$s ' ||
+                       'FROM ' ||
+                       '    permissions p', action, username, entityId, projectId)
+            INTO field_count, fields, field_values, found_can;
+
+        -- Delete with sharing is a special case: if the user can't delete the entity, but
+        -- that entity is shared they may be able to unshare the entity if they can delete
+        -- entities of the same data type in the project.
+        IF action = 'delete' AND found_can = FALSE AND field_count = 1 AND fields LIKE '%/sharing/share/project'
+        THEN
+            EXECUTE format('SELECT can_%1$s FROM data_type_fns_get_secured_property_permissions(''%2$s'', ''%3$s'', ''%4$s'')', action, username, projectId, split_part(fields, '/', 1) || '/project')
+                INTO found_can;
+        END IF;
     END IF;
-    EXECUTE query INTO found_can;
     RETURN found_can;
 END
 $$

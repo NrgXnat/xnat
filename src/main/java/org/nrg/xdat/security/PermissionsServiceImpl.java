@@ -90,7 +90,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
         final String fullXMLName = root.getFullXMLName();
-        if (!ElementSecurity.IsSecureElement(fullXMLName, SecurityManager.READ)) {
+        if (!ElementSecurity.IsSecureElement(fullXMLName, READ)) {
             return null;
         }
 
@@ -114,7 +114,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI root) throws Exception {
-        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
+        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), READ)) {
             return null;
         }
 
@@ -139,22 +139,22 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.READ, root, values);
+        return securityCheck(user, READ, root, values);
     }
 
     @Override
     public boolean canEdit(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.EDIT, root, values);
+        return securityCheck(user, EDIT, root, values);
     }
 
     @Override
     public boolean canActivate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.ACTIVATE, root, values);
+        return securityCheck(user, ACTIVATE, root, values);
     }
 
     @Override
     public boolean canDelete(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.DELETE, root, values);
+        return securityCheck(user, DELETE, root, values);
     }
 
     @Override
@@ -245,7 +245,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean can(UserI user, ItemI item, String action) throws InvalidItemException, Exception {
-        if (user == null || user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user == null || user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         final String xsiType = item.getXSIType();
@@ -278,12 +278,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.READ);
+        return can(user, item, READ);
     }
 
     @Override
     public boolean canEdit(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.EDIT);
+        return can(user, item, EDIT);
     }
 
     @Override
@@ -293,17 +293,17 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canActivate(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.ACTIVATE);
+        return can(user, item, ACTIVATE);
     }
 
     @Override
     public boolean canDelete(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.DELETE);
+        return can(user, item, DELETE);
     }
 
     @Override
     public boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         String rootElement = XftStringUtils.GetRootElementName(xmlPath);
@@ -320,12 +320,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.READ);
+        return can(user, xmlPath, value, READ);
     }
 
     @Override
     public boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.EDIT);
+        return can(user, xmlPath, value, EDIT);
     }
 
     @Override
@@ -335,12 +335,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canActivate(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.ACTIVATE);
+        return can(user, xmlPath, value, ACTIVATE);
     }
 
     @Override
     public boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.DELETE);
+        return can(user, xmlPath, value, DELETE);
     }
 
     @Override
@@ -395,7 +395,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canAny(UserI user, String elementName, String xmlPath, String action) {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -404,7 +404,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canAny(UserI user, String elementName, String action) {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -413,7 +413,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canAny(final String username, final String elementName, final String action) {
-        if (isGuest(username) && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (isGuest(username) && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -533,7 +533,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserReadableProjects(final String username) {
-        return _cache.getProjectsForUser(username, SecurityManager.READ);
+        return _cache.getProjectsForUser(username, READ);
     }
 
     @Override
@@ -553,14 +553,14 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserOwnedProjects(final String username) {
-        return _cache.getProjectsForUser(username, SecurityManager.DELETE);
+        return _cache.getProjectsForUser(username, DELETE);
     }
 
     private boolean can(final @Nonnull String username, final @Nonnull String action, final @Nullable String projectId, final @Nonnull String entityId) {
         final boolean hasProjectId = StringUtils.isNotBlank(projectId);
         final String  query;
         switch (action) {
-            case SecurityManager.READ:
+            case READ:
                 query = hasProjectId ? QUERY_CAN_USER_READ_ID_IN_PROJECT : QUERY_CAN_USER_READ_ID;
                 break;
             case EDIT:

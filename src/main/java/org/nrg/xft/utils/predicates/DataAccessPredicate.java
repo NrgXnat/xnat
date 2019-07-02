@@ -190,27 +190,28 @@ public abstract class DataAccessPredicate implements Predicate<String> {
         }
         if (properties.containsKey("secured_property")) {
             final String securedProperty = (String) properties.get("secured_property");
-            switch (getAccessLevel()) {
-                case Delete:
-                    return getService().canDelete(user, securedProperty, (Object) primaryId);
+            if (StringUtils.isNotBlank(securedProperty)) {
+                switch (getAccessLevel()) {
+                    case Delete:
+                        return getService().canDelete(user, securedProperty, (Object) primaryId);
 
-                case Edit:
-                    return getService().canEdit(user, securedProperty, (Object) primaryId);
+                    case Edit:
+                        return getService().canEdit(user, securedProperty, (Object) primaryId);
 
-                default:
-                    return getService().canRead(user, securedProperty, (Object) primaryId);
+                    default:
+                        return getService().canRead(user, securedProperty, (Object) primaryId);
+                }
             }
-        } else {
-            switch (getAccessLevel()) {
-                case Delete:
-                    return getService().canDelete(user, primaryId);
+        }
+        switch (getAccessLevel()) {
+            case Delete:
+                return getService().canDelete(user, primaryId);
 
-                case Edit:
-                    return getService().canEdit(user, primaryId);
+            case Edit:
+                return getService().canEdit(user, primaryId);
 
-                default:
-                    return getService().canRead(user, primaryId);
-            }
+            default:
+                return getService().canRead(user, primaryId);
         }
     }
 
@@ -290,8 +291,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
     private static final String QUERY_EXPERIMENT                 = "SELECT " +
                                                                    "    e.id AS experiment_id, " +
                                                                    "    e.label AS experiment_label, " +
-                                                                   "    m.element_name AS data_type, " +
-                                                                   "    m.element_name || '/project' AS secured_property " +
+                                                                   "    m.element_name AS data_type " +
                                                                    "FROM " +
                                                                    "    xnat_experimentdata e " +
                                                                    "    LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +

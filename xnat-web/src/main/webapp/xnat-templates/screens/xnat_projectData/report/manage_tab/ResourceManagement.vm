@@ -52,7 +52,11 @@
 		<script type="text/javascript" src="$content.getURI("scripts/project/projResourceMgmt.js")"></script>
         <script>
             XNAT.app.pResources.id='$om.getId()';
-            XNAT.app.pResources.allowAutomationScripts=($siteConfig.getBooleanValue("uiHideResourceUploaderScripts") == false);
+            #if($siteConfig.getBooleanValue("uiHideResourceUploaderScripts"))
+                XNAT.app.pResources.allowAutomationScripts=false;
+            #else
+                XNAT.app.pResources.allowAutomationScripts=true;
+            #end
         </script>
         <style>
             #pResource_settings_dialog_mask {

@@ -948,7 +948,7 @@ BEGIN
                        '    p.field_count, ' ||
                        '    p.fields, ' ||
                        '    p.field_values, ' ||
-                       '    CASE WHEN ARRAY [''XNAT_02''::VARCHAR(255), ''*''::VARCHAR(255)] && projects THEN p.can_%1$s ELSE FALSE END AS can_%1$s ' ||
+                       '    CASE WHEN ARRAY [''%4$s''::VARCHAR(255), ''*''::VARCHAR(255)] && projects THEN p.can_%1$s ELSE FALSE END AS can_%1$s ' ||
                        'FROM ' ||
                        '    permissions p', action, username, entityId, projectId)
             INTO field_count, fields, field_values, found_can;

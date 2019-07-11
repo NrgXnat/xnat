@@ -21,23 +21,23 @@ $page.setTitle("$siteId - Please Login")
 //    XNAT.cookie.set('SESSION_LOGOUT_REDIRECT', 'true');
 </script>
 
-<div id="login_area">
-
-    <!--[if lte IE 8]>
-    <div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
-            $!systemName does not support Internet Explorer version 8 or below.
-        <br><br>
-        We recommend using a modern browser such as
-        <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
-        <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>,
-        <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>, or a newer
-        version of Internet Explorer (version 9.0 or higher).
-    </div>
-    <![endif]-->
+<!--[if lte IE 8]>
+<div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
+        $!systemName does not support Internet Explorer version 8 or below.
+    <br><br>
+    We recommend using a modern browser such as
+    <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
+    <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>,
+    <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>, or a newer
+    version of Internet Explorer (version 9.0 or higher).
+</div>
+<![endif]-->
 
 #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
-    <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
+<div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
 #end
+
+<div id="login_area">
 
 #if($turbineUtils.GetPassedParameter("par",$data))
 ## create custom layout when parameters are passed to the login page from an external link.

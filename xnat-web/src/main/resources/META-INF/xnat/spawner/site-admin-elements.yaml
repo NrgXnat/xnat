@@ -1234,6 +1234,7 @@ petTracers:
             name: sitewidePetTracers
             label: "Pet Tracers"
             code: text
+            validation: max-length:1000
             description: >
                 This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
 

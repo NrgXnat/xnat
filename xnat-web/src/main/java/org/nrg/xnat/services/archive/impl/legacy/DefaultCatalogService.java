@@ -31,6 +31,7 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.model.CatCatalogI;
+import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.*;
@@ -84,6 +85,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -666,7 +668,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public ResourceData getResourceDataFromUri(String uriString, boolean catalogOnly) throws ClientException {
+    public ResourceData getResourceDataFromUri(String uriString, boolean acceptFileUri) throws ClientException {
         //Is it a valid resource?
         final URIManager.DataURIA uri;
         try {
@@ -687,33 +689,38 @@ public class DefaultCatalogService implements CatalogService {
                     + uriString);
         }
 
-        XnatResourcecatalog catRes = null;
-
         // Is it a catalog resource?
+        XnatResourcecatalog catRes = null;
+        String resourceFilePath = null;
         if (xnatUri instanceof ResourceURII) {
-            // Make sure we don't have the path to a file
-            final String resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
+            // Do we have the path to a file?
+            resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
+
             if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
-                throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                        " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
+                if (!acceptFileUri) {
+                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
+                            " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
+                }
+            } else {
+                resourceFilePath = null;
             }
 
             XnatAbstractresourceI resource = ((ResourceURII) xnatUri).getXnatResource();
-            // Allow a null resource; throw exception if we've specified catalogOnly and we have a non-catalog resource
+            // Allow a null resource; throw exception if we have a resource file path and we have a non-catalog resource
             if (resource != null) {
                 if (resource instanceof XnatResourcecatalog) {
                     catRes = (XnatResourcecatalog) resource;
-                } else if (catalogOnly) {
-                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                            " doesn't refer to a catalog.");
                 }
             }
-        } else if (catalogOnly) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                    " doesn't refer to a resource.");
+
+            if (resourceFilePath != null && catRes == null) {
+                // This shouldn't happen - cannot reference a file outside a catalog resource, right?
+                throw new ClientException("File " + resourceFilePath + " does not appear to be within a catalog " +
+                        "resource.");
+            }
         }
 
-        return new ResourceData(uri, xnatUri, item, catRes);
+        return new ResourceData(uri, xnatUri, item, catRes, resourceFilePath);
     }
 
     /**
@@ -722,28 +729,45 @@ public class DefaultCatalogService implements CatalogService {
     @Override
     public void pullResourceCatalogsToDestination(final UserI user, final String uriString,
                                                   final String archiveRelativeDir,
-                                                  @Nullable final String destinationDir)
+                                                  @Nullable String destinationDir)
             throws ServerException, ClientException {
 
         if (_remoteFilesService == null) {
             throw new ServerException("No remote filesystems configured for this site; all catalogs must be local");
         }
 
-        final ResourceData resourceData = getResourceDataFromUri(uriString);
+        final ResourceData resourceData = getResourceDataFromUri(uriString, true);
 
         final URIManager.ArchiveItemURI resourceURI = resourceData.getXnatUri();
         final ArchivableItem            item        = resourceData.getItem();
 
         checkPermissionsOnItem(user, item, SecurityManager.READ, uriString);
 
-        XnatAbstractresourceI catRes = resourceData.getCatalogResource();
-        List<XnatAbstractresourceI> resources;
-        if (catRes != null) {
-            resources = Collections.singletonList(catRes);
+        XnatResourcecatalog catRes = resourceData.getCatalogResource();
+        String resourceFilePath = resourceData.getResourceFilePath();
+        if (resourceFilePath != null) {
+            // We have just one file, but in order to pull it, we need to determine the URL via the catalog (bummer)
+            CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(item, catRes);
+            Map<String, CatalogUtils.CatalogMapEntry> catalogMap = CatalogUtils.buildCatalogMap(catalogData);
+            CatalogUtils.CatalogMapEntry mapEntry = catalogMap.get(resourceFilePath);
+            try {
+                if (mapEntry == null) {
+                    throw new FileNotFoundException();
+                }
+                destinationDir = StringUtils.defaultIfBlank(destinationDir, archiveRelativeDir);
+                _remoteFilesService.pullFile(mapEntry.entry.getUri(), destinationDir);
+            } catch (FileNotFoundException e) {
+                throw new ClientException("Unable to pull file indicated by " + uriString);
+            }
         } else {
-            resources = resourceURI.getResources(true);
+            List<XnatAbstractresourceI> resources;
+            if (catRes != null) {
+                resources = Collections.singletonList((XnatAbstractresourceI) catRes);
+            } else {
+                resources = resourceURI.getResources(true);
+            }
+            _remoteFilesService.pullItem(item, resources, archiveRelativeDir, destinationDir);
         }
-        _remoteFilesService.pullItem(item, resources, archiveRelativeDir, destinationDir);
     }
 
     /**
@@ -755,7 +779,7 @@ public class DefaultCatalogService implements CatalogService {
             return false;
         }
 
-        final ResourceData resourceData = getResourceDataFromUri(uriString);
+        final ResourceData resourceData = getResourceDataFromUri(uriString, true);
         checkPermissionsOnItem(user, resourceData.getItem(), SecurityManager.READ, uriString);
         XnatResourcecatalog catRes = resourceData.getCatalogResource();
         if (catRes != null) {

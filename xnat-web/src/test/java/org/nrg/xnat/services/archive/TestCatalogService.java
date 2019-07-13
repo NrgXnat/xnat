@@ -1,7 +1,8 @@
 package org.nrg.xnat.services.archive;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -9,7 +10,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.action.ClientException;
-import org.nrg.action.ServerException;
+import org.nrg.test.workers.resources.ResourceManager;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
@@ -33,16 +34,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
-import static org.assertj.core.api.Fail.fail;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @Slf4j
@@ -113,11 +116,9 @@ public class TestCatalogService {
         Mockito.when(mockCatResUriObj.getXnatResource()).thenReturn(catRes);
     }
 
-    @Test
-    public void testPullNoRemoteService() throws Exception {
-        exceptionRule.expect(ServerException.class);
-        exceptionRule.expectMessage("No remote filesystems configured for this site; all catalogs must be local");
-        catalogServiceNoRemote.pullResourceCatalogsToDestination(unpermittedUser, "junk", sesArchivePath, null);
+    @After
+    public void cleanup() throws Exception {
+        FileUtils.deleteDirectory(new File(writableArchivePath));
     }
 
     @Test
@@ -130,12 +131,42 @@ public class TestCatalogService {
     }
 
     @Test
-    public void testPullPermsSuccess() {
-        try {
-            catalogService.pullResourceCatalogsToDestination(mockUser, mockSesUri, sesArchivePath,null);
-        } catch (Exception e) {
-            fail("Expecting no exceptions but caught " + ExceptionUtils.getStackTrace(e));
-        }
+    public void testPullResourceCatalogsToDestinationSession() throws Exception {
+        catalogService.pullResourceCatalogsToDestination(mockUser, mockSesUri, sesArchivePath,null);
+        Mockito.verify(remoteFilesService, times(1)).pullItem(session,
+                mockSesUriObj.getResources(true), sesArchivePath, null);
+    }
+
+    @Test
+    public void testPullResourceCatalogsToDestinationResource() throws Exception {
+        catalogService.pullResourceCatalogsToDestination(mockUser, mockCatResUri, null,null);
+        Mockito.verify(remoteFilesService, times(1)).pullItem(session,
+                Collections.singletonList((XnatAbstractresourceI) catRes), null, null);
+    }
+
+    @Test
+    public void testPullResourceCatalogsToDestinationFile() throws Exception {
+        File permFile = ResourceManager.getInstance().getTestResourceFile(
+                Paths.get("catalogs", "DEBUG_OUTPUT_catalog.xml").toString());
+        File catFile = Paths.get(writableArchivePath, "RESOURCES", catRes.getLabel(),
+                catRes.getLabel() + "_catalog.xml").toFile();
+        Mockito.when(catRes.getUri()).thenReturn(catFile.getAbsolutePath());
+        Mockito.when(session.getArchiveRootPath()).thenReturn(writableArchivePath);
+        catFile.getParentFile().mkdirs();
+        Files.copy(permFile.toPath(), catFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        String filePath = "LEVEL0.da3c96f78155.1/L5D4/L4F2";
+        String dummyLoc = "dummyLoc";
+        String uri = mockCatResUri + "/files/" + filePath;
+
+        ResourcesExptURI uriObj = Mockito.mock(ResourcesExptURI.class);
+        Mockito.when(uriObj.getSecurityItem()).thenReturn(session);
+        Mockito.when(uriObj.getXnatResource()).thenReturn(catRes);
+        Mockito.when(uriObj.getResourceFilePath()).thenReturn(filePath);
+        PowerMockito.when(UriParserUtils.parseURI(uri)).thenReturn(uriObj);
+        catalogService.pullResourceCatalogsToDestination(mockUser, uri,
+                dummyLoc,null);
+        Mockito.verify(remoteFilesService, times(1)).pullFile(filePath, dummyLoc);
     }
 
     @Test
@@ -174,7 +205,7 @@ public class TestCatalogService {
     }
 
     @Test
-    public void testGetResourceDataFromUriFilePath() throws Exception {
+    public void testGetResourceDataFromCatalogFileUri() throws Exception {
         ResourcesExptURI mockResUriObj = Mockito.mock(ResourcesExptURI.class);
         String uriString = "/archive/experiments/id/resources/label/label_catalog.xml";
         PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockResUriObj);
@@ -187,17 +218,28 @@ public class TestCatalogService {
     }
 
     @Test
+    public void testGetResourceDataFromUriFilePath() throws Exception {
+        ResourcesExptURI mockFileUriObj = Mockito.mock(ResourcesExptURI.class);
+        String uriString = "/archive/experiments/id/resources/label/files/file.txt";
+        PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockFileUriObj);
+        Mockito.when(mockFileUriObj.getXnatResource()).thenReturn(catRes);
+        Mockito.when(mockFileUriObj.getSecurityItem()).thenReturn(session);
+        Mockito.when(mockFileUriObj.getResourceFilePath()).thenReturn("file.txt");
+        ResourceData resourceData = catalogService.getResourceDataFromUri(uriString, true);
+
+        assertThat(resourceData.getItem(), is((ArchivableItem) session));
+        assertThat(resourceData.getUri(), is((URIManager.DataURIA) mockFileUriObj));
+        assertThat(resourceData.getXnatUri(), is((URIManager.ArchiveItemURI) mockFileUriObj));
+        assertThat(resourceData.getCatalogResource(), is(catRes));
+    }
+
+    @Test
     public void testGetResourceDataFromUriItem() throws Exception {
         ResourceData resourceData = catalogService.getResourceDataFromUri(mockSesUri);
         assertThat(resourceData.getItem(), is((ArchivableItem) session));
         assertThat(resourceData.getUri(), is((URIManager.DataURIA) mockSesUriObj));
         assertThat(resourceData.getXnatUri(), is((URIManager.ArchiveItemURI) mockSesUriObj));
         assertThat(resourceData.getCatalogResource(), is(nullValue()));
-
-        exceptionRule.expect(ClientException.class);
-        exceptionRule.expectMessage("Resource URI: " + mockSesUri +
-                        " doesn't refer to a resource.");
-        catalogService.getResourceDataFromUri(mockSesUri, true);
     }
 
     @Test
@@ -208,7 +250,7 @@ public class TestCatalogService {
         assertThat(resourceData.getXnatUri(), is((URIManager.ArchiveItemURI) mockCatResUriObj));
         assertThat(resourceData.getCatalogResource(), is(catRes));
 
-        ResourceData resourceData2 = catalogService.getResourceDataFromUri(mockCatResUri, true);
+        ResourceData resourceData2 = catalogService.getResourceDataFromUri(mockCatResUri);
         assertEquals(resourceData, resourceData2);
     }
 
@@ -227,11 +269,6 @@ public class TestCatalogService {
         assertThat(resourceData.getUri(), is((URIManager.DataURIA) mockResUriObj));
         assertThat(resourceData.getXnatUri(), is((URIManager.ArchiveItemURI) mockResUriObj));
         assertThat(resourceData.getCatalogResource(), is(nullValue()));
-
-        exceptionRule.expect(ClientException.class);
-        exceptionRule.expectMessage("Resource URI: " + uriString +
-                " doesn't refer to a catalog.");
-        catalogService.getResourceDataFromUri(uriString, true);
     }
 
 }

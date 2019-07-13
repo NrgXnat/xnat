@@ -516,7 +516,7 @@ public interface CatalogService {
      *                      /archive/experiments/XNAT_E0001
      *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
      * @return ResourceData
-     * @throws ClientException for invalid URI
+     * @throws ClientException for invalid URI or file URI
      */
     ResourceData getResourceDataFromUri(String uriString) throws ClientException;
 
@@ -525,12 +525,11 @@ public interface CatalogService {
      * @param uriString     the uri string, identified by standard archive-relative paths, such as
      *                      /archive/experiments/XNAT_E0001
      *                      or /archive/projects/XNAT_01/subjects/XNAT_01_01/resources/RESID
-     * @param catalogOnly   boolean indicating if you are expecting a single catalog at this URI
+     * @param acceptFileUri true if URI can be a file path
      * @return ResourceData
-     * @throws ClientException for invalid URI or if catalogOnly, when multiple resources or non-catalog resources
-     * are found at the URI
+     * @throws ClientException for invalid URI
      */
-    ResourceData getResourceDataFromUri(String uriString, boolean catalogOnly) throws ClientException;
+    ResourceData getResourceDataFromUri(String uriString, boolean acceptFileUri) throws ClientException;
 
     /**
      * Check that user can edit item, throw exception if not
@@ -570,7 +569,7 @@ public interface CatalogService {
      * @throws ServerException When an error occurs in the system during the pull operation.
      */
     void pullResourceCatalogsToDestination(final UserI user, final String uriString, final String archiveRelativeDir,
-                                           @Nullable final String destinationDir)
+                                           @Nullable String destinationDir)
             throws ServerException, ClientException;
 
     /**

@@ -9,17 +9,20 @@ import javax.annotation.Nullable;
 public class ResourceData {
     private URIManager.DataURIA uri;
     private URIManager.ArchiveItemURI xnatUri;
-    @Nullable private XnatResourcecatalog catalogResource;
     private ArchivableItem item;
+    @Nullable private XnatResourcecatalog catalogResource;
+    @Nullable private String resourceFilePath;
 
     public ResourceData(URIManager.DataURIA uri,
                         URIManager.ArchiveItemURI xnatUri,
                         ArchivableItem item,
-                        @Nullable XnatResourcecatalog catalogResource) {
+                        @Nullable XnatResourcecatalog catalogResource,
+                        @Nullable String resourceFilePath) {
         this.uri = uri;
         this.xnatUri = xnatUri;
         this.catalogResource = catalogResource;
         this.item = item;
+        this.resourceFilePath = resourceFilePath;
     }
 
     public URIManager.DataURIA getUri() {
@@ -55,6 +58,15 @@ public class ResourceData {
         this.item = item;
     }
 
+    @Nullable
+    public String getResourceFilePath() {
+        return resourceFilePath;
+    }
+
+    public void setResourceFilePath(@Nullable String resourceFilePath) {
+        this.resourceFilePath = resourceFilePath;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
@@ -62,6 +74,8 @@ public class ResourceData {
         ResourceData other = (ResourceData) o;
         return item.equals(other.getItem()) && uri.equals(other.getUri()) && xnatUri.equals(other.getXnatUri()) &&
                 (catalogResource == null && other.getCatalogResource() == null
-                        || catalogResource.equals(other.getCatalogResource()));
+                        || catalogResource.equals(other.getCatalogResource())) &&
+                (resourceFilePath == null && other.getResourceFilePath() == null
+                        || resourceFilePath.equals(other.getResourceFilePath()));
     }
 }

@@ -13,7 +13,7 @@
                     <td>List entries should be separated by whitespace:</td>
                 </tr>
                 <tr>
-                    <td><textarea id="pet_tracers_text_area" rows="20" cols="80" disabled="disabled"></textarea></td>
+                    <td><textarea id="pet_tracers_text_area" rows="20" cols="80" maxlength="1000" disabled="disabled"></textarea></td>
                 </tr>
                 <tr>
                     <td><input type="button" id="project_pet_tracers_save" value="Save" disabled="disabled"/></td>

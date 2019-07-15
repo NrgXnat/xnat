@@ -17,9 +17,10 @@
         <h4>$displayManager.getSingularDisplayNameForSubject() Fields</h4>
 
         <div class="search-item">
-            <h5>$displayManager.getSingularDisplayNameForSubject():</h5>
-            #xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBJECT_ID"))
-        </div>
+        <h5>$displayManager.getSingularDisplayNameForSubject():</h5>
+        <input type="hidden" name="xnat:subjectData.COMBO0_FIELDS" value="xnat:subjectData.SUBJECTID_equals,xnat:subjectData.ADD_IDS_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals"/>
+        <input size="20" type="text" name="xnat:subjectData.COMBO0" value="$!search.getWebFormValue("xnat:subjectData.COMBO0")" maxlength="100"/>
+    </div>
             
         <div class="clear"></div>
 

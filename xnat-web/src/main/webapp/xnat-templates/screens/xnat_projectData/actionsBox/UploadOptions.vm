@@ -1,0 +1,5 @@
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+    <li class="yuimenuitem">
+        <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
+    </li>
+#end

@@ -23,23 +23,25 @@
                     <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo(
                         'project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</a>
                 </li>
-                #foreach($dataType in $exptCounts.keySet())
-                    #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
-                    <li class="yuimenuitem">
-                        <a class="yuimenuitemlabel"
-                           href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
-                               'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
-                    </li>
-                #end
-                #set($key="xnat:mrSessionData")
-                #if(!$exptCounts.containsKey($key))
-                    #set($ed=$!userHelper.getBrowseableElementDisplay($key))
-                    #if($ed)
-                        <li class="yuimenuitem">
-                            <a class="yuimenuitemlabel"
-                               href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
-                                   'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
-                        </li>
+                #if(!$siteConfig.getBooleanValue("uiHideProjectActionsAddBrowseableElements"))
+                    #foreach($dataType in $exptCounts.keySet())
+                        #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
+                            <li class="yuimenuitem">
+                                <a class="yuimenuitemlabel"
+                                    href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                    'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                            </li>
+                    #end
+                    #set($key="xnat:mrSessionData")
+                    #if(!$exptCounts.containsKey($key))
+                        #set($ed=$!userHelper.getBrowseableElementDisplay($key))
+                        #if($ed)
+                            <li class="yuimenuitem">
+                                <a class="yuimenuitemlabel"
+                                    href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                    'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                            </li>
+                        #end
                     #end
                 #end
                 <li class="yuimenuitem">
@@ -49,13 +51,5 @@
             </ul>
         </div>
     </div>
-</li>
-<li class="yuimenuitem">
-    <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
-</li>
-<li class="yuimenuitem">
-    <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">
-        View Prearchive
-    </a>
 </li>
 #end

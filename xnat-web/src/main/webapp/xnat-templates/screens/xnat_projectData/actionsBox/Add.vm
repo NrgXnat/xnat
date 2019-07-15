@@ -54,18 +54,8 @@
     <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
 </li>
 <li class="yuimenuitem">
-    <a class="yuimenuitemlabel"
-       href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo(
-           'project',$project.getId())">View Prearchive</a>
+    <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">
+        View Prearchive
+    </a>
 </li>
-    #if($project.getUseScanTypeMapping())
-    <li class="yuimenuitem">
-        <a class="yuimenuitemlabel"
-           href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","scanTypeCleanup").addPathInfo(
-               "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
-               "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Scan Type Cleanup</a>
-    </li>
-    #end
-</ul>
-<ul>
 #end

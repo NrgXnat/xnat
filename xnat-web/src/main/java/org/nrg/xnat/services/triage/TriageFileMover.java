@@ -12,11 +12,13 @@ import java.util.List;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.file.StoredFile;
@@ -56,10 +58,7 @@ public class TriageFileMover implements Mover{
 
 	final String MANIFEST = ".manifest";
 	
-	public TriageFileMover(){
-		
-	}
-	
+	public TriageFileMover(){ }
 	
 	@Override
 	public File getSource(UserI user, DataURIA src){
@@ -71,12 +70,9 @@ public class TriageFileMover implements Mover{
 		}
 		return srcF;
 	}
-	
-	
-	
-	
+
 	@Override
-	public List<String> move(UserI user,Integer eventId,Boolean overwrite,ListMultimap<String,Object> params,DataURIA src,ResourceURII dest,EventMetaI ci) throws Exception{		
+	public List<String> move(UserI user,Integer eventId,Boolean overwrite,ListMultimap<String,Object> params,DataURIA src,ResourceURII dest,EventMetaI ci) throws Exception{
 		List<String> duplicates=new ArrayList<String>();
 		File srcF=this.getSource(user,src);
 		final String label = dest.getResourceLabel();
@@ -117,6 +113,7 @@ public class TriageFileMover implements Mover{
 				this.buildResourceInfo(user,params,ci),
 				overwrite);
 		}
+		XDAT.triggerXftItemEvent(dest.getProject(), XftItemEventI.UPDATE);
 		return duplicates;
 	}
 	@Override
@@ -129,11 +126,7 @@ public class TriageFileMover implements Mover{
 			FileUtils.MoveToCache(srcF);
 		}
 	}
-	
-	
-	
-	
-	
+
     /* (non-Javadoc)
 	 * @see org.nrg.xnat.helpers.move.Mover#buildResourceInfo(org.nrg.xft.event.EventMetaI)
 	 */

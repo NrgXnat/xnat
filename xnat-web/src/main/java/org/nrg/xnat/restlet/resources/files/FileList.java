@@ -1045,7 +1045,7 @@ public class FileList extends XNATCatalogTemplate {
                 } else {
                     f = CatalogUtils.getFile(entry, parentPath);
 
-                    if (f.exists()) {
+                    if (f != null && f.exists()) {
                         String fName;
                         if (zipEntry == null) {
                             fName = f.getName().toLowerCase();

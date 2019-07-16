@@ -93,6 +93,7 @@ public class PrearcSessionResourceFiles extends PrearcScanResourceList {
 		if(StringUtils.isNotEmpty(filepath)){
 			final CatEntryI entry=CatalogUtils.getEntryByURI(catalog, filepath);
 			File f= CatalogUtils.getFile(entry, rootPath);
+			if (f == null) return null;
 			
             if (mt.equals(MediaType.IMAGE_JPEG) && StringUtils.equals(resource_id, "DICOM") && Dcm2Jpg.isDicom(f)) {
                 try {
@@ -111,6 +112,7 @@ public class PrearcSessionResourceFiles extends PrearcScanResourceList {
 	        table.initTable(columns);
 	        for (final CatEntryI entry: CatalogUtils.getEntriesByFilter(catalog,null)) {
 	        	File f=CatalogUtils.getFile(entry, rootPath);
+	        	if (f == null) continue;
 	        	Object[] oarray = new Object[] { f.getName(), (prettyPrint)?CatalogUtils.formatSize(f.length()):f.length(), constructURI(entry.getUri())};
 	        	table.insertRow(oarray);
 	        }

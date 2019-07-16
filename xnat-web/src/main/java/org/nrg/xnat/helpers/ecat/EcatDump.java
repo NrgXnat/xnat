@@ -165,7 +165,7 @@ public final class EcatDump extends SecureResource {
                 return new CatFilterWithPath() {
                     public boolean accept(CatEntryI entry) {
                         final File f = CatalogUtils.getFile(entry, path);
-                        return f.getName().equals(filename);
+                        return f != null && f.getName().equals(filename);
                     }
                 };
             }

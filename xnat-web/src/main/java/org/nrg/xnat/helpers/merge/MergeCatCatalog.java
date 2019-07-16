@@ -94,8 +94,11 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
                     result.getAfter().add(new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            File f = FileUtils.BuildHistoryFile(CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath()), EventUtils.getTimestamp(ci));
-                            CatalogUtils.addCatHistoryEntry(destCatFile, f.getAbsolutePath(), (CatEntryBean) entry, ci);
+                            File destFile = CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath());
+                            if (destFile != null) {
+                                File f = FileUtils.BuildHistoryFile(destFile, EventUtils.getTimestamp(ci));
+                                CatalogUtils.addCatHistoryEntry(destCatFile, f.getAbsolutePath(), (CatEntryBean) entry, ci);
+                            }
                             return true;
                         }
                     });

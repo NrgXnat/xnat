@@ -164,7 +164,7 @@ public final class DicomDump extends SecureResource {
                 return new CatFilterWithPath() {
                     public boolean accept(CatEntryI entry) {
                         final File f = CatalogUtils.getFile(entry, path);
-                        return f.getName().equals(filename);
+                        return f != null && f.getName().equals(filename);
                     }
                 };
             }
@@ -466,7 +466,8 @@ public final class DicomDump extends SecureResource {
                     final CatCatalogI catalog = env.a.getCatalog(resource);
                     filter.setPath(env.a.rootPath);
                     for (CatEntryI match : CatalogUtils.getEntriesByFilter(catalog, filter)) {
-                        files.add(CatalogUtils.getFile(match, env.a.rootPath));
+                        File f = CatalogUtils.getFile(match, env.a.rootPath);
+                        if (f != null) files.add(f);
                         if (files.size() >= enough) {
                             return files;
                         }

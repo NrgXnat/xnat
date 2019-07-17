@@ -1526,19 +1526,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
     
     @NrgPreference(defaultValue = "true")
-    public boolean getUiShowCachedFileCounts() {
-        return getBooleanValue("uiShowCachedFileCounts");
-    }
-
-    public void setUiShowCachedFileCounts(final boolean uiShowCachedFileCounts) {
-        try {
-            setBooleanValue(uiShowCachedFileCounts, "uiShowCachedFileCounts");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowCachedFileCounts': something is very wrong here.", e);
-        }
-    }
-    
-    @NrgPreference(defaultValue = "true")
     public boolean getUiShowPrearchiveFileActions() {
         return getBooleanValue("uiShowPrearchiveFileActions");
     }

@@ -35,7 +35,6 @@ function FileViewer(_obj){
             if (refreshCatalog) {
                 this.catalogRefresh();
             } else {
-                this.resetCounts();
                 this.getCatalog();
 			}
 		}else if(this.loading==1){
@@ -351,19 +350,11 @@ function FileViewer(_obj){
    };
    
    this.resetCounts=function(){
-       var scans,sCount,sSize;
        for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
-           var catName=this.obj.categories.ids[catC];
-           scans=this.obj.categories[this.obj.categories.ids[catC]];
-           for(var sC=0;sC<scans.length;sC++){
-               var dest=document.getElementById(catName + "_" + scans[sC].id + "_stats");
-               if(dest!=null && dest !=undefined){
-                   dest.innerHTML="Loading...";
-               }
-           }
-           scans=null;
+           var scans=this.obj.categories[this.obj.categories.ids[catC]];
+               scans=null;
        }
-    };
+   };
    
    this.refreshCatalogs=function(msg_id){
 		closeModalPanel(msg_id);

@@ -278,15 +278,6 @@ checksums:
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
         overhead to the archive process.
-uiShowCachedFileCounts:
-    kind: panel.input.switchbox
-    name: uiShowCachedFileCounts
-    label: Show cached file counts?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Should this site display cached file counts (when available) on the Image Session Report pages?
-        This can improve page performance, but conceal file system changes.
 uiShowPrearchiveFileActions:
     kind: panel.input.switchbox
     name: uiShowPrearchiveFileActions
@@ -1371,7 +1362,6 @@ fileSystem:
         ${triagePath}
         ${zipExtensions}
         ${checksums}
-        ${uiShowCachedFileCounts}
         ${uiShowPrearchiveFileActions}
 #        ${checksumsPropertyChangedListener}
 

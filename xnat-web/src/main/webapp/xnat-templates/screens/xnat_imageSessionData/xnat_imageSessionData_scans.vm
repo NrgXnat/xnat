@@ -90,7 +90,7 @@
                                 #if ($item.canEdit($user))
                                     <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
                                 #end
-                                #if($item.getStatus()!="obsolete")
+                                #if($item.getStatus()!="obsolete" && $item.getStatus()!="locked")
                                     #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
                                         #if ($data.getSession().getAttribute("userHelper").canDelete($item))
                                             <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">

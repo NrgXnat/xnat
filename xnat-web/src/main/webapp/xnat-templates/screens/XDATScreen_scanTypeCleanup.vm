@@ -18,7 +18,7 @@ $page.setVlinkColor($ui.vlink)
         <TR>
             <TD align="left" valign="middle">
 #if($queryResults.rows().isEmpty())
-                <div class="edit_title">No Scan Types avaliable for cleanup</div>
+                <div class="edit_title">No Scan Types available for cleanup</div>
             </td>
         </tr>
 #else

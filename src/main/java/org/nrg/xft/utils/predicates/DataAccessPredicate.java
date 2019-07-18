@@ -2,6 +2,7 @@ package org.nrg.xft.utils.predicates;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -59,10 +60,10 @@ public abstract class DataAccessPredicate implements Predicate<String> {
 
         final boolean hasProject = StringUtils.isNotBlank(_project);
         final boolean hasSubject = StringUtils.isNotBlank(_subject);
-        if (hasProject && hasSubject) {
-            _query = QUERY_PROJECT_SUBJECT_EXPERIMENT;
-            _parameters = validateProjectSubject(_project, _subject);
-        } else if (hasProject) {
+        // We could validate both project and subject here if specified, but, because
+        // experiment label must be unique within a project, there's no need. This is
+        // consistent with the older REST API implementations.
+        if (hasProject) {
             _query = _scope == Subject ? QUERY_PROJECT_SUBJECT : QUERY_PROJECT_EXPERIMENT;
             _parameters = validateProject(_project);
         } else if (hasSubject) {
@@ -119,7 +120,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
     private boolean applyImpl(final String objectId) {
         final UserI user = getUser();
         try {
-            final Map<String, Object> properties = identify(objectId);
+            final List<Map<String, Object>> properties = identify(objectId);
             return evaluate(user, properties, objectId);
         } catch (NotFoundException e) {
             getMissing().add(objectId);
@@ -141,12 +142,12 @@ public abstract class DataAccessPredicate implements Predicate<String> {
      * @throws NotFoundException When no entity can be identified based on the specified ID and predicate context.
      */
     @Nonnull
-    protected Map<String, Object> identify(final String entityId) throws NotFoundException {
+    protected List<Map<String, Object>> identify(final String entityId) throws NotFoundException {
         log.debug("Testing for existence of object \"{}\" with parameters \"{}\" and query: {}", entityId, _parameters, _query);
         final Map<String, String> parameters = new HashMap<>(_parameters);
         parameters.put(_scope.code(), entityId);
         try {
-            return getTemplate().queryForMap(_query, parameters);
+            return getTemplate().queryForList(_query, parameters);
         } catch (EmptyResultDataAccessException ignored) {
             throw new NotFoundException(parameters.toString());
         }
@@ -163,7 +164,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
      *
      * @throws Exception When an error occurs.
      */
-    protected boolean evaluate(final UserI user, final Map<String, Object> properties, final String entityId) throws Exception {
+    protected boolean evaluate(final UserI user, final List<Map<String, Object>> properties, final String entityId) throws Exception {
         final String projectId = getProject();
         if (StringUtils.isNotBlank(projectId)) {
             switch (getAccessLevel()) {
@@ -177,42 +178,58 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                     return getService().canRead(user, getProject(), entityId);
             }
         }
-        final String primaryId;
-        switch (getScope()) {
-            case Project:
-                primaryId = entityId;
-                break;
-            case Subject:
-                primaryId = (String) properties.get("subject_id");
-                break;
-            default:
-                primaryId = (String) properties.get("experiment_id");
-        }
-        if (properties.containsKey("secured_property")) {
-            final String securedProperty = (String) properties.get("secured_property");
-            if (StringUtils.isNotBlank(securedProperty)) {
-                switch (getAccessLevel()) {
-                    case Delete:
-                        return getService().canDelete(user, securedProperty, (Object) primaryId);
-
-                    case Edit:
-                        return getService().canEdit(user, securedProperty, (Object) primaryId);
-
+        return Iterables.any(properties, new Predicate<Map<String, Object>>() {
+            @Override
+            public boolean apply(final Map<String, Object> properties) {
+                final String primaryId;
+                switch (getScope()) {
+                    case Project:
+                        primaryId = entityId;
+                        break;
+                    case Subject:
+                        primaryId = (String) properties.get("subject_id");
+                        break;
                     default:
-                        return getService().canRead(user, securedProperty, (Object) primaryId);
+                        primaryId = (String) properties.get("experiment_id");
                 }
+                try {
+                    final boolean accessByPrimaryId;
+                    switch (getAccessLevel()) {
+                        case Delete:
+                            accessByPrimaryId = getService().canDelete(user, primaryId);
+                            break;
+
+                        case Edit:
+                            accessByPrimaryId = getService().canEdit(user, primaryId);
+                            break;
+
+                        default:
+                            accessByPrimaryId = getService().canRead(user, primaryId);
+                    }
+                    if (accessByPrimaryId) {
+                        return true;
+                    }
+                    if (properties.containsKey("secured_property")) {
+                        final String securedProperty = (String) properties.get("secured_property");
+                        if (StringUtils.isNotBlank(securedProperty)) {
+                            switch (getAccessLevel()) {
+                                case Delete:
+                                    return getService().canDelete(user, securedProperty, (Object) primaryId);
+
+                                case Edit:
+                                    return getService().canEdit(user, securedProperty, (Object) primaryId);
+
+                                default:
+                                    return getService().canRead(user, securedProperty, (Object) primaryId);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("An error occurred trying to evaluate entity ID {} for the user {} with properties: {}", entityId, user.getUsername(), properties);
+                }
+                return false;
             }
-        }
-        switch (getAccessLevel()) {
-            case Delete:
-                return getService().canDelete(user, primaryId);
-
-            case Edit:
-                return getService().canEdit(user, primaryId);
-
-            default:
-                return getService().canRead(user, primaryId);
-        }
+        });
     }
 
     private Pair<String, Map<String, String>> getInitialQueryAndParameters() {
@@ -251,14 +268,6 @@ public abstract class DataAccessPredicate implements Predicate<String> {
             default:
                 return accessLevel;
         }
-    }
-
-    private Map<String, String> validateProjectSubject(final String project, final String subject) throws NotFoundException {
-        final Map<String, String> parameters = ImmutableMap.of(PROJECT_CODE, project, SUBJECT_CODE, subject);
-        if (!getTemplate().queryForObject(QUERY_PROJECT_SUBJECT_EXISTS, parameters, Boolean.class)) {
-            throw new NotFoundException("No such project \"" + project + "\" and subject \"" + subject + "\" exist");
-        }
-        return parameters;
     }
 
     private Map<String, String> validateProject(final String project) throws NotFoundException {
@@ -338,23 +347,65 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "WHERE " +
                                                                    "    (((x.id = :experiment OR x.label = :experiment) AND x.project = :prj) OR " +
                                                                    "     ((sh.sharing_share_xnat_experimentda_id = :experiment OR sh.label = :experiment) AND sh.project = :prj))";
-    private static final String QUERY_SUBJECT_EXPERIMENT         = "SELECT " +
-                                                                   "    subject.project AS project_id, " +
-                                                                   "    assessor.subject_id AS subject_id, " +
-                                                                   "    subject.label AS subject_label, " +
-                                                                   "    expt.id AS experiment_id, " +
-                                                                   "    expt.label AS experiment_label, " +
-                                                                   "    xme.element_name AS data_type, " +
-                                                                   "    xme.element_name || '/project' AS secured_property " +
-                                                                   "FROM " +
-                                                                   "    xnat_experimentdata expt " +
-                                                                   "    LEFT JOIN xnat_subjectassessordata assessor ON assessor.id = expt.id " +
-                                                                   "    LEFT JOIN xnat_subjectdata subject ON assessor.subject_id = subject.id " +
-                                                                   "    LEFT JOIN xnat_projectdata project ON subject.project = project.id " +
-                                                                   "    LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
-                                                                   "WHERE " +
-                                                                   "    subject.id = :subj AND " +
-                                                                   "    (expt.id = :experiment OR expt.label = :experiment)";
+    private static final String QUERY_SUBJECT_EXPERIMENT         = "WITH  " +
+                                                                   "    subjects AS  " +
+                                                                   "        (SELECT  " +
+                                                                   "             s.id,  " +
+                                                                   "             s.label,  " +
+                                                                   "             s.project  " +
+                                                                   "         FROM  " +
+                                                                   "             xnat_subjectdata s  " +
+                                                                   "         WHERE  " +
+                                                                   "             :subj IN (s.id, s.label)  " +
+                                                                   "         UNION  " +
+                                                                   "         SELECT  " +
+                                                                   "             p.subject_id AS id,  " +
+                                                                   "             p.label,  " +
+                                                                   "             p.project  " +
+                                                                   "         FROM  " +
+                                                                   "             xnat_projectparticipant p  " +
+                                                                   "         WHERE  " +
+                                                                   "             :subj IN (p.subject_id, label)),  " +
+                                                                   "    experiments AS  " +
+                                                                   "        (SELECT  " +
+                                                                   "             e.id,  " +
+                                                                   "             e.label,  " +
+                                                                   "             e.project,  " +
+                                                                   "             m.element_name,  " +
+                                                                   "             (m.element_name || '/project')::VARCHAR(255) AS secured_property  " +
+                                                                   "         FROM  " +
+                                                                   "             xnat_experimentdata e  " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON e.id = a.id  " +
+                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id  " +
+                                                                   "         WHERE  " +
+                                                                   "             :experiment IN (e.id, e.label)  " +
+                                                                   "         UNION  " +
+                                                                   "         SELECT  " +
+                                                                   "             s.sharing_share_xnat_experimentda_id AS id,  " +
+                                                                   "             s.label,  " +
+                                                                   "             s.project,  " +
+                                                                   "             m.element_name,  " +
+                                                                   "             (m.element_name || '/sharing/share/project')::VARCHAR(255) AS secured_property  " +
+                                                                   "         FROM  " +
+                                                                   "             xnat_experimentdata_share s  " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON s.sharing_share_xnat_experimentda_id = a.id  " +
+                                                                   "             LEFT JOIN xnat_experimentdata e ON a.id = e.id  " +
+                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id  " +
+                                                                   "         WHERE  " +
+                                                                   "             :experiment IN (s.sharing_share_xnat_experimentda_id, s.label))  " +
+                                                                   "SELECT  " +
+                                                                   "    e.project AS project_id,  " +
+                                                                   "    s.id AS subject_id,  " +
+                                                                   "    s.label AS subject_label,  " +
+                                                                   "    e.id AS experiment_id,  " +
+                                                                   "    e.label AS experiment_label,  " +
+                                                                   "    e.element_name AS data_type,  " +
+                                                                   "    e.secured_property AS secured_property " +
+                                                                   "FROM  " +
+                                                                   "    experiments e  " +
+                                                                   "    LEFT JOIN subjects s ON e.project = s.project  " +
+                                                                   "WHERE  " +
+                                                                   "    s.id IS NOT NULL";
     private static final String QUERY_PROJECT_SUBJECT_EXPERIMENT = QUERY_PROJECT_EXPERIMENT + " AND " +
                                                                    "    (((s.id = :subj OR s.label = :subj) AND s.project = :prj) OR " +
                                                                    "     ((p.subject_id = :subj OR p.label = :subj) AND p.project = :prj))";
@@ -362,7 +413,6 @@ public abstract class DataAccessPredicate implements Predicate<String> {
     private static final String QUERY_PROJECT_EXISTS                    = getExistsQuery(QUERY_PROJECT);
     private static final String QUERY_SUBJECT_EXISTS                    = getExistsQuery(QUERY_SUBJECT);
     private static final String QUERY_EXPERIMENT_EXISTS                 = getExistsQuery(QUERY_EXPERIMENT);
-    private static final String QUERY_PROJECT_SUBJECT_EXISTS            = getExistsQuery(QUERY_PROJECT_SUBJECT);
     private static final String QUERY_PROJECT_EXPERIMENT_EXISTS         = getExistsQuery(QUERY_PROJECT_EXPERIMENT);
     private static final String QUERY_PROJECT_SUBJECT_EXPERIMENT_EXISTS = getExistsQuery(QUERY_PROJECT_SUBJECT_EXPERIMENT);
 

@@ -39,6 +39,15 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
     public String getElementName() {
 	    return XnatProjectdata.SCHEMA_ELEMENT_NAME;
 	}
+    
+    @Override
+    protected boolean isAuthorized(final RunData data) throws Exception {
+        if(!XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation()) {
+            return super.isAuthorizedAdmin(data);
+        }else {
+            return super.isAuthorized(data);
+        }
+    }
 
     /**
      * {@inheritDoc}

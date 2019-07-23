@@ -1810,7 +1810,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
 
     var callback = {
         upload: function (response) {
-            XNAT.app.maintainLogin = false;
+			XNAT.app.timeout.maintainLogin = false;
             window.viewer.requiresRefresh = true;
             window.viewer.refreshCatalogs("add_file");
             this.cancel();
@@ -1844,7 +1844,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
             }
         },
         failure: function (obj1) {
-            XNAT.app.maintainLogin = false;
+			XNAT.app.timeout.maintainLogin = false;
             xmodal.message('Upload File', obj1.toString());
             this.cancel();
         },
@@ -1862,7 +1862,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
 	var params="&event_reason="+event_reason;
 	params+="&event_type=WEB_FORM";
 	params+="&event_action=File(s) uploaded";
-    XNAT.app.maintainLogin = true;
+	XNAT.app.timeout.maintainLogin = true;
 	YAHOO.util.Connect.asyncRequest(method,container.file_dest+params,callback);
 };
 
@@ -1903,13 +1903,4 @@ XNAT.app._addFolder = function (arg1, arg2, container) {
     params += "&event_type=WEB_FORM";
     params += "&event_action=Folder Created";
     YAHOO.util.Connect.asyncRequest('PUT', container.file_dest + params, callback);
-};
-
-jq(document).ready(function() {
-    // refresh timeout interval so that the page doesn't lose its session while uploading.
-    setInterval(function(){XNAT.app.renewLogin()},60000);
-});
-
-XNAT.app.renewLogin = function ()  {
-    if (XNAT.app.maintainLogin) {XNAT.app.timeout.handleOk();}
 };

@@ -282,6 +282,7 @@ abu.FileUploader = function(o){
 		$(formSelector).on("submit",function(e, uploader) {
 			 $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
+					XNAT.app.timeout.maintainLogin = true;
 					var formURL = $form.url;
 					if (typeof formURL !== 'undefined' && formURL.toLowerCase().indexOf("overwrite=true")>=0 && formURL.indexOf("/files")>0) {
 						// See if file already exists
@@ -397,6 +398,7 @@ abu.FileUploader = function(o){
 					if (uploader.currentUploads==0) {
 						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
 						uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
+						XNAT.app.timeout.maintainLogin = false;
 					}
 					uploader.manageUploads();
 				}

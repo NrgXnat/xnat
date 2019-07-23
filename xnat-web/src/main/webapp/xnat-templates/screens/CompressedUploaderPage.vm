@@ -19,7 +19,6 @@
 
     var i;
     var req;
-    var progInterval;
 
     var extractCount = 0;
     var uploadID = "$uploadID";
@@ -260,30 +259,6 @@
         req.send(null);
     }
 
-    var current_progress = 0;
-    var step = 0.15;
-    function fakeProgress(progress) {
-        if (!progress) {
-            current_progress += step;
-            progress = Math.round(Math.atan(current_progress) / (Math.PI / 2) * 100 * 1000) / 1000;
-
-            if (progress >= 70) {
-                step = 0.01;
-            } else {
-                progress = Math.round(progress);
-                if (progress >= 50) {
-                    step = 0.05;
-                } else if (progress >= 30) {
-                    step = 0.1;
-                }
-            }
-        }
-
-        $(".pull-progress-bar")
-                .css("width", progress + "%")
-                .text(progress + "%");
-    }
-
     function errorHandler(e, base){
         var info = e.responseText ? base + ': ' + e.responseText : base;
         var details = spawn('p',[info]);
@@ -321,7 +296,8 @@
             processData: false,
             cache: false,
             beforeSend: function() {
-                loading = XNAT.ui.dialog.static.wait("Uploading file...", {
+                XNAT.app.timeout.maintainLogin = true;
+                loading = XNAT.ui.dialog.static.wait("Uploading file", {
                     width: 300,
                     header: false,
                     footer: false,
@@ -330,17 +306,14 @@
                     top: '80px',
                     classes: 'static',
                     content: spawn('div.message.md', [
-                        'Uploading file...',
+                        'Uploading file',
                         spawn('div.clearfix', [
                             spawn('div', {classes: 'pull-progress-div'}, spawn('div', {classes: 'pull-progress-bar'}, '0%'))
                         ])
                     ])
                 });
-                progInterval = setInterval(fakeProgress, 1000);
             },
             success: function() {
-                clearInterval(progInterval);
-                fakeProgress(100);
                 $.ajax({
                     method: 'POST',
                     contentType: false,
@@ -363,14 +336,45 @@
                     },
                     error: function(xhr) {
                         errorHandler(xhr, 'Issue requesting [pre]archival of your data');
+                    },
+                    complete: function() {
+                        loading.close();
                     }
                 });
-                loading.close();
+
             },
             error: function(xhr) {
-                clearInterval(progInterval);
                 loading.close();
                 errorHandler(xhr, 'Issue uploading your data');
+            },
+            complete: function() {
+                XNAT.app.timeout.maintainLogin = false;
+            },
+            xhr: function() {
+                var xhr = $.ajaxSettings.xhr();
+                if (xhr.upload) {
+                    xhr.upload.addEventListener('progress', function(event) {
+                        var percent = 0;
+                        var position = event.loaded || event.position; /*event.position is deprecated*/
+                        var total = event.total;
+                        if (event.lengthComputable) {
+                            percent = Math.ceil(position / total * 100);
+                            $(".pull-progress-bar")
+                                    .css("width", percent + "%")
+                                    .text(percent + "%");
+                        } else {
+                            $(".pull-progress-bar")
+                                    .css("width", "100%")
+                                    .text("Waiting...");
+                        }
+                    }, false);
+                    xhr.upload.addEventListener('loadend', function(event) {
+                        $(".pull-progress-bar")
+                                .css("width", "100%")
+                                .text("Requesting [pre]archival...");
+                    }, false);
+                }
+                return xhr;
             }
         });
     }

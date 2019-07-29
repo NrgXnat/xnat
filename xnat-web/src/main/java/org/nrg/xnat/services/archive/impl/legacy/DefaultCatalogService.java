@@ -25,6 +25,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -142,7 +143,7 @@ public class DefaultCatalogService implements CatalogService {
                     sessionCatalog.setDescription("Project: " + project + ", subject: " + subject + ", label: " + label);
 
                     CatCatalogI               sessionsByScanTypesAndFormats    = null;
-                    final Map<String, Object> sessionsByScanTypesAndFormatsMap = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options, withSize);
+                    final Map<String, Object> sessionsByScanTypesAndFormatsMap = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options);
                     if (sessionsByScanTypesAndFormatsMap != null) {
                         Object catalogObj = sessionsByScanTypesAndFormatsMap.get("catalog");
                         if (catalogObj != null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())) {
@@ -153,13 +154,13 @@ public class DefaultCatalogService implements CatalogService {
                                 Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
                                 totalSize += objSize;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize += unknownCount;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -168,7 +169,7 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     CatCatalogI               resourcesCatalog = null;
-                    final Map<String, Object> resourcesMap     = getRelatedData(project, subject, label, sessionId, resources, "resources", options, withSize);
+                    final Map<String, Object> resourcesMap     = getRelatedData(project, subject, label, sessionId, resources, "resources", options);
                     if (resourcesMap != null) {
                         Object catalogObj = resourcesMap.get("catalog");
                         if (catalogObj != null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())) {
@@ -179,13 +180,13 @@ public class DefaultCatalogService implements CatalogService {
                                 Object sizeObj = resourcesMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
                                 totalSize += objSize;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = resourcesMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize += unknownCount;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -194,7 +195,7 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     CatCatalogI               reconstructionsCatalog = null;
-                    final Map<String, Object> reconstructionsMap     = getRelatedData(project, subject, subject, sessionId, reconstructions, "reconstructions", options, withSize);
+                    final Map<String, Object> reconstructionsMap     = getRelatedData(project, subject, subject, sessionId, reconstructions, "reconstructions", options);
                     if (reconstructionsMap != null) {
                         Object catalogObj = reconstructionsMap.get("catalog");
                         if (catalogObj != null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())) {
@@ -205,13 +206,13 @@ public class DefaultCatalogService implements CatalogService {
                                 Object sizeObj = reconstructionsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
                                 totalSize += objSize;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = reconstructionsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize += unknownCount;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -220,7 +221,7 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     CatCatalogI               assessorsCatalog = null;
-                    final Map<String, Object> assessorsMap     = getSessionAssessors(project, subject, sessionId, assessors, options, resolvedUser, withSize);
+                    final Map<String, Object> assessorsMap     = getSessionAssessors(project, subject, sessionId, assessors, options, resolvedUser);
                     if (assessorsMap != null) {
                         Object catalogObj = assessorsMap.get("catalog");
                         if (catalogObj != null && CatCatalogI.class.isAssignableFrom(catalogObj.getClass())) {
@@ -231,13 +232,13 @@ public class DefaultCatalogService implements CatalogService {
                                 Object sizeObj = assessorsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
                                 totalSize += objSize;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = assessorsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
                                 resourcesOfUnknownSize += unknownCount;
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -456,7 +457,6 @@ public class DefaultCatalogService implements CatalogService {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("ConstantConditions")
     public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception {
         final XFTItem item             = parent.getItem();
         final boolean isScan           = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
@@ -555,7 +555,7 @@ public class DefaultCatalogService implements CatalogService {
             log.debug("Copied XML to temporary file {}", temporary.getPath());
 
             try (final FileInputStream validatorInput = new FileInputStream(temporary)) {
-                final XMLValidator.ValidationHandler handler = new XMLValidator().validateInputStream(validatorInput);
+                final ValidationHandler handler = new XMLValidator().validateInputStream(validatorInput);
                 if (!handler.assertValid()) {
                     throw handler.getErrors().get(0);
                 }
@@ -682,7 +682,7 @@ public class DefaultCatalogService implements CatalogService {
         try {
             return _parameterized.queryForObject(Permissions.getObjectExistsQuery(table, column, "objectId"), new MapSqlParameterSource("objectId", primaryKey), Boolean.class);
         } catch (BadSqlGrammarException e) {
-            log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. Returning false.", e);
+            log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. Returning false.", table, column, primaryKey, e);
             return false;
         }
     }
@@ -1219,7 +1219,7 @@ public class DefaultCatalogService implements CatalogService {
         return sessionMap;
     }
 
-    private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, final boolean withSize) {
+    private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
         Long totalSize              = 0L;
         Long resourcesOfUnknownSize = 0L;
         if (StringUtils.isBlank(session)) {
@@ -1281,7 +1281,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private Map<String, Object> getRelatedData(final String project, final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options, final boolean withSize) {
+    private Map<String, Object> getRelatedData(final String project, final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options) {
         if (resources == null || resources.isEmpty()) {
             return null;
         }
@@ -1329,8 +1329,8 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private Map<String, Object> getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options, final UserI user, final boolean withSize) {
-        if (assessorTypes == null || assessorTypes.isEmpty()) {
+    private Map<String, Object> getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options, final UserI user) {
+        if ((assessorTypes == null) || assessorTypes.isEmpty()) {
             return null;
         }
         Long                 totalSize              = 0L;

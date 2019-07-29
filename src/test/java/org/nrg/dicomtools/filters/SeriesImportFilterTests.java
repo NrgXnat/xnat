@@ -9,7 +9,13 @@
 
 package org.nrg.dicomtools.filters;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.dcm4che2.data.BasicDicomObject;
+import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.VR;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicomtools.configuration.SeriesImportFilterTestsConfiguration;
@@ -19,10 +25,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+import static org.dcm4che2.data.Tag.*;
+import static org.dcm4che2.data.VR.CS;
+import static org.dcm4che2.data.VR.LO;
 import static org.junit.Assert.*;
+import static org.nrg.dicomtools.filters.SeriesImportFilter.KEY_LIST;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SeriesImportFilterTestsConfiguration.class)
@@ -36,11 +45,11 @@ public class SeriesImportFilterTests {
         assertTrue(StringUtils.isNotBlank(_blacklistWithTagNamesRegexFilter));
         assertTrue(StringUtils.isNotBlank(_modalityMapFilter));
 
-        SeriesImportFilter whitelistRegexFilter = new RegExBasedSeriesImportFilter(_whitelistRegexFilter);
+        SeriesImportFilter whitelistRegexFilter             = new RegExBasedSeriesImportFilter(_whitelistRegexFilter);
         SeriesImportFilter whitelistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_whitelistWithTagNamesRegexFilter);
-        SeriesImportFilter blacklistRegexFilter = new RegExBasedSeriesImportFilter(_blacklistRegexFilter);
+        SeriesImportFilter blacklistRegexFilter             = new RegExBasedSeriesImportFilter(_blacklistRegexFilter);
         SeriesImportFilter blacklistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_blacklistWithTagNamesRegexFilter);
-        SeriesImportFilter modalityMapFilter = new ModalityMapSeriesImportFilter(_modalityMapFilter);
+        SeriesImportFilter modalityMapFilter                = new ModalityMapSeriesImportFilter(_modalityMapFilter);
 
         assertNotNull(whitelistRegexFilter);
         assertNotNull(whitelistWithTagNamesRegexFilter);
@@ -110,10 +119,10 @@ public class SeriesImportFilterTests {
         blacklistWithTagNamesRegexFilter.setProjectId("5");
         _service.commit(blacklistWithTagNamesRegexFilter, "admin");
 
-        final SeriesImportFilter retrievedWhitelistRegexFilter = _service.getSeriesImportFilter("1");
-        final SeriesImportFilter retrievedBlacklistRegexFilter = _service.getSeriesImportFilter("2");
-        final SeriesImportFilter retrievedModalityMapFilter = _service.getSeriesImportFilter();
-        final SeriesImportFilter retrievedHandRolledFilter = _service.getSeriesImportFilter("3");
+        final SeriesImportFilter retrievedWhitelistRegexFilter             = _service.getSeriesImportFilter("1");
+        final SeriesImportFilter retrievedBlacklistRegexFilter             = _service.getSeriesImportFilter("2");
+        final SeriesImportFilter retrievedModalityMapFilter                = _service.getSeriesImportFilter();
+        final SeriesImportFilter retrievedHandRolledFilter                 = _service.getSeriesImportFilter("3");
         final SeriesImportFilter retrievedWhitelistWithTagNamesRegexFilter = _service.getSeriesImportFilter("4");
         final SeriesImportFilter retrievedBlacklistWithTagNamesRegexFilter = _service.getSeriesImportFilter("5");
 
@@ -124,9 +133,87 @@ public class SeriesImportFilterTests {
         assertNotNull(handRolledFilter.getModalityFilter("PT"));
         assertEquals(whitelistWithTagNamesRegexFilter, retrievedWhitelistWithTagNamesRegexFilter);
         assertEquals(blacklistWithTagNamesRegexFilter, retrievedBlacklistWithTagNamesRegexFilter);
-        assertEquals(whitelistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST), retrievedWhitelistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST));
-        assertEquals(blacklistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST), retrievedBlacklistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST));
+        assertEquals(whitelistWithTagNamesRegexFilter.toMap().get(KEY_LIST), retrievedWhitelistWithTagNamesRegexFilter.toMap().get(KEY_LIST));
+        assertEquals(blacklistWithTagNamesRegexFilter.toMap().get(KEY_LIST), retrievedBlacklistWithTagNamesRegexFilter.toMap().get(KEY_LIST));
+
+        final List<DicomObject> shouldIncludes = buildDicomObjects(SHOULD_INCLUDES);
+        for (final DicomObject shouldInclude : shouldIncludes) {
+            assertTrue(retrievedModalityMapFilter.shouldIncludeDicomObject(shouldInclude));
+        }
+        final List<DicomObject> shouldNotIncludes = buildDicomObjects(SHOULD_NOT_INCLUDES);
+        for (final DicomObject shouldNotInclude : shouldNotIncludes) {
+            assertFalse(retrievedModalityMapFilter.shouldIncludeDicomObject(shouldNotInclude));
+        }
     }
+
+    private List<DicomObject> buildDicomObjects(final ImmutableMap<String, List<ImmutableMap<Integer, ImmutablePair<VR, String>>>> dataSet) {
+        final List<DicomObject> dicomObjects = new ArrayList<>();
+        for (final String sessionModality : dataSet.keySet()) {
+            for (final ImmutableMap<Integer, ImmutablePair<VR, String>> sessionMap : dataSet.get(sessionModality)) {
+                final DicomObject dicomObject = new BasicDicomObject();
+                for (final int tag : sessionMap.keySet()) {
+                    final Pair<VR, String> value = sessionMap.get(tag);
+                    dicomObject.putString(tag, value.getLeft(), value.getRight());
+                }
+            }
+        }
+        return dicomObjects;
+    }
+
+    private static final ImmutableMap<String, List<ImmutableMap<Integer, ImmutablePair<VR, String>>>> SHOULD_INCLUDES     = ImmutableMap.of("MR", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "MR data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no"))),
+                                                                                                                                            "PT", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "MR data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no"))),
+                                                                                                                                            "CT", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "MR data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no"))));
+    private static final ImmutableMap<String, List<ImmutableMap<Integer, ImmutablePair<VR, String>>>> SHOULD_NOT_INCLUDES = ImmutableMap.of("MR", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "PET data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes"))),
+                                                                                                                                            "PT", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "MR data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "no")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes"))),
+                                                                                                                                            "CT", Arrays.asList(ImmutableMap.of(Modality, ImmutablePair.of(CS, "MR"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "MR data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "PT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "Some other PT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes")),
+                                                                                                                                                                ImmutableMap.of(Modality, ImmutablePair.of(CS, "CT"),
+                                                                                                                                                                                SeriesDescription, ImmutablePair.of(LO, "CT data"),
+                                                                                                                                                                                BurnedInAnnotation, ImmutablePair.of(CS, "yes"))));
 
     @Inject
     private DicomFilterService _service;
@@ -142,22 +229,32 @@ public class SeriesImportFilterTests {
     @Value("${modalityMapFilter}")
     private String _modalityMapFilter;
 
-    private final Map<String, String> _t1SpinEcho = new HashMap<String, String>() {{ put("SeriesDescription", "T1 Spin Echo"); }};
-    private final Map<String, String> _localizer1 = new HashMap<String, String>() {{ put("SeriesDescription", "LOCALIZER"); }};
-    private final Map<String, String> _localizer2 = new HashMap<String, String>() {{ put("SeriesDescription", "SAG LOCALIZER And Then Some"); }};
-    private final Map<String, String> _petData = new HashMap<String, String>() {{ put("SeriesDescription", "PET Data"); }};
-    private final Map<String, String> _massivePhi = new HashMap<String, String>() {{ put("SeriesDescription", "This is PHI as all get out"); }};
-    private final Map<String, String> _burnedInAnnotation = new HashMap<String, String>() {{
+    private final Map<String, String> _t1SpinEcho                     = new HashMap<String, String>() {{
+        put("SeriesDescription", "T1 Spin Echo");
+    }};
+    private final Map<String, String> _localizer1                     = new HashMap<String, String>() {{
+        put("SeriesDescription", "LOCALIZER");
+    }};
+    private final Map<String, String> _localizer2                     = new HashMap<String, String>() {{
+        put("SeriesDescription", "SAG LOCALIZER And Then Some");
+    }};
+    private final Map<String, String> _petData                        = new HashMap<String, String>() {{
+        put("SeriesDescription", "PET Data");
+    }};
+    private final Map<String, String> _massivePhi                     = new HashMap<String, String>() {{
+        put("SeriesDescription", "This is PHI as all get out");
+    }};
+    private final Map<String, String> _burnedInAnnotation             = new HashMap<String, String>() {{
         put("SeriesDescription", "T1 Spin Echo");
         put("Modality", "MR");
         put("BurnedInAnnotation", "YES");
     }};
-    private final Map<String, String> _petScan = new HashMap<String, String>() {{
+    private final Map<String, String> _petScan                        = new HashMap<String, String>() {{
         put("SeriesDescription", "PET WB");
         put("Modality", "PT");
         put("BurnedInAnnotation", "NO");
     }};
-    private final Map<String, String> _mrScan = new HashMap<String, String>() {{
+    private final Map<String, String> _mrScan                         = new HashMap<String, String>() {{
         put("SeriesDescription", "T1 Spin Echo");
         put("Modality", "MR");
     }};
@@ -166,12 +263,12 @@ public class SeriesImportFilterTests {
         put("Modality", "MR");
         put("ImageType", "Captured Patient Data");
     }};
-    private final Map<String, String> _mrWithImageTypeDerivedScan = new HashMap<String, String>() {{
+    private final Map<String, String> _mrWithImageTypeDerivedScan     = new HashMap<String, String>() {{
         put("SeriesDescription", "T1 Spin Echo");
         put("Modality", "MR");
         put("ImageType", "DERIVED");
     }};
-    private final Map<String, String> _mrWithPetDataScan = new HashMap<String, String>() {{
+    private final Map<String, String> _mrWithPetDataScan              = new HashMap<String, String>() {{
         put("SeriesDescription", "PET Data");
         put("Modality", "MR");
     }};

@@ -22,11 +22,12 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -47,20 +48,20 @@ import org.xml.sax.helpers.AttributesImpl;
 /**
  * @author timo
  */
+@Slf4j
 public class SAXWriter {
-    static org.apache.log4j.Logger logger = Logger.getLogger(SAXWriter.class);
     boolean            allowSchemaLocation = true;
     boolean            _allowDBAccess      = true;
     boolean            allowClear          = true;
     String             location            = "";
     boolean            limited             = false;
-    TransformerHandler transformer         = null;
     Object             oldTransformer      = null;
     String             relativizePath      = null;
 
     boolean writeHiddenFields = false;
 
     private String appendRootPath = null;
+    private TransformerHandler transformer;
 
     Hashtable<String, String> aliases = new Hashtable<>();
 
@@ -72,52 +73,18 @@ public class SAXWriter {
         this(new StreamResult(out), allowDBAccess);
     }
 
-    /**
-     *
-     */
     public SAXWriter(final StreamResult streamResult, final boolean allowDBAccess) throws TransformerConfigurationException, IllegalArgumentException, TransformerFactoryConfigurationError {
-        // Set the TransformerFactory system property.
-        // Note: For more flexibility, load properties from a properties file.
-        final String key = "javax.xml.transform.TransformerFactory";
-        final String value = "org.apache.xalan.processor.TransformerFactoryImpl";
-        final Properties properties = System.getProperties();
-        if (properties.containsKey(key)) {
-            if (!properties.get(key).equals("org.apache.xalan.processor.TransformerFactoryImpl")) {
-                oldTransformer = properties.get(key);
-                properties.put(key, value);
-            } else {
-                oldTransformer = properties.get(key);
-            }
-        } else {
-            properties.put(key, value);
-        }
+        transformer = XDAT.getSerializerService().getSAXTransformerHandler();
 
-        System.setProperties(properties);
-
-        final TransformerHandler handler = ((SAXTransformerFactory) SAXTransformerFactory.newInstance()).newTransformerHandler();
-        final Transformer serializer = handler.getTransformer();
-
+        final Transformer serializer = transformer.getTransformer();
         serializer.setOutputProperty(OutputKeys.STANDALONE, "yes");
         serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         serializer.setOutputProperty(OutputKeys.METHOD, "xml");
         serializer.setOutputProperty(OutputKeys.INDENT, "yes");
         serializer.setOutputProperty("{ http://xml.apache.org/xslt }indent-amount", "4");
 
-        handler.setResult(streamResult);
-        transformer = handler;
+        transformer.setResult(streamResult);
         setAllowDBAccess(allowDBAccess);
-
-        final Properties updated = System.getProperties();
-        if (oldTransformer != null) {
-            if (updated.containsKey(key)) {
-                if (!updated.get(key).equals(oldTransformer)) {
-                    updated.put(key, oldTransformer);
-                }
-            }
-        } else {
-            updated.remove(key);
-        }
-        System.setProperties(updated);
     }
 
     public void setMethod(String s) {
@@ -137,7 +104,7 @@ public class SAXWriter {
         super.finalize();
     }
 
-    private Hashtable<String, XFTElementWrapper> elements = new Hashtable<String, XFTElementWrapper>();
+    private Hashtable<String, XFTElementWrapper> elements = new Hashtable<>();
 
     public XMLWrapperElement getElement(String name) {
         try {
@@ -145,9 +112,9 @@ public class SAXWriter {
                 elements.put(name, XFTMetaManager.GetWrappedElementByName(XMLWrapperFactory.GetInstance(), name));
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return (XMLWrapperElement) elements.get(name);
@@ -209,7 +176,7 @@ public class SAXWriter {
                                             try {
                                                 sb.append(item.getProperty(spec.getLocalCol()));
                                             } catch (FieldNotFoundException e) {
-                                                logger.error("", e);
+                                                log.error("", e);
                                             }
                                             sb.append("\"");
                                         }
@@ -224,7 +191,7 @@ public class SAXWriter {
                             try {
                                 sb.append(item.getProperty(gwf.getXMLPathString()));
                             } catch (FieldNotFoundException e) {
-                                logger.error("", e);
+                                log.error("", e);
                             }
                             sb.append("\"");
                         }
@@ -233,9 +200,9 @@ public class SAXWriter {
                     insertComments(sb.toString());
                 }
             } catch (XFTInitException e) {
-                logger.error("", e);
+                log.error("", e);
             } catch (ElementNotFoundException e) {
-                logger.error("", e);
+                log.error("", e);
             }
         }
     }
@@ -333,9 +300,9 @@ public class SAXWriter {
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -412,9 +379,9 @@ public class SAXWriter {
                             counter++;
                         }
                     } catch (XFTInitException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     } catch (ElementNotFoundException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     }
                 } else {
                     try {
@@ -460,16 +427,16 @@ public class SAXWriter {
 
                                 counter++;
                             } catch (DOMException e) {
-                                logger.error("", e);
+                                log.error("", e);
                             } catch (IllegalAccessException e) {
                             } catch (Exception e) {
-                                logger.error("", e);
+                                log.error("", e);
                             }
                         }
                     } catch (XFTInitException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     } catch (ElementNotFoundException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     }
                 }
 
@@ -518,9 +485,9 @@ public class SAXWriter {
                         this.transformer.endElement("", "", xmlField.getName(allowSchemaLocation));
                     }
                 } catch (XFTInitException e) {
-                    logger.error("", e);
+                    log.error("", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("", e);
+                    log.error("", e);
                 }
             }
         } else {
@@ -542,9 +509,9 @@ public class SAXWriter {
                             }
                         }
                     } catch (XFTInitException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     } catch (ElementNotFoundException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     }
                 } else {
                     try {
@@ -564,9 +531,9 @@ public class SAXWriter {
                             }
                         }
                     } catch (XFTInitException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     } catch (ElementNotFoundException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     }
                 }
             }
@@ -625,9 +592,9 @@ public class SAXWriter {
                         transformer.endElement("", "", xmlField.getName(allowSchemaLocation));
                     }
                 } catch (XFTInitException e) {
-                    logger.error("", e);
+                    log.error("", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("", e);
+                    log.error("", e);
                 }
             }
 

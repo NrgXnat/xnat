@@ -15,8 +15,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -40,10 +42,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.DefaultHandler2;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -348,18 +349,11 @@ public class XFTManager {
      * @throws ParserConfigurationException
      * @throws IOException
      */
-    private static List<String> getDependentSchema(InputStream in) throws ParserConfigurationException, SAXException, IOException {
+    private static List<String> getDependentSchema(final InputStream in) throws ParserConfigurationException, SAXException, IOException {
         try (final InputStream inputStream = in) {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            DependencyParser parser = new DependencyParser();
-
-            spf.setNamespaceAware(true);
-
-            SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", parser);
-            sp.parse(inputStream, parser);
-
-            return parser.dependencies;
+            final DependencyParser parser = new DependencyParser();
+            getSerializerService().parse(inputStream, parser, "http://xml.org/sax/properties/lexical-handler", parser);
+            return parser.getDependencies();
         }
     }
 
@@ -408,22 +402,25 @@ public class XFTManager {
         }
     }
 
-    private static class DependencyParser extends org.xml.sax.ext.DefaultHandler2 {
-        public List<String> dependencies = Lists.newArrayList();
-
+    private static class DependencyParser extends DefaultHandler2 {
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attributes) {
             if (StringUtils.equals("xs:import", qName)) {
                 for (int i = 0; i < attributes.getLength(); i++) {
                     String local = attributes.getLocalName(i);
                     String value = attributes.getValue(i);
                     if (StringUtils.isNotEmpty(value) && StringUtils.equals("schemaLocation", local)) {
-                        dependencies.add(FilenameUtils.getName(value));
+                        _dependencies.add(FilenameUtils.getName(value));
                     }
                 }
             }
         }
 
+        public List<String> getDependencies() {
+            return _dependencies;
+        }
+
+        private final List<String> _dependencies = new ArrayList<>();
     }
 
     public static List<DataModelDefinition> discoverDataModelDefs() {
@@ -683,5 +680,14 @@ public class XFTManager {
         al.trimToSize();
         return al;
     }
-}
 
+    private static SerializerService getSerializerService() {
+        if (_serializer == null) {
+            _serializer = XDAT.getSerializerService();
+        }
+        return _serializer;
+    }
+
+
+    private static SerializerService _serializer;
+}

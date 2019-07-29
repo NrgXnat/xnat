@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.5.3</version>
+        <version>1.7.5.4-SNAPSHOT</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
@@ -108,10 +108,6 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -221,12 +217,6 @@
         <dependency>
             <groupId>stratum</groupId>
             <artifactId>stratum</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xerces</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lowagie</groupId>

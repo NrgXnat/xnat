@@ -10,134 +10,103 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.io.IOException;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.services.impl.ValidationHandler;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.exception.ValidationException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.XMLValidator;
 import org.xml.sax.SAXParseException;
+
+import java.io.IOException;
 
 /**
  * @author Tim
  *
  */
+@Slf4j
+@SuppressWarnings("unused")
 public class XMLUpload extends SecureAction {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XMLUpload.class);
-
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(final RunData data, final Context context) throws Exception {
 //      get the ParameterParser from RunData
-        ParameterParser params = data.getParameters();
+        final ParameterParser params = data.getParameters();
 
         //grab the FileItems available in ParameterParser
-        FileItem fi = params.getFileItem("xml_to_store");
+        final FileItem fileItem = params.getFileItem("xml_to_store");
+        final ValidationHandler handler = new XMLValidator().validateInputStream(fileItem.getInputStream());
+        if(!handler.assertValid()){
+            throw handler.getErrors().get(0);
+        }
 
-        String allowDeletion = (String)TurbineUtils.GetPassedParameter("allowdeletion",data);
-        if (fi != null && allowDeletion!=null)
-        {
-            XFTItem item = null;
+        final String allowDeletion = (String)TurbineUtils.GetPassedParameter("allowdeletion",data);
+        final SAXReader reader = new SAXReader(XDAT.getUserDetails());
+        XFTItem   item = null;
+        if (allowDeletion != null) {
     	    try {
-                XMLValidator validator = new XMLValidator();
-                XMLValidator.ValidationHandler handler= validator.validateInputStream(fi.getInputStream());
+                item = reader.parse(fileItem.getInputStream());
+                log.info("Loaded XML Item: {}", item.getProperName());
 
-                if(!handler.assertValid()){
-                	throw handler.getErrors().get(0);
-                }
+                final ValidationResults vr = XFTValidator.Validate(item);
+                if (vr.isValid()) {
+                    log.info("Validation: PASSED");
 
-                //Document doc = XMLUtils.GetDOM(fi.getInputStream());
-                //item = XMLReader.TranslateDomToItem(doc,TurbineUtils.getUser(data));
-                SAXReader reader = new SAXReader(TurbineUtils.getUser(data));
-    			item = reader.parse(fi.getInputStream());
-                if (XFT.VERBOSE)
-                    System.out.println("Loaded XML Item:" + item.getProperName());
-                logger.info("Loaded XML Item:" + item.getProperName());
-
-                ValidationResults vr = XFTValidator.Validate(item);
-                if (vr.isValid())
-                {
-                    if (XFT.VERBOSE)
-                        System.out.println("Validation: PASSED");
-                    logger.info("Validation: PASSED");
-
-                	boolean q;
-                	boolean override;
-                	q = item.getGenericSchemaElement().isQuarantine();
-                	override = false;
+                    SaveItemHelper.unauthorizedSave(item, XDAT.getUserDetails(), false, item.getGenericSchemaElement().isQuarantine(), false, allowDeletion.equalsIgnoreCase("true"), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
                 	
-                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
-                	
-                	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
-                    logger.info("Item Successfully Stored.");
+                    log.info("Item Successfully Stored.");
 
-                    DisplayItemAction dia = new DisplayItemAction();
-                	data = TurbineUtils.SetSearchProperties(data,item);
-                	dia.doPerform(data,context);
-
-                	postProcessing(item,data,context);
-
-                	return;
-                }else
-                {
+                    final RunData           searchData = TurbineUtils.SetSearchProperties(data, item);
+                    final DisplayItemAction dia        = new DisplayItemAction();
+                    dia.doPerform(searchData, context);
+                    postProcessing(item);
+                } else {
                 	throw new ValidationException(vr);
                 }
             } catch (IOException e) {
-                logger.error("",e);
+                log.error("", e);
                 data.setScreenTemplate("Error.vm");
                 data.setMessage("Error loading document.");
-            } catch (XFTInitException e) {
-                logger.error("",e);
-            } catch (ElementNotFoundException e) {
-                logger.error("",e);
-            } catch (FieldNotFoundException e) {
-                logger.error("",e);
+            } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+                log.error("", e);
             } catch (ValidationException e) {
-                logger.error("",e);
+                log.error("", e);
                 data.setScreenTemplate("Error.vm");
                 data.setMessage("XML Validation Exception.<BR>" + e.getValidation().toHTML());
     		} catch (Exception e) {
     		    if (e instanceof SAXParseException)
 				{
-                    logger.error("",e);
+                    log.error("", e);
                     data.setScreenTemplate("Error.vm");
-                    String message = "SAX Parser Exception.<BR><BR>" + e.getMessage();
-                    data.setMessage(message);
-				}else if (e instanceof InvalidPermissionException){
-				    logger.error("",e);
+                    data.setMessage("SAX Parser Exception.<BR><BR>" + e.getMessage());
+				}else if (item != null && e instanceof InvalidPermissionException){
+				    log.error("", e);
                     data.setScreenTemplate("Error.vm");
-                    String message = "Permissions Exception.<BR><BR>" + e.getMessage();
-                    final SchemaElement se = SchemaElement.GetElement(item.getXSIType());
-                    final ElementSecurity es=se.getElementSecurity();
+                    final StringBuilder message = new StringBuilder("Permissions Exception.<BR><BR>").append(e.getMessage());
+                    final SchemaElement   se = SchemaElement.GetElement(item.getXSIType());
+                    final ElementSecurity es =se.getElementSecurity();
                     if(es!=null && es.getSecurityFields()!=null){
-                    	message += "<BR><BR>Please review the security field (" + se.getElementSecurity().getSecurityFields() + ") for this data type.";
-                    	message += " Verify that the data reflects a currently stored value and the user has relevant permissions for this data.";
+                    	message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
+                    	message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
                     }
-                    data.setMessage(message);
+                    data.setMessage(message.toString());
 				}else{
-	                logger.error("",e);
+	                log.error("", e);
 	                data.setScreenTemplate("Error.vm");
 	                data.setMessage(e.getMessage());
 				}
@@ -145,12 +114,10 @@ public class XMLUpload extends SecureAction {
         }
     }
 
-    public void postProcessing(XFTItem item,RunData data, Context context) throws Exception{
-        SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-        if (se.getGenericXFTElement().getType().getLocalPrefix().equalsIgnoreCase("xdat"))
-        {
-            ElementSecurity.refresh();
-        }else if (se.getFullXMLName().equals("xnat:investigatorData")|| se.getFullXMLName().equals("xnat:projectData")){
+    public void postProcessing(final XFTItem item) throws Exception {
+        final SchemaElementI schemaElement = SchemaElement.GetElement(item.getXSIType());
+        if (StringUtils.equalsIgnoreCase("xdat", schemaElement.getGenericXFTElement().getType().getLocalPrefix()) ||
+            StringUtils.equalsAny(schemaElement.getFullXMLName(), "xnat:investigatorData", "xnat:projectData")) {
             ElementSecurity.refresh();
         }
     }

@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.5.3</version>
+    <version>1.7.5.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -66,17 +66,18 @@
 
         <xnat.version>1.7.5</xnat.version>
         <xnat.previous.version>1.7.5.2</xnat.previous.version>
+        <prj.previous.version>1.7.5.3</prj.previous.version>
         <xnat-web.version>${project.version}</xnat-web.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
-        <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
+        <xnat-tasks.version>${project.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${project.version}</xnat-data-models.version>
+        <xnat-data-models.version>${prj.previous.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
         <xdat.version>${project.version}</xdat.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.previous.version}</nrg.framework.version>
+        <nrg.framework.version>${project.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
@@ -163,8 +164,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.2</lombok.version>
-        <lombok.checksum>f13db210efa2092a58bb7befce58ffa502e5fefc5e1099f45007074008756bc0</lombok.checksum>
+        <lombok.version>1.18.8</lombok.version>
+        <lombok.checksum>0396952823579b316a0fe85cbd871bbb3508143c2bcbd985dd7800e806cb24fc</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -223,8 +224,6 @@
         <wizard.version>1.1</wizard.version>
         <xalan.version>2.7.2</xalan.version>
         <xbean.version>3.17</xbean.version>
-        <xml-apis.version>1.4.01</xml-apis.version>
-        <xerces-impl.version>2.11.0</xerces-impl.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
         <xstream.version>1.4.9</xstream.version>
 
@@ -983,22 +982,6 @@
                 <version>${xstream.version}</version>
             </dependency>
             <dependency>
-                <groupId>xerces</groupId>
-                <artifactId>xercesImpl</artifactId>
-                <version>${xerces-impl.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>xml-apis</groupId>
-                <artifactId>xml-apis</artifactId>
-                <version>${xml-apis.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>xalan</groupId>
                 <artifactId>xalan</artifactId>
                 <version>${xalan.version}</version>
@@ -1414,6 +1397,10 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>xml-apis</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1544,6 +1531,10 @@
                 <artifactId>fop</artifactId>
                 <version>${fop.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>xml-apis</groupId>
                         <artifactId>*</artifactId>

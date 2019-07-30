@@ -9,23 +9,17 @@
 
 package org.nrg.xnat.initialization;
 
-import ch.qos.logback.core.joran.spi.JoranException;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
@@ -43,7 +37,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.xml.sax.SAXException;
 
@@ -54,7 +47,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -67,7 +59,7 @@ import static lombok.AccessLevel.PRIVATE;
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
-@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
+@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class, SerializerConfig.class})
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
@@ -120,7 +112,7 @@ public class RootConfig {
     }
 
     @Bean
-    public LoggingService loggingService(final Path xnatHome) throws ParserConfigurationException, JoranException, SAXException, TransformerException, IOException {
+    public LoggingService loggingService(final Path xnatHome) throws ParserConfigurationException, SAXException, TransformerException, IOException {
         return new DefaultLoggingService(xnatHome, documentBuilder(), transformer(), xnatPluginBeanManager());
     }
 
@@ -134,34 +126,8 @@ public class RootConfig {
     }
 
     @Bean
-    public Jackson2ObjectMapperBuilder objectMapperBuilder() throws NrgServiceException {
-        return new Jackson2ObjectMapperBuilder()
-                .serializationInclusion(JsonInclude.Include.NON_NULL)
-                .failOnEmptyBeans(false)
-                .mixIns(mixIns())
-                .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
-                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .modulesToInstall(_jacksonModules);
-    }
-
-    @Bean
-    public Module hibernateModule() {
-        return new Hibernate4Module();
-    }
-
-    @Bean
     public Module guavaModule() {
         return new GuavaModule();
-    }
-
-    @Bean
-    public Map<Class<?>, Class<?>> mixIns() throws NrgServiceException {
-        return Beans.getMixIns();
-    }
-
-    @Bean
-    public SerializerService serializerService(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
-        return new SerializerService(objectMapperBuilder);
     }
 
     @Bean

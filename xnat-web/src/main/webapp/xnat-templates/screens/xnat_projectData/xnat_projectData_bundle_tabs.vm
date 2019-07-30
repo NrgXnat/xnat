@@ -1,3 +1,6 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #set($path = "screens/xnat_projectData/xnat_projectData_bundle_header.vm")
 #if($turbineUtils.validateClasspathTemplate($path))
     #parse($path)
@@ -96,7 +99,7 @@
 
     function debug_out(msg){
         var div = document.getElementById("mylogger");
-        if (div != undefined && div != null) {
+        if (div) {
             div.innerHTML += msg + "<br/>";
         }
     }

@@ -10,32 +10,35 @@
 
 package org.nrg.xdat.bean.reader;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.ClassMappingFactory;
 import org.nrg.xdat.bean.base.BaseElement;
 import org.nrg.xdat.bean.base.BaseElement.UnknownFieldException;
 import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.Hashtable;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
-
+@Slf4j
 public class XDATXMLReader extends DefaultHandler {
-    static org.apache.log4j.Logger logger = Logger.getLogger(XDATXMLReader.class);
-    private BaseElement root = null;
-    private SAXReaderObject current = null;
-    private String tempValue = null;
-    Hashtable uriToPrefixMapping = new Hashtable();
-    Hashtable prefixToURIMapping = new Hashtable();
-    String xsi = null;
-    
+    private final SerializerService   _serializer;
+    private final Map<String, String> prefixToURIMapping = new HashMap<>();
+    private       BaseElement         root               = null;
+    private       SAXReaderObject     current            = null;
+    private       String              tempValue          = null;
+
+    public XDATXMLReader() {
+        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+    }
+
     public BaseElement getItem()
     {
         return root;
@@ -44,15 +47,15 @@ public class XDATXMLReader extends DefaultHandler {
     /* (non-Javadoc)
      * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String, java.lang.String)
      */
-    public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
-        this.uriToPrefixMapping.put(uri,prefix);
+    @Override
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
         this.prefixToURIMapping.put(prefix,uri);
     }
     
     /* (non-Javadoc)
      * @see org.xml.sax.ContentHandler#characters(char[], int, int)
      */
+    @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
         if (length > 0) {
                 String temp = (new String(ch, start, length));
@@ -75,7 +78,6 @@ public class XDATXMLReader extends DefaultHandler {
         return getBaseElement(uri + ":" + localName);
     }
 
-    
     public BaseElement getBaseElement(String name) throws SAXException{
         String className=null;;
 		try {
@@ -102,11 +104,8 @@ public class XDATXMLReader extends DefaultHandler {
             
         }
     }
-    
-    
-    /* (non-Javadoc)
-     * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
-     */
+
+    @Override
     public void startElement(String uri, String localName, String qName,Attributes attributes) throws SAXException {
         tempValue = null;
         if (root ==null)
@@ -124,7 +123,7 @@ public class XDATXMLReader extends DefaultHandler {
                         try {
                             item.setDataField(local,value);
                         } catch (BaseElement.UnknownFieldException e1) {
-                            logger.error("",e1);
+                            log.error("", e1);
                         } catch (IllegalArgumentException e1) {
                             throw new SAXException("Invalid value for attribute '" + local +"'");
                         }
@@ -184,7 +183,7 @@ public class XDATXMLReader extends DefaultHandler {
                                     try {
                                         item.setDataField(local,value);
                                     } catch (BaseElement.UnknownFieldException e1) {
-                                        logger.error("",e1);
+                                        log.error("", e1);
                                     } catch (IllegalArgumentException e1) {
                                         throw new SAXException("Invalid value for attribute '" + local +"'");
                                     }
@@ -227,7 +226,7 @@ public class XDATXMLReader extends DefaultHandler {
                         throw new SAXException(e2.getMessage());
                     }
                 } catch (UnknownFieldException e) {
-                    logger.error("",e);
+                    log.error("", e);
                     throw new SAXException("INVALID XML STRUCTURE:");
                 }
             }else{
@@ -244,7 +243,6 @@ public class XDATXMLReader extends DefaultHandler {
                             try {
                                 currentItem.setDataField(current_header + "/" + local,value);
                             } catch (BaseElement.UnknownFieldException e1) {
-                                logger.error(e1);
                                 throw new SAXException("Unknown field '" + current_header + "/" + local +"'");
                             } catch (IllegalArgumentException e1) {
                                 throw new SAXException("Invalid value for attribute '" + local +"'");
@@ -293,62 +291,51 @@ public class XDATXMLReader extends DefaultHandler {
         return _base;
     }
     
-    /* (non-Javadoc)
-     * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-     */
+    @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        String current_header = current.getHeader();
-            if (tempValue!=null && !tempValue.equals("") && isValidText(tempValue))
-            {
-                BaseElement currentItem = current.getItem();
-                try {
-                    currentItem.setDataField(current_header,tempValue);
-                } catch (BaseElement.UnknownFieldException e1) {
-                    throw new SAXException("Invalid field '" + current_header +"'");
-                } catch (IllegalArgumentException e1) {
-                    throw new SAXException("Invalid value for field '" + current_header +"'");
-                } catch (RuntimeException e){
-                    logger.error(e);
-                    throw new SAXException("Unknown Exception <" + current_header +">" + tempValue);
-                }finally{
-                    tempValue=null;
-                }
+        final String currentHeader = current.getHeader();
+        if (tempValue != null && !tempValue.equals("") && isValidText(tempValue)) {
+            final BaseElement currentItem = current.getItem();
+            try {
+                currentItem.setDataField(currentHeader, tempValue);
+            } catch (BaseElement.UnknownFieldException e) {
+                throw new SAXException("Invalid field '" + currentHeader + "'");
+            } catch (IllegalArgumentException e) {
+                throw new SAXException("Invalid value for field '" + currentHeader + "'");
+            } catch (RuntimeException e) {
+                throw new SAXException("Unknown Exception <" + currentHeader + ">" + tempValue);
+            } finally {
+                tempValue = null;
             }
-            
-            if (current.getHeader() == "")
-            {
-                while ((!current.isRoot()) && current.getHeader()=="")
-                {
+        }
+
+        if (StringUtils.isBlank(current.getHeader())) {
+            while ((!current.isRoot()) && StringUtils.isBlank(current.getHeader())) {
+                current = current.getParent();
+            }
+            current.removeHeader();
+        } else {
+            current.removeHeader();
+            if (current.getIsInlineRepeater() && StringUtils.isBlank(current.getHeader())) {
+                while ((!current.isRoot()) && StringUtils.isBlank(current.getHeader())) {
                     current = current.getParent();
                 }
                 current.removeHeader();
-            }else{
-                current.removeHeader();
-                if (current.getIsInlineRepeater() && current.getHeader() == "")
-                {
-                    while ((!current.isRoot()) && current.getHeader()=="")
-                    {
-                        current = current.getParent();
-                    }
-                    current.removeHeader();
-                }
             }
-            
+        }
     }
-    /* (non-Javadoc)
-     * @see org.xml.sax.ContentHandler#startDocument()
-     */
-    public void startDocument() throws SAXException {
+
+    @Override
+    public void startDocument() {
     }
-    /* (non-Javadoc)
-     * @see org.xml.sax.ContentHandler#endDocument()
-     */
-    public void endDocument() throws SAXException {
+
+    @Override
+    public void endDocument() {
     }
     
-    public class SAXReaderObject{
+    public static class SAXReaderObject{
         BaseElement item = null;
-        String header = "";
+        StringBuilder header = new StringBuilder();
         SAXReaderObject parent = null;
         boolean root = false;
         boolean isInlineRepeater = false;
@@ -371,26 +358,25 @@ public class XDATXMLReader extends DefaultHandler {
         }
         
         public String getHeader(){
-            return header;
+            return header.toString();
         }
         
         public boolean isRoot(){return root;}
         
-        public void addHeader(String s){
-            if (header =="")
-            {
-                header += s;
+        public void addHeader(final String s){
+            if (StringUtils.isBlank(header)) {
+                header.append(s);
             }else{
-                header += "/" + s;
+                header.append("/").append(s);
             }
         }
         
         public void removeHeader()
         {
-            if(header.indexOf("/" )!=-1){
-                header = header.substring(0,header.lastIndexOf("/" ));
+            if(header.toString().contains("/")){
+                header = new StringBuilder(StringUtils.substringBeforeLast(header.toString(), "/"));
             }else{
-                header ="";
+                header = new StringBuilder();
             }
         }
         
@@ -414,17 +400,7 @@ public class XDATXMLReader extends DefaultHandler {
         
         public boolean insertNewLine(){
             try {
-                if (FIELD_TYPE==null)
-                {
-                    return false;
-                }else{
-                    if (FIELD_TYPE.equals(BaseElement.field_LONG_DATA))
-                    {
-                        return true;
-                    }else{
-                        return false;
-                    }
-                }
+                return FIELD_TYPE != null && FIELD_TYPE.equals(BaseElement.field_LONG_DATA);
             } catch (RuntimeException e) {
                 return false;
             }
@@ -460,80 +436,46 @@ public class XDATXMLReader extends DefaultHandler {
     			bs[j] =' ';
     		}
     	}
-    	return new java.io.ByteArrayInputStream(bs);
+    	return new ByteArrayInputStream(bs);
     }
-    
-    public BaseElement parse(java.io.File data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        try {
-            spf.setNamespaceAware(true);
-            java.io.FileInputStream fi = new java.io.FileInputStream(data);
-            //get a new instance of parser
-            SAXParser sp = spf.newSAXParser();
+
+    public BaseElement parse(final File data) throws IOException, SAXException {
+        try (final FileInputStream inputStream = new FileInputStream(data)) {
             //parse the file and also register this class for call backs
-            sp.parse(XDATXMLReader.removeNullUnicodeChars(fi), this);
-            // sp.parse(fi, this);
-            fi.close();
-            
-        }catch(ParserConfigurationException pce) {
-            pce.printStackTrace();
+            _serializer.parse(XDATXMLReader.removeNullUnicodeChars(inputStream), this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
         }
-        
         return getItem();
     }
 
-    public BaseElement parse(Reader data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
+    public BaseElement parse(final Reader data) throws IOException, SAXException {
         try {
-            spf.setNamespaceAware(true);
-        
-            //get a new instance of parser
-            SAXParser sp = spf.newSAXParser();
             //parse the file and also register this class for call backs
-            sp.parse(new org.xml.sax.InputSource(data), this);
-            
-        }catch(ParserConfigurationException pce) {
-            pce.printStackTrace();
+            _serializer.parse(new InputSource(data), this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
         }
-        
         return getItem();
     }
 
-
-    public BaseElement parse(org.xml.sax.InputSource data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
+    public BaseElement parse(final InputSource data) throws IOException, SAXException {
         try {
-            spf.setNamespaceAware(true);
-        
-            //get a new instance of parser
-            SAXParser sp = spf.newSAXParser();
             //parse the file and also register this class for call backs
-            sp.parse(data, this);
-            
-        }catch(ParserConfigurationException pce) {
+            _serializer.parse(data, this);
+        } catch (ParserConfigurationException pce) {
             pce.printStackTrace();
         }
-        
         return getItem();
     }
 
-    public BaseElement parse(InputStream data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
+    public BaseElement parse(final InputStream data) throws IOException, SAXException {
         try {
-            spf.setNamespaceAware(true);
-        
-            //get a new instance of parser
-            SAXParser sp = spf.newSAXParser();
             //parse the file and also register this class for call backs
-            sp.parse(data, this);
-            
-            
-        }catch(ParserConfigurationException pce) {
-            pce.printStackTrace();
+            _serializer.parse(data, this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
         }
-        
         return getItem();
     }
-    
-    
 }

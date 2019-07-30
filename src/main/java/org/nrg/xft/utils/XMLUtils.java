@@ -7,272 +7,173 @@
  * Released under the Simplified BSD.
  */
 
-
-
 package org.nrg.xft.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.framework.utilities.PropertiesUtils;
+import org.nrg.xdat.XDAT;
 import org.springframework.core.io.Resource;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerException;
 import java.io.*;
 
-public  class XMLUtils
-{	
-	private static final Logger logger = LoggerFactory.getLogger(XMLUtils.class);
-	
-	/*********************************************************
-	 * Saves a DOM Document to the specified file.
-	 * @param doc XML DOM Document
-	 * @param _outputName File path and name
-	 * @throws Exception
+@Slf4j
+public  class XMLUtils {	
+	/**
+	 * Saves an XNAT Document object to the specified file.
+	 * @param document XML DOM Document
+	 * @param outputName File path and name
+	 * @throws Exception When an error occurs
 	 */
-	
-	public static void DOMToFile(Document doc, String _outputName) throws Exception
-	{
-        File f = new File(_outputName);
-        if (!f.exists())
-        {
-            f.createNewFile();
-        }
-		FileWriter writer = new FileWriter(f);
-		try {
-		  OutputFormat format = new OutputFormat(doc);
-		  format.setIndenting(true);
-		  format.setIndent(4);
-		  format.setLineWidth(0);
-
-		  XMLSerializer output = new XMLSerializer(writer, format);
-		  output.asDOMSerializer();
-		  output.serialize(doc);
+	public static void DOMToFile(final Document document, final String outputName) throws Exception {
+		final File outputFile = new File(outputName);
+		if (!outputFile.exists()) {
+			//noinspection ResultOfMethodCallIgnored
+			outputFile.createNewFile();
 		}
-		catch (IOException e) {
-		  System.err.println(e);
+		try (final FileWriter writer = new FileWriter(outputFile)) {
+			getSerializer().toXml(document, writer);
+			log.info("Created file: {}", outputName);
+		} catch (IOException e) {
+			log.error("An error occurred writing to the output file {}", outputName, e);
 		}
-		logger.info("Created File:" + _outputName);
-		writer.close();
 	}
 	
-	public static void PrettyPrintDOM(File f)
-	{
+	public static void PrettyPrintDOM(final File file) {
 	    try {
-            Document d = GetDOM(f);
-            DOMToFile(d,f.getAbsolutePath());
+            DOMToFile(GetDOM(file), file.getAbsolutePath());
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("", e);
         }
 	}
 	
-	public static void PrettyPrintSAX(File f)
-	{
+	@SuppressWarnings("unused")
+	public static void PrettyPrintSAX(final File file) {
 	    try {
-            Document d = GetDOM(f);
-            DOMToFile(d,f.getAbsolutePath());
+            DOMToFile(GetDOM(file), file.getAbsolutePath());
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("", e);
         }
 	}
 
-	/*********************************************************
+	/**
 	 * Translates the DOM Document to a basic string.
-	 * @param doc XML DOM Document
+	 * @param document XML DOM Document
 	 */
-	public static String DOMToString(Document doc)
-	{
-		StringWriter writer = new StringWriter();
+	public static String DOMToString(final Document document) {
+		return DOMToCustomString(document, OutputKeys.OMIT_XML_DECLARATION, "yes");
+	}
+
+	public static String DOMToCustomString(final Document document, final String... properties) {
 		try {
-			 OutputFormat format = new OutputFormat(doc);
-			  format.setLineSeparator("\r\n");
-			  format.setIndenting(true);
-			  format.setOmitComments(true);
-			  format.setLineWidth(0);
-			  format.setOmitDocumentType(true);
-			  format.setOmitXMLDeclaration(true);
-			  XMLSerializer output = new XMLSerializer(writer, format);
-			 
-			  output.serialize(doc);
+			return getSerializer().toXml(document, PropertiesUtils.of(properties));
+		} catch (TransformerException e) {
+		  log.error("An error occurred trying to transform an XML document to a string", e);
+		  return null;
 		}
-		catch (IOException e) {
-		  System.err.println(e);
-		}
-		
-		return writer.toString();
 	}
 
 
-	/*********************************************************
+	/**
 	 * Translates the DOM Document to a basic string.
-	 * @param doc XML DOM Document
+	 * @param document XML DOM Document
 	 */
-	public static String DOMToBasicString(Document doc)
-	{
-		StringWriter writer = new StringWriter();
+	@SuppressWarnings("unused")
+	public static String DOMToBasicString(final Document document) {
 		try {
-			 OutputFormat format = new OutputFormat(doc);
-			  format.setLineSeparator("\r\n");
-			  format.setIndenting(true);
-			  format.setIndent(4);
-			  format.setLineWidth(0);
-			  
-			  XMLSerializer output = new XMLSerializer(writer, format);
-			  output.serialize(doc);
+			return getSerializer().toXml(document);
 		}
-		catch (IOException e) {
-		  System.err.println(e);
+		catch (TransformerException e) {
+			log.error("An error occurred trying to transform an XML document to a string", e);
+			return null;
 		}
-		
-		return writer.toString();
 	}
-	/*********************************************************
+	/**
 	 * Translates the DOM Document to a basic string.
-	 * @param doc XML DOM Document
+	 * @param document XML DOM Document
 	 */
-	public static String DOMToHTML(Document doc)
-	{
-		StringWriter writer = new StringWriter();
-		try {
-		  OutputFormat format = new OutputFormat(doc);
-		  format.setLineSeparator("<BR>");
-		  format.setIndenting(true);
-		  format.setLineWidth(0);
-		  format.setOmitComments(true);
-		  format.setOmitDocumentType(true);
-		  format.setOmitXMLDeclaration(true);
-		  XMLSerializer output = new XMLSerializer(writer, format);
-		  output.serialize(doc);
-		}
-		catch (IOException e) {
-		  System.err.println(e);
-		}
-		
-		String s = writer.toString();
-		s = StringUtils.replace(s, "<BR>", "*BR*");
-		s =  StringUtils.replace(StringUtils.replace(StringUtils.replace(s, "</", "&lt;/"), "<", "&lt;"), ">", "&gt;");
-		return StringUtils.replace(s, "*BR*", "<BR>");
+	public static String DOMToHTML(final Document document) {
+		return DOMToCustomString(document, OutputKeys.OMIT_XML_DECLARATION, "yes", OutputKeys.METHOD, "html");
 	}
 	
 	/**
 	 * Translates the given DOM Document to a ByteArrayOutputStream
-	 * @param doc
+	 * @param document XML DOM Document
 	 * @return Returns the ByteArrayOutputStream translation of the DOM element
 	 */
-	public static ByteArrayOutputStream DOMToBAOS(Document doc)
-	{
-		ByteArrayOutputStream writer = new ByteArrayOutputStream();
+	public static ByteArrayOutputStream DOMToBAOS(final Document document) {
+		final ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try {
-		  OutputFormat format = new OutputFormat(doc);
-		  format.setLineSeparator("\r\n");
-		  format.setLineWidth(0);
-		  format.setIndenting(true);
-		  format.setOmitComments(true);
-		  format.setOmitDocumentType(true);
-		  format.setOmitXMLDeclaration(true);
-		  XMLSerializer output = new XMLSerializer(writer, format);
-		  output.serialize(doc);
+			output.write(StringUtils.defaultIfBlank(DOMToString(document), "").getBytes());
+		} catch (IOException e) {
+			log.error("An error occurred trying to transform an XML document to a byte-array output stream", e);
 		}
-		catch (IOException e) {
-		  System.err.println(e);
-		}
-		
-		return writer;
+		return output;
 	}
 	
 	
-	/**********************************************************
-	 * Transforms a File into a XML DOM Document using DocumentBuilderFactory.
+	/**
+	 * Transforms a File into a XML DOM Document.
+	 * 
+	 * @param resource File to be translated.
+	 * @return doc
+	 */
+	public static Document GetDOM(final Resource resource) {
+		try {
+			return getSerializer().parse(resource);
+		} catch (Exception ex) {
+			throw new RuntimeException("Unable to load DOM document from resource: " + resource, ex);
+		}
+	}
+	
+	/**
+	 * Transforms a File into a XML DOM Document.
 	 * 
 	 * @param file File to be translated.
 	 * @return doc
 	 */
-	public static Document GetDOM(Resource file)
-	{
-		try{
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.parse(file.getInputStream());
-			return doc;
-		}catch(Exception ex)
-		{
-		    RuntimeException e1 = new RuntimeException("Unable to load DOM document:" + file + "\n" + ex.getMessage());
-			throw e1;
+	public static Document GetDOM(final File file) {
+		try (final InputStream input = new FileInputStream(file)){
+			return getSerializer().parse(input);
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load DOM document from file: " + file, e);
 		}
 	}
-	
-	
-	/**********************************************************
-	 * Transforms a File into a XML DOM Document using DocumentBuilderFactory.
-	 * 
-	 * @param file File to be translated.
-	 * @return doc
-	 */
-	public static Document GetDOM(File file)
-	{
-		try{
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.parse(file);
-			return doc;
-		}catch(Exception ex)
-		{
-		    RuntimeException e1 = new RuntimeException("Unable to load DOM document:" + file + "\n" + ex.getMessage());
-			throw e1;
+
+	public static Document GetDOM(final InputStream input) {
+		try {
+			return getSerializer().parse(input);
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load DOM document", e);
 		}
 	}
-	
-	public static Document GetDOM(InputStream is)
-	{
-	    try{
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.parse(is);
-			return doc;
-		}catch(Exception ex)
-		{
-		    RuntimeException e1 = new RuntimeException("Unable to load DOM document:\n" + ex.getMessage());
-			throw e1;
-		}
-	}
-	
-	public static Document GetDOM(String stream)
-	{
-	    try{
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-            StringReader sr = new StringReader(stream);
-            InputSource is = new InputSource(sr);
-			Document doc = builder.parse(is);
-			return doc;
-		}catch(Exception ex)
-		{
-		    RuntimeException e1 = new RuntimeException("Unable to load DOM document:\n" + ex.getMessage());
-			throw e1;
+
+	public static Document GetDOM(final String stream) {
+		try {
+			return getSerializer().parse(stream);
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load DOM document:", e);
 		}
 	}
 		
-	public static boolean HasAttribute(Node node, String name)
-	{
-		boolean found = false;
-		NamedNodeMap nnm = node.getAttributes();
-		if (nnm != null)
-		{
-			Node temp = nnm.getNamedItem(name);
-			if (temp != null)
-			{
-				return true;
-			}
-		}
-		
-		return found;
+	public static boolean HasAttribute(final Node node, final String name) {
+		final NamedNodeMap nodeMap = node.getAttributes();
+		return nodeMap != null && nodeMap.getNamedItem(name) != null;
 	}
-	
+
+	private static SerializerService getSerializer() {
+		if (_serializer == null) {
+			_serializer = XDAT.getContextService().getBean(SerializerService.class);
+		}
+		return _serializer;
+	}
+
+	private static SerializerService _serializer;
 }
 

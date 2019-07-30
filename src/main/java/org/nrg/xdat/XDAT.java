@@ -32,6 +32,7 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -112,6 +113,7 @@ public class XDAT implements Initializable, Configurable{
 	private static NotificationService        _notificationService;
 	private static XdatUserAuthService        _xdatUserAuthService;
 	private static ConfigService              _configurationService;
+	private static SerializerService          _serializerService;
 	private static DataTypeAwareEventService  _eventService;
 	private static SiteConfigPreferences      _siteConfigPreferences;
 	private static CacheManager               _cacheManager;
@@ -123,7 +125,7 @@ public class XDAT implements Initializable, Configurable{
 
 	private String instanceSettingsLocation = null;
 
-	/**
+    /**
 	 * configure torque
 	 *
 	 * @param configuration Configuration
@@ -652,6 +654,17 @@ public class XDAT implements Initializable, Configurable{
 	    	_configurationService = getContextService().getBean(ConfigService.class);
 	    }
 	    return _configurationService;
+	}
+
+	/**
+	 * Returns an instance of the serializer service.
+	 * @return An instance of the {@link SerializerService} service.
+	 */
+	public static SerializerService getSerializerService() {
+	    if (_serializerService == null) {
+	    	_serializerService = getContextService().getBean(SerializerService.class);
+	    }
+	    return _serializerService;
 	}
 
 	public static DataTypeAwareEventService getEventService() {

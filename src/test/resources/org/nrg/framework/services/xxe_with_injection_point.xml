@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE xnat:Project [
+  <!ELEMENT xnat:Project ANY>
+  <!ATTLIST xnat:Project
+     ID               CDATA             #REQUIRED
+     secondary_ID     CDATA             #REQUIRED
+  >
+  <!ATTLIST xnat:Project xmlns:xnat CDATA #FIXED "http://nrg.wustl.edu/xnat">
+  <!ELEMENT xnat:name ANY>
+  <!ELEMENT xnat:description ANY>
+  <!ENTITY hack SYSTEM "${injectedPath}">
+]>
+<xnat:Project ID="testProject" secondary_ID="testProject">
+  <xnat:name>testProject</xnat:name>
+  <xnat:description>&hack;</xnat:description>
+</xnat:Project>

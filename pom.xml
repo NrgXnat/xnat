@@ -35,9 +35,6 @@
         <finalName>xdat-${project.version}</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>

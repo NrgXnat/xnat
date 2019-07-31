@@ -147,7 +147,11 @@ public abstract class DataAccessPredicate implements Predicate<String> {
         final Map<String, String> parameters = new HashMap<>(_parameters);
         parameters.put(_scope.code(), entityId);
         try {
-            return getTemplate().queryForList(_query, parameters);
+            final List<Map<String, Object>> properties = getTemplate().queryForList(_query, parameters);
+            if (properties.isEmpty()) {
+                throw new NotFoundException(parameters.toString());
+            }
+            return properties;
         } catch (EmptyResultDataAccessException ignored) {
             throw new NotFoundException(parameters.toString());
         }
@@ -194,7 +198,7 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                 }
                 try {
                     // Skip this for the special case of reading projects...
-                    if (getScope() != Project && getAccessLevel() != Read) {
+                    if (!(getScope() == Project && getAccessLevel() == Read)) {
                         final boolean accessByPrimaryId;
                         switch (getAccessLevel()) {
                             case Delete:
@@ -350,65 +354,62 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "WHERE " +
                                                                    "    (((x.id = :experiment OR x.label = :experiment) AND x.project = :prj) OR " +
                                                                    "     ((sh.sharing_share_xnat_experimentda_id = :experiment OR sh.label = :experiment) AND sh.project = :prj))";
-    private static final String QUERY_SUBJECT_EXPERIMENT         = "WITH  " +
-                                                                   "    subjects AS  " +
-                                                                   "        (SELECT  " +
-                                                                   "             s.id,  " +
-                                                                   "             s.label,  " +
-                                                                   "             s.project  " +
-                                                                   "         FROM  " +
-                                                                   "             xnat_subjectdata s  " +
-                                                                   "         WHERE  " +
-                                                                   "             :subj IN (s.id, s.label)  " +
-                                                                   "         UNION  " +
-                                                                   "         SELECT  " +
-                                                                   "             p.subject_id AS id,  " +
-                                                                   "             p.label,  " +
-                                                                   "             p.project  " +
-                                                                   "         FROM  " +
-                                                                   "             xnat_projectparticipant p  " +
-                                                                   "         WHERE  " +
-                                                                   "             :subj IN (p.subject_id, label)),  " +
-                                                                   "    experiments AS  " +
-                                                                   "        (SELECT  " +
-                                                                   "             e.id,  " +
-                                                                   "             e.label,  " +
-                                                                   "             e.project,  " +
-                                                                   "             m.element_name,  " +
-                                                                   "             (m.element_name || '/project')::VARCHAR(255) AS secured_property  " +
-                                                                   "         FROM  " +
-                                                                   "             xnat_experimentdata e  " +
-                                                                   "             LEFT JOIN xnat_subjectassessordata a ON e.id = a.id  " +
-                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id  " +
-                                                                   "         WHERE  " +
-                                                                   "             :experiment IN (e.id, e.label)  " +
-                                                                   "         UNION  " +
-                                                                   "         SELECT  " +
-                                                                   "             s.sharing_share_xnat_experimentda_id AS id,  " +
-                                                                   "             s.label,  " +
-                                                                   "             s.project,  " +
-                                                                   "             m.element_name,  " +
-                                                                   "             (m.element_name || '/sharing/share/project')::VARCHAR(255) AS secured_property  " +
-                                                                   "         FROM  " +
-                                                                   "             xnat_experimentdata_share s  " +
-                                                                   "             LEFT JOIN xnat_subjectassessordata a ON s.sharing_share_xnat_experimentda_id = a.id  " +
-                                                                   "             LEFT JOIN xnat_experimentdata e ON a.id = e.id  " +
-                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id  " +
-                                                                   "         WHERE  " +
-                                                                   "             :experiment IN (s.sharing_share_xnat_experimentda_id, s.label))  " +
-                                                                   "SELECT  " +
-                                                                   "    e.project AS project_id,  " +
-                                                                   "    s.id AS subject_id,  " +
-                                                                   "    s.label AS subject_label,  " +
-                                                                   "    e.id AS experiment_id,  " +
-                                                                   "    e.label AS experiment_label,  " +
-                                                                   "    e.element_name AS data_type,  " +
+    private static final String QUERY_SUBJECT_EXPERIMENT         = "WITH " +
+                                                                   "    subjects AS " +
+                                                                   "        (SELECT " +
+                                                                   "             s.id, " +
+                                                                   "             s.label, " +
+                                                                   "             s.project " +
+                                                                   "         FROM " +
+                                                                   "             xnat_subjectdata s " +
+                                                                   "         WHERE :subj IN (s.id, s.label) " +
+                                                                   "         UNION " +
+                                                                   "         SELECT " +
+                                                                   "             p.subject_id AS id, " +
+                                                                   "             p.label, " +
+                                                                   "             p.project " +
+                                                                   "         FROM " +
+                                                                   "             xnat_projectparticipant p " +
+                                                                   "         WHERE :subj IN (p.subject_id, label)), " +
+                                                                   "    experiments AS " +
+                                                                   "        (SELECT " +
+                                                                   "             e.id, " +
+                                                                   "             e.label, " +
+                                                                   "             e.project, " +
+                                                                   "             a.subject_id, " +
+                                                                   "             m.element_name, " +
+                                                                   "             (m.element_name || '/project')::VARCHAR(255) AS secured_property " +
+                                                                   "         FROM " +
+                                                                   "             xnat_experimentdata e " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON e.id = a.id " +
+                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
+                                                                   "         WHERE :experiment IN (e.id, e.label) " +
+                                                                   "         UNION " +
+                                                                   "         SELECT " +
+                                                                   "             s.sharing_share_xnat_experimentda_id AS id, " +
+                                                                   "             s.label, " +
+                                                                   "             s.project, " +
+                                                                   "             a.subject_id, " +
+                                                                   "             m.element_name, " +
+                                                                   "             (m.element_name || '/sharing/share/project')::VARCHAR(255) AS secured_property " +
+                                                                   "         FROM " +
+                                                                   "             xnat_experimentdata_share s " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON s.sharing_share_xnat_experimentda_id = a.id " +
+                                                                   "             LEFT JOIN xnat_experimentdata e ON a.id = e.id " +
+                                                                   "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
+                                                                   "         WHERE :experiment IN (s.sharing_share_xnat_experimentda_id, s.label)) " +
+                                                                   "SELECT " +
+                                                                   "    e.project AS project_id, " +
+                                                                   "    s.id AS subject_id, " +
+                                                                   "    s.label AS subject_label, " +
+                                                                   "    e.id AS experiment_id, " +
+                                                                   "    e.label AS experiment_label, " +
+                                                                   "    e.element_name AS data_type, " +
                                                                    "    e.secured_property AS secured_property " +
-                                                                   "FROM  " +
-                                                                   "    experiments e  " +
-                                                                   "    LEFT JOIN subjects s ON e.project = s.project  " +
-                                                                   "WHERE  " +
-                                                                   "    s.id IS NOT NULL";
+                                                                   "FROM " +
+                                                                   "    experiments e " +
+                                                                   "    LEFT JOIN subjects s ON e.project = s.project AND e.subject_id = s.id " +
+                                                                   "WHERE s.id IS NOT NULL";
     private static final String QUERY_PROJECT_SUBJECT_EXPERIMENT = QUERY_PROJECT_EXPERIMENT + " AND " +
                                                                    "    (((s.id = :subj OR s.label = :subj) AND s.project = :prj) OR " +
                                                                    "     ((p.subject_id = :subj OR p.label = :subj) AND p.project = :prj))";

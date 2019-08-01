@@ -149,10 +149,7 @@ configurations {
         exclude group: "log4j", module: "log4j"
         exclude group: "mockobjects"
         exclude group: "mysql"
-        exclude group: "net.sf.saxon", module: "Saxon-B"
-        exclude group: "net.sf.saxon", module: "saxon"
-        exclude group: "net.sf.saxon", module: "saxon-dom"
-        exclude group: "net.sf.saxon", module: "saxon-xpath"
+        exclude group: "net.sf.saxon"
         exclude group: "ojb", module: "ojb"
         exclude group: "org.apache.geronimo.specs"
         exclude group: "org.apache.struts"
@@ -294,9 +291,6 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
-
-    implementation "net.sourceforge.saxon:saxon"
-    implementation "xalan:xalan"
 
     implementation "eu.bitwalker:UserAgentUtils"
     implementation "com.twmacinta:fast-md5"

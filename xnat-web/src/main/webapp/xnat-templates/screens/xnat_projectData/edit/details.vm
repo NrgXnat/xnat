@@ -109,7 +109,7 @@
                 ##<input class="abbreviation" id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")">
                 ##<p class="project-id">$item.getProperty("xnat:projectData/ID")</p>
             #else
-                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="14" maxlength="14" onchange="this.value=stringCamelCaps(this.value);">
+                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="24" maxlength="24" onchange="this.value=stringCamelCaps(this.value);">
             #end
             <div class="requirementStatement">
                 <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the database and <b>cannot be changed.</b></span>

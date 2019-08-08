@@ -1895,7 +1895,8 @@ public class DefaultCatalogService implements CatalogService {
             "  ${scanTypesClause} AND " +
             "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT       = "SELECT " +
-            "  scan.id   AS scan_id, " +
+            "  scan.id   AS scan_id, " + 
+            "  scan.type AS scan_type, " +
             "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
             "  res.file_size AS size " +
             "FROM xnat_imagescandata scan " +

@@ -14,6 +14,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -26,6 +27,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -661,10 +663,35 @@ public class XDAT implements Initializable, Configurable{
 	 * @return An instance of the {@link SerializerService} service.
 	 */
 	public static SerializerService getSerializerService() {
-	    if (_serializerService == null) {
-	    	_serializerService = getContextService().getBean(SerializerService.class);
-	    }
-	    return _serializerService;
+		if (_serializerService == null) {
+			final SerializerService service = getContextService().getBean(SerializerService.class);
+			if (service != null) {
+				_serializerService = service;
+			} else {
+				final Map<String, String> appInfo = Maps.filterKeys(System.getenv(), new Predicate<String>() {
+					@Override
+					public boolean apply(@Nullable final String key) {
+						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_");
+					}
+				});
+				// We're running an application of some sort, not in a web application, so we need to
+				// strap on the serializer service by hand.
+				if (!appInfo.isEmpty()) {
+					log.info("Found environment variables that indicate this is running in a stand-alone application:");
+					for (final String key : appInfo.keySet()) {
+						log.info(" * \"{}\": {}", key, appInfo.get(key));
+					}
+					log.info("Because this is a stand-alone application, I will instantiate SerializerService on its own.");
+					final SerializerConfig config = new SerializerConfig();
+					try {
+						_serializerService = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				}
+			}
+		}
+		return _serializerService;
 	}
 
 	public static DataTypeAwareEventService getEventService() {

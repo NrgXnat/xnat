@@ -15,7 +15,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -352,7 +351,7 @@ public class XFTManager {
     private static List<String> getDependentSchema(final InputStream in) throws ParserConfigurationException, SAXException, IOException {
         try (final InputStream inputStream = in) {
             final DependencyParser parser = new DependencyParser();
-            getSerializerService().parse(inputStream, parser, "http://xml.org/sax/properties/lexical-handler", parser);
+            XDAT.getSerializerService().parse(inputStream, parser, "http://xml.org/sax/properties/lexical-handler", parser);
             return parser.getDependencies();
         }
     }
@@ -680,14 +679,4 @@ public class XFTManager {
         al.trimToSize();
         return al;
     }
-
-    private static SerializerService getSerializerService() {
-        if (_serializer == null) {
-            _serializer = XDAT.getSerializerService();
-        }
-        return _serializer;
-    }
-
-
-    private static SerializerService _serializer;
 }

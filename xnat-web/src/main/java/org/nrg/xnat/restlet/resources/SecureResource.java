@@ -154,7 +154,7 @@ public abstract class SecureResource extends Resource {
     public SecureResource(Context context, Request request, Response response) {
         super(context, request, response);
 
-        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        _serializer = XDAT.getSerializerService();
         if (null == _serializer) {
             getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
@@ -1291,8 +1291,8 @@ public abstract class SecureResource extends Resource {
     public Representation buildChangesets(XFTItem item, String key, MediaType mt) throws Exception {
         String files = getQueryVariable("includeFiles");
         String details = getQueryVariable("includeDetails");
-        final boolean includeFiles = (StringUtils.isEmpty(files)) ? false : Boolean.valueOf(files);
-        final boolean includeDetails = (StringUtils.isEmpty(details)) ? false : Boolean.valueOf(details);
+        final boolean includeFiles = !StringUtils.isEmpty(files) && Boolean.parseBoolean(files);
+        final boolean includeDetails = !StringUtils.isEmpty(details) && Boolean.parseBoolean(details);
 
         return new JSONObjectRepresentation(MediaType.APPLICATION_JSON, (new WorkflowBasedHistoryBuilder(item, key, getUser(), includeFiles, includeDetails)).toJSON(getQueryVariable("dateFormat")));
     }

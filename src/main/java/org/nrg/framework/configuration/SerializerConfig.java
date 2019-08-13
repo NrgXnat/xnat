@@ -23,6 +23,9 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -31,7 +34,9 @@ public class SerializerConfig {
     @Autowired
     public void setJacksonModules(final Module[] jacksonModules) {
         log.info("Adding {} Jackson modules", jacksonModules != null ? jacksonModules.length : 0);
-        _jacksonModules = jacksonModules;
+        if (jacksonModules != null) {
+            _jacksonModules.addAll(Arrays.asList(jacksonModules));
+        }
     }
 
     @Bean
@@ -52,7 +57,7 @@ public class SerializerConfig {
                 .mixIns(mixIns())
                 .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .modulesToInstall(_jacksonModules);
+                .modulesToInstall(_jacksonModules.toArray(new Module[0]));
     }
 
     @Bean
@@ -106,5 +111,5 @@ public class SerializerConfig {
         return new SerializerService(objectMapperBuilder(), documentBuilderFactory(), saxParserFactory(), transformerFactory(), saxTransformerFactory());
     }
 
-    private Module[] _jacksonModules;
+    private final List<Module> _jacksonModules = new ArrayList<>();
 }

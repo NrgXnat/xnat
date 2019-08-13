@@ -70,7 +70,6 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      *
      * @param marshalablePackages The list of package names that can be searched.
      */
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired(required = false)
     @Qualifier("marshalablePackages")
     public void setMarshalablePackages(final List<String> marshalablePackages) {

@@ -32,12 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +57,8 @@ public class ThreadAndProcessFileLock {
     private final static Map<File, AtomicInteger> accessorCount = new HashMap<>();
 
     public synchronized static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
-                                                                       boolean readOnly) throws IOException {
+                                                                                    boolean readOnly)
+            throws IOException {
         ThreadAndProcessFileLock lock;
         if (lockMap.containsKey(file)) {
             // Another thread is accessing this file, too. Use its ReadWriteLock
@@ -74,12 +77,17 @@ public class ThreadAndProcessFileLock {
             return;
         }
         if (accessorCount.get(file).decrementAndGet() == 0) {
+            try {
+                Files.deleteIfExists(lockMap.get(file).dummyFile.toPath());
+            } catch (IOException e) {
+                log.error("Unable to delete dummy file", e);
+            }
             lockMap.remove(file);
             accessorCount.remove(file);
         }
     }
 
-    // The dummy file on which we synchronize for inter-process
+    // The dummy file on which we synchronize for inter-process reading & writing
     private File dummyFile;
     private RandomAccessFile dummyRAF;
     private FileChannel channel;
@@ -104,7 +112,7 @@ public class ThreadAndProcessFileLock {
      * @param file the file
      * @param readOnly Is this a readonly lock?
      */
-    public ThreadAndProcessFileLock(File file, boolean readOnly) throws IOException {
+    private ThreadAndProcessFileLock(File file, boolean readOnly) throws IOException {
         this(null, file, readOnly);
     }
 
@@ -115,7 +123,7 @@ public class ThreadAndProcessFileLock {
      * @param l the ThreadAndProcessFileLock whose ReadWriteLock we want to share
      * @param readOnly Is this a readonly lock?
      */
-    public ThreadAndProcessFileLock(ThreadAndProcessFileLock l, File file, boolean readOnly) throws IOException {
+    private ThreadAndProcessFileLock(ThreadAndProcessFileLock l, File file, boolean readOnly) throws IOException {
         // Have to share the mutex for thread locking
         this.mutex = l == null ? new ReentrantReadWriteLock() : l.mutex;
         this.threadLock = readOnly ? mutex.readLock() : mutex.writeLock();
@@ -123,13 +131,37 @@ public class ThreadAndProcessFileLock {
 
         // Open channel on the dummy file to synchronize across processes
         this.dummyFile = new File(file.getParent(), "." + file.getName() + ".lock");
-        this.dummyRAF = new RandomAccessFile(this.dummyFile, "rw"); // "rw" bc "r" errors out if file DNE
-        this.channel = this.dummyRAF.getChannel();
+        openDummyRAF(true);
+        this.channel = dummyRAF.getChannel();
 
         // Store the inter-process file channel file lock so we can unlock it
         this.fileLock = null;
     }
 
+    /**
+     * Open Random Access File for dummyFile, retry once if this fails in case the issue is another process deleting the
+     * dummyFile at the exact time we're trying to open it
+     *
+     * @param retry catch one FNF and retry
+     * @throws FileNotFoundException if the given file object does not denote an existing, writable regular file and a new regular file of
+     *                               that name cannot be created, or if some other error occurs while opening or creating the file
+     */
+    private void openDummyRAF(boolean retry) throws FileNotFoundException {
+        try {
+            dummyRAF = new RandomAccessFile(dummyFile, "rw");
+        } catch (FileNotFoundException e) {
+            if (retry) {
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException e2) {
+                    // ignore
+                }
+                openDummyRAF(false);
+            } else {
+                throw e;
+            }
+        }
+    }
 
     /**
      * Acquires the fileLock on the file.  This code will try repeatedly to
@@ -157,6 +189,7 @@ public class ThreadAndProcessFileLock {
             }
         } while (System.currentTimeMillis() <= timeoutTime);
 
+        dummyRAF.close();
         throw new IOException("Unable to acquire thread and process locks");
     }
 
@@ -166,14 +199,6 @@ public class ThreadAndProcessFileLock {
      * @throws IOException when the fileLock cannot be released.
      */
     public void unlock() throws IOException {
-        try {
-            if (dummyFile.exists()) dummyFile.delete();
-            if (channel.isOpen()) channel.close();
-            dummyRAF.close();
-        } catch (IOException e) {
-            // ignore, just trying to cleanup
-        }
-
         if (fileLock != null) {
             try {
                 fileLock.release(); // Is released when we close the channel, but just in case...
@@ -183,6 +208,13 @@ public class ThreadAndProcessFileLock {
             } catch (IOException e) {
                 throw new IOException("Unable to release fileLock " + fileLock, e);
             }
+        }
+
+        try {
+            if (channel.isOpen()) channel.close();
+            dummyRAF.close();
+        } catch (IOException e) {
+            // ignore, just trying to cleanup
         }
 
         threadLock.unlock();

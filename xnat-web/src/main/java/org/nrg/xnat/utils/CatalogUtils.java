@@ -212,43 +212,32 @@ public class CatalogUtils {
         @Nonnull
         public static CatalogData getOrCreate(final String rootPath, final XnatResourcecatalogI resource)
                 throws ServerException {
-
-            String fullPath = getFullPath(rootPath, resource);
-            if (fullPath.endsWith("\\")) {
-                fullPath = fullPath.substring(0, fullPath.length() - 1);
-            }
-            if (fullPath.endsWith("/")) {
-                fullPath = fullPath.substring(0, fullPath.length() - 1);
-            }
-
+            File f = getOrCreateCatalogFile(rootPath, resource);
             XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
                     (XnatResourcecatalog) resource : null;
+            return new CatalogData(f, catRes);
+        }
 
-            File f = new File(fullPath);
-            if (f.exists()) {
-                return new CatalogData(f, catRes, null, false);
+        @Nonnull
+        public static CatalogData getOrCreateAndClean(final String rootPath, final XnatResourcecatalogI resource,
+                                                      final boolean includeFullPaths) throws ServerException {
+            return getOrCreateAndClean(rootPath, resource, includeFullPaths, null, null);
+        }
+        @Nonnull
+        public static CatalogData getOrCreateAndClean(final String rootPath, final XnatResourcecatalogI resource,
+                                                      final boolean includeFullPaths, final UserI user,
+                                                      final EventMetaI c) throws ServerException {
+            CatalogData catalogData = getOrCreate(rootPath, resource);
+
+            formalizeCatalog(catalogData.catBean, catalogData.catPath, user, c);
+
+            if (includeFullPaths) {
+                CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
+                mf.setName("CATALOG_LOCATION");
+                mf.setMetafield(catalogData.catPath);
+                catalogData.catBean.addMetafields_metafield(mf);
             }
-
-            f = new File(fullPath + ".gz");
-            if (f.exists()) {
-                return new CatalogData(f, catRes, null, false);
-            }
-
-            String catId = resource.getLabel() != null ? resource.getLabel() :
-                    Long.toString(Calendar.getInstance().getTimeInMillis());
-
-            f = new File(fullPath);
-            try {
-                CatalogData catalogData = new CatalogData(f, catRes, catId);
-                writeCatalogToFile(catalogData);
-                return catalogData;
-            } catch (IOException e) {
-                log.error("Error writing to the folder: {}", f.getParentFile().getAbsolutePath(), e);
-                throw new ServerException(e);
-            } catch (Exception e) {
-                log.error("Error creating the folder: {}", f.getParentFile().getAbsolutePath(), e);
-                throw new ServerException(e);
-            }
+            return catalogData;
         }
     }
 
@@ -1631,6 +1620,12 @@ public class CatalogUtils {
         addAuditEntry(summary, key, action, i);
     }
 
+    /**
+     * Deprecated: use {@link #writeCatalogToFile(CatalogData)}
+     * @param xml the catalog bean
+     * @param dest the file destination
+     * @throws Exception for errors
+     */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest) throws Exception {
         try {
@@ -1640,17 +1635,41 @@ public class CatalogUtils {
         }
     }
 
+    /**
+     * Deprecated: use {@link #writeCatalogToFile(CatalogData, boolean)}
+     * @param xml the catalog bean
+     * @param dest the file destination
+     * @param calculateChecksums compute checksums or skip?
+     * @throws Exception for errors
+     */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums) throws Exception {
         writeCatalogToFile(xml, dest, calculateChecksums, null);
     }
 
+    /**
+     * Deprecated: use {@link #writeCatalogToFile(CatalogData, boolean, Map<String, Map<String, Integer>>)}
+     * @param xml the catalog bean
+     * @param dest the file destination
+     * @param calculateChecksums compute checksums or skip?
+     * @param auditSummary the audit summary map
+     * @throws Exception for errors
+     */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums,
                                           Map<String, Map<String, Integer>> auditSummary) throws Exception {
         writeCatalogToFile(xml, dest, calculateChecksums, auditSummary, null);
     }
 
+    /**
+     * Deprecated: use {@link #writeCatalogToFile(CatalogData, boolean, Map<String, Map<String, Integer>>)}
+     * @param xml the catalog bean
+     * @param dest the file destination
+     * @param calculateChecksums compute checksums or skip?
+     * @param auditSummary the audit summary map
+     * @param previousCatalogChecksum the checksum of the catalog when it was read, so that it isn't incorrectly overwritten
+     * @throws Exception for errors
+     */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, boolean calculateChecksums,
                                           Map<String, Map<String, Integer>> auditSummary,
@@ -1662,6 +1681,10 @@ public class CatalogUtils {
         writeCatalogToFile(catalogData, calculateChecksums, auditSummary);
     }
 
+    /**
+     * @param catalogData the catalog data
+     * @throws Exception for errors
+     */
     public static void writeCatalogToFile(CatalogData catalogData) throws Exception {
         try {
             writeCatalogToFile(catalogData, getChecksumConfiguration());
@@ -1670,10 +1693,21 @@ public class CatalogUtils {
         }
     }
 
+    /**
+     * @param catalogData the catalog data
+     * @param calculateChecksums compute checksums or skip?
+     * @throws Exception for errors
+     */
     public static void writeCatalogToFile(CatalogData catalogData, boolean calculateChecksums) throws Exception {
         writeCatalogToFile(catalogData, calculateChecksums, null);
     }
 
+    /**
+     * @param catalogData the catalog data
+     * @param calculateChecksums compute checksums or skip?
+     * @param auditSummary the audit summary map
+     * @throws Exception for errors
+     */
     public static void writeCatalogToFile(CatalogData catalogData, boolean calculateChecksums,
                                           Map<String, Map<String, Integer>> auditSummary) throws Exception {
 
@@ -1720,17 +1754,73 @@ public class CatalogUtils {
         }
     }
 
+    @Nonnull
+    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource) throws ServerException {
+        String fullPath = getFullPath(rootPath, resource);
+        if (fullPath.endsWith("\\")) {
+            fullPath = fullPath.substring(0, fullPath.length() - 1);
+        }
+        if (fullPath.endsWith("/")) {
+            fullPath = fullPath.substring(0, fullPath.length() - 1);
+        }
+
+        File f = new File(fullPath);
+        if (f.exists()) {
+            return f;
+        }
+
+        f = new File(fullPath + ".gz");
+        if (f.exists()) {
+            try {
+                FileUtils.GUnzipFiles(f);
+            } catch (IOException e) {
+                throw new ServerException(e);
+            }
+            return getOrCreateCatalogFile(rootPath, resource);
+        }
+
+        f = new File(fullPath);
+        try {
+            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
+                    (XnatResourcecatalog) resource : null;
+            String catId = resource.getLabel() != null ? resource.getLabel() :
+                    Long.toString(Calendar.getInstance().getTimeInMillis());
+            CatalogData catalogData = new CatalogData(f, catRes, catId);
+            writeCatalogToFile(catalogData);
+            return catalogData.catFile;
+        } catch (IOException e) {
+            log.error("Error writing to the folder: {}", f.getParentFile().getAbsolutePath(), e);
+            throw new ServerException(e);
+        } catch (Exception e) {
+            log.error("Error creating the folder: {}", f.getParentFile().getAbsolutePath(), e);
+            throw new ServerException(e);
+        }
+    }
+
+    /**
+     * Deprecated use {@link #getOrCreateCatalogFile} with appropriate exception handling
+     * @param rootPath the root path
+     * @param resource the resource
+     * @return the catalog file
+     */
     @Nullable
+    @Deprecated
     public static File getCatalogFile(final String rootPath, final XnatResourcecatalogI resource) {
         try {
-            return CatalogData.getOrCreate(rootPath, resource).catFile;
+            return getOrCreateCatalogFile(rootPath, resource);
         } catch (ServerException e) {
             log.error(e.getMessage(), e);
             return null;
         }
     }
 
+    /**
+     * Deprecated use {@link CatalogUtils.CatalogData} object with appropriate exception handling
+     * @param catalogFile the catalog file
+     * @return the catalog bean
+     */
     @Nullable
+    @Deprecated
     public static CatCatalogBean getCatalog(File catalogFile) {
         try {
             CatalogData catalogData = new CatalogData(catalogFile, false);
@@ -1742,16 +1832,23 @@ public class CatalogUtils {
     }
 
     /**
+     * Deprecated should use {@link CatalogUtils.CatalogData#getOrCreate(String, XnatResourcecatalogI)} with
+     * appropriate exception handling
+     *
      * Parses catalog xml for resource and returns the Bean object.  Returns null if not found.
      *
      * @param rootPath The root path for the catalog.
      * @param resource The resource catalog.
      * @return The initialized catalog bean.
      */
+    @Deprecated
     public static CatCatalogBean getCatalog(String rootPath, XnatResourcecatalogI resource) {
         File catalogFile = null;
         try {
             catalogFile = CatalogUtils.getCatalogFile(rootPath, resource);
+            if (catalogFile == null) {
+                throw new FileNotFoundException();
+            }
             if (catalogFile.getName().endsWith(".gz")) {
                 FileUtils.GUnzipFiles(catalogFile);
                 catalogFile = CatalogUtils.getCatalogFile(rootPath, resource);
@@ -1767,10 +1864,31 @@ public class CatalogUtils {
         return catalogFile != null ? getCatalog(catalogFile) : null;
     }
 
+    /**
+     * Deprecated should use {@link CatalogUtils.CatalogData#getOrCreateAndClean(String, XnatResourcecatalogI, boolean)}
+     * with appropriate exception handling
+     * @param rootPath The root path for the catalog.
+     * @param resource The resource catalog.
+     * @param includeFullPaths T to set CATALOG_LOCATION metafield
+     * @return the catalog bean
+     */
+    @Deprecated
     public static CatCatalogBean getCleanCatalog(String rootPath, XnatResourcecatalogI resource, boolean includeFullPaths) {
         return getCleanCatalog(rootPath, resource, includeFullPaths, null, null);
     }
 
+    /**
+     * Deprecated should use {@link CatalogUtils.CatalogData#getOrCreateAndClean(String, XnatResourcecatalogI,
+     * boolean, UserI, EventMetaI)} with appropriate exception handling
+     *
+     * @param rootPath The root path for the catalog.
+     * @param resource The resource catalog.
+     * @param includeFullPaths T to set CATALOG_LOCATION metafield
+     * @param user the user
+     * @param c the event
+     * @return the catalog bean
+     */
+    @Deprecated
     public static CatCatalogBean getCleanCatalog(String rootPath, XnatResourcecatalogI resource,
                                                  boolean includeFullPaths, UserI user, EventMetaI c) {
         File catalogFile = handleCatalogFile(rootPath, resource);
@@ -2403,25 +2521,22 @@ public class CatalogUtils {
             }
 
             if (createChecksum) {
-                if (CatalogUtils.setChecksum(entry, catPath)) {
+                if (setChecksum(entry, catPath)) {
                     modified = true;
                 }
             }
 
-            if (StringUtils.isEmpty(entry.getId()) || removeMissingFiles) {
+            if (removeMissingFiles) {
                 File f = getFile(entry, catPath);
-                if (f != null && StringUtils.isEmpty(entry.getId())) {
-                    entry.setId(Paths.get(catPath).relativize(f.toPath()).toString());
+                if (f == null) {
+                    toRemove.add(entry);
                     modified = true;
-                } else if (f == null) {
-                    if (removeMissingFiles) {
-                        toRemove.add(entry);
-                        modified = true;
-                    } else {
-                        log.warn("The catalog with ID {} located in the folder {} contains an invalid entry. " +
-                                "Please check and/or refresh the catalog.", cat.getId(), catPath);
-                    }
                 }
+            }
+
+            if (StringUtils.isEmpty(entry.getId())) {
+                entry.setId(getRelativePathForCatalogEntry(entry, catPath));
+                modified = true;
             }
 
             if (entry.getClass().equals(CatDcmentryBean.class)) {

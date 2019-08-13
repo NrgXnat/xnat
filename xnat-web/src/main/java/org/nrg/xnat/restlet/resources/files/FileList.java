@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.dcm.Dcm2Jpg;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -958,24 +959,29 @@ public class FileList extends XNATCatalogTemplate {
             boolean includeRoot = this.isQueryVariableTrue("includeRootPath");
 
             XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
-            CatCatalogBean cat = catResource.getCleanCatalog(proj.getRootArchivePath(), includeRoot, null, null);
-            String parentPath = catResource.getCatalogFile(proj.getRootArchivePath()).getParent();
+            CatalogUtils.CatalogData catalogData;
+            try {
+                catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(proj.getRootArchivePath(), catResource,
+                        includeRoot);
+            } catch (ServerException e) {
+                log.error("Issue reading catalog file", e);
+                throw new ElementNotFoundException("catalog resource " + catResource.getLabel() + " (id=" +
+                        catResource.getXnatAbstractresourceId() + ")");
+            }
 
             if (StringUtils.isEmpty(filePath) && index == null) {
                 String baseURI = getBaseURI();
 
-                if (cat != null) {
-                	table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath,
-                            baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
-                            catResource, false, entryFilter, proj, locator));
-                }
+                table.insertRows(CatalogUtils.getEntryDetails(catalogData.catBean, catalogData.catPath,
+                        baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
+                        catResource, false, entryFilter, proj, locator));
             } else {
 
                 String zipEntry = null;
 
                 CatEntryI entry;
                 if (index != null) {
-                    entry = CatalogUtils.getEntryByFilter(cat, new CatEntryFilterI() {
+                    entry = CatalogUtils.getEntryByFilter(catalogData.catBean, new CatEntryFilterI() {
                         private int count = 0;
                         private CatEntryFilterI filter = entryFilter;
 
@@ -1002,10 +1008,10 @@ public class FileList extends XNATCatalogTemplate {
                             break;
                         }
                     }
-                    entry = CatalogUtils.getEntryByURI(cat, filePath);
+                    entry = CatalogUtils.getEntryByURI(catalogData.catBean, filePath);
 
                     if (entry == null) {
-                        entry = CatalogUtils.getEntryById(cat, filePath);
+                        entry = CatalogUtils.getEntryById(catalogData.catBean, filePath);
                     }
                 }
 
@@ -1032,7 +1038,7 @@ public class FileList extends XNATCatalogTemplate {
 
     				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
     				if(filepath.endsWith("/")){
-    					table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath,
+    					table.insertRows(CatalogUtils.getEntryDetails(catalogData.catBean, catalogData.catPath,
                                 baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files",
                                 catResource, false, folderFilter, proj, locator));
     				}else{
@@ -1043,7 +1049,7 @@ public class FileList extends XNATCatalogTemplate {
                     getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                     return new StringRepresentation("");
                 } else {
-                    f = CatalogUtils.getFile(entry, parentPath);
+                    f = CatalogUtils.getFile(entry, catalogData.catPath);
 
                     if (f != null && f.exists()) {
                         String fName;

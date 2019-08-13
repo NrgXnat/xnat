@@ -11,7 +11,6 @@ package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.PropertiesUtils;
 import org.nrg.xdat.XDAT;
 import org.springframework.core.io.Resource;
@@ -38,7 +37,7 @@ public  class XMLUtils {
 			outputFile.createNewFile();
 		}
 		try (final FileWriter writer = new FileWriter(outputFile)) {
-			getSerializer().toXml(document, writer);
+			XDAT.getSerializerService().toXml(document, writer);
 			log.info("Created file: {}", outputName);
 		} catch (IOException e) {
 			log.error("An error occurred writing to the output file {}", outputName, e);
@@ -72,7 +71,7 @@ public  class XMLUtils {
 
 	public static String DOMToCustomString(final Document document, final String... properties) {
 		try {
-			return getSerializer().toXml(document, PropertiesUtils.of(properties));
+			return XDAT.getSerializerService().toXml(document, PropertiesUtils.of(properties));
 		} catch (TransformerException e) {
 		  log.error("An error occurred trying to transform an XML document to a string", e);
 		  return null;
@@ -87,7 +86,7 @@ public  class XMLUtils {
 	@SuppressWarnings("unused")
 	public static String DOMToBasicString(final Document document) {
 		try {
-			return getSerializer().toXml(document);
+			return XDAT.getSerializerService().toXml(document);
 		}
 		catch (TransformerException e) {
 			log.error("An error occurred trying to transform an XML document to a string", e);
@@ -126,7 +125,7 @@ public  class XMLUtils {
 	 */
 	public static Document GetDOM(final Resource resource) {
 		try {
-			return getSerializer().parse(resource);
+			return XDAT.getSerializerService().parse(resource);
 		} catch (Exception ex) {
 			throw new RuntimeException("Unable to load DOM document from resource: " + resource, ex);
 		}
@@ -140,7 +139,7 @@ public  class XMLUtils {
 	 */
 	public static Document GetDOM(final File file) {
 		try (final InputStream input = new FileInputStream(file)){
-			return getSerializer().parse(input);
+			return XDAT.getSerializerService().parse(input);
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to load DOM document from file: " + file, e);
 		}
@@ -148,7 +147,7 @@ public  class XMLUtils {
 
 	public static Document GetDOM(final InputStream input) {
 		try {
-			return getSerializer().parse(input);
+			return XDAT.getSerializerService().parse(input);
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to load DOM document", e);
 		}
@@ -156,7 +155,7 @@ public  class XMLUtils {
 
 	public static Document GetDOM(final String stream) {
 		try {
-			return getSerializer().parse(stream);
+			return XDAT.getSerializerService().parse(stream);
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to load DOM document:", e);
 		}
@@ -166,14 +165,5 @@ public  class XMLUtils {
 		final NamedNodeMap nodeMap = node.getAttributes();
 		return nodeMap != null && nodeMap.getNamedItem(name) != null;
 	}
-
-	private static SerializerService getSerializer() {
-		if (_serializer == null) {
-			_serializer = XDAT.getContextService().getBean(SerializerService.class);
-		}
-		return _serializer;
-	}
-
-	private static SerializerService _serializer;
 }
 

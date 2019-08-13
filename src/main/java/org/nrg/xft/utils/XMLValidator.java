@@ -10,7 +10,6 @@
 package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
@@ -21,7 +20,7 @@ import java.io.Reader;
 @Slf4j
 public class XMLValidator {
     public void validateSchema(final String documentUrl) throws Exception {
-        final ValidationHandler handler = getSerializer().validateSchema(documentUrl, XFT.GetAllSchemaLocations(null));
+        final ValidationHandler handler = XDAT.getSerializerService().validateSchema(documentUrl, XFT.GetAllSchemaLocations(null));
         if (!handler.assertValid()) {
             log.error("{} errors occurred while processing the XML document loaded from URI {}", handler.getErrors().size(), documentUrl);
             throw handler.getErrors().get(0);
@@ -30,26 +29,18 @@ public class XMLValidator {
 
     @SuppressWarnings("unused")
     public ValidationHandler validateReader(final Reader reader) throws Exception {
-        return getSerializer().validateReader(reader, XFT.GetAllSchemaLocations(null));
+        return XDAT.getSerializerService().validateReader(reader, XFT.GetAllSchemaLocations(null));
     }
 
     public ValidationHandler validateInputStream(final InputStream inputStream) throws Exception {
-        return getSerializer().validateInputStream(inputStream, XFT.GetAllSchemaLocations(null));
+        return XDAT.getSerializerService().validateInputStream(inputStream, XFT.GetAllSchemaLocations(null));
     }
 
     public void validateString(final String xml) throws Exception {
-        final ValidationHandler handler = getSerializer().validateString(xml, XFT.GetAllSchemaLocations(null));
+        final ValidationHandler handler = XDAT.getSerializerService().validateString(xml, XFT.GetAllSchemaLocations(null));
         if (!handler.assertValid()) {
             log.error("{} errors occurred while processing the XML document:\n{}", handler.getErrors().size(), xml);
             throw handler.getErrors().get(0);
         }
     }
-
-    private static SerializerService getSerializer() {
-        if (_serializer == null) {
-            _serializer = XDAT.getContextService().getBean(SerializerService.class);
-        }
-        return _serializer;
-    }
-    private static SerializerService _serializer;
 }

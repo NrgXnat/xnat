@@ -36,7 +36,7 @@ public class XDATXMLReader extends DefaultHandler {
     private       String              tempValue          = null;
 
     public XDATXMLReader() {
-        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        _serializer = XDAT.getSerializerService();
     }
 
     public BaseElement getItem()

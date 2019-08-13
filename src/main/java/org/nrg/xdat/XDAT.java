@@ -671,7 +671,7 @@ public class XDAT implements Initializable, Configurable{
 				final Map<String, String> appInfo = Maps.filterKeys(System.getenv(), new Predicate<String>() {
 					@Override
 					public boolean apply(@Nullable final String key) {
-						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_");
+						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL");
 					}
 				});
 				// We're running an application of some sort, not in a web application, so we need to
@@ -682,12 +682,14 @@ public class XDAT implements Initializable, Configurable{
 						log.info(" * \"{}\": {}", key, appInfo.get(key));
 					}
 					log.info("Because this is a stand-alone application, I will instantiate SerializerService on its own.");
-					final SerializerConfig config = new SerializerConfig();
-					try {
-						_serializerService = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
+				} else {
+					log.warn("The serializer service was null, which usually happens only in a non-XNAT application context, but I didn't find anything in the environment to indicate the non-XNAT context: {}", System.getenv());
+				}
+				final SerializerConfig config = new SerializerConfig();
+				try {
+					_serializerService = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
+				} catch (Exception e) {
+					throw new RuntimeException(e);
 				}
 			}
 		}

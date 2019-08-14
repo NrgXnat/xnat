@@ -381,7 +381,8 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "             (m.element_name || '/project')::VARCHAR(255) AS secured_property " +
                                                                    "         FROM " +
                                                                    "             xnat_experimentdata e " +
-                                                                   "             LEFT JOIN xnat_subjectassessordata a ON e.id = a.id " +
+                                                                   "             LEFT JOIN xnat_imageassessordata i ON e.id = i.id " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON a.id IN (e.id, i.imagesession_id) " +
                                                                    "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
                                                                    "         WHERE :experiment IN (e.id, e.label) " +
                                                                    "         UNION " +
@@ -394,7 +395,8 @@ public abstract class DataAccessPredicate implements Predicate<String> {
                                                                    "             (m.element_name || '/sharing/share/project')::VARCHAR(255) AS secured_property " +
                                                                    "         FROM " +
                                                                    "             xnat_experimentdata_share s " +
-                                                                   "             LEFT JOIN xnat_subjectassessordata a ON s.sharing_share_xnat_experimentda_id = a.id " +
+                                                                   "             LEFT JOIN xnat_imageassessordata i ON s.sharing_share_xnat_experimentda_id = i.id " +
+                                                                   "             LEFT JOIN xnat_subjectassessordata a ON a.id IN (s.sharing_share_xnat_experimentda_id, i.imagesession_id) " +
                                                                    "             LEFT JOIN xnat_experimentdata e ON a.id = e.id " +
                                                                    "             LEFT JOIN xdat_meta_element m ON e.extension = m.xdat_meta_element_id " +
                                                                    "         WHERE :experiment IN (s.sharing_share_xnat_experimentda_id, s.label)) " +

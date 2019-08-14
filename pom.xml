@@ -70,10 +70,10 @@
         <xnat-web.version>${project.version}</xnat-web.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xnat-tasks.version>${project.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${project.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${prj.previous.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
+        <xnat-data-models.version>${project.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${project.version}</xdat-data-builder.version>
         <xdat.version>${project.version}</xdat.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>

@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.7.5.4-SNAPSHOT"
+        vXnat = "1.7.5.4"
     }
     repositories {
         mavenLocal()
@@ -34,9 +34,6 @@ buildscript {
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
         classpath "io.franzbecker:gradle-lombok:3.1.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
-        classpath "org.nrg.xnat:xnat-data-models:1.7.5.3"
-        classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
 }
 

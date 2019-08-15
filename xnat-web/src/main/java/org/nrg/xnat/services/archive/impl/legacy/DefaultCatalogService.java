@@ -973,7 +973,6 @@ public class DefaultCatalogService implements CatalogService {
                         } else {
                             item.setProperty(XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/ID", XnatSubjectdata.CreateNewID());
                         }
-                        eventItemIdValue = item.getIDValue();
                     }
                     try {
                         if (eventMetaI != null) {
@@ -987,6 +986,8 @@ public class DefaultCatalogService implements CatalogService {
                         log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
                         throw e;
                     }
+                    // ID might have been created by the save
+                    eventItemIdValue = StringUtils.defaultIfBlank(eventItemIdValue, item.getIDValue());
                 }
 
                 XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,

@@ -1013,6 +1013,24 @@ function scanListingEditor(_tbody,_scanSet,_options){
 			td.appendChild(scan.id_input);
 			tr.appendChild(td);
 
+			// project
+            scan.project_input=document.createElement("input");
+            scan.project_input.manager=this;
+            scan.project_input.type="hidden";
+            scan.project_input.id=elementName + scanXPath(modality, scanTypeTable) + "/project";
+            scan.project_input.name=elementName + scanXPath(modality, scanTypeTable) + "/project";
+            var $projectPlaceholderDiv = $('div#project_placeholder');
+            if (scan.extension.Project) {
+                scan.project_input.value = scan.extension.Project;
+            } else if (XNAT.data.context.projectID) {
+                scan.project_input.value = XNAT.data.context.projectID;
+            } else if (window.currentProject) {
+                scan.project_input.value = window.currentProject;
+            } else if ($projectPlaceholderDiv.length === 1) {
+                scan.project_input.value = $projectPlaceholderDiv.text();
+            }
+            td.appendChild(scan.project_input);
+
 			//type
 			td= document.createElement("td");
 			if(this.scanSet.options.types==undefined || this.scanSet.options.types[modality]==undefined || this.scanSet.options.types[modality].values.length<=1){

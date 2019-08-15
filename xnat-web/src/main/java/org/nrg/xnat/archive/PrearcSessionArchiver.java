@@ -399,6 +399,11 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             }
         }
         src = (XnatImagesessiondata) BaseElement.GetGeneratedItem(i);
+
+        // copy project into scan
+        for (XnatImagescandataI scan : src.getScans_scan()) {
+            scan.setProject(project);
+        }
     }
 
     @SuppressWarnings("deprecation")

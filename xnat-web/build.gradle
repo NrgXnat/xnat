@@ -43,14 +43,14 @@ buildscript {
         classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:1.7.5.RAD4"
+        classpath "org.nrg.xnat:xnat-data-models:1.7.5.RAD5"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
         classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
 }
 
 group "org.nrg.xnat"
-version = "1.7.5.RAD9"
+version = "1.7.5.RAD10"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -215,7 +215,7 @@ configurations.all {
 dependencies {
     // NRG dependencies first.
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models:1.7.5.RAD4") {
+    implementation("org.nrg.xnat:xnat-data-models:1.7.5.RAD5") {
         transitive = false
     }
     implementation "org.nrg.xdat:core"

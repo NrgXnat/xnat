@@ -36,9 +36,11 @@ import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatImagescandata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -1591,6 +1593,10 @@ public abstract class SecureResource extends Resource {
     }
 
     protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final XnatExperimentdataShare shared, final String newLabel) throws Exception {
+        shareExperimentToProject(user, newProject, experiment, shared, newLabel, true);
+    }
+
+    protected void shareExperimentToProject(final UserI user, final XnatProjectdata newProject, final XnatExperimentdata experiment, final XnatExperimentdataShare shared, final String newLabel, boolean shareAllScans) throws Exception {
         final String newProjectId = newProject.getId();
 
         shared.setProject(newProjectId);
@@ -1598,9 +1604,27 @@ public abstract class SecureResource extends Resource {
         if(StringUtils.isNotBlank(newLabel)) {
             shared.setLabel(newLabel);
         }
-
+        if (shareAllScans) {
+            if (experiment instanceof XnatImagesessiondata) {
+                for (XnatImagescandataI scan : ((XnatImagesessiondata) experiment).getScans_scan()) {
+                    shareScanToProject(user, newProject, (XnatImagescandata) scan);
+                }
+            }
+        }
         BaseXnatExperimentdata.SaveSharedProject(shared, experiment, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
         XDAT.triggerXftItemEvent(experiment, XftItemEvent.SHARE, ImmutableMap.<String, Object>of("target", newProjectId));
+    }
+
+    protected void shareScanToProject(final UserI user, final XnatProjectdata newProject, final XnatImagescandata scan)
+            throws Exception {
+        XnatImagescandataShare shared = new XnatImagescandataShare(user);
+        final String newProjectId = newProject.getId();
+
+        shared.setProject(newProjectId);
+        shared.setProperty("sharing_share_xnat_imagescandat_xnat_imagescandata_id", scan.getXnatImagescandataId());
+        shared.setLabel(scan.getId());
+        BaseXnatImagescandata.SaveSharedProject(shared, scan, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.CONFIGURED_PROJECT_SHARING));
+        XDAT.triggerXftItemEvent(scan, XftItemEvent.SHARE, ImmutableMap.<String, Object>of("target", newProjectId));
     }
 
     protected void deleteItem(final XnatProjectdata proj, final BaseElement item) {

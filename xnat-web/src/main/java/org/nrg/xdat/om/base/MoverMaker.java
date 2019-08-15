@@ -15,12 +15,8 @@ import java.util.concurrent.Callable;
 
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImageassessordata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResource;
-import org.nrg.xdat.om.XnatResourceseries;
-import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -49,11 +45,18 @@ public class MoverMaker {
         current.setId(m.getId());
 		current.setProject(newProject.getId());
 		current.setLabel(newLabel);
+		if (m instanceof XnatImagesessiondata) {
+			for (XnatImagescandataI scan : ((XnatImagesessiondata) m).getScans_scan()) {
+				scan.setProject(newProject.getId());
+				((XnatImagesessiondata) current).addScans_scan(scan);
+			}
+		}
+
         if (m instanceof XnatSubjectassessordata) {
             ((XnatSubjectassessordata) current).setSubjectId(((XnatSubjectassessordata) m).getSubjectId());
         } else if (m instanceof XnatImageassessordata) {
             ((XnatImageassessordata) current).setImagesessionId(((XnatImageassessordata) m).getImagesessionId());
-        }
+		}
 		SaveItemHelper.authorizedSave(current.getItem(), u, false, false, c);
 	}
 	

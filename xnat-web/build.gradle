@@ -7,15 +7,9 @@
  * Released under the Simplified BSD.
  */
 
-import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
-import com.github.zhurlik.SwaggerTask
-import io.swagger.models.Contact
-import io.swagger.models.Info
-import io.swagger.models.License
-
 buildscript {
     ext {
-        vXnat = "1.7.5.3"
+        vXnat = "1.7.5.4"
     }
     repositories {
         mavenLocal()
@@ -37,15 +31,9 @@ buildscript {
         gradleApi()
         classpath "com.bmuschko:gradle-cargo-plugin:2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.4.2"
-        classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
-        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:1.14"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
-        classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:${vXnat}"
-        classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
+        classpath "io.franzbecker:gradle-lombok:3.1.0"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
     }
 }
 
@@ -54,7 +42,6 @@ version = vXnat
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
-apply plugin: "com.github.zhurlik.swagger"
 apply plugin: "com.palantir.git-version"
 apply plugin: "eclipse"
 apply plugin: "groovy"
@@ -167,6 +154,7 @@ configurations {
         exclude group: "javax.servlet", module: "servlet-api"
         exclude group: "javax.sql", module: "jdbc-stdext"
         exclude group: "javax.transaction", module: "jta"
+        exclude group: "javax.xml", module: "jsr173"
         exclude group: "jdbc", module: "jdbc"
         exclude group: "jmock"
         exclude group: "jms", module: "jms"
@@ -193,7 +181,9 @@ configurations {
         exclude group: "stax", module: "stax-api"
         exclude group: "tomcat"
         exclude group: "velocity"
-        exclude group: "xerces", module: "xmlParserAPIs"
+        exclude group: "xerces"
+        exclude group: "xml-apis"
+        exclude group: "xml-resolver"
         exclude group: "xmlrpc"
         exclude module: "log4j-slf4j-impl"
         exclude module: "pipelineCNDAXNAT"
@@ -299,7 +289,6 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
-    implementation "xerces:xercesImpl"
 
     implementation "commons-beanutils:commons-beanutils"
     implementation "commons-codec:commons-codec"
@@ -492,42 +481,6 @@ jacocoTestReport {
         csv.enabled = false
         html.destination file("${buildDir}/jacocoHtml")
     }
-}
-
-task swagger(type: SwaggerTask, dependsOn: classes) {
-
-    // any dirs with classes
-    classesDirs = [
-            file("${buildDir}/classes/java/main")
-    ]
-
-    apiSources = [
-            new ApiSource(
-                    springmvc: true,
-                    locations: ["org.nrg.xapi.rest"],
-                    schemes: ["http", "https"],
-                    host: "xnat.org",
-                    basePath: "/xapi",
-                    info: new Info(
-                            title: "XNAT REST API",
-                            version: "${version}",
-                            description: "REST API for the XNAT server",
-                            contact: new Contact(
-                                    email: "info@xnat.org",
-                                    name: "XNAT",
-                                    url: "http://www.xnat.org"
-                            ),
-                            license: new License(
-                                    url: "https://opensource.org/licenses/BSD-2-Clause",
-                                    name: "Simplified 2-Clause BSD"
-                            )
-                    ),
-                    outputPath: file("${buildDir}/docs").path,
-                    outputFormats: "json,yaml",
-                    swaggerDirectory: file("${buildDir}/docs").path,
-                    swaggerFileName: "${project.group}.${project.name}-${project.version}-swagger"
-            )
-    ]
 }
 
 task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {

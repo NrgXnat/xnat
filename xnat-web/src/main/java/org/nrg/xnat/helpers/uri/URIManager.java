@@ -100,6 +100,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/subjects/{SUBJECT_ID}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesSubjURI.class);
 
         add(TEMPLATE_TYPE.ARC, "/archive", Template.MODE_EQUALS, URIManager.ArchiveURI.class);

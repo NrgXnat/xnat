@@ -214,6 +214,12 @@ public class ScanResource extends ItemResource {
                     }
                 }
 
+                if (proj != null) {
+                    scan.setProject(proj.getId());
+                } else if (session != null) {
+                    scan.setProject(session.getProject());
+                }
+
                 if (scan.getImageSessionId() == null) {
                     getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Specified scan must reference a valid image session.");
                     return;

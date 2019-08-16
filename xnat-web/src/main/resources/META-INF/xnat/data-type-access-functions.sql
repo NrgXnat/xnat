@@ -358,8 +358,8 @@ BEGIN
                                    FROM
                                        (VALUES
                                             ('Owners', 1, 1, 1, 1, 1, 0, 1, 0, 0, 1),
-                                            ('Members', 1, 1, 1, 0, 0, 0, 1, 0, 0, 0),
-                                            ('Collaborators', 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
+                                            ('Members', 1, 1, 1, 0, 1, 0, 1, 0, 0, 1),
+                                            ('Collaborators', 0, 1, 0, 0, 1, 0, 1, 0, 0, 1),
                                             ('ALL_DATA_ADMIN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
                                             ('ALL_DATA_ACCESS', 0, 1, 0, 0, 1, 0, 1, 0, 0, 1)) AS groupNames (groupNameOrId, create_element, read_element, edit_element, delete_element, active_element, create_shared, read_shared, edit_shared, delete_shared, active_shared))
          SELECT

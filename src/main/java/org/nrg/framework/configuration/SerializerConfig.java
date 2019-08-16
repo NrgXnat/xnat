@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.SerializerService;
@@ -66,6 +67,14 @@ public class SerializerConfig {
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setExpandEntityReferences(false);
+
+            // The only way in Java 7 to turn off entity expansion is this flag. However, in Java 8 and later, this flag suppresses exceptions when entity expansion is
+            // used in an XML document. We want exceptions as an alert mechanism, so only turn this on when running on Java 7.
+            // REMOVE ON JAVA 8 UPDATE
+            final int javaVersion = Integer.parseInt(StringUtils.substringBefore(StringUtils.removeStart(System.getProperty("java.version"), "1."), "."));
+            if (javaVersion < 8) {
+                factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            }
             return factory;
         } catch (ParserConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on DocumentBuilderFactory implementation of type " + factory.getClass(), e);

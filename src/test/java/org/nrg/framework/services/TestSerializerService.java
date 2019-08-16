@@ -25,6 +25,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -40,6 +41,10 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestSerializerServiceConfiguration.class)
 public class TestSerializerService {
+    public TestSerializerService() {
+        _javaVersion = Integer.parseInt(StringUtils.substringBefore(StringUtils.removeStart(System.getProperty("java.version"), "1."), "."));
+    }
+
     @Autowired
     public void setSerializerService(final SerializerService serializer) {
         _serializer = serializer;
@@ -124,22 +129,25 @@ public class TestSerializerService {
         final String   plainTransformed = _serializer.toXml(plainParsed);
         assertFalse(plainTransformed.contains("This is the stuff I injected."));
 
-        final String resolved = getResolvedXmlWithInjection();
-        _serializer.parse(resolved);
+        final String   resolved = getResolvedXmlWithInjection();
+        final Document document = _serializer.parse(resolved);
+        checkJava7Suppression(document);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testEntityExpansionParseResourceSuppression() throws IOException, SAXException {
         final Resource resolved = getResolvedXmlWithInjectionAsResource();
-        _serializer.parse(resolved);
+        final Document document = _serializer.parse(resolved);
+        checkJava7Suppression(document);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testEntityExpansionParseInputStreamSuppression() throws IOException, SAXException {
         final InputStream resolved = getResolvedXmlWithInjectionAsInputStream();
-        _serializer.parse(resolved);
+        final Document    document = _serializer.parse(resolved);
+        checkJava7Suppression(document);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
@@ -209,7 +217,12 @@ public class TestSerializerService {
     private Resource getResolvedXmlWithInjectionAsResource() throws IOException {
         final File xmlFile = Files.newTemporaryFile();
         xmlFile.deleteOnExit();
-        IOUtils.copy(new StringReader(getResolvedXmlWithInjection()), new FileWriter(xmlFile));
+
+        final String resolvedXmlWithInjection = getResolvedXmlWithInjection();
+        try (final StringReader reader = new StringReader(resolvedXmlWithInjection);
+             final FileWriter writer = new FileWriter(xmlFile)) {
+            IOUtils.copy(reader, writer);
+        }
         return new FileSystemResource(xmlFile);
     }
 
@@ -217,8 +230,25 @@ public class TestSerializerService {
         return getResolvedXmlWithInjectionAsResource().getInputStream();
     }
 
+    private void checkJava7Suppression(final Document document) throws SAXParseException {
+        if (_javaVersion > 7) {
+            return;
+        }
+        final NodeList descriptions = document.getDocumentElement().getElementsByTagName("xnat:description");
+        if (descriptions.getLength() != 1) {
+            throw new RuntimeException("Unexpected context: Java 7 but the XML document doesn't appear to have processed at all, as there's no \"xnat:description\" node.");
+        }
+        final String content = descriptions.item(0).getTextContent();
+        if (StringUtils.contains(content, "This is the stuff I injected.")) {
+            throw new RuntimeException("The injected entity value was expanded by the SAX parser, which is bad.");
+        }
+        throw new SAXParseException("This isn't a real SAXParserException, but indicates that the &hack entity wasn't expanded.", "id", "id", 14, 1);
+    }
+
     private static final String IGNORED  = "This shouldn't show up.";
     private static final String RELEVANT = "This should totally show up.";
+
+    private final int _javaVersion;
 
     private SerializerService _serializer;
 }

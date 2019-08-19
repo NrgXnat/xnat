@@ -460,7 +460,7 @@
                         </dl>
                     #end
                     <dl>
-                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="zip"></dt>
+                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="zip" #if($siteConfig.uiHideDesktopClientDownload) checked #end></dt>
                         <dd><label for="direct-download">
                             <b>Option #if(!$siteConfig.uiHideDesktopClientDownload) 2: #else 1: #end ZIP download</b></label></dd>
                         <dd>

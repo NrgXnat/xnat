@@ -1640,8 +1640,8 @@ public class DefaultCatalogService implements CatalogService {
                     }else {
                         
                         // First clean up the scan type string so we don't break the download
-                        // Replace \,/,(,), and spaces with underscores
-                        scanType = scanType.replaceAll("[\\\\/() ]", "_"); 
+                        // Replace '\','/','(',')',',', and spaces with underscores
+                        scanType = scanType.replaceAll("[\\\\/(), ]", "_"); 
                         String path = null;
                         try {
                             path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);

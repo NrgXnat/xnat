@@ -9,7 +9,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.SerializerService;
@@ -32,19 +31,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("DuplicatedCode")
 @Configuration
 @Slf4j
 @Getter(AccessLevel.PRIVATE)
 @Accessors(prefix = "_")
 public class SerializerConfig {
-    public SerializerConfig() {
-        final int javaVersion = Integer.parseInt(StringUtils.substringBefore(StringUtils.removeStart(System.getProperty("java.version"), "1."), "."));
-        if (javaVersion < 7) {
-            throw new RuntimeException("XNAT can't run on anything below Java 7.");
-        }
-        _java7 = javaVersion == 7;
-    }
-
     @Autowired
     public void setJacksonModules(final Module[] jacksonModules) {
         log.info("Adding {} Jackson modules", jacksonModules != null ? jacksonModules.length : 0);
@@ -79,14 +71,13 @@ public class SerializerConfig {
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
             factory.setExpandEntityReferences(false);
-
-            // The only way in Java 7 to turn off entity expansion is this flag. However, in Java 8 and later, this flag suppresses exceptions when entity expansion is
-            // used in an XML document. We want exceptions as an alert mechanism, so only turn this on when running on Java 7.
-            // REMOVE ON JAVA 8 UPDATE
-            if (isJava7()) {
-                factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            }
+            factory.setXIncludeAware(false);
+            factory.setNamespaceAware(true);
             return factory;
         } catch (ParserConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on DocumentBuilderFactory implementation of type " + factory.getClass(), e);
@@ -98,9 +89,11 @@ public class SerializerConfig {
         final SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            if (isJava7()) {
-                factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            }
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setXIncludeAware(false);
             factory.setNamespaceAware(true);
             return factory;
         } catch (SAXNotRecognizedException | ParserConfigurationException | SAXNotSupportedException e) {
@@ -113,6 +106,8 @@ public class SerializerConfig {
         final TransformerFactory factory = TransformerFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             return factory;
         } catch (TransformerConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on TransformerFactory implementation of type " + factory.getClass(), e);
@@ -124,6 +119,8 @@ public class SerializerConfig {
         final SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             return factory;
         } catch (TransformerConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on TransformerFactory implementation of type " + factory.getClass(), e);
@@ -136,5 +133,4 @@ public class SerializerConfig {
     }
 
     private final List<Module> _jacksonModules = new ArrayList<>();
-    private final boolean      _java7;
 }

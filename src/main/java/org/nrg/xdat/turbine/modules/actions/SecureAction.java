@@ -320,6 +320,7 @@ public abstract class SecureAction extends VelocitySecureAction {
         data.getResponse().sendError(code);
     }
 
+    @SuppressWarnings("unused")
     protected boolean displayPopulatorErrors(final PopulateItem populator, final RunData data, final XFTItem item) {
         if (!populator.hasError()) {
             return false;
@@ -332,6 +333,7 @@ public abstract class SecureAction extends VelocitySecureAction {
         return true;
     }
 
+    @SuppressWarnings("unused")
     protected void displayProjectConflicts(final Collection<String> conflicts, final RunData data, final XFTItem item) {
         final StringBuilder message = new StringBuilder();
         for (final String conflict : conflicts) {

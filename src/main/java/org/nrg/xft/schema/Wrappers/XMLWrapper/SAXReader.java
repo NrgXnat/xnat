@@ -10,8 +10,10 @@
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -22,17 +24,15 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
 import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.ext.DefaultHandler2;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -40,27 +40,28 @@ import java.util.Map;
  * @author timo
  *
  */
-public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
-	static org.apache.log4j.Logger logger = Logger.getLogger(SAXReader.class);
-    private XFTItem root = null;
-    private XFTItem template=null;
-    private SAXReaderObject current = null;
-    private String tempValue = null;
-    private final UserI user;
-	Hashtable uriToPrefixMapping = new Hashtable();
-	String xsi = null;
+@Slf4j
+public class SAXReader extends DefaultHandler2 {
+    private final SerializerService   _serializer;
+    private final UserI               user;
+    private final Map<String, String> uriToPrefixMapping = new HashMap<>();
+    private       XFTItem             root      = null;
+    private       XFTItem             template  =null;
+    private       SAXReaderObject     current   = null;
+    private       String              tempValue = null;
     boolean stopRecording = false;
     
     String stopAtPath= null;
 
-
     private ArrayList errors = new ArrayList();
     private boolean isValid = true;
+
     /**
      * 
      */
     public SAXReader(final UserI u) {
         user=u;
+        _serializer = XDAT.getSerializerService();
     }
     
     public XFTItem getItem()
@@ -68,8 +69,6 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
         return root;
     }
     
-    
-
     public XFTItem getTemplate() {
 		return template;
 	}
@@ -78,22 +77,13 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
 		this.template = template;
 	}
 
-	public XFTItem parse(java.io.File data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-		try {
-			spf.setNamespaceAware(true);
-		
-			//get a new instance of parser
-			SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-			//parse the file and also register this class for call backs
-			sp.parse(data, this);
-			
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}
-		
-		return getItem();
+	public XFTItem parse(final File data) throws IOException, SAXException{
+        try (final FileReader reader = new FileReader(data)) {
+            _serializer.parse(new InputSource(reader), this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
+        }
+        return getItem();
     }
 
     /**
@@ -104,98 +94,50 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
      * @throws IOException
      * @throws SAXException
      */
-    public XFTItem parse(java.io.File data, String stopAtXMLPath) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        try {
-            spf.setNamespaceAware(true);
-        
+    public XFTItem parse(final File data, final String stopAtXMLPath) throws IOException, SAXException{
+        try (final FileReader reader = new FileReader(data)) {
             this.stopAtPath= stopAtXMLPath;
-            //get a new instance of parser
-            SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-            //parse the file and also register this class for call backs
-            sp.parse(data, this);
-            
-        }catch(ParserConfigurationException pce) {
-            pce.printStackTrace();
+            _serializer.parse(new InputSource(reader), this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
         }
-        
         return getItem();
     }
 
-    public XFTItem parse(Reader data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-		try {
-			spf.setNamespaceAware(true);
-		
-			//get a new instance of parser
-			SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-			//parse the file and also register this class for call backs
-			sp.parse(new org.xml.sax.InputSource(data), this);
-			
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}
-		
-		return getItem();
+    public XFTItem parse(final Reader reader) throws IOException, SAXException{
+        try {
+            _serializer.parse(new InputSource(reader), this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
+        }
+        return getItem();
     }
 
-
-    public XFTItem parse(org.xml.sax.InputSource data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-		try {
-			spf.setNamespaceAware(true);
-		
-			//get a new instance of parser
-			SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-			//parse the file and also register this class for call backs
-			sp.parse(data, this);
-			
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}
-		
-		return getItem();
+    public XFTItem parse(final InputSource data) throws IOException, SAXException{
+        try {
+            _serializer.parse(data, this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
+        }
+        return getItem();
     }
 
-    public XFTItem parse(InputStream data) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        
-		try {
-			spf.setNamespaceAware(true);
-		
-			//get a new instance of parser
-			SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-			//parse the file and also register this class for call backs
-			sp.parse(data, this);
-			
-			
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}
-		
-		return getItem();
+    public XFTItem parse(final InputStream data) throws IOException, SAXException{
+        try {
+            _serializer.parse(data, this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
+        }
+        return getItem();
     }
 
-    public XFTItem parse(String file_path) throws IOException, SAXException{
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-		try {
-			spf.setNamespaceAware(true);
-		
-			//get a new instance of parser
-			SAXParser sp = spf.newSAXParser();
-            sp.setProperty("http://xml.org/sax/properties/lexical-handler", this);
-			//parse the file and also register this class for call backs
-			sp.parse(file_path, this);
-			
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}
-		
-		return getItem();
+    public XFTItem parse(final String filePath) throws IOException, SAXException{
+        try {
+            _serializer.parse(filePath, this, "http://xml.org/sax/properties/lexical-handler", this);
+        } catch (ParserConfigurationException e) {
+            log.error("An error occurred creating the SAX parser", e);
+        }
+        return getItem();
     }
     
     /* (non-Javadoc)
@@ -281,7 +223,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                     try {
                         f = GenericWrapperElement.GetFieldForXMLPath(e.getXSIType() + XFT.PATH_SEPARATOR + current_header);
                     } catch (FieldNotFoundException e3) {
-                        logger.error("",e3);
+                        log.error("", e3);
 //                      NOT A REFERENCE
                         if (attributes != null)
                         {
@@ -490,7 +432,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                 } catch (InvalidValueException e1) {
                     throw new SAXException("Invalid value for field '" + current_header +"'");
                 } catch (RuntimeException e){
-                    logger.error(e);
+                    log.error("Unknown exception processing <{}>: {}", current_header, tempValue, e);
                     throw new SAXException("Unknown Exception <" + current_header +">" + tempValue);
                 }finally{
                     tempValue=null;
@@ -685,13 +627,13 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                                 	if(!token[1].equals("null"))
                                 		this.current.getItem().setProperty(token[0],token[1]);
                                 } catch (XFTInitException e) {
-                                    logger.error("",e);
+                                    log.error("", e);
                                 } catch (ElementNotFoundException e) {
-                                    logger.error("",e);
+                                    log.error("", e);
                                 } catch (FieldNotFoundException e) {
-                                    logger.error("",e);
+                                    log.error("", e);
                                 } catch (InvalidValueException e) {
-                                    logger.error("",e);
+                                    log.error("", e);
                                 }
                             }
                         }

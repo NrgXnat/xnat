@@ -10,12 +10,15 @@
 package org.nrg.xdat.security.helpers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.util.RunData;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUserHelperService;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +31,8 @@ import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 
 @Slf4j
 public class UserHelper {
+    public static final String USER_HELPER = "userHelper";
+
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
      * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
@@ -93,6 +98,19 @@ public class UserHelper {
         }
     }
 
+    public static UserHelperServiceI getUserHelper(final RunData data) {
+        return (UserHelperServiceI) data.getSession().getAttribute(USER_HELPER);
+    }
+
+    public static void setGuestUserHelper(final RunData data) throws UserNotFoundException, UserInitException {
+        data.getSession().setAttribute(USER_HELPER, UserHelper.getUserHelperService(Users.getGuest()));
+    }
+
+    public static void setUserHelper(final HttpServletRequest request, final UserI user) {
+        Users.clearCache(user);
+        request.getSession().setAttribute(USER_HELPER, getUserHelperService(user));
+    }
+
     private static Class<? extends UserHelperServiceI> getUserHelperImplementationClass() {
         final String packageName = XDAT.safeSiteConfigProperty("security.userHelperService.package", "org.nrg.xdat.user.helper.custom");
         try {
@@ -118,11 +136,6 @@ public class UserHelper {
         } catch (ClassNotFoundException e) {
             throw new NrgServiceRuntimeException(ConfigurationError, "The configured user helper service class could not be found on the classpath: " + className);
         }
-    }
-
-    public static void setUserHelper(HttpServletRequest request, UserI user) {
-        Users.clearCache(user);
-        request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
     }
 
     private static Constructor<? extends UserHelperServiceI> _userHelperCtor = null;

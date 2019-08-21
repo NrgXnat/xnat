@@ -10,13 +10,13 @@
 package org.nrg.xdat.security.services.impl;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
@@ -24,6 +24,7 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.security.UserI;
@@ -34,7 +35,8 @@ import java.util.*;
 
 import static lombok.AccessLevel.PRIVATE;
 import static org.nrg.xdat.om.base.auto.AutoXdatUsergroup.SCHEMA_ELEMENT_NAME;
-import static org.nrg.xft.event.XftItemEvent.builder;
+import static org.nrg.xdat.security.helpers.Features.*;
+import static org.nrg.xft.event.XftItemEventI.OPERATION;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @Service
@@ -54,7 +56,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
     }
 
     @Autowired
-    public void setEventService(final NrgEventService eventService) {
+    public void setEventService(final DataTypeAwareEventService eventService) {
         _eventService = eventService;
     }
 
@@ -87,7 +89,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, ADD_FEATURE, ADDED, feature));
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -104,7 +106,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, REMOVE_FEATURE, REMOVED, feature));
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -121,7 +123,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
         try {
             //group objects are cached by an old caching implementation which listened for events
-            _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+            _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, REMOVE_ALL_FEATURES));
         } catch (Exception e1) {
             log.error("", e1);
         }
@@ -243,7 +245,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, DISABLE_FEATURE, DISABLED, feature));
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -260,7 +262,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, BLOCK_FEATURE, BLOCKED, feature));
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -281,7 +283,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                _eventService.triggerEvent(builder().xsiType(SCHEMA_ELEMENT_NAME).id(group.getId()).action(UPDATE).build());
+                _eventService.triggerXftItemEvent(SCHEMA_ELEMENT_NAME, group.getId(), UPDATE, ImmutableMap.of(OPERATION, UNBLOCK_FEATURE, UNBLOCKED, feature));
             } catch (Exception e1) {
                 log.error("", e1);
             }
@@ -411,6 +413,6 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
     private GroupsAndPermissionsCache _cache;
     private GroupFeatureService       _groupFeatureService;
-    private NrgEventService           _eventService;
+    private DataTypeAwareEventService _eventService;
     private FeatureServiceI           _featureService;
 }

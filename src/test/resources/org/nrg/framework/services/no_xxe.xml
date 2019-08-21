@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!DOCTYPE xnat:Project [
-  <!ELEMENT xnat:Project ANY>
-  <!ATTLIST xnat:Project
-     ID               CDATA             #REQUIRED
-     secondary_ID     CDATA             #REQUIRED
-  >
-  <!ATTLIST xnat:Project xmlns:xnat CDATA #FIXED "http://nrg.wustl.edu/xnat">
-  <!ELEMENT xnat:name ANY>
-  <!ELEMENT xnat:description ANY>
-]>
-<xnat:Project ID="testProject" secondary_ID="testProject">
+<xnat:Project ID="testProject" secondary_ID="testProject" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nrg.wustl.edu/xnat https://central.xnat.org/schemas/xnat.xsd">
   <xnat:name>testProject</xnat:name>
   <xnat:description>This is a test project.</xnat:description>
 </xnat:Project>

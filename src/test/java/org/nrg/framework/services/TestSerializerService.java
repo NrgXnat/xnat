@@ -17,7 +17,6 @@ import org.apache.commons.text.StringSubstitutor;
 import org.assertj.core.util.Files;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -29,11 +28,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -152,6 +154,25 @@ public class TestSerializerService {
     }
 
     @Test(expected = SAXParseException.class)
+    public void testEntityExpansionSaxParseInputStreamSuppression() throws IOException, SAXException, ParserConfigurationException {
+        final Resource resource = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/no_xxe.xml");
+        final String   xml      = IOUtils.toString(new FileReader(resource.getFile()));
+
+        final TestValidationHandler handler1 = new TestValidationHandler();
+        _serializer.parseText(xml, handler1);
+        assertTrue(handler1.isValid());
+
+        final TestValidationHandler handler2 = new TestValidationHandler();
+        _serializer.parse(resource.getURL().toString(), handler2);
+        assertTrue(handler2.isValid());
+
+        final Resource              resolved = getResolvedXmlWithInjectionAsResource();
+        final TestValidationHandler handler3 = new TestValidationHandler("hack", "This is the stuff I injected.");
+        _serializer.parseText(IOUtils.toString(new FileReader(resolved.getFile())), handler3);
+        checkJava7Suppression(handler3);
+    }
+
+    @Test(expected = SAXParseException.class)
     public void testBillionLaughsSuppression() throws IOException, SAXException {
         final Resource billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
         assertNotNull(billionLaughsXml);
@@ -162,32 +183,32 @@ public class TestSerializerService {
 
     @Test(expected = SAXParseException.class)
     public void testBillionLaughsValidateSchemaSuppression() throws Exception {
-        final Resource          billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
-        final ValidationHandler handler          = _serializer.validateSchema(billionLaughsXml.getURL().toString(), null);
+        final Resource       billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
+        final DefaultHandler handler          = _serializer.validateSchema(billionLaughsXml.getURL().toString(), null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testBillionLaughsValidateResourceSuppression() throws Exception {
-        final Resource          billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
-        final ValidationHandler handler          = _serializer.validateResource(billionLaughsXml, null);
+        final Resource       billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
+        final DefaultHandler handler          = _serializer.validateResource(billionLaughsXml, null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testBillionLaughsValidateReaderSuppression() throws Exception {
-        final Resource          billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
-        final ValidationHandler handler          = _serializer.validateReader(new InputStreamReader(billionLaughsXml.getInputStream()), null);
+        final Resource       billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
+        final DefaultHandler handler          = _serializer.validateReader(new InputStreamReader(billionLaughsXml.getInputStream()), null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testBillionLaughsValidateInputStreamSuppression() throws Exception {
-        final Resource          billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
-        final ValidationHandler handler          = _serializer.validateInputStream(billionLaughsXml.getInputStream(), null);
+        final Resource       billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
+        final DefaultHandler handler          = _serializer.validateInputStream(billionLaughsXml.getInputStream(), null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
@@ -196,15 +217,15 @@ public class TestSerializerService {
     public void testBillionLaughsValidateStringSuppression() throws Exception {
         final StringWriter billionLaughsXml = new StringWriter();
         IOUtils.copy(BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml").getInputStream(), billionLaughsXml, Charset.defaultCharset());
-        final ValidationHandler handler = _serializer.validateString(billionLaughsXml.toString(), null);
+        final DefaultHandler handler = _serializer.validateString(billionLaughsXml.toString(), null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
 
     @Test(expected = SAXParseException.class)
     public void testBillionLaughsValidateSuppression() throws Exception {
-        final Resource          billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
-        final ValidationHandler handler          = _serializer.validate(new InputSource(billionLaughsXml.getInputStream()), null);
+        final Resource       billionLaughsXml = BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/billion_laughs.xml");
+        final DefaultHandler handler          = _serializer.validate(new InputSource(billionLaughsXml.getInputStream()), null);
         assertNotNull(handler);
         fail("This test should have thrown a SAXParserException when parsing vulnerable XML.");
     }
@@ -243,6 +264,21 @@ public class TestSerializerService {
             throw new RuntimeException("The injected entity value was expanded by the SAX parser, which is bad.");
         }
         throw new SAXParseException("This isn't a real SAXParserException, but indicates that the &hack entity wasn't expanded.", "id", "id", 14, 1);
+    }
+
+    private void checkJava7Suppression(final TestValidationHandler handler) throws SAXParseException {
+        if (_javaVersion > 7) {
+            return;
+        }
+        final List<String> unhandled = handler.getUnskippedEntities();
+        if (!unhandled.isEmpty()) {
+            throw new RuntimeException(unhandled.size() + " entities were expected but weren't skipped, which is bad: " + StringUtils.join(unhandled, ", "));
+        }
+        final String content = handler.getText();
+        if (StringUtils.contains(content, "This is the stuff I injected.")) {
+            throw new RuntimeException("The injected entity value was expanded by the SAX parser, which is bad.");
+        }
+        throw new SAXParseException("This isn't a real SAXParserException, but indicates that the expected entities weren't expanded: " + StringUtils.join(handler.getExpectedEntities().keySet(), ", "), "id", "id", 14, 1);
     }
 
     private static final String IGNORED  = "This shouldn't show up.";

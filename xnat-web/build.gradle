@@ -38,7 +38,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = "1.7.5.RAD10"
+version = "1.7.5.4.RAD1"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -205,10 +205,10 @@ configurations.all {
 dependencies {
     // NRG dependencies first.
     implementation "org.nrg.xnat:spawner"
-    implementation("org.nrg.xnat:xnat-data-models:1.7.5.RAD5") {
+    implementation("org.nrg.xnat:xnat-data-models:1.7.5.4.RAD1") {
         transitive = false
     }
-    implementation "org.nrg.xdat:core:1.7.5.RAD1"
+    implementation "org.nrg.xdat:core:1.7.5.4.RAD1"
     implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"

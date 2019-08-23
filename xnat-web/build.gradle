@@ -43,7 +43,7 @@ buildscript {
         classpath "io.franzbecker:gradle-lombok:1.14"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
         classpath "io.swagger:swagger-core:1.5.13"
-        classpath "org.nrg.xnat:xnat-data-models:1.7.5.RAD5"
+        classpath "org.nrg.xnat:xnat-data-models:1.7.5"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
         classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
@@ -218,7 +218,7 @@ dependencies {
     implementation("org.nrg.xnat:xnat-data-models:1.7.5.RAD5") {
         transitive = false
     }
-    implementation "org.nrg.xdat:core"
+    implementation "org.nrg.xdat:core:1.7.5.RAD1"
     implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"

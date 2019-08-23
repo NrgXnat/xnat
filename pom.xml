@@ -1380,6 +1380,10 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>xalan</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>xml-apis</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1581,6 +1585,10 @@
                 <artifactId>fop</artifactId>
                 <version>${fop.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>xalan</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>xerces</groupId>
                         <artifactId>*</artifactId>

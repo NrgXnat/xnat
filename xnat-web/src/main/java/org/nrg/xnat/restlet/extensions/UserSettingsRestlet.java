@@ -37,7 +37,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import java.io.IOException;
@@ -56,7 +55,7 @@ public class UserSettingsRestlet extends SecureResource {
             synchronized (UserSettingsRestlet.class) {
                 XPath xpath = XPathFactory.newInstance().newXPath();
                 try {
-                    _builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    _builder = XDAT.getSerializerService().getDocumentBuilder();
                     _propertyMappings = new HashMap<>();
                     for (UserProperty property : UserProperty.values()) {
                         _propertyMappings.put(property, xpath.compile(XPATH_EXPRESSIONS.containsKey(property) ? XPATH_EXPRESSIONS.get(property) : String.format("/user/%s", property.toString())));
@@ -253,11 +252,10 @@ public class UserSettingsRestlet extends SecureResource {
     }
 
     private Map<UserProperty, String> translateXmlBody() throws IOException, SAXException, XPathExpressionException {
-        Map<UserProperty, String> properties = new HashMap<>();
-        Document document = getXmlDocument();
-        for (UserProperty property : UserProperty.values()) {
+        final Map<UserProperty, String> properties = new HashMap<>();
+        for (final UserProperty property : UserProperty.values()) {
             if (!XPATH_EXPRESSIONS.containsKey(property)) {
-                Object value = _propertyMappings.get(property).evaluate(document, XPathConstants.STRING);
+                final Object value = _propertyMappings.get(property).evaluate(getXmlDocument(), XPathConstants.STRING);
                 if (value != null) {
                     properties.put(property, value.toString());
                 }
@@ -267,11 +265,10 @@ public class UserSettingsRestlet extends SecureResource {
     }
 
     private Map<UserProperty, String> translateJsonBody() throws IOException {
-        Map<UserProperty, String> properties = new HashMap<>();
-        JsonNode node = getJsonNode();
-        for (UserProperty property : UserProperty.values()) {
+        final Map<UserProperty, String> properties = new HashMap<>();
+        for (final UserProperty property : UserProperty.values()) {
             if (!XPATH_EXPRESSIONS.containsKey(property)) {
-                final String value = node.get(property.toString()).textValue();
+                final String value = getJsonNode().get(property.toString()).textValue();
                 if (value != null) {
                     properties.put(property, value);
                 }
@@ -448,7 +445,7 @@ public class UserSettingsRestlet extends SecureResource {
     }
 
     @SuppressWarnings("unused")
-    abstract class IgnoreSetValueMixIn {
+    abstract static class IgnoreSetValueMixIn {
         @JsonIgnore
         public abstract Boolean isPrimaryKey();
     }

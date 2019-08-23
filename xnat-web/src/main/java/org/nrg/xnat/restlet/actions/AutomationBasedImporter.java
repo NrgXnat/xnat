@@ -34,7 +34,6 @@ import org.nrg.automation.services.AutomationEventIdsService;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -640,27 +639,25 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			automationCompletionEvent.addNotificationEmailAddr(user.getEmail());
 		}
 		automationEvent.setAutomationCompletionEvent(automationCompletionEvent);
-		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-		if (eventService == null) {
-			returnList.add("ERROR: Could retrieve event service");
-			return;
-		}
-		eventService.triggerEvent(automationEvent, automationCompletionEvent);
+		XDAT.triggerEvent(automationEvent, automationCompletionEvent);
 		final AutomationCompletionEventListener completionService = XDAT.getContextService().getBeanSafely(AutomationCompletionEventListener.class);
 		List<ScriptOutput> scriptOutputs = null;
-		for (int i = 1; i < TIMEOUT_SECONDS; i++) {
+		int i = 1;
+		for (; i < TIMEOUT_SECONDS; i++) {
 			try {
 				Thread.sleep(1000);
 				final AutomationCompletionEvent ace = completionService.getEvent(automationId);
 				if (ace != null) {
 					scriptOutputs = ace.getScriptOutputs();
+					i = 0;
 					break;
-				} else if (i == TIMEOUT_SECONDS) {
-					returnList.add("<br><b>TIMEOUT WAITING FOR SCRIPT TO RETURN.<b></br>");
 				}
 			} catch (InterruptedException e) {
 				// Do nothing for now.
 			}
+		}
+		if (i == TIMEOUT_SECONDS) {
+			returnList.add("<br><b>TIMEOUT WAITING FOR SCRIPT TO RETURN.<b></br>");
 		}
 		if (scriptOutputs != null && scriptOutputs.size() > 0) {
 			for (ScriptOutput scriptOut : scriptOutputs) {
@@ -695,10 +692,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 							returnList.add(writer.toString().replace("\n", "<br>"));
 							writer.close();
 						} else {
-							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput().toString()));
+							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput()));
 						}
 					} catch (IOException e) {
-						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput().toString()));
+						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput()));
 					}
 				}
 				if (scriptOut.getErrorOutput() != null && scriptOut.getErrorOutput().length() > 0) {
@@ -710,10 +707,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 							returnList.add(writer.toString().replace("\n", "<br>"));
 							writer.close();
 						} else {
-							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput().toString()));
+							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput()));
 						}
 					} catch (IOException e) {
-						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput().toString()));
+						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput()));
 					}
 				}
 			}
@@ -871,10 +868,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	private ZipI getZipper(final String fileName) {
 
 		// Assume file name represents correct compression method
-		String file_extension = null;
-		if (fileName != null && fileName.indexOf(".") != -1) {
+		String file_extension;
+		if (fileName != null && fileName.contains(".")) {
 			file_extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-			if (Arrays.asList(ZIP_EXT).contains(file_extension)) {
+			if (ZIP_EXT.contains(file_extension)) {
 				return new ZipUtils();
 			} else if (file_extension.equalsIgnoreCase(".tar")) {
 				return new TarUtils();

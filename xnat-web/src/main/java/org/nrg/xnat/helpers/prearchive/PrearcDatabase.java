@@ -77,8 +77,6 @@ public final class PrearcDatabase {
 
     private static String prearcPath;
 
-    private static SerializerService _serializer;
-
     public static final String SPLIT_PETMR_SESSION_ID = "SplitPetMrSessions";
 
     public static final String DEFAULT_SPLIT_PETMR_SESSION_FILTER = "{\n" +
@@ -724,15 +722,8 @@ public final class PrearcDatabase {
         } else {
             content = script.getContent();
         }
-        final LinkedHashMap<String, String> keys = getSerializer().deserializeJson(content, SeriesImportFilter.MAP_TYPE_REFERENCE);
+        final LinkedHashMap<String, String> keys = XDAT.getSerializerService().deserializeJson(content, SeriesImportFilter.MAP_TYPE_REFERENCE);
         return DicomFilterService.buildSeriesImportFilter(keys);
-    }
-
-    private static SerializerService getSerializer() {
-        if (_serializer == null) {
-            _serializer = XDAT.getContextService().getBean(SerializerService.class);
-        }
-        return _serializer;
     }
 
     static String getUniqueSessionLabel(final String stem, final String target, final String replacement, final String projectId, final UserI user) {

@@ -133,11 +133,11 @@ div.xnat-dialog > .footer .button,
 div.xnat-dialog > .footer .button.cancel.default {
     color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #a0a0a0 ; border-radius: 3px ; }
 div.xnat-dialog > .footer .button:hover,
-div.xnat-dialog > .footer .button.cancel.default:hover { background: #e8e8e8; }
+div.xnat-dialog > .footer .button.cancel.default:hover { background: #f0f0f0; }
 div.xnat-dialog > .footer .button:active,
-div.xnat-dialog > .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
+div.xnat-dialog > .footer .button.cancel.default:active { color: inherit ; background: #e0e0e0 }
 div.xnat-dialog > .footer .button.default { color: #fff ; background: #1A75BB linear-gradient( #3C8BC7, #1A75BB ); border-color: #085895 ; }
-div.xnat-dialog > .footer .button.default:active { background: #1A75BB ; border-color: #085895 ; }
+div.xnat-dialog > .footer .button.default:active { background: #145b91 ; border-color: #085895 ; }
 div.xnat-dialog > .footer .button.default:hover { background: #1A75BB; }
 div.xnat-dialog > .footer .button.hidden,
 div.xnat-dialog > .footer .button.disabled { opacity: 0.6; }

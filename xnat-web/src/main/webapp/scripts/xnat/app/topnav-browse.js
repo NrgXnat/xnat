@@ -28,7 +28,7 @@
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
             var TEXT = (val ? escapeHtml(val) : '<i><i>&ndash;</i></i>');
             var linkText = spawn('a.truncate', {
-                title: val,
+                title: unescapeAllHtml(val),
                 // style: { width: len },
                 href: URL
             }, TEXT);
@@ -171,7 +171,7 @@
                     name: item.secondary_id,
                     item: spawn('a.truncate', {
                         href: URL,
-                        title: item.name,
+                        title: unescapeAllHtml(item.name),
                         style: { width: '100%' }
                     }, escapeHtml(item.secondary_id))
                 }
@@ -192,7 +192,7 @@
             name:  type.element_name,
             item: spawn('a.truncate', {
                 href: dataTypeUrl(type.element_name),
-                title: type.element_name,
+                title: unescapeAllHtml(type.element_name),
                 style: { width: '100%' }
             }, escapeHtml(type.plural))
         }

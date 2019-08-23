@@ -11,6 +11,7 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.xmlbeans.XmlException;
@@ -28,8 +29,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xnat.notifications.NotifyProjectPipelineListeners;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
+@Slf4j
 public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandlerAbst {
     
     /** The default template success. */
@@ -56,7 +56,7 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
     public final String DEFAULT_SUBJECT_FAILURE = "";
 
     protected PipelineEmailHandlerAbst() {
-        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        _serializer = XDAT.getSerializerService();
     }
 
     /**
@@ -105,14 +105,14 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
                 }
 
                 if (completed(e) && Float.parseFloat(wrk.getPercentagecomplete()) < 100.0f) {
-                    _log.error("Workflow " + wrk.getWrkWorkflowdataId() + " is \"Complete\" but percentage is less than 100%. Not sending email.");
+                    log.error("Workflow " + wrk.getWrkWorkflowdataId() + " is \"Complete\" but percentage is less than 100%. Not sending email.");
                     return;
                 }
                 SchemaElement objXsiType;
                 try {
                     objXsiType = SchemaElement.GetElement(wrk.getDataType());
                 } catch (Throwable e1) {
-                    _log.error("", e1);//this shouldn't happen
+                    log.error("", e1);//this shouldn't happen
                     return;
                 }
 
@@ -167,7 +167,7 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
                     try {
                         wrkEE = (WrkXnatexecutionenvironment) wrk.getExecutionenvironment();
                     } catch (ClassCastException e1){
-                        _log.error("Workflow Execution Environment is not an XNAT Execution Environment", e1);
+                        log.error("Workflow Execution Environment is not an XNAT Execution Environment", e1);
                     }
                     final List<WrkXnatexecutionenvironmentParameterI> pipelineCmdLineParameters = null == wrkEE ? new ArrayList<WrkXnatexecutionenvironmentParameterI>() : wrkEE.getParameters_parameter();
 
@@ -195,14 +195,14 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
                                                 stderr = logFileContents;
                                             }
                                         } catch (IOException e1) {
-                                            _log.error("Could not read pipeline log file " + logFileObj.toPath(), e1);
+                                            log.error("Could not read pipeline log file " + logFileObj.toPath(), e1);
                                         }
                                     } else if (logFileObj.getName().endsWith(".xml")) {
                                         AllResolvedStepsDocument pipeParamsDoc = null;
                                         try {
                                             pipeParamsDoc = AllResolvedStepsDocument.Factory.parse(logFileObj);
                                         } catch (XmlException | IOException e1) {
-                                            _log.error("Encountered a problem parsing pipeline parameter XML for failure email.", e1);
+                                            log.error("Encountered a problem parsing pipeline parameter XML for failure email.", e1);
                                         }
 
                                         if (null!=pipeParamsDoc) {
@@ -242,29 +242,23 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
                         }
                     }
 
-
                     params.put("pipelineParamsMap",pipelineParamsMap);
                     params.put("attachments", attachments);
-                    if (stdout.size() > 0) {
+                    if (!stdout.isEmpty()) {
                         params.put("stdout", tailLog(stdout));
                     }
-                    if (stderr.size() > 0) {
+                    if (!stderr.isEmpty()) {
                         params.put("stderr",tailLog(stderr));
                     }
 
                     _subject = TurbineUtils.GetSystemName()+" update: Processing failed for " + expt.getLabel() +" "+subject;
-
-
-
                 } else {
                     _subject = TurbineUtils.GetSystemName()+" update: " + expt.getLabel() +" "+subject;
                 }
                 send(e, wrk, expt, params, template, _subject, notificationFileName, new ArrayList<String>());
-
-
             }
         } catch (Throwable e1) {
-            _log.error("", e1);
+            log.error("", e1);
         }
     }
 
@@ -274,13 +268,13 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
      * @param log the log
      * @return the list
      */
-    List<String> tailLog(List<String> log) {
-        List<String> retList = Lists.newArrayList();
-        if (log.size()==0) {
+    List<String> tailLog(final List<String> log) {
+        if (log.isEmpty()) {
             return log;
         }
-        int numlines = Math.min(40, log.size());
-        for (int line = log.size()-numlines; line < log.size(); line++) {
+        final List<String> retList = new ArrayList<>();
+        final int numLines = Math.min(40, log.size());
+        for (int line = log.size() - numLines; line < log.size(); line++) {
             retList.add(log.get(line));
         }
         return retList;
@@ -290,8 +284,5 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
         return _serializer;
     }
 
-    private final static Logger _log = LoggerFactory.getLogger(PipelineEmailHandlerAbst.class);
-
     private final SerializerService _serializer;
 }
-

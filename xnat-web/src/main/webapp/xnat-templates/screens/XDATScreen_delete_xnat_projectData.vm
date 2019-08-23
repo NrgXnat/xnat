@@ -1,4 +1,4 @@
-<h2 class="edit_header1">Delete Project: #escapeHTML($!om.getName())</h2>
+<h2 class="edit_header1">Delete Project: #escapeCleanHTML($!om.getName())</h2>
 <form name="form1" method="post" action="$link.setAction("DeleteProjectData")" ONSUBMIT="return validateForm();">
     <p>Select content to delete from this project. </p>
     <div id="projectDeleteTree">

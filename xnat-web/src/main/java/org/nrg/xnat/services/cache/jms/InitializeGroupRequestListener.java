@@ -23,12 +23,15 @@ import static org.nrg.framework.exceptions.NrgServiceError.UserServiceError;
 @Slf4j
 public class InitializeGroupRequestListener implements GroupsAndPermissionsCache.Listener {
     @Autowired
-    public InitializeGroupRequestListener(final GroupsAndPermissionsCache cache) {
-        _cache = cache;
+    public InitializeGroupRequestListener() {
         _groupIds = new HashSet<>();
         _processed = Sets.newConcurrentHashSet();
         _start = new Date();
+    }
 
+    @Autowired
+    public void setCache(final GroupsAndPermissionsCache cache) {
+        _cache = cache;
         if (cache instanceof GroupsAndPermissionsCache.Provider) {
             ((GroupsAndPermissionsCache.Provider) _cache).registerListener(this);
         }
@@ -51,7 +54,7 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
             _processed.add(groupId);
         } catch (NrgServiceRuntimeException e) {
             if (e.getServiceError() == UserServiceError && e.getCause() instanceof UserInitException) {
-                log.warn("A UserInitException happened while trying to process a group with ID '{}'. This probably means the system hasn't initialized yet and the processing request was left over from a previous run.");
+                log.warn("A UserInitException happened while trying to process a group with ID '{}'. This probably means the system hasn't initialized yet and the processing request was left over from a previous run.", groupId);
             } else {
                 throw e;
             }
@@ -111,16 +114,16 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
         if (log.isTraceEnabled()) {
             log.trace("Added {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
         } else {
-            log.debug("Added {} group IDs to the listener: {}", _groupIds.size());
+            log.debug("Added {} group IDs to the listener", _groupIds.size());
         }
     }
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 
-    private final Date                      _start;
-    private final GroupsAndPermissionsCache _cache;
-    private final Set<String>               _groupIds;
-    private final Set<String>               _processed;
+    private final Date        _start;
+    private final Set<String> _groupIds;
+    private final Set<String> _processed;
 
-    private Date _completed;
+    private GroupsAndPermissionsCache _cache;
+    private Date                      _completed;
 }

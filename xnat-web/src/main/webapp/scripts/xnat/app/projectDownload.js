@@ -333,8 +333,8 @@ var XNAT = getObject(XNAT);
                                 isDefault: true,
                                 close: true,
                                 action: function(){
-                                    // tickle the server every minute to keep the session alive
-                                    window.setInterval(XNAT.app.timer.touch, 60*1000);
+                                    // *DON'T* tickle the server every minute to keep the session alive
+                                    // window.setInterval(XNAT.app.timer.touch, 60*1000);
                                     window.open(URL)
                                 }
                             }

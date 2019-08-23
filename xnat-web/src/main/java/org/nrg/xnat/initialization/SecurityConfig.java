@@ -271,7 +271,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
 
-        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint, eventPublisher()));
+        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint, _aliasTokenService));
 
         http.sessionManagement()
             .sessionAuthenticationStrategy(sessionAuthenticationStrategy())

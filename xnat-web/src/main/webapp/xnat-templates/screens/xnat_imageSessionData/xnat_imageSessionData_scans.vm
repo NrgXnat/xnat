@@ -71,13 +71,18 @@
             #else
                 <script>
                     #foreach($scan in $om.getSortedScans())
-                    XNAT.data.context.scans.push({ id: '#escapeAll($!scan.getProperty("ID"))', series_description: '#escapeAll($!scan.getProperty("series_description"))' });
+                    XNAT.data.context.scans.push({
+                        id: '#escapeAll("$!scan.getProperty('ID')")',
+                        series_description: '#escapeAll("$!scan.getProperty('series_description')")',
+                        modality: '#escapeAll("$!scan.getProperty('modality')")',
+                        xsitype: '#escapeAll("$!scan.getXSIType()")'
+                    });
                     #end
                 </script>
 
                 #foreach($scan in $om.getSortedScans())
                     #set ($scanID =$!scan.getProperty("ID"))
-                    <tr valign="top" id="scan-${scanID}">
+                    <tr valign="top" id="scan-${scanID}" data-scan="${scanID}">
                         <td class="scan-actions-controls scan-selector center" style="width: 45px;">
                             <input type="checkbox" class="selectable-select-one" name="scanAction" value="$scanID" />
                         </td>

@@ -9,11 +9,11 @@
 
 package org.nrg.xnat.configuration;
 
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,12 +32,12 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                 "org.nrg.xnat.services.triage"})
 public class XnatServicesConfig {
     @Bean
-    public PermissionsServiceI permissionsService(final NrgEventService eventService, final NamedParameterJdbcTemplate template) {
+    public PermissionsServiceI permissionsService(final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
         return new PermissionsServiceImpl(eventService, template);
     }
 
     @Bean
-    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
-        return new UserGroupManager(cache, template);
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
+        return new UserGroupManager(cache, template, eventService);
     }
 }

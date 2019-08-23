@@ -19,10 +19,7 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -39,7 +36,6 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
-import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -150,13 +146,9 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             final Integer uid = retrieveUserId(username);
             if (uid != null) {
                 try {
-                    final XFTItem item = XFTItem.NewItem("xdat:user_login", null);
-                    item.setProperty("xdat:user_login.user_xdat_user_id", uid);
-                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
-                    item.setProperty("xdat:user_login.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
-                    SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
+                    Users.recordUserLogin(request);
                 } catch (Exception exception) {
-                    log.error("An exception occurred trying to log a failed login attempt for the user " + username, exception);
+                    log.error("An exception occurred trying to log a failed login attempt for the user {}", username, exception);
                 }
             }
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "FAILED");

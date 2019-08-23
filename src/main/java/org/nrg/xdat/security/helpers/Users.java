@@ -21,6 +21,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XdatUserLogin;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.ElementSecurity;
@@ -32,11 +33,15 @@ import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
+import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -50,6 +55,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -60,6 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 
+@SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
 public class Users {
     public static final String                  ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
@@ -76,9 +83,9 @@ public class Users {
     public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
     public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
     public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
-    public static final Function<UserI, String> USERI_TO_USERNAME           = new Function<UserI, String>() {
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_USER        = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
+    public static final Function<UserI, String> USERI_TO_USERNAME       = new Function<UserI, String>() {
         @Nullable
         @Override
         public String apply(final UserI user) {
@@ -541,6 +548,38 @@ public class Users {
     }
 
     /**
+     * Creates a record of the user associated with the specified request logging into the system.
+     *
+     * @param request The request object
+     *
+     * @throws Exception When an error occurs
+     */
+    public static void recordUserLogin(final HttpServletRequest request) throws Exception {
+        final UserI user = XDAT.getUserDetails();
+        if (user != null) {
+            recordUserLogin(user, request);
+        } else {
+            log.warn("Tried to record user login from a request, but no user was associated with the request or context.");
+        }
+    }
+    /**
+     * Creates a record of the specified user logging into the system.
+     *
+     * @param user    The user logging in
+     * @param request The request object
+     * @throws Exception When an error occurs.
+     */
+    public static void recordUserLogin(final UserI user, final HttpServletRequest request) throws Exception {
+        final XFTItem item = XFTItem.NewItem(XdatUserLogin.SCHEMA_ELEMENT_NAME, user);
+        item.setProperty(USER_XDAT_USER_ID, user.getID());
+        item.setProperty(LOGIN_DATE, Calendar.getInstance(TimeZone.getDefault()).getTime());
+        item.setProperty(IP_ADDRESS, AccessLogger.GetRequestIp(request));
+        item.setProperty(SESSION_ID, request.getSession().getId());
+        SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null)); // XnatBasicAuthenticationFilter
+        UserHelper.setUserHelper(request, user);
+    }
+
+    /**
      * Tests password and salt for existing and updated user to determine what value should be set when user is saved.
      * The password value will always be encoded using the returned salt.
      *
@@ -664,6 +703,11 @@ public class Users {
         }
         return _users;
     }
+
+    private static final String USER_XDAT_USER_ID = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".user_xdat_user_id";
+    private static final String LOGIN_DATE        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".login_date";
+    private static final String IP_ADDRESS        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".ip_address";
+    private static final String SESSION_ID        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".session_id";
 
     @SuppressWarnings("deprecation")
     private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);

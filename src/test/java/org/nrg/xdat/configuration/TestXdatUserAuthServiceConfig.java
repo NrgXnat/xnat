@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.configuration.NrgPrefsConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
@@ -65,12 +66,12 @@ public class TestXdatUserAuthServiceConfig {
     }
 
     @Bean
-    public NrgEventService eventService(final EventBus eventBus) {
+    public NrgEventServiceI eventService(final EventBus eventBus) {
         return new NrgEventService(eventBus);
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService) {
         return new SiteConfigPreferences(preferenceService, eventService, null, null);
     }
 }

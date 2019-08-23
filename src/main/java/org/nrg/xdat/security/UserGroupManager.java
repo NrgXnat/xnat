@@ -32,6 +32,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -65,9 +66,10 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
     @Autowired
-    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
+    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final DataTypeAwareEventService eventService) {
         _cache = cache;
         _template = template;
+        _eventService = eventService;
     }
 
     @Override
@@ -570,7 +572,7 @@ public class UserGroupManager implements UserGroupServiceI {
             properties.put(REMOVED, groupIdsToRemove);
         }
         if (triggerEvent) {
-            XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, properties);
+            _eventService.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, XftItemEvent.UPDATE, properties);
         }
     }
 
@@ -578,7 +580,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             return PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), objectId, value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, action));
         } catch (PersistentWorkflowUtils.JustificationAbsent | PersistentWorkflowUtils.ActionNameAbsent | PersistentWorkflowUtils.IDAbsent exception) {
-            log.error("An error occurred trying to create a workflow object for the group '{}' and value '{}'");
+            log.error("An error occurred trying to create a workflow object for the group '{}' and value '{}'", group.getId(), objectId);
             return null;
         }
     }
@@ -726,4 +728,5 @@ public class UserGroupManager implements UserGroupServiceI {
 
     private final GroupsAndPermissionsCache  _cache;
     private final NamedParameterJdbcTemplate _template;
+    private final DataTypeAwareEventService  _eventService;
 }

@@ -14,6 +14,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -25,13 +26,14 @@ import org.apache.velocity.context.Context;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -41,7 +43,6 @@ import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
@@ -50,6 +51,7 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
@@ -60,8 +62,6 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
@@ -69,7 +69,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -80,6 +79,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.annotation.Nullable;
 import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
@@ -98,7 +98,7 @@ import static org.nrg.xdat.security.helpers.Users.*;
  * @author Tim
  */
 // TODO: Remove all @SuppressWarnings() annotations.
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 @Slf4j
 public class XDAT implements Initializable, Configurable{
 	public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
@@ -116,6 +116,8 @@ public class XDAT implements Initializable, Configurable{
 	private static NotificationService        _notificationService;
 	private static XdatUserAuthService        _xdatUserAuthService;
 	private static ConfigService              _configurationService;
+	private static SerializerService          _serializerService;
+	private static DataTypeAwareEventService  _eventService;
 	private static SiteConfigPreferences      _siteConfigPreferences;
 	private static CacheManager               _cacheManager;
 	private static NotificationsPreferences   _notificationsPreferences;
@@ -126,7 +128,7 @@ public class XDAT implements Initializable, Configurable{
 
 	private String instanceSettingsLocation = null;
 
-	/**
+    /**
 	 * configure torque
 	 *
 	 * @param configuration Configuration
@@ -272,14 +274,7 @@ public class XDAT implements Initializable, Configurable{
 	public static void setNewUserDetails(final UserI user, final RunData data, final Context context) {
 		try {
 			XDAT.setUserDetails(user);
-
-			final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
-			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
-			item.setProperty("xdat:user_login.login_date", Calendar.getInstance(TimeZone.getDefault()).getTime());
-			item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
-			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
-
+			Users.recordUserLogin(user, data.getRequest());
 			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
 		} catch (Exception exception) {
             log.error("Error performing su operation to user {}", user.getUsername(), exception);
@@ -522,54 +517,54 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	public static void triggerEvent(final EventI event) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event);
+		getEventService().triggerEvent(event);
 	}
 
 	public static void triggerEvent(final String description, final EventI event, final boolean notifyClassListeners) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event, notifyClassListeners);
+		getEventService().triggerEvent(description, event, notifyClassListeners);
 	}
 
 	public static void triggerEvent(final String description, final EventI event) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(description, event);
+		getEventService().triggerEvent(description, event);
 	}
 
 	public static void triggerEvent(final EventI event, final Object replyTo) {
-		XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(event, replyTo);
+		getEventService().triggerEvent(event, replyTo);
 	}
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action) {
-		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).build());
+		getEventService().triggerXftItemEvent(xsiType, id, action);
 	}
 
 	public static void triggerXftItemEvent(final XFTItem item, final String action) {
-		triggerEvent(XftItemEvent.builder().item(item).action(action).build());
+		getEventService().triggerXftItemEvent(item, action);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement baseElement, final String action) {
-		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).build());
+		getEventService().triggerXftItemEvent(baseElement, action);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement[] baseElements, final String action) {
-		triggerEvent(XftItemEvent.builder().elements(Arrays.asList(baseElements)).action(action).build());
+		getEventService().triggerXftItemEvent(baseElements, action);
 	}
 
 	public static void triggerXftItemEvent(final String xsiType, final String id, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().xsiType(xsiType).id(id).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(xsiType, id, action, properties);
 	}
 
 	public static void triggerUserIEvent(final String username, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).id(username).action(action).properties(properties).build());
+		getEventService().triggerUserIEvent(username, action, properties);
 	}
 
 	public static void triggerXftItemEvent(final XFTItem item, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().item(item).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(item, action, properties);
 	}
 
 	public static void triggerXftItemEvent(final BaseElement baseElement, final String action, final Map<String, ?> properties) {
-		triggerEvent(XftItemEvent.builder().element(baseElement).action(action).properties(properties).build());
+		getEventService().triggerXftItemEvent(baseElement, action, properties);
 	}
 
-    public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
+	public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
         _screenTemplatesFolders.put(path, screenTemplatesFolder);
     }
 
@@ -628,7 +623,52 @@ public class XDAT implements Initializable, Configurable{
 	    return _configurationService;
 	}
 
-    @SuppressWarnings("RedundantThrows")
+	/**
+	 * Returns an instance of the serializer service.
+	 * @return An instance of the {@link SerializerService} service.
+	 */
+	public static SerializerService getSerializerService() {
+		if (_serializerService == null) {
+			final SerializerService service = getContextService().getBean(SerializerService.class);
+			if (service != null) {
+				_serializerService = service;
+			} else {
+				final Map<String, String> appInfo = Maps.filterKeys(System.getenv(), new Predicate<String>() {
+					@Override
+					public boolean apply(@Nullable final String key) {
+						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL");
+					}
+				});
+				// We're running an application of some sort, not in a web application, so we need to
+				// strap on the serializer service by hand.
+				if (!appInfo.isEmpty()) {
+					log.info("Found environment variables that indicate this is running in a stand-alone application:");
+					for (final String key : appInfo.keySet()) {
+						log.info(" * \"{}\": {}", key, appInfo.get(key));
+					}
+					log.info("Because this is a stand-alone application, I will instantiate SerializerService on its own.");
+				} else {
+					log.warn("The serializer service was null, which usually happens only in a non-XNAT application context, but I didn't find anything in the environment to indicate the non-XNAT context: {}", System.getenv());
+				}
+				final SerializerConfig config = new SerializerConfig();
+				try {
+					_serializerService = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		return _serializerService;
+	}
+
+	public static DataTypeAwareEventService getEventService() {
+		if (_eventService == null) {
+			_eventService = XDAT.getContextService().getBean(DataTypeAwareEventService.class);
+		}
+		return _eventService;
+	}
+
+	@SuppressWarnings("RedundantThrows")
 	public static Properties getSiteConfiguration() throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		if (preferences == null) {
@@ -896,14 +936,7 @@ public class XDAT implements Initializable, Configurable{
 
 	public static void loginUser(final UserI user, final HttpServletRequest request, final String password) throws Exception {
 		UserHelper.setUserHelper(request, user);
-
-		final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
-		item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
-		item.setProperty("xdat:user_login.login_date", Calendar.getInstance(TimeZone.getDefault()).getTime());
-		item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
-		item.setProperty("xdat:user_login.session_id", request.getSession().getId());
-		SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
-
+		Users.recordUserLogin(user, request);
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, password, getGrantedAuthorities(user));
 		if (!user.isGuest()) {
 			SecurityContextHolder.getContext().setAuthentication(authentication);

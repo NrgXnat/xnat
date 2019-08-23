@@ -13,12 +13,12 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.5</version>
+        <version>1.7.5.4</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.5.RAD1</version>
+    <version>1.7.5.4.RAD1</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
@@ -77,6 +77,7 @@
         <dependency>
             <groupId>org.nrg</groupId>
             <artifactId>framework</artifactId>
+            <version>1.7.5.4</version>
         </dependency>
         <dependency>
             <groupId>org.nrg</groupId>
@@ -109,10 +110,6 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -222,12 +219,6 @@
         <dependency>
             <groupId>stratum</groupId>
             <artifactId>stratum</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xerces</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lowagie</groupId>

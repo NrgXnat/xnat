@@ -7,12 +7,10 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xdat.turbine.modules.actions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
@@ -22,32 +20,24 @@ import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+
 /**
  * @author Tim
- *
  */
+@Slf4j
 public class XDATLoginUser extends VelocityAction{
-
-    private final static Logger logger       = LoggerFactory.getLogger(XDATLoginUser.class);
 	/** CGI Parameter for the user name */
 	public static final  String CGI_USERNAME = "username";
 
 	/** CGI Parameter for the password */
 	public static final String CGI_PASSWORD = "password";
-
-	/** Logging */
-	private static Log log = LogFactory.getLog(XDATLoginUser.class);
 
 	/**
 	 * Updates the user's LastLogin timestamp, sets their state to
@@ -86,15 +76,9 @@ public class XDATLoginUser extends VelocityAction{
 			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
 
 			try {
-				XFTItem item = XFTItem.NewItem("xdat:user_login",user);
-				java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-				item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
-				item.setProperty("xdat:user_login.login_date",today);
-				item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-				item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
-				SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+				Users.recordUserLogin(user, data.getRequest());
 			} catch (Exception e1) {
-				logger.error("",e1);
+				log.error("", e1);
 			}
 
 			XDAT.setUserDetails(user);
@@ -118,7 +102,7 @@ public class XDATLoginUser extends VelocityAction{
             {
             	e= new Exception("Illegal username &lt;script&gt; usage.");
 				AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml4(username));
-            	logger.error("",e);
+            	log.error("", e);
                 data.setScreenTemplate("Error.vm");
                 data.getParameters().setString("exception", e.toString());
                 return;
@@ -172,14 +156,6 @@ public class XDATLoginUser extends VelocityAction{
 			data.setMessage("<b>Previous session expired.</b><br>If you have bookmarked this page, please redirect your bookmark to: " + TurbineUtils.GetFullServerPath());
 			data.setScreenTemplate("Index.vm");
 		}
-	}
-
-	public void doRegister(RunData data, Context context) throws Exception{
-		data.setScreenTemplate("Register.vm");
-	}
-
-	public void doForgotLogin(RunData data, Context context) throws Exception{
-		data.setScreenTemplate("ForgotLogin.vm");
 	}
 }
 

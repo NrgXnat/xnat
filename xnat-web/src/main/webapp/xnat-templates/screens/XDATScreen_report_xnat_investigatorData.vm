@@ -26,19 +26,19 @@
                         <table align="left">
                             <tr>
                                 <TH align="left">ID</TH>
-                                <TD>#escapeHTML($!item.getProperty("ID"))</TD>
+                                <TD>#escapeCleanHTML($!item.getProperty("ID"))</TD>
                             </tr>
                             <tr>
                                 <TH align="left">Name</TH>
-                                <TD>#escapeHTML($!item.getProperty("title")) #escapeHTML($!item.getProperty("firstname")) #escapeHTML($!item.getProperty("lastname"))</TD>
+                                <TD>#escapeCleanHTML($!item.getProperty("title")) #escapeCleanHTML($!item.getProperty("firstname")) #escapeCleanHTML($!item.getProperty("lastname"))</TD>
                             </tr>
                             <tr>
                                 <TH align="left">Institution</TH>
-                                <TD>#escapeHTML($!item.getProperty("institution"))</TD>
+                                <TD>#escapeCleanHTML($!item.getProperty("institution"))</TD>
                             </tr>
                             <tr>
                                 <TH align="left">Department</TH>
-                                <TD>#escapeHTML($!item.getProperty("department"))</TD>
+                                <TD>#escapeCleanHTML($!item.getProperty("department"))</TD>
                             </tr>
                             <tr>
                                 <TH align="left">Email</TH>
@@ -49,7 +49,7 @@
                             </tr>
                             <tr>
                                 <TH align="left">Phone</TH>
-                                <TD>#escapeHTML($!item.getProperty("phone"))</TD>
+                                <TD>#escapeCleanHTML($!item.getProperty("phone"))</TD>
                             </tr>
                         </table>
                     </TD>

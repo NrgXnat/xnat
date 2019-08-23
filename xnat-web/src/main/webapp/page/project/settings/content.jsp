@@ -12,39 +12,54 @@
     <c:set var="id" value="${fn:escapeXml(param.id)}"/>
 </c:if>
 
+<div id="breadcrumbs" style="padding-left:0;">
+    <span class="crumb project-link">
+        <%-- project link rendered here --%>
+    </span>
+</div>
 
-<div id="page-wrapper">
+<div id="page-body">
     <div class="pad">
 
-        <div id="project-not-specified" class="error hidden">Project not specified.</div>
+        <div id="project-settings-page" class="settings-tabs">
 
-        <%-- show an error if the project data is not returned from the rest call --%>
-        <div id="project-data-error" class="error hidden">Data for "<span class="project-id"></span>" project not found.</div>
+            <div id="project-not-specified" class="error hidden">Project not specified.</div>
 
-        <%-- if an 'id' param is passed, use its value to edit specified project data --%>
-        <h3 id="project-settings-header" class="hidden">Settings for <span class="project-id"></span></h3>
+            <%-- show an error if the project data is not returned from the rest call --%>
+            <div id="project-data-error" class="error hidden">Data for "<span class="project-id"></span>" project not found.</div>
 
-        <div id="project-settings-tabs">
-            <div class="content-tabs xnat-tab-container">
+            <%-- if an 'id' param is passed, use its value to edit specified project data --%>
+            <header id="project-settings-header" class="hidden">
+                <h2 class="pull-left">Settings for <span class="project-id"></span></h2>
+                <div class="clearfix"></div>
+            </header>
 
-                <%--<div class="xnat-nav-tabs side pull-left">--%>
-                <%--<!-- ================== -->--%>
-                <%--<!-- Admin tab flippers -->--%>
-                <%--<!-- ================== -->--%>
-                <%--</div>--%>
-                <%--<div class="xnat-tab-content side pull-right">--%>
-                <%--<!-- ================== -->--%>
-                <%--<!-- Admin tab panes    -->--%>
-                <%--<!-- ================== -->--%>
-                <%--</div>--%>
+            <div id="project-settings-tabs">
+                <div class="content-tabs xnat-tab-container">
 
+                    <%--<div class="xnat-nav-tabs side pull-left">--%>
+                    <%--<!-- ================== -->--%>
+                    <%--<!-- Admin tab flippers -->--%>
+                    <%--<!-- ================== -->--%>
+                    <%--</div>--%>
+                    <%--<div class="xnat-tab-content side pull-right">--%>
+                    <%--<!-- ================== -->--%>
+                    <%--<!-- Admin tab panes    -->--%>
+                    <%--<!-- ================== -->--%>
+                    <%--</div>--%>
+
+                </div>
             </div>
-        </div>
 
         <script>
             (function(){
 
-                var PROJECT_ID = '${id}' || getQueryStringValue('id') || getUrlHashValue('#id=');
+                var PROJECT_ID =
+                    '${id}' ||
+                    getQueryStringValue('id') ||
+                    getQueryStringValue('project') ||
+                    getUrlHashValue('#id=') ||
+                    getUrlHashValue('#project=');
 
                 if (!PROJECT_ID) {
                     $('#project-not-specified').hidden(false);
@@ -87,12 +102,67 @@
                         projectSettingsHeader$.hidden();
                         $('#project-data-error').hidden(false);
                     }
-                })
 
-            }())
+                    // make sure the 'projectId' variable is set for use in spawned elements
+                    // (it could be referenced by any of these variables)
+                    XNAT.data.context.project = XNAT.data.projectId = XNAT.data.project = PROJECT_ID;
 
-        </script>
+                    function projectLink(cfg, txt){
+                        return spawn('a.last', extend(true, {
+                            href: '${SITE_ROOT}/data/projects/' + PROJECT_ID + '?format=html',
+                            style: { textDecoration: 'underline' },
+                            data: { projectId: PROJECT_ID }
+                        }, cfg), txt || PROJECT_ID);
+                    }
 
+                    $('.project-link').each(function(){
+                        this.appendChild(projectLink())
+                    });
 
+                    $('.project-id').each(function(){
+                        this.textContent = PROJECT_ID;
+                    });
+
+                    // cache DOM objects
+                    var projectSettingsHeader$ = $('#project-settings-header');
+
+                    // render siteSettings tab into specified container
+                    var projectSettingsTabs = $('#project-settings-tabs').find('div.content-tabs');
+
+                    // these properties _should_ be set before spawning 'tabs' widgets
+                    XNAT.tabs.container = projectSettingsTabs;
+                    XNAT.tabs.layout    = 'left';
+
+                    // get project data first so we have data to work with
+                    XNAT.xhr.getJSON({
+                        url: XNAT.url.restUrl('/data/projects/' + PROJECT_ID),
+                        success: function(data){
+                            // make project id available
+                            XNAT.data.projectId   = XNAT.data.projectID = PROJECT_ID;
+                            // make returned project data available for Spawner elements
+                            XNAT.data.projectData = data;
+                            // show the header since we should have the data
+                            projectSettingsHeader$.removeClass('hidden');
+                            // render the project settings tabs
+                            XNAT.app.pluginSettings.showTabs            = true;
+                            XNAT.app.pluginSettings.projectSettingsTabs = projectSettingsTabs;
+                            XNAT.app.pluginSettings.projectSettings(projectSettingsTabs, function(data){
+                                console.log(data);
+                                console.log(arguments);
+                                XNAT.tab.activate(XNAT.tab.active, projectSettingsTabs);
+                            });
+                        },
+                        failure: function(){
+                            // if REST call for project data fails,
+                            projectSettingsHeader$.hidden();
+                            $('#project-data-error').hidden(false);
+                        }
+                    })
+
+                }())
+
+            </script>
+
+        </div>
     </div>
 </div>

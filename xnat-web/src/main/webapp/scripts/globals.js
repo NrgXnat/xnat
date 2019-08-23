@@ -88,23 +88,6 @@ window.jsdebug = window.jsdebug ||
 
 (function(){
 
-    function escapeHtml(str, regex) {
-        return (str + '').replace(regex || /[&<>"']/g, function(s){
-            var entityMap = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;',
-                // '/': '&#x2F;',
-                '---': '---'
-            };
-            return entityMap[s] || s;
-        });
-    }
-    window.escapeHtml = escapeHtml;
-    window.escapeHTML = escapeHtml;
-
     function unescapeHtml(str) {
         return (str + '').replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function(s){
             var entityMap = {
@@ -129,6 +112,23 @@ window.jsdebug = window.jsdebug ||
     }
     window.unescapeAllHtml = unescapeAllHtml;
     window.unescapeAllHTML = unescapeAllHtml;
+
+    function escapeHtml(str, regex) {
+        return unescapeHtml(str + '').replace(regex || /[&<>"']/g, function(s){
+            var entityMap = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                // '/': '&#x2F;',
+                '---': '---'
+            };
+            return entityMap[s] || s;
+        });
+    }
+    window.escapeHtml = escapeHtml;
+    window.escapeHTML = escapeHtml;
 
 })();
 

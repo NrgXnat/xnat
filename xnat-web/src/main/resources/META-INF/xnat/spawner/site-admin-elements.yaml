@@ -1,6 +1,5 @@
-
 tabGroups:
-#    dashboard: Dashboard
+    #    dashboard: Dashboard
     xnatSetup: Site Settings
     manageAccess: Manage Access
     manageData: Manage Data
@@ -36,7 +35,7 @@ siteDescriptionText:
 
 passwordExpirationInterval:
     kind: input.text
-#    id: passwordExpirationInterval
+    #    id: passwordExpirationInterval
     name: passwordExpirationInterval
     label: Password Expiration (Interval)
     validation: interval onblur
@@ -46,7 +45,7 @@ passwordExpirationInterval:
 
 passwordExpirationDate:
     kind: input.text
-#    id: passwordExpirationDate
+    #    id: passwordExpirationDate
     name: passwordExpirationDate
     label: Password Expiration (Date)
     validation: allow-empty date-iso onblur
@@ -301,6 +300,53 @@ triagePath:
 #    name: checksums.property.changed.listener
 #    label: Checksums Property Changed Listener?
 
+asyncOperationsSettingsWarning:
+    someInfo:
+        tag: div.message
+        element:
+            html: >
+                These settings can only be applied during application start-up. That means that any
+                changes to the values here require a restart of the application server.
+            style:
+                fontWeight: bold
+defaultTimeout:
+    kind: panel.input.text
+    name: defaultTimeout
+    label: Default Timeout
+    validation: required onblur
+    description: "Sets the timeout for asynchronous request handling."
+    info: >
+        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
+        Generally speaking, this should stay set to -1.</p>
+corePoolSize:
+    kind: panel.input.text
+    name: corePoolSize
+    label: Core Pool Size
+    validation: required onblur
+    description: "Sets the minimum number of threads available to the asynchronous task executor."
+maxPoolSize:
+    kind: panel.input.text
+    name: maxPoolSize
+    label: Max Pool Size
+    validation: required onblur
+    description: "Sets the maximum number of threads available to the asynchronous task executor."
+keepAliveSeconds:
+    kind: panel.input.text
+    name: keepAliveSeconds
+    label: Keep-Alive Time
+    validation: required onblur
+    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
+allowCoreThreadTimeOut:
+    kind: panel.input.switchbox
+    name: allowCoreThreadTimeOut
+    label: Allow Core Thread Time-Out?
+    onText: Enabled
+    offText: Disabled
+    description: "Indicates whether core threads are allowed to time out."
+    info: >
+        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
+        (since the max pool size will only grow once the queue is full).
+
 siteInfo:
     kind: panel.form
     name: siteInfo
@@ -311,13 +357,13 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
+      #        ${processingUrl}
         ${siteDescriptionType}
         ${siteLogo}
         ${siteLoginLanding}
+      #        ${siteLandingLayout}
         ${siteHome}
-#       ${siteLandingLayout}
-#       ${processingUrl}
-#       ${siteHomeLayout}
+#        ${siteHomeLayout}
 
 adminInfo:
     kind: panel.form
@@ -416,10 +462,10 @@ generalSecuritySettings:
             name: ipsThatCanSendEmailsThroughRest
             label: IPs that can send emails via REST
             description: >
-              This must be a regular expression (do not include bounding '/' characters) which matches
-              trusted IPs from which users or pipelines should be able to send emails via an XNAT REST
-              call. By default this is set to allow all IPs but should be changed so that malicious
-              users do not use this to send phishing emails.
+                This must be a regular expression (do not include bounding '/' characters) which matches
+                trusted IPs from which users or pipelines should be able to send emails via an XNAT REST
+                call. By default this is set to allow all IPs but should be changed so that malicious
+                users do not use this to send phishing emails.
             validation: "!pattern:^/"
             element:
                 data:
@@ -439,36 +485,36 @@ userLoginsSessionControls:
             label: Session Timeout
             validation: interval onblur
             description: >
-              Interval for timing out user sessions. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval for timing out user sessions. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         aliasTokenTimeout:
             kind: panel.input.text
             name: aliasTokenTimeout
             label: Alias Token Timeout
             validation: interval onblur
             description: >
-              Interval for timing out alias tokens. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval for timing out alias tokens. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         aliasTokenTimeoutSchedule:
             kind: panel.input.text
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
             validation: cron onblur
             description: >
-              How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         sessionTimeoutMessage:
             kind: panel.textarea
             name: sessionTimeoutMessage
             label: Session Timeout Message
             code: html
             description: Alert message provided to users after a session timeout. TIMEOUT_TIME will be replaced by the timeout time.
-#        allowResumeOnNextLogin:
-#            kind: panel.input.checkbox
-#            id: allow-resume-on-next-login
-#            name: allowResumeOnNextLogin
-#            label: Allow Resume On Next Login?
-#            description: Allow user to resume where they left off, if logging back in after a session timeout?
+        #        allowResumeOnNextLogin:
+        #            kind: panel.input.checkbox
+        #            id: allow-resume-on-next-login
+        #            name: allowResumeOnNextLogin
+        #            label: Allow Resume On Next Login?
+        #            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
             name: concurrentMaxSessions
@@ -493,16 +539,16 @@ userLoginsSessionControls:
             label: Failed Logins Lockout Duration
             validation: interval onblur
             description: >
-              Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         resetFailedLoginsSchedule:
             kind: panel.input.text
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
             validation: cron onblur
             description: >
-              How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         canResetFailedLoginsWithForgotPassword:
             kind: panel.input.switchbox
             name: canResetFailedLoginsWithForgotPassword
@@ -519,16 +565,16 @@ userLoginsSessionControls:
             label: User Inactivity Lockout
             validation: interval onblur
             description: >
-              Interval of inactivity before a user account is disabled. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval of inactivity before a user account is disabled. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         inactivityBeforeLockoutSchedule:
             kind: panel.input.text
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
             validation: cron onblur
             description: >
-              How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         interactiveAgentIds:
             kind: panel.input.textList
             size: 60
@@ -537,9 +583,9 @@ userLoginsSessionControls:
             label: Interactive Agent IDs
             placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
             description: >
-              Regular-expression patterns that define user-agent header values that indicate whether a particular
-              request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
-              scriptable or automatable client. Separate multiple agent IDs with commas.
+                Regular-expression patterns that define user-agent header values that indicate whether a particular
+                request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
+                scriptable or automatable client. Separate multiple agent IDs with commas.
         dataPaths:
             kind: panel.input.textList
             size: 60
@@ -548,11 +594,11 @@ userLoginsSessionControls:
             label: Data Paths
             placeholder: /xapi/**, /data/**, /REST/**, /fs/**
             description: >
-              Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
-              paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
-              example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
-              a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
-              commas.
+                Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
+                paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+                example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
+                a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
+                commas.
 
 passwords:
     kind: panel.form
@@ -792,34 +838,34 @@ notifications:
             code: html
             description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
 
-#        notifyAdminSubhead:
-#            kind: panel.subhead
-#            label: "Notify Administrator on..."
-#
-#        notifyAdminUserRegistration:
-#            kind: panel.input.checkbox
-#            id: notifyAdminUserRegistration
-##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
-#            label: "User Registration"
-#            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
-#        notifyAdminPipelineEmails:
-#            kind: panel.input.checkbox
-#            id: notifyAdminPipelineEmails
-##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
-#            label: "Pipeline Emails"
-#            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
-#        notifyAdminProjectAccessRequest:
-#            kind: panel.input.checkbox
-#            id: notifyAdminProjectAccessRequest
-##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
-#            label: "Project Access Request"
-#            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
-#        notifyAdminSessionTransfer:
-#            kind: panel.input.checkbox
-#            id: notifyAdminSessionTransfer
-##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
-#            label: "Session Transfer"
-#            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+        #        notifyAdminSubhead:
+        #            kind: panel.subhead
+        #            label: "Notify Administrator on..."
+        #
+        #        notifyAdminUserRegistration:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminUserRegistration
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
+        #            label: "User Registration"
+        #            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
+        #        notifyAdminPipelineEmails:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminPipelineEmails
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
+        #            label: "Pipeline Emails"
+        #            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
+        #        notifyAdminProjectAccessRequest:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminProjectAccessRequest
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
+        #            label: "Project Access Request"
+        #            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
+        #        notifyAdminSessionTransfer:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminSessionTransfer
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
+        #            label: "Session Transfer"
+        #            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
 
         emailRecipientSubhead:
             kind: panel.subhead
@@ -832,7 +878,7 @@ notifications:
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-#            value: "!? XNAT.data.notifications['emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+        #            value: "!? XNAT.data.notifications['emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             label: "Issue Reports"
@@ -840,7 +886,7 @@ notifications:
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-#            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+        #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"
@@ -848,7 +894,7 @@ notifications:
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-#            value: "!? XNAT.data.notifications['emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+        #            value: "!? XNAT.data.notifications['emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             label: "Updates"
@@ -856,7 +902,7 @@ notifications:
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-#            value: "!? XNAT.data.notifications['emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+        #            value: "!? XNAT.data.notifications['emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
         copyAdminOnNotifications:
             kind: panel.input.switchbox
             name: copyAdminOnNotifications
@@ -886,7 +932,7 @@ themeManagement:
     contents:
         themeStyle:
             tag: style
-             # "|" preserves line breaks...
+            # "|" preserves line breaks...
             content: |
                 input.theme-uploader { width:244px; display: inline !important; }
                 body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
@@ -900,8 +946,8 @@ themeManagement:
                     name: themeSelection
                     label: Select Theme
                     description: Select a new global theme from those available on the system.
-#                    options:
-#                        None: None
+                    #                    options:
+                    #                        None: None
                     element:
                         style: "width:230px;margin-right:10px;"
                     afterElement: >
@@ -1062,12 +1108,12 @@ registrationOptions:
                 If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
                 If true, users who wish to change their email will also be required to verify their new email address.
-#        emailVerificationMessage:
-#            kind: panel.textarea
-#            name: emailVerificationMessage
-#            label: "Email Verification Message"
-#            code: html
-#            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
+        #        emailVerificationMessage:
+        #            kind: panel.textarea
+        #            name: emailVerificationMessage
+        #            label: "Email Verification Message"
+        #            code: html
+        #            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration
@@ -1301,7 +1347,7 @@ dicomScpEditor:
             name: customProcessing
             label: Custom Processing
             #show: false
-#            className: hidden
+            #            className: hidden
             onText: "Custom Processing: <b>Enabled</b>"
             offText: "Custom Processing <b>Disabled</b>"
             description: Enable or Disable Custom Processing for DICOM Receiver
@@ -1363,7 +1409,19 @@ fileSystem:
         ${zipExtensions}
         ${checksums}
         ${uiShowPrearchiveFileActions}
-#        ${checksumsPropertyChangedListener}
+asyncOperations:
+    kind: panel.form
+    name: asyncOperations
+    label: Async Operations
+    method: POST
+    contentType: json
+    url: /xapi/asyncOps
+    contents:
+        ${defaultTimeout}
+        ${corePoolSize}
+        ${allowCoreThreadTimeOut}
+        ${maxPoolSize}
+        ${keepAliveSeconds}
 
 #automationSettings:
 #    kind: panel.form
@@ -1508,29 +1566,29 @@ root:
             contents:
                 ${pluginOpenUrlsConfig}
 
-#        authenticationMethods:
-#            kind: tab
-#            name: authenticationMethods
-#            label: Authentication Methods
-#            group: manageAccess
-#            contents:
-#                ${authenticationMethods}
-#                ${genericAuthenticationProvider}
-#                ${ldapAuthentication}
-#        users:            # enable when users table can be re-implemented in spawner, until then use old users config?
-#            kind: tab
-#            name: users
-#            label: Users
-#            group: manageAccess
-#            contents:
-#                ${users}
-#        userRoles:        # enable when user roles table can be re-implemented in spawner, until then use old user roles config?
-#            kind: tab
-#            name: userRoles
-#            label: User Roles
-#            group: manageAccess
-#            contents:
-#                ${userRoles}
+        #        authenticationMethods:
+        #            kind: tab
+        #            name: authenticationMethods
+        #            label: Authentication Methods
+        #            group: manageAccess
+        #            contents:
+        #                ${authenticationMethods}
+        #                ${genericAuthenticationProvider}
+        #                ${ldapAuthentication}
+        #        users:            # enable when users table can be re-implemented in spawner, until then use old users config?
+        #            kind: tab
+        #            name: users
+        #            label: Users
+        #            group: manageAccess
+        #            contents:
+        #                ${users}
+        #        userRoles:        # enable when user roles table can be re-implemented in spawner, until then use old user roles config?
+        #            kind: tab
+        #            name: userRoles
+        #            label: User Roles
+        #            group: manageAccess
+        #            contents:
+        #                ${userRoles}
         registrationOptions:
             kind: tab
             name: registrationOptions
@@ -1538,13 +1596,13 @@ root:
             group: manageAccess
             contents:
                 ${registrationOptions}
-#        manageDataTypes:
-#            kind: tab
-#            name: manageDataTypes
-#            label: Manage Data Types
-#            group: manageData
-#            contents:
-#                ${manageDataTypes}
+        #        manageDataTypes:
+        #            kind: tab
+        #            name: manageDataTypes
+        #            label: Manage Data Types
+        #            group: manageData
+        #            contents:
+        #                ${manageDataTypes}
         sessionUploadImportAnonymization:
             kind: tab
             name: sessionUploadImportAnonymization
@@ -1574,13 +1632,19 @@ root:
             group: advanced
             contents:
                 ${fileSystem}
-#        automationTab:
-#            kind: tab
-#            name: automationTab
-#            label: Automation
-#            group: advanced
-#            contents:
-#                ${automationSettings}
+        asyncOperationsTab:
+            kind: tab
+            label: Async Operations
+            group: advanced
+            contents:
+                ${asyncOperations}
+        #        automationTab:
+        #            kind: tab
+        #            name: automationTab
+        #            label: Automation
+        #            group: advanced
+        #            contents:
+        #                ${automationSettings}
         manageInvestigators:
             kind: tab
             label: Manage Investigators

@@ -27,7 +27,7 @@ public class UserSession extends SecureResource {
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
 
         // copy the user from the request into the session
-        getHttpSession().setAttribute("userHelper", UserHelper.getUserHelperService(getUser()));
+        UserHelper.setUserHelper(getHttpServletRequest(), getUser());
 
         _includeXnatCsrfToken = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean(getQueryVariable("CSRF")), false);
     }

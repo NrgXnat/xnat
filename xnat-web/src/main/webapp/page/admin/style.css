@@ -7,6 +7,9 @@
  * Released under the Simplified BSD.
  */
 
+/* SETTINGS TABS HEADER */
+.settings-tabs header h2 { margin: 10px 0 20px; }
+
 .xnat-nav-tabs { position: relative; z-index: 1; }
 .xnat-nav-tabs > ul,
 .xnat-nav-tabs ul.tabs {

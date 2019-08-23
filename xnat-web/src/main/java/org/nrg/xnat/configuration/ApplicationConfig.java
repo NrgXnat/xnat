@@ -9,10 +9,13 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.configuration.ConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -21,18 +24,19 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
-import org.nrg.xnat.preferences.AutomationPreferences;
-import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
+import org.nrg.xnat.preferences.AsyncOperationsPreferences;
+import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
+import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
-import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
-import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.services.PETTracerUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
@@ -41,15 +45,17 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
-import org.apache.commons.configuration.ConfigurationException;
-
-import java.io.IOException;
+import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
 @Configuration
 @ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat",
@@ -59,13 +65,25 @@ import java.util.List;
                 "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",
                 "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners",
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
-                "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.processors",
+                "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.preferences", "org.nrg.xnat.processors",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 @EnableCaching
+@Getter
+@Accessors(prefix = "_")
 @Slf4j
 public class ApplicationConfig {
+    @Autowired
+    public void setAsyncOperationsPreferences(final AsyncOperationsPreferences asyncOperationsPreferences) {
+        _asyncOperationsPreferences = asyncOperationsPreferences;
+    }
+
+    @Autowired
+    public void setXnatHome(final Path xnatHome) {
+        _xnatHome = xnatHome;
+    }
+
     @Bean
     public ThemeService themeService(final SerializerService serializer, final ServletContext context) {
         return new ThemeServiceImpl(serializer, context);
@@ -74,6 +92,48 @@ public class ApplicationConfig {
     @Bean
     public CacheManager cacheManager() {
         return new EhCacheCacheManager(ehCacheManagerFactory().getObject());
+    }
+
+    @Bean(name = {"threadPoolExecutorFactoryBean", "executorService"})
+    @DependsOn({"xnatHome", "asyncOperationsPreferences"})
+    public ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean() throws IOException, InvocationTargetException, IllegalAccessException {
+        final ThreadPoolExecutorFactoryBean bean = new ThreadPoolExecutorFactoryBean();
+
+        final Path executor = getXnatHome().resolve("../executor.properties");
+        if (executor.toFile().exists()) {
+            try (final BufferedReader reader = Files.newBufferedReader(executor, StandardCharsets.UTF_8)) {
+                final Properties properties = new Properties();
+                properties.load(reader);
+                final Map<String, String> converted = new HashMap<>();
+                for (final String key : properties.stringPropertyNames()) {
+                    converted.put(key, properties.getProperty(key));
+                }
+                BeanUtils.populate(bean, converted);
+            }
+        } else {
+            final int     corePoolSize           = getAsyncOperationsPreferences().getCorePoolSize();
+            final boolean allowCoreThreadTimeOut = getAsyncOperationsPreferences().getAllowCoreThreadTimeOut();
+            final int     maxPoolSize            = getAsyncOperationsPreferences().getMaxPoolSize();
+            final int     keepAliveSeconds       = getAsyncOperationsPreferences().getKeepAliveSeconds();
+
+            log.info("Configuring async task executor with core pool size {}, max pool size {}, keep-alive seconds {}, and allow core thread timeout {}", corePoolSize, maxPoolSize, keepAliveSeconds, allowCoreThreadTimeOut);
+            bean.setCorePoolSize(corePoolSize);
+            bean.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
+            bean.setMaxPoolSize(maxPoolSize);
+            bean.setKeepAliveSeconds(keepAliveSeconds);
+        }
+
+        return bean;
+    }
+
+    @Bean
+    public ScheduledExecutorFactoryBean scheduledExecutorFactoryBean() throws IllegalAccessException, IOException, InvocationTargetException {
+        final ScheduledExecutorFactoryBean bean = new ScheduledExecutorFactoryBean();
+        bean.setRemoveOnCancelPolicy(true);
+        bean.setContinueScheduledExecutionAfterException(true);
+        bean.setWaitForTasksToCompleteOnShutdown(true);
+        bean.setThreadFactory(threadPoolExecutorFactoryBean());
+        return bean;
     }
 
     @Bean
@@ -90,23 +150,13 @@ public class ApplicationConfig {
     }
 
     @Bean(name = {"siteConfigPreferences", "siteConfig"})
-    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @Bean
-    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new NotificationsPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
-    }
-
-    @Bean
-    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
-    }
-
-    @Bean
-    public PluginOpenUrlsPreference pluginOpenUrlsPreference(final NrgPreferenceService preferenceService) {
-        return new PluginOpenUrlsPreference(preferenceService);
     }
 
     @Bean
@@ -158,6 +208,9 @@ public class ApplicationConfig {
 
     @Bean
     public ProcessorImporterMap processorImporterMap(final List<ProcessorImporterHandlerA> handlers) throws ConfigurationException, IOException, ClassNotFoundException {
-        return new ProcessorImporterMap(new HashSet<>(Arrays.asList("org.nrg.xnat.processor.importer")), handlers);
+        return new ProcessorImporterMap(new HashSet<>(Collections.singletonList("org.nrg.xnat.processor.importer")), handlers);
     }
+
+    private AsyncOperationsPreferences _asyncOperationsPreferences;
+    private Path                       _xnatHome;
 }

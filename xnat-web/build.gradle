@@ -165,6 +165,7 @@ configurations {
         exclude group: "stax", module: "stax-api"
         exclude group: "tomcat"
         exclude group: "velocity"
+        exclude group: "xalan"
         exclude group: "xerces"
         exclude group: "xml-apis"
         exclude group: "xml-resolver"

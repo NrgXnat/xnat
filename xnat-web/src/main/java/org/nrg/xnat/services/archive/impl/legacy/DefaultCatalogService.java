@@ -956,6 +956,7 @@ public class DefaultCatalogService implements CatalogService {
                                     scanId + "in use. Rerun with allowDataDeletion or choose a new ID");
                         }
                     }
+                    item.setProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/project", session.getProject());
                     session.addScans_scan(new XnatImagescandata(item));
                     if (eventMetaI != null) {
                         SaveItemHelper.unauthorizedSave(session, user, false, quarantine,

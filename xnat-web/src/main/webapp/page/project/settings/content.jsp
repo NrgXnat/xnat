@@ -51,56 +51,19 @@
                 </div>
             </div>
 
-        <script>
-            (function(){
+            <script>
+                (function(){
 
-                var PROJECT_ID =
-                    '${id}' ||
-                    getQueryStringValue('id') ||
-                    getQueryStringValue('project') ||
-                    getUrlHashValue('#id=') ||
-                    getUrlHashValue('#project=');
+                    var PROJECT_ID =
+                        '${id}' ||
+                        getQueryStringValue('id') ||
+                        getQueryStringValue('project') ||
+                        getUrlHashValue('#id=') ||
+                        getUrlHashValue('#project=');
 
-                if (!PROJECT_ID) {
-                    $('#project-not-specified').hidden(false);
-                    return;
-                }
-
-                $('span.project-id').html('<a href="/app/action/DisplayItemAction/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/'+PROJECT_ID+'">'+PROJECT_ID+'</a>');
-
-                // cache DOM objects
-                var projectSettingsHeader$ = $('#project-settings-header');
-
-                // render siteSettings tab into specified container
-                var projectSettingsTabs = $('#project-settings-tabs').find('div.content-tabs');
-
-                // these properties _should_ be set before spawning 'tabs' widgets
-                XNAT.tabs.container = projectSettingsTabs;
-                XNAT.tabs.layout = 'left';
-
-                // get project data first so we have data to work with
-                XNAT.xhr.getJSON({
-                    url: XNAT.url.restUrl('/data/projects/' + PROJECT_ID),
-                    success: function(data){
-                        // make project id available
-                        XNAT.data.projectId = XNAT.data.projectID = PROJECT_ID;
-                        // make returned project data available for Spawner elements
-                        XNAT.data.projectData = data;
-                        // show the header since we should have the data
-                        projectSettingsHeader$.removeClass('hidden');
-                        // render the project settings tabs
-                        XNAT.app.pluginSettings.showTabs = true;
-                        XNAT.app.pluginSettings.projectSettingsTabs = projectSettingsTabs;
-                        XNAT.app.pluginSettings.projectSettings(projectSettingsTabs, function(data){
-                            console.log(data);
-                            console.log(arguments);
-                            XNAT.tab.activate(XNAT.tab.active, projectSettingsTabs);
-                        });
-                    },
-                    failure: function(){
-                        // if REST call for project data fails,
-                        projectSettingsHeader$.hidden();
-                        $('#project-data-error').hidden(false);
+                    if (!PROJECT_ID) {
+                        $('#project-not-specified').hidden(false);
+                        return;
                     }
 
                     // make sure the 'projectId' variable is set for use in spawned elements

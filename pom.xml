@@ -98,6 +98,7 @@
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
+        <data-client.version>1.7.2</data-client.version>
 
         <spring-framework.version>4.3.24.RELEASE</spring-framework.version>
         <spring-security.version>4.2.13.RELEASE</spring-security.version>
@@ -441,6 +442,13 @@
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>xdat-beans</artifactId>
                 <version>${xdat.version}</version>
+            </dependency>
+
+            <!-- XNAT Data Client dependency definitions -->
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>data-client</artifactId>
+                <version>${data-client.version}</version>
             </dependency>
 
             <!-- PlexiViewer dependency definitions -->

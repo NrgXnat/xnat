@@ -274,7 +274,7 @@
 
     function makeTheFormGo() {
         var form = document.getElementById("uploadFORM");
-        validateForm(form);
+        if(!validateForm(form)){ return; }
         //form.submit();
 
         // Upload file, then archive it asynchronously

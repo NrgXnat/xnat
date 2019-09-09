@@ -22,7 +22,7 @@ XNAT.app.TriageResourceDeleter={
 	          
 	          content: "Are you sure you want to delete "+this.fsource+" uploaded by "+this.user+" on "+this.date+"?<br><br>"+"<form id=\"cru_delete_frm\"><div style=\"margin-bottom:16px;\">Justification:<br><textarea id=\"cru_event_reason\" name=\"event_reason\" cols=\"50\" rows=\"3\"></textarea></div></form>",
 	          scroll: false,
-	          height: 240,
+	          height: 280,
 	          okAction: function(){
 	        	 if(document.getElementById("cru_delete_frm").event_reason.value==""){
 	      			showMessage("page_body","Include justification.","Please include a justification for this deletion.");

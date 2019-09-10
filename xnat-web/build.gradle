@@ -181,6 +181,8 @@ dependencyManagement.imports {
 }
 
 dependencies {
+    annotationProcessor "org.nrg:framework"
+
     // NRG dependencies first.
     api "org.nrg.xdat:core"
     api "org.nrg.xnat:xnat-data-models"

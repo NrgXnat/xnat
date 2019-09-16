@@ -14,13 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Tim
@@ -87,7 +81,6 @@ public class DateUtils {
 		times.add(new SimpleDateFormat("HH:mm:ss z", Locale.US));
 		times.add(new SimpleDateFormat("HHmmss", Locale.US));
 	}
-
 
     private Date parse(List<SimpleDateFormat> al, String s) throws ParseException {
         if (s.contains("'")) {
@@ -198,6 +191,10 @@ public class DateUtils {
         return (new TimestampSafeComparator()).compare(d1, d2);
     }
 
+    public static String getMsTimestamp() {
+        return Long.toString(CALENDAR.getTimeInMillis());
+    }
+
     public static class TimestampSafeComparator implements Comparator<Date> {
 
 		public int compare(Date one, Date two) {
@@ -215,5 +212,7 @@ public class DateUtils {
     public static java.util.Date toDate(java.sql.Timestamp timestamp) {
         return new java.util.Date(timestamp.getTime());
     }
+
+    private static final Calendar CALENDAR = Calendar.getInstance();
 }
 

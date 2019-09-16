@@ -10,30 +10,27 @@
 
 package org.nrg.xdat.services;
 
-import java.io.FileNotFoundException;
-import java.io.StringReader;
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.ValidationException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.XMLValidator;
 import org.xml.sax.InputSource;
+
+import java.io.FileNotFoundException;
+import java.io.StringReader;
+import java.rmi.RemoteException;
+import java.sql.SQLException;
 
 /**
  * @author Tim
@@ -44,9 +41,10 @@ public class StoreXML {
     
     public String store(String _file,Boolean _quarantine,Boolean _allowDataDeletion)  throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","StoreXML","Called");
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final String         _username      = messageContext.getUsername();
+        final String         _password      = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext, "StoreXML", "Called");
         StringBuffer sb = new StringBuffer();
 
             try {
@@ -60,8 +58,6 @@ public class StoreXML {
                 //XFTItem item = XMLReader.TranslateDomToItem(doc,user);
                 SAXReader reader = new SAXReader(user);
     			org.nrg.xft.XFTItem item = reader.parse(new StringReader(_file));
-                if (XFT.VERBOSE)
-                    System.out.println("Store XML Service Called By " + _username + " For " + item.getProperName());
                 logger.info("Store XML Service Called By " + _username + " For " + item.getProperName());
                 
                 ValidationResults vr = XFTValidator.Validate(item);
@@ -85,63 +81,61 @@ public class StoreXML {
                     
                     sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
-                    AccessLogger.LogServiceAccess(_username,"","StoreXML",item.getProperName() + " Successfully Stored");		
+                    AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML",item.getProperName() + " Successfully Stored");
                 }else
                 {
                 	throw new ValidationException(vr);
                 }
             } catch (FileNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (XFTInitException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (DBPoolException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (SQLException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (FieldNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (FailedLoginException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (ValidationException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             } catch (Exception e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(_username,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(_username, messageContext,"StoreXML","Store Failed");
                 throw new RemoteException("",e);
             }
         
-        
         return sb.toString();
-        
     }
-    
 
     public String store(String session_id,String _file,Boolean _quarantine,Boolean _allowDataDeletion)  throws RemoteException
     {
-        AccessLogger.LogServiceAccess(session_id,"","StoreXML","Called");
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final UserI          user           = (UserI) messageContext.getSession().get("user");
+        AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Called");
         StringBuffer sb = new StringBuffer();
 
             try {
-            	UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
-                               
+
                 //XERCES VALIDATION
                 XMLValidator validator = new XMLValidator();
                 validator.validateString(_file);
@@ -152,8 +146,6 @@ public class StoreXML {
                 StringReader sr = new StringReader(_file);
                 InputSource is = new InputSource(sr);
     			org.nrg.xft.XFTItem item = reader.parse(is);
-                if (XFT.VERBOSE)
-                    System.out.println("Store XML Service Called By " + session_id + " For " + item.getProperName());
                 logger.info("Store XML Service Called By " + session_id + " For " + item.getProperName());
                 
                 ValidationResults vr = XFTValidator.Validate(item);
@@ -176,63 +168,57 @@ public class StoreXML {
                     
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
-                    AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		
+                    AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML",item.getProperName() + " Successfully Stored");
                 }else
                 {
                 	throw new ValidationException(vr);
                 }
             } catch (FileNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (XFTInitException e) {
-                logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
-                throw new RemoteException("",e);
+                logger.error("", e);
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
+                throw new RemoteException("", e);
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (DBPoolException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (SQLException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (FieldNotFoundException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (FailedLoginException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (ValidationException e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             } catch (Exception e) {
                 logger.error("",e);
-                AccessLogger.LogServiceAccess(session_id,"","StoreXML","Store Failed");
+                AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "StoreXML", "Store Failed");
                 throw new RemoteException("",e);
             }
-        
-        
+
         return sb.toString();
-        
     }
-    
-    public static String Store(String session_id,String _file,Boolean _quarantine,Boolean _allowDataDeletion) throws RemoteException
-    {
-        return (new StoreXML()).store(session_id,_file,_quarantine,_allowDataDeletion);
+
+    public static String Store(String session_id, String _file, Boolean _quarantine, Boolean _allowDataDeletion) throws RemoteException {
+        return (new StoreXML()).store(session_id, _file, _quarantine, _allowDataDeletion);
     }
-    
-    public static String Store(String _file,Boolean _quarantine,Boolean _allowDataDeletion) throws RemoteException
-    {
-        return (new StoreXML()).store(_file,_quarantine,_allowDataDeletion);
+
+    public static String Store(String _file, Boolean _quarantine, Boolean _allowDataDeletion) throws RemoteException {
+        return (new StoreXML()).store(_file, _quarantine, _allowDataDeletion);
     }
-    
-    
 }

@@ -99,9 +99,9 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
         context.put("notifications", XDAT.getNotificationsPreferences());
         context.put("siteConfig", XDAT.getSiteConfigPreferences());
-        
+
         context.put("configService", XDAT.getConfigService());
-        
+        context.put("contextService", XDAT.getContextService());
     }
 
     protected static void checkForPopup(final RunData data, final Context c) {

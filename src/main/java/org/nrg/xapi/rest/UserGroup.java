@@ -15,9 +15,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that the parameter can be used to discover the user group passed to a REST method.
+ * Indicates that the parameter can be used to discover user group ID(s) passed as method parameters.
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RestUserGroup {
+public @interface UserGroup {
 }

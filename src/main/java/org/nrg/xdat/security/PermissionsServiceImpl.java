@@ -35,6 +35,7 @@ import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -49,15 +50,15 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xdat.security.SecurityManager.EDIT;
+import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xft.event.XftItemEvent.builder;
-import static org.nrg.xft.event.XftItemEventI.DELETE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
@@ -89,7 +90,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
         final String fullXMLName = root.getFullXMLName();
-        if (!ElementSecurity.IsSecureElement(fullXMLName, SecurityManager.READ)) {
+        if (!ElementSecurity.IsSecureElement(fullXMLName, READ)) {
             return null;
         }
 
@@ -97,7 +98,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final CriteriaCollection collection    = new CriteriaCollection("OR");
         for (final PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
             if (isProjectData && log.isTraceEnabled()) {
-                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
+                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
             }
             if (criteria.getRead()) {
                 collection.add(DisplayCriteria.buildCriteria(root, criteria));
@@ -113,7 +114,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI root) throws Exception {
-        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
+        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), READ)) {
             return null;
         }
 
@@ -133,27 +134,27 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canCreate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.CREATE, root, values);
+        return securityCheck(user, CREATE, root, values);
     }
 
     @Override
     public boolean canRead(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.READ, root, values);
+        return securityCheck(user, READ, root, values);
     }
 
     @Override
     public boolean canEdit(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.EDIT, root, values);
+        return securityCheck(user, EDIT, root, values);
     }
 
     @Override
     public boolean canActivate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.ACTIVATE, root, values);
+        return securityCheck(user, ACTIVATE, root, values);
     }
 
     @Override
     public boolean canDelete(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user, SecurityManager.DELETE, root, values);
+        return securityCheck(user, DELETE, root, values);
     }
 
     @Override
@@ -244,7 +245,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean can(UserI user, ItemI item, String action) throws InvalidItemException, Exception {
-        if (user == null || user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user == null || user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         final String xsiType = item.getXSIType();
@@ -277,32 +278,32 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.READ);
+        return can(user, item, READ);
     }
 
     @Override
     public boolean canEdit(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.EDIT);
+        return can(user, item, EDIT);
     }
 
     @Override
     public boolean canCreate(UserI user, ItemI item) throws Exception {
-        return can(user, item, SecurityManager.CREATE);
+        return can(user, item, CREATE);
     }
 
     @Override
     public boolean canActivate(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.ACTIVATE);
+        return can(user, item, ACTIVATE);
     }
 
     @Override
     public boolean canDelete(UserI user, ItemI item) throws InvalidItemException, Exception {
-        return can(user, item, SecurityManager.DELETE);
+        return can(user, item, DELETE);
     }
 
     @Override
     public boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         String rootElement = XftStringUtils.GetRootElementName(xmlPath);
@@ -319,32 +320,82 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.READ);
+        return can(user, xmlPath, value, READ);
     }
 
     @Override
     public boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.EDIT);
+        return can(user, xmlPath, value, EDIT);
     }
 
     @Override
     public boolean canCreate(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.CREATE);
+        return can(user, xmlPath, value, CREATE);
     }
 
     @Override
     public boolean canActivate(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.ACTIVATE);
+        return can(user, xmlPath, value, ACTIVATE);
     }
 
     @Override
     public boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
-        return can(user, xmlPath, value, SecurityManager.DELETE);
+        return can(user, xmlPath, value, DELETE);
+    }
+
+    @Override
+    public boolean canRead(final UserI user, final String entityId) {
+        return can(user.getUsername(), READ, null, entityId);
+    }
+
+    @Override
+    public boolean canEdit(final UserI user, final String entityId) {
+        return can(user.getUsername(), EDIT, null, entityId);
+    }
+
+    @Override
+    public boolean canCreate(final UserI user, final String entityId) {
+        return can(user.getUsername(), CREATE, null, entityId);
+    }
+
+    @Override
+    public boolean canDelete(final UserI user, final String entityId) {
+        return can(user.getUsername(), DELETE, null, entityId);
+    }
+
+    @Override
+    public boolean canActivate(final UserI user, final String entityId) {
+        return can(user.getUsername(), ACTIVATE, null, entityId);
+    }
+
+    @Override
+    public boolean canRead(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), READ, project, entityId);
+    }
+
+    @Override
+    public boolean canEdit(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), EDIT, project, entityId);
+    }
+
+    @Override
+    public boolean canCreate(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), CREATE, project, entityId);
+    }
+
+    @Override
+    public boolean canDelete(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), DELETE, project, entityId);
+    }
+
+    @Override
+    public boolean canActivate(final UserI user, final String project, final String entityId) {
+        return can(user.getUsername(), ACTIVATE, project, entityId);
     }
 
     @Override
     public boolean canAny(UserI user, String elementName, String xmlPath, String action) {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -353,7 +404,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canAny(UserI user, String elementName, String action) {
-        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (user.isGuest() && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -362,7 +413,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canAny(final String username, final String elementName, final String action) {
-        if (isGuest(username) && !action.equalsIgnoreCase(SecurityManager.READ)) {
+        if (isGuest(username) && !action.equalsIgnoreCase(READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
@@ -482,7 +533,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserReadableProjects(final String username) {
-        return _cache.getProjectsForUser(username, SecurityManager.READ);
+        return _cache.getProjectsForUser(username, READ);
     }
 
     @Override
@@ -502,7 +553,36 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<String> getUserOwnedProjects(final String username) {
-        return _cache.getProjectsForUser(username, SecurityManager.DELETE);
+        return _cache.getProjectsForUser(username, DELETE);
+    }
+
+    private boolean can(final @Nonnull String username, final @Nonnull String action, final @Nullable String projectId, final @Nonnull String entityId) {
+        final boolean hasProjectId = StringUtils.isNotBlank(projectId);
+        final String  query;
+        switch (action) {
+            case READ:
+                query = hasProjectId ? QUERY_CAN_USER_READ_ID_IN_PROJECT : QUERY_CAN_USER_READ_ID;
+                break;
+            case EDIT:
+                query = hasProjectId ? QUERY_CAN_USER_EDIT_ID_IN_PROJECT : QUERY_CAN_USER_EDIT_ID;
+                break;
+            case CREATE:
+                query = hasProjectId ? QUERY_CAN_USER_CREATE_ID_IN_PROJECT : QUERY_CAN_USER_CREATE_ID;
+                break;
+            case DELETE:
+                query = hasProjectId ? QUERY_CAN_USER_DELETE_ID_IN_PROJECT : QUERY_CAN_USER_DELETE_ID;
+                break;
+            case ACTIVATE:
+                query = hasProjectId ? QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT : QUERY_CAN_USER_ACTIVE_ID;
+                break;
+            default:
+                throw new IllegalArgumentException("Action must be one of read, edit, create, delete, or active. Invalid: " + action);
+        }
+        final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username).addValue("entityId", entityId);
+        if (hasProjectId) {
+            parameters.addValue("projectId", projectId);
+        }
+        return _template.queryForObject(query, parameters, Boolean.class);
     }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -573,7 +653,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final UserI                 guest           = Users.getGuest();
 
         if (securedElements.isEmpty()) {
-            log.error("Setting access level for project {} to {}, but there are no secured elements to set. Most likely bad things are going to happen.", projectId, accessibility, securedElements.size());
+            log.error("Setting access level for project {} to {}, but there are no secured elements to set. Most likely bad things are going to happen.", projectId, accessibility);
         } else {
             log.info("Setting access level for project {} to {}, along with {} secured elements", projectId, accessibility, securedElements.size());
         }
@@ -681,7 +761,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 final Integer fieldMappingId = _template.queryForObject(QUERY_FIELD_MAPPING, new MapSqlParameterSource("field", fieldName).addValue("projectId", fieldValue), Integer.class);
                 deleteFieldMappings(Collections.singletonList(fieldMappingId), affected, ci);
                 if (triggerEvent) {
-                    _eventService.triggerEvent(builder().xsiType(XdatFieldMapping.SCHEMA_ELEMENT_NAME).id(fieldMappingId.toString()).action(DELETE).build());
+                    _eventService.triggerEvent(builder().xsiType(XdatFieldMapping.SCHEMA_ELEMENT_NAME).id(fieldMappingId.toString()).action(XftItemEventI.DELETE).build());
                 }
                 return;
             }
@@ -847,76 +927,87 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
     }
 
-    private static final String GUEST_USERNAME                     = "guest";
-    private static final String QUERY_USER_ELEMENT_ACCESS          = "SELECT  " +
-                                                                     "  xdat_element_access_id  " +
-                                                                     "FROM  " +
-                                                                     "  xdat_element_access a  " +
-                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id  " +
-                                                                     "    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id  " +
-                                                                     "WHERE  " +
-                                                                     "  a.element_name = :elementName AND  " +
-                                                                     "  (u.login = :identifier OR g.id = :identifier)";
-    private static final String QUERY_USER_READABLE_ELEMENTS       = "SELECT " +
-                                                                     "  a.element_name, " +
-                                                                     "  m.field, " +
-                                                                     "  m.field_value " +
-                                                                     "FROM xdat_user u " +
-                                                                     "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
-                                                                     "  LEFT JOIN xdat_usergroup g on i.groupid = g.id " +
-                                                                     "  LEFT JOIN xdat_element_access a on (xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
-                                                                     "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "  LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  m.field_value != '*' AND " +
-                                                                     "  m.read_element = 1 AND " +
-                                                                     "  u.login IN ('guest', '%s')";
-    private static final String QUERY_FIELD_MAPPING                = "SELECT " +
-                                                                     "  m.xdat_field_mapping_id AS fieldMappingId " +
-                                                                     "FROM " +
-                                                                     "  xdat_element_access a " +
-                                                                     "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
-                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  u.login = 'guest' AND " +
-                                                                     "  m.field = :field AND " +
-                                                                     "  m.field_value = :projectId";
-    private static final String QUERY_FIELD_MAPPING_EXISTS         = "SELECT EXISTS(" + QUERY_FIELD_MAPPING + ")";
-    private static final String QUERY_FIND_ORPHAN_ELEMENT_ACCESS   = "SELECT " +
-                                                                     "  a.xdat_element_access_id " +
-                                                                     "FROM " +
-                                                                     "  xdat_element_access a " +
-                                                                     "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
-                                                                     "WHERE " +
-                                                                     "  s.permissions_allow_set_xdat_elem_xdat_element_access_id IS NULL";
-    private static final String QUERY_FIND_ORPHAN_MAPPING_SETS     = "SELECT " +
-                                                                     "  s.xdat_field_mapping_set_id " +
-                                                                     "FROM " +
-                                                                     "  xdat_field_mapping_set s " +
-                                                                     "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
-                                                                     "WHERE " +
-                                                                     "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
-    public static final  String QUERY_MAKE_FIELD_MAPPING_PROTECTED = "UPDATE " +
-                                                                     "  xdat_field_mapping " +
-                                                                     "SET " +
-                                                                     "  create_element = 0, " +
-                                                                     "  read_element = 1, " +
-                                                                     "  edit_element = 0, " +
-                                                                     "  delete_element = 0, " +
-                                                                     "  active_element = 0 " +
-                                                                     "WHERE " +
-                                                                     "  xdat_field_mapping_id = :fieldMappingId";
-    public static final  String QUERY_MAKE_FIELD_MAPPING_PUBLIC    = "UPDATE " +
-                                                                     "  xdat_field_mapping " +
-                                                                     "SET " +
-                                                                     "  create_element = 0, " +
-                                                                     "  read_element = 1, " +
-                                                                     "  edit_element = 0, " +
-                                                                     "  delete_element = 0, " +
-                                                                     "  active_element = 1 " +
-                                                                     "WHERE " +
-                                                                     "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String GUEST_USERNAME                      = "guest";
+    private static final String QUERY_USER_ELEMENT_ACCESS           = "SELECT  " +
+                                                                      "  xdat_element_access_id  " +
+                                                                      "FROM  " +
+                                                                      "  xdat_element_access a  " +
+                                                                      "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id  " +
+                                                                      "    LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id  " +
+                                                                      "WHERE  " +
+                                                                      "  a.element_name = :elementName AND  " +
+                                                                      "  (u.login = :identifier OR g.id = :identifier)";
+    private static final String QUERY_USER_READABLE_ELEMENTS        = "SELECT " +
+                                                                      "  a.element_name, " +
+                                                                      "  m.field, " +
+                                                                      "  m.field_value " +
+                                                                      "FROM xdat_user u " +
+                                                                      "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
+                                                                      "  LEFT JOIN xdat_usergroup g on i.groupid = g.id " +
+                                                                      "  LEFT JOIN xdat_element_access a on (xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id OR u.xdat_user_id = a.xdat_user_xdat_user_id) " +
+                                                                      "  LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "  LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  m.field_value != '*' AND " +
+                                                                      "  m.read_element = 1 AND " +
+                                                                      "  u.login IN ('guest', '%s')";
+    private static final String QUERY_FIELD_MAPPING                 = "SELECT " +
+                                                                      "  m.xdat_field_mapping_id AS fieldMappingId " +
+                                                                      "FROM " +
+                                                                      "  xdat_element_access a " +
+                                                                      "    LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                                      "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  u.login = 'guest' AND " +
+                                                                      "  m.field = :field AND " +
+                                                                      "  m.field_value = :projectId";
+    private static final String QUERY_FIELD_MAPPING_EXISTS          = "SELECT EXISTS(" + QUERY_FIELD_MAPPING + ")";
+    private static final String QUERY_FIND_ORPHAN_ELEMENT_ACCESS    = "SELECT " +
+                                                                      "  a.xdat_element_access_id " +
+                                                                      "FROM " +
+                                                                      "  xdat_element_access a " +
+                                                                      "    LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                      "WHERE " +
+                                                                      "  s.permissions_allow_set_xdat_elem_xdat_element_access_id IS NULL";
+    private static final String QUERY_FIND_ORPHAN_MAPPING_SETS      = "SELECT " +
+                                                                      "  s.xdat_field_mapping_set_id " +
+                                                                      "FROM " +
+                                                                      "  xdat_field_mapping_set s " +
+                                                                      "    LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                      "WHERE " +
+                                                                      "  m.xdat_field_mapping_set_xdat_field_mapping_set_id IS NULL";
+    private static final String QUERY_MAKE_FIELD_MAPPING_PROTECTED  = "UPDATE " +
+                                                                      "  xdat_field_mapping " +
+                                                                      "SET " +
+                                                                      "  create_element = 0, " +
+                                                                      "  read_element = 1, " +
+                                                                      "  edit_element = 0, " +
+                                                                      "  delete_element = 0, " +
+                                                                      "  active_element = 0 " +
+                                                                      "WHERE " +
+                                                                      "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String QUERY_MAKE_FIELD_MAPPING_PUBLIC     = "UPDATE " +
+                                                                      "  xdat_field_mapping " +
+                                                                      "SET " +
+                                                                      "  create_element = 0, " +
+                                                                      "  read_element = 1, " +
+                                                                      "  edit_element = 0, " +
+                                                                      "  delete_element = 0, " +
+                                                                      "  active_element = 1 " +
+                                                                      "WHERE " +
+                                                                      "  xdat_field_mapping_id = :fieldMappingId";
+    private static final String QUERY_GET_USER_PERMS_FOR_ID         = "SELECT * FROM data_type_fns_get_entity_permissions(:username, :entityId)";
+    private static final String QUERY_CAN_USER_READ_ID              = "SELECT data_type_fns_can(:username, 'read', :entityId) AS can_read";
+    private static final String QUERY_CAN_USER_EDIT_ID              = "SELECT data_type_fns_can(:username, 'edit', :entityId) AS can_edit";
+    private static final String QUERY_CAN_USER_CREATE_ID            = "SELECT data_type_fns_can(:username, 'create', :entityId) AS can_create";
+    private static final String QUERY_CAN_USER_DELETE_ID            = "SELECT data_type_fns_can(:username, 'delete', :entityId) AS can_delete";
+    private static final String QUERY_CAN_USER_ACTIVE_ID            = "SELECT data_type_fns_can(:username, 'active', :entityId) AS can_active";
+    private static final String QUERY_CAN_USER_READ_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'read', :entityId, :projectId) AS can_read";
+    private static final String QUERY_CAN_USER_EDIT_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'edit', :entityId, :projectId) AS can_edit";
+    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'create', :entityId, :projectId) AS can_create";
+    private static final String QUERY_CAN_USER_DELETE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'delete', :entityId, :projectId) AS can_delete";
+    private static final String QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'active', :entityId, :projectId) AS can_active";
 
     private final DataTypeAwareEventService  _eventService;
     private final NamedParameterJdbcTemplate _template;

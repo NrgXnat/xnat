@@ -13,12 +13,12 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.5.4</version>
+        <version>1.7.6-SNAPSHOT</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.5.4.RAD1</version>
+    <version>1.7.6.RAD-SNAPSHOT</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
@@ -36,21 +36,17 @@
         <finalName>xdat-${project.version}</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
-              <plugin>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <quiet>true</quiet>
-                    <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
-            </plugin> 
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
@@ -77,7 +73,6 @@
         <dependency>
             <groupId>org.nrg</groupId>
             <artifactId>framework</artifactId>
-            <version>1.7.5.4</version>
         </dependency>
         <dependency>
             <groupId>org.nrg</groupId>
@@ -209,6 +204,10 @@
             <artifactId>velocity-tools</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.noelios.restlet</groupId>
+            <artifactId>com.noelios.restlet.ext.servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>ecs</groupId>
             <artifactId>ecs</artifactId>
         </dependency>
@@ -268,6 +267,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Unit testing dependencies -->

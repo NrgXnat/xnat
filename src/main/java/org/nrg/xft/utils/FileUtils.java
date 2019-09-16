@@ -33,6 +33,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 
+@SuppressWarnings({"RedundantThrows", "DuplicateThrows"})
 public  class FileUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
@@ -676,36 +677,26 @@ public  class FileUtils
         org.apache.commons.io.FileUtils.copyFile(src, dest);
     }
 
+	public static void MoveDir(File src, File dest, boolean overwrite) throws FileNotFoundException, IOException {
+		MoveDir(src, dest, overwrite, null);
+	}
 
-	public static void MoveDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
-		MoveDir(src,dest,overwrite,null);
+	public static void MoveDir(File src, File dest, boolean overwrite, FileFilter filter) throws FileNotFoundException, IOException {
+		MoveDir(src, dest, overwrite, filter, new DefaultOldFileHandler());
 	}
-	public static void MoveDir(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
-		MoveDir(src,dest,overwrite,filter,new DefaultOldFileHandler());
-	}
-	
-	public static void MoveDir(File src, File dest,boolean overwrite, FileFilter filter,OldFileHandlerI handler) throws FileNotFoundException,IOException{
-		if(!overwrite){
-			final File match=FindFirstMatch(src, dest, filter);
-			if(match!=null){
+
+	public static void MoveDir(File src, File dest, boolean overwrite, FileFilter filter, OldFileHandlerI handler) throws FileNotFoundException, IOException {
+		if (!overwrite) {
+			final File match = FindFirstMatch(src, dest, filter);
+			if (match != null) {
 				throw new IOException(match.getName() + " already exists.");
 			}
 		}
-		
-		MoveDirImpl(src,dest,overwrite,filter,handler);
-	}
-	
-	public static interface OldFileHandlerI{
-		public boolean handle(File f);
-	}
-	
-	public static class DefaultOldFileHandler implements OldFileHandlerI{
-		public boolean handle(File f){
-			return f.delete();
-		}
+
+		MoveDirImpl(src, dest, overwrite, filter, handler);
 	}
 
-	private static void MoveDirImpl(File src, File dest, boolean overwrite, FileFilter filter, OldFileHandlerI handler) throws FileNotFoundException, IOException {
+	private static void MoveDirImpl(final File src, final File dest, final boolean overwrite, final FileFilter filter, final OldFileHandlerI handler) throws FileNotFoundException, IOException {
 		boolean moved = false;
 
 		if (!dest.exists()) {
@@ -718,25 +709,27 @@ public  class FileUtils
 
 		if (!moved) {
 			if (!dest.exists()) {
-				dest.mkdirs();
+				if (!dest.mkdirs() && !dest.exists()) {
+					logger.error("Failed to create the destination folder {} when trying to move \"{}\" to \"{}\". This isn't an exception, so I don't know what went wrong, but probably more stuff will fail later.", dest.getAbsolutePath(), src.getAbsolutePath(), dest.getAbsolutePath());
+				}
 			}
 			if (src != null && src.exists()) {
 				final File[] files = src.listFiles();
 				if (files != null) {
 					for (final File file : files) {
-                        final File dChild = new File(dest, file.getName());
-                        if (filter == null || filter.accept(dChild)) {
-                            if (file.isDirectory()) {
-                                MoveDirImpl(file, dChild, overwrite, filter, handler);
-                            } else {
-                                try {
-                                    MoveFile(file, dChild, overwrite, handler);
-                                } catch (FileNotFoundException e) {
-                                    logger.warn("", e);
-                                }
-                            }
-                        }
-                    }
+						final File dChild = new File(dest, file.getName());
+						if (filter == null || filter.accept(dChild)) {
+							if (file.isDirectory()) {
+								MoveDirImpl(file, dChild, overwrite, filter, handler);
+							} else {
+								try {
+									MoveFile(file, dChild, overwrite, handler);
+								} catch (FileNotFoundException e) {
+									logger.warn("", e);
+								}
+							}
+						}
+					}
 				}
 
 				final File[] recheck = src.listFiles();
@@ -746,48 +739,67 @@ public  class FileUtils
 			}
 		}
 	}
-	
-	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR,OldFileHandlerI handler)throws FileNotFoundException,IOException{
+
+	public static void MoveFile(File src, File dest, boolean overwrite, boolean deleteDIR, OldFileHandlerI handler) throws FileNotFoundException, IOException {
 		boolean moved = false;
 
-		if(!src.exists())throw new FileNotFoundException(src.getAbsolutePath()); 
-		
-            if (!dest.exists()){
-                try {
-                    moved = src.renameTo(dest);
-                } catch (Throwable e) {
-                    logger.error("",e);
-                }
-            }else if (!overwrite){
-                return;
-            }else{
-            	if(handler!=null)
-            		handler.handle(dest);
-            	else
-            		dest.delete();
-            }
-    
-    	if (!moved) {
-    	    if (dest.exists()) {
-    		org.apache.commons.io.FileUtils.forceDelete(dest);
-    	    }
-    	    org.apache.commons.io.FileUtils.moveFile(src, dest);
-    	}
+		if (!src.exists()) {
+			throw new FileNotFoundException(src.getAbsolutePath());
+		}
 
-	if(deleteDIR){
-            	CleanEmptyDirectories(src.getParentFile());
-            }
+		if (!dest.exists()) {
+			try {
+				final File destDir = dest.getParentFile();
+				if (!destDir.mkdirs() && !destDir.exists()) {
+					logger.error("Failed to create the destination folder {} when trying to move \"{}\" to \"{}\". This isn't an exception, so I don't know what went wrong, but probably more stuff will fail later.", destDir.getAbsolutePath(), src.getAbsolutePath(), dest.getAbsolutePath());
+				} else {
+					moved = src.renameTo(dest);
+				}
+			} catch (Throwable e) {
+				logger.error("", e);
+			}
+		} else if (!overwrite) {
+			return;
+		} else {
+			if (handler != null) {
+				handler.handle(dest);
+			} else {
+				dest.delete();
+			}
+		}
+
+		if (!moved) {
+			if (dest.exists()) {
+				org.apache.commons.io.FileUtils.forceDelete(dest);
+			}
+			org.apache.commons.io.FileUtils.moveFile(src, dest);
+		}
+
+		if (deleteDIR) {
+			CleanEmptyDirectories(src.getParentFile());
+		}
 	}
 
-	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR) throws FileNotFoundException,IOException{
-	    MoveFile(src,dest,overwrite,deleteDIR,null);
+	public static void MoveFile(File src, File dest, boolean overwrite, boolean deleteDIR) throws FileNotFoundException, IOException {
+		MoveFile(src, dest, overwrite, deleteDIR, null);
 	}
 
-	public static void MoveFile(File src, File dest,boolean overwrite,OldFileHandlerI handler) throws FileNotFoundException,IOException{
-	    MoveFile(src,dest,overwrite,false,handler);
+	public static void MoveFile(File src, File dest, boolean overwrite, OldFileHandlerI handler) throws FileNotFoundException, IOException {
+		MoveFile(src, dest, overwrite, false, handler);
 	}
-	public static void MoveFile(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
-	    MoveFile(src,dest,overwrite,false,null);
+
+	public static void MoveFile(File src, File dest, boolean overwrite) throws FileNotFoundException, IOException {
+		MoveFile(src, dest, overwrite, false, null);
+	}
+	
+	public static interface OldFileHandlerI{
+		public boolean handle(File f);
+	}
+	
+	public static class DefaultOldFileHandler implements OldFileHandlerI{
+		public boolean handle(File f){
+			return f.delete();
+		}
 	}
 
 	public static void CleanEmptyDirectories(File level1) throws FileNotFoundException,IOException{

@@ -9,12 +9,9 @@
 
 
 package org.nrg.xdat.services;
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.Authorizer;
@@ -30,6 +27,11 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 /**
  * @author timo
  *
@@ -38,9 +40,15 @@ public class GetIdentifiers {
 	static org.apache.log4j.Logger logger = Logger.getLogger(GetIdentifiers.class);
     public ArrayList search(String _field,String _comparison,Object _value,String _dataType)  throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","GetIdentifiers",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final String         _username      = messageContext.getUsername();
+        final String         _password      = messageContext.getPassword();
+        final UserI user = authenticate(_username, _password);
+        if (user == null) {
+            throw new RemoteException("Invalid User.");
+        }
+
+        AccessLogger.LogServiceAccess(_username, messageContext, "GetIdentifiers", _field + " " + _comparison + " " + _value);
         ArrayList al = new ArrayList();
         try {
             String elementName=null;
@@ -77,16 +85,7 @@ public class GetIdentifiers {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
-            
             Authorizer.getInstance().authorizeRead(gwe, user);
-            if (user == null)
-            {
-                throw new Exception("Invalid User.");
-            }
-            
-            Authorizer.getInstance().authorizeRead(gwe, user);
-            
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";
@@ -122,9 +121,15 @@ public class GetIdentifiers {
         }
         return al;
     }
+
     public ArrayList search(String session_id,String _field,String _comparison,Object _value,String _dataType)  throws RemoteException
     {
-        AccessLogger.LogServiceAccess(session_id,"","GetIdentifiers",_field + " " +  _comparison + " " + _value);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final UserI          user           = (UserI) messageContext.getSession().get("user");
+        if (user == null) {
+            throw new RemoteException("Invalid User for session ID: " + session_id);
+        }
+        AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "GetIdentifiers", _field + " " + _comparison + " " + _value);
         ArrayList al = new ArrayList();
         try {
             String elementName=null;
@@ -161,16 +166,11 @@ public class GetIdentifiers {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
-            if (user == null)
-            {
-                throw new Exception("Invalid User.");
-            }
-            
+
             Authorizer.getInstance().authorizeRead(gwe, user);
-            
+
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
-	
+
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";
 				sfield = (String)_field;
@@ -204,12 +204,23 @@ public class GetIdentifiers {
         }
         return al;
     }
+
     public static ArrayList Search(String session_id,String _field,String _comparison,Object _value,String _dataType) throws RemoteException
     {
         return (new GetIdentifiers()).search(session_id,_field,_comparison,_value,_dataType);
     }
+
     public static ArrayList Search(String _field,String _comparison,Object _value,String _dataType) throws RemoteException
     {
         return (new GetIdentifiers()).search(_field,_comparison,_value,_dataType);
+    }
+
+    private UserI authenticate(final String _username, final String _password) {
+        try {
+            return Authenticator.Authenticate(new Authenticator.Credentials(_username, _password));
+        } catch (Exception e) {
+            logger.warn("Failed to authenticate user with username " + _password, e);
+            return null;
+        }
     }
 }

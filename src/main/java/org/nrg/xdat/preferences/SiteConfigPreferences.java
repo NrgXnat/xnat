@@ -11,6 +11,7 @@ package org.nrg.xdat.preferences;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.annotations.XnatMixIn;
@@ -35,8 +36,6 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -58,13 +57,16 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
-        toolName = "XNAT Site Preferences",
-        description = "Manages site configurations and settings for the XNAT system.",
-        properties = "META-INF/xnat/preferences/site-config.properties",
-        strict = false)
+                   toolName = "XNAT Site Preferences",
+                   description = "Manages site configurations and settings for the XNAT system.",
+                   properties = "META-INF/xnat/preferences/site-config.properties",
+                   strict = false)
 @XnatMixIn(ProxiedBeanMixIn.class)
+@Slf4j
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
+    public static final String INITIALIZED         = "initialized";
+    public static final String SITE_URL            = "siteUrl";
 
     @Autowired
     public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
@@ -80,7 +82,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(initialized, "initialized");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name initialized: something is very wrong here.", e);
+            log.error("Invalid preference name initialized: something is very wrong here.", e);
         }
     }
 
@@ -93,7 +95,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(pathErrorWarning, "pathErrorWarning");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name pathErrorWarning: something is very wrong here.", e);
+            log.error("Invalid preference name pathErrorWarning: something is very wrong here.", e);
         }
     }
 
@@ -106,20 +108,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteId, "siteId");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name siteId: something is very wrong here.", e);
+            log.error("Invalid preference name siteId: something is very wrong here.", e);
         }
     }
 
     @NrgPreference
     public String getSiteUrl() {
-        return getValue("siteUrl");
+        return getValue(SITE_URL);
     }
 
     public void setSiteUrl(final String siteUrl) {
         try {
-            set(siteUrl, "siteUrl");
+            set(siteUrl, SITE_URL);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name siteUrl: something is very wrong here.", e);
+            log.error("Invalid preference name siteUrl: something is very wrong here.", e);
         }
     }
 
@@ -132,7 +134,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(processingUrl, "processingUrl");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name processingUrl: something is very wrong here.", e);
+            log.error("Invalid preference name processingUrl: something is very wrong here.", e);
         }
     }
 
@@ -145,7 +147,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(primaryAdminUsername, "primaryAdminUsername");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'primaryAdminUsername': something is very wrong here.", e);
+            log.error("Invalid preference name 'primaryAdminUsername': something is very wrong here.", e);
         }
     }
 
@@ -158,7 +160,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(adminEmail, "adminEmail");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'adminEmail': something is very wrong here.", e);
+            log.error("Invalid preference name 'adminEmail': something is very wrong here.", e);
         }
     }
 
@@ -171,7 +173,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(archivePath, "archivePath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'archivePath': something is very wrong here.", e);
+            log.error("Invalid preference name 'archivePath': something is very wrong here.", e);
         }
     }
 
@@ -184,7 +186,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(prearchivePath, "prearchivePath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'prearchivePath': something is very wrong here.", e);
+            log.error("Invalid preference name 'prearchivePath': something is very wrong here.", e);
         }
     }
 
@@ -197,7 +199,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(cachePath, "cachePath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'cachePath': something is very wrong here.", e);
+            log.error("Invalid preference name 'cachePath': something is very wrong here.", e);
         }
     }
 
@@ -210,7 +212,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(ftpPath, "ftpPath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'ftpPath': something is very wrong here.", e);
+            log.error("Invalid preference name 'ftpPath': something is very wrong here.", e);
         }
     }
 
@@ -223,7 +225,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(buildPath, "buildPath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'buildPath': something is very wrong here.", e);
+            log.error("Invalid preference name 'buildPath': something is very wrong here.", e);
         }
     }
 
@@ -236,7 +238,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(pipelinePath, "pipelinePath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'pipelinePath': something is very wrong here.", e);
+            log.error("Invalid preference name 'pipelinePath': something is very wrong here.", e);
         }
     }
 
@@ -249,7 +251,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(inboxPath, "inboxPath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'inboxPath': something is very wrong here.", e);
+            log.error("Invalid preference name 'inboxPath': something is very wrong here.", e);
         }
     }
 
@@ -262,7 +264,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(reloadPrearcDatabaseOnStartup, "reloadPrearcDatabaseOnStartup");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'reloadPrearcDatabaseOnStartup': something is very wrong here.", e);
+            log.error("Invalid preference name 'reloadPrearcDatabaseOnStartup': something is very wrong here.", e);
         }
     }
 
@@ -275,7 +277,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordComplexity, "passwordComplexity");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordComplexity': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordComplexity': something is very wrong here.", e);
         }
     }
 
@@ -288,7 +290,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordComplexityMessage, "passwordComplexityMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordComplexityMessage': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordComplexityMessage': something is very wrong here.", e);
         }
     }
 
@@ -301,7 +303,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordHistoryDuration, "passwordHistoryDuration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordHistoryDuration': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordHistoryDuration': something is very wrong here.", e);
         }
     }
 
@@ -314,7 +316,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(requireLogin, "requireLogin");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'requireLogin': something is very wrong here.", e);
+            log.error("Invalid preference name 'requireLogin': something is very wrong here.", e);
         }
     }
 
@@ -327,15 +329,15 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(emailVerification, "emailVerification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailVerification': something is very wrong here.", e);
+            log.error("Invalid preference name 'emailVerification': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "Dear FULL_NAME,\n" +
-                                    "<br><br>We received a request to register an account for you on SITE_NAME. If you would like to register, please confirm your email address by clicking this link: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
-                                    " (This link will expire in 24 hours.)" +
-                                    "AUTO_ENABLE_TEXT" +
-                                    "<br><br>If you did not initiate this request, you can safely ignore this email.")
+                                  "<br><br>We received a request to register an account for you on SITE_NAME. If you would like to register, please confirm your email address by clicking this link: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
+                                  " (This link will expire in 24 hours.)" +
+                                  "AUTO_ENABLE_TEXT" +
+                                  "<br><br>If you did not initiate this request, you can safely ignore this email.")
     public String getEmailVerificationMessage() {
         return getValue("emailVerificationMessage");
     }
@@ -344,22 +346,9 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(emailVerificationMessage, "emailVerificationMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailVerificationMessage': something is very wrong here.", e);
+            log.error("Invalid preference name 'emailVerificationMessage': something is very wrong here.", e);
         }
     }
-
-//    @NrgPreference(defaultValue = "365")
-//    public int getEmailVerificationExpiration() {
-//        return getIntegerValue("emailVerificationExpiration");
-//    }
-//
-//    public void setEmailVerificationExpiration(final int emailVerificationExpiration) {
-//        try {
-//            setIntegerValue(emailVerificationExpiration, "emailVerificationExpiration");
-//        } catch (InvalidPreferenceName e) {
-//            _log.error("Invalid preference name 'emailVerificationExpiration': something is very wrong here.", e);
-//        }
-//    }
 
     @NrgPreference(defaultValue = "false")
     public boolean getUserRegistration() {
@@ -370,7 +359,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(userRegistration, "userRegistration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'userRegistration': something is very wrong here.", e);
+            log.error("Invalid preference name 'userRegistration': something is very wrong here.", e);
         }
     }
 
@@ -383,7 +372,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(par, "par");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'par': something is very wrong here.", e);
+            log.error("Invalid preference name 'par': something is very wrong here.", e);
         }
     }
 
@@ -396,7 +385,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(restrictUserListAccessToAdmins, "restrictUserListAccessToAdmins");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'restrictUserListAccessToAdmins': something is very wrong here.", e);
+            log.error("Invalid preference name 'restrictUserListAccessToAdmins': something is very wrong here.", e);
         }
     }
 
@@ -409,7 +398,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setListValue("dataPaths", dataPaths);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'dataPaths': something is very wrong here.", e);
+            log.error("Invalid preference name 'dataPaths': something is very wrong here.", e);
         }
     }
 
@@ -422,7 +411,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setListValue("interactiveAgentIds", interactiveAgentIds);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'interactiveAgentIds': something is very wrong here.", e);
+            log.error("Invalid preference name 'interactiveAgentIds': something is very wrong here.", e);
         }
     }
 
@@ -435,7 +424,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(enableCsrfToken, "enableCsrfToken");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableCsrfToken': something is very wrong here.", e);
+            log.error("Invalid preference name 'enableCsrfToken': something is very wrong here.", e);
         }
     }
 
@@ -448,7 +437,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(csrfEmailAlert, "csrfEmailAlert");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'csrfEmailAlert': something is very wrong here.", e);
+            log.error("Invalid preference name 'csrfEmailAlert': something is very wrong here.", e);
         }
     }
 
@@ -461,7 +450,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setListValue("enabledProviders", enabledProviders);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name enabledProviders: something is very wrong here.", e);
+            log.error("Invalid preference name enabledProviders: something is very wrong here.", e);
         }
     }
 
@@ -474,7 +463,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordReuseRestriction, "passwordReuseRestriction");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordReuseRestriction': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordReuseRestriction': something is very wrong here.", e);
         }
     }
 
@@ -487,7 +476,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(requireSaltedPasswords, "requireSaltedPasswords");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'requireSaltedPasswords': something is very wrong here.", e);
+            log.error("Invalid preference name 'requireSaltedPasswords': something is very wrong here.", e);
         }
     }
 
@@ -500,7 +489,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordExpirationType, "passwordExpirationType");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordExpirationType': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordExpirationType': something is very wrong here.", e);
         }
     }
 
@@ -513,7 +502,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordExpirationInterval, "passwordExpirationInterval");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordExpirationInterval': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordExpirationInterval': something is very wrong here.", e);
         }
     }
 
@@ -526,7 +515,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(passwordExpirationDate, "passwordExpirationDate");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'passwordExpirationDate': something is very wrong here.", e);
+            log.error("Invalid preference name 'passwordExpirationDate': something is very wrong here.", e);
         }
     }
 
@@ -539,7 +528,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(enableSitewideAnonymizationScript, "enableSitewideAnonymizationScript");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableSitewideAnonymizationScript': something is very wrong here.", e);
+            log.error("Invalid preference name 'enableSitewideAnonymizationScript': something is very wrong here.", e);
         }
     }
 
@@ -552,7 +541,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sitewideAnonymizationScript, "sitewideAnonymizationScript");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sitewideAnonymizationScript': something is very wrong here.", e);
+            log.error("Invalid preference name 'sitewideAnonymizationScript': something is very wrong here.", e);
         }
     }
 
@@ -565,7 +554,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(enableSitewideSeriesImportFilter, "enableSitewideSeriesImportFilter");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableSitewideSeriesImportFilter': something is very wrong here.", e);
+            log.error("Invalid preference name 'enableSitewideSeriesImportFilter': something is very wrong here.", e);
         }
     }
 
@@ -578,7 +567,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sitewideSeriesImportFilterMode, "sitewideSeriesImportFilterMode");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sitewideSeriesImportFilterMode': something is very wrong here.", e);
+            log.error("Invalid preference name 'sitewideSeriesImportFilterMode': something is very wrong here.", e);
         }
     }
 
@@ -591,7 +580,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sitewideSeriesImportFilter, "sitewideSeriesImportFilter");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sitewideSeriesImportFilter': something is very wrong here.", e);
+            log.error("Invalid preference name 'sitewideSeriesImportFilter': something is very wrong here.", e);
         }
     }
 
@@ -604,7 +593,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sitewidePetTracers, "sitewidePetTracers");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sitewidePetTracers': something is very wrong here.", e);
+            log.error("Invalid preference name 'sitewidePetTracers': something is very wrong here.", e);
         }
     }
 
@@ -617,7 +606,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sitewidePetMr, "sitewidePetMr");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sitewidePetMr': something is very wrong here.", e);
+            log.error("Invalid preference name 'sitewidePetMr': something is very wrong here.", e);
         }
     }
 
@@ -630,7 +619,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(checksums, "checksums");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'checksums': something is very wrong here.", e);
+            log.error("Invalid preference name 'checksums': something is very wrong here.", e);
         }
     }
 
@@ -643,7 +632,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(scanTypeMapping, "scanTypeMapping");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
+            log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
         }
     }
 
@@ -656,7 +645,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(enableDicomReceiver, "enableDicomReceiver");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableDicomReceiver': something is very wrong here.", e);
+            log.error("Invalid preference name 'enableDicomReceiver': something is very wrong here.", e);
         }
     }
 
@@ -669,7 +658,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set("dicomFileNameTemplate", dicomFileNameTemplate);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'dicomFileNameTemplate': something is very wrong here.", e);
+            log.error("Invalid preference name 'dicomFileNameTemplate': something is very wrong here.", e);
         }
     }
 
@@ -682,7 +671,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(enableDicomReceiverPropertyChangedListener, "enableDicomReceiverPropertyChangedListener");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableDicomReceiverPropertyChangedListener': something is very wrong here.", e);
+            log.error("Invalid preference name 'enableDicomReceiverPropertyChangedListener': something is very wrong here.", e);
         }
     }
 
@@ -699,7 +688,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             }
             set(receivedFileUser, "receivedFileUser");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'receivedFileUser': something is very wrong here.", e);
+            log.error("Invalid preference name 'receivedFileUser': something is very wrong here.", e);
         } catch (UserNotFoundException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, receivedFileUser);
         } catch (UserInitException e) {
@@ -716,7 +705,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(displayNameForGenericImageSessionSingular, "imageSessionDisplayNameSingular");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'imageSessionDisplayNameSingular': something is very wrong here.", e);
+            log.error("Invalid preference name 'imageSessionDisplayNameSingular': something is very wrong here.", e);
         }
     }
 
@@ -729,7 +718,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(displayNameForGenericImageSessionPlural, "imageSessionDisplayNamePlural");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'imageSessionDisplayNamePlural': something is very wrong here.", e);
+            log.error("Invalid preference name 'imageSessionDisplayNamePlural': something is very wrong here.", e);
         }
     }
 
@@ -757,7 +746,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set("zipExtensions", zipExtensions);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'zipExtensions': something is very wrong here.", e);
+            log.error("Invalid preference name 'zipExtensions': something is very wrong here.", e);
         }
     }
 
@@ -770,7 +759,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteLogoPath, "siteLogoPath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteLogoPath': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteLogoPath': something is very wrong here.", e);
         }
     }
 
@@ -783,7 +772,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteDescriptionType, "siteDescriptionType");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteDescriptionType': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteDescriptionType': something is very wrong here.", e);
         }
     }
 
@@ -796,7 +785,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteDescriptionPage, "siteDescriptionPage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteDescriptionPage': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteDescriptionPage': something is very wrong here.", e);
         }
     }
 
@@ -809,7 +798,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteDescriptionText, "siteDescriptionText");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteDescriptionText': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteDescriptionText': something is very wrong here.", e);
         }
     }
 
@@ -822,7 +811,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteLoginLanding, "siteLoginLanding");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteLoginLanding': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteLoginLanding': something is very wrong here.", e);
         }
     }
 
@@ -835,7 +824,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteLandingLayout, "siteLandingLayout");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteLandingLayout': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteLandingLayout': something is very wrong here.", e);
         }
     }
 
@@ -848,7 +837,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteHome, "siteHome");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteHome': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteHome': something is very wrong here.", e);
         }
     }
 
@@ -861,7 +850,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(channel, "securityChannel");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'securityChannel': something is very wrong here.", e);
+            log.error("Invalid preference name 'securityChannel': something is very wrong here.", e);
         }
     }
 
@@ -874,7 +863,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(matchSecurityProtocol, "matchSecurityProtocol");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'matchSecurityProtocol': something is very wrong here.", e);
+            log.error("Invalid preference name 'matchSecurityProtocol': something is very wrong here.", e);
         }
     }
 
@@ -887,7 +876,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(allowDataAdmins, "allowDataAdmins");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'allowDataAdmins': something is very wrong here.", e);
+            log.error("Invalid preference name 'allowDataAdmins': something is very wrong here.", e);
         }
     }
 
@@ -908,7 +897,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setListValue("failMergeOn", failMergeOn);
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'failMergeOn': something is very wrong here.", e);
+            log.error("Invalid preference name 'failMergeOn': something is very wrong here.", e);
         }
     }
 
@@ -921,7 +910,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(concurrentMaxSessions, "concurrentMaxSessions");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'concurrentMaxSessions': something is very wrong here.", e);
+            log.error("Invalid preference name 'concurrentMaxSessions': something is very wrong here.", e);
         }
     }
 
@@ -934,7 +923,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteHomeLayout, "siteHomeLayout");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteHomeLayout': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteHomeLayout': something is very wrong here.", e);
         }
     }
 
@@ -947,7 +936,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(siteWideAlertStatus, "siteWideAlertStatus");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteWideAlertStatus': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteWideAlertStatus': something is very wrong here.", e);
         }
     }
 
@@ -960,7 +949,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteWideAlertType, "siteWideAlertType");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteWideAlertType': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteWideAlertType': something is very wrong here.", e);
         }
     }
 
@@ -973,7 +962,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(siteWideAlertMessage, "siteWideAlertMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'siteWideAlertMessage': something is very wrong here.", e);
+            log.error("Invalid preference name 'siteWideAlertMessage': something is very wrong here.", e);
         }
     }
 
@@ -986,7 +975,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiDebugExtensionPoints, "uiDebugExtensionPoints");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiDebugExtensionPoints': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiDebugExtensionPoints': something is very wrong here.", e);
         }
     }
 
@@ -999,7 +988,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiDisplaySeriesDescription, "uiDisplaySeriesDescription");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiDisplaySeriesDescription': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiDisplaySeriesDescription': something is very wrong here.", e);
         }
     }
 
@@ -1012,7 +1001,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowAdvancedSearch, "uiAllowAdvancedSearch");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowAdvancedSearch': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowAdvancedSearch': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "multinode")
+    public DisplayHostName getDisplayHostName() {
+        return getEnumValue(DisplayHostName.class, "displayHostName");
+    }
+
+    public void setDisplayHostName(final DisplayHostName displayHostName) {
+        try {
+            setEnumValue(displayHostName, "displayHostName");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'displayHostName': something is very wrong here.", e);
         }
     }
 
@@ -1025,7 +1027,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowProjectDelete, "uiAllowProjectDelete");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowProjectDelete': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowProjectDelete': something is very wrong here.", e);
         }
     }
 
@@ -1038,7 +1040,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowNewUserComments, "uiAllowNewUserComments");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowNewUserComments': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowNewUserComments': something is very wrong here.", e);
         }
     }
 
@@ -1051,7 +1053,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowScanAddition, "uiAllowScanAddition");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowScanAddition': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowScanAddition': something is very wrong here.", e);
         }
     }
 
@@ -1064,7 +1066,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(projectAllowAutoArchive, "projectAllowAutoArchive");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'projectAllowAutoArchive': something is very wrong here.", e);
+            log.error("Invalid preference name 'projectAllowAutoArchive': something is very wrong here.", e);
         }
     }
 
@@ -1077,7 +1079,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowQuarantine, "uiAllowQuarantine");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowQuarantine': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowQuarantine': something is very wrong here.", e);
         }
     }
 
@@ -1090,7 +1092,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowScanTypeModification, "uiAllowScanTypeModification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowScanTypeModification': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowScanTypeModification': something is very wrong here.", e);
         }
     }
 
@@ -1103,7 +1105,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowLeftBar, "uiShowLeftBar");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowLeftBar': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowLeftBar': something is very wrong here.", e);
         }
     }
 
@@ -1116,7 +1118,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowLeftBarProjects, "uiShowLeftBarProjects");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowLeftBarProjects': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowLeftBarProjects': something is very wrong here.", e);
         }
     }
 
@@ -1129,7 +1131,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowLeftBarFavorites, "uiShowLeftBarFavorites");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowLeftBarFavorites': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowLeftBarFavorites': something is very wrong here.", e);
         }
     }
 
@@ -1142,7 +1144,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowLeftBarSearch, "uiShowLeftBarSearch");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowLeftBarSearch': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowLeftBarSearch': something is very wrong here.", e);
         }
     }
 
@@ -1155,7 +1157,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowLeftBarBrowse, "UiShowLeftBarBrowse");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UiShowLeftBarBrowse': something is very wrong here.", e);
+            log.error("Invalid preference name 'UiShowLeftBarBrowse': something is very wrong here.", e);
         }
     }
 
@@ -1168,7 +1170,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowManageFiles, "uiShowManageFiles");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowManageFiles': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowManageFiles': something is very wrong here.", e);
         }
     }
 
@@ -1181,7 +1183,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowProjectManageFiles, "uiShowProjectManageFiles");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowProjectManageFiles': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowProjectManageFiles': something is very wrong here.", e);
         }
     }
 
@@ -1194,7 +1196,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowSubjectCreateFromExptEdit, "uiAllowSubjectCreateFromExptEdit");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowSubjectCreateFromExptEdit': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowSubjectCreateFromExptEdit': something is very wrong here.", e);
         }
     }
 
@@ -1207,7 +1209,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowNonAdminProjectCreation, "uiAllowNonAdminProjectCreation");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowNonAdminProjectCreation': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowNonAdminProjectCreation': something is very wrong here.", e);
         }
     }
 
@@ -1220,7 +1222,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(allowNonAdminsToClaimUnassignedSessions, "allowNonAdminsToClaimUnassignedSessions");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'allowNonAdminsToClaimUnassignedSessions': something is very wrong here.", e);
+            log.error("Invalid preference name 'allowNonAdminsToClaimUnassignedSessions': something is very wrong here.", e);
         }
     }
 
@@ -1233,12 +1235,12 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(ipsThatCanSendEmailsThroughRest, "ipsThatCanSendEmailsThroughRest");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'ipsThatCanSendEmailsThroughRest': something is very wrong here.", e);
+            log.error("Invalid preference name 'ipsThatCanSendEmailsThroughRest': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid or your user already has the maximum number of user sessions open. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>",
-            aliases = "UI.login_failure_message")
+                   aliases = "UI.login_failure_message")
     public String getUiLoginFailureMessage() {
         return getValue("uiLoginFailureMessage");
     }
@@ -1247,7 +1249,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(uiLoginFailureMessage, "uiLoginFailureMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiLoginFailureMessage': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiLoginFailureMessage': something is very wrong here.", e);
         }
     }
 
@@ -1260,7 +1262,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowBlockedSubjectAssessorView, "uiAllowBlockedSubjectAssessorView");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowBlockedSubjectAssessorView': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowBlockedSubjectAssessorView': something is very wrong here.", e);
         }
     }
 
@@ -1273,7 +1275,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(featureService, "featureService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'featureService': something is very wrong here.", e);
+            log.error("Invalid preference name 'featureService': something is very wrong here.", e);
         }
     }
 
@@ -1286,7 +1288,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(featureRepositoryService, "featureRepositoryService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'featureRepositoryService': something is very wrong here.", e);
+            log.error("Invalid preference name 'featureRepositoryService': something is very wrong here.", e);
         }
     }
 
@@ -1299,7 +1301,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(roleService, "roleService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'roleService': something is very wrong here.", e);
+            log.error("Invalid preference name 'roleService': something is very wrong here.", e);
         }
     }
 
@@ -1312,7 +1314,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(roleRepositoryService, "roleRepositoryService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'roleRepositoryService': something is very wrong here.", e);
+            log.error("Invalid preference name 'roleRepositoryService': something is very wrong here.", e);
         }
     }
 
@@ -1325,7 +1327,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(allowHtmlResourceRendering, "allowHtmlResourceRendering");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'allowHtmlResourceRendering': something is very wrong here.", e);
+            log.error("Invalid preference name 'allowHtmlResourceRendering': something is very wrong here.", e);
         }
     }
 
@@ -1338,7 +1340,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(maxFailedLogins, "maxFailedLogins");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'maxFailedLogins': something is very wrong here.", e);
+            log.error("Invalid preference name 'maxFailedLogins': something is very wrong here.", e);
         }
     }
 
@@ -1351,7 +1353,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(maxFailedLoginsLockoutDuration, "maxFailedLoginsLockoutDuration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'maxFailedLoginsLockoutDuration': something is very wrong here.", e);
+            log.error("Invalid preference name 'maxFailedLoginsLockoutDuration': something is very wrong here.", e);
         }
     }
 
@@ -1364,7 +1366,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(resetFailedLoginsSchedule, "resetFailedLoginsSchedule");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'resetFailedLoginsSchedule': something is very wrong here.", e);
+            log.error("Invalid preference name 'resetFailedLoginsSchedule': something is very wrong here.", e);
         }
     }
 
@@ -1377,7 +1379,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(canResetFailedLoginsWithForgotPassword, "canResetFailedLoginsWithForgotPassword");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'canResetFailedLoginsWithForgotPassword': something is very wrong here.", e);
+            log.error("Invalid preference name 'canResetFailedLoginsWithForgotPassword': something is very wrong here.", e);
         }
     }
 
@@ -1390,7 +1392,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(inactivityBeforeLockout, "inactivityBeforeLockout");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'inactivityBeforeLockout': something is very wrong here.", e);
+            log.error("Invalid preference name 'inactivityBeforeLockout': something is very wrong here.", e);
         }
     }
 
@@ -1403,7 +1405,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(inactivityBeforeLockoutSchedule, "inactivityBeforeLockoutSchedule");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'inactivityBeforeLockoutSchedule': something is very wrong here.", e);
+            log.error("Invalid preference name 'inactivityBeforeLockoutSchedule': something is very wrong here.", e);
         }
     }
 
@@ -1416,7 +1418,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setLongValue(sessionXmlRebuilderRepeat, "sessionXmlRebuilderRepeat");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sessionXmlRebuilderRepeat': something is very wrong here.", e);
+            log.error("Invalid preference name 'sessionXmlRebuilderRepeat': something is very wrong here.", e);
         }
     }
 
@@ -1429,7 +1431,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(sessionXmlRebuilderInterval, "sessionXmlRebuilderInterval");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sessionXmlRebuilderInterval': something is very wrong here.", e);
+            log.error("Invalid preference name 'sessionXmlRebuilderInterval': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "600")
+    public int getSessionArchiveTimeoutInterval() {
+        return getIntegerValue("sessionArchiveTimeoutInterval");
+    }
+
+    public void setSessionArchiveTimeoutInterval(final int sessionArchiveTimeoutInterval) {
+        try {
+            setIntegerValue(sessionArchiveTimeoutInterval, "sessionArchiveTimeoutInterval");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'sessionArchiveTimeoutInterval': something is very wrong here.", e);
         }
     }
 
@@ -1442,7 +1457,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sessionTimeout, "sessionTimeout");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sessionTimeout': something is very wrong here.", e);
+            log.error("Invalid preference name 'sessionTimeout': something is very wrong here.", e);
         }
     }
 
@@ -1456,7 +1471,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(aliasTokenTimeout, "aliasTokenTimeout");
 
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
+            log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
         }
     }
 
@@ -1469,7 +1484,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(aliasTokenTimeoutSchedule, "aliasTokenTimeoutSchedule");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'aliasTokenTimeoutSchedule': something is very wrong here.", e);
+            log.error("Invalid preference name 'aliasTokenTimeoutSchedule': something is very wrong here.", e);
         }
     }
 
@@ -1482,7 +1497,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             set(sessionTimeoutMessage, "sessionTimeoutMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sessionTimeoutMessage': something is very wrong here.", e);
+            log.error("Invalid preference name 'sessionTimeoutMessage': something is very wrong here.", e);
         }
     }
 
@@ -1495,7 +1510,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(showChangeJustification, "showChangeJustification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'showChangeJustification': something is very wrong here.", e);
+            log.error("Invalid preference name 'showChangeJustification': something is very wrong here.", e);
         }
     }
 
@@ -1508,7 +1523,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(requireChangeJustification, "requireChangeJustification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'requireChangeJustification': something is very wrong here.", e);
+            log.error("Invalid preference name 'requireChangeJustification': something is very wrong here.", e);
         }
     }
 
@@ -1521,7 +1536,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(requireEventName, "requireEventName");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
+            log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
         }
     }
     
@@ -1534,7 +1549,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowPrearchiveFileActions, "uiShowPrearchiveFileActions");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowPrearchiveFileActions': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowPrearchiveFileActions': something is very wrong here.", e);
         }
     }
     
@@ -1547,7 +1562,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(securityAllowNonPrivateProjects, "securityAllowNonPrivateProjects");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'securityAllowNonPrivateProjects': something is very wrong here.", e);
+            log.error("Invalid preference name 'securityAllowNonPrivateProjects': something is very wrong here.", e);
         }
     }
     
@@ -1560,7 +1575,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowPetTracerConfiguration, "uiAllowPetTracerConfiguration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowPetTracerConfiguration': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowPetTracerConfiguration': something is very wrong here.", e);
         }
     }
     
@@ -1573,7 +1588,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiShowScanTypeMapping, "uiShowScanTypeMapping");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowScanTypeMapping': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiShowScanTypeMapping': something is very wrong here.", e);
         }
     }
     
@@ -1586,7 +1601,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(emailProjectAccessRequestToAdmin, "emailProjectAccessRequestToAdmin");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailProjectAccessRequestToAdmin': something is very wrong here.", e);
+            log.error("Invalid preference name 'emailProjectAccessRequestToAdmin': something is very wrong here.", e);
         }
     }
     
@@ -1599,7 +1614,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiExptAllowLabelChange, "uiExptAllowLabelChange");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiExptAllowLabelChange': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiExptAllowLabelChange': something is very wrong here.", e);
         }
     }
     
@@ -1612,7 +1627,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiExptAllowProjectChange, "uiExptAllowProjectChange");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiExptAllowProjectChange': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiExptAllowProjectChange': something is very wrong here.", e);
         }
     }
     
@@ -1625,7 +1640,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiExptAllowSubjectChange, "uiExptAllowSubjectChange");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiExptAllowSubjectChange': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiExptAllowSubjectChange': something is very wrong here.", e);
         }
     }
     
@@ -1638,7 +1653,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(defaultProjectAutoArchiveSetting, "defaultProjectAutoArchiveSetting");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'defaultProjectAutoArchiveSetting': something is very wrong here.", e);
+            log.error("Invalid preference name 'defaultProjectAutoArchiveSetting': something is very wrong here.", e);
         }
     }
     
@@ -1651,7 +1666,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiAllowMoreProjectInvestigators, "uiAllowMoreProjectInvestigators");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiAllowMoreProjectInvestigators': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiAllowMoreProjectInvestigators': something is very wrong here.", e);
         }
     }
     
@@ -1659,7 +1674,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
         	setIntegerValue(securityMaxLoginInterval, "securityMaxLoginInterval");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'securityMaxLoginInterval': something is very wrong here.", e);
+            log.error("Invalid preference name 'securityMaxLoginInterval': something is very wrong here.", e);
         }
     }
     
@@ -1672,7 +1687,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setIntegerValue(securityLastModifiedInterval, "securityLastModifiedInterval");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'securityLastModifiedInterval': something is very wrong here.", e);
+            log.error("Invalid preference name 'securityLastModifiedInterval': something is very wrong here.", e);
         }
     }
     
@@ -1685,7 +1700,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         try {
             setBooleanValue(uiHideDesktopClientDownload, "uiHideDesktopClientDownload");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiHideDesktopClientDownload': something is very wrong here.", e);
+            log.error("Invalid preference name 'uiHideDesktopClientDownload': something is very wrong here.", e);
         }
     }
     
@@ -1710,7 +1725,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             if (missing.size() == 0) {
                 setInitialized(true);
             } else {
-                _log.warn("Your configuration was initialized from a configuration file, but the following settings were not initialized: {}. These must be set before the initialization configuration for the system can be fully initialized.", Joiner.on(", ").join(missing));
+                log.warn("Your configuration was initialized from a configuration file, but the following settings were not initialized: {}. These must be set before the initialization configuration for the system can be fully initialized.", Joiner.on(", ").join(missing));
                 setInitialized(false);
             }
         }
@@ -1723,7 +1738,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             missing.add("siteId");
         }
         if (StringUtils.isBlank(getSiteUrl())) {
-            missing.add("siteUrl");
+            missing.add(SITE_URL);
         }
         if (StringUtils.isBlank(getAdminEmail())) {
             missing.add("adminEmail");
@@ -1745,6 +1760,4 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
         return missing;
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
 }

@@ -103,7 +103,7 @@ public abstract class SearchA extends SecureAction {
                 List<String> readableProjects = Permissions.getReadableProjects(user);
                 List<String> protectedProjects = Permissions.getAllProtectedProjects(XDAT.getJdbcTemplate());
                 Collection<String> readableExcludingProtected = CollectionUtils.subtract(readableProjects,protectedProjects);
-                if(readableExcludingProtected.size()<=0){//Projects user can see, excluding those that they might only be seeing because they are protected
+                if(readableExcludingProtected.size()<=0 && (search.getRootElement()==null || !StringUtils.equals(search.getRootElement().getSQLName(),"xnat_projectData"))){//Projects user can see, excluding those that they might only be seeing because they are protected
                     boolean hasExplicitAccessToAtLeastOneProtectedProject = false;
                     for(String protectedProject: protectedProjects){
                         if(StringUtils.isNotBlank(getUserProjectAccess(user, protectedProject))){

@@ -158,12 +158,7 @@ public class SAXReader extends DefaultHandler2 {
                 String temp = (new String(ch, start, length));
                 if (temp.length()!=0 && isValidText(temp)){
                     if (tempValue != null){
-                        if (current.insertNewLine())
-                        {
-                            tempValue +="\n" + temp;
-                        }else{
-                            tempValue +=temp;
-                        }
+                        tempValue +=temp;
                     }else{
                         tempValue=temp;
                     }
@@ -558,25 +553,6 @@ public class SAXReader extends DefaultHandler2 {
          */
         public void setF(GenericWrapperField f) {
             this.f = f;
-        }
-        
-        public boolean insertNewLine(){
-            try {
-                if (f==null)
-                {
-                    return false;
-                }else{
-                    if (f.getXMLType().getLocalType().equals("string"))
-                    {
-                        int size = Integer.valueOf(f.getSize());
-                        return size > 256;
-                    }else{
-                        return false;
-                    }
-                }
-            } catch (RuntimeException e) {
-                return false;
-            }
         }
     }
     /* (non-Javadoc)

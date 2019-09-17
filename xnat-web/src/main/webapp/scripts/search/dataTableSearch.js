@@ -802,11 +802,9 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                             }
                         }
 
-                        //copied existing  getSearchMenuOptions and modified to support xsitype specific lists
+                       //you can add custom listing actions by adding {action:'actionClassName',display:text} to XNAT.app.typeBasedListingOptions
                        var typeOptions = getTypeBasedListingOptions(this.en);
                         if (typeOptions) {
-
-
                             if (typeOptions != undefined && typeOptions.length > 0) {
                                 for (var toC = 0; toC < typeOptions.length; toC++) {
                                     submenuitems.push({
@@ -1045,7 +1043,7 @@ function addTypeBasedListingOptions(xsiType, menuMap) {
 		XNAT.app.typeBasedListingOptions = {};
 	}	
 	
-	if(XNAT.app.typeBasedListingOptions[xsiType]){
+	if(!XNAT.app.typeBasedListingOptions[xsiType]){
 		XNAT.app.typeBasedListingOptions[xsiType]=[];
 	}
 	
@@ -1053,5 +1051,12 @@ function addTypeBasedListingOptions(xsiType, menuMap) {
 }
 
 function getTypeBasedListingOptions(xsiType) {
+	if(!XNAT.app.typeBasedListingOptions){
+		XNAT.app.typeBasedListingOptions = {};
+	}	
+	
+	if(!XNAT.app.typeBasedListingOptions[xsiType]){
+		XNAT.app.typeBasedListingOptions[xsiType]=[];
+	}
     return XNAT.app.typeBasedListingOptions[xsiType];
 }

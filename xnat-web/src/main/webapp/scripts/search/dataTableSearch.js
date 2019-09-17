@@ -801,6 +801,22 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                 }
                             }
                         }
+
+                        //copied existing  getSearchMenuOptions and modified to support xsitype specific lists
+                       var typeOptions = getTypeBasedListingOptions(this.en);
+                        if (typeOptions) {
+
+
+                            if (typeOptions != undefined && typeOptions.length > 0) {
+                                for (var toC = 0; toC < typeOptions.length; toC++) {
+                                    submenuitems.push({
+                                        value: typeOptions[toC].action,
+                                        text: typeOptions[toC].display,
+                                        onclick: { fn: this.search.menuSend, scope: this.search }
+                                    });
+                                }
+                            }
+                        }
                     }
 
 
@@ -1023,3 +1039,19 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
 
     }
 };
+
+function addTypeBasedListingOptions(xsiType, menuMap) {
+	if(!XNAT.app.typeBasedListingOptions){
+		XNAT.app.typeBasedListingOptions = {};
+	}	
+	
+	if(XNAT.app.typeBasedListingOptions[xsiType]){
+		XNAT.app.typeBasedListingOptions[xsiType]=[];
+	}
+	
+	XNAT.app.typeBasedListingOptions[xsiType].push(menuMap);
+}
+
+function getTypeBasedListingOptions(xsiType) {
+    return XNAT.app.typeBasedListingOptions[xsiType];
+}

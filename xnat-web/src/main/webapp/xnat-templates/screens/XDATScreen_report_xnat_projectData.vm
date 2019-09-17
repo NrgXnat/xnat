@@ -25,6 +25,7 @@
 ##    <div id="tp_fm" style="display:none"></div>
     #addCustomScreens($om.getXSIType() "report/alerts")
     #addCustomScreens($om.getXSIType() "report/errors")
+    #addGlobalCustomScreens("search/plugins/pre")
 
     <h2 class="edit_header1" style="">#escapeCleanHTML($!item.getStringProperty("xnat:projectData/name"))</h2>
 
@@ -58,6 +59,7 @@
         #parse($turbineUtils.getTemplateName("_bundle_tabs","xnat:projectData",$project.getId()))
 
         #addCustomScreens($om.getXSIType() "report/postData")
+    	#addGlobalCustomScreens("search/plugins/post")
     #else
         <!--can't read data-->
 

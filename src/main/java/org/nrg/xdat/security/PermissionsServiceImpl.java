@@ -260,8 +260,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         } else {
             final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
             if (elementSecurity.isSecure(action)) {
-                final SchemaElement  schemaElement  = SchemaElement.GetElement(xsiType);
-                final SecurityValues securityValues = item.getItem().getSecurityValues();
+                final SchemaElement       schemaElement  = SchemaElement.GetElement(xsiType);
+                final SecurityValues      securityValues = item.getItem().getSecurityValues();
+                final Map<String, String> hash           = securityValues.getHash();
+                if (hash.size() == 1 && hash.containsKey("xnat:projectData/ID")) {
+                    return can(user.getUsername(), action, null, hash.get("xnat:projectData/ID"));
+                }
                 if (!securityCheckByXMLPath(user, action, schemaElement, securityValues)) {
                     log.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",
                              user.getUsername(),
@@ -427,6 +431,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<Object> getAllowedValues(final String username, final String elementName, final String xmlPath, final String action) {
+        //noinspection rawtypes
         final List allowedValues = new ArrayList();
 
         try {

@@ -1,4 +1,5 @@
-				#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
+<!-- BEGIN xnat-templates/screens/xnat_imageAssessorData/actions.vm -->
+#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
 
 		#addCustomScreens("$element" "actionsBox") 
      </DIV>
@@ -19,4 +20,4 @@
    _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getImageSessionData().getSubjectData.getIdentifier($project) ($!om.getImageSessionData().getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getImageSessionData().getSubjectData().getIdentifier($project)",allowDelete:false});
 
 				</script>
-				
+<!-- END xnat-templates/screens/xnat_imageAssessorData/actions.vm -->

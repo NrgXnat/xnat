@@ -9,42 +9,12 @@
 
 package org.nrg.xnat.ajax;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.sun.msv.verifier.jarv.TheFactoryImpl;
 import org.apache.turbine.Turbine;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXWriter;
-import org.iso_relax.verifier.Schema;
-import org.iso_relax.verifier.Verifier;
-import org.iso_relax.verifier.VerifierConfigurationException;
-import org.iso_relax.verifier.VerifierFactory;
-import org.iso_relax.verifier.VerifierHandler;
+import org.iso_relax.verifier.*;
 import org.nrg.PrearcImporter;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusQueue;
@@ -56,7 +26,20 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 import static org.nrg.framework.status.StatusMessage.Status.*;
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 public final class Inbox {
     private static final String LOCKNAME = ".importing";
@@ -84,7 +67,7 @@ public final class Inbox {
 	}
 
 	final String project = req.getParameter("project");
-	if (null == project || Prearchive.COMMON.equals(project)) {
+	if (null == project || UNASSIGNED.equals(project)) {
 	    sendEmptyListing(response, project);
 	    return;
 	}

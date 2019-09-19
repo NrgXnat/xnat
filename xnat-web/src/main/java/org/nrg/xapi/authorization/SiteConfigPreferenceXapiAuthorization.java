@@ -10,7 +10,9 @@
 package org.nrg.xapi.authorization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.aspectj.lang.JoinPoint;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -42,18 +45,16 @@ public class SiteConfigPreferenceXapiAuthorization extends AbstractXapiAuthoriza
     }
 
     @Override
-    protected boolean checkImpl() {
-        final UserI user = getUser();
-
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
         // Admin can access them all so no need to look further.
         if (Roles.isSiteAdmin(user)) {
             return true;
         }
 
-        final Object[] parameters = getJoinPoint().getArgs();
+        final Object[] parameters = joinPoint.getArgs();
 
         // We only allow one parameter.
-        if (parameters == null || parameters.length == 0 || parameters.length > 1) {
+        if (parameters == null || parameters.length != 1) {
             return false;
         }
 

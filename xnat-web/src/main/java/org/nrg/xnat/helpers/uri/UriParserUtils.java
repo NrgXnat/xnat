@@ -34,6 +34,9 @@ public final class UriParserUtils {
     public static final String _REMAINDER = "_REMAINDER";
 
     public static URIManager.DataURIA parseURI(final String passedDataUri) throws MalformedURLException {
+        if (StringUtils.isBlank(passedDataUri)) {
+            return null;
+        }
         final String dataUri;
         if (passedDataUri.startsWith("/data")) {
             dataUri = passedDataUri.substring(5);
@@ -52,12 +55,10 @@ public final class UriParserUtils {
             }
 
             for (final URIManager.TemplateInfo template : URIManager.getTemplates(URIManager.TEMPLATE_TYPE.PREARC)) {
-                final Map<String, Object> map = new UriParser(template.key, template.MODE).readUri(dataUri);
-                if (map.size() > 0) {
-                    log.debug("Found {} parameters from the data URI {}: {}", map.size(), dataUri, map);
-                    return template.wrap(map, dataUri);
+                final URIManager.DataURIA uri = mapTemplateInfo(template, dataUri);
+                if (uri != null) {
+                    return uri;
                 }
-                log.debug("Found no parameters from the data URI {}", dataUri);
             }
         } else if (dataUri.startsWith("/archive")) {
             if (dataUri.equals("/archive")) {
@@ -66,12 +67,10 @@ public final class UriParserUtils {
             }
 
             for (final URIManager.TemplateInfo template : URIManager.getTemplates(URIManager.TEMPLATE_TYPE.ARC)) {
-                final Map<String, Object> map = new UriParser(template.key, template.MODE).readUri(dataUri);
-                if (map.size() > 0) {
-                    log.debug("Found {} parameters from the data URI {}: {}", map.size(), dataUri, map);
-                    return template.wrap(map, dataUri);
+                final URIManager.DataURIA uri = mapTemplateInfo(template, dataUri);
+                if (uri != null) {
+                    return uri;
                 }
-                log.debug("Found no parameters from the data URI {}", dataUri);
             }
         } else if (dataUri.startsWith("/user")) {
             if (dataUri.equals("/user")) {
@@ -80,12 +79,10 @@ public final class UriParserUtils {
             }
 
             for (final URIManager.TemplateInfo template : URIManager.getTemplates(URIManager.TEMPLATE_TYPE.CACHE)) {
-                final Map<String, Object> map = new UriParser(template.key, template.MODE).readUri(dataUri);
-                if (map.size() > 0) {
-                    log.debug("Found {} parameters from the data URI {}: {}", map.size(), dataUri, map);
-                    return template.wrap(map, dataUri);
+                final URIManager.DataURIA uri = mapTemplateInfo(template, dataUri);
+                if (uri != null) {
+                    return uri;
                 }
-                log.debug("Found no parameters from the data URI {}", dataUri);
             }
         } else if(dataUri.startsWith("/services/triage")){
 			if(dataUri.equals("/services/triage")){
@@ -257,6 +254,16 @@ public final class UriParserUtils {
         final List<String> list = Arrays.asList(types);
         Collections.sort(list, TYPE_COMPARATOR);
         return list;
+    }
+
+    private static URIManager.DataURIA mapTemplateInfo(final URIManager.TemplateInfo template, final String dataUri) {
+        final Map<String, Object> map = new UriParser(template.key, template.MODE).readUri(dataUri);
+        if (map.size() > 0) {
+            log.debug("Found {} parameters from the data URI {}: {}", map.size(), dataUri, map);
+            return template.wrap(map, dataUri);
+        }
+        log.debug("Found no parameters from the data URI {}", dataUri);
+        return null;
     }
 
     private static final Comparator<String> TYPE_COMPARATOR = new Comparator<String>() {

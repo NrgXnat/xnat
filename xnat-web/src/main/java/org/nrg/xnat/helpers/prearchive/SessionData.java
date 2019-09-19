@@ -16,6 +16,8 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Date;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public final class SessionData implements Serializable {
     private static final long serialVersionUID = 7915299491932778685L;
     public static final String UPLOADER = "uploader";
@@ -213,7 +215,7 @@ public final class SessionData implements Serializable {
 		if (project != null) {
 			this.sessionTriple.setProject(project);
         } else {
-			this.sessionTriple.setProject(PrearcUtils.COMMON);
+			this.sessionTriple.setProject(UNASSIGNED);
 		}
 		return this;
 	}

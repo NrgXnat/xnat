@@ -1,8 +1,15 @@
+#* @vtlvariable name="canReadSubjects" type="java.lang.Boolean" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="subject" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_report.vm -->
 #set ( $exptHeadings = ["Date", "Type", "ID", "Investigator" ] )
 		<style>
 DIV.container{
 	border: 1px solid #AAAAAA;
-    width:250px;  
+    width:250px;
 }
 DIV.containerTitle{
 			    border: 1px solid #AAAAAA;
@@ -16,10 +23,10 @@ DIV.containerBody{
     font-size:13px;
     line-height:15px;
     padding:3px;
-    
+
 		</style>
-<script type="text/javascript">  
-if(XNAT.app.subject==undefined)XNAT.app.subject=new Object(); 
+<script type="text/javascript">
+if(XNAT.app.subject==undefined)XNAT.app.subject=new Object();
 </script>
 <DIV class="edit_title">$displayManager.getSingularDisplayNameForSubject() Details: #if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end</DIV>
 <TABLE width="100%">
@@ -44,37 +51,36 @@ width:1px;
       <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
       <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
   </ul>
- <div class="yui-content">   
+ <div class="yui-content">
   <div id="tab1">
  <table>
 #parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectData",$!project))
  </table>
 </div>
- 
+
   <div id="tab2">
 	  #parse($turbineUtils.getTemplateName("sharing","xnat:subjectData",$!project))
   </div>
-  </div> 
+  </div>
  </DIV>
 </div>
-<script type="text/javascript">  
+<script type="text/javascript">
 function summaryIndexChanged(){
-   var activeIndex=this.get("activeIndex");
-   YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
+   YAHOO.util.Cookie.set("${project}.summary.index", this.get("activeIndex"));
 }
-   
+
 function summaryTabManagerInit(){
-    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');   
-    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module",{visible:false,zIndex:5});   
-	
-#addCustomScreenJS($om.getXSIType() "report/tabs_js") 
-	
-    window.subject_summary_module.show(); 		    
-    
+    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
+    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module",{visible:false,zIndex:5});
+
+#addCustomScreenJS($om.getXSIType() "report/tabs_js")
+
+    window.subject_summary_module.show();
+
 #if($canReadSubjects)
     var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
     window.summaryTabView.set('activeIndex',tabIndex||0);
-    
+
     window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
 #end
 					}
@@ -113,8 +119,9 @@ function summaryTabManagerInit(){
 	</TR>
 <tr>
 	<td>
-		#addCustomScreens($om.getXSIType() "report/postAssessors") 
+		#addCustomScreens($om.getXSIType() "report/postAssessors")
 	</td>
 </tr>
 			#parse($turbineUtils.getTemplateName("_resources","xnat:subjectData",$project))
 </TABLE>
+<!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_report.vm -->

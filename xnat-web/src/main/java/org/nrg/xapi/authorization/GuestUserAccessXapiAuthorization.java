@@ -1,15 +1,15 @@
 package org.nrg.xapi.authorization;
 
+import org.aspectj.lang.JoinPoint;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
-import org.nrg.xapi.rest.Username;
-import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
+import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +31,9 @@ public class GuestUserAccessXapiAuthorization extends AbstractXapiAuthorization 
      * guest user can also access the annotated API call.
      */
     @Override
-    protected boolean checkImpl() {
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
         // If login is not required, then return true, otherwise only allow if the user is not a guest.
-        return !_requireLogin || !getUser().isGuest();
+        return !_requireLogin || !user.isGuest();
     }
 
     @Override

@@ -21,9 +21,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.DisplayHostName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.node.entities.XnatNodeInfo;
+import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -43,8 +48,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -56,22 +63,25 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xnat.utils.FileUtils.nodeToList;
 
 @Component
 @Slf4j
 public class XnatAppInfo {
-    public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
-    public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
-
     @Inject
-    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
+    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node, final XnatNodeInfoService nodeInfoService) throws IOException {
         _preferences = preferences;
         _template = template;
         _environment = environment;
         _openUrlsPref = openUrlsPref;
         _serializerService = serializerService;
-        _primaryNode = Boolean.parseBoolean(_environment.getProperty(XNAT_PRIMARY_MODE_PROPERTY, "true"));
+        _primaryNode = Boolean.parseBoolean(_environment.getProperty(PROPERTY_XNAT_PRIMARY_MODE, "true"));
+        _node = node;
+        _siteAddress = getSiteAddress();
+        _hostName = getXnatNodeHostName(nodeInfoService);
+        _hasMultipleActiveNodes = !StringUtils.equals(XnatNode.NODE_ID_NOT_CONFIGURED, _node.getNodeId()) && _template.queryForObject(QUERY_COUNT_ACTIVE_NODES, Boolean.class);
+        _displayHostName = shouldDisplayHostName(_preferences.getDisplayHostName());
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
@@ -89,24 +99,25 @@ public class XnatAppInfo {
             _adminUrls.addAll(getPluginAdminUrls());
         }
 
+        _properties = new HashMap<>();
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
-            final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+            // final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
             if (input != null) {
                 final Manifest   manifest   = new Manifest(input);
                 final Attributes attributes = manifest.getMainAttributes();
                 final String     rawVersion = attributes.getValue(MANIFEST_VERSION);
 
-                builder.put(PROPERTY_VERSION, rawVersion);
-                builder.put(PROPERTY_BUILD_NUMBER, attributes.getValue(MANIFEST_BUILD_NUMBER));
-                builder.put(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
-                builder.put(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
-                builder.put(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
+                _properties.put(PROPERTY_VERSION, rawVersion);
+                _properties.put(PROPERTY_BUILD_NUMBER, attributes.getValue(MANIFEST_BUILD_NUMBER));
+                _properties.put(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
+                _properties.put(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
+                _properties.put(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
 
                 for (final Object key : attributes.keySet()) {
                     final String name = key.toString();
                     if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name) && !MANIFEST_ATTRIBUTE_EXCLUSIONS.contains(name)) {
                         final String propertyKey = MANIFEST_PROPERTY_MAPPING.containsKey(name) ? MANIFEST_PROPERTY_MAPPING.get(name) : name;
-                        builder.put(propertyKey, attributes.getValue(name));
+                        _properties.put(propertyKey, attributes.getValue(name));
                     }
                 }
                 final Map<String, Attributes> entries = manifest.getEntries();
@@ -120,27 +131,24 @@ public class XnatAppInfo {
                     }
                 }
 
-                _buildDate = parseDate(attributes.getValue(MANIFEST_BUILD_DATE));
-                builder.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+                _properties.put(PROPERTY_TIMESTAMP, Long.toString((_buildDate = parseDate(attributes.getValue(MANIFEST_BUILD_DATE))).getTime()));
+                _properties.put(PROPERTY_HOSTNAME, _hostName);
+                _properties.put(PROPERTY_DISPLAY_HOST_NAME, Boolean.toString(_displayHostName));
+                _properties.put(PROPERTY_NODE_ID, _node.getNodeId());
 
-                _properties = builder.build();
-
-                if (rawVersion.matches(NON_RELEASE_VERSION_REGEX)) {
-                    _versionDisplay = rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")";
-                } else {
-                    _versionDisplay = rawVersion;
-                }
+                _versionDisplay = NON_RELEASE_VERSION_REGEX.matcher(rawVersion).matches()
+                                  ? rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")"
+                                  : rawVersion;
             } else {
                 log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");
                 _versionDisplay = "Unknown";
                 _buildDate = new Date();
-                builder.put(PROPERTY_BUILD_NUMBER, "Unknown");
-                builder.put(PROPERTY_BUILD_DATE, FORMATTER.format(_buildDate));
-                builder.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
-                builder.put(PROPERTY_VERSION, "Unknown");
-                builder.put(PROPERTY_SHA, "Unknown");
-                builder.put(PROPERTY_DIRTY, "Unknown");
-                _properties = builder.build();
+                _properties.put(PROPERTY_BUILD_NUMBER, "Unknown");
+                _properties.put(PROPERTY_BUILD_DATE, FORMATTER.format(_buildDate));
+                _properties.put(PROPERTY_TIMESTAMP, Long.toString(_buildDate.getTime()));
+                _properties.put(PROPERTY_VERSION, "Unknown");
+                _properties.put(PROPERTY_SHA, "Unknown");
+                _properties.put(PROPERTY_DIRTY, "Unknown");
             }
 
             log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}\n * Dirty flag: {}",
@@ -160,7 +168,7 @@ public class XnatAppInfo {
                             public Object mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
                                 addFoundStringPreference(resultSet, "siteId", "site_id");
                                 addFoundStringPreference(resultSet, "adminEmail", "site_admin_email");
-                                addFoundStringPreference(resultSet, "siteUrl", "site_url");
+                                addFoundStringPreference(resultSet, SITE_URL, "site_url");
                                 addFoundStringPreference(resultSet, "smtp_host", "smtp_host");
                                 addFoundStringPreference(resultSet, "archivePath", "archivepath");
                                 addFoundStringPreference(resultSet, "prearchivePath", "prearchivepath");
@@ -202,6 +210,7 @@ public class XnatAppInfo {
                 }
             }
         }
+
     }
 
     @SuppressWarnings("unused")
@@ -224,15 +233,6 @@ public class XnatAppInfo {
     }
 
     /**
-     * Gets the plugin admin urls.
-     *
-     * @return the plugin admin urls
-     */
-    private List<? extends String> getPluginAdminUrls() {
-        return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
-    }
-
-    /**
      * Returns any found preferences. If no preferences were found, the returned map will be empty.
      *
      * @return A map containing the found preferences.
@@ -252,7 +252,6 @@ public class XnatAppInfo {
         if (!_initialized) {
             // Recheck to see if it has been initialized. We don't need to recheck to see if it's been
             // uninitialized because that's silly.
-            //noinspection SqlDialectInspection,SqlNoDataSourceInspection
             try {
                 _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
                 if (_initialized) {
@@ -266,8 +265,8 @@ public class XnatAppInfo {
                     for (final String preference : _foundPreferences.keySet()) {
                         if (_foundPreferences.get(preference) != null) {
                             _template.update(
-                                    "UPDATE xhbm_preference SET value = ? WHERE name = ?",
-                                    new Object[]{_foundPreferences.get(preference), preference}, new int[]{Types.VARCHAR, Types.VARCHAR}
+                                "UPDATE xhbm_preference SET value = ? WHERE name = ?",
+                                new Object[] {_foundPreferences.get(preference), preference}, new int[] {Types.VARCHAR, Types.VARCHAR}
                                             );
                             try {
                                 _preferences.set(_foundPreferences.get(preference), preference);
@@ -358,7 +357,7 @@ public class XnatAppInfo {
      * @return The value of the property if found, the specified default value otherwise.
      */
     public <T> T getConfiguredProperty(final String property, final Class<T> type, final T defaultValue) {
-        return _environment.getProperty(property, type, defaultValue);
+        return defaultValue == null ? _environment.getProperty(property, type) : _environment.getProperty(property, type, defaultValue);
     }
 
     @SuppressWarnings("unused")
@@ -523,6 +522,24 @@ public class XnatAppInfo {
         return _primaryNode;
     }
 
+    @SuppressWarnings("unused")
+    public String getHostName() {
+        return _hostName;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isDisplayHostName() {
+        return _displayHostName;
+    }
+
+    public void setDisplayHostName(final DisplayHostName displayHostName) {
+        _properties.put(PROPERTY_DISPLAY_HOST_NAME, Boolean.toString(_displayHostName = shouldDisplayHostName(displayHostName)));
+    }
+
+    public XnatNode getNode() {
+        return _node;
+    }
+
     /**
      * Returns the system uptime in a formatted display string.
      *
@@ -606,6 +623,67 @@ public class XnatAppInfo {
             log.warn("Unable to parse the build date value, returning current date for fail-over: {}", dateProperty);
             return new Date();
         }
+    }
+
+    @Nonnull
+    private static List<String> findHostNames() {
+        final Set<String> hostNames = XDAT.getHostNames();
+        if (hostNames.isEmpty()) {
+            return Collections.singletonList("localhost");
+        }
+        return new ArrayList<>(hostNames);
+    }
+
+    @Nullable
+    private String getSiteAddress() {
+        final String siteUrl = _preferences.getSiteUrl();
+        if (StringUtils.isBlank(siteUrl)) {
+            log.info("No site URL is currently configured, returning null for site address");
+            return null;
+        }
+        try {
+            return new URL(siteUrl).getHost();
+        } catch (MalformedURLException e) {
+            log.info("The site URL \"{}\" is invalid, returning null for site address", siteUrl);
+            return null;
+        }
+    }
+
+    private boolean shouldDisplayHostName(final DisplayHostName displayHostName) {
+        return displayHostName == DisplayHostName.always || displayHostName != DisplayHostName.never && _hasMultipleActiveNodes;
+    }
+
+    private XnatNodeInfo getXnatNodeInfo(final XnatNodeInfoService nodeInfoService) {
+        final String             nodeId    = _node.getNodeId();
+        final List<XnatNodeInfo> nodeInfos = nodeInfoService.getXnatNodeInfoByNodeId(nodeId);
+        final String[]           hostNames = findHostNames().toArray(new String[0]);
+        for (final XnatNodeInfo nodeInfo : nodeInfos) {
+            if (StringUtils.equalsAny(nodeInfo.getHostName(), hostNames)) {
+                return nodeInfo;
+            }
+        }
+        return null;
+    }
+
+    private String getXnatNodeHostName(final XnatNodeInfoService nodeInfoService) {
+        final XnatNodeInfo nodeInfo = getXnatNodeInfo(nodeInfoService);
+        if (nodeInfo != null) {
+            return nodeInfo.getHostName();
+        }
+        final List<String> hostNames = findHostNames();
+        if (hostNames.isEmpty()) {
+            return "localhost";
+        }
+        return hostNames.contains(_siteAddress) ? _siteAddress : hostNames.iterator().next();
+    }
+
+    /**
+     * Gets the plugin admin urls.
+     *
+     * @return the plugin admin urls
+     */
+    private List<? extends String> getPluginAdminUrls() {
+        return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
     }
 
     private String translateToBoolean(final String currentValue) {
@@ -707,43 +785,49 @@ public class XnatAppInfo {
         return false;
     }
 
-    private static final String MANIFEST_BUILD_NUMBER = "Build-Number";
-    private static final String MANIFEST_BUILD_DATE   = "Build-Date";
-    private static final String MANIFEST_VERSION      = "Implementation-Version";
-    private static final String MANIFEST_SHA          = "Implementation-Sha";
-    private static final String MANIFEST_DIRTY        = "Implementation-Dirty";
-    private static final String MANIFEST_BRANCH       = "Implementation-Branch";
-    private static final String MANIFEST_COMMIT       = "Implementation-Commit";
-    private static final String MANIFEST_LASTTAG      = "Implementation-LastTag";
-    private static final String MANIFEST_SHA_FULL     = "Implementation-Sha-Full";
-    private static final String PROPERTY_BUILD_NUMBER = "buildNumber";
-    private static final String PROPERTY_BUILD_DATE   = "buildDate";
-    private static final String PROPERTY_VERSION      = "version";
-    private static final String PROPERTY_SHA          = "sha";
-    private static final String PROPERTY_DIRTY        = "isDirty";
-    private static final String PROPERTY_BRANCH       = "branch";
-    private static final String PROPERTY_SHA_FULL     = "shaFull";
-    private static final String PROPERTY_COMMIT       = "commit";
-    private static final String PROPERTY_TIMESTAMP    = "timestamp";
-    private static final String PROPERTY_TAG          = "tag";
+    private static final String PROPERTY_XNAT_PRIMARY_MODE = "xnat.is_primary_node";
+    private static final String MANIFEST_BUILD_NUMBER      = "Build-Number";
+    private static final String MANIFEST_BUILD_DATE        = "Build-Date";
+    private static final String MANIFEST_VERSION           = "Implementation-Version";
+    private static final String MANIFEST_SHA               = "Implementation-Sha";
+    private static final String MANIFEST_DIRTY             = "Implementation-Dirty";
+    private static final String MANIFEST_BRANCH            = "Implementation-Branch";
+    private static final String MANIFEST_COMMIT            = "Implementation-Commit";
+    private static final String MANIFEST_LAST_TAG          = "Implementation-LastTag";
+    private static final String MANIFEST_SHA_FULL          = "Implementation-Sha-Full";
+    private static final String PROPERTY_BUILD_NUMBER      = "buildNumber";
+    private static final String PROPERTY_BUILD_DATE        = "buildDate";
+    private static final String PROPERTY_VERSION           = "version";
+    private static final String PROPERTY_SHA               = "sha";
+    private static final String PROPERTY_DIRTY             = "isDirty";
+    private static final String PROPERTY_BRANCH            = "branch";
+    private static final String PROPERTY_SHA_FULL          = "shaFull";
+    private static final String PROPERTY_COMMIT            = "commit";
+    private static final String PROPERTY_TIMESTAMP         = "timestamp";
+    private static final String PROPERTY_TAG               = "tag";
+    private static final String PROPERTY_HOSTNAME          = "hostName";
+    private static final String PROPERTY_DISPLAY_HOST_NAME = "displayHostName";
+    private static final String PROPERTY_NODE_ID           = "nodeId";
 
     private static final List<String>        PRIMARY_MANIFEST_ATTRIBUTES   = Arrays.asList(MANIFEST_BUILD_NUMBER, MANIFEST_BUILD_DATE, MANIFEST_VERSION, MANIFEST_SHA, MANIFEST_DIRTY);
     private static final List<String>        MANIFEST_ATTRIBUTE_EXCLUSIONS = Arrays.asList("Application-Name", "Manifest-Version", "Implementation-CleanTag");
-    private static final Map<String, String> MANIFEST_PROPERTY_MAPPING     = ImmutableMap.of(MANIFEST_BRANCH, PROPERTY_BRANCH, MANIFEST_COMMIT, PROPERTY_COMMIT, MANIFEST_LASTTAG, PROPERTY_TAG, MANIFEST_SHA_FULL, PROPERTY_SHA_FULL);
+    private static final Map<String, String> MANIFEST_PROPERTY_MAPPING     = ImmutableMap.of(MANIFEST_BRANCH, PROPERTY_BRANCH, MANIFEST_COMMIT, PROPERTY_COMMIT, MANIFEST_LAST_TAG, PROPERTY_TAG, MANIFEST_SHA_FULL, PROPERTY_SHA_FULL);
 
-    private static final ResourceLoader   RESOURCE_LOADER          = new DefaultResourceLoader();
-    private static final SimpleDateFormat FORMATTER                = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
-    private static final AntPathMatcher   PATH_MATCHER             = new AntPathMatcher();
-    private static final int              MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
-    private static final int              MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
-    private static final int              MILLISECONDS_IN_A_MINUTE = (60 * 1000);
-    private static final DecimalFormat    SECONDS_FORMAT           = new DecimalFormat("##.000");
-    private static final String           DAYS                     = "days";
-    private static final String           HOURS                    = "hours";
-    private static final String           MINUTES                  = "minutes";
-    private static final String           SECONDS                  = "seconds";
-    private static final Pattern          CHECK_VALID_PATTERN      = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
-    private static final Pattern          CHECK_TRUE_PATTERN       = Pattern.compile("^(?i)(1|true|t)$");
+    private static final ResourceLoader   RESOURCE_LOADER           = new DefaultResourceLoader();
+    private static final SimpleDateFormat FORMATTER                 = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
+    private static final AntPathMatcher   PATH_MATCHER              = new AntPathMatcher();
+    private static final Pattern          NON_RELEASE_VERSION_REGEX = Pattern.compile("(?i:^.*(SNAPSHOT|BETA|RC).*$)");
+    private static final int              MILLISECONDS_IN_A_DAY     = (24 * 60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_AN_HOUR   = (60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_A_MINUTE  = (60 * 1000);
+    private static final DecimalFormat    SECONDS_FORMAT            = new DecimalFormat("##.000");
+    private static final String           DAYS                      = "days";
+    private static final String           HOURS                     = "hours";
+    private static final String           MINUTES                   = "minutes";
+    private static final String           SECONDS                   = "seconds";
+    private static final Pattern          CHECK_VALID_PATTERN       = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
+    private static final Pattern          CHECK_TRUE_PATTERN        = Pattern.compile("^(?i)(1|true|t)$");
+    private static final String QUERY_COUNT_ACTIVE_NODES = "SELECT count(*) > 1 AS has_multiple FROM xhbm_xnat_node_info WHERE enabled = TRUE";
 
     private final JdbcTemplate             _template;
     private final Environment              _environment;
@@ -755,15 +839,21 @@ public class XnatAppInfo {
     private final String                   _nonAdminErrorPath;
     private final List<String>             _nonAdminErrorPathPatterns;
     private final boolean                  _primaryNode;
+    private final Map<String, String>      _properties;
+    private final String                   _versionDisplay;
+    private final Date                     _buildDate;
+    private final String                   _hostName;
+    private final XnatNode                 _node;
+    private final String                   _siteAddress;
+    private final boolean                  _hasMultipleActiveNodes;
 
-    private       boolean                          _initialized      = false;
     private final List<String>                     _initUrls         = new ArrayList<>();
     private final List<String>                     _openUrls         = new ArrayList<>();
     private final List<String>                     _adminUrls        = new ArrayList<>();
     private final Map<String, String>              _foundPreferences = new HashMap<>();
     private final Date                             _startTime        = new Date();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
-    private final Map<String, String>              _properties;
-    private final String                           _versionDisplay;
-    private final Date                             _buildDate;
+
+    private boolean _initialized = false;
+    private boolean _displayHostName;
 }

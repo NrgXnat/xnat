@@ -13,14 +13,13 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
+import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
+
+import java.util.Collections;
 
 public class UserAuth extends SecureResource {
     public UserAuth(Context context, Request request, Response response) {
@@ -35,11 +34,14 @@ public class UserAuth extends SecureResource {
 
     @Override
     public Representation represent(Variant variant) throws ResourceException {
-        final UserI loggedInUser = XDAT.getUserDetails();
-        if (loggedInUser == null) {
+        final UserI user = XDAT.getUserDetails();
+        if (user == null) {
+            final Response response = getResponse();
+            response.setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
+            response.setChallengeRequests(Collections.singletonList(new ChallengeRequest(ChallengeScheme.HTTP_BASIC, XDAT.getSiteId())));
             throw new ResourceException(Status.CLIENT_ERROR_UNAUTHORIZED);
         }
-        final String message = String.format(LOGGED_IN, loggedInUser.getUsername()) + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : "");
+        final String message = String.format(LOGGED_IN, user.getUsername()) + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : "");
         return new StringRepresentation(message, MediaType.TEXT_PLAIN);
     }
 

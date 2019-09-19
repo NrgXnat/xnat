@@ -68,7 +68,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     @SuppressWarnings("RedundantThrows")
     public GradualDicomImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String, Object> parameters) throws ServerException {
-        super(listenerControl, user, fileWriter, parameters);
+        super(listenerControl, user);
         _user = user;
         _fileWriter = fileWriter;
         _parameters = parameters;

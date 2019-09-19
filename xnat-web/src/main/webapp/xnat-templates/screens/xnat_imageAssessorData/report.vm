@@ -1,4 +1,4 @@
-<!-- BEGIN imageAssessor/xnat_imageAssessorData_report.vm -->
+<!-- BEGIN xnat-templates/screens/xnat_imageAssessorData/report.vm -->
 #if($project)
 
 #else
@@ -162,4 +162,4 @@ function showFiles(){
 }
 
     </script>
-<!-- END imageAssessor/xnat_imageAssessorData_report.vm -->
+<!-- END xnat-templates/screens/xnat_imageAssessorData/report.vm -->

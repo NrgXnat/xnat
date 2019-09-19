@@ -54,7 +54,7 @@ import javax.annotation.Nullable;
  *
  */
 public class XNATUtils {
-	static Logger logger = Logger.getLogger(XNATUtils.class);
+    static Logger logger = Logger.getLogger(XNATUtils.class);
     public static String MAP_COLUMN_NAME="map";
     public static String LAB_COLUMN_NAME="lab_id";
 
@@ -63,105 +63,105 @@ public class XNATUtils {
         UserI tempUser = XDAT.getUserDetails();
         return getInvestigatorsForRead(elementName,tempUser);
     }
-    
+
     public static Hashtable getInvestigatorsForRead(String elementName, UserI user)
     {
         Hashtable _return = new Hashtable();
         try {String login = null;
-	        if (user != null)
-	        {
-	            login = user.getUsername();
-	        }
-            
+            if (user != null)
+            {
+                login = user.getUsername();
+            }
+
             _return = ElementSecurity.GetDistinctIdValuesFor("xnat:investigatorData","default",login);
         } catch (Exception e) {
             logger.error("",e);
         }
-        
+
         return _return;
     }
-    
+
     public static Hashtable getInvestigatorsForCreate(String elementName, RunData data)
     {
         UserI tempUser = XDAT.getUserDetails();
         return getInvestigatorsForCreate(elementName,tempUser);
     }
-    
+
     public static Hashtable getInvestigatorsForCreate(String elementName, UserI user)
     {
         Hashtable _return = new Hashtable();
         try {String login = null;
-			if (user != null)
-			{
-			    login = user.getUsername();
-			}
-	            
-	        _return = ElementSecurity.GetDistinctIdValuesFor("xnat:investigatorData","default",login);
+            if (user != null)
+            {
+                login = user.getUsername();
+            }
+
+            _return = ElementSecurity.GetDistinctIdValuesFor("xnat:investigatorData","default",login);
         } catch (Exception e) {
             logger.error("",e);
         }
-        
+
         return _return;
     }
-    
-  
-  public static Hashtable getProjectsForCreate(String elementName, RunData data)
-  {
-      UserI tempUser = XDAT.getUserDetails();
-      return getProjectsForCreate(elementName,tempUser);
-  }
-  
-  public static Hashtable getProjectsForEdit(String elementName, RunData data)
-  {
-      UserI tempUser = XDAT.getUserDetails();
-      return getProjectsForAction(elementName,tempUser,SecurityManager.EDIT);
-  }
-  
-  public static Hashtable getProjectsForCreate(String elementName, UserI user)
-  {
-      return getProjectsForAction(elementName,user,SecurityManager.CREATE);
-  }
 
-  
-  public static Hashtable getProjectsForAction(String elementName, UserI user, String action)
-  {
-      Hashtable _return = new Hashtable();
-      try {String login = null;
+
+    public static Hashtable getProjectsForCreate(String elementName, RunData data)
+    {
+        UserI tempUser = XDAT.getUserDetails();
+        return getProjectsForCreate(elementName,tempUser);
+    }
+
+    public static Hashtable getProjectsForEdit(String elementName, RunData data)
+    {
+        UserI tempUser = XDAT.getUserDetails();
+        return getProjectsForAction(elementName,tempUser,SecurityManager.EDIT);
+    }
+
+    public static Hashtable getProjectsForCreate(String elementName, UserI user)
+    {
+        return getProjectsForAction(elementName,user,SecurityManager.CREATE);
+    }
+
+
+    public static Hashtable getProjectsForAction(String elementName, UserI user, String action)
+    {
+        Hashtable _return = new Hashtable();
+        try {String login = null;
+            if (user != null)
+            {
+                login = user.getUsername();
+            }
+
+            if (ElementSecurity.IsSecureElement(elementName,action))
+            {
+                List<Object> permisionItems = Permissions.getAllowedValues(user,elementName,elementName +"/project",action);
+
+                Hashtable temp = ElementSecurity.GetDistinctIdValuesFor("xnat:projectData","default",login);
+
+                for(int i=0;i<permisionItems.size();i++){
+                    String o=(String)permisionItems.get(i);
+                    if(temp.containsKey(o)){
+                        _return.put(o,temp.get(o));
+                    }
+                }
+            }else{
+                _return = ElementSecurity.GetDistinctIdValuesFor("xnat:projectData","default",login);
+
+            }
+        } catch (Exception e) {
+            logger.error("",e);
+        }
+
+        return _return;
+    }
+
+    public static String getLastSessionIdForParticipant(String id,UserI user)
+    {
+        String login = null;
         if (user != null)
         {
             login = user.getUsername();
         }
-          
-          if (ElementSecurity.IsSecureElement(elementName,action))
-          {
-              List<Object> permisionItems = Permissions.getAllowedValues(user,elementName,elementName +"/project",action);
-              
-              Hashtable temp = ElementSecurity.GetDistinctIdValuesFor("xnat:projectData","default",login);
-              
-              for(int i=0;i<permisionItems.size();i++){
-                  String o=(String)permisionItems.get(i);
-            	  if(temp.containsKey(o)){
-                      _return.put(o,temp.get(o));
-                  }
-              } 
-          }else{
-              _return = ElementSecurity.GetDistinctIdValuesFor("xnat:projectData","default",login);
-              
-          }
-      } catch (Exception e) {
-          logger.error("",e);
-      }
-      
-      return _return;
-  }
-  
-    public static String getLastSessionIdForParticipant(String id,UserI user)
-    {
-        String login = null;
-		if (user != null)
-		{
-		    login = user.getUsername();
-		}
         String query = "SELECT mr.id FROM xnat_mrSessionData mr LEFT JOIN xnat_subjectAssessorData sad ON mr.ID=sad.ID LEFT JOIN xnat_experimentData ed ON sad.ID=ed.ID WHERE subject_id='" + id +"' ORDER BY date DESC LIMIT 1";
         try {
             XFTTable table = TableSearch.Execute(query,user.getDBName(),login);
@@ -177,7 +177,7 @@ public class XNATUtils {
                         break;
                     }
                 }
-                
+
                 return (String)mr_id;
             }
 
@@ -187,7 +187,7 @@ public class XNATUtils {
             return null;
         }
     }
-    
+
     public static XnatMrsessiondata getLastSessionForParticipant(String id,UserI user)
     {
         try {
@@ -196,13 +196,13 @@ public class XNATUtils {
             {
                 return null;
             }
-            
+
             ItemI mr = ItemSearch.GetItem("xnat:mrSessionData.ID",mr_id,user,false);
             if (mr == null)
             {
                 return null;
             }
-            
+
             return new XnatMrsessiondata(mr);
         } catch (Exception e) {
             logger.error("",e);
@@ -321,26 +321,26 @@ public class XNATUtils {
 //    public static String GetCurrentArchiveFolder() throws org.nrg.xnat.exceptions.UndefinedArchive,org.nrg.xnat.exceptions.InvalidArchiveStructure,IOException{
 //        return GetInstance().getCurrentArchiveFolder();
 //    }
-    
+
 
     public static void populateCatalogBean(CatCatalogBean cat, String header,File f){
-    	if (f.isDirectory()){
-    		if (f.listFiles()!=null && f.listFiles().length>0)
-    		for (File child : f.listFiles()){
-    			populateCatalogBean(cat, header + f.getName() + "/", child);
-    		}
-    	}else{
-    		CatEntryBean entry = new CatEntryBean();
-    		entry.setUri(header + f.getName());
-    		cat.addEntries_entry(entry);
-    	}
+        if (f.isDirectory()){
+            if (f.listFiles()!=null && f.listFiles().length>0)
+                for (File child : f.listFiles()){
+                    populateCatalogBean(cat, header + f.getName() + "/", child);
+                }
+        }else{
+            CatEntryBean entry = new CatEntryBean();
+            entry.setUri(header + f.getName());
+            cat.addEntries_entry(entry);
+        }
     }
-    
+
     public static CatalogSet getCatalogBean(RunData data,ItemI input){
         XnatProjectdata project = null;
         ItemI thisOM=null;
         XFTItem item=null;
-        
+
         if (input instanceof XFTItem){
             thisOM = BaseElement.GetGeneratedItem(input);
             item = (XFTItem)input;
@@ -351,9 +351,9 @@ public class XNATUtils {
         CatalogSet catalog_set = null;
 
         final String server = TurbineUtils.GetFullServerPath();
-        
+
         final String url = server + "/app/template/GetFile.vm/search_element/" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)) + "/search_field/" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)) + "/search_value/" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data));
-        
+
         try {
             Class c = thisOM.getClass();
             Class[] pClasses = new Class[]{String.class};
@@ -371,11 +371,11 @@ public class XNATUtils {
         } catch (NoSuchMethodException e) {
             logger.error("",e);
         }
-        
+
         if (catalog_set!=null){
             return catalog_set;
         }
-        
+
         if (thisOM instanceof XnatExperimentdata){
             project = ((XnatExperimentdata)thisOM).getPrimaryProject(false);
         }else if(thisOM instanceof XnatSubjectdata){
@@ -384,12 +384,12 @@ public class XNATUtils {
             project = ((XnatProjectdata)thisOM);
         }
         List<XFTItem> hash = (item).getChildrenOfType("xnat:abstractResource");
-        
+
         CatCatalogBean catalog = new CatCatalogBean();
         Hashtable<String,Object> fileMap = new Hashtable<String,Object>();
-                
+
         int counter = 0;
-        
+
         catalog.setId(((XFTItem)item).getPK().toString());
         if (project!=null){
             for (XFTItem resource : hash){
@@ -401,12 +401,12 @@ public class XNATUtils {
                         File f = files.get(i);
                         //String xPath= item.getXSIType() + "[" + ((XFTItem)item).getPKString() + "]/" + key;
                         //xPath = xPath.replace('/', '.');
-                        
+
                         CatEntryBean entry = new CatEntryBean();
                         entry.setUri(url + "/file/" + counter);
-                        
+
                         fileMap.put("/file/" + counter++, f);
-                        
+
                         String path = f.getAbsolutePath();
                         if (path.indexOf(File.separator + project.getId())!=-1){
                             path = path.substring(path.indexOf(File.separator + project.getId()) + 1);
@@ -415,7 +415,7 @@ public class XNATUtils {
                                 path = path.substring(path.indexOf(File.separator + ((XFTItem)item).getPK()) + 1);
                             }
                         }
-                        
+
                         entry.setName(f.getName());
                         CatalogUtils.setCatEntryBeanMetafields(entry, path,
                                 Long.toString(f.length()));
@@ -425,11 +425,11 @@ public class XNATUtils {
                     if (om instanceof XnatResourcecatalog){
                         File f = ((XnatResourcecatalog)om).getCatalogFile(project.getRootArchivePath());
                         CatEntryBean entry = new CatEntryBean();
-                        
+
                         entry.setUri(url + "/file/" + counter);
-                        
+
                         fileMap.put("/file/" + counter++, f);
-                        
+
                         String path = f.getAbsolutePath();
                         if (path.indexOf(File.separator + project.getId())!=-1){
                             path = path.substring(path.indexOf(File.separator + project.getId()) + 1);
@@ -438,64 +438,60 @@ public class XNATUtils {
                                 path = path.substring(path.indexOf(File.separator + ((XFTItem)item).getPK()) + 1);
                             }
                         }
-                        
+
                         entry.setName(f.getName());
                         CatalogUtils.setCatEntryBeanMetafields(entry, path,
                                 Long.toString(f.length()));
 
                         catalog.addEntries_entry(entry);
                     }
-                    
+
                 }
             }
         }
-        
+
         return new CatalogSet(catalog,fileMap);
     }
 
 
-    protected static File GetFileOnLocalFileSystem(String fullPath) {
-      return CatalogUtils.getFileOnLocalFileSystem(fullPath);
-    }
-    
     public static boolean isNull(String s){
-    	if(s==null){
-    		return true;
-    	}else if(s.equals("NULL")){
-    		return true;
-    	}else{
-    		return false;
-}
+        if(s==null){
+            return true;
+        }else if(s.equals("NULL")){
+            return true;
+        }else{
+            return false;
+        }
     }
-    
+
     public static boolean hasValue(String s){
-    	if(isNull(s)){
-    		return false;
-    	}else{
-    		if(StringUtils.isEmpty(s)){
-    			return false;
-    		}
-    	}
-    	
-    	return true;
+        if(isNull(s)){
+            return false;
+        }else{
+            if(StringUtils.isEmpty(s)){
+                return false;
+            }
+        }
+
+        return true;
     }
-	
+
     public static Object getFirstOf(final Iterator<?> i) {
-		while (i.hasNext()) {
-			final Object o = i.next();
-			if (null != o) {
-				return o;
-			}
-		}
-		return null;
-	}
-	
+        while (i.hasNext()) {
+            final Object o = i.next();
+            if (null != o) {
+                return o;
+            }
+        }
+        return null;
+    }
+
     public static Object getFirstOf(final MultiMap m, final Object key) {
-		final Collection<?> vals = (Collection<?>)m.get(key);
-		return null == vals ? null : getFirstOf(vals.iterator());
-	}
-	
-	public static boolean isNullOrEmpty(final String s) {
-		return null == s || "".equals(s);
-	}
+        final Collection<?> vals = (Collection<?>)m.get(key);
+        return null == vals ? null : getFirstOf(vals.iterator());
+    }
+
+    public static boolean isNullOrEmpty(final String s) {
+        return null == s || "".equals(s);
+    }
 }

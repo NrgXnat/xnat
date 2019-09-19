@@ -14,7 +14,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -35,8 +34,11 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
+import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipOutputStream;
@@ -45,11 +47,12 @@ import java.util.zip.ZipOutputStream;
 public class XarImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	private static final Logger logger = Logger.getLogger(XarImporter.class);
-
+	private final static SimpleDateFormat UPLOAD_ID_FORMATTER = new SimpleDateFormat ("yyyyMMdd_HHmmss_SSS");
 	private final FileWriterWrapperI fw;
 	private final UserI user;
 	final Map<String,Object> params;
 	private final ArrayList<String> urlList;
+	private static long counter;
 
 	/**
 	 *
@@ -61,7 +64,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
      *                            pre-existing content. Should include project, subject_ID and label if session is null.
 	 */
 	public XarImporter(final Object listenerControl, final UserI u, final FileWriterWrapperI fw, final Map<String,Object> params) {
-		super(listenerControl, u, fw, params);
+		super(listenerControl, u);
 		this.user=u;
 		this.fw=fw;
 		this.params=params;
@@ -90,20 +93,33 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
 	private List<String> processXarFile() throws ClientException,ServerException {
 
-        String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath();
-        Date d = Calendar.getInstance().getTime();
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
-        String uploadID = formatter.format(d);
-        cachepath+="user_uploads/"+user.getID() + "/" + uploadID + "/";
+		final String localFilePath = (this.params.containsKey("localFilePath")) ? 
+				this.params.get("localFilePath").toString() : null;
+		final Date d = Calendar.getInstance().getTime();
+		final java.text.SimpleDateFormat formatter = UPLOAD_ID_FORMATTER;
+		counter+=1;
+		final String uploadID = formatter.format(d) + "_" + String.format("%06d",counter);
+		final String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath()
+				+ "user_uploads/" +user.getID() + "/" + uploadID + "/";
 
-        File destination = new File(cachepath);
-        final File original = new File(cachepath);
+		File destination = new File(cachepath);
+		final File original = new File(cachepath);
+		
 
-        final String fileName = fw.getName();
-		ZipI zipper = getZipper(fileName);
-
+      	final File localFile;
         try {
-        	zipper.extract(fw.getInputStream(),cachepath);
+		
+        	if (localFilePath != null && localFilePath.length()>0) {
+        		localFile = new File(localFilePath);
+        		final ZipI zipper = getZipper(localFile.getName());
+        		zipper.extract(Files.asByteSource(localFile).openStream(),cachepath);
+        	} else {
+        		localFile = null;
+        		final String fileName = fw.getName();
+        		final ZipI zipper = getZipper(fileName);
+        		zipper.extract(fw.getInputStream(),cachepath);
+        	}
+        	
         } catch (Exception e) {
         	throw new ClientException("Archive file is corrupt or not a valid archive file type.");
         }
@@ -399,8 +415,31 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
           	throw new ClientException("Multiple data types cannot share a single XAR.  Please separate files into separate XARs");
 
         }
-
-        FileUtils.DeleteFile(original);
+        
+        // If we've got here (have a valid XAR file), and users have requested the local file to be removed, 
+        // let's remove it. Don't want to let users use the URL to delete arbitrary files from the server.
+       	if (localFilePath != null && localFilePath.length()>0) {
+       		final String removeAfterImport = this.params.get("removeLocalFileAfterImport").toString();
+       		Boolean removeLocalFile = (removeAfterImport != null && removeAfterImport.equalsIgnoreCase("true"));
+       		if (removeLocalFile && localFile.exists() && localFile.canWrite()) {
+       			new Thread(new Runnable() {
+       				@Override
+       				public void run() {
+       					if (localFile != null) {	
+       						localFile.delete();
+       					}
+       				}
+    			}).start();
+        	}
+        } 
+       	// Let's not wait for the cleanup.  This can take a long time on huge xar files and was causing some
+       	// connections to timeout.
+      	new Thread(new Runnable() {
+       		@Override
+       		public void run() {
+       			FileUtils.DeleteFile(original);
+       		}
+    	}).start();
 		return urlList;
 
 	}

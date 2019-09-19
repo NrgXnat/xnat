@@ -59,6 +59,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.xml.sax.SAXException;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 @Slf4j
 public final class Prearchive {
 	private static final String XML_SUFFIX = ".xml";
@@ -107,15 +109,13 @@ public final class Prearchive {
 		RECEIVING, BUILDING, READY, ARCHIVING, ERROR
 	}
 
-	public static final String COMMON = "Unassigned";
-
 	private final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
 	private final SimpleDateFormat XS_DATETIME_FORMAT = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ss");
 
 	private final Map<String,Map<String,Boolean>> createAllowedTypes = new HashMap<>();
 
 	public Prearchive() {
-		createAllowedTypes.put(COMMON, null);
+		createAllowedTypes.put(UNASSIGNED, null);
 	}
 
 
@@ -193,7 +193,7 @@ public final class Prearchive {
 				if (null == commonPath) {
 					log.error("null global prearchive path");
 				}
-				prearcs.put(COMMON, new File(commonPath));
+				prearcs.put(UNASSIGNED, new File(commonPath));
 			}
 		} catch (Exception e) {
 			log.error("unable to check user for site administrator role", e);
@@ -223,7 +223,7 @@ public final class Prearchive {
 			}
 			elem.addAttribute("size", String.valueOf(sessionCount));
 
-			if (!COMMON.equals(prearc)) {
+			if (!UNASSIGNED.equals(prearc)) {
 				elem.addAttribute("allowMatch", "true");
 			}
 		}
@@ -363,7 +363,7 @@ public final class Prearchive {
 		//     ...
 		// The only exception is an explicit special case: this prearchive directory may contain
 		// other prearchive directories, which we ignore here.  This special case should only arise
-		// when the current prearchive is the "global"/COMMON prearchive.
+		// when the current prearchive is the "global"/UNASSIGNED prearchive.
 
 		final Collection<File> projectPrearcs = new HashSet<File>();
 		for (final Object apo : arcspec.getProjects_project()) {
@@ -483,7 +483,7 @@ public final class Prearchive {
 				archiveURL.append("/app/action/LoadImageData");
 				archiveURL.append("/folder/");
 				archiveURL.append(sessDirName);
-				if (null != name && !COMMON.equals(name)) {
+				if (null != name && !UNASSIGNED.equals(name)) {
 					archiveURL.append("/project/");
 					archiveURL.append(name);
 				}
@@ -562,7 +562,7 @@ public final class Prearchive {
 
 
 	private File getPrearcRoot(final String project) {
-		if (null == project || COMMON.equals(project)) {
+		if (null == project || UNASSIGNED.equals(project)) {
 			return new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath());
 		} else {
 			final String path = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);

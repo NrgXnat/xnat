@@ -54,9 +54,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public class PrearcUtils {
     private final static Logger logger = LoggerFactory.getLogger(PrearcUtils.class);
-    public static final String COMMON = "Unassigned";
 
     public static final String APPEND = "append";
 
@@ -195,7 +196,7 @@ public class PrearcUtils {
     }
 
     private static String cleanProject(final String p) {
-        if (COMMON.equals(p)) {
+        if (UNASSIGNED.equals(p)) {
             return null;
         } else {
             return p;
@@ -204,8 +205,25 @@ public class PrearcUtils {
 
     public static boolean canModify(final UserI user, final String projectId) throws Exception {
         final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-        assert userHelperService != null;
         return Roles.isSiteAdmin(user) || projectId != null && userHelperService.hasEditAccessToSessionDataByTag(projectId);
+    }
+
+    /**
+     * Retrieves the File reference to the prearchive root directory for the
+     * named project.
+     * <p/>
+     * 4/30/12- removed requirement that user object be not null.  null users are allowed here for administrative code that happens outside the permissions structure (like logging).
+     * 4/30/12- refactored to prevent unnecessary database queries
+     *
+     * @param username    Name of the user getting the directory.
+     * @param project Project abbreviation or alias
+     * @return prearchive root directory
+     * @throws ResourceException if the named project does not exist, or if the user does not
+     *                           have create permission for it, or if the prearchive directory
+     *                           does not exist.
+     */
+    public static File getPrearcDir(final String username, final String project, final boolean allowUnassigned) throws Exception {
+        return getPrearcDir(StringUtils.isNotBlank(username) ? Users.getUser(username) : null, project, allowUnassigned);
     }
 
     /**
@@ -225,11 +243,11 @@ public class PrearcUtils {
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
         String prearcPath;
         String prearchRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
-        if (project == null || project.equals(COMMON)) {
+        if (project == null || project.equals(UNASSIGNED)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
                 prearcPath = prearchRootPref;
             } else {
-                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, COMMON);
+                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);
             }
         } else {
             //Refactored to remove unnecessary database hits.  It only needs to hit the xnat_projectdata table if the query is using a project alias rather than a project id.  TO
@@ -314,7 +332,7 @@ public class PrearcUtils {
         boolean valid = true;
         try {
             if (null == project) {
-                PrearcUtils.getPrearcDir(user, PrearcUtils.COMMON, allowUnassigned);
+                PrearcUtils.getPrearcDir(user, UNASSIGNED, allowUnassigned);
             } else {
                 PrearcUtils.getPrearcDir(user, project, allowUnassigned);
             }
@@ -459,7 +477,7 @@ public class PrearcUtils {
     public static File getPrearcSessionDir(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
         if (user == null || timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: user %s; timestamp %s; session %s",
-                    user, timestamp, session));
+                                                             user, timestamp, session));
         }
         return new File(new File(getPrearcDir(user, project, allowUnassigned), timestamp), session);
     }
@@ -470,7 +488,7 @@ public class PrearcUtils {
 
         public boolean accept(final File f) {
             return scanCatalogPattern.matcher(f.getName()).matches()
-                    || conversionLogPattern.matcher(f.getName()).matches();
+                   || conversionLogPattern.matcher(f.getName()).matches();
         }
     };
 
@@ -533,7 +551,7 @@ public class PrearcUtils {
     }
 
     public static String buildURI(final String project, final String timestamp, final String folderName) {
-        return StringUtils.join("/prearchive/projects/", (project == null) ? PrearcUtils.COMMON : project, "/", timestamp, "/", folderName);
+        return StringUtils.join("/prearchive/projects/", (project == null) ? UNASSIGNED : project, "/", timestamp, "/", folderName);
     }
 
     public static XFTTable convertArrayLtoTable(ArrayList<ArrayList<Object>> rows) {
@@ -557,7 +575,7 @@ public class PrearcUtils {
     public static final String TEMP_UNPACK = "temp-unpack";
 
     public static boolean isUnassigned(final SessionData sd) {
-        return StringUtils.isEmpty(sd.getProject()) || sd.getProject().equals(COMMON);
+        return StringUtils.isEmpty(sd.getProject()) || sd.getProject().equals(UNASSIGNED);
     }
 
     /*******************
@@ -574,7 +592,7 @@ public class PrearcUtils {
     private static File getLogDir(final String project, final String timestamp, final String session) throws Exception {
         if (timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: timestamp %s; session %s",
-                    timestamp, session));
+                                                             timestamp, session));
         }
         final XnatUserProvider provider = XDAT.getContextService().getBeanSafely("receivedFileUserProvider", XnatUserProvider.class);
         final UserI receivedFileUser = provider != null ? provider.get() : Users.getUser(XDAT.getSiteConfigurationProperty("receivedFileUser"));

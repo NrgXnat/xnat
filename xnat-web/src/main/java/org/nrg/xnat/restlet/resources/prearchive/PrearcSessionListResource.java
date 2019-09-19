@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.restlet.resources.prearchive;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -24,9 +23,8 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
 import org.nrg.xnat.restlet.resources.SecureResource;
+import org.nrg.xnat.utils.functions.Functions;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
@@ -112,12 +110,7 @@ public final class PrearcSessionListResource extends SecureResource {
         try {
             final XFTTable table;
             if (StringUtils.isNotBlank(getTag())) {
-                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(Lists.transform(new ArrayList<>(PrearcDatabase.getSessionByUID(getTag())), new Function<SessionData, SessionDataTriple>() {
-                    @Override
-                    public SessionDataTriple apply(final SessionData sessionData) {
-                        return sessionData.getSessionDataTriple();
-                    }
-                })));
+                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(Lists.transform(new ArrayList<>(PrearcDatabase.getSessionByUID(getTag())), Functions.SESSION_DATA_TO_SESSION_DATA_TRIPLE)));
             } else {
                 final List<String> projects = new ArrayList<>(StringUtils.isNotBlank(getProject()) ? Arrays.asList(getProject().split("\\s*,\\s*")) : getPermissions().getUserEditableProjects(getUser().getUsername()));
                 if (isDataAccess()) {

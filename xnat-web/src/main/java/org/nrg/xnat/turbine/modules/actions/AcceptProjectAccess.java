@@ -32,6 +32,7 @@ public class AcceptProjectAccess extends SecureAction {
 		if (user == null) {
 			user = XDAT.getUserDetails();
         }
+		assert user != null;
 		if (user.getUsername().equals("guest")) {
 			data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
 			if (!StringUtils.isBlank(data.getAction())) {

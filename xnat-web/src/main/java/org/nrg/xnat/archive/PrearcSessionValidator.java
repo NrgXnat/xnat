@@ -22,7 +22,7 @@ import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.helpers.merge.MergePrearcToArchiveSession;
 import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
 import org.nrg.xnat.helpers.merge.MergeUtils;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
+import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.xml.sax.SAXException;
 
@@ -47,7 +47,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 	/**
 	 * This method overwrites the one in archiver so that multiple exceptions can be recorded, rather than just the first one.
 	 */
-	public void checkForConflicts(final XnatImagesessiondata src, final File srcDIR, final XnatImagesessiondata existing, final File destDIR) throws ClientException{
+	public void checkForConflicts(final XnatImagesessiondata src, final File srcDIR, final XnatImagesessiondata existing, final File destDIR) {
 		if(existing!=null){
 			//it already exists
 			conflict(1,PRE_EXISTS);
@@ -149,7 +149,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 			try {
 				try {
 					Thread.sleep(10000);
-				}catch(InterruptedException e2){
+				}catch(InterruptedException ignored){
 				}
 				fixSubject(EventUtils.TEST_EVENT(user),false);
 			} catch (ClientException e1) {
@@ -175,7 +175,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		if(existing!=null)checkForConflicts(src,this.prearcSession.getSessionDir(),existing,arcSessionDir);
 
 		SaveHandlerI<XnatImagesessiondata> saveImpl=new SaveHandlerI<XnatImagesessiondata>() {
-			public void save(XnatImagesessiondata merged) throws Exception {					
+			public void save(XnatImagesessiondata merged) {
 				
 			}
 		};
@@ -268,13 +268,13 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 	//override implementations from PrearcSessionArchiver
 	//prearcSessionArchiver will fail (throw exception) on the first issue it finds
 	//validator should collect a list of all failures
-	protected void fail(int code, String msg) throws ClientException{
+	protected void fail(int code, String msg) {
 		notices.add(new Failure(code, msg));
 	}
-	protected void warn(int code, String msg) throws ClientException{
+	protected void warn(int code, String msg) {
 		notices.add(new Warning(code, msg));
 	}
-	protected void conflict(int code, String msg) throws ClientException{
+	protected void conflict(int code, String msg) {
 		notices.add(new Conflict(code, msg));
 	}
 }

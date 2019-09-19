@@ -18,6 +18,8 @@ import org.restlet.util.Variable;
 
 import java.util.*;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public final class PrearcUriParserUtils {
 		
 	/**
@@ -45,14 +47,13 @@ public final class PrearcUriParserUtils {
 				throw new java.util.MissingFormatArgumentException("More in the uri past the project_id"); 
 			}
 			
-			List<String> ls = new ArrayList<String>();
+			List<String> ls = new ArrayList<>();
 			String[] sa = StringUtils.split((String)so.get("PROJECT_ID"),',');
-			for (int i = 0; i < sa.length ; i++) {
-				if (StringUtils.upperCase(sa[i]).equals(StringUtils.upperCase(PrearcUtils.COMMON))) {
+			for (final String s : sa) {
+				if (StringUtils.upperCase(s).equals(StringUtils.upperCase(UNASSIGNED))) {
 					ls.add(null);
-				}
-				else {
-					ls.add(sa[i]);
+				} else {
+					ls.add(s);
 				}
 			}
 			return ls;
@@ -94,19 +95,15 @@ public final class PrearcUriParserUtils {
 				throw new java.util.MissingFormatArgumentException("More in the uri past the TIMESTAMP"); 
 			}
 			
-			Map<String,String> ss = new HashMap<String,String>();
-			Iterator<String> i = so.keySet().iterator();
-			while(i.hasNext()) {
-				String key = i.next();
-				if (key.equals("PROJECT_ID")){
-					if (StringUtils.upperCase((String) so.get(key)).equals(StringUtils.upperCase(PrearcUtils.COMMON))) {
+			Map<String,String> ss = new HashMap<>();
+			for (final String key : so.keySet()) {
+				if (key.equals("PROJECT_ID")) {
+					if (StringUtils.upperCase((String) so.get(key)).equals(StringUtils.upperCase(UNASSIGNED))) {
 						ss.put(key, null);
-					}
-					else {
+					} else {
 						ss.put(key, (String) so.get(key));
 					}
-				}
-				else {
+				} else {
 					ss.put(key, (String) so.get(key));
 				}
 			}
@@ -134,7 +131,7 @@ public final class PrearcUriParserUtils {
 		 */
 		public Map<String,Object> readUri (String uri) {
 			Template t = new Template(template, Template.MODE_STARTS_WITH, Variable.TYPE_URI_SEGMENT, "", true, false);
-			Map<String,Object> so = new HashMap<String,Object>();
+			Map<String,Object> so = new HashMap<>();
 			t.parse(uri,so);
 			Reference ref = new Reference(uri);
 			this.f = new Form(ref.getQuery(), CharacterSet.UTF_8, ',');

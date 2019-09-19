@@ -81,7 +81,7 @@ import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
-@SuppressWarnings({"Duplicates", "SqlNoDataSourceInspection"})
+@SuppressWarnings("Duplicates")
 @Service("groupsAndPermissionsCache")
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
@@ -425,8 +425,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public List<UserGroupI> getGroupsForTag(final String tag) {
         // Get the group IDs associated with the tag.
-        log.info("Getting groups for tag {}", tag);
         final List<String> groupIds = getTagGroups(tag);
+        log.info("Getting {} groups for tag {}", groupIds.size(), tag);
         return getUserGroupList(groupIds);
     }
 
@@ -1232,7 +1232,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.info("Initializing user group IDs cache entry for user '{}' with cache ID '{}'", username, cacheId);
         final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
         log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-        forceCacheObject(cacheId, groupIds);
+        cacheObject(cacheId, groupIds);
         return ImmutableList.copyOf(groupIds);
     }
 
@@ -1376,9 +1376,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private void resetTotalCounts() {
+        _totalCounts.clear();
         resetProjectCount();
-        final Long subjectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_subjectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectCount);
+        resetSubjectCount();
+        resetImageSessionCount();
         final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
         for (final Map<String, Object> elementCount : elementCounts) {
             final String elementName = (String) elementCount.get("element_name");
@@ -1406,9 +1407,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private void resetProjectCount() {
-        _totalCounts.clear();
-        final Long projectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_projectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectCount);
+        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_projectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+    }
+
+    private void resetSubjectCount() {
+        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_subjectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+    }
+
+    private void resetImageSessionCount() {
+        _totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_imagesessiondata", EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private Map<String, ElementDisplay> resetGuestBrowseableElementDisplays() {

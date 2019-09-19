@@ -1232,7 +1232,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.info("Initializing user group IDs cache entry for user '{}' with cache ID '{}'", username, cacheId);
         final List<String> groupIds = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, checkUser(username), String.class);
         log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-        cacheObject(cacheId, groupIds);
+        forceCacheObject(cacheId, groupIds);
         return ImmutableList.copyOf(groupIds);
     }
 
@@ -1634,7 +1634,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
     }
 
-    private List<UserGroupI> getUserGroupList(final List groupIds) {
+    private List<UserGroupI> getUserGroupList(final List<String> groupIds) {
         if (groupIds == null || groupIds.isEmpty()) {
             return new ArrayList<>();
         }

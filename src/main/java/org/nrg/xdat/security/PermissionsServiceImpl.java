@@ -12,10 +12,7 @@ package org.nrg.xdat.security;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
@@ -590,7 +587,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return _template.queryForObject(query, parameters, Boolean.class);
     }
 
-    private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
+    private boolean securityCheck(final UserI user, final String action, final SchemaElementI root, final SecurityValues values) throws Exception {
         final String rootXmlName = root.getFullXMLName();
         if (ElementSecurity.IsInSecureElement(rootXmlName)) {
             return true;
@@ -608,11 +605,11 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                   values.toString(),
                                   new Exception());
                     } else {
-                        log.error("No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
-                                  username,
-                                  action,
-                                  rootXmlName,
-                                  values.toString());
+                        log.info("No permission criteria found for user '{}' with action '{}' on the schema element '{}' and the following security values: {}.",
+                                 username,
+                                 action,
+                                 rootXmlName,
+                                 values.toString());
                     }
                 }
                 return false;
@@ -622,20 +619,29 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 log.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
             }
 
-            for (final PermissionCriteriaI criterion : criteria) {
-                if (log.isInfoEnabled()) {
-                    log.info(" * Testing against criterion {}", criterion.toString());
-                }
-                if (criterion.canAccess(action, values)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+            if (Iterables.any(criteria, new Predicate<PermissionCriteriaI>() {
+                @Override
+                public boolean apply(final PermissionCriteriaI criterion) {
+                    if (log.isInfoEnabled()) {
+                        log.info(" * Testing against criterion {}", criterion.toString());
                     }
-                    return true;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                    try {
+                        if (criterion.canAccess(action, values)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                            }
+                            return true;
+                        }
+                        if (log.isDebugEnabled()) {
+                            log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                        }
+                    } catch (Exception e) {
+                        log.error("An error occurred trying to check {} access for user {} with criterion {} and values: {}", action, username, criterion.toString(), values);
                     }
+                    return false;
                 }
+            })) {
+                return true;
             }
 
             // If we've reached here, the security check has failed so let's provide some information on the context but

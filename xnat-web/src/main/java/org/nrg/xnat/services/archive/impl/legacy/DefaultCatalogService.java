@@ -367,7 +367,7 @@ public class DefaultCatalogService implements CatalogService {
         if (uploadToRemote) {
             try {
                 if (_remoteFilesService == null) {
-                    throw new ServerException("No remote filesystems configured for this site; " +
+                    throw new UnsupportedOperationException("No remote filesystems configured for this site; " +
                             "all catalogs must be local");
                 }
                 ArchivableItem item = getResourceDataFromUri(parentUri).getItem();
@@ -375,7 +375,9 @@ public class DefaultCatalogService implements CatalogService {
                         parentEventId);
             } catch (Exception e) {
                 // For any exception, default to local add
-                log.error("Error uploading {} to remote and adding to {} by URL", resources, catalog.getUri(), e);
+                if (!(e instanceof UnsupportedOperationException)) {
+                    log.error("Error uploading {} to remote and adding to {} by URL", resources, catalog.getUri(), e);
+                }
                 doLocalAdd = true;
             }
         }

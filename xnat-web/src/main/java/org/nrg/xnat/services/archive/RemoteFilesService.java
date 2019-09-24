@@ -73,9 +73,12 @@ public interface RemoteFilesService {
      * @param preserveDirectories   If true, files are added to catalog with relative directory paths; if false,
      *                              we attmept to use only names
      * @param parentEventId Nullable eventId for parent workflow
+     * @throws ClientException for invalid request
+     * @throws ServerException if resources cannot be pushed to remote
+     * @throws UnsupportedOperationException if project doesn't support remote resources
      */
     void pushFilesAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
                                       final XnatResourcecatalog catalog, final Collection<File> files,
                                       final boolean preserveDirectories, @Nullable Integer parentEventId)
-            throws ClientException, ServerException;
+            throws ClientException, ServerException, UnsupportedOperationException;
 }

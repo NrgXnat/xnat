@@ -10,10 +10,11 @@
  */
 package org.nrg.framework.status;
 
+import java.io.Serializable;
 import java.util.EventObject;
 
-public class StatusMessage extends EventObject {
-    public enum Status {PROCESSING, WARNING, FAILED, COMPLETED}
+public class StatusMessage extends EventObject implements Serializable {
+    public enum Status {PROCESSING, WARNING, FAILED, COMPLETED};
 
     public StatusMessage(final Object source, final Status status, final CharSequence message) {
         super(source);
@@ -31,4 +32,6 @@ public class StatusMessage extends EventObject {
 
     private final Status       _status;
     private final CharSequence _message;
+
+	private static final long serialVersionUID = 1573394760292279036L;
 }

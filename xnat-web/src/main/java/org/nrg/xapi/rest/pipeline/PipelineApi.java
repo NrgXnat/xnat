@@ -3,6 +3,7 @@ package org.nrg.xapi.rest.pipeline;
 import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +29,9 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xnat.services.archive.CatalogService;
@@ -104,7 +107,8 @@ public class PipelineApi extends AbstractXapiRestController {
 	    	        return  new ResponseEntity<>(launchReport, HttpStatus.BAD_REQUEST);
 	        	}
 	        	Map<String,String> queryParams = extractJustParameters(allRequestParams);
-        	
+	        	Map<String,String> schemaLinkParams = extractSchemaLinkParameters(allRequestParams);
+	        	
 	        	String[] splits =  experimentIdOrUri.replace("[","").replace("]","").split(",");
 	        	ArrayList<String> uriAsList = new ArrayList<>(Arrays.asList(splits));
 	        
@@ -116,12 +120,16 @@ public class PipelineApi extends AbstractXapiRestController {
 			        		pipelineLaunch.add(markLaunchFailure(projectId,experimentId, ""));
 			        		failureCount++;
 				        }else {
+				        	Map<String,String> qParams = new HashMap<String,String>();
 				        	Map<String,String> bodyParams = new HashMap<String,String>();
 				        	Map<String,String> xmlDocumentParams = new HashMap<String,String>();
 				        	String XMLbody = "";
+				        	qParams.putAll(queryParams);
+				        	Map<String, String> resolvedSchemaLink = resolveSchemaLink(exp,schemaLinkParams);
+				        	qParams.putAll(resolvedSchemaLink);
 				        	
 				        	PipelineLaunchHandler pipelineLaunchHandler = new PipelineLaunchHandler(project,exp,pipelineNameOrStep);
-				        	boolean status = pipelineLaunchHandler.handleLaunch(bodyParams, queryParams, xmlDocumentParams, XMLbody, user);
+				        	boolean status = pipelineLaunchHandler.handleLaunch(bodyParams, qParams, xmlDocumentParams, XMLbody, user);
 				        	if (status) {
 				        		successCount++;
 				        		pipelineLaunch.add(markLaunchSuccess(projectId,experimentId,exp.getLabel()));
@@ -130,7 +138,7 @@ public class PipelineApi extends AbstractXapiRestController {
 				        		pipelineLaunch.add(markLaunchFailure(projectId,experimentId,exp.getLabel()));
 				        	}
 				        }
-	        		}catch(ClientException ce) {
+	        		}catch(Exception ce) {
 	        			failureCount++;
 		        		pipelineLaunch.add(markLaunchFailure(projectId,expIdOrUri,""));
 	        		}
@@ -196,13 +204,13 @@ public class PipelineApi extends AbstractXapiRestController {
 			        }
 	        	}
 
-	        List<Map<String,Object>> dbWorkflowRows = 	geLatestWorkflow(user,pipelineNameOrStep,experimentIds,projectId);
+	        List<Map<String,Object>> dbWorkflowRows = 	geLatestWorkflow(user,pipelinePath,experimentIds,projectId);
 	        for (Map row : dbWorkflowRows) {
-	        	String wId = (String) row.get("wrk_workflowdata_id");
+	        	Integer wId = (Integer) row.get("wrk_workflowdata_id");
 	        	String jId = (String) row.get("jobId");
 	        	String experimentId = (String) row.get("id");
 	        	String label = idToLabel.get(experimentId);
-	        	boolean successStatus = triggerTerminate(user,experimentId,wId,jId,label,projectId,pipelinePath);
+	        	boolean successStatus = triggerTerminate(user,experimentId,wId.toString(),jId,label,projectId,pipelinePath);
 	        	if (successStatus) {
         			successCount++;
 	        		pipelineLaunch.add(markLaunchSuccess(projectId,experimentId,""));
@@ -212,6 +220,7 @@ public class PipelineApi extends AbstractXapiRestController {
 	        	}
 	        }
 	        
+	        idToLabel.put("pipelinePath", pipelinePath);
         	launchReport.setSuccesses(successCount);
         	launchReport.setFailures(failureCount);
         	launchReport.setParams(idToLabel);
@@ -219,12 +228,23 @@ public class PipelineApi extends AbstractXapiRestController {
 
 	    }
 	    
-		public boolean triggerTerminate(UserI user,String xnatId, String workflowId, String jobId,String label, String projectId, String pipelinePath) {
+	    private boolean terminateFileExists(String command) {
+	    	File f = new File(command);
+	    	return (f.exists() && f.canExecute());
+	    }
+	    
+		private boolean triggerTerminate(UserI user,String xnatId, String workflowId, String jobId,String label, String projectId, String pipelinePath) {
 		    boolean success = false;
 			String   command = Paths.get(XDAT.getSiteConfigPreferences().getPipelinePath(), "bin", "killxnatpipeline").toString();
 		        if (System.getProperty("os.name").toUpperCase().startsWith("WINDOWS")) {
 		            command += ".bat";
 		        }
+		       
+		        boolean fileExists = terminateFileExists(command);
+		        if (!fileExists) {
+		        	return false;
+		        }
+		        
 		        final String pipelineUrl = XDAT.safeSiteConfigProperty("processingUrl", "");
 		        String host = StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
 
@@ -273,13 +293,52 @@ public class PipelineApi extends AbstractXapiRestController {
 	    	 for (Map.Entry<String,String> entry : allRequestParams.entrySet())  {
 	    		 String key = entry.getKey();
 	    		 String value = entry.getValue();
-	    		 if (!EXPERIMENTS.equalsIgnoreCase(key)) {
+	    		 if (!EXPERIMENTS.equalsIgnoreCase(key) && !key.startsWith(SCHEMALINK_NAME_START)) {
 	    			 params.put(key, value);
 	    		 }
 	    	 }
 	    	 return params;
 	    }
-	    
+
+		private   HashMap<String,String> extractSchemaLinkParameters(Map<String, String> allRequestParams) {
+	    	 HashMap<String,String> params = new HashMap<String,String>();
+	    	 for (Map.Entry<String,String> entry : allRequestParams.entrySet())  {
+	    		 String key = entry.getKey();
+	    		 String value = entry.getValue();
+	    		 if (!EXPERIMENTS.equalsIgnoreCase(key) && key.startsWith(SCHEMALINK_NAME_START)) {
+	    			 params.put(key.substring(SCHEMALINK_NAME_START.length()), value);
+	    		 }
+	    	 }
+	    	 return params;
+	    }
+		
+		private Map<String,String> resolveSchemaLink(ItemI om, Map<String,String>schemaLinkParam) throws Exception {
+			Map<String,String> resolvedValues = new HashMap<String,String>();
+			for (Map.Entry<String,String> entry : schemaLinkParam.entrySet()) {
+				String schemaLink = entry.getKey();
+				String resolvedValue = resolveValues(om, schemaLink);
+			}
+			return resolvedValues;
+		}
+		
+		private String resolveValues(ItemI om, String schemaLink) throws Exception {
+			String rtn = ""; 
+			Object o = om.getItem().getProperty(schemaLink, true);
+             if (o != null) {
+                 try {
+                     ArrayList<? extends Class> matches = (ArrayList<? extends Class>) o;
+                     if (matches.size() == 1) {
+                          rtn = "" + matches.get(0);
+                     } else {
+                         rtn = "[" + StringUtils.join(matches.toArray(), ",") + "]";
+                     }
+                 } catch (ClassCastException cce) {
+                     rtn = "" + o;
+                 }
+             }
+             return rtn;
+		}
+
 	    private PipelineLaunchStatus markLaunchSuccess(String projectId, String expId,String label) {
 	    	PipelineLaunchStatus pStatus = new PipelineLaunchStatus();
 	    	pStatus.setStatus("SUCCESS");
@@ -310,13 +369,13 @@ public class PipelineApi extends AbstractXapiRestController {
 		private List<Map<String,Object>> geLatestWorkflow(final UserI user, final String pipeline_name, List<String> experimentIds, final String projectId ){
 			
 			String query = "SELECT inn.wrk_workflowdata_id, inn.jobid, inn.launch_time, inn.externalid,  inn.id";
-			query +=       "FROM";
-			query +=        "  (";
-			query +=              "SELECT t.wrk_workflowdata_id, t.jobid, t.launch_time, t.externalid,  t.id, ";
-			query +=               "ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY t.launch_time desc) num";
-			query +=               "FROM wrk_workflowdata t where pipeline_name=:PIPELINE_NAME and externalid=:PROJECT and id in (:IDS)";
-			query +=        "  ) inn";
-			query +=       "WHERE inn.num = 1";
+			query +=       " FROM ";
+			query +=        "  ( ";
+			query +=              " SELECT t.wrk_workflowdata_id, t.jobid, t.launch_time, t.externalid,  t.id, ";
+			query +=               " ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY t.launch_time desc) num";
+			query +=               " FROM wrk_workflowdata t where pipeline_name=:PIPELINE_NAME and externalid=:PROJECT and id in (:IDS)";
+			query +=        "  ) inn ";
+			query +=       " WHERE inn.num = 1";
 			
 			MapSqlParameterSource parameters = new MapSqlParameterSource();
 			parameters.addValue("PIPELINE_NAME", pipeline_name);
@@ -328,6 +387,7 @@ public class PipelineApi extends AbstractXapiRestController {
 
 	    private static final Logger _log = LoggerFactory.getLogger(PipelineApi.class);
 	    private final String EXPERIMENTS = "Experiments";
+	    private final String SCHEMALINK_NAME_START = "xnatschemaLink-";
 	    private final CatalogService catalogService;
 	    private final NamedParameterJdbcTemplate _jdbcTemplate;
 

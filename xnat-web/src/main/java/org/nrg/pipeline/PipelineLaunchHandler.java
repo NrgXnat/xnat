@@ -105,7 +105,7 @@ public class PipelineLaunchHandler {
 			}
 		}catch(Exception e) {
 			e.printStackTrace();
-            logger.error("Pipeline step " + step + " for project " + proj.getId() + " does not exist");
+            logger.error("Pipeline step " + step + " for project " + proj.getId() + " does not exist " + e.getLocalizedMessage());
 			//getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 		}
 		}catch(XmlException x) {

@@ -511,10 +511,6 @@ task javadocJar(type: Jar) {
 }
 
 publishing.publications {
-    mavenWeb(MavenPublication) {
-        from components.web
-        artifactId = "xnat-web"
-    }
     mavenJava(MavenPublication) {
         from components.java
 

@@ -69,6 +69,7 @@ import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.ThreadAndProcessFileLock;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +92,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.nrg.xft.event.EventUtils.*;
 import static org.nrg.xft.event.EventUtils.TYPE.WEB_FORM;
@@ -452,24 +454,39 @@ public class DefaultCatalogService implements CatalogService {
                                                               @Nullable Integer parentEventId, final String label,
                                                               final String description, final String format,
                                                               final String content, final String... tags) throws Exception {
-        // Test if catalog already exists
-        XnatResourcecatalog catalog = null;
+
         ResourceData resourceData = getResourceDataFromUri(parentUri);
-        for (XnatAbstractresourceI res : resourceData.getXnatUri().getResources(false)) {
-            if (!(res instanceof XnatResourcecatalog)) {
-                continue;
+        File lockFile = new File(resourceData.getItem().getExpectedCurrentDirectory().toString(),
+                ".resourcecheck" + label);
+        try {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
+                    false);
+            fl.tryLock(2L, TimeUnit.MINUTES);
+            try {
+                // Test if catalog already exists
+                XnatResourcecatalog catalog = null;
+
+                for (XnatAbstractresourceI res : resourceData.getXnatUri().getResources(false)) {
+                    if (!(res instanceof XnatResourcecatalog)) {
+                        continue;
+                    }
+                    if (res.getLabel().equals(label)) {
+                        catalog = (XnatResourcecatalog) res;
+                        break;
+                    }
+                }
+                // If it doesn't exist, create it
+                if (catalog == null) {
+                    catalog = createResourceCatalog(user, label, description, format, content, tags);
+                    insertResourceCatalog(user, parentUri, catalog, parentEventId);
+                }
+                return catalog;
+            } finally {
+                fl.unlock();
             }
-            if (res.getLabel().equals(label)) {
-                catalog = (XnatResourcecatalog) res;
-                break;
-            }
+        } finally {
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(lockFile);
         }
-        // If it doesn't exist, create it
-        if (catalog == null) {
-            catalog = createResourceCatalog(user, label, description, format, content, tags);
-            insertResourceCatalog(user, parentUri, catalog, parentEventId);
-        }
-        return catalog;
     }
 
     /**
@@ -1382,24 +1399,38 @@ public class DefaultCatalogService implements CatalogService {
         long startTime = Calendar.getInstance().getTimeInMillis();
 
     	if (resource instanceof XnatResourcecatalog) {
-    	    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
-                    (XnatResourcecatalog) resource);
-            Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
-                    addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
-            boolean modified = (boolean) refreshInfo[0];
-            Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
-
-            if (modified) {
+            File lockFile = new File(((XnatResourcecatalog) resource).getUri() + ".refresh");
+            try {
+                final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
+                        false);
+                fl.tryLock(2L, TimeUnit.MINUTES);
                 try {
-                    //checksums and auditSummary computed in CatalogUtils.refreshCatalog
-                    CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
-                    if (populateStats) {
-                        resource.save(user, false, false, now);
+                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
+                            (XnatResourcecatalog) resource);
+                    Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
+                            addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+                    boolean modified = (boolean) refreshInfo[0];
+                    Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
+
+                    if (modified) {
+                        try {
+                            //checksums and auditSummary computed in CatalogUtils.refreshCatalog
+                            CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
+                            if (populateStats) {
+                                resource.save(user, false, false, now);
+                            }
+                        } catch (Exception e) {
+                            throw new ServerException("An error occurred writing the catalog file " +
+                                    catalogData.catFile.getAbsolutePath(), e);
+                        }
                     }
-                } catch (Exception e) {
-                    throw new ServerException("An error occurred writing the catalog file " +
-                            catalogData.catFile.getAbsolutePath(), e);
+                } finally {
+                    fl.unlock();
                 }
+            } catch (IOException e) {
+                log.error("Unable to obtain lock for catalog refresh: {}", resource.getLabel(), e);
+            } finally {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(lockFile);
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {

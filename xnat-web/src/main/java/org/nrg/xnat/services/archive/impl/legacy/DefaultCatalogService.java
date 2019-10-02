@@ -456,8 +456,9 @@ public class DefaultCatalogService implements CatalogService {
                                                               final String content, final String... tags) throws Exception {
 
         ResourceData resourceData = getResourceDataFromUri(parentUri);
-        File lockFile = new File(resourceData.getItem().getExpectedCurrentDirectory().toString(),
-                ".resourcecheck" + label);
+        File parentDir = resourceData.getItem().getExpectedCurrentDirectory();
+        Files.createDirectories(parentDir.toPath());
+        File lockFile = new File(parentDir.toString(), ".resourcecheck" + label);
         try {
             final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
                     false);

@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xnat.restlet.resources.files.CatalogResource
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -240,20 +240,28 @@ public class CatalogResource extends XNATCatalogTemplate {
             return;
         }
 
+        final Triple<XnatProjectdata, String, String> securityTriple;
         try {
-            final Triple<XnatProjectdata, String, String> securityTriple = getProjectXsiTypeAndId(parent, security);
+            securityTriple = getProjectXsiTypeAndId(parent, security);
             if (securityTriple.getLeft() == null) {
                 log.warn("Got a parent item of type {}/ID={} and security item of type {}/ID={}, but neither of these is a project, subject, or experiment.", parentItem.getIDValue(), parentItem.getXSIType(), securityItem.getIDValue(), securityItem.getXSIType());
-                throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You can't directly delete insecure items");
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You can't directly delete insecure items");
+                return;
             }
+        } catch (XFTInitException | ElementNotFoundException e) {
+            log.error("An error occurred trying to delete resources", e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            return;
+        }
 
-            if (proj == null) {
-                proj = securityTriple.getLeft();
-            }
+        if (proj == null) {
+            proj = securityTriple.getLeft();
+        }
 
-            final String xsiType    = securityTriple.getMiddle();
-            final String securityId = securityTriple.getRight();
+        final String xsiType    = securityTriple.getMiddle();
+        final String securityId = securityTriple.getRight();
 
+        try {
             final List<String> ineligible = Lists.newArrayList(Iterables.transform(Iterables.filter(getResources(), new Predicate<XnatAbstractresource>() {
                 @Override
                 public boolean apply(final XnatAbstractresource resource) {
@@ -298,7 +306,7 @@ public class CatalogResource extends XNATCatalogTemplate {
         } catch (ClientException e) {
             getResponse().setStatus(e.getStatus(), e.getMessage());
         } catch (Exception e) {
-            log.error("An error occurred trying to delete the specified resources", e);
+            log.error("An error occurred trying to delete resources from the secured object {}/ID={}: {}", xsiType, securityId, getResourceIds(), e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         }
     }

@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xnat.restlet.resources.files.CatalogResource
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -16,18 +16,25 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.MetaDataException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
@@ -42,8 +49,11 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 public class CatalogResource extends XNATCatalogTemplate {
@@ -124,7 +134,7 @@ public class CatalogResource extends XNATCatalogTemplate {
         }
 
         if (parent != null && security != null) {
-            final UserI   user = getUser();
+            final UserI user = getUser();
             try {
                 if (Permissions.canEdit(user, security)) {
                     if (!getResources().isEmpty()) {
@@ -206,87 +216,143 @@ public class CatalogResource extends XNATCatalogTemplate {
 
     @Override
     public void handleDelete() {
-        if (failFastDueToNonEmptyFilePath()) {
+        if (failFastDueToNonEmptyFilePath() || getResources().isEmpty() || parent == null || security == null) {
             return;
         }
 
-        if (!getResources().isEmpty() && parent != null && security != null) {
-            final UserI user = getUser();
-            for (final XnatAbstractresource resource : getResources()) {
-                try {
-                    if (Permissions.canDelete(user, security)) {
-                        final String securityId;
-                        final String xsiType;
-                        if (parent.getItem().instanceOf("xnat:experimentData")) {
-                            securityId = ((XnatExperimentdata) parent).getId();
-                            xsiType = parent.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatExperimentdata) parent).getPrimaryProject(false);
-                            }
-                        } else if (security.getItem().instanceOf("xnat:experimentData")) {
-                            securityId = ((XnatExperimentdata) security).getId();
-                            xsiType = security.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatExperimentdata) security).getPrimaryProject(false);
-                            }
-                        } else if (parent.getItem().instanceOf("xnat:subjectData")) {
-                            securityId = ((XnatSubjectdata) parent).getId();
-                            xsiType = parent.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatSubjectdata) parent).getPrimaryProject(false);
-                            }
-                        } else if (security.getItem().instanceOf("xnat:subjectData")) {
-                            securityId = ((XnatSubjectdata) security).getId();
-                            xsiType = security.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatSubjectdata) security).getPrimaryProject(false);
-                            }
-                        } else if (parent.getItem().instanceOf("xnat:projectData")) {
-                            securityId = ((XnatProjectdata) parent).getId();
-                            xsiType = parent.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatProjectdata) security);
-                            }
-                        } else if (security.getItem().instanceOf("xnat:projectData")) {
-                            securityId = ((XnatProjectdata) security).getId();
-                            xsiType = security.getXSIType();
-                            if (proj == null) {
-                                proj = ((XnatProjectdata) security);
-                            }
-                        } else {
-                            securityId = null;
-                            xsiType = null;
-                        }
+        final UserI   user         = getUser();
+        final XFTItem securityItem = security.getItem();
+        final XFTItem parentItem   = parent.getItem();
 
-                        final String rootPath = proj.getRootArchivePath();
+        try {
+            checkPermissionsAndStatus(user, securityItem);
+        } catch (ClientException e) {
+            getResponse().setStatus(e.getStatus(), e.getMessage());
+            return;
+        } catch (Exception e) {
+            try {
+                log.error("An error occurred trying to delete the specified resources on parent item {}/ID={} and security item {}/ID={}: {}", parentItem.getIDValue(), parentItem.getXSIType(), securityItem.getIDValue(), securityItem.getXSIType(), StringUtils.join(getResourceIds(), ", "), e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            } catch (XFTInitException | ElementNotFoundException ex) {
+                log.error("An error occurred trying to delete resources", ex);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, ex.getMessage());
+            }
+            return;
+        }
 
-                        if (!((security).getItem().isActive() || (security).getItem().isQuarantine())) {
-                            //cannot modify it if it isn't active
-                            throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, new Exception());
-                        }
+        final Triple<XnatProjectdata, String, String> securityTriple;
+        try {
+            securityTriple = getProjectXsiTypeAndId(parent, security);
+            if (securityTriple.getLeft() == null) {
+                log.warn("Got a parent item of type {}/ID={} and security item of type {}/ID={}, but neither of these is a project, subject, or experiment.", parentItem.getIDValue(), parentItem.getXSIType(), securityItem.getIDValue(), securityItem.getXSIType());
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You can't directly delete insecure items");
+                return;
+            }
+        } catch (XFTInitException | ElementNotFoundException e) {
+            log.error("An error occurred trying to delete resources", e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            return;
+        }
 
-                        final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, xsiType, securityId, (proj == null) ? null : proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_CATALOG));
-                        final EventMetaI          ci       = workflow.buildEvent();
+        if (proj == null) {
+            proj = securityTriple.getLeft();
+        }
 
-                        try {
-                            resource.deleteWithBackup(rootPath, user, ci);
-                            SaveItemHelper.authorizedRemoveChild(parent.getItem(), xmlPath, resource.getItem(), user, ci);
-                            PersistentWorkflowUtils.complete(workflow, ci);
-                        } catch (Exception e) {
-                            PersistentWorkflowUtils.fail(workflow, ci);
-                            throw e;
-                        }
-                    } else {
-                        getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
-                        return;
+        final String xsiType    = securityTriple.getMiddle();
+        final String securityId = securityTriple.getRight();
+
+        try {
+            final List<String> ineligible = Lists.newArrayList(Iterables.transform(Iterables.filter(getResources(), new Predicate<XnatAbstractresource>() {
+                @Override
+                public boolean apply(final XnatAbstractresource resource) {
+                    try {
+                        return resource.getItem().isLocked() || !resource.getItem().isActive() && !resource.getItem().isQuarantine();
+                    } catch (MetaDataException e) {
+                        log.error("An error occurred trying to check the lock/active/quarantine status of the resource {} associated with {}/ID={}", resource.getXnatAbstractresourceId(), xsiType, securityId);
+                        return true;
                     }
+                }
+            }), RESOURCE_TO_STRING_FUNCTION));
+
+            if (!ineligible.isEmpty()) {
+                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "Item " + securityItem.getXSIType() + "/ID=" + securityItem.getIDValue() + " has " + ineligible.size() + " resources that are either locked or are not active or quarantined and can't be deleted: " + StringUtils.join(ineligible));
+            }
+
+            final List<String> failed = new ArrayList<>();
+            for (final XnatAbstractresource resource : getResources()) {
+                final String              resourceId = getResourceDisplay(resource);
+                final PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, xsiType, securityId, (proj == null) ? null : proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_CATALOG + " " + resourceId));
+                final EventMetaI          meta       = workflow.buildEvent();
+
+                try {
+                    resource.deleteWithBackup(proj.getRootArchivePath(), user, meta);
+                    SaveItemHelper.authorizedRemoveChild(parentItem, xmlPath, resource.getItem(), user, meta);
+                    PersistentWorkflowUtils.complete(workflow, meta);
                 } catch (Exception e) {
-                    log.error("", e);
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-                    return;
+                    failed.add(getResourceDisplay(resource));
+                    PersistentWorkflowUtils.fail(workflow, meta);
                 }
             }
+            if (!failed.isEmpty()) {
+                if (failed.size() == getResources().size()) {
+                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Deletion failed for all resources: " + StringUtils.join(failed, ", "));
+                    return;
+                } else {
+                    getResponse().setStatus(Status.SUCCESS_MULTI_STATUS, "Deleted resources as requested, but the following resources failed somehow: " + StringUtils.join(failed, ", "));
+                }
+            }
+            XDAT.triggerXftItemEvent(xsiType, securityId, XftItemEvent.UPDATE);
+        } catch (ClientException e) {
+            getResponse().setStatus(e.getStatus(), e.getMessage());
+        } catch (Exception e) {
+            log.error("An error occurred trying to delete resources from the secured object {}/ID={}: {}", xsiType, securityId, getResourceIds(), e);
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         }
+    }
+
+    private void checkPermissionsAndStatus(final UserI user, final XFTItem securityItem) throws Exception {
+        if (!Permissions.canDelete(user, security)) {
+            throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
+        }
+        if (securityItem.isLocked()) {
+            //cannot modify item if it's locked
+            throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "Item " + securityItem.getXSIType() + "/ID=" + securityItem.getIDValue() + " is locked, resource deletion not allowed.");
+        }
+        if (!securityItem.isActive() && !securityItem.isQuarantine()) {
+            //cannot modify item if it isn't active or quarantined.
+            throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "Item " + securityItem.getXSIType() + "/ID=" + securityItem.getIDValue() + " is not active or quarantined, resource deletion not allowed.");
+        }
+    }
+
+    @Nonnull
+    private Triple<XnatProjectdata, String, String> getProjectXsiTypeAndId(final ItemI parent, final ItemI security) throws ElementNotFoundException {
+        final XFTItem parentItem   = parent.getItem();
+        final XFTItem securityItem = security.getItem();
+        if (parentItem.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatExperimentdata experiment = (XnatExperimentdata) this.parent;
+            return ImmutableTriple.of(experiment.getPrimaryProject(false), experiment.getXSIType(), experiment.getId());
+        }
+        if (securityItem.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatExperimentdata experiment = (XnatExperimentdata) security;
+            return ImmutableTriple.of(experiment.getPrimaryProject(false), experiment.getXSIType(), experiment.getId());
+        }
+        if (parentItem.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatSubjectdata subject = (XnatSubjectdata) parent;
+            return ImmutableTriple.of(subject.getPrimaryProject(false), XnatSubjectdata.SCHEMA_ELEMENT_NAME, subject.getId());
+        }
+        if (securityItem.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatSubjectdata subject = (XnatSubjectdata) security;
+            return ImmutableTriple.of(subject.getPrimaryProject(false), XnatSubjectdata.SCHEMA_ELEMENT_NAME, subject.getId());
+        }
+        if (parentItem.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatProjectdata project = (XnatProjectdata) parent;
+            return ImmutableTriple.of(project, XnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId());
+        }
+        if (securityItem.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
+            final XnatProjectdata project = (XnatProjectdata) security;
+            return ImmutableTriple.of(project, XnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId());
+        }
+        return ImmutableTriple.nullTriple();
     }
 
     private void getAllMatches() {
@@ -339,6 +405,19 @@ public class CatalogResource extends XNATCatalogTemplate {
             }
         }
     }
+
+    @Nonnull
+    private static String getResourceDisplay(final XnatAbstractresource resource) {
+        final String resourceLabel = resource.getLabel();
+        return resource.getXnatAbstractresourceId() + (StringUtils.isBlank(resourceLabel) ? "" : " (" + resourceLabel + ")");
+    }
+
+    private static final Function<XnatAbstractresource, String> RESOURCE_TO_STRING_FUNCTION = new Function<XnatAbstractresource, String>() {
+        @Override
+        public String apply(final XnatAbstractresource resource) {
+            return getResourceDisplay(resource);
+        }
+    };
 
     private final boolean _filePathIsEmpty;
 }

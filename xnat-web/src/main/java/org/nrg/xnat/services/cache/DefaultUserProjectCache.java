@@ -76,7 +76,7 @@ import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xdat.security.helpers.Roles.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
-@SuppressWarnings("Duplicates")
+@SuppressWarnings({"Duplicates", "deprecation"})
 @Service("userProjectCache")
 @Slf4j
 public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache, Initializing {
@@ -283,7 +283,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
             return project;
         } else {
-            log.info("Resolved ID or alias '{}' to project ID '{}' for user '{}', but getProjectCache({}) returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", idOrAlias, projectId, userId);
+            log.info("Resolved ID or alias '{}' to project ID '{}' for user '{}', but getProjectCache() returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", idOrAlias, projectId, userId);
             // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
             return null;
         }
@@ -296,10 +296,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
     @Override
     public List<XnatProjectdata> getByField(final UserI user, final String field, final String value) {
-        try {
-            final String standardized = XftStringUtils.StandardizeXMLPath(field);
-            log.debug("User {} requested to retrieve project by field '{}' (standardized: '{}') with value '{}'", user.getUsername(), field, standardized, value);
+        final String standardized = XftStringUtils.StandardizeXMLPath(field);
+        log.debug("User {} requested to retrieve project by field '{}' (standardized: '{}') with value '{}'", user.getUsername(), field, standardized, value);
 
+        try {
             final String rootElement = XftStringUtils.GetRootElementName(standardized);
             if (!StringUtils.equalsIgnoreCase(XnatProjectdata.SCHEMA_ELEMENT_NAME, rootElement)) {
                 return Collections.emptyList();
@@ -317,7 +317,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             log.debug("Executing query '{}' with value '{}'", query, mappedValue);
             return getProjectsFromIds(user, _template.queryForList(query, new MapSqlParameterSource("value", mappedValue), String.class));
         } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-            log.error("Got an error trying to retrieve project by field '{}' (standardized: '{}') with value '{}' for user {}", field, value, user.getUsername());
+            log.error("Got an error trying to retrieve project by field '{}' (standardized: '{}') with value '{}' for user {}", field, standardized, value, user.getUsername());
             return null;
         }
     }
@@ -408,7 +408,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
         final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(eventId);
         if (idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
-            log.info("Got a non-project-related group event, which I'm not supposed to handle: ", event);
+            log.info("Got a non-project-related group event, which I'm not supposed to handle: {}", event);
             return false;
         }
         final String      projectId = idAndAccess.getLeft();
@@ -726,7 +726,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      *
      * @return The project cache consisting of the project as the "left" or "key" value and a map of users and their access level to the project as the "right" or "value" value.
      */
-    @SuppressWarnings("unchecked")
     @Nullable
     private ProjectCache getProjectCache(final String projectId) {
         // If we've already mapped and cached the project...
@@ -875,7 +874,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                     levels.add(Collaborator);
                     break;
                 default:
-                    log.warn("Unknown access group for user {} and project {}: {}", user.getUsername(), projectId);
+                    log.warn("Unknown access group for user {} and project {}: {}", user.getUsername(), projectId, access);
             }
         }
         return levels;

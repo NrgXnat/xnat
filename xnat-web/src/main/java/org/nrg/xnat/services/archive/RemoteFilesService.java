@@ -21,27 +21,30 @@ public interface RemoteFilesService {
      *
      * @param url may be a URL or may be an absolute local path
      * @param destinationPath absolute local path to which file ought to be saved
+     * @param project the project or null if unknown
      * @return File
      * @throws FileNotFoundException if url isn't accessible from any configured remote filesystem (use FNF because it doesn't require loading exceptions from the plugin)
      */
     @Nonnull
-    File pullFile(String url, String destinationPath) throws FileNotFoundException;
+    File pullFile(String url, String destinationPath, @Nullable String project) throws FileNotFoundException;
 
     /**
      * Is the url accessible?
      *
      * @param url the url
+     * @param project the project or null if unknown
      * @return T/F if we can HEAD the url
      */
-    boolean canPullFile(String url);
+    boolean canPullFile(String url, @Nullable String project);
 
     /**
      * Delete file at url on remote filesystem
      *
      * @param url the url
+     * @param project the project or null if unknown
      * @return true if file successfully deleted
      */
-    boolean deleteFile(String url);
+    boolean deleteFile(String url, @Nullable String project);
 
     /**
      * Does the catalog resource have remote files?
@@ -77,8 +80,8 @@ public interface RemoteFilesService {
      * @throws ServerException if resources cannot be pushed to remote
      * @throws UnsupportedOperationException if project doesn't support remote resources
      */
-    void pushFilesAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
-                                      final XnatResourcecatalog catalog, final Collection<File> files,
-                                      final boolean preserveDirectories, @Nullable Integer parentEventId)
+    void pushProcessingOutputsAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
+                                                  final XnatResourcecatalog catalog, final Collection<File> files,
+                                                  final boolean preserveDirectories, @Nullable Integer parentEventId)
             throws ClientException, ServerException, UnsupportedOperationException;
 }

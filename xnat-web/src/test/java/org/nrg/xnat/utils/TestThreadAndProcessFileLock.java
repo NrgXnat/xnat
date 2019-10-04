@@ -45,6 +45,8 @@ public class TestThreadAndProcessFileLock {
     private static File TEST_CATALOG_FILE;
     private static File TEST_DCMCATALOG;
     private static File TEST_DCMCATALOG_PERM;
+    
+    private static final String fakeProject = null;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -79,7 +81,7 @@ public class TestThreadAndProcessFileLock {
     private static void rewriteFileWithCatalogUtils(File catFile) throws Exception {
         // We have to read & write the file once to ensure the checksum is constant for our tests
         // (the way the test resources are "compiled" adds a newline at end of file, which writeCatalogToFile strips)
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(catFile, false);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(catFile, fakeProject,false);
         CatalogUtils.writeCatalogToFile(catalogData, false,
                 new HashMap<String, Map<String, Integer>>());
     }
@@ -131,21 +133,21 @@ public class TestThreadAndProcessFileLock {
         File outfile = new File(TMPDIR,"testEntryDelete_tmp_dcm_catalog.xml");
         Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile, false);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile, fakeProject,false);
         int size = catalogData.catBean.getEntries_entry().size();
         CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData.catBean, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
         assertNotNull(entry);
         CatalogUtils.removeEntry(catalogData.catBean, entry);
         CatalogUtils.writeCatalogToFile(catalogData);
 
-        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, false);
+        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, fakeProject, false);
         assertThat(catalogData2.catBean.getEntries_entry().size(), is(size-1));
         entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData2.catBean, "TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm");
         assertNotNull(entry);
         CatalogUtils.removeEntry(catalogData2.catBean, entry);
         CatalogUtils.writeCatalogToFile(catalogData2);
 
-        CatCatalogBean cat2 = CatalogUtils.getCatalog(outfile);
+        CatCatalogBean cat2 = CatalogUtils.getCatalog(outfile, fakeProject);
         assertNotNull(cat2);
         assertThat(cat2.getEntries_entry().size(), is(size-2));
     }
@@ -160,14 +162,14 @@ public class TestThreadAndProcessFileLock {
         Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // Read in the catalog and do things
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile, false);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile, fakeProject,false);
         CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(catalogData.catBean,
                 "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
         assertNotNull(entry);
         CatalogUtils.removeEntry(catalogData.catBean, entry);
 
         // While one process/thread/user is doing things, another reads the unchanged catalog
-        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, false);
+        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, fakeProject,false);
 
         // The original process/thread/user writes the modified catalog
         CatalogUtils.writeCatalogToFile(catalogData);
@@ -180,8 +182,9 @@ public class TestThreadAndProcessFileLock {
 
         // And when the second process/thread/user tries to write his version of the catalog, an exception should be thrown
         exceptionRule.expect(ConcurrentModificationException.class);
-        exceptionRule.expectMessage(    "Another thread or process modified " + catalogData2.catFile +
-                " since I last read it. To avoid overwriting changes, I'm throwing an exception.");
+        exceptionRule.expectMessage("Another thread or process modified " + catalogData2.catFile +
+                " since I last read it or I don't have a previous checksum to compare. To avoid overwriting changes, " +
+                "I'm throwing an exception.");
         CatalogUtils.writeCatalogToFile(catalogData2);
     }
 
@@ -193,7 +196,7 @@ public class TestThreadAndProcessFileLock {
         File fakeFile = new File(TMPDIR, fakeName);
         fakeFile.createNewFile();
 
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile); //creates catalog
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(outfile, fakeProject); //creates catalog
         CatalogUtils.writeCatalogToFile(catalogData); //saves new & empty catalog
         XnatResourceInfo mockInfo = Mockito.mock(XnatResourceInfo.class);
         CatalogUtils.addOrUpdateEntry(catalogData, null, fakeName, fakeName,
@@ -202,20 +205,20 @@ public class TestThreadAndProcessFileLock {
         CatalogUtils.writeCatalogToFile(catalogData);
 
         // but then also, let's check that we added the item
-        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile);
+        CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, fakeProject);
         assertThat(catalogData2.catBean.getEntries_entry(), Matchers.<CatEntryI>hasSize(1));
     }
 
     private void doReadWrite(File file) throws Exception {
         // Read the shared file
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(file, false);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(file, fakeProject,false);
 
         // Write to the shared file (without changing anything)
         CatalogUtils.writeCatalogToFile(catalogData, false,
                 new HashMap<String, Map<String, Integer>>());
 
         // Read it again - since we didn't actually mod anything, it better match
-        CatCatalogBean cat2 = CatalogUtils.getCatalog(file);
+        CatCatalogBean cat2 = CatalogUtils.getCatalog(file, fakeProject);
         assertNotNull(cat2);
         assertEquals(catalogData.catBean.toString(), cat2.toString());
     }

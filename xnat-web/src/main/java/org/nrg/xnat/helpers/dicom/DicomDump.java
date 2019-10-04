@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.dcm4che2.data.ElementDictionary;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.*;
@@ -38,6 +39,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.util.Template;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -141,6 +143,12 @@ public final class DicomDump extends SecureResource {
                 }
             }
         }
+
+        @Nullable
+        String getProject() {
+            final Object proj = env.attrs.get("PROJECT_ID");
+            return proj != null ? (String) proj : null;
+        }
     }
 
 
@@ -161,9 +169,10 @@ public final class DicomDump extends SecureResource {
             @Override
             CatFilterWithPath getFilter(final Env env, final UserI user) {
                 final Object filename = env.attrs.get(FILENAME_PARAM);
+                final String project = env.getProject();
                 return new CatFilterWithPath() {
                     public boolean accept(CatEntryI entry) {
-                        final File f = CatalogUtils.getFile(entry, path);
+                        final File f = CatalogUtils.getFile(entry, path, project);
                         return f != null && f.getName().equals(filename);
                     }
                 };
@@ -291,8 +300,15 @@ public final class DicomDump extends SecureResource {
         PREARCHIVE() {
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
-                this.rootPath = CatalogUtils.getCatalogFile(this.x.getPrearchivepath(), r).getParentFile().getAbsolutePath();
-                return CatalogUtils.getCleanCatalog(this.x.getPrearchivepath(), r, false);
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -313,7 +329,15 @@ public final class DicomDump extends SecureResource {
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 this.rootPath = (new File(r.getUri())).getParent();
-                return CatalogUtils.getCleanCatalog(this.rootPath, r, true);
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.rootPath, r, true, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -464,9 +488,10 @@ public final class DicomDump extends SecureResource {
                 final String type = resource.getLabel();
                 if (imageTypes.contains(type)) {
                     final CatCatalogI catalog = env.a.getCatalog(resource);
+                    final String project = env.getProject();
                     filter.setPath(env.a.rootPath);
                     for (CatEntryI match : CatalogUtils.getEntriesByFilter(catalog, filter)) {
-                        File f = CatalogUtils.getFile(match, env.a.rootPath);
+                        File f = CatalogUtils.getFile(match, env.a.rootPath, project);
                         if (f != null) files.add(f);
                         if (files.size() >= enough) {
                             return files;

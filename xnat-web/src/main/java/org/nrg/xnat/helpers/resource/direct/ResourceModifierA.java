@@ -10,7 +10,6 @@
 package org.nrg.xnat.helpers.resource.direct;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -180,7 +179,7 @@ public abstract class ResourceModifierA implements Serializable {
 
         File saveTo = new File(new File(destPath, catId), catId + "_catalog.xml");
 
-        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(saveTo, resource, catId);
+        CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(saveTo, resource, null, catId);
 
         CatalogUtils.writeCatalogToFile(catalogData);
 

@@ -32,9 +32,7 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.model.CatCatalogI;
-import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
@@ -282,7 +280,8 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
-    public CatCatalogI getCachedCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException {
+    public CatCatalogI getCachedCatalog(final UserI user, final String catalogId)
+            throws InsufficientPrivilegesException {
         final CatCatalogI catalog = getFromCache(user, catalogId);
         if (catalog == null) {
             throw new InsufficientPrivilegesException(user.getUsername());
@@ -291,7 +290,8 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
-    public long getCatalogSize(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
+    public long getCatalogSize(final UserI user, final String catalogId)
+            throws InsufficientPrivilegesException, IOException {
         final CatCatalogI catalog = getFromCache(user, catalogId);
         if (catalog == null) {
             throw new InsufficientPrivilegesException(user.getUsername());
@@ -373,7 +373,7 @@ public class DefaultCatalogService implements CatalogService {
                             "all catalogs must be local");
                 }
                 ArchivableItem item = getResourceDataFromUri(parentUri).getItem();
-                _remoteFilesService.pushFilesAndAddUrlsToCatalog(user, item, catalog, resources, preserveDirectories,
+                _remoteFilesService.pushProcessingOutputsAndAddUrlsToCatalog(user, item, catalog, resources, preserveDirectories,
                         parentEventId);
             } catch (Exception e) {
                 // For any exception, default to local add
@@ -776,7 +776,7 @@ public class DefaultCatalogService implements CatalogService {
                     throw new FileNotFoundException();
                 }
                 destinationDir = StringUtils.defaultIfBlank(destinationDir, archiveRelativeDir);
-                _remoteFilesService.pullFile(mapEntry.entry.getUri(), destinationDir);
+                _remoteFilesService.pullFile(mapEntry.entry.getUri(), destinationDir, item.getProject());
             } catch (FileNotFoundException e) {
                 throw new ClientException("Unable to pull file indicated by " + uriString);
             }
@@ -1157,9 +1157,10 @@ public class DefaultCatalogService implements CatalogService {
 
             workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
             // Note that resources will contain only catalog if that is specified
+            final String project = item.getProject();
+            final String archiveRootPath = item.getArchiveRootPath();
             for (final XnatAbstractresourceI resource : resources) {
-                final String archiveRootPath = item.getArchiveRootPath();
-                refreshResourceCatalog((XnatAbstractresource) resource, archiveRootPath,
+                refreshResourceCatalog((XnatAbstractresource) resource, project, archiveRootPath,
                         populateStats, checksum, delete, append, user, workflow.buildEvent());
             }
 
@@ -1393,8 +1394,8 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath,
-                                        final boolean populateStats, final boolean checksums,
+    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectId,
+                                        final String projectPath, final boolean populateStats, final boolean checksums,
                                         final boolean removeMissingFiles, final boolean addUnreferencedFiles,
                                         final UserI user, final EventMetaI now) throws ServerException {
         long startTime = Calendar.getInstance().getTimeInMillis();
@@ -1406,8 +1407,8 @@ public class DefaultCatalogService implements CatalogService {
                         false);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 try {
-                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
-                            (XnatResourcecatalog) resource);
+                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath, (XnatResourcecatalog) resource, projectId
+                    );
                     Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
                             addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
                     boolean modified = (boolean) refreshInfo[0];
@@ -1455,7 +1456,7 @@ public class DefaultCatalogService implements CatalogService {
         if (cached == null) {
             final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
             if (cacheFile.exists()) {
-                final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile);
+                final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile, null);
                 if (catalog != null) {
                     storeToCache(user, catalog);
                     return catalog;
@@ -1466,7 +1467,7 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             final File file = (File) cached.get();
             if (file.exists()) {
-                return CatalogUtils.getCatalog(file);
+                return CatalogUtils.getCatalog(file, null);
             }
         }
         return null;

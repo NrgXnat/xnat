@@ -14,7 +14,6 @@ import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -293,14 +292,15 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
     public abstract Results<A> mergeSessions(final A src, final String srcRootPath, final A dest, final String destRootPath, final File rootbackup) throws ClientException, ServerException;
 
-    public MergeSessionsA.Results<File> mergeCatalogs(final String srcRootPath, final XnatResourcecatalogI srcRes, final String destRootPath, final XnatResourcecatalogI destRes) throws Exception {
-        final CatalogUtils.CatalogData src = CatalogUtils.CatalogData.getOrCreateAndClean(srcRootPath, srcRes,
-                false, user, c);
-        final CatalogUtils.CatalogData dest = CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, destRes,
-                false, user, c);
+    public MergeSessionsA.Results<File> mergeCatalogs(final String srcProject, final String srcRootPath, final XnatResourcecatalogI srcRes,
+                                                      final String destProject, final String destRootPath, final XnatResourcecatalogI destRes) throws Exception {
+        final CatalogUtils.CatalogData src = CatalogUtils.CatalogData.getOrCreateAndClean(srcRootPath, srcRes, false, srcProject,
+                user, c);
+        final CatalogUtils.CatalogData dest = CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, destRes, false, destProject,
+                user, c);
 
         MergeCatCatalog merge = new MergeCatCatalog(src.catBean, dest.catBean, allowSessionMerge, c,
-                dest.catFile);
+                dest.catFile, dest.project);
 
         MergeSessionsA.Results<Boolean> r = merge.call();
         if (r.result != null && r.result) {

@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.event.EventMetaI;
@@ -72,8 +71,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     public void postSave(final XnatImagesessiondata session) {
         final String root      = destRootPath.replace('\\', '/') + "/";
         boolean      checksums = false;
+        final XnatProjectdata project = session.getProjectData();
         try {
-            final XnatProjectdata project = session.getProjectData();
             checksums = CatalogUtils.getChecksumConfiguration(project);
         } catch (ConfigServiceException e) {
             //
@@ -84,9 +83,10 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                 if (file instanceof XnatResourcecatalog) {
                     XnatResourcecatalog res = (XnatResourcecatalog) file;
                     try {
-                        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(root, res);
-                        if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, user, c, checksums,
-                                false)) {
+                        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(root, res, project.getId()
+                        );
+                        if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project,
+                                user, c, checksums, false)) {
                             CatalogUtils.writeCatalogToFile(catalogData, checksums);
                         }
                     } catch (Exception exception) {
@@ -106,6 +106,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         final Results<XnatImagesessiondata> results   = new Results<>();
         final List<XnatImagescandataI>      srcScans  = src.getScans_scan();
         final List<XnatImagescandataI>      destScans = dest.getScans_scan();
+        final String srcProject  = src.getProject();
+        final String destProject = dest.getProject();
 
         final List<File> toDelete = new ArrayList<>();
         processing("Merging new meta-data into existing meta-data.");
@@ -124,7 +126,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                             destScan.addFile(srcRes);
                         } else {
                             if (destRes instanceof XnatResourcecatalogI) {
-                                MergeSessionsA.Results<File> r = mergeCatalogs(srcRootPath, (XnatResourcecatalogI) srcRes, destRootPath, (XnatResourcecatalogI) destRes);
+                                MergeSessionsA.Results<File> r = mergeCatalogs(srcProject, srcRootPath, (XnatResourcecatalogI) srcRes,
+                                        destProject, destRootPath, (XnatResourcecatalogI) destRes);
                                 if (r != null) {
                                     toDelete.add(r.result);
                                     results.addAll(r);

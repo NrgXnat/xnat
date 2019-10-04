@@ -740,13 +740,13 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         for (final XnatImagescandataI scan : src.getScans_scan()) {
             for (final XnatAbstractresourceI resource : scan.getFile()) {
                 if (resource instanceof XnatResourcecatalogI) {
-                    final File catalogFile = CatalogUtils.getCatalogFile(src.getPrearchivepath(), (XnatResourcecatalogI) resource);
+                    final File catalogFile = CatalogUtils.getCatalogFile(project, src.getPrearchivepath(), (XnatResourcecatalogI) resource);
                     if (catalogFile == null || !catalogFile.exists()) {
                         warn(21, "Expected a catalog file, however it was missing.");
                     }
 
                     if (catalogFile != null) {
-                        final List<String> unreferenced = CatalogUtils.getUnreferencedFiles(catalogFile.getParentFile());
+                        final List<String> unreferenced = CatalogUtils.getUnreferencedFiles(catalogFile.getParentFile(), project);
                         if (unreferenced.size() > 0) {
                             warn(20, String.format("Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files", scan.getId(), unreferenced.size(), resource.getLabel()));
                         }
@@ -754,7 +754,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 
                     if (StringUtils.equals(resource.getLabel(), "DICOM") && catalogFile != null) {
                         //check for entries that aren't DICOM entries or don't have a UID stored
-                        final CatCatalogI catalog = CatalogUtils.getCatalog(catalogFile);
+                        final CatCatalogI catalog = CatalogUtils.getCatalog(catalogFile, project);
                         if (catalog != null) {
                             final Collection<CatEntryI> nonDicom = CatalogUtils.getEntriesByFilter(catalog, new CatalogUtils.CatEntryFilterI() {
                                 @Override

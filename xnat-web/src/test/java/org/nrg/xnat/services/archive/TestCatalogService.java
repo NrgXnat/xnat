@@ -71,6 +71,7 @@ public class TestCatalogService {
     private XnatResourcecatalog catRes;
     private ExptURI mockSesUriObj;
     private ResourcesExptURI mockCatResUriObj;
+    private String project = "project";
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
@@ -97,6 +98,7 @@ public class TestCatalogService {
         //Mock objects
         session = Mockito.mock(XnatMrsessiondata.class);
         Mockito.when(session.getId()).thenReturn("LOCAL_E00001");
+        Mockito.when(session.getProject()).thenReturn(project);
 
         catRes = Mockito.mock(XnatResourcecatalog.class);
         Mockito.when(catRes.getLabel()).thenReturn("LABEL");
@@ -166,7 +168,7 @@ public class TestCatalogService {
         PowerMockito.when(UriParserUtils.parseURI(uri)).thenReturn(uriObj);
         catalogService.pullResourceCatalogsToDestination(mockUser, uri,
                 dummyLoc,null);
-        Mockito.verify(remoteFilesService, times(1)).pullFile(filePath, dummyLoc);
+        Mockito.verify(remoteFilesService, times(1)).pullFile(filePath, dummyLoc, project);
     }
 
     @Test

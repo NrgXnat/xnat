@@ -420,8 +420,8 @@ public class FileList extends XNATCatalogTemplate {
                 }
             }
 
-            final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(proj.getRootArchivePath(),
-                    (XnatResourcecatalog) resource);
+            final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(proj.getRootArchivePath(), (XnatResourcecatalog) resource, proj.getId()
+            );
             final Collection<CatEntryI> entries = CatalogUtils.findCatEntriesWithinPath(filePath, catalogData);
 
             if (entries.isEmpty()) {
@@ -513,15 +513,16 @@ public class FileList extends XNATCatalogTemplate {
         final Integer         index       = (containsQueryVariable("index")) ? Integer.parseInt(getQueryVariable("index")) : null;
         File                  file        = null;
 
+        final String projectId = proj.getId();
+        final String rootArchivePath = proj.getRootArchivePath();
         for (final XnatAbstractresource temp : getResources()) {
-            final String rootArchivePath = proj.getRootArchivePath();
             if (temp.getItem().instanceOf("xnat:resourceCatalog")) {
                 final boolean             includeRoot = isQueryVariableTrue("includeRootPath");
                 final XnatResourcecatalog catResource = (XnatResourcecatalog) temp;
                 final CatalogData         catalogData;
                 try {
-                    catalogData = CatalogData.getOrCreateAndClean(rootArchivePath, catResource,
-                            includeRoot);
+                    catalogData = CatalogData.getOrCreateAndClean(rootArchivePath, catResource, includeRoot, projectId
+                    );
                 } catch (ServerException e) {
                     throw new ElementNotFoundException("xnat:resourceCatalog " + catResource.getUri());
                 }
@@ -548,13 +549,13 @@ public class FileList extends XNATCatalogTemplate {
 
 
                     if (entries.size() == 1) {
-                        file = CatalogUtils.getFile(entries.get(0), parentPath);
+                        file = CatalogUtils.getFile(entries.get(0), parentPath, projectId);
                         if (file != null && file.exists()) {
                             break;
                         }
                     } else {
                         for (final CatEntryI entry : entries) {
-                            file = CatalogUtils.getFile(entry, parentPath);
+                            file = CatalogUtils.getFile(entry, parentPath, projectId);
 
                             if (file != null && file.exists()) {
                                 fileList.put(CatalogUtils.getRelativePathForCatalogEntry(entry, parentPath), file);
@@ -675,18 +676,27 @@ public class FileList extends XNATCatalogTemplate {
         final CatalogUtils.CatEntryFilterI entryFilter = buildFilter();
         final Integer                      index       = (containsQueryVariable("index")) ? Integer.parseInt(getQueryVariable("index")) : null;
 
+        final String projectId = proj.getId();
+        final String rootArchivePath = proj.getRootArchivePath();
+
         if (resource.getItem().instanceOf("xnat:resourceCatalog")) {
             final boolean             includeRoot = isQueryVariableTrue("includeRootPath");
             final XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
-            final CatCatalogBean      cat         = catResource.getCleanCatalog(proj.getRootArchivePath(), includeRoot, null, null);
-            final String              parentPath  = catResource.getCatalogFile(proj.getRootArchivePath()).getParent();
+            final CatalogData         catalogData;
+            try {
+                catalogData = CatalogData.getOrCreateAndClean(rootArchivePath, catResource, includeRoot, projectId);
+            } catch (ServerException e) {
+                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND,
+                        e.getMessage());
+                return new StringRepresentation("");
+            }
+
+            final CatCatalogBean      cat         = catalogData.catBean;
+            final String              parentPath  = catalogData.catPath;
 
             if (StringUtils.isBlank(filePath) && index == null) {
                 String baseURI = getBaseURI();
-
-                if (cat != null) {
-                    table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
-                }
+                table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, entryFilter, proj, locator));
             } else {
 
                 String zipEntryName = null;
@@ -733,7 +743,7 @@ public class FileList extends XNATCatalogTemplate {
                     getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                     return new StringRepresentation("");
                 } else {
-                    file = CatalogUtils.getFile(entry, parentPath);
+                    file = CatalogUtils.getFile(entry, parentPath, projectId);
 
                     if (file == null || !file.exists()) { // If file does not exist
                         getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
@@ -802,7 +812,7 @@ public class FileList extends XNATCatalogTemplate {
             if (filePath == null || filePath.equals("")) {
                 String baseURI = getBaseURI();
                 if (entryFilter == null) {
-                    ArrayList<File> files = resource.getCorrespondingFiles(proj.getRootArchivePath());
+                    ArrayList<File> files = resource.getCorrespondingFiles(rootArchivePath);
                     for (File subFile : files) {
                         Object[] row = new Object[13];
                         row[0] = (subFile.getName());
@@ -812,7 +822,7 @@ public class FileList extends XNATCatalogTemplate {
                         } else if (locator.equalsIgnoreCase(ABSOLUTE_PATH)) {
                             row[2] = subFile.getAbsolutePath();
                         } else {
-                            row[2] = subFile.getAbsolutePath().substring(proj.getRootArchivePath().substring(0, proj.getRootArchivePath().lastIndexOf(proj.getId())).length());
+                            row[2] = subFile.getAbsolutePath().substring(rootArchivePath.substring(0, rootArchivePath.lastIndexOf(projectId)).length());
                         }
                         row[3] = resource.getLabel();
                         row[4] = resource.getTagString();
@@ -823,7 +833,7 @@ public class FileList extends XNATCatalogTemplate {
                     }
                 }
             } else {
-                ArrayList<File> files = resource.getCorrespondingFiles(proj.getRootArchivePath());
+                ArrayList<File> files = resource.getCorrespondingFiles(rootArchivePath);
                 for (File subFile : files) {
                     if (subFile.getName().equals(filePath)) {
                         file = subFile;

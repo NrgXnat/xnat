@@ -15,10 +15,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.dcm4che2.data.ElementDictionary;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.model.*;
-import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImageresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -39,6 +38,7 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.restlet.util.Template;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -142,6 +142,12 @@ public final class EcatDump extends SecureResource {
                 }
             }
         }
+
+        @Nullable
+        String getProject() {
+            final Object proj = env.attrs.get("PROJECT_ID");
+            return proj != null ? (String) proj : null;
+        }
     }
 
 
@@ -162,9 +168,10 @@ public final class EcatDump extends SecureResource {
             @Override
             CatFilterWithPath getFilter(final Env env, final UserI user) {
                 final Object filename = env.attrs.get(FILENAME_PARAM);
+                final String project = env.getProject();
                 return new CatFilterWithPath() {
                     public boolean accept(CatEntryI entry) {
-                        final File f = CatalogUtils.getFile(entry, path);
+                        final File f = CatalogUtils.getFile(entry, path, project);
                         return f != null && f.getName().equals(filename);
                     }
                 };
@@ -286,9 +293,15 @@ public final class EcatDump extends SecureResource {
         PREARCHIVE(){
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
-                this.rootPath=CatalogUtils.getCatalogFile(this.x.getPrearchivepath(), ((XnatResourcecatalogI)r)).getParentFile().getAbsolutePath();			
-                final CatCatalogI catalog=CatalogUtils.getCleanCatalog(this.x.getPrearchivepath(),r, false);
-                return catalog;
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -309,8 +322,15 @@ public final class EcatDump extends SecureResource {
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 this.rootPath = (new File(r.getUri())).getParent();
-                final CatCatalogI catalog=CatalogUtils.getCleanCatalog(this.rootPath, r, true);
-                return catalog;
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.rootPath, r, true, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -484,7 +504,6 @@ public final class EcatDump extends SecureResource {
 
         /**
          * Retrieve the ECAT files at this resource level.
-         * @param uri
          * @param user
          * @param filter
          * @param enough

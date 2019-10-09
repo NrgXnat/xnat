@@ -1,8 +1,11 @@
 package org.nrg.xapi.rest.pipeline;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
 import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -14,15 +17,21 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.pipeline.PipelineDetailsHelper;
 import org.nrg.pipeline.PipelineLaunchHandler;
 import org.nrg.pipeline.PipelineLaunchReport;
 import org.nrg.pipeline.PipelineLaunchStatus;
+import org.nrg.pipeline.PipelineRepositoryManager;
 import org.nrg.pipeline.ProcessLauncher;
 import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.ProjectId;
+import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.om.ArcPipelineparameterdata;
+import org.nrg.xdat.om.ArcProject;
+import org.nrg.xdat.om.PipePipelinedetailsParameter;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -30,12 +39,14 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ResourceData;
+import org.nrg.xnat.restlet.representations.JSONTableRepresentation;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.restlet.resource.StringRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +59,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -68,24 +80,64 @@ public class PipelineApi extends AbstractXapiRestController {
 	
 	    
 		@Autowired
-	    public PipelineApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder,final CatalogService catalogService,final JdbcTemplate jdbcTemplate) {
+	    public PipelineApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder,final CatalogService catalogService,final JdbcTemplate jdbcTemplate, final SerializerService serializerService) {
 	        super(userManagementService, roleHolder);
 	        this.catalogService = catalogService;
 	        _jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
+	        _serializerService = serializerService;
 		}
-	  
-	    @XapiRequestMapping(value = {"/launch/{pipelineNameOrStep}/{projectId}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+
+	    @XapiRequestMapping(value = {"/site"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ApiOperation(value = "Get a list of site wide pipelines for a given datatype (optional)")
+	    public ResponseEntity<String> getSitePipelines(@RequestParam(value = "xsiType", required=false) final String xsiType) {
+    			try  {
+    				 ArcProject arcProject = null;
+    				if (xsiType==null) {
+    					 arcProject = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject();
+    				}else {
+    					 arcProject = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject(xsiType);
+    				}
+    				if (arcProject != null) {
+		                final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
+		                JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
+		                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		                jsonTableRep.write(stream);
+		                String responseString = new String(stream.toByteArray());
+		                stream.close();
+		                //String responseString =  _serializerService.toJson(table);
+		                return new ResponseEntity<>(responseString,HttpStatus.OK);
+    				}else {
+    	                return new ResponseEntity<>("",HttpStatus.INTERNAL_SERVER_ERROR);
+    				}
+    			}catch(Exception e) {
+	                return new ResponseEntity<>("",HttpStatus.INTERNAL_SERVER_ERROR);
+    			}
+		}
+
+	    
+	    @XapiRequestMapping(value = {"/parameters"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ApiOperation(value = "Get the site-wide parameter details for the pipeline identified by its name; optionally pass the project id to get the project specific parameters")
+	    public ResponseEntity<String> getSitePipelineParameters(@RequestParam("pipelinename") final String pipelineName,
+	    														@RequestParam(value = "project", required=false) final String projectId) {
+        	PipelineDetailsHelper pipelineDetailsHelper = new PipelineDetailsHelper(projectId);
+            try {
+            	Map<String,Object> pipelineDetails = pipelineDetailsHelper.getPipelineDetailsMap(pipelineName,true);
+                // Make a json object from the pipelineDetails map
+                String json = _serializerService.toJson(pipelineDetails);
+                return new ResponseEntity<>(json, HttpStatus.OK);
+            }catch(Exception e) {
+                return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+	    }
+
+	    @XapiRequestMapping(value = {"/launch/{pipelineNameOrStep}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	    @ApiOperation(value = "Resolve the parameters and launch the pipeline")
-	    public ResponseEntity<PipelineLaunchReport> launchPipelineWQueryParams(@PathVariable("projectId") @ProjectId final String projectId,
+	    public ResponseEntity<PipelineLaunchReport> launchPipelineWQueryParams(@RequestParam(value = "project", required=false) final String projectId,
 	    																			 @PathVariable("pipelineNameOrStep") final String pipelineNameOrStep, 
 	    																			 final @RequestBody Map<String, String> allRequestParams) {
 			UserI user = getSessionUser();
-			XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
-	    	if (project == null) {
-				return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
-			}
 	    	PipelineLaunchReport launchReport = new PipelineLaunchReport(); 
-	        _log.info("Launch requested for project id " + projectId);
+	        _log.info("Launch requested for pipeline " + pipelineNameOrStep);
 	        
 	        List<PipelineLaunchStatus> pipelineLaunch  = new ArrayList<PipelineLaunchStatus>();
 	        int successCount = 0;
@@ -116,6 +168,17 @@ public class PipelineApi extends AbstractXapiRestController {
 	        		try {
 				        String experimentId = getExperimentIdFromUri(expIdOrUri.replace("\"", ""));
 				        XnatExperimentdata exp = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
+				        String _projectId =  projectId;
+				        if (_projectId == null) {
+				        	_projectId = exp.getProject();
+				        }
+						XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(_projectId, user, false);
+				    	if (project == null) {
+			        		pipelineLaunch.add(markLaunchFailure(projectId,experimentId, ""));
+			        		failureCount++;
+			        		break;
+						}
+
 				        if (exp == null) {
 			        		pipelineLaunch.add(markLaunchFailure(projectId,experimentId, ""));
 			        		failureCount++;
@@ -153,10 +216,10 @@ public class PipelineApi extends AbstractXapiRestController {
 	    }
 
 	    
-	    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/{projectId}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	    @ApiOperation(value = "Resolve the parameters and terminate the pipeline")
 	    public ResponseEntity<PipelineLaunchReport> terminate(@PathVariable("pipelineNameOrStep") final String pipelineNameOrStep, 
-	    													  @PathVariable("projectId") @ProjectId final String projectId,											  
+	    													  @PathVariable("projectId") @Project final String projectId,											  
 	    													  final @RequestBody Map<String, String> allRequestParams) {
 			UserI user = getSessionUser();
 	    	PipelineLaunchReport launchReport = new PipelineLaunchReport(); 
@@ -384,11 +447,40 @@ public class PipelineApi extends AbstractXapiRestController {
 			
 			return _jdbcTemplate.queryForList(query,parameters);
 		}
+		
+		 private String getName(String path) {
+		    	String rtn = path;
+		    	//int index = path.lastIndexOf(File.separator);
+		    	int index = path.lastIndexOf("/");
+		    	if (index != -1) {
+		    		rtn = path.substring(index + 1);
+		    	}
+	        	index = rtn.lastIndexOf(".xml");
+	        	if (index != -1) {
+	        		rtn = rtn.substring(0, index);
+	        	}
+		    	return rtn;
+		    }
+		 
+		   private ArcPipelineparameterdata extractArcPipelineParameter(PipePipelinedetailsParameter pipeParameter) {
+		    	ArcPipelineparameterdata rtn = new ArcPipelineparameterdata();
+		    	rtn.setName(pipeParameter.getName());
+		    	rtn.setDescription(pipeParameter.getDescription());
+		    	String schemaLink = pipeParameter.getValues_schemalink();
+		    	String csvValue = pipeParameter.getValues_csvvalues();
+		    	if (schemaLink != null) {
+		    		rtn.setSchemalink(schemaLink);
+		    	}else {
+		    		rtn.setCsvvalues(csvValue);
+		    	}
+		    	return rtn;
+		    }
 
 	    private static final Logger _log = LoggerFactory.getLogger(PipelineApi.class);
 	    private final String EXPERIMENTS = "Experiments";
+	    
 	    private final String SCHEMALINK_NAME_START = "xnatschemaLink-";
 	    private final CatalogService catalogService;
 	    private final NamedParameterJdbcTemplate _jdbcTemplate;
-
+	    private final SerializerService _serializerService;
 }

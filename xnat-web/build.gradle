@@ -192,7 +192,7 @@ dependencies {
 
     // NRG dependencies first.
     api "org.nrg.xdat:core:1.7.6.RAD-SNAPSHOT"
-    api "org.nrg.xnat:xnat-data-models:1.7.6.RAD-SNAPSHOT"
+    api "org.nrg.xnat:xnat-data-models:1.7.6.RAD-SNAPSHOT-PIPELINE"
     api "org.nrg:framework"
     api "org.springframework.security:spring-security-ldap"
     api "org.springframework.security.oauth:spring-security-oauth2"

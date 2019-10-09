@@ -22,4 +22,4 @@ src/main/webapp/themes/*
 MANIFEST.MF
 /ide-bin/
 /lib/
-dependencies.txt
+dep*.txt

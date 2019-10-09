@@ -20,6 +20,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.security.alias.AliasTokenException;
 import org.springframework.security.crypto.codec.Base64;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
@@ -138,4 +139,11 @@ public class XnatHttpUtils {
 
         return null;
     }
+
+    @Nonnull
+    public static String buildArchiveEventId(final @Nullable String project, final @Nullable String timestamp, final @Nonnull String session) {
+        // JAVA8: This should be a default method implementation on the ArchiveOperationListener interface, probably as toString().
+        return StringUtils.isNotBlank(project) ? StringUtils.joinWith("/", project, timestamp, session) : session;
+    }
+
 }

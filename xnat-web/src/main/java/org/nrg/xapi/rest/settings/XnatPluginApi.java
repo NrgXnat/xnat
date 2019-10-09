@@ -9,41 +9,46 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-@Api(description = "XNAT Plugin API")
+import static lombok.AccessLevel.PRIVATE;
+
+@Api("XNAT Plugin API")
 @XapiRestController
 @RequestMapping(value = "/plugins")
+@Getter(PRIVATE)
+@Accessors(prefix = "_")
+@Slf4j
 public class XnatPluginApi extends AbstractXapiRestController {
     @Autowired
-    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatPluginBeanManager manager) throws IOException {
+    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatPluginBeanManager manager) {
         super(userManagementService, roleHolder);
-        for (final String pluginId : manager.getPluginIds()) {
-            final XnatPluginBean plugin = manager.getPlugin(pluginId);
-            _plugins.put(pluginId, plugin);
-        }
+        _plugins = new HashMap<>(manager.getPluginBeans());
+        log.debug("Plugin API controller loaded {} plugins: {}", getPlugins().size(), StringUtils.join(getPlugins().keySet(), ", "));
     }
 
     @ApiOperation(value = "Returns a list of all of the installed and active XNAT plugins with their properties.", notes = "The maps returned from this call include all of the properties specified in the plugin's property file.", response = String.class, responseContainer = "Map")
@@ -51,8 +56,8 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Map<String, XnatPluginBean>> getAllPlugins() throws IOException {
-        return new ResponseEntity<>(_plugins, HttpStatus.OK);
+    public Map<String, XnatPluginBean> getAllPlugins() {
+        return getPlugins();
     }
 
     @ApiOperation(value = "Returns the indicated XNAT plugin with its properties.", notes = "The map returned from this call include all of the properties specified in the plugin's property file.", response = Properties.class)
@@ -61,12 +66,12 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<XnatPluginBean> getRequestedPlugin(@PathVariable("plugin") final String plugin) throws IOException {
-        if (!_plugins.containsKey(plugin)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public XnatPluginBean getRequestedPlugin(@PathVariable("plugin") final String plugin) throws NotFoundException {
+        if (!getPlugins().containsKey(plugin)) {
+            throw new NotFoundException("No plugin with ID " + plugin + " could be found on this system");
         }
-        return new ResponseEntity<>(_plugins.get(plugin), HttpStatus.OK);
+        return getPlugins().get(plugin);
     }
 
-    private final Map<String, XnatPluginBean> _plugins = Maps.newHashMap();
+    private final Map<String, XnatPluginBean> _plugins;
 }

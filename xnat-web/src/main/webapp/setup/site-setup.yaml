@@ -145,6 +145,14 @@ siteSetup:
                     value: ''
                     validation: required path
 
+                inboxPath:
+                    kind: panel.input.text
+                    name: inboxPath
+                    label: Inbox Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
         # =========================
         # SMTP SERVER SETTINGS
         smtpServer:

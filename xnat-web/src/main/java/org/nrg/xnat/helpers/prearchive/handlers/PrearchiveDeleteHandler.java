@@ -9,60 +9,51 @@
 
 package org.nrg.xnat.helpers.prearchive.handlers;
 
+import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.services.StudyRoutingService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
+import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xnat.actions.postArchive.ClearStudyRemappingAction;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-@Handles("Delete")
+import static org.nrg.xnat.archive.Operation.Delete;
+
+@Handles(Delete)
+@Slf4j
 public class PrearchiveDeleteHandler extends AbstractPrearchiveOperationHandler {
-
-    public PrearchiveDeleteHandler(final PrearchiveOperationRequest request) throws Exception {
-        super(request);
+    public PrearchiveDeleteHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
+        super(request, eventService, userProvider, importRequestService);
     }
 
     @Override
     public void execute() throws Exception {
-        SessionData sessionData = getSessionData();
-        String studyInstanceUid = null;
-        if(sessionData!=null){
-            studyInstanceUid = sessionData.getTag();
+        final SessionData sessionData = getSessionData();
+        if (sessionData == null) {
+            log.warn("Tried to process prearchive delete request for directory {}, but the session data object is null, which makes things difficult", getSessionDir());
+            return;
         }
-        if (!getSessionDir().getParentFile().exists()) {
-            PrearcDatabase.unsafeSetStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcUtils.PrearcStatus._DELETING);
-            PrearcDatabase.deleteCacheRow(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-        }
-        if (_log.isDebugEnabled()) {
-            _log.debug("Deleting session {} from project {}", sessionData.getFolderName(), sessionData.getProject());
-        }
-        PrearcDatabase.deleteSession(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+        final String studyInstanceUid = sessionData.getTag();
+        final String project          = sessionData.getProject();
+        final String timestamp        = sessionData.getTimestamp();
+        final String folderName       = sessionData.getFolderName();
 
-        //Clear study routing/remapping
-        if(StringUtils.isNotBlank(studyInstanceUid)){
-            try {
-                XDAT.getContextService().getBean(StudyRoutingService.class).close(studyInstanceUid);
-            }
-            catch(Exception e){
-                _log.error("Error when clearing study routing information.",e);
-            }
-            try {
-                String script = DefaultAnonUtils.getService().getStudyScript(studyInstanceUid);
-                if (StringUtils.isNotBlank(script)) {
-                    DefaultAnonUtils.getService().disableStudy(AdminUtils.getAdminUser().getLogin(), studyInstanceUid);
-                }
-            }
-            catch(Exception e){
-                _log.error("Error when clearing study remapping information.",e);
-            }
+        if (!getSessionDir().getParentFile().exists()) {
+            PrearcDatabase.unsafeSetStatus(folderName, timestamp, project, PrearcUtils.PrearcStatus._DELETING);
+            PrearcDatabase.deleteCacheRow(folderName, timestamp, project);
+        }
+
+        log.debug("Deleting session {} from project {}", folderName, project);
+        PrearcDatabase.deleteSession(folderName, timestamp, project);
+
+        // Clear study routing/remapping if the study instance UID is valid.
+        if (StringUtils.isNotBlank(studyInstanceUid)) {
+            new ClearStudyRemappingAction().execute(Users.getAdminUser(), null, ImmutableMap.<String, Object>of("studyInstanceUid", studyInstanceUid));
         }
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(PrearchiveDeleteHandler.class);
 }

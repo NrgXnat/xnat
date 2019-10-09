@@ -188,8 +188,10 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         final Object candidate = object instanceof Provider ? ((Provider<?>) object).get() : object;
         final Object target;
         if (candidate instanceof Map) {
+            //noinspection rawtypes
             target = checkMapForNullKey(cacheId, (Map) candidate);
         } else if (candidate instanceof Multimap) {
+            //noinspection rawtypes
             target = checkMultimapForNullKey(cacheId, (Multimap) candidate);
         } else {
             target = candidate;

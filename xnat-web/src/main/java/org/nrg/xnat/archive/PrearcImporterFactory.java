@@ -10,9 +10,10 @@
 package org.nrg.xnat.archive;
 
 import org.nrg.PrearcImporter;
-import org.nrg.xnat.ajax.Prearchive;
 
 import java.io.File;
+
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 public final class PrearcImporterFactory {
     // TODO: these should be configurable
@@ -43,8 +44,8 @@ public final class PrearcImporterFactory {
      * @param files Explicit list of files to be imported (optional)
      */
     public PrearcImporter getPrearcImporter(final String project, final File toDir, final File fromDir, final File...files) {
-	return new PrearcImporter(Prearchive.COMMON.equals(project) ? null : project,
-		toDir, fromDir, (null == files || 0 == files.length) ? null : files,
-		buildXMLfromIMAcmd, buildXMLfromIMAenv);
+	return new PrearcImporter(UNASSIGNED.equals(project) ? null : project,
+                              toDir, fromDir, (null == files || 0 == files.length) ? null : files,
+                              buildXMLfromIMAcmd, buildXMLfromIMAenv);
     }
 }

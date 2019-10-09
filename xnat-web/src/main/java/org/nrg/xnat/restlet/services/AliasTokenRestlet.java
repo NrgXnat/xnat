@@ -67,7 +67,7 @@ public class AliasTokenRestlet extends SecureResource {
             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Can't find an alias token with the ID " + tokenId);
         }
 
-        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        _serializer = XDAT.getSerializerService();
         if (null == _serializer) {
             getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new ResourceException(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Serializer service was not properly initialized.");

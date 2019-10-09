@@ -42,7 +42,7 @@ import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 
-@Api(description = "Site Configuration Management API")
+@Api
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
 @Slf4j

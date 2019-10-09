@@ -15,3 +15,5 @@ org.nrg.xnat.node.entities
 org.nrg.xnat.task.entities
 org.nrg.xnat.spawner.entities
 org.nrg.xnat.eventservice.entities
+org.nrg.xnat.services.messaging.archive
+org.nrg.xnat.spawner.entities

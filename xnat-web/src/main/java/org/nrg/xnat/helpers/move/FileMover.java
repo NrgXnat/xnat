@@ -9,10 +9,8 @@
 
 package org.nrg.xnat.helpers.move;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -20,6 +18,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
@@ -30,22 +29,16 @@ import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierBuilderI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.uri.archive.AssessedURII;
-import org.nrg.xnat.helpers.uri.archive.AssessorURII;
-import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
-import org.nrg.xnat.helpers.uri.archive.ProjectURII;
-import org.nrg.xnat.helpers.uri.archive.ReconURII;
-import org.nrg.xnat.helpers.uri.archive.ResourceURII;
-import org.nrg.xnat.helpers.uri.archive.ScanURII;
-import org.nrg.xnat.helpers.uri.archive.SubjectURII;
+import org.nrg.xnat.helpers.uri.archive.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 
 public class FileMover {
 	private final static Logger logger = LoggerFactory.getLogger(FileMover.class);
@@ -65,16 +58,14 @@ public class FileMover {
 		this.params=params;
 	}
 	
-	public Boolean call(org.nrg.xnat.helpers.uri.URIManager.UserCacheURI src,ResourceURII dest,EventMetaI ci) throws Exception {
-		File srcF;		
-		if(src.getProps().containsKey(UriParserUtils._REMAINDER)){
-			srcF=org.nrg.xdat.security.helpers.Users.getUserCacheFile(user, (String)src.getProps().get(URIManager.XNAME), (String)src.getProps().get(UriParserUtils._REMAINDER));
-		}else{
-			srcF=org.nrg.xdat.security.helpers.Users.getUserCacheFile(user, (String)src.getProps().get(URIManager.XNAME));
+	public Boolean call(final URIManager.UserCacheURI src, final ResourceURII dest, final EventMetaI ci) throws Exception {
+		final File srcF;
+		if (src.getProps().containsKey(UriParserUtils._REMAINDER)) {
+			srcF = Users.getUserCacheFile(user, (String) src.getProps().get(URIManager.XNAME), (String) src.getProps().get(UriParserUtils._REMAINDER));
+		} else {
+			srcF = Users.getUserCacheFile(user, (String) src.getProps().get(URIManager.XNAME));
 		}
-		
-		
-		
+
 		final String label = dest.getResourceLabel();
 		
 		String filepath=dest.getResourceFilePath();
@@ -85,7 +76,7 @@ public class FileMover {
 		final String type=(String)dest.getProps().get(URIManager.TYPE);
 						
 		this.buildResourceModifier(dest,overwrite,type,ci).addFile(
-				(List<? extends FileWriterWrapperI>)Lists.newArrayList(new StoredFile(srcF,overwrite)),
+				Lists.newArrayList(new StoredFile(srcF,overwrite)),
 				label,
 				type, 
 				filepath, 

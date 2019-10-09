@@ -41,6 +41,7 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.utils.CatalogUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -168,18 +169,7 @@ public class ArchiveServlet extends HttpServlet {
                     }
 
                     entry.setCachepath(relative);
-
-                    CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                    meta.setMetafield(relative);
-                    meta.setName("RELATIVE_PATH");
-                    entry.addMetafields_metafield(meta);
-
-                    meta = new CatEntryMetafieldBean();
-                    meta.setMetafield(rf.getSize().toString());
-                    meta.setName("SIZE");
-                    entry.addMetafields_metafield(meta);
-
-
+                    CatalogUtils.setCatEntryBeanMetafields(entry, relative, rf.getSize().toString());
                     cat.addEntries_entry(entry);
                 }
             }

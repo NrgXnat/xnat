@@ -9,23 +9,26 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
+import org.nrg.xdat.turbine.modules.screens.XdatScreen;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 
+@XdatScreen
+@Slf4j
 public class RequestProjectAccess extends SecureScreen {
-
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
-        String p = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-        XnatProjectdataI project = XnatProjectdata.getXnatProjectdatasById(p, null, false);
-        
-        context.put("project", project);
+    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+        final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
+        log.debug("User {} is requesting access to project {}", XDAT.getUserDetails().getUsername(), projectId);
+        context.put("project", XnatProjectdata.getXnatProjectdatasById(projectId, null, false));
     }
-    
-    public boolean allowGuestAccess(){
+
+    public boolean allowGuestAccess() {
         return false;
     }
 }

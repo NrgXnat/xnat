@@ -14,29 +14,27 @@ import org.nrg.xnat.status.StatusList;
 import javax.servlet.http.HttpSession;
 
 public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManagerI {
-	private final HttpSession session;
-	
-	public HTTPSessionStatusManagerQueue(final HttpSession s){
-		this.session=s;
-	}
-	
-	@Override
-	public StatusList storeStatusQueue(final String id, final StatusList sq) throws IllegalArgumentException {
-		this.session.setAttribute(TransactionUtils.buildTransactionID(id), sq);
-		return sq;
-	}
+    public HTTPSessionStatusManagerQueue(final HttpSession session) {
+        _session = session;
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
-		return (StatusList) this.session.getAttribute(TransactionUtils.buildTransactionID(id));
-	}
+    @Override
+    public StatusList storeStatusQueue(final String id, final StatusList statusList) throws IllegalArgumentException {
+        _session.setAttribute(TransactionUtils.buildTransactionID(id), statusList);
+        return statusList;
+    }
 
-	@Override
-	public StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
-		final StatusList sq=this.retrieveStatusQueue(TransactionUtils.buildTransactionID(id));
-		this.session.removeAttribute(id);
-		return sq;
-	}
+    @Override
+    public StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
+        return (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
+    }
 
+    @Override
+    public StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
+        final StatusList statusList = retrieveStatusQueue(TransactionUtils.buildTransactionID(id));
+        _session.removeAttribute(id);
+        return statusList;
+    }
+
+    private final HttpSession _session;
 }

@@ -9,27 +9,28 @@
 
 package org.nrg.xnat.initialization;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xft.schema.DataTypeSchemaService;
+import org.nrg.xft.schema.impl.DefaultDataTypeSchemaService;
 import org.nrg.xnat.configuration.ApplicationConfig;
+import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.logging.LoggingService;
@@ -41,8 +42,17 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -58,7 +68,7 @@ import static lombok.AccessLevel.PRIVATE;
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
-@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
+@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class, SerializerConfig.class})
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
@@ -76,8 +86,8 @@ public class RootConfig {
     }
 
     @Bean
-    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
-        return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref);
+    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node, final XnatNodeInfoService nodeInfoService) throws IOException {
+        return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref, node, nodeInfoService);
     }
 
     @Bean
@@ -86,13 +96,33 @@ public class RootConfig {
     }
 
     @Bean
+    public DocumentBuilder documentBuilder() throws ParserConfigurationException {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+    }
+
+    @Bean
+    public Transformer transformer() throws TransformerConfigurationException {
+        final Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.VERSION, "1.0");
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+        return transformer;
+    }
+
+    @Bean
+    public DataTypeSchemaService dataTypeSchemaService() throws ParserConfigurationException {
+        return new DefaultDataTypeSchemaService(documentBuilder());
+    }
+
+    @Bean
     public XnatPluginBeanManager xnatPluginBeanManager() {
         return new XnatPluginBeanManager();
     }
 
     @Bean
-    public LoggingService loggingService() {
-        return new DefaultLoggingService(xnatPluginBeanManager());
+    public LoggingService loggingService(final Path xnatHome) throws ParserConfigurationException, SAXException, TransformerException, IOException {
+        return new DefaultLoggingService(xnatHome, documentBuilder(), transformer(), xnatPluginBeanManager());
     }
 
     @Bean
@@ -102,22 +132,6 @@ public class RootConfig {
             indentObjectsWith(indenter);
             indentArraysWith(indenter);
         }};
-    }
-
-    @Bean
-    public Jackson2ObjectMapperBuilder objectMapperBuilder() throws NrgServiceException {
-        return new Jackson2ObjectMapperBuilder()
-                .serializationInclusion(JsonInclude.Include.NON_NULL)
-                .failOnEmptyBeans(false)
-                .mixIns(mixIns())
-                .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
-                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .modulesToInstall(_jacksonModules);
-    }
-
-    @Bean
-    public Module hibernateModule() {
-        return new Hibernate4Module();
     }
 
     @Bean
@@ -137,7 +151,13 @@ public class RootConfig {
 
     @Bean
     public SerializerService serializerService(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
-        return new SerializerService(objectMapperBuilder);
+        final SerializerConfig config = new SerializerConfig();
+        try {
+            return config.serializerService();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Bean

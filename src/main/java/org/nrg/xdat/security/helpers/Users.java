@@ -14,6 +14,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -33,6 +34,7 @@ import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -58,6 +60,7 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
@@ -239,9 +242,12 @@ public class Users {
      * @param user The user.
      *
      * @return The cache path for the user.
+     *
+     * @deprecated Use {@link UserDataCache#getUserDataCache(UserI)} instead.
      */
+    @Deprecated
     public static String getUserCacheUploadsPath(final UserI user) {
-        return Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), "USERS", user.getID().toString()).toString();
+        return getUserDataCache().getUserDataCache(user).toAbsolutePath().toString();
     }
 
     /**
@@ -251,9 +257,22 @@ public class Users {
      * @param dirs The directories.
      *
      * @return A file from the user cache.
+     *
+     * @deprecated Use {@link UserDataCache#getUserDataCacheFile(UserI, Path, UserDataCache.Options...)} instead.
      */
-    public static File getUserCacheFile(final UserI user, String... dirs) {
-        return (dirs == null ? Paths.get(getUserCacheUploadsPath(user)) : Paths.get(getUserCacheUploadsPath(user), dirs)).toFile();
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
+    public static File getUserCacheFile(final UserI user, final String... dirs) {
+        switch (dirs.length) {
+            case 0:
+                return getUserDataCache().getUserDataCache(user).toFile();
+
+            case 1:
+                return getUserDataCache().getUserDataCacheFile(user, Paths.get(dirs[0]));
+
+            default:
+                return getUserDataCache().getUserDataCacheFile(user, Paths.get(dirs[0], ArrayUtils.remove(dirs, 0)));
+        }
     }
 
     /**
@@ -689,6 +708,13 @@ public class Users {
         return grantedAuthorities;
     }
 
+    private static UserDataCache getUserDataCache() {
+        if (_cache == null) {
+            _cache = XDAT.getContextService().getBean(UserDataCache.class);
+        }
+        return _cache;
+    }
+
     private static Map<Integer, String> getCachedUserIds() {
         if (_users.isEmpty()) {
             synchronized (_users) {
@@ -713,6 +739,7 @@ public class Users {
     private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);
     private static final Map<Integer, String>          _users               = new ConcurrentHashMap<>();
     private static final Map<String, GrantedAuthority> _authorities         = new HashMap<>();
-    private static final String                        DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
-    private static       UserManagementServiceI        singleton            = null;
+    private static final String                 DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
+    private static       UserManagementServiceI singleton            = null;
+    private static       UserDataCache          _cache               = null;
 }

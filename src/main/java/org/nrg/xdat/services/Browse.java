@@ -10,14 +10,8 @@
 
 package org.nrg.xdat.services;
 
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
@@ -35,6 +29,13 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+
 /**
  * @author timo
  *
@@ -43,9 +44,10 @@ public class Browse {
 	static org.apache.log4j.Logger logger = Logger.getLogger(Browse.class);
     public ArrayList search(String _dataType,Date _date) throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","Browse",_dataType + " since " + _date);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+        AccessLogger.LogServiceAccess(_username, messageContext,"Browse",_dataType + " since " + _date);
         ArrayList al = new ArrayList();
         try {
             String elementName = XFTTool.GetValidElementName(_dataType);
@@ -136,15 +138,15 @@ public class Browse {
 
     public ArrayList search(String session_id,String _dataType,Date _date) throws RemoteException
     {
-        AccessLogger.LogServiceAccess(session_id,"","Browse",_dataType + " since " + _date);
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final UserI          user           = (UserI) messageContext.getSession().get("user");
+        if (user == null) {
+            throw new RemoteException("Invalid User for session ID: " + session_id);
+        }
+        AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "Browse", _dataType + " since " + _date);
         ArrayList al = new ArrayList();
         try {
-			
-			UserI user =(UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
-            if (user == null)
-            {
-                throw new Exception("Invalid User.");
-            }
+
             String elementName = XFTTool.GetValidElementName(_dataType);
 
 			boolean valid = XFTTool.ValidateElementName(elementName);

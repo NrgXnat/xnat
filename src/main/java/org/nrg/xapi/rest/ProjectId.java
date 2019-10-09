@@ -16,8 +16,11 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates that the parameter can be used to discover the project ID(s) passed to a REST method.
+ *
+ * @deprecated Use {@link Project} instead.
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated
 public @interface ProjectId {
 }

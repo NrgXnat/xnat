@@ -9,6 +9,10 @@
 
 package org.nrg.xft.db;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +31,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.SecurityManagerI;
@@ -35,24 +40,16 @@ import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XftStringUtils;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes", "UnusedReturnValue"})
 @Slf4j
 public class DBAction {
-    private static final Map<String, String> SEQUENCES = new HashMap<>();
-    private static final String  QUERY_FIND_SEQLESS_TABLES        = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
-    private static final String  QUERY_CREATE_SEQUENCE            = "CREATE SEQUENCE %s_id_seq";
-    private static final String  QUERY_SET_ID_DEFAULT             = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
-    private static final String  QUERY_SET_ID_NOT_NULL            = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
-    private static final String  QUERY_SET_SEQUENCE_OWNER         = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
-    private static final String  QUERY_GET_SEQUENCE_START         = "SELECT (MAX(id) + 1) AS value FROM %s";
-    private static final String  QUERY_SET_SEQUENCE_VALUE         = "SELECT setval('%s_id_seq', %d) AS value";
-
     /**
      * This method is used to insert/update an item into the database.
      *
@@ -67,11 +64,12 @@ public class DBAction {
      * row.  Otherwise, a new row is INSERTed.
      *
      * @param item The item to be stored.
+     *             git
      * @return updated XFTItem
      */
     public static boolean StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, SecurityManagerI securityManager, EventMetaI c) throws Exception {
-        long localStartTime = Calendar.getInstance().getTimeInMillis();
-        DBItemCache cache = new DBItemCache(user, c);
+        long        localStartTime = Calendar.getInstance().getTimeInMillis();
+        DBItemCache cache          = new DBItemCache(user, c);
         item = StoreItem(item, user, checkForDuplicates, new ArrayList(), quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
 
         log.debug("prepare-sql: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
@@ -84,8 +82,8 @@ public class DBAction {
             localStartTime = Calendar.getInstance().getTimeInMillis();
 
             PoolDBUtils con;
-            String username = null;
-            Integer xdat_user_id = null;
+            String      username     = null;
+            Integer     xdat_user_id = null;
             if (user != null) {
                 username = user.getUsername();
                 xdat_user_id = user.getID();
@@ -117,8 +115,8 @@ public class DBAction {
 
     public static void executeCache(final DBItemCache cache, final UserI user, final String db) throws Exception {
         PoolDBUtils con;
-        String username = null;
-        Integer xdat_user_id = null;
+        String      username     = null;
+        Integer     xdat_user_id = null;
         if (user != null) {
             username = user.getUsername();
             xdat_user_id = user.getID();
@@ -209,6 +207,7 @@ public class DBAction {
      * @param allowItemOverwrite Whether an existing item should be overwritten.
      * @param securityManager    The security manager for evaluating the operation.
      * @param cache              The database item cache.
+     *
      * @return The updated database item cache with the stored item.
      */
     @SuppressWarnings("UnusedParameters")
@@ -265,8 +264,8 @@ public class DBAction {
                 if (al.size() > 0) {
                     isNew = false;
                     //ITEM EXISTS
-                    XFTItem sub = (XFTItem) al.get(0);
-                    String output = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + sub.getPK() + ")";
+                    XFTItem sub    = (XFTItem) al.get(0);
+                    String  output = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + sub.getPK() + ")";
                     if (sub.getXSIType().startsWith("xdat:")) {
                         log.debug(output);
                     } else {
@@ -288,7 +287,7 @@ public class DBAction {
 
                     if (hasOneColumnTable) {
                         sub.importNonItemFields(item, false);
-                        StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                        StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, true);
 
                         if (HasNewFields(sub, item, allowItemOverwrite)) {
                             item = UpdateItem(sub, item, user, localQuarantine, overrideQuarantine, cache, false);
@@ -301,7 +300,7 @@ public class DBAction {
                         if (temp.size() > 0) {
                             isNew = false;
                             XFTItem duplicate = (XFTItem) temp.get(0);
-                            String output = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
+                            String  output    = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
                             if (duplicate.getXSIType().startsWith("xdat:")) {
                                 log.debug(output);
                             } else {
@@ -324,7 +323,7 @@ public class DBAction {
 
                             if (hasOneColumnTable) {
                                 duplicate.importNonItemFields(item, false);
-                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, true);
 
                                 if (HasNewFields(duplicate, item, allowItemOverwrite)) {
                                     item = UpdateItem(duplicate, item, user, localQuarantine, overrideQuarantine, cache, false);
@@ -343,7 +342,7 @@ public class DBAction {
 
                                 if (hasOneColumnTable) {
                                     DBAction.ImportNoIdentifierFKs(item, duplicate);
-                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                 }
                             } else if (cache.getSaved().containsByUnique(item, false)) {
                                 itemAlreadyStoredInCache = true;
@@ -356,28 +355,27 @@ public class DBAction {
 
                                 if (hasOneColumnTable) {
                                     DBAction.ImportNoIdentifierFKs(item, duplicate);
-                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                 }
                             } else {
                                 //            				      ITEM IS NEW
                                 if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase("")) {
-                                    GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                                    XFTItem meta = (XFTItem) item.getProperty(f);
+                                    GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
+                                    XFTItem             meta = (XFTItem) item.getProperty(f);
                                     if (meta == null) {
                                         meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
-                                        StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                        assert meta != null;
 
+                                        StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                         GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-
                                         item.setChild(ref, meta, true);
 
                                         for (final Object o : ref.getLocalRefNames()) {
-                                            ArrayList refName = (ArrayList) o;
-                                            String localKey = (String) refName.get(0);
+                                            ArrayList           refName    = (ArrayList) o;
+                                            String              localKey   = (String) refName.get(0);
                                             GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                                            Object value = meta.getProperty(foreignKey.getId());
+                                            Object              value      = meta.getProperty(foreignKey.getId());
                                             if (value != null) {
-
                                                 if (!item.setFieldValue(localKey, value)) {
                                                     throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
                                                 }
@@ -390,33 +388,31 @@ public class DBAction {
                                 }
 
                                 if (hasOneColumnTable) {
-                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                    StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                 }
 
                                 item = InsertItem(item, login, cache, false);
                             }
-
                         }
-
                     } else {
                         if (!cache.getSaved().containsByPK(item, false)) {
                             //ITEM IS NEW
                             if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase("")) {
-                                GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                                XFTItem meta = (XFTItem) item.getProperty(f);
+                                GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
+                                XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
-                                    StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                    assert meta != null;
 
+                                    StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                     GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-
                                     item.setChild(ref, meta, true);
 
                                     for (final Object o : ref.getLocalRefNames()) {
-                                        ArrayList refName = (ArrayList) o;
-                                        String localKey = (String) refName.get(0);
+                                        ArrayList           refName    = (ArrayList) o;
+                                        String              localKey   = (String) refName.get(0);
                                         GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                                        Object value = meta.getProperty(foreignKey.getId());
+                                        Object              value      = meta.getProperty(foreignKey.getId());
                                         if (value != null) {
                                             if (!item.setFieldValue(localKey, value)) {
                                                 throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
@@ -430,7 +426,7 @@ public class DBAction {
                             }
 
                             if (hasOneColumnTable) {
-                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                             }
 
                             item = InsertItem(item, login, cache, false);
@@ -445,7 +441,7 @@ public class DBAction {
 
                             if (hasOneColumnTable) {
                                 DBAction.ImportNoIdentifierFKs(item, duplicate);
-                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                             }
                         }
                     }
@@ -458,7 +454,7 @@ public class DBAction {
                     if (temp.size() > 0) {
                         isNew = false;
                         XFTItem duplicate = (XFTItem) temp.get(0);
-                        String output = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
+                        String  output    = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
                         if (duplicate.getXSIType().startsWith("xdat:")) {
                             log.debug(output);
                         } else {
@@ -470,9 +466,8 @@ public class DBAction {
                         }
 
                         if (HasNewFields(duplicate, item, allowItemOverwrite)) {
-                            log.debug("OLD: {}\nNEW: ", duplicate.toString(), item.toString());
+                            log.debug("OLD: {}\nNEW: {}", duplicate, item);
                             item = UpdateItem(duplicate, item, user, localQuarantine, overrideQuarantine, cache, allowItemOverwrite);
-
                         } else {
                             item.importNonItemFields(duplicate, allowItemOverwrite);
 
@@ -482,7 +477,7 @@ public class DBAction {
 
                         if (hasOneColumnTable) {
                             duplicate.importNonItemFields(item, false);
-                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, true);
 
                             if (HasNewFields(duplicate, item, allowItemOverwrite)) {
                                 item = UpdateItem(duplicate, item, user, localQuarantine, overrideQuarantine, cache, false);
@@ -493,21 +488,21 @@ public class DBAction {
                         if (!cache.getSaved().containsByUnique(item, false)) {
                             //ITEM IS NEW
                             if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase("")) {
-                                GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                                XFTItem meta = (XFTItem) item.getProperty(f);
+                                GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
+                                XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
-                                    StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                    assert meta != null;
 
+                                    StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                     GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-
                                     item.setChild(ref, meta, true);
 
                                     for (final Object o : ref.getLocalRefNames()) {
-                                        ArrayList refName = (ArrayList) o;
-                                        String localKey = (String) refName.get(0);
+                                        ArrayList           refName    = (ArrayList) o;
+                                        String              localKey   = (String) refName.get(0);
                                         GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                                        Object value = meta.getProperty(foreignKey.getId());
+                                        Object              value      = meta.getProperty(foreignKey.getId());
                                         if (value != null) {
                                             if (!item.setFieldValue(localKey, value)) {
                                                 throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
@@ -521,7 +516,7 @@ public class DBAction {
                             }
 
                             if (hasOneColumnTable) {
-                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                             }
 
                             item = InsertItem(item, login, cache, false);
@@ -537,7 +532,7 @@ public class DBAction {
 
                             if (hasOneColumnTable) {
                                 DBAction.ImportNoIdentifierFKs(item, duplicate);
-                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                             }
                         }
 
@@ -547,7 +542,7 @@ public class DBAction {
                     if (temp.size() > 0) {
                         isNew = false;
                         XFTItem duplicate = (XFTItem) temp.get(0);
-                        String output = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
+                        String  output    = "Duplicate " + item.getGenericSchemaElement().getFullXMLName() + " Found. (" + duplicate.getPK() + ")";
                         if (duplicate.getXSIType().startsWith("xdat:")) {
                             log.debug(output);
                         } else {
@@ -571,7 +566,7 @@ public class DBAction {
 
                         if (hasOneColumnTable) {
                             duplicate.importNonItemFields(item, false);
-                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, true);
 
                             if (HasNewFields(duplicate, item, allowItemOverwrite)) {
                                 item = UpdateItem(duplicate, item, user, localQuarantine, overrideQuarantine, cache, false);
@@ -580,21 +575,21 @@ public class DBAction {
                     } else {
 //                		  ITEM IS NEW
                         if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase("")) {
-                            GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                            XFTItem meta = (XFTItem) item.getProperty(f);
+                            GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
+                            XFTItem             meta = (XFTItem) item.getProperty(f);
                             if (meta == null) {
                                 meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
-                                StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                                assert meta != null;
 
+                                StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                                 GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-
                                 item.setChild(ref, meta, true);
 
                                 for (final Object o : ref.getLocalRefNames()) {
-                                    ArrayList refName = (ArrayList) o;
-                                    String localKey = (String) refName.get(0);
+                                    ArrayList           refName    = (ArrayList) o;
+                                    String              localKey   = (String) refName.get(0);
                                     GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                                    Object value = meta.getProperty(foreignKey.getId());
+                                    Object              value      = meta.getProperty(foreignKey.getId());
                                     if (value != null) {
                                         if (!item.setFieldValue(localKey, value)) {
                                             throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
@@ -608,7 +603,7 @@ public class DBAction {
                         }
 
                         if (hasOneColumnTable) {
-                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                            StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                         }
 
                         item = InsertItem(item, login, cache, false);
@@ -616,21 +611,21 @@ public class DBAction {
                 } else {
                     //ITEM IS NEW
                     if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase("")) {
-                        GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                        XFTItem meta = (XFTItem) item.getProperty(f);
+                        GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
+                        XFTItem             meta = (XFTItem) item.getProperty(f);
                         if (meta == null) {
                             meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
-                            StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                            assert meta != null;
 
+                            StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                             GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-
                             item.setChild(ref, meta, true);
 
                             for (final Object o : ref.getLocalRefNames()) {
-                                ArrayList refName = (ArrayList) o;
-                                String localKey = (String) refName.get(0);
+                                ArrayList           refName    = (ArrayList) o;
+                                String              localKey   = (String) refName.get(0);
                                 GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                                Object value = meta.getProperty(foreignKey.getId());
+                                Object              value      = meta.getProperty(foreignKey.getId());
                                 if (value != null) {
                                     if (!item.setFieldValue(localKey, value)) {
                                         throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
@@ -644,7 +639,7 @@ public class DBAction {
                     }
 
                     if (hasOneColumnTable) {
-                        StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, (!isNew));
+                        StoreSingleRefs(item, true, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
                     }
 
                     item = InsertItem(item, login, cache, false);
@@ -704,7 +699,8 @@ public class DBAction {
      * @param i     The item to inspect.
      * @param cache The database item cache.
      * @param user  The user performing the operation.
-     * @throws Exception
+     *
+     * @throws Exception When an unexpected error occurs.
      */
     private static void confirmExtensionHistory(XFTItem i, DBItemCache cache, UserI user) throws Exception {
         if (i.getGenericSchemaElement().isExtension()) {
@@ -728,27 +724,28 @@ public class DBAction {
      * @param oldI               The old item for comparison.
      * @param newI               The new item for comparison.
      * @param allowItemOverwrite Indicates whether overwriting should be allowed.
+     *
      * @return True if the new item has any new fields, false otherwise.
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws InvalidValueException
+     *
+     * @throws XFTInitException         When an error occurs accessing XFT
+     * @throws ElementNotFoundException When the element or a referenced element can't be found.
+     * @throws InvalidValueException    When an invalid value is specified for item properties.
      */
-    private static boolean HasNewFields(XFTItem oldI, XFTItem newI, boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
-
-        Hashtable newHash = newI.getProps();
-        Hashtable oldHashClone = (Hashtable) oldI.getProps().clone();
-        Enumeration enumer = newHash.keys();
+    private static boolean HasNewFields(final XFTItem oldI, final XFTItem newI, final boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
+        Hashtable   newHash      = newI.getProps();
+        Hashtable   oldHashClone = (Hashtable) oldI.getProps().clone();
+        Enumeration enumer       = newHash.keys();
         while (enumer.hasMoreElements()) {
-            String field = (String) enumer.nextElement();
-            GenericWrapperField gwf = oldI.getGenericSchemaElement().getField(field);
-            Object newObject = newHash.get(field);
+            String              field     = (String) enumer.nextElement();
+            GenericWrapperField gwf       = oldI.getGenericSchemaElement().getField(field);
+            Object              newObject = newHash.get(field);
             if (!(newObject instanceof XFTItem)) {
                 try {
                     if (oldI.getProperty(field) != null) {
                         oldHashClone.remove(field);
                         String oldValue = DBAction.ValueParser(oldI.getProperty(field), gwf, true);
                         String newValue = DBAction.ValueParser(newHash.get(field), gwf, false);
-                        String type = null;
+                        String type     = null;
                         if (gwf != null) {
                             type = gwf.getXMLType().getLocalType();
                         }
@@ -763,31 +760,30 @@ public class DBAction {
                         }
                     }
                 } catch (NumberFormatException e) {
-                    log.error("", e);
+                    log.error("An invalid value was specified for a number", e);
                     log.info("OLD:NULL NEW: {}", newObject);
                     return true;
                 } catch (XFTInitException e) {
-                    log.error("", e);
+                    log.error("An error occurred accessing XFT", e);
                     log.info("OLD:NULL NEW: {}", newObject);
                     return true;
                 } catch (ElementNotFoundException e) {
-                    log.error("", e);
+                    log.error("Element not found: {}", e.ELEMENT, e);
                     log.info("OLD:NULL NEW: {}", newObject);
                     return true;
                 } catch (FieldNotFoundException e) {
-                    log.error("", e);
+                    log.error("Field not found {}: {}", e.FIELD, e.MESSAGE, e);
                     log.info("OLD:NULL NEW: {}", newObject);
                     return true;
                 }
             }
-
         }
 
         if (allowItemOverwrite) {
             enumer = oldHashClone.keys();
             while (enumer.hasMoreElements()) {
-                String field = (String) enumer.nextElement();
-                GenericWrapperField gwf = oldI.getGenericSchemaElement().getField(field);
+                String              field = (String) enumer.nextElement();
+                GenericWrapperField gwf   = oldI.getGenericSchemaElement().getField(field);
                 if (gwf == null) {
                     if (!oldI.getGenericSchemaElement().isHiddenFK(field)) {
                         Object newObject = oldHashClone.get(field);
@@ -828,7 +824,7 @@ public class DBAction {
                 } else {
                     if (!oldI.getGenericSchemaElement().isHiddenFK(field)) {
                         Object newObject = oldHashClone.get(field);
-                        String type = gwf.getXMLType().getLocalType();
+                        String type      = gwf.getXMLType().getLocalType();
                         if (type != null) {
                             newObject = XMLWriter.ValueParser(newObject, type);
                         }
@@ -1069,27 +1065,25 @@ public class DBAction {
                     try {
                         Object o = item.getProperty(ref.getId());
 
-                        if (o != null && o instanceof XFTItem) {
+                        if (o instanceof XFTItem) {
                             XFTItem temp = (XFTItem) o;
 
                             //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                             // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                             String keyName;
-                            if (temp != null) {
-                                if (temp.getPossibleFieldNames().size() == 1) {
-                                    keyName = (String) temp.getPossibleFieldNames().get(0)[0];
-                                    try {
-                                        if (temp.getProperty(keyName) == null) {
-                                            isNoIdentifierTable = true;
-                                        }
-                                    } catch (FieldNotFoundException e1) {
-                                        log.error("", e1);
+                            if (temp.getPossibleFieldNames().size() == 1) {
+                                keyName = (String) temp.getPossibleFieldNames().get(0)[0];
+                                try {
+                                    if (temp.getProperty(keyName) == null) {
+                                        isNoIdentifierTable = true;
                                     }
+                                } catch (FieldNotFoundException e1) {
+                                    log.error("", e1);
                                 }
+                            }
 
-                                if (!temp.getGenericSchemaElement().hasUniqueIdentifiers()) {
-                                    isNoIdentifierTable = true;
-                                }
+                            if (!temp.getGenericSchemaElement().hasUniqueIdentifiers()) {
+                                isNoIdentifierTable = true;
                             }
                         }
 
@@ -1149,13 +1143,13 @@ public class DBAction {
             if (!item.getGenericSchemaElement().getExtensionFieldName().equalsIgnoreCase(ref.getName())) {
                 Object o = item.getProperty(ref.getId());
 
-                if (o != null && o instanceof XFTItem) {
+                if (o instanceof XFTItem) {
                     XFTItem temp = (XFTItem) o;
 
                     //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                     // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                     boolean isNoIdentifierTable = false;
-                    String keyName = "";
+                    String  keyName             = "";
                     if (temp.getPossibleFieldNames().size() == 1) {
                         keyName = (String) temp.getPossibleFieldNames().get(0)[0];
                         if (temp.getProperty(keyName) == null) {
@@ -1183,7 +1177,7 @@ public class DBAction {
                         //Set foreign keys based on saved values.
                         for (final XFTRelationSpecification spec : supRef.getKeyRelations()) {
                             String fieldName = spec.getLocalCol();
-                            Object value = temp.getProperty(spec.getForeignCol());
+                            Object value     = temp.getProperty(spec.getForeignCol());
                             if (value != null) {
                                 if (!item.setFieldValue(fieldName.toLowerCase(), value)) {
                                     throw new FieldNotFoundException(item.getXSIType() + "/" + fieldName.toLowerCase());
@@ -1195,10 +1189,10 @@ public class DBAction {
                             item.child_modified = true;
                         }
                     } else if ((isNoIdentifierTable) && (storeSubItems)) {
-                        ArrayList refName = (ArrayList) ref.getLocalRefNames().get(0);
-                        String localKey = (String) refName.get(0);
-                        GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                        Object rootFKValue = item.getProperty(localKey);
+                        ArrayList           refName     = (ArrayList) ref.getLocalRefNames().get(0);
+                        String              localKey    = (String) refName.get(0);
+                        GenericWrapperField foreignKey  = (GenericWrapperField) refName.get(1);
+                        Object              rootFKValue = item.getProperty(localKey);
 
                         if (rootFKValue != null) {
                             if (keyName.equals("")) {
@@ -1253,13 +1247,13 @@ public class DBAction {
         if (ext != null) {
             Object o = item.getProperty(ext.getId());
 
-            if (o != null && o instanceof XFTItem) {
+            if (o instanceof XFTItem) {
                 XFTItem temp = (XFTItem) o;
 
                 //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                 // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                 boolean isNoIdentifierTable = false;
-                String keyName = "";
+                String  keyName             = "";
                 if (temp.getPossibleFieldNames().size() == 1) {
                     keyName = (String) temp.getPossibleFieldNames().get(0)[0];
                     if (temp.getProperty(keyName) == null) {
@@ -1282,8 +1276,8 @@ public class DBAction {
                     final XFTSuperiorReference supRef = (XFTSuperiorReference) ext.getXFTReference();
                     //Set foreign keys based on saved values.
                     for (final XFTRelationSpecification spec : supRef.getKeyRelations()) {
-                        String fieldName = spec.getLocalCol();
-                        final Object value = temp.getProperty(spec.getForeignCol());
+                        String       fieldName = spec.getLocalCol();
+                        final Object value     = temp.getProperty(spec.getForeignCol());
                         if (value != null) {
                             if (!item.setFieldValue(fieldName.toLowerCase(), value)) {
                                 throw new FieldNotFoundException(item.getXSIType() + "/" + fieldName.toLowerCase());
@@ -1295,10 +1289,10 @@ public class DBAction {
                         item.modified = true;
                     }
                 } else if ((isNoIdentifierTable) && (storeSubItems)) {
-                    ArrayList refName = (ArrayList) ext.getLocalRefNames().get(0);
-                    String localKey = (String) refName.get(0);
-                    GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
-                    Object rootFKValue = item.getProperty(localKey);
+                    ArrayList           refName     = (ArrayList) ext.getLocalRefNames().get(0);
+                    String              localKey    = (String) refName.get(0);
+                    GenericWrapperField foreignKey  = (GenericWrapperField) refName.get(1);
+                    Object              rootFKValue = item.getProperty(localKey);
 
                     if (rootFKValue != null) {
                         if (keyName.equals("")) {
@@ -1358,8 +1352,8 @@ public class DBAction {
         }
         XFTItem dbVersion = null;
         while (mRefs.hasNext()) {
-            GenericWrapperField ref = (GenericWrapperField) mRefs.next();
-            XFTReferenceI xftRef = ref.getXFTReference();
+            GenericWrapperField ref    = (GenericWrapperField) mRefs.next();
+            XFTReferenceI       xftRef = ref.getXFTReference();
             if (xftRef.isManyToMany()) {
                 GenericWrapperElement foreignElement = (GenericWrapperElement) ref.getReferenceElement();
 
@@ -1409,7 +1403,7 @@ public class DBAction {
                     }
                 }
 
-                int counter = 0;
+                int      counter  = 0;
                 Iterator children = item.getChildItems(ref).iterator();
                 while (children.hasNext()) {
                     XFTItem temp = (XFTItem) children.next();
@@ -1553,7 +1547,7 @@ public class DBAction {
 
                     for (final XFTRelationSpecification spec : supRef.getKeyRelations()) {
                         String fieldName = spec.getLocalCol();
-                        Object value = item.getProperty(spec.getForeignCol());
+                        Object value     = item.getProperty(spec.getForeignCol());
                         if (value != null) {
                             boolean set = temp.setFieldValue(fieldName.toLowerCase(), value);
                             if (!set) {
@@ -1618,39 +1612,33 @@ public class DBAction {
     }
 
     private static boolean StoreMapping(XFTManyToManyReference mapping, CriteriaCollection criteria, String login, DBItemCache cache) throws Exception {
-
-        XFTTable table = TableSearch.GetMappingTable(mapping, criteria, login);
+        final XFTTable table = TableSearch.GetMappingTable(mapping, criteria, login);
 
         if (table.getNumRows() > 0) {
             log.info("Duplicate mapping table row found in '{}'", mapping.getMappingTable());
             return false;
         } else {
-            String query = "INSERT INTO ";
-
-            query += mapping.getMappingTable() + " (";
-
-            String fields = "";
-            String values = "";
-
-            Iterator props = criteria.iterator();
-            int counter = 0;
-            while (props.hasNext()) {
-                SearchCriteria c = (SearchCriteria) props.next();
-                if (c.getValue() != null) {
-                    if (counter++ == 0) {
-                        fields = c.getField_name();
-                        values = c.valueToDB();
-                    } else {
-                        fields += "," + c.getField_name();
-                        values += "," + c.valueToDB();
-                    }
-                }
-            }
-            query += fields + ") VALUES (" + values + ");";
-
+            final List<String> values = new ArrayList<>();
+            final String query = "INSERT INTO " +
+                                 mapping.getMappingTable() +
+                                 " (" +
+                                 StringUtils.join(Iterables.filter(Iterables.transform(Iterables.filter(criteria.toList(), Predicates.instanceOf(SearchCriteria.class)), new Function<SQLClause, String>() {
+                                     @Nullable
+                                     @Override
+                                     public String apply(final SQLClause clause) {
+                                         final SearchCriteria search = (SearchCriteria) clause;
+                                         if (search.getValue() == null) {
+                                             return null;
+                                         }
+                                         values.add(search.valueToDB());
+                                         return search.getField_name();
+                                     }
+                                 }), Predicates.<String>notNull()), ", ") +
+                                 ") VALUES (" +
+                                 StringUtils.join(values, ", ") + ");";
+            log.debug("Preparing to store mapping with query: {}", query);
             try {
-                PoolDBUtils con = new PoolDBUtils();
-                con.insertItem(query, mapping.getElement1().getDbName(), login, cache);
+                new PoolDBUtils().insertItem(query, mapping.getElement1().getDbName(), login, cache);
             } catch (ClassNotFoundException e) {
                 log.warn("Class missing", e);
             } catch (SQLException e) {
@@ -1683,16 +1671,16 @@ public class DBAction {
      * @param login              The requesting user's login name.
      * @param cache              The database item cache.
      * @param allowInvalidValues Indicates whether an invalid value show trigger an exception and possible email to the site administrator.
+     *
      * @return The item after insertion.
      */
     @SuppressWarnings("ConstantConditions")
     public static XFTItem InsertItem(XFTItem item, String login, DBItemCache cache, boolean allowInvalidValues) throws Exception {
         item.modified = true;
         item.assignDefaultValues();
-        String query = "INSERT INTO ";
-        GenericWrapperElement element = item.getGenericSchemaElement();
 
-        PoolDBUtils con = new PoolDBUtils();
+        final GenericWrapperElement element = item.getGenericSchemaElement();
+        final PoolDBUtils           con     = new PoolDBUtils();
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
                 Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().get(0), element.getSequenceName());
@@ -1702,41 +1690,43 @@ public class DBAction {
             }
         }
 
-        query += element.getSQLName() + " (";
+        final StringBuilder buffer = new StringBuilder("INSERT INTO ").append(element.getSQLName()).append(" (");
 
-        String fields = "";
-        String values = "";
+        StringBuilder fields = new StringBuilder();
+        StringBuilder values = new StringBuilder();
 
-        Hashtable props = item.getProps();
-        Enumeration enumer = props.keys();
-        int counter = 0;
-        while (enumer.hasMoreElements()) {
-            String key = (String) enumer.nextElement();
+        final Hashtable   props   = item.getProps();
+        final Enumeration keys    = props.keys();
+        int               counter = 0;
+        while (keys.hasMoreElements()) {
+            String key   = (String) keys.nextElement();
             Object value = props.get(key);
             if (!(value instanceof XFTItem)) {
                 GenericWrapperField field = element.getNonMultipleDataField(key);
                 if (field == null) {
                     if (element.validateID(key)) {
                         if (counter++ == 0) {
-                            fields = key;
-                            values = ValueParser(value, field, allowInvalidValues);
+                            fields = new StringBuilder(key);
+                            values = new StringBuilder(ValueParser(value, field, allowInvalidValues));
                         } else {
-                            fields += "," + key;
-                            values += "," + ValueParser(value, field, allowInvalidValues);
+                            fields.append(",").append(key);
+                            values.append(",").append(ValueParser(value, field, allowInvalidValues));
                         }
                     }
                 } else {
                     if (counter++ == 0) {
-                        fields = key;
-                        values = ValueParser(value, field, allowInvalidValues);
+                        fields = new StringBuilder(key);
+                        values = new StringBuilder(ValueParser(value, field, allowInvalidValues));
                     } else {
-                        fields += "," + key;
-                        values += "," + ValueParser(value, field, allowInvalidValues);
+                        fields.append(",").append(key);
+                        values.append(",").append(ValueParser(value, field, allowInvalidValues));
                     }
                 }
             }
         }
-        query += fields + ") VALUES (" + values + ");";
+        buffer.append(fields).append(") VALUES (").append(values).append(");");
+
+        final String query = buffer.toString();
 
         //XFT.LogSQLInfo(query);
         cache.getSaved().add(item);
@@ -1846,10 +1836,11 @@ public class DBAction {
                 oldMeta.setFieldValue("last_modified", Calendar.getInstance().getTime());
 
                 boolean q;
-                if (overrideQuarantine)
+                if (overrideQuarantine) {
                     q = quarantine;
-                else
+                } else {
                     q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
+                }
 
                 if (q) {
                     oldMeta.setFieldValue("status", ViewManager.QUARANTINE);
@@ -1895,10 +1886,11 @@ public class DBAction {
                 }
 
                 if (quarantine != null) {
-                    if (quarantine)
+                    if (quarantine) {
                         meta.setFieldValue("status", ViewManager.QUARANTINE);
-                    else
+                    } else {
                         meta.setFieldValue("status", ViewManager.ACTIVE);
+                    }
                 }
 
                 UpdateItem(meta, user, cache, false);
@@ -1917,30 +1909,24 @@ public class DBAction {
     }
 
     /**
+     *
      */
-    private static XFTItem UpdateItem(XFTItem oldI, XFTItem newI, UserI user, boolean quarantine, boolean overrideQuarantine, DBItemCache cache, boolean storeNULLS) throws Exception {
-
-        Boolean q;
-        if (overrideQuarantine)
-            q = quarantine;
-        else
-            q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
-
+    private static XFTItem UpdateItem(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
         // MARK MODIFIED AS TRUE
-        StoreHistoryAndMeta(oldI, newI, user, q, cache);
+        StoreHistoryAndMeta(oldI, newI, user, overrideQuarantine ? quarantine : oldI.getGenericSchemaElement().isQuarantine(quarantine), cache);
 
         //COPY PK VALUES INTO NEW ITEM
         newI.getProps().putAll(oldI.getPkValues());
 
         //UPDATE ITEM
-        newI = UpdateItem(newI, user, cache, storeNULLS);
+        final XFTItem newItem = UpdateItem(newI, user, cache, storeNULLS);
 
-        cache.getModified().add(newI);
+        cache.getModified().add(newItem);
 
         oldI.modified = true;
-        newI.modified = true;
+        newItem.modified = true;
 
-        return newI;
+        return newItem;
     }
 
     public static void StoreHistoryItem(XFTItem oldI, UserI user, final DBItemCache cache, final Date previousChangeDate) throws Exception {
@@ -1960,8 +1946,8 @@ public class DBAction {
             history.setDirectProperty("change_date", cache.getModTime());
             history.setDirectProperty("xft_version", oldI.getXFTVersion());
 
-            Hashtable pkHash = (Hashtable) oldI.getPkValues();
-            Enumeration pks = pkHash.keys();
+            Hashtable   pkHash = (Hashtable) oldI.getPkValues();
+            Enumeration pks    = pkHash.keys();
             while (pks.hasMoreElements()) {
                 String name = (String) pks.nextElement();
                 history.setFieldValue("new_row_" + name, pkHash.get(name));
@@ -1977,6 +1963,7 @@ public class DBAction {
      * @param user       The user performing the operation.
      * @param cache      The database item cache.
      * @param storeNULLS Whether NULL values should be stored or cleared out.
+     *
      * @return The item after updating.
      */
     private static XFTItem UpdateItem(XFTItem item, UserI user, DBItemCache cache, boolean storeNULLS) throws ElementNotFoundException, XFTInitException, FieldNotFoundException, InvalidValueException {
@@ -1984,17 +1971,15 @@ public class DBAction {
         if (user != null) {
             login = user.getUsername();
         }
-        String query = "UPDATE ";
+        StringBuilder         query   = new StringBuilder("UPDATE ");
         GenericWrapperElement element = item.getGenericSchemaElement();
 
-        query += element.getSQLName() + " SET ";
+        query.append(element.getSQLName()).append(" SET ");
 
-        Hashtable props = item.getProps();
-        int counter = 0;
-        Iterator iter = item.getPossibleFieldNames().iterator();
-        while (iter.hasNext()) {
-            Object[] possibleField = (Object[]) iter.next();
-            String key = (String) possibleField[0];
+        Hashtable props   = item.getProps();
+        int       counter = 0;
+        for (final Object[] possibleField : item.getPossibleFieldNames()) {
+            String key   = (String) possibleField[0];
             Object value = props.get(key);
             if (!item.getPkNames().contains(key)) {
                 if (value == null) {
@@ -2008,16 +1993,16 @@ public class DBAction {
 
                                     if (e.getAddin().equals("")) {
                                         if (counter++ == 0) {
-                                            query += key + "= NULL";
+                                            query.append(key).append("= NULL");
                                         } else {
-                                            query += ", " + key + "= NULL";
+                                            query.append(", ").append(key).append("= NULL");
                                         }
                                     }
                                 } else {
                                     if (counter++ == 0) {
-                                        query += key + "= NULL";
+                                        query.append(key).append("= NULL");
                                     } else {
-                                        query += ", " + key + "= NULL";
+                                        query.append(", ").append(key).append("= NULL");
                                     }
                                 }
                             }
@@ -2027,32 +2012,30 @@ public class DBAction {
                     if (!(value instanceof XFTItem)) {
                         GenericWrapperField field = element.getNonMultipleField(key);
                         if (counter++ == 0) {
-                            query += key + "=" + ValueParser(value, field, false);
+                            query.append(key).append("=").append(ValueParser(value, field, false));
                         } else {
-                            query += ", " + key + "=" + ValueParser(value, field, false);
+                            query.append(", ").append(key).append("=").append(ValueParser(value, field, false));
                         }
                     }
                 }
             }
         }
-        query += " WHERE ";
+        query.append(" WHERE ");
 
         counter = 0;
-        iter = item.getPkNames().iterator();
-        while (iter.hasNext()) {
-            String key = (String) iter.next();
-            GenericWrapperField field = element.getNonMultipleField(key);
+        for (final String key : item.getPkNames()) {
+            final GenericWrapperField field = element.getNonMultipleField(key);
             if (counter++ == 0) {
-                query += key + "=" + ValueParser(item.getProperty(key), field, false) + " ";
+                query.append(key).append("=").append(ValueParser(item.getProperty(key), field, false)).append(" ");
             } else {
-                query += " AND " + key + "=" + ValueParser(item.getProperty(key), field, false) + " ";
+                query.append(" AND ").append(key).append("=").append(ValueParser(item.getProperty(key), field, false)).append(" ");
             }
         }
-        query += ";";
+        query.append(";");
 
         try {
-            PoolDBUtils con = new PoolDBUtils();
-            con.updateItem(query, element.getDbName(), login, cache);
+            final PoolDBUtils con = new PoolDBUtils();
+            con.updateItem(query.toString(), element.getDbName(), login, cache);
             cache.handlePostModificationAction(item, "update");
 
             if (!element.getFullXMLName().toLowerCase().startsWith("xdat")) {
@@ -2082,16 +2065,18 @@ public class DBAction {
      * @param object             The object containing the value to be parsed.
      * @param field              The generic wrapper field.
      * @param allowInvalidValues Indicates whether an invalid value show trigger an exception and possible email to the site administrator.
+     *
      * @return The string parsed from the object.
-     * @throws XFTInitException
-     * @throws InvalidValueException
+     *
+     * @throws XFTInitException      When an error occurs accessing XFT.
+     * @throws InvalidValueException When an invalid value is specified for item properties.
      */
-    public static String ValueParser(Object object, GenericWrapperField field, boolean allowInvalidValues) throws org.nrg.xft.exception.XFTInitException, InvalidValueException {
+    public static String ValueParser(Object object, GenericWrapperField field, boolean allowInvalidValues) throws XFTInitException, InvalidValueException {
         if (field != null) {
             if (field.isReference()) {
                 try {
-                    GenericWrapperElement foreign = (GenericWrapperElement) field.getReferenceElement();
-                    GenericWrapperField foreignKey = foreign.getAllPrimaryKeys().get(0);
+                    GenericWrapperElement foreign    = (GenericWrapperElement) field.getReferenceElement();
+                    GenericWrapperField   foreignKey = foreign.getAllPrimaryKeys().get(0);
                     return ValueParser(object, foreignKey, allowInvalidValues);
                 } catch (Exception e) {
                     return object.toString();
@@ -2110,9 +2095,9 @@ public class DBAction {
                 } else {
                     return object.toString();
                 }
-            }else if (type.equalsIgnoreCase("LONGVARCHAR")) {
+            } else if (type.equalsIgnoreCase("LONGVARCHAR")) {
                 return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
-            }else {
+            } else {
                 if (type.equalsIgnoreCase("string")) {
                     if (field.getWrapped().getRule().getBaseType().equals("xs:anyURI")) {
                         return ValueParser(object, "anyURI", allowInvalidValues);
@@ -2139,8 +2124,10 @@ public class DBAction {
      * @param object             The The object containing the value to be parsed.
      * @param type               The type to be used for conversion.
      * @param allowInvalidValues Indicates whether an invalid value show trigger an exception and possible email to the site administrator.
+     *
      * @return The string parsed from the object.
-     * @throws InvalidValueException
+     *
+     * @throws InvalidValueException When an invalid value is specified for item properties.
      */
     public static String ValueParser(Object object, String type, boolean allowInvalidValues) throws InvalidValueException {
         if (object != null) {
@@ -2153,7 +2140,7 @@ public class DBAction {
 
         if (type.equalsIgnoreCase("string")) {
             if (object.getClass().getName().equalsIgnoreCase("[B")) {
-                byte[] b = (byte[]) object;
+                byte[]                        b    = (byte[]) object;
                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
                 try {
                     baos.write(b);
@@ -2163,7 +2150,7 @@ public class DBAction {
                 if (baos.toString().equalsIgnoreCase("NULL")) {
                     return "NULL";
                 } else {
-                    String s = baos.toString();
+                    String s     = baos.toString();
                     String upper = s.toUpperCase();
                     if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
                         if (!allowInvalidValues) {
@@ -2176,7 +2163,7 @@ public class DBAction {
             } else if (object.toString().equalsIgnoreCase("NULL")) {
                 return "NULL";
             } else {
-                String s = object.toString();
+                String s     = object.toString();
                 String upper = s.toUpperCase();
                 if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
                     if (!allowInvalidValues) {
@@ -2196,8 +2183,9 @@ public class DBAction {
                 }
                 if (FileUtils.IsAbsolutePath(uri)) {
                     //must be within a specified directory, to prevent directory traversal to secured files.
-                    if (!allowInvalidValues)
+                    if (!allowInvalidValues) {
                         FileUtils.ValidateUriAgainstRoot(uri, XDAT.getSiteConfigPreferences().getArchivePath(), "URI references data outside of the archive:" + uri);
+                    }
 
                 }
                 return "'" + XftStringUtils.CleanForSQLValue(uri) + "'";
@@ -2407,7 +2395,7 @@ public class DBAction {
 
         PoolDBUtils con;
         if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]")) {
-            String username = null;
+            String  username     = null;
             Integer xdat_user_id = null;
             if (user != null) {
                 username = user.getUsername();
@@ -2452,8 +2440,8 @@ public class DBAction {
         try {
             GenericWrapperElement root = item.getGenericSchemaElement();
 
-            boolean foundField = false;
-            GenericWrapperField field = null;
+            boolean             foundField = false;
+            GenericWrapperField field      = null;
             if (xmlPath != null && !xmlPath.equals("")) {
                 field = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
             } else {
@@ -2482,7 +2470,7 @@ public class DBAction {
                 GenericWrapperElement foreign = toRemove.getGenericSchemaElement();
                 if (foreign.hasUniqueIdentifiers() || foreign.matchByValues()) {
                     Integer referenceCount;
-                    if (cache.getPreexisting().contains(toRemove, false)) {
+                    if (cache != null && cache.getPreexisting().contains(toRemove, false)) {
                         referenceCount = 100;
                     } else {
                         referenceCount = XFTReferenceManager.NumberOfReferences(toRemove);
@@ -2494,13 +2482,13 @@ public class DBAction {
                         //ELSE, DELETE THE ITEM
                         if (referenceCount > 1) {
                             if (field.getXFTReference().isManyToMany()) {
-                                XFTManyToManyReference ref = (XFTManyToManyReference) field.getXFTReference();
-                                ArrayList values = new ArrayList();
-                                Iterator refCols = ref.getMappingColumnsForElement(foreign).iterator();
+                                XFTManyToManyReference ref     = (XFTManyToManyReference) field.getXFTReference();
+                                ArrayList              values  = new ArrayList();
+                                Iterator               refCols = ref.getMappingColumnsForElement(foreign).iterator();
                                 while (refCols.hasNext()) {
                                     XFTMappingColumn spec = (XFTMappingColumn) refCols.next();
-                                    Object o = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
-                                    ArrayList al = new ArrayList();
+                                    Object           o    = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
+                                    ArrayList        al   = new ArrayList();
                                     al.add(spec.getLocalSqlName());
                                     al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
                                     values.add(al);
@@ -2509,8 +2497,8 @@ public class DBAction {
                                 refCols = ref.getMappingColumnsForElement(root).iterator();
                                 while (refCols.hasNext()) {
                                     XFTMappingColumn spec = (XFTMappingColumn) refCols.next();
-                                    Object o = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
-                                    ArrayList al = new ArrayList();
+                                    Object           o    = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
+                                    ArrayList        al   = new ArrayList();
                                     al.add(spec.getLocalSqlName());
                                     al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
                                     values.add(al);
@@ -2524,14 +2512,16 @@ public class DBAction {
 
                             } else {
 
-                                GenericWrapperElement gwe = null;
-                                XFTSuperiorReference ref = (XFTSuperiorReference) field.getXFTReference();
-                                Iterator refsCols = ref.getKeyRelations().iterator();
+                                GenericWrapperElement gwe      = null;
+                                XFTSuperiorReference  ref      = (XFTSuperiorReference) field.getXFTReference();
+                                Iterator              refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    GenericWrapperField      f    = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    assert f != null;
                                     gwe = f.getParentElement().getGenericXFTElement();
                                 }
+                                assert gwe != null;
 
                                 XFTItem updateItem = toRemove;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType())) {
@@ -2563,11 +2553,11 @@ public class DBAction {
                             }
                         } else {
                             if (field.getXFTReference().isManyToMany()) {
-                                XFTManyToManyReference ref = (XFTManyToManyReference) field.getXFTReference();
-                                ArrayList values = new ArrayList();
+                                XFTManyToManyReference      ref     = (XFTManyToManyReference) field.getXFTReference();
+                                ArrayList                   values  = new ArrayList();
                                 ArrayList<XFTMappingColumn> forCols = ref.getMappingColumnsForElement(foreign);
                                 for (XFTMappingColumn spec : forCols) {
-                                    Object o = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
+                                    Object    o  = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
                                     ArrayList al = new ArrayList();
                                     al.add(spec.getLocalSqlName());
                                     al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
@@ -2576,7 +2566,7 @@ public class DBAction {
 
                                 ArrayList<XFTMappingColumn> localCols = ref.getMappingColumnsForElement(root);
                                 for (XFTMappingColumn spec : localCols) {
-                                    Object o = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
+                                    Object    o  = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
                                     ArrayList al = new ArrayList();
                                     al.add(spec.getLocalSqlName());
                                     al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
@@ -2602,18 +2592,20 @@ public class DBAction {
                         if (referenceCount > 1) {
                             if (!parentDeleted) {
                                 GenericWrapperElement gwe = null;
-                                XFTSuperiorReference ref = (XFTSuperiorReference) field.getXFTReference();
+                                XFTSuperiorReference  ref = (XFTSuperiorReference) field.getXFTReference();
 
                                 //FIND EXTENSION LEVEL FOR UPDATE
                                 Iterator refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    GenericWrapperField      f    = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    assert f != null;
                                     gwe = f.getParentElement().getGenericXFTElement();
                                 }
 
                                 //FIND CORRECT EXTENSION LEVEL ITEM
                                 XFTItem updateItem = item;
+                                assert gwe != null;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType())) {
                                     updateItem = updateItem.getExtensionItem(gwe.getFullXMLName());
                                     if (updateItem == null) {
@@ -2646,18 +2638,20 @@ public class DBAction {
                         } else {
                             if (!parentDeleted) {
                                 GenericWrapperElement gwe = null;
-                                XFTSuperiorReference ref = (XFTSuperiorReference) field.getXFTReference();
+                                XFTSuperiorReference  ref = (XFTSuperiorReference) field.getXFTReference();
 
                                 //FIND EXTENSION LEVEL FOR UPDATE
                                 Iterator refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    GenericWrapperField      f    = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                    assert f != null;
                                     gwe = f.getParentElement().getGenericXFTElement();
                                 }
 
                                 //FIND CORRECT EXTENSION LEVEL ITEM
                                 XFTItem updateItem = item;
+                                assert gwe != null;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType())) {
                                     updateItem = updateItem.getExtensionItem(gwe.getFullXMLName());
                                     if (updateItem == null) {
@@ -2694,13 +2688,13 @@ public class DBAction {
                 } else {
                     if (field.isMultiple()) {
                         if (field.getXFTReference().isManyToMany()) {
-                            XFTManyToManyReference ref = (XFTManyToManyReference) field.getXFTReference();
-                            ArrayList values = new ArrayList();
-                            Iterator refCols = ref.getMappingColumnsForElement(foreign).iterator();
+                            XFTManyToManyReference ref     = (XFTManyToManyReference) field.getXFTReference();
+                            ArrayList              values  = new ArrayList();
+                            Iterator               refCols = ref.getMappingColumnsForElement(foreign).iterator();
                             while (refCols.hasNext()) {
                                 XFTMappingColumn spec = (XFTMappingColumn) refCols.next();
-                                Object o = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
-                                ArrayList al = new ArrayList();
+                                Object           o    = toRemove.getProperty(spec.getForeignKey().getXMLPathString(toRemove.getXSIType()));
+                                ArrayList        al   = new ArrayList();
                                 al.add(spec.getLocalSqlName());
                                 al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
                                 values.add(al);
@@ -2709,8 +2703,8 @@ public class DBAction {
                             refCols = ref.getMappingColumnsForElement(root).iterator();
                             while (refCols.hasNext()) {
                                 XFTMappingColumn spec = (XFTMappingColumn) refCols.next();
-                                Object o = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
-                                ArrayList al = new ArrayList();
+                                Object           o    = item.getProperty(spec.getForeignKey().getXMLPathString(item.getXSIType()));
+                                ArrayList        al   = new ArrayList();
                                 al.add(spec.getLocalSqlName());
                                 al.add(DBAction.ValueParser(o, spec.getXmlType().getLocalType(), true));
                                 values.add(al);
@@ -2737,18 +2731,20 @@ public class DBAction {
                             }
 
                             GenericWrapperElement gwe = null;
-                            XFTSuperiorReference ref = (XFTSuperiorReference) field.getXFTReference();
+                            XFTSuperiorReference  ref = (XFTSuperiorReference) field.getXFTReference();
 
                             //FIND EXTENSION LEVEL FOR UPDATE
                             Iterator refsCols = ref.getKeyRelations().iterator();
                             while (refsCols.hasNext()) {
                                 XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                GenericWrapperField      f    = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." + spec.getLocalCol());
+                                assert f != null;
                                 gwe = f.getParentElement().getGenericXFTElement();
                             }
 
                             //FIND CORRECT EXTENSION LEVEL ITEM
                             XFTItem updateItem = item;
+                            assert gwe != null;
                             if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType())) {
                                 updateItem = updateItem.getExtensionItem(gwe.getFullXMLName());
                                 if (updateItem == null) {
@@ -2796,22 +2792,18 @@ public class DBAction {
         }
     }
 
-
-    /**
-     * @throws Exception
-     */
-    private static void DeleteMappings(XFTManyToManyReference mapping, String dbName, ArrayList values, String login, DBItemCache cache, boolean noHistory) throws Exception {
+    private static void DeleteMappings(XFTManyToManyReference mapping, String dbName, ArrayList values, String login, DBItemCache cache, boolean noHistory) {
         if (values.size() > 0) {
             PoolDBUtils con;
             try {
                 con = new PoolDBUtils();
 
-                String query;
-                int counter;
-                Iterator keys;
+                StringBuilder query;
+                int           counter;
+                Iterator      keys;
                 if (!noHistory) {
-                    query = "INSERT INTO " + mapping.getHistoryTableName();
-                    query += " (";
+                    query = new StringBuilder("INSERT INTO ").append(mapping.getHistoryTableName());
+                    query.append(" (");
 
                     counter = 0;
                     keys = values.iterator();
@@ -2819,11 +2811,11 @@ public class DBAction {
                         ArrayList key = (ArrayList) keys.next();
 
                         if (counter++ != 0) {
-                            query += ", ";
+                            query.append(", ");
                         }
-                        query += key.get(0);
+                        query.append(key.get(0));
                     }
-                    query += ") VALUES (";
+                    query.append(") VALUES (");
 
                     counter = 0;
                     keys = values.iterator();
@@ -2831,30 +2823,30 @@ public class DBAction {
                         ArrayList key = (ArrayList) keys.next();
 
                         if (counter++ != 0) {
-                            query += ", ";
+                            query.append(", ");
                         }
-                        query += key.get(1);
+                        query.append(key.get(1));
                     }
-                    query += ");";
+                    query.append(");");
 
-                    log.debug(query);
-                    con.updateItem(query, dbName, login, cache);
+                    log.debug(query.toString());
+                    con.updateItem(query.toString(), dbName, login, cache);
                 }
 
-                query = "DELETE FROM " + mapping.getMappingTable() + " WHERE ";
+                query = new StringBuilder("DELETE FROM " + mapping.getMappingTable() + " WHERE ");
                 counter = 0;
                 keys = values.iterator();
                 while (keys.hasNext()) {
                     ArrayList key = (ArrayList) keys.next();
 
                     if (counter++ != 0) {
-                        query += " AND ";
+                        query.append(" AND ");
                     }
-                    query += key.get(0) + "=" + key.get(1);
+                    query.append(key.get(0)).append("=").append(key.get(1));
                 }
 
-                log.debug(query);
-                con.updateItem(query, dbName, login, cache);
+                log.debug(query.toString());
+                con.updateItem(query.toString(), dbName, login, cache);
                 log.info("{} removed.", mapping.getMappingTable());
             } catch (ClassNotFoundException e) {
                 log.error("The requested class definition was not found.", e);
@@ -2867,12 +2859,13 @@ public class DBAction {
     }
 
     /**
+     *
      */
     public static void DeleteItem(XFTItem item, UserI user, EventMetaI c, boolean skipTriggers) throws Exception {
         DBItemCache cache = new DBItemCache(user, c);
         DeleteItem(item, user, cache, false, false);
 
-        String username = null;
+        String  username     = null;
         Integer xdat_user_id = null;
         if (user != null) {
             username = user.getUsername();
@@ -2894,6 +2887,7 @@ public class DBAction {
     }
 
     /**
+     *
      */
     @SuppressWarnings("unused")
     public static void CleanDeleteItem(XFTItem item, UserI user, EventMetaI c) throws Exception {
@@ -2901,8 +2895,8 @@ public class DBAction {
         DeleteItem(item, user, cache, true, false);
 
         PoolDBUtils con;
-        String username = null;
-        Integer xdat_user_id = null;
+        String      username     = null;
+        Integer     xdat_user_id = null;
         if (user != null) {
             username = user.getUsername();
             xdat_user_id = user.getID();
@@ -2965,7 +2959,7 @@ public class DBAction {
                 //CLEAN HISTORY
                 if (item.hasHistory()) {
                     ItemCollection items = item.getHistory();
-                    Iterator iter = items.getItemIterator();
+                    Iterator       iter  = items.getItemIterator();
                     while (iter.hasNext()) {
                         ItemI history = (ItemI) iter.next();
                         DeleteHistoryItem(history.getItem(), item.getGenericSchemaElement(), login, cache);
@@ -3006,37 +3000,38 @@ public class DBAction {
     }
 
     //Added for backward compatibility - MR
-    public static void DeleteItem(XFTItem item, UserI user, EventMetaI c) throws SQLException,Exception{
-    	DeleteItem(item, user, c, false);
+    @SuppressWarnings("unused")
+    public static void DeleteItem(XFTItem item, UserI user, EventMetaI c) throws Exception {
+        DeleteItem(item, user, c, false);
     }
-    
+
     private static void DeleteItem(XFTItem item, String login, DBItemCache cache) throws Exception {
-        String query = "DELETE FROM ";
+        StringBuilder         query   = new StringBuilder("DELETE FROM ");
         GenericWrapperElement element = item.getGenericSchemaElement();
 
-        query += element.getSQLName() + " WHERE ";
+        query.append(element.getSQLName()).append(" WHERE ");
 
-        Hashtable props = (Hashtable) item.getPkValues();
-        Enumeration enumer = props.keys();
-        int counter = 0;
+        Hashtable   props   = (Hashtable) item.getPkValues();
+        Enumeration enumer  = props.keys();
+        int         counter = 0;
         while (enumer.hasMoreElements()) {
-            String key = (String) enumer.nextElement();
+            String key   = (String) enumer.nextElement();
             Object value = props.get(key);
             if (!(value instanceof XFTItem)) {
                 GenericWrapperField field = element.getNonMultipleDataField(key);
                 if (counter++ == 0) {
-                    query += key + "=" + ValueParser(value, field, true);
+                    query.append(key).append("=").append(ValueParser(value, field, true));
                 } else {
-                    query += ", " + key + "=" + ValueParser(value, field, true);
+                    query.append(", ").append(key).append("=").append(ValueParser(value, field, true));
                 }
             }
         }
-        query += ";";
+        query.append(";");
 
-        log.debug(query);
+        log.debug(query.toString());
         try {
             PoolDBUtils con = new PoolDBUtils();
-            con.updateItem(query, element.getDbName(), login, cache);
+            con.updateItem(query.toString(), element.getDbName(), login, cache);
             cache.handlePostModificationAction(item, "delete");
             log.info("{} Removed.", element.getFullXMLName());
         } catch (ClassNotFoundException e) {
@@ -3053,8 +3048,9 @@ public class DBAction {
             // Migration: Parameterize all array lists, hashtables, etc.
             for (final Object object : XFTManager.GetInstance().getAllElements()) {
                 GenericWrapperElement e = (GenericWrapperElement) object;
-                if (e.getAddin().equals(""))
+                if (e.getAddin().equals("")) {
                     InsertMetaDatas(e.getXSIType());
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -3067,30 +3063,30 @@ public class DBAction {
 
             DBItemCache cache = new DBItemCache(null, null);
             log.info("Update Meta-Data: {}", element.getFullXMLName());
-            ArrayList<GenericWrapperField> keys = element.getAllPrimaryKeys();
-            String keyString = "";
+            ArrayList<GenericWrapperField> keys      = element.getAllPrimaryKeys();
+            StringBuilder                  keyString = new StringBuilder();
             for (GenericWrapperField key : keys) {
-                if (!keyString.equals("")) {
-                    keyString += ",";
+                if (!keyString.toString().equals("")) {
+                    keyString.append(",");
                 }
-                keyString += key.getSQLName();
+                keyString.append(key.getSQLName());
             }
-            String query = "SELECT " + keyString + " FROM " + element.getSQLName() + " WHERE " + element.getMetaDataFieldName() + " IS NULL;";
-            XFTTable t = XFTTable.Execute(query, element.getDbName(), null);
+            String   query = "SELECT " + keyString + " FROM " + element.getSQLName() + " WHERE " + element.getMetaDataFieldName() + " IS NULL;";
+            XFTTable t     = XFTTable.Execute(query, element.getDbName(), null);
             if (t.size() > 0) {
                 log.info("{} missing {} meta rows.", element.getFullXMLName(), t.size());
                 t.resetRowCursor();
                 while (t.hasMoreRows()) {
-                    Object[] row = t.nextRow();
-                    XFTItem meta = XFTItem.NewMetaDataElement(null, element.getXSIType(), false, Calendar.getInstance().getTime(), null);
+                    Object[] row  = t.nextRow();
+                    XFTItem  meta = XFTItem.NewMetaDataElement(null, element.getXSIType(), false, Calendar.getInstance().getTime(), null);
                     StoreItem(meta, null, true, false, false, false, cache, null, true);
-                    keyString = "";
+                    keyString = new StringBuilder();
                     int count = 0;
                     for (GenericWrapperField key : keys) {
-                        if (!keyString.equals("")) {
-                            keyString += " AND ";
+                        if (!keyString.toString().equals("")) {
+                            keyString.append(" AND ");
                         }
-                        keyString += key.getSQLName() + "=" + DBAction.ValueParser(row[count++], key, true);
+                        keyString.append(key.getSQLName()).append("=").append(DBAction.ValueParser(row[count++], key, true));
                     }
                     if (meta != null) {
                         String st = "UPDATE " + element.getSQLName() + " SET " + element.getMetaDataFieldName() + "=" + meta.getProperty("meta_data_id") + " WHERE " + keyString;
@@ -3118,62 +3114,47 @@ public class DBAction {
 
 
     public static void AdjustSequences() {
+        // TODO: Convert this to use adjust_sequences() database function in sequence-adjustment-functions.sql
         long startTime = Calendar.getInstance().getTimeInMillis();
         try {
-            final String defaultDBName = PoolDBUtils.getDefaultDBName();
-            final XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, defaultDBName, null);
+            final String   defaultDBName = PoolDBUtils.getDefaultDBName();
+            final XFTTable tables        = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, defaultDBName, null);
             if (tables.size() > 0) {
                 for (Object table : tables.convertColumnToArrayList("table_name")) {
-                    try {
-                        log.error("Preparing to convert table '{}' to use sequence for default value.", table);
-                        ArrayList<String> queries = new ArrayList<>();
-                        queries.add(String.format(QUERY_CREATE_SEQUENCE, table));
-                        queries.add(String.format(QUERY_SET_ID_DEFAULT, table, table));
-                        queries.add(String.format(QUERY_SET_ID_NOT_NULL, table));
-                        queries.add(String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
-                        log.error("Queries prepared for conversion:");
-                        for (String query : queries) {
-                            log.error(" *** {}", query);
-                        }
-                        PoolDBUtils.ExecuteBatch(queries, defaultDBName, null);
-                        Long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", defaultDBName, null);
-                        if (start == null) {
-                            start = 1L;
-                        }
-                        log.error("Ran the query {} and got the value {}", String.format(QUERY_GET_SEQUENCE_START, table), start);
-                        log.error("Now preparing to run the query: {}", String.format(QUERY_SET_SEQUENCE_VALUE, table, start));
-                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", defaultDBName, null);
-                    } catch (Exception e) {
-                        log.error("", e);
+                    log.error("Preparing to convert table '{}' to use sequence for default value.", table);
+                    final List<String> queries = Arrays.asList(String.format(QUERY_CREATE_SEQUENCE, table),
+                                                               String.format(QUERY_SET_ID_DEFAULT, table, table),
+                                                               String.format(QUERY_SET_ID_NOT_NULL, table),
+                                                               String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
+                    log.error("Queries prepared for conversion:");
+                    for (final String query : queries) {
+                        log.error(" *** {}", query);
                     }
+                    PoolDBUtils.ExecuteBatch(queries, defaultDBName, null);
+
+                    final String querySequenceStart = String.format(QUERY_GET_SEQUENCE_START, table);
+                    final long   start              = ObjectUtils.defaultIfNull((Long) PoolDBUtils.ReturnStatisticQuery(querySequenceStart, "value", defaultDBName, null), 1L);
+                    final String querySequenceValue = String.format(QUERY_SET_SEQUENCE_VALUE, table, start);
+                    log.error("Ran the query '{}' and got the value {}. Now preparing to run the query: {}", querySequenceStart, start, querySequenceValue);
+                    PoolDBUtils.ReturnStatisticQuery(querySequenceValue, "value", defaultDBName, null);
                 }
             }
 
-            ArrayList dbs = new ArrayList();
             for (final Object o1 : XFTManager.GetInstance().getAllElements()) {
                 try {
                     GenericWrapperElement input = (GenericWrapperElement) o1;
                     if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data")) {
-                        String dbName = input.getDbName();
-                        if (!dbs.contains(dbName)) {
-                            dbs.add(dbName);
-                        }
-                        GenericWrapperField pk = input.getAllPrimaryKeys().get(0);
-                        String sequenceName = input.getSequenceName();
-                        adjustSequence(sequenceName, pk.getSQLName(), input.getSQLName(), input.getDbName());
+                        adjustSequence(input.getSequenceName(), input.getAllPrimaryKeys().get(0).getSQLName(), input.getSQLName(), input.getDbName());
                     }
                 } catch (Exception e) {
                     log.error("", e);
                 }
-
             }
 
-            for (Object object : XFTReferenceManager.GetInstance().getUniqueMappings()) {
+            for (final Object object : XFTReferenceManager.GetInstance().getUniqueMappings()) {
                 try {
-                    XFTManyToManyReference map = (XFTManyToManyReference) object;
-                    String sequenceName = DBAction.getSequenceName(map.getMappingTable(), map.getMappingTable() + "_id", map.getElement1().getDbName());
-                    adjustSequence(sequenceName, map.getMappingTable() + "_id", map.getMappingTable(), map.getElement1().getDbName());
-
+                    final XFTManyToManyReference map = (XFTManyToManyReference) object;
+                    adjustSequence(DBAction.getSequenceName(map.getMappingTable(), map.getMappingTable() + "_id", map.getElement1().getDbName()), map.getMappingTable() + "_id", map.getMappingTable(), map.getElement1().getDbName());
                 } catch (Exception e) {
                     log.error("", e);
                 }
@@ -3188,16 +3169,38 @@ public class DBAction {
     //It reviews the number of rows in the table and makes sure the sequence is set higher then that.
     //the logic ends up changing the sequence to aggressively when the row count is 1.  I tried to fix it, but it introduced lots of bugs.
     //so, this small issue is tolerable.  If you mess with it, test installing a new server, and creating some stuff.
-    private static void adjustSequence(String sequenceName, String column, String table, String dbName) throws Exception {
-        final int    numRows   = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from " + table, "MAX_COUNT", dbName, null), 0)).intValue();
-        final Number nextValue = (Number) PoolDBUtils.ReturnStatisticQuery("SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from " + sequenceName, "LAST_COUNT", dbName, null);
+    private static void adjustSequence(final String sequenceName, final String column, final String table, final String dbName) throws Exception {
+        final int maxValue  = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_VALUE from " + table, "MAX_VALUE", dbName, null), 0)).intValue();
+        final int nextValue = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(getSequenceQuery(sequenceName), "LAST_COUNT", dbName, null), -1)).intValue();
 
-        if (nextValue == null) {
-            log.info("Adjusting missing sequence ({})", table);
-            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
-        } else if (numRows >= nextValue.intValue()) {
-            log.info("Adjusting invalid sequence ({}) from {} to {} ({} max_row)", table, nextValue, numRows + 1, numRows);
-            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (numRows + 1) + ")", dbName, null);
+        if (nextValue == -1) {
+            log.info("Sequence {} has not yet been used, but rows exist in the database. The largest existing value is {}, so adjusting sequence to the next value after that.", table, maxValue);
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (maxValue + 1) + ")", dbName, null);
+        } else if (maxValue >= nextValue) {
+            log.info("Sequence {} would issue {} as the next value, but there are already rows with larger values. The largest existing value is {}, so adjusting sequence to the next value after that.", table, nextValue, maxValue);
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + (maxValue + 1) + ")", dbName, null);
+        } else {
+            log.debug("Checked sequence {}: the next sequence value is {} while the larger existing value is {}, so no action is required.", sequenceName, nextValue, maxValue);
+        }
+    }
+
+    private static String getSequenceQuery(final String sequenceName) throws SQLException {
+        if (PoolDBUtils.getDatabaseVersion() < 10.0) {
+            return String.format(QUERY_PRE_PG10_SEQUENCE, sequenceName);
+        }
+        final String[] atoms = StringUtils.split(sequenceName, ".");
+        switch (atoms.length) {
+            case 0:
+                throw new SQLException("Invalid sequence name, empty!");
+
+            case 1:
+                return String.format(QUERY_POST_PG10_SEQUENCE, "public", atoms[0]);
+
+            case 2:
+                return String.format(QUERY_POST_PG10_SEQUENCE, atoms[0], atoms[1]);
+
+            default:
+                throw new SQLException("Invalid sequence name: cross-database references are not supported, so the sequence name \"" + sequenceName + " is invalid");
         }
     }
 
@@ -3213,7 +3216,7 @@ public class DBAction {
         if (user != null) {
             login = user.getUsername();
         }
-        String s = (String) PoolDBUtils.ReturnStatisticQuery(query, functionName, element.getDbName(), login);
+        String  s    = (String) PoolDBUtils.ReturnStatisticQuery(query, functionName, element.getDbName(), login);
         XFTItem item = XFTItem.PopulateItemFromFlatString(s, user);
         if (allowMultiples) {
             item.setPreLoaded(true);
@@ -3221,63 +3224,85 @@ public class DBAction {
         return item;
     }
 
-    public static XFTItem SelectItemByIDs(GenericWrapperElement element, Object[] ids, UserI user, boolean allowMultiples, boolean preventLoop) throws Exception {
-        String functionName = element.getTextFunctionName();
-        String functionCall = "SELECT " + functionName + "(";
-        for (int i = 0; i < ids.length; i++) {
-            if (i > 0) functionCall += ",";
-            functionCall += ids[i];
-        }
-        functionCall += ",0," + allowMultiples + ",FALSE," + preventLoop + ");";
-
+    public static XFTItem SelectItemByIDs(final GenericWrapperElement element, final Object[] ids, final UserI user, final boolean allowMultiples, final boolean preventLoop) throws Exception {
+        final String functionName = element.getTextFunctionName();
+        final String formattedIds = StringUtils.join(ids, ", ");
+        final String functionCall = "SELECT " + functionName + "(" + formattedIds + ", 0," + allowMultiples + ", FALSE," + preventLoop + ");";
+        log.debug("Selecting {} items by IDs [{}] with database function call: {}", element.getXSIType(), formattedIds, functionCall);
         return SelectItemByID(functionCall, functionName, element, user, allowMultiples);
     }
 
-    public static void PerformUpdateTriggers(DBItemCache cache, String userName, Integer xdat_user_id, boolean asynchronous) {
-        long localStartTime = Calendar.getInstance().getTimeInMillis();
-        ArrayList<String> cmds = new ArrayList<>();
-        try {
-            //process modification triggers
-            if (cache.getDBTriggers().size() > 0) {
-
-                ArrayList<XFTItem> items = cache.getDBTriggers().items();
-
-                if (asynchronous) cmds.add("SET LOCAL synchronous_commit TO OFF;");
-
-                String dbname = null;
-
-                for (XFTItem mod : items) {
-                    int count = 0;
-                    String ids = "";
-                    ArrayList keys = mod.getGenericSchemaElement().getAllPrimaryKeys();
-                    for (final Object key : keys) {
-                        GenericWrapperField sf = (GenericWrapperField) key;
-                        Object id = mod.getProperty(sf);
-                        if (count++ > 0) ids += ",";
-                        ids += DBAction.ValueParser(id, sf, true);
-                    }
-
-                    dbname = mod.getDBName();
-
-                    PoolDBUtils.CreateCache(dbname, userName);
-                    cmds.add(String.format("SELECT update_ls_%s(%s,%s)", mod.getGenericSchemaElement().getFormattedName(), ids, (xdat_user_id == null) ? "NULL" : xdat_user_id));
-                }
-
-                if (asynchronous) cmds.add("SET LOCAL synchronous_commit TO ON;");
-
-                //PoolDBUtils.ExecuteBatch(cmds, dbname, userName);
-
-                for (String s : cmds) {
-                    try {
-                        PoolDBUtils.ExecuteNonSelectQuery(s, dbname, userName);
-                    } catch (RuntimeException ignored) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("", e);
+    public static void PerformUpdateTriggers(final DBItemCache cache, final String username, final Integer userId, final boolean asynchronous) {
+        if (cache.getDBTriggers().size() < 1) {
+            return;
         }
-        log.debug("triggers ({}): {} ms", cmds.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
-    }
-}
 
+        //process modification triggers
+        final long          localStartTime = Calendar.getInstance().getTimeInMillis();
+        final List<String>  commands       = new ArrayList<>();
+        final List<XFTItem> items          = cache.getDBTriggers().items();
+
+        if (asynchronous) {
+            commands.add("SET LOCAL synchronous_commit TO OFF;");
+        }
+
+        String dbname = null;
+
+        for (final XFTItem item : items) {
+            try {
+                final GenericWrapperElement     schemaElement = item.getGenericSchemaElement();
+                final List<GenericWrapperField> keys          = schemaElement.getAllPrimaryKeys();
+
+                final String ids = StringUtils.join(Iterables.filter(Lists.transform(keys, new Function<GenericWrapperField, String>() {
+                    @Nullable
+                    @Override
+                    public String apply(final GenericWrapperField field) {
+                        final Object value = item.getProperty(field);
+                        try {
+                            return DBAction.ValueParser(value, field, true);
+                        } catch (XFTInitException e) {
+                            log.error("Error initializing XFT ", e);
+                        } catch (InvalidValueException e) {
+                            log.error("Invalid value \"{}\" specified for field \"{}\"", value, field, e);
+                        }
+                        return null;
+                    }
+                }), Predicates.notNull()), ", ");
+
+                PoolDBUtils.CreateCache(dbname = item.getDBName(), username);
+                commands.add(String.format("SELECT update_ls_%s(%s,%s)", schemaElement.getFormattedName(), ids, ObjectUtils.defaultIfNull(userId, "NULL").toString()));
+            } catch (ElementNotFoundException e) {
+                log.error("Element not found while trying to process item of type {}", e.ELEMENT, e);
+            }
+        }
+
+        if (asynchronous) {
+            commands.add("SET LOCAL synchronous_commit TO ON;");
+        }
+
+        //process modification triggers
+        for (final String command : commands) {
+            try {
+                PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
+            } catch (RuntimeException ignored) {
+            } catch (SQLException e) {
+                log.error("An SQL exception occurred trying to execute the command: \"{}\"", command, e);
+            } catch (Exception e) {
+                log.error("An unexpected exception occurred trying to execute the command: \"{}\"", command, e);
+            }
+        }
+        log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
+    }
+
+    private static final Map<String, String> SEQUENCES = new HashMap<>();
+
+    private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
+    private static final String QUERY_CREATE_SEQUENCE     = "CREATE SEQUENCE %s_id_seq";
+    private static final String QUERY_SET_ID_DEFAULT      = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
+    private static final String QUERY_SET_ID_NOT_NULL     = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
+    private static final String QUERY_SET_SEQUENCE_OWNER  = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
+    private static final String QUERY_GET_SEQUENCE_START  = "SELECT (MAX(id) + 1) AS value FROM %s";
+    private static final String QUERY_SET_SEQUENCE_VALUE  = "SELECT setval('%s_id_seq', %d) AS value";
+    private static final String QUERY_PRE_PG10_SEQUENCE   = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from %s";
+    private static final String QUERY_POST_PG10_SEQUENCE  = "SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT FROM pg_sequences WHERE schemaname = '%s' AND sequencename = '%s'";
+}

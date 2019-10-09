@@ -29,7 +29,6 @@ import org.w3c.dom.NodeList;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMarshallerCacheServiceConfiguration.class)
 public class TestMarshallerCacheService {
-
     @Test
     public void testMarshalToString() throws NrgServiceException {
         MarshalableThingy thingy = new MarshalableThingy();

@@ -12,6 +12,7 @@ package org.nrg.framework.task.services;
 import java.util.List;
 
 import org.nrg.framework.task.XnatTaskExecutionResolverI;
+import org.nrg.framework.task.XnatTaskI;
 
 /**
  * The Interface XnatTaskService.
@@ -25,7 +26,30 @@ public interface XnatTaskService {
 	 * @return true, if successful
 	 */
 	boolean shouldRunTask(Class<?> clazz);
-	
+
+	/**
+	 * Notifies the task service that the submitted task has started.
+	 *
+	 * @param task The task that has started.
+	 */
+	void start(XnatTaskI task);
+
+	/**
+	 * Updates the status of the specified task.
+	 *
+	 * @param task       The task to update.
+	 * @param message    A message containing the update status.
+	 * @param parameters Parameters for the message.
+	 */
+	void update(XnatTaskI task, String message, Object... parameters);
+
+	/**
+	 * Notifies the task service that the submitted task has finished.
+	 *
+	 * @param task The task that has finished.
+	 */
+	void finish(XnatTaskI task);
+
 	/**
 	 * Record task run information.
 	 *
@@ -48,5 +72,4 @@ public interface XnatTaskService {
 	 * @return the configuration elements yaml
 	 */
 	List<String> getConfigurationElementsYaml(Class<?> clazz);
-	
 }

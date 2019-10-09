@@ -9,19 +9,24 @@
 
 package org.nrg.framework.beans;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.RegExUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.framework.utilities.RepeatingString;
 import org.springframework.core.env.*;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Beans {
     public static <T> T getInitializedBean(final Properties properties, final Class<? extends T> clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
@@ -32,22 +37,58 @@ public class Beans {
         return bean;
     }
 
+    public static Set<String> discoverNamespaces(final Properties properties) {
+        return discoverNamespaces(properties, 1);
+    }
+
+    public static Set<String> discoverNamespaces(final Properties properties, final int extractionLevel) {
+        final Set<String> namespaces = new HashSet<>();
+        final Pattern     pattern    = Pattern.compile(getNamespacePattern(extractionLevel));
+        for (final String property : properties.stringPropertyNames()) {
+            final Matcher matcher = pattern.matcher(property);
+            if (matcher.find()) {
+                namespaces.add(matcher.group("namespace"));
+            }
+        }
+        return namespaces;
+    }
+
     public static Properties getNamespacedProperties(final Environment environment, final String namespace, final boolean truncate) {
-        final String regex = "^" + namespace.replaceAll("\\.", "\\\\.") + (namespace.endsWith(".") ? "" : "\\.") + "[A-z0-9_\\.-]+";
-        final Properties properties = new Properties();
         if (environment instanceof AbstractEnvironment) {
             final AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
-            for (final PropertySource<?> propertySource : abstractEnvironment.getPropertySources()) {
-                properties.putAll(getMatchingProperties(propertySource, regex));
+            return getNamespacedProperties(abstractEnvironment.getPropertySources(), namespace, truncate);
+        }
+        return new Properties();
+    }
+
+    public static Properties getNamespacedProperties(final Properties properties, final String namespace, final boolean truncate) {
+        return getNamespacedProperties(Collections.singletonList(properties), namespace, truncate);
+    }
+
+    public static Properties getNamespacedProperties(final Collection<Properties> properties, final String namespace, final boolean truncate) {
+        return getNamespacedProperties(Iterables.transform(properties, new Function<Properties, PropertySource<?>>() {
+            @Override
+            public PropertiesPropertySource apply(final Properties props) {
+                return new PropertiesPropertySource(StringUtils.defaultIfBlank(namespace, "namespacedProperties"), props);
             }
+        }), namespace, truncate);
+    }
+
+    public static Properties getNamespacedProperties(final Iterable<PropertySource<?>> propertySources, final String namespace, final boolean truncate) {
+        assert StringUtils.isNotBlank(namespace) : "You must provide a value for namespace";
+        final String     regex      = "^" + StringUtils.removeEnd(RegExUtils.replaceAll(namespace, "\\.", "\\\\."), ".") + "(\\.[A-z0-9_\\.-]+)?";
+        final Properties properties = new Properties();
+        for (final PropertySource<?> propertySource : propertySources) {
+            properties.putAll(getMatchingProperties(propertySource, regex));
         }
         if (!truncate) {
             return properties;
         }
         final Properties truncated = new Properties();
-        final int offset = namespace.length() + 1;
+        final int        offset    = namespace.length() + 1;
         for (final String key : properties.stringPropertyNames()) {
-            truncated.put(key.substring(offset), properties.getProperty(key));
+            final String namespacedKey = StringUtils.equals(namespace, key) ? "default" : key.substring(offset);
+            truncated.put(namespacedKey, properties.getProperty(key));
         }
         return truncated;
     }
@@ -63,7 +104,7 @@ public class Beans {
                     throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred attempting to read in mixin properties file " + resource.getFilename(), e);
                 }
                 for (final String target : properties.stringPropertyNames()) {
-                    final String mixIn = properties.getProperty(target);
+                    final String   mixIn = properties.getProperty(target);
                     final Class<?> targetClass;
                     try {
                         targetClass = Class.forName(target);
@@ -86,6 +127,102 @@ public class Beans {
 
     }
 
+    /**
+     * Gets a map of properties by namespace. This differs from the variations of {@link #getNamespacedProperties(Iterable, String, boolean)} in that it
+     * gets properties by the specified namespace, then breaks those down by the next detected property namespace and returns multiple properties objects,
+     * each stored under the second namespace. For example, take a properties file like this:
+     * <p>
+     * {@code
+     * alpha.one.first=xxx
+     * alpha.one.second=xxx
+     * alpha.one.third=xxx
+     * alpha.two.first=xxx
+     * alpha.two.second=xxx
+     * alpha.two.third=xxx
+     * }
+     * <p>
+     * Then you call:
+     * <p>
+     * {@code
+     * getNamespacedPropertiesMap(properties, "alpha", true, true);
+     * }
+     * <p>
+     * That will return a map with two keys, <b>one</b> and <b>two</b>. Each value will be a properties
+     * object containing:
+     * <p>
+     * {@code
+     * first=xxx
+     * second=xxx
+     * third=xxx
+     * }
+     * <p>
+     * Note that properties that don't match the namespace are ignored, so if you had properties with names starting with <b>beta</b>, those
+     * will not be in your results at all.
+     * <p>
+     * The <b>truncateFirst</b> parameter indicates whether the top-level namespace should be preserved. The <b>truncateSecond</b> parameter
+     * indicates whether the discovered namespaces should be preserved. With the example above, the end result ends up looking like this:
+     * <p>
+     * When both parameters are <b>true</b>:
+     * <p>
+     * {@code
+     * one -> first=xxx
+     * }
+     * <p>
+     * When <b>truncateFirst</b> is <b>true</b> and <b>truncateSecond</b> is <b>false</b>:
+     * <p>
+     * {@code
+     * one -> one.first=xxx
+     * }
+     * <p>
+     * When <b>truncateFirst</b> is <b>false</b> and <b>truncateSecond</b> is <b>true</b>:
+     * <p>
+     * {@code
+     * alpha.one -> first=xxx
+     * }
+     * <p>
+     * When both parameters are <b>false</b>:
+     * <p>
+     * {@code
+     * alpha.one -> alpha.one.first=xxx
+     * }
+     *
+     * @param properties        The properties to extract.
+     * @param topLevelNamespace The top-level namespace to extract.
+     * @param extractionLevel   Indicates how many '.'-separated tokens should be considered for the next-level namespace.
+     * @param truncateFirst     Whether the top-level namespace should be preserved in the extracted properties.
+     * @param truncateSecond    Whether the discovered next-level namespaces should be preserved in the extracted properties.
+     *
+     * @return The various properties objects separated by namespace.
+     */
+    public static Map<String, Properties> getNamespacedPropertiesMap(final Properties properties, final String topLevelNamespace, final int extractionLevel, final boolean truncateFirst, final boolean truncateSecond) {
+        final Map<String, Properties> propertiesMap = new HashMap<>();
+        if (StringUtils.isNotBlank(topLevelNamespace)) {
+            final Properties  namespacedProperties = getNamespacedProperties(properties, topLevelNamespace, truncateFirst);
+            final int         offset               = truncateFirst ? 0 : StringUtils.split(topLevelNamespace, ".").length;
+            final Set<String> namespaces           = discoverNamespaces(namespacedProperties, extractionLevel + offset);
+            for (final String namespace : namespaces) {
+                propertiesMap.put(namespace, getNamespacedProperties(namespacedProperties, namespace, truncateSecond));
+            }
+        } else {
+            for (final String discovered : discoverNamespaces(properties)) {
+                propertiesMap.put(discovered, getNamespacedProperties(properties, discovered, truncateFirst));
+            }
+        }
+        return propertiesMap;
+    }
+
+    public static Map<String, Properties> getNamespacedPropertiesMap(final Properties properties, final String namespace, final int extractionLevel) {
+        return getNamespacedPropertiesMap(properties, namespace, extractionLevel, true, true);
+    }
+
+    public static Map<String, Properties> getNamespacedPropertiesMap(final Properties properties, final String namespace) {
+        return getNamespacedPropertiesMap(properties, namespace, 1, true, true);
+    }
+
+    public static Map<String, Properties> getNamespacedPropertiesMap(final Properties properties) {
+        return getNamespacedPropertiesMap(properties, null, 1, true, true);
+    }
+
     private static Properties getMatchingProperties(final PropertySource<?> propertySource, final String regex) {
         return new Properties() {{
             if (propertySource instanceof CompositePropertySource) {
@@ -103,4 +240,11 @@ public class Beans {
             }
         }};
     }
+
+    private static String getNamespacePattern(final int count) {
+        return String.format(EXTRACT_NAMESPACE_PATTERN, StringUtils.join(new RepeatingString(NAMESPACE_PATTERN, count), "\\."));
+    }
+
+    private static final String EXTRACT_NAMESPACE_PATTERN = "^(?<namespace>%s)(\\.|=).*$";
+    private static final String NAMESPACE_PATTERN         = "[^.]+";
 }

@@ -9,49 +9,19 @@
 
 package org.nrg.framework.services.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.MarshalException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.ValidationException;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.MarshallerCacheService;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.oxm.MarshallingFailureException;
-import org.springframework.oxm.UncategorizedMappingException;
-import org.springframework.oxm.UnmarshallingFailureException;
-import org.springframework.oxm.ValidationFailureException;
-import org.springframework.oxm.XmlMappingException;
+import org.springframework.oxm.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.SystemPropertyUtils;
@@ -60,16 +30,33 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Nullable;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.*;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.*;
+import java.util.*;
+
 @Service
+@Slf4j
 public final class JaxbBasedMarshallerCacheService implements MarshallerCacheService {
-    public JaxbBasedMarshallerCacheService() {
-        _docBuilderFactory.setExpandEntityReferences(false);
+    @Autowired
+    public JaxbBasedMarshallerCacheService(final SerializerService serializer) throws ParserConfigurationException {
+        _serializer = serializer;
+        _documentBuilder = _serializer.getDocumentBuilder();
     }
 
     /**
      * Gets the list of packages that can be searched for classes that support
      * submitted XML root element values.
-     * 
+     *
      * @return An array
      */
     @Override
@@ -80,38 +67,36 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
     /**
      * Sets the list of packages that can be searched for classes that support
      * submitted XML root element values.
-     * 
-     * @param packages
-     *            The list of package names that can be searched.
+     *
+     * @param marshalablePackages The list of package names that can be searched.
      */
-    @Override
-    public void setMarshalablePackages(List<String> packages) {
-        _packages = packages;
+    @Autowired(required = false)
+    @Qualifier("marshalablePackages")
+    public void setMarshalablePackages(final List<String> marshalablePackages) {
+        _packages.addAll(marshalablePackages);
     }
 
     /**
      * Indicates whether the requested class is supported for marshalling
      * operations.
-     * 
-     * @param clazz
-     *            The class to test for marshalling support.
+     *
+     * @param clazz The class to test for marshalling support.
+     *
      * @return <b>true</b> if the class is supported for marshalling,
      *         <b>false</b> if not.
      */
     @Override
     public boolean supports(Class<?> clazz) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Asking if " + clazz.getName() + " is supported");
-        }
+        log.debug("Asking if {} is supported", clazz.getName());
         return clazz.isAnnotationPresent(XmlRootElement.class);
     }
 
     /**
      * Marshals the submitted object ({@link #supports(Class) if supported} to
      * a string.
-     * 
-     * @param object
-     *            The object to be marshaled.
+     *
+     * @param object The object to be marshaled.
+     *
      * @return The resulting XML.
      */
     @Override
@@ -125,31 +110,23 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      * Marshals the object to a {@link Document} object.
      */
     @Override
-    public Document marshalToDocument(Object object) {
-        try {
-            DOMResult result = new DOMResult(getDocument());
-            marshal(object, result);
-            return (Document) result.getNode();
-        } catch (ParserConfigurationException exception) {
-            throw new UncategorizedMappingException("An error occurred creating a Document object", exception);
-        }
+    public Document marshalToDocument(final Object object) {
+        final DOMResult result = new DOMResult(getDocument());
+        marshal(object, result);
+        return (Document) result.getNode();
     }
 
     /**
      * Implements the base <b>marshall()</b> method. This accepts the object and
      * returns the results of the marshalling operation in the <b>result</b>
      * parameter.
-     * 
-     * @param object
-     *            The object to be marshalled.
-     * @param result
-     *            The results of the marshalling operation.
+     *
+     * @param object The object to be marshalled.
+     * @param result The results of the marshalling operation.
      */
     @Override
     public void marshal(Object object, Result result) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Attempting to marshall object of type: " + object.getClass().getName());
-        }
+        log.debug("Attempting to marshall object of type: {}", object.getClass().getName());
 
         JAXBContext context = getInstance(object.getClass());
 
@@ -170,48 +147,40 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      */
     @Override
     public Object unmarshal(Source source) throws IOException, XmlMappingException {
-        String xmlElementName = null;
-        String xmlSource = null;
+        final String xmlElementName;
+        final String xmlSource;
 
         try {
-            if (source instanceof StreamSource) {
-                InputStream stream = ((StreamSource) source).getInputStream();
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document document = builder.parse(stream);
-                xmlElementName = document.getDocumentElement().getNodeName();
-                xmlSource = getStringFromDocument(document);
+            if (source instanceof StreamSource || StaxUtils.isStaxSource(source)) {
+                try (final InputStream stream = source instanceof StreamSource ? ((StreamSource) source).getInputStream() : new ByteArrayInputStream(StaxUtils.getXMLStreamReader(source).getText().getBytes())) {
+                    final Document document = _serializer.parse(stream);
+                    xmlElementName = document.getDocumentElement().getNodeName();
+                    xmlSource = getStringFromDocument(document);
+                }
             } else if (source instanceof DOMSource) {
-                Node node = ((DOMSource) source).getNode();
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document document = builder.newDocument();
+                final Node     node     = ((DOMSource) source).getNode();
+                final Document document = getDocument();
                 document.adoptNode(node);
                 document.appendChild(node);
                 xmlElementName = document.getDocumentElement().getNodeName();
                 xmlSource = getStringFromDocument(document);
-            } else if (StaxUtils.isStaxSource(source)) {
-                XMLStreamReader streamReader = StaxUtils.getXMLStreamReader(source);
-                InputStream stream = new ByteArrayInputStream(streamReader.getText().getBytes());
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document document = builder.parse(stream);
-                xmlElementName = document.getDocumentElement().getNodeName();
-                xmlSource = getStringFromDocument(document);
+            } else {
+                log.warn("A transform source of unknown type \"{}\" was submitted, should use StreamSource, StaxSource, or DOMSource types.", source.getClass().getName());
+                return null;
             }
-        } catch (ParserConfigurationException exception) {
-            throw new UncategorizedMappingException("There was a parser configuration exception.", exception);
         } catch (TransformerException exception) {
             throw new UncategorizedMappingException("There was a transformer exception.", exception);
         } catch (SAXException exception) {
             throw new UncategorizedMappingException("There was a SAX exception.", exception);
         }
 
-        JAXBContext context = getInstance(xmlElementName);
-
-        Unmarshaller unmarshaller;
-        try {
-            InputStream inputstream = new ByteArrayInputStream(xmlSource.getBytes());
-            StreamSource newSource = new StreamSource(inputstream);
-            unmarshaller = context.createUnmarshaller();
-            return unmarshaller.unmarshal(newSource);
+        final JAXBContext context = getInstance(xmlElementName);
+        if (context == null) {
+            log.error("No JAXB context found for elements of type \"{}\". Please check your configuration.", xmlElementName);
+            return null;
+        }
+        try (final InputStream inputStream = new ByteArrayInputStream(xmlSource.getBytes())) {
+            return context.createUnmarshaller().unmarshal(new StreamSource(inputStream));
         } catch (JAXBException exception) {
             throw convertJaxbException(exception);
         }
@@ -219,19 +188,19 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
 
     /**
      * Gets the string from document.
-     * 
-     * @param document
-     *            the document
+     *
+     * @param document the document
+     *
      * @return the string from document
-     * @throws TransformerException
-     *             the transformer exception
+     *
+     * @throws TransformerException the transformer exception
      */
     private String getStringFromDocument(Document document) throws TransformerException {
-        DOMSource domSource = new DOMSource(document);
-        Writer writer = new StringWriter();
-        Result result = new StreamResult(writer);
-        TransformerFactory factory = TransformerFactory.newInstance();
-        Transformer transformer = factory.newTransformer();
+        DOMSource          domSource   = new DOMSource(document);
+        Writer             writer      = new StringWriter();
+        Result             result      = new StreamResult(writer);
+        TransformerFactory factory     = TransformerFactory.newInstance();
+        Transformer        transformer = factory.newTransformer();
         transformer.transform(domSource, result);
         return writer.toString();
     }
@@ -240,10 +209,10 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      * Gets an instance of the {@link JAXBContext} class. This gets the
      * <b>JAXBContext</b> appropriate for the <b>clazz</b> parameter from the
      * internal cache.
-     * 
-     * @param clazz
-     *            The class for which the <b>JAXBContext</b> needs to be
-     *            retrieved.
+     *
+     * @param clazz The class for which the <b>JAXBContext</b> needs to be
+     *              retrieved.
+     *
      * @return The appropriate <b>JAXBContext</b> object.
      */
     private static JAXBContext getInstance(final Class<?> clazz) {
@@ -267,20 +236,25 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      * Gets an instance of the {@link JAXBContext} class. This gets the
      * <b>JAXBContext</b> appropriate for the <b>clazz</b> parameter from the
      * internal cache.
-     * 
-     * @param xmlElementName
-     *            The XML element name for which the <b>JAXBContext</b> needs to
-     *            be retrieved.
+     *
+     * @param xmlElementName The XML element name for which the <b>JAXBContext</b> needs to
+     *                       be retrieved.
+     *
      * @return The appropriate <b>JAXBContext</b> object.
      */
-    private JAXBContext getInstance(String xmlElementName) {
+    private JAXBContext getInstance(final String xmlElementName) {
         if (contextCache.containsKey(xmlElementName)) {
             return cache.get(contextCache.get(xmlElementName));
         }
 
         final Class<?> clazz = findClassForElement(xmlElementName);
+        if (clazz == null) {
+            log.warn("Couldn't find class for element \"{}\", please check configuration.", xmlElementName);
+            return null;
+        }
+
         final ContextDescriptor contextDescriptor = new ContextDescriptor(clazz.getName());
-        final JAXBContext jaxbContext = newInstance(clazz);
+        final JAXBContext       jaxbContext       = newInstance(clazz);
 
         cacheContext(xmlElementName, contextDescriptor, jaxbContext);
 
@@ -290,17 +264,17 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
     /**
      * Creates a new instance of a <b>JAXBContext</b> object for the submitted
      * class.
-     * 
-     * @param clazz
-     *            The class for which a new <b>JAXBContext</b> needs to be
-     *            created.
+     *
+     * @param clazz The class for which a new <b>JAXBContext</b> needs to be
+     *              created.
+     *
      * @return The new <b>JAXBContext</b> object.
      */
     private static JAXBContext newInstance(final Class<?> clazz) {
         try {
             return JAXBContext.newInstance(clazz);
         } catch (JAXBException exception) {
-            throw new RuntimeException("Exception occured creating JAXB unmarshaller for context=" + clazz, exception);
+            throw new RuntimeException("Exception occurred creating JAXB unmarshaller for context=" + clazz, exception);
         }
     }
 
@@ -310,13 +284,10 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      * descriptor is used to cache the {@link JAXBContext}. This allows lookups
      * by both class name (generally for unmarshalling operations where you can
      * get the XML root element name)
-     * 
-     * @param xmlElementName
-     *            the xml element name
-     * @param contextDescriptor
-     *            the context descriptor
-     * @param jaxbContext
-     *            the jaxb context
+     *
+     * @param xmlElementName    the xml element name
+     * @param contextDescriptor the context descriptor
+     * @param jaxbContext       the jaxb context
      */
     private static void cacheContext(final String xmlElementName, final ContextDescriptor contextDescriptor, final JAXBContext jaxbContext) {
         contextCache.put(xmlElementName, contextDescriptor);
@@ -325,35 +296,39 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
 
     /**
      * Find class for element.
-     * 
-     * @param xmlElementName
-     *            the xml element name
+     *
+     * @param xmlElementName the xml element name
+     *
      * @return the class
      */
-    private Class<?> findClassForElement(String xmlElementName) {
-        for (String target : _packages) {
-            List<Class<?>> classes;
-            try {
-                classes = Reflection.getClassesForPackage(target);
-            } catch (Exception exception) {
-                throw new RuntimeException(exception);
+    private Class<?> findClassForElement(final String xmlElementName) {
+        final Iterator<Class<?>> found = Iterables.filter(Iterables.transform(_packages, new Function<String, Class<?>>() {
+            @Nullable
+            @Override
+            public Class<?> apply(@Nullable final String packageName) {
+                return findClassForElementInPackage(xmlElementName, packageName);
             }
+        }), Predicates.notNull()).iterator();
+        return found.hasNext() ? found.next() : null;
+    }
 
-            for (Class<?> clazz : classes) {
-                if (clazz.isAnnotationPresent(XmlRootElement.class)) {
-                    String name = clazz.getAnnotation(XmlRootElement.class).name();
-                    if (name.equals("##default")) {
-                        String simpleName = clazz.getSimpleName();
-                        name = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
-                    }
-                    if (name.equals(xmlElementName)) {
-                        return clazz;
-                    }
+    private Class<?> findClassForElementInPackage(final String xmlElementName, final String packageName) {
+        try {
+            final Optional<Class<?>> found = Iterables.tryFind(Reflection.getClassesForPackage(packageName), new Predicate<Class<?>>() {
+                @Override
+                public boolean apply(final Class<?> clazz) {
+                    return clazz.isAnnotationPresent(XmlRootElement.class) && StringUtils.equals(xmlElementName, resolve(clazz));
                 }
-            }
-        }
 
-        return null;
+                private String resolve(final Class<?> clazz) {
+                    final String name = clazz.getAnnotation(XmlRootElement.class).name();
+                    return StringUtils.equals(name, "##default") ? StringUtils.uncapitalize(clazz.getSimpleName()) : name;
+                }
+            });
+            return found.orNull();
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     /**
@@ -364,20 +339,21 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      * The default implementation resolves placeholders against system
      * properties, and converts a "."-based package path to a "/"-based resource
      * path.
-     * 
-     * @param basePackage
-     *            the base package as specified by the user
+     *
+     * @param basePackage the base package as specified by the user
+     *
      * @return the pattern specification to be used for package searching
      */
+    @SuppressWarnings("unused")
     protected String resolveBasePackage(String basePackage) {
         return ClassUtils.convertClassNameToResourcePath(SystemPropertyUtils.resolvePlaceholders(basePackage));
     }
 
     /**
      * Gets the xml root element name.
-     * 
-     * @param clazz
-     *            the clazz
+     *
+     * @param clazz the clazz
+     *
      * @return the xml root element name
      */
     private static String getXmlRootElementName(Class<?> clazz) {
@@ -399,12 +375,12 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
     /**
      * Convert the given <code>JAXBException</code> to a {@link XmlMappingException}
      * with an appropriate error message.
-     * 
-     * @param exception
-     *            <code>JAXBException</code> that occured
+     *
+     * @param exception <code>JAXBException</code> that occurred
+     *
      * @return the corresponding {@link XmlMappingException}
      */
-    protected XmlMappingException convertJaxbException(JAXBException exception) {
+    private XmlMappingException convertJaxbException(JAXBException exception) {
         if (exception instanceof ValidationException) {
             return new ValidationFailureException("JAXB validation exception", exception);
         } else if (exception instanceof MarshalException) {
@@ -424,7 +400,9 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
      */
     private static class ContextDescriptor {
 
-        /** The class name. */
+        /**
+         * The class name.
+         */
         private final String className;
 
         /*
@@ -449,25 +427,23 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
 
         /**
          * Instantiates a new context descriptor.
-         * 
-         * @param className
-         *            the class name
+         *
+         * @param className the class name
          */
         ContextDescriptor(String className) {
             this.className = className.trim();
         }
     }
 
-    private Document getDocument() throws ParserConfigurationException {
-        return _docBuilderFactory.newDocumentBuilder().newDocument();
+    private Document getDocument() {
+        return _documentBuilder.newDocument();
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(JaxbBasedMarshallerCacheService.class);
-    private static final Map<ContextDescriptor, JAXBContext> cache = new HashMap<>();
-    private static final Map<String, ContextDescriptor> contextCache = new HashMap<>();
-    private final DocumentBuilderFactory _docBuilderFactory = DocumentBuilderFactory.newInstance();
+    private static final Map<ContextDescriptor, JAXBContext> cache        = new HashMap<>();
+    private static final Map<String, ContextDescriptor>      contextCache = new HashMap<>();
 
-    @Autowired(required = false)
-    @Qualifier("marshalablePackages")
-    private List<String> _packages;
+    private final SerializerService _serializer;
+    private final DocumentBuilder   _documentBuilder;
+
+    private final List<String> _packages = new ArrayList<>();
 }

@@ -10,6 +10,7 @@
 package org.nrg.framework.annotations;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.*;
 
@@ -23,16 +24,25 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Documented
 public @interface XnatPlugin {
-    String PLUGIN_CLASS            = "class";
-    String PLUGIN_ID               = "id";
-    String PLUGIN_NAMESPACE        = "namespace";
-    String PLUGIN_NAME             = "name";
-    String PLUGIN_VERSION          = "version";
-    String PLUGIN_DESCRIPTION      = "description";
-    String PLUGIN_BEAN_NAME        = "beanName";
-    String PLUGIN_ENTITY_PACKAGES  = "entityPackages";
-    String PLUGIN_OPEN_URLS        = "openUrls";
-    String PLUGIN_ADMIN_URLS       = "adminUrls";
+    String PLUGIN_CLASS             = "class";
+    String PLUGIN_ID                = "id";
+    String PLUGIN_NAMESPACE         = "namespace";
+    String PLUGIN_NAME              = "name";
+    String PLUGIN_VERSION           = "version";
+    String PLUGIN_DESCRIPTION       = "description";
+    String PLUGIN_BEAN_NAME         = "beanName";
+    String PLUGIN_ENTITY_PACKAGES   = "entityPackages";
+    String PLUGIN_OPEN_URLS         = "openUrls";
+    String PLUGIN_ADMIN_URLS        = "adminUrls";
+    String PLUGIN_LOG_CONFIGURATION = "logConfiguration";
+
+    /**
+     * Key for the log4j logging configuration file.
+     *
+     * @deprecated Use {@link #PLUGIN_LOG_CONFIGURATION} instead.
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
     String PLUGIN_LOG4J_PROPERTIES = "log4jPropertiesFile";
 
     /**
@@ -106,9 +116,21 @@ public @interface XnatPlugin {
     XnatDataModel[] dataModels() default {};
 
     /**
+     * Path to the log configuration file for your plugin.
+     *
+     * @return A path to the configuration file to add.
+     */
+    @AliasFor(attribute = "log4jPropertiesFile")
+    String logConfigurationFile() default "";
+
+    /**
      * A file containing Log4j properties you want to add.
      *
      * @return A path to the file containing properties to add.
+     *
+     * @deprecated Use {@link #logConfigurationFile()} instead.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @AliasFor(attribute = "logConfigurationFile")
     String log4jPropertiesFile() default "";
 }

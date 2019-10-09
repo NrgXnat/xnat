@@ -29,12 +29,12 @@ import java.io.Serializable;
 @Service
 public class HibernateDataCacheService extends AbstractHibernateEntityService<DataCacheItem, DataCacheItemDAO> implements DataCacheService {
     @Autowired
-    public void getSerializerRegistry(final SerializerRegistry serializers) {
+    public void setSerializerRegistry(final SerializerRegistry serializers) {
         _serializers = serializers;
     }
 
     @Autowired
-    public void getSerializerService(final SerializerService serializerService) {
+    public void setSerializerService(final SerializerService serializerService) {
         _serializerService = serializerService;
     }
 

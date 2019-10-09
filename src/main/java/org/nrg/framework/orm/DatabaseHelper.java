@@ -10,16 +10,22 @@
 package org.nrg.framework.orm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.postgresql.util.PGInterval;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -38,9 +44,8 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.*;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 @Getter
@@ -148,20 +153,39 @@ public class DatabaseHelper {
      *
      * @throws SQLException If an error occurs while accessing the database.
      */
-    public boolean tablesExistInSchema(final String schema, final String... tables) throws SQLException {
+    public boolean tablesExistInSchema(final @Nullable String schema, final @Nonnull String... tables) throws SQLException {
+        return locateDatabaseSchemas(schema, tables).containsAll(Arrays.asList(tables));
+    }
+
+    @Nonnull
+    public List<String> locateDatabaseSchemas(final @Nullable String schema, final @Nonnull String... names) throws SQLException {
+        final List<String> located       = new ArrayList<>();
+        final String       schemaPattern = StringUtils.defaultIfBlank(schema, "public");
+
         try (final Connection connection = _jdbcTemplate.getDataSource().getConnection()) {
-            for (final String table : tables) {
-                try (final ResultSet results = connection.getMetaData().getTables("catalog", schema, table, SEARCHABLE_TABLE_TYPES)) {
-                    // As soon as we find one that doesn't exist...
-                    if (!results.next()) {
-                        // The exist fails, so return false.
-                        return false;
+            for (final String name : names) {
+                final DatabaseMetaData metaData = connection.getMetaData();
+                try (final ResultSet tablesAndViews = metaData.getTables("catalog", schemaPattern, name, SEARCHABLE_TABLE_TYPES)) {
+                    if (tablesAndViews.next()) {
+                        do {
+                            located.add(tablesAndViews.getString("TABLE_NAME"));
+                        } while (tablesAndViews.next());
+                    } else {
+                        try (final ResultSet functions = metaData.getFunctions("catalog", schemaPattern, name)) {
+                            if (functions.next()) {
+                                final String columnName = findColumnName(functions, "PROCEDURE_NAME", "FUNCTION_NAME");
+                                do {
+                                    located.add(functions.getString(columnName));
+                                } while (functions.next());
+                            } else {
+                                log.info("Didn't find any tables, views, or functions for name {}", name);
+                            }
+                        }
                     }
                 }
             }
-            // If we made it this far, all of the specified tables exist, return true.
-            return true;
         }
+        return located;
     }
 
     /**
@@ -319,13 +343,50 @@ public class DatabaseHelper {
     }
 
     public <T> T callFunction(final String function, final SqlParameterSource parameters, final Class<? extends T> returnType) {
-        final SimpleJdbcCall call = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
+        final SimpleJdbcCall      call    = new SimpleJdbcCall(getJdbcTemplate()).withFunctionName(function);
         final Map<String, Object> payload = call.execute(parameters);
         if (payload.containsKey("returnvalue")) {
             //noinspection unchecked
             return (T) payload.get("returnvalue");
         }
         return null;
+    }
+
+    public List<Map<String, Object>> callFunction(final String function, final LinkedHashMap<String, Object> arguments) {
+        return _parameterizedTemplate.queryForList(generateFunctionSql(function, arguments), arguments);
+    }
+
+    public <T> List<T> callFunction(final String function, final LinkedHashMap<String, Object> arguments, final Class<T> elementType) {
+        return _parameterizedTemplate.query(generateFunctionSql(function, arguments), arguments, BeanPropertyRowMapper.newInstance(elementType));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource() {
+        return EMPTY_PARAM_SOURCE;
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name, final Object value) {
+        return getFunctionParameterSource(ImmutablePair.of(name, value));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2, final String name3, final Object value3) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2), ImmutablePair.of(name3, value3));
+    }
+
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final String name1, final Object value1, final String name2, final Object value2, final String name3, final Object value3, final String name4, final Object value4) {
+        return getFunctionParameterSource(ImmutablePair.of(name1, value1), ImmutablePair.of(name2, value2), ImmutablePair.of(name3, value3), ImmutablePair.of(name4, value4));
+    }
+
+    @SafeVarargs
+    public static LinkedHashMap<String, Object> getFunctionParameterSource(final Pair<String, Object>... pairs) {
+        final LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        for (final Pair<String, Object> pair : pairs) {
+            parameters.put(pair.getKey(), pair.getValue());
+        }
+        return parameters;
     }
 
     /**
@@ -340,10 +401,14 @@ public class DatabaseHelper {
      */
     public void checkForTablesAndViewsInit(final String scriptUrl, final String... tableSpecs) throws SQLException, IOException {
         if (!tablesExist(tableSpecs)) {
-            final String script = IOUtils.toString(BasicXnatResourceLocator.getResource(scriptUrl).getInputStream(), Charset.defaultCharset());
-            log.info("Initializing tables/functions for patterns '{}' with SQL: {}", StringUtils.join(tableSpecs, ", "), script);
-            executeScript(script);
+            executeScript(BasicXnatResourceLocator.getResource(scriptUrl));
         }
+    }
+
+    public void executeScript(final Resource resource) throws IOException {
+        final String script = IOUtils.toString(resource.getInputStream(), Charset.defaultCharset());
+        log.debug("Executing SQL:\n{}", script);
+        executeScript(script);
     }
 
     // TODO: Convert this to return the List<Pair<Integer,String>> rather than String. The catch is that the executeTransaction() method can be genericized without affecting the returned logMessage() values.
@@ -403,6 +468,31 @@ public class DatabaseHelper {
         private final String _dataType;
     }
 
+    @Nonnull
+    private static String generateFunctionSql(final @Nonnull String function, final @Nonnull LinkedHashMap<String, Object> arguments) {
+        return "SELECT * FROM " + function + " (" + StringUtils.join(Iterables.transform(arguments.keySet(), PREFIX_COLON), ", ") + ")";
+    }
+
+    @Nullable
+    private static String findColumnName(final @Nonnull ResultSet results, final @Nonnull String... names) throws SQLException {
+        final String[] columnNames = getColumnNames(results).toArray(new String[0]);
+        for (final String name : names) {
+            if (StringUtils.equalsAnyIgnoreCase(name, columnNames)) {
+                return name;
+            }
+        }
+        return null;
+    }
+
+    private static List<String> getColumnNames(final ResultSet results) throws SQLException {
+        final ResultSetMetaData metadata    = results.getMetaData();
+        final List<String>      columnNames = new ArrayList<>();
+        for (int index = 1; index <= metadata.getColumnCount(); index++) {
+            columnNames.add(metadata.getColumnName(index));
+        }
+        return columnNames;
+    }
+
     @SuppressWarnings("SameParameterValue")
     private String logMessage(final String message) {
         return logMessage(message, null);
@@ -418,7 +508,15 @@ public class DatabaseHelper {
         }
     }
 
-    private static final String[] SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEWS"};
+    private static final String[]                      SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
+    private static final Function<String, String>      PREFIX_COLON           = new Function<String, String>() {
+        @Override
+        public String apply(final String name) {
+            return ":" + name;
+        }
+    };
+
+    private static final LinkedHashMap<String, Object> EMPTY_PARAM_SOURCE     = new LinkedHashMap<>();
 
     private final JdbcTemplate               _jdbcTemplate;
     private final NamedParameterJdbcTemplate _parameterizedTemplate;

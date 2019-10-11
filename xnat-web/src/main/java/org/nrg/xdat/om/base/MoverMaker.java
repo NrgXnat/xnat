@@ -72,11 +72,13 @@ public class MoverMaker {
 		final UserI u;
 		XnatAbstractresource r = null;
 		final EventMetaI c;
+		final String project;
 		
-		public Mover(File newSessionDir, String existingSessionDir, String existingRootPath, UserI u, EventMetaI c) {
+		public Mover(File newSessionDir, String existingSessionDir, String existingRootPath, String project, UserI u, EventMetaI c) {
 			this.newSessionDir = newSessionDir;
 			this.existingSessionDir = existingSessionDir;
 			this.existingRootPath = existingRootPath;
+			this.project = project;
 			this.u = u;
 			this.c=c;
 		}
@@ -87,7 +89,7 @@ public class MoverMaker {
 		
 		@Override
 		public Void call() throws Exception {
-			r.moveTo(newSessionDir, existingSessionDir, existingRootPath, u,c);
+			r.moveTo(newSessionDir, existingSessionDir, existingRootPath, project, u, c);
 			return null;
 		}
 	}
@@ -129,10 +131,10 @@ public class MoverMaker {
 				//don't attempt to move sessions which are outside of the Session Directory.
 				throw new Exception("Non-standard file location for file(s):" + uri);
 			}
-			return new Mover(newSessionDir, existingSessionDir, existingRootPath, u,c);
+			return new Mover(newSessionDir, existingSessionDir, existingRootPath, m.getProject(), u,c);
 			//((XnatAbstractresource)m).moveTo(newSessionDir,existingSessionDir,existingRootPath,u);
 		}else{
-			return new Mover(newSessionDir, null, existingRootPath, u,c);
+			return new Mover(newSessionDir, null, existingRootPath, m.getProject(), u,c);
 			//((XnatAbstractresource)m).moveTo(newSessionDir,null,existingRootPath,u);
 		}
 	}

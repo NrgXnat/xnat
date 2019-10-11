@@ -1381,7 +1381,7 @@ public abstract class SecureResource extends Resource {
                     ItemI om = BaseElement.GetGeneratedItem(resource);
                     if (om instanceof XnatAbstractresource) {
                         XnatAbstractresource resourceA = (XnatAbstractresource) om;
-                        resourceA.deleteWithBackup(item.getArchiveRootPath(), user, ci);
+                        resourceA.deleteWithBackup(item.getArchiveRootPath(), item.getProject(), user, ci);
                         builder.item(resource);
                     }
                 }

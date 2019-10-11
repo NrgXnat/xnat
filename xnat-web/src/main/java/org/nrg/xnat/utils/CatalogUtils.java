@@ -514,13 +514,18 @@ public class CatalogUtils {
     public static List<Object[]> getEntryDetails(final @Nonnull CatCatalogI cat, final String parentPath,
                                                  final String uriPath, final XnatResource _resource,
                                                  final boolean includeFile, final CatEntryFilterI filter,
-                                                 final XnatProjectdata proj, final String locator) {
+                                                 @Nullable final XnatProjectdata proj, final String locator) {
         final List<Object[]> catalogEntries = new ArrayList<>();
         for (final CatCatalogI subset : cat.getSets_entryset()) {
             catalogEntries.addAll(getEntryDetails(subset, parentPath, uriPath, _resource, includeFile, filter, proj, locator));
         }
 
-        final String projectId = proj.getId();
+        final String projectId;
+        if (proj == null) {
+            projectId = cat instanceof CatCatalogBean ? getCatalogProject((CatCatalogBean) cat) : null;
+        } else {
+            projectId = proj.getId();
+        }
         for (final CatEntryI entry : cat.getEntries_entry()) {
             if (filter == null || filter.accept(entry)) {
                 final List<Object> row = Lists.newArrayList();

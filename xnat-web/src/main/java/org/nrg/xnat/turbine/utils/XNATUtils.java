@@ -253,11 +253,13 @@ public class XNATUtils {
         if (removeFiles) {
             final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
 
+            String archivePath = parent.getArchiveRootPath();
+            String project = parent.getProject();
             for (XFTItem resource : hash) {
                 ItemI om = BaseElement.GetGeneratedItem(resource);
                 if (om instanceof XnatAbstractresource) {
                     XnatAbstractresource resourceA = (XnatAbstractresource) om;
-                    resourceA.deleteWithBackup(parent.getArchiveRootPath(), user, ci);
+                    resourceA.deleteWithBackup(archivePath, project, user, ci);
                 }
             }
         }

@@ -333,17 +333,23 @@ public class PipelineApi extends AbstractXapiRestController {
 		        arguments.add("-label");
 		        arguments.add(label);
 
+		        StringBuilder commandWithArguments = new StringBuilder();
+		        commandWithArguments.append(command + "  ");
+		        for (String argument : arguments) {
+		            commandWithArguments.append(argument).append(" ");
+		        }
+
 			try {
 
 	            if (launchLogger.isInfoEnabled()) {
-	                launchLogger.info("Terminating pipeline with command: " + command);
+	                launchLogger.info("Terminating pipeline with command: " + commandWithArguments);
 	            }
 
 	            ProcessLauncher processLauncher = new ProcessLauncher();
-	            processLauncher.setCommand(command);
+	            processLauncher.setCommand(commandWithArguments.toString().trim());
 	            processLauncher.start();
 	        } catch (Exception e) {
-	            launchLogger.error(e.getMessage() + " for command " + command, e);
+	            launchLogger.error(e.getMessage() + " for command " + commandWithArguments, e);
 	            success = false;
 	        }
 			return success;

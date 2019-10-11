@@ -38,8 +38,6 @@ buildscript {
 group "org.nrg.xnat"
 version = "1.7.6.RAD-SNAPSHOT"
 
-def vXnatDevDataModel = '1.7.6.RAD-SNAPSHOT-PIPELINE'
-
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
 apply plugin: "com.palantir.git-version"
@@ -194,7 +192,7 @@ dependencies {
 
     // NRG dependencies first.
     api "org.nrg.xdat:core:1.7.6.RAD-SNAPSHOT"
-    api "org.nrg.xnat:xnat-data-models:${vXnatDevDataModel}"
+    api "org.nrg.xnat:xnat-data-models:1.7.6.RAD-SNAPSHOT-PIPELINE"
     api "org.nrg:framework"
     api "org.springframework.security:spring-security-ldap"
     api "org.springframework.security.oauth:spring-security-oauth2"

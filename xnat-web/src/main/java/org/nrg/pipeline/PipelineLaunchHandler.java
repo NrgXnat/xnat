@@ -27,6 +27,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.PipelineNotFoundException;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 /**
@@ -52,6 +53,7 @@ public class PipelineLaunchHandler {
 		boolean launchSuccess = false;
 		try {
 		ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
+		
         if (null != xmlDocumentParams && null != XMLbody  && StringUtils.isNotBlank(XMLbody)) {
             ParametersDocument doc = ParametersDocument.Factory.parse(XMLbody);
             for (ParameterData param : doc.getParameters().getParameterArray()) {
@@ -92,16 +94,42 @@ public class PipelineLaunchHandler {
         pipelineParams.putAll(bodyParams);
         pipelineParams.putAll(xmlDocumentParams);
 
+        
 		try {
-			ArrayList<ArcPipelinedataI> arcPipelines = arcProject.getPipelinesForDescendant(expt.getXSIType(), step, match);
-            for (ArcPipelinedataI arcPipeline : arcPipelines) {
+	        if (arcProject == null) {
+	        	arcProject = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject();
+	        }
 
-                logger.info("Launching pipeline at step " + arcPipeline.getLocation() + File.separator + arcPipeline.getName());
-                if (legacy) {
-                	launchSuccess = launch(arcPipeline, user);
-                } else {
-                	launchSuccess = launch(arcPipeline,pipelineParams, user);
-                }
+			ArrayList<ArcPipelinedataI> arcPipelines = arcProject.getPipelinesForDescendant(expt.getXSIType(), step, match);
+            if (arcPipelines == null || arcPipelines.size() < 1) { //Pipeline may not have been configured for the project.
+            	ArcProject dummy = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject();
+            	arcPipelines = dummy.getPipelinesForDescendant(expt.getXSIType(), step, match);
+            }
+            launchSuccess = launchPipelines(arcPipelines, legacy, pipelineParams, user);
+		}catch(PipelineNotFoundException pne) {
+        	ArcProject dummy = null;
+        	try {
+        		dummy = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject();
+        	}catch(Exception e) {}
+        	if (dummy == null) return false;
+        	try {
+	        	ArrayList<ArcPipelinedataI> arcPipelines = dummy.getPipelinesForDescendant(expt.getXSIType(), step, match);
+	            launchSuccess = launchPipelines(arcPipelines, legacy, pipelineParams, user);
+			}catch(PipelineNotFoundException e) {
+				try {
+					ArrayList<ArcPipelinedataI> arcPipelines = dummy.getPipelinesForDescendant(PipelineRepositoryManager.ALL_DATA_TYPES, step, match);
+		            launchSuccess = launchPipelines(arcPipelines, legacy, pipelineParams, user);
+				}catch(PipelineNotFoundException e1) {
+		            logger.error("Pipeline step " + step + " for project " + proj.getId() + " does not exist in the site pipeline repository " + e.getLocalizedMessage());
+				}catch(Exception e2) {
+					e.printStackTrace();
+		            logger.error("Pipeline step " + step + " for project " + proj.getId() + " does not exist " + e.getLocalizedMessage());
+					//getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+				}
+			}catch(Exception e) {
+				e.printStackTrace();
+	            logger.error("Pipeline step " + step + " for project " + proj.getId() + " does not exist " + e.getLocalizedMessage());
+				//getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			}
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -115,6 +143,20 @@ public class PipelineLaunchHandler {
 		return launchSuccess;
 	}
 
+	
+	private boolean launchPipelines(ArrayList<ArcPipelinedataI> arcPipelines, boolean legacy, Map<String,String> pipelineParams, UserI user) throws Exception {
+		boolean launchSuccess = false;
+		for (ArcPipelinedataI arcPipeline : arcPipelines) {
+            logger.info("Launching pipeline at step " + arcPipeline.getLocation() + File.separator + arcPipeline.getName());
+            if (legacy) {
+            	launchSuccess = launch(arcPipeline, user);
+            } else {
+            	launchSuccess = launch(arcPipeline,pipelineParams, user);
+            }
+		}
+		return launchSuccess;
+	}
+	
 	   private boolean launch(ArcPipelinedataI arcPipeline, Map<String,String> paramsMap, final UserI user) throws Exception {
 
 			XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);

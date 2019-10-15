@@ -22,6 +22,8 @@
  * @author Maxim Vasiliev
  * Date: 09.09.2010
  * Time: 19:02:33
+ *
+ * Modifications by Kate Alpert 2019 kate@radiologics.com
  */
 
 
@@ -54,8 +56,10 @@
      * @param [nodeCallback] {Function} custom function to get node value
      * @param [useAttribute] {Boolean} specify which attribute of field will be used if name of field is empty
      * @param [getDisabled] {Boolean} if true values of disabled elements will be retrieved
+     * @param [stringValues] {Array|String} elements with name in this array will retain string values
+     *                       (skipping parsing for numeric/boolean)
      */
-    function form2js(rootNode, delimiter, skipEmpty, nodeCallback, useAttribute, getDisabled){
+    function form2js(rootNode, delimiter, skipEmpty, nodeCallback, useAttribute, getDisabled, stringValues){
         var formValues = [],
             currNode,
             i          = 0;
@@ -65,6 +69,7 @@
         delimiter    = isNull(delimiter) ? '.' : delimiter;
         // check for boolean 'true' to maintain compatibility with old argument signature
         useAttribute = /true/i.test(useAttribute) ? 'id' : useAttribute || null;
+        stringValues = stringValues ? [].concat(stringValues) : [];
 
         if (typeof rootNode === 'string') {
             // if not found by id, maybe 'rootNode' is a full selector string
@@ -85,7 +90,7 @@
             formValues = getFormValues(rootNode, skipEmpty, nodeCallback, useAttribute, getDisabled);
         }
 
-        return processNameValues(formValues, skipEmpty, delimiter);
+        return processNameValues(formValues, skipEmpty, delimiter, stringValues);
     }
 
 
@@ -102,8 +107,9 @@
      * @param nameValues
      * @param skipEmpty if true skips elements with value === '' or value === null
      * @param delimiter
+     * @param stringValues {Array} elements with name in this array will retain string values (skipping parsing for numeric/boolean)
      */
-    function processNameValues(nameValues, skipEmpty, delimiter){
+    function processNameValues(nameValues, skipEmpty, delimiter, stringValues){
         var result = {},
             arrays = {},
             i, j, k, l,
@@ -120,11 +126,15 @@
 
         for (i = 0; i < nameValues.length; i++) {
 
-            value = realValue(nameValues[i].value);
+            name      = nameValues[i].name;
+
+            if (stringValues.includes(name)) {
+                value = nameValues[i].value;
+            } else {
+                value = realValue(nameValues[i].value);
+            }
 
             if (skipEmpty && (value === '' || value == null)) continue;
-
-            name       = nameValues[i].name;
 
             _nameParts = name.split(delimiter);
 

@@ -1156,6 +1156,24 @@ body [type="submit"]:active {
     box-shadow: none;
 }
 
+.btn.error {
+    color: #fff;
+    background: #993333 linear-gradient( #bf4040, #993333 );
+    /*border: 1px solid #033E77;*/
+    border: 1px solid #723131;
+    box-shadow: 0 1px 1px #a0a0a0;
+}
+
+.btn.error:hover {
+    background: #993333;
+    box-shadow: none;
+}
+
+.btn.error:active {
+    background: #723131;
+    box-shadow: none;
+}
+
 /* btn2 gets gray background */
 .btn,
 .btn2,

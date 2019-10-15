@@ -59,6 +59,7 @@ import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
@@ -377,7 +378,7 @@ public class DefaultCatalogService implements CatalogService {
                         parentEventId);
             } catch (Exception e) {
                 // For any exception, default to local add
-                if (!(e instanceof UnsupportedOperationException)) {
+                if (!(e instanceof UnsupportedRemoteFilesOperationException)) {
                     log.error("Error uploading {} to remote and adding to {} by URL", resources, catalog.getUri(), e);
                 }
                 doLocalAdd = true;

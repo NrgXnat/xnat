@@ -5,6 +5,7 @@ import org.nrg.action.ServerException;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 
 import javax.annotation.Nonnull;
@@ -78,10 +79,10 @@ public interface RemoteFilesService {
      * @param parentEventId Nullable eventId for parent workflow
      * @throws ClientException for invalid request
      * @throws ServerException if resources cannot be pushed to remote
-     * @throws UnsupportedOperationException if project doesn't support remote resources
+     * @throws UnsupportedRemoteFilesOperationException if project doesn't support remote resources
      */
     void pushProcessingOutputsAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
                                                   final XnatResourcecatalog catalog, final Collection<File> files,
                                                   final boolean preserveDirectories, @Nullable Integer parentEventId)
-            throws ClientException, ServerException, UnsupportedOperationException;
+            throws ClientException, ServerException, UnsupportedRemoteFilesOperationException;
 }

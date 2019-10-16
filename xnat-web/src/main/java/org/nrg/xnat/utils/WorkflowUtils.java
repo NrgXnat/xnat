@@ -67,13 +67,18 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 	 * Get list of open pipelineName workflows for ID
 	 * @param user			the user
 	 * @param ID			the item ID
+	 * @param dataType 		the item dataType
 	 * @param pipelineName	the pipeline
 	 * @return list of workflows
 	 */
-	public static Collection<? extends PersistentWorkflowI> getOpenWorkflowsForPipeline(final UserI user,final String ID, final String pipelineName){
+	public static Collection<? extends PersistentWorkflowI> getOpenWorkflowsForPipeline(final UserI user,
+																						final String ID,
+																						final String dataType,
+																						final String pipelineName){
 		final CriteriaCollection cc= new CriteriaCollection("AND");
-		cc.addClause("wrk:workFlowData.ID",ID);
-		cc.addClause("wrk:workFlowData.pipelineName",pipelineName);
+		cc.addClause("wrk:workFlowData.ID", ID);
+		cc.addClause("wrk:workFlowData.data_type", dataType);
+		cc.addClause("wrk:workFlowData.pipeline_name", pipelineName);
 
 		final CriteriaCollection cc2 = getOpenWorkflowCriteriaCollection();
 		cc.add(cc2);

@@ -38,7 +38,7 @@ buildscript {
 group "org.nrg.xnat"
 version = "1.7.6.RAD-SNAPSHOT"
 
-def vXnatDevDataModel = '1.7.6.RAD-SNAPSHOT-PIPELINE'
+def vXnatDevDataModel = '1.7.6.RAD-SNAPSHOT'
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"

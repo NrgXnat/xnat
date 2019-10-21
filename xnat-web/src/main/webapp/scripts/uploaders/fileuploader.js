@@ -69,6 +69,8 @@ abu.FileUploader = function(o){
 						'Verbose status output?' +
 						'</div>' : ""
 					) +
+					'<div class="abu-options-cb" id="formatAndContentBoxDiv" style="display:none;margin-bottom:4px;"><table><tr><td>Content:</td><td><input id="contentBox" name="fileContent" type="text"/></td></tr>' +
+					'<tr><td>Format:</td><td><input id="formatBox" name="formatBox" type="text"/></td></tr></table></div>'+
 					'<div class="abu-options-cb" id="triageMessage" style="display: none;">' +
 					'<br>Your files will be uploaded to the project quarantine location and will await review by project administrators' + 
 					'</div>' +
@@ -222,6 +224,8 @@ abu.FileUploader = function(o){
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +
 					 (($("#updateBox").length>0) ? (($("#updateBox").is(':checked')) ? "&update=true" : "&update=false") : "") +
+					 (($("#contentBox").length>0) ? (($("#contentBox").val().length>0) ? "&content="+$("#contentBox").val() : "") : "") +
+					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
 					 '" method="POST" enctype="multipart/form-data">' + 
 				'</form>' + 
 				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file">' + cFile.name + '</span><span class="abu-upload-file">' +  

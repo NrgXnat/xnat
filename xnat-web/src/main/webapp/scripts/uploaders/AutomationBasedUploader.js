@@ -822,6 +822,14 @@ XNAT.app.abu.updateModalAction = function(){
 						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
 					}
 					
+					if(resourceConfigs[i].format){
+						$("#formatAndContentBoxDiv").css('display', 'block');
+					}else{
+						$("#formatAndContentBoxDiv").css('display', 'none');
+						$("#formatBox").val("");
+						$("#contentBox").val("");
+					}
+					
 					XNAT.app.abu.populateEventHandlerSelect();
 					return;
 				}
@@ -898,6 +906,7 @@ XNAT.app.abu.updateOptionsCheckboxes = function(selectVal) {
 			} else {
 				$("#emailBox").attr('checked',false);
 			}
+			
 			//console.log($("#extractRequestBox").is(":checked"));
 			//console.log($("#closeBox").is(":checked"));
 			//console.log($("#emailBox").is(":checked"));

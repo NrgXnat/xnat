@@ -1490,6 +1490,20 @@ setScanTypeMapping:
             label: Scan Type Mapping?
             onText: Enabled
             offText: Disabled
+            
+manualQC:
+    kind: panel.form
+    label: Manual QC
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiShowAddManualQCAction:
+            kind: panel.input.switchbox
+            label: Manual QC Actions Menu Item
+            description: Show "Add QC Entry" in the image session actions menu?
+            onText: Enabled
+            offText: Disabled
 
 developmentUtilities:
     kind: panel
@@ -1677,6 +1691,7 @@ root:
             label: Miscellaneous
             contents:
                 ${setScanTypeMapping}
+                ${manualQC}
                 ${developmentUtilities}
 
 

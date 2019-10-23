@@ -25,6 +25,14 @@ buildscript {
             url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
             name "XNAT Snapshot Repository"
         }
+        maven {
+            url "https://maven.radiologics.com/repository/snapshots"
+            name "Radiologics Snapshot Repository"
+        }
+        maven {
+            url "https://maven.radiologics.com/repository/internal"
+            name "Radiologics Release Repository"
+        }
     }
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.6.1"
@@ -61,6 +69,8 @@ repositories {
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    maven { url "https://maven.radiologics.com/repository/snapshots" }
+    maven { url "https://maven.radiologics.com/repository/internal" }
 }
 
 sourceCompatibility = 1.7
@@ -555,6 +565,16 @@ publishing.repositories {
             password propertyWithDefault("repoPassword", "password")
         }
         url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+    }
+    maven {
+        name "Radiologics"
+        credentials {
+            // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+            // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+            username propertyWithDefault('repoUsername', 'username')
+            password propertyWithDefault('repoPassword', 'password')
+        }
+        url project.version.endsWith("-SNAPSHOT") ? "https://maven.radiologics.com/repository/snapshots/" : "https://maven.radiologics.com/repository/internal/"
     }
 }
 

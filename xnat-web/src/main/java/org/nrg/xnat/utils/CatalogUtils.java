@@ -234,7 +234,8 @@ public class CatalogUtils {
 
         @Nullable
         private String queryResourceProject() {
-            if (catRes == null) {
+            Integer id;
+            if (catRes == null || (id = catRes.getXnatAbstractresourceId()) == null) {
                 return null;
             }
             NamedParameterJdbcTemplate template = getNamedParameterJdbcTemplateInstance();
@@ -243,13 +244,12 @@ public class CatalogUtils {
                 return null;
             }
             final List<String> projects = template.query(QUERY_PROJECT_FROM_RESOURCE,
-                    new MapSqlParameterSource("abstractResourceId", catRes.getXnatAbstractresourceId()),
-                    RESOURCE_PROJECT_ROW_MAPPER);
+                    new MapSqlParameterSource("abstractResourceId", id), RESOURCE_PROJECT_ROW_MAPPER);
             if (projects.isEmpty()) {
                 log.error("No projects associated with resource {}", catRes);
                 return null;
             } else if (projects.size() > 1) {
-                log.error("Multiple projects associated with resource {}: {}. Using the first...", catRes, projects);
+                log.error("Multiple projects associated with resource id={}: {}. Using the first...", id, projects);
             }
             return projects.get(0);
         }

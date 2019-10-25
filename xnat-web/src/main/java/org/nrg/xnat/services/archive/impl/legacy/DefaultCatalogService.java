@@ -715,10 +715,13 @@ public class DefaultCatalogService implements CatalogService {
 
     private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final Collection<InputStreamSource> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
         final XnatResourcecatalog catalog;
+        final String              uri;
         if (existing != null) {
             catalog = existing;
+            uri = UriParserUtils.getArchiveUri(catalog.getParent());
         } else {
             catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
+            uri = parentUri;
         }
 
         final File destination = new File(catalog.getUri()).getParentFile();
@@ -732,13 +735,12 @@ public class DefaultCatalogService implements CatalogService {
                 } else {
                     FileUtils.copyFileToDirectory(source, destination);
                 }
-            } else if (resource instanceof MultipartFile){
+            } else if (resource instanceof MultipartFile) {
                 FileUtils.copyInputStreamToFile(resource.getInputStream(), destination.toPath().resolve(((MultipartFile) resource).getOriginalFilename()).toFile());
             }
         }
 
-        refreshResourceCatalog(user, parentUri);
-
+        refreshResourceCatalog(user, uri, Operation.Append);
         return catalog;
 
     }

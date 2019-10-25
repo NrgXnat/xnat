@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.services.archive;
 
-import org.apache.ecs.xhtml.label;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -18,6 +17,7 @@ import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
+import org.springframework.core.io.InputStreamSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,20 +61,22 @@ public interface CatalogService {
      * Each key can reference a list containing one or more data object IDs. This function returns the ID of the newly
      * created catalog. You can retrieve the catalog itself by calling {@link #getCachedCatalog(UserI, String)}.
      *
-     * @param user       The user requesting the resources.
-     * @param resources  The resources to be included in the catalog.
-     * @param withSize   Whether to include the total size of the files that will be included
+     * @param user      The user requesting the resources.
+     * @param resources The resources to be included in the catalog.
+     * @param withSize  Whether to include the total size of the files that will be included
+     *
      * @return The ID of the newly created catalog containing the requested resources.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    Map<String,String> buildCatalogForResources(final UserI user, final Map<String, List<String>> resources, final boolean withSize) throws InsufficientPrivilegesException;
+    Map<String, String> buildCatalogForResources(final UserI user, final Map<String, List<String>> resources, final boolean withSize) throws InsufficientPrivilegesException;
 
     /**
      * Retrieves the catalog with the submitted ID.
      *
      * @param user      The user requesting the catalog.
      * @param catalogId The ID of the catalog to be retrieved.
+     *
      * @return The specified catalog.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
@@ -145,24 +147,87 @@ public interface CatalogService {
      * the sources parameters are copied into the resource folder.
      * * If the source is a file, that file is copied into the resource folder.
      * * If the source is a directory, and preserveDirectories=true, the directory and its contents are copied in.
-     *      If preserveDirectories=false, only that directory's contents&emdash;that is,
-     *      not the directory itself&emdash;are copied into the resource folder.
+     * If preserveDirectories=false, only that directory's contents&emdash;that is,
+     * not the directory itself&emdash;are copied into the resource folder.
      *
-     * @param user                  The user creating the catalog.
-     * @param parentUri             The URI of the resource parent.
-     * @param resources             The files and/or folders to copy into the resource folder.
-     * @param preserveDirectories   Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
-     * @param label                 The label for the new resource catalog.
-     * @param description           The description of the resource catalog.
-     * @param format                The format of the data in the resource catalog.
-     * @param content               The content of the data in the resource catalog.
-     * @param tags                  Tags for categorizing the data in the resource catalog.
+     * @param user                The user creating the catalog.
+     * @param parentUri           The URI of the resource parent.
+     * @param resources           The files and/or folders to copy into the resource folder.
+     * @param preserveDirectories Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
+     * @param label               The label for the new resource catalog.
+     * @param description         The description of the resource catalog.
+     * @param format              The format of the data in the resource catalog.
+     * @param content             The content of the data in the resource catalog.
+     * @param tags                Tags for categorizing the data in the resource catalog.
      *
      * @return The newly created {@link XnatResourcecatalog} object representing the new resource.
      *
      * @throws Exception When something goes wrong.
      */
     XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
+
+    /**
+     * Inserts resources into an existing resource catalog. The contents of the location specified by the source parameter
+     * are copied into the resource folder: if source is a directory, only its contents&emdash;that is, not the source
+     * directory itself&emdash;are copied into the resource folder, but if source is a file, that file is copied into the
+     * resource folder.
+     *
+     * @param user     The user inserting the resources.
+     * @param catalog  The catalog into which the resources should be added.
+     * @param resource The file or folder to copy into the resource folder.
+     *
+     * @return The updated {@link XnatResourcecatalog} object.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    @SuppressWarnings("unused")
+    XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final File resource) throws Exception;
+
+    /**
+     * Inserts resources into an existing resource catalog. The contents of the location specified by the source parameter
+     * are copied into the resource folder: if source is a directory, only its contents&emdash;that is, not the source
+     * directory itself&emdash;are copied into the resource folder, but if source is a file, that file is copied into the
+     * resource folder.
+     *
+     * @param user      The user inserting the resources.
+     * @param catalog   The catalog into which the resources should be added.
+     * @param resources The files or folders to copy into the resource folder.
+     *
+     * @return The updated {@link XnatResourcecatalog} object.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources) throws Exception;
+
+    /**
+     * Inserts resources into an existing resource catalog. The contents of the location specified by the source parameter
+     * are copied into the resource folder:
+     *
+     * <ul>
+     *     <li>If the source is a file, that file is copied into the resource folder.</li>
+     *     <li>If the source is a directory, and <b>preserveDirectories</b> is <b>true</b>, the directory and its contents are copied in.</li>
+     *     <li>
+     *         If the source is a directory, and <b>preserveDirectories</b> is <b>false</b>, only that directory's contents&emdash;that is,
+     *         not the directory itself&emdash;are copied into the resource folder.
+     *     </li>
+     * </ul>
+     *
+     * @param user                The user inserting the resources.
+     * @param catalog             The catalog into which the resources should be added.
+     * @param resources           The files or folders to copy into the resource folder.
+     * @param preserveDirectories Whether to copy a subdirectory along with its contents (true), or just the directory itself (false).
+     *
+     * @return The updated {@link XnatResourcecatalog} object.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources, final boolean preserveDirectories) throws Exception;
+
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, InputStreamSource source) throws Exception;
+
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Collection<InputStreamSource> sources) throws Exception;
+
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Collection<InputStreamSource> sources, boolean preserveDirectories) throws Exception;
 
     /**
      * Creates a new resource catalog with the indicated attributes. The new resource catalog is not associated with any

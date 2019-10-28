@@ -240,7 +240,7 @@ abu.FileUploader = function(o){
 			this.currentUploads++;
 			var formData = new FormData();
 			formData.append("file" + adj_i,cFile,cFile.name);
-			this.uploadFile("#file-upload-form-" + adj_i,formData);
+			this.uploadFile(adj_i,formData);
 			this.manageUploads();
 		}
 	}.bind(this)
@@ -278,7 +278,8 @@ abu.FileUploader = function(o){
 		this.anyFailedUploads = false;
 	}.bind(this)
 
-	this.uploadFile = function(formSelector,formData) {
+	this.uploadFile = function(idx,formData) {
+		var formSelector = "#file-upload-form-" + idx;
 		var infoSelector = formSelector.replace("-upload-form-","-info-div-");
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
@@ -286,6 +287,19 @@ abu.FileUploader = function(o){
 		$(formSelector).on("submit",function(e, uploader) {
 			 $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
+					
+					// Don't allow % and # characters in the filename.
+					if (formData.get("file"+idx).name.match(/[%#]/g)){
+						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%' and '#' are not allowed). Not Uploaded.</a>");
+						$(infoSelector).find(".abu-progress").css("display","none");
+						status.css("display","inline-block");
+						uploader.uploadsStarted++;
+						uploader.uploadsInProgress++;
+						arr.abort();
+						this.complete();
+						return false;
+					}
+					
 					XNAT.app.timeout.maintainLogin = true;
 					var formURL = $form.url;
 					if (typeof formURL !== 'undefined' && formURL.toLowerCase().indexOf("overwrite=true")>=0 && formURL.indexOf("/files")>0) {

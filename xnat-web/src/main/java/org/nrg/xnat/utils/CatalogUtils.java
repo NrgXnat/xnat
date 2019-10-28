@@ -2707,26 +2707,26 @@ public class CatalogUtils {
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
     private static final String QUERY_PROJECT_FROM_RESOURCE = "SELECT res.xnat_abstractresource_id, COALESCE(SCAN.project, IAD_IN.project, IAD_OUT.project, EXPT.project, SUBJ.project, PROJ.ID) AS project, res.uri " +
             "FROM xnat_resourceCatalog cat " +
-            "LEFT JOIN xnat_Resource res ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=res.xnat_abstractresource_id " +
+            "LEFT JOIN xnat_Resource res ON cat.xnat_abstractresource_id=res.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT abst.xnat_abstractresource_id,COALESCE(scan.project,expt.project) AS project FROM xnat_abstractResource abst LEFT JOIN xnat_imageScanData scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id LEFT JOIN xnat_experimentdata expt ON scan.image_session_id=expt.id" +
-            ") SCAN ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=SCAN.xnat_abstractresource_id " +
+            ") SCAN ON cat.xnat_abstractresource_id=SCAN.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractResource res LEFT JOIN img_assessor_in_resource  map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT" +
             "     JOIN Xnat_imageAssessorData iad ON map.xnat_imageassessordata_id=iad.id LEFT JOIN xnat_experimentData expt ON  iad.id=expt.id" +
-            ") IAD_IN ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=IAD_IN.xnat_abstractresource_id " +
+            ") IAD_IN ON cat.xnat_abstractresource_id=IAD_IN.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractResource res LEFT JOIN img_assessor_out_resource     map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN    Xnat_imageAssessorData iad ON map.xnat_imageassessordata_id=iad.id LEFT JOIN xnat_experimentData expt ON    iad.id=expt.id" +
-            ") IAD_OUT ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=IAD_OUT.xnat_abstractresource_id " +
+            ") IAD_OUT ON cat.xnat_abstractresource_id=IAD_OUT.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractresource res LEFT JOIN xnat_experimentdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_experimentdata       expt ON map.xnat_experimentdata_id=expt.id" +
-            ") EXPT ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=EXPT.xnat_abstractresource_id " +
+            ") EXPT ON cat.xnat_abstractresource_id=EXPT.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractresource res LEFT JOIN xnat_subjectdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_subjectdata expt         ON map.xnat_subjectdata_id=expt.id" +
-            ") SUBJ ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=SUBJ.xnat_abstractresource_id " +
+            ") SUBJ ON cat.xnat_abstractresource_id=SUBJ.xnat_abstractresource_id " +
             "LEFT JOIN (" +
             "    SELECT xnat_abstractresource_id,expt.ID FROM xnat_abstractresource res LEFT JOIN xnat_projectdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_projectdata expt         ON map.xnat_projectdata_id=expt.id" +
-            ") PROJ ON cat.xnat_abstractresource_id = :abstractResourceId AND cat.xnat_abstractresource_id=PROJ.xnat_abstractresource_id ";
+            ") PROJ ON cat.xnat_abstractresource_id=PROJ.xnat_abstractresource_id WHERE res.xnat_abstractresource_id = :abstractResourceId";
 
     private static final RowMapper<String> RESOURCE_PROJECT_ROW_MAPPER = new RowMapper<String>() {
         @Override

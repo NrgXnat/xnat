@@ -18,6 +18,7 @@ import org.apache.commons.collections.Predicate;
 import org.apache.commons.configuration.ConfigurationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
+import org.nrg.dcm.xnat.XnatImagescandataBeanFactory;
 import org.nrg.dcm.xnat.XnatImagesessiondataBeanFactory;
 import org.nrg.ecat.xnat.PETSessionBuilder;
 import org.nrg.framework.services.ContextService;
@@ -27,6 +28,7 @@ import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -71,6 +73,8 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     private static final Class<?>[] PARAMETER_TYPES = new Class[]{File.class, Writer.class};
 
     private static final List<Class<? extends XnatImagesessiondataBeanFactory>> sessionDataFactoryClasses = Lists.newArrayList();
+    private static final List<XnatImagesessiondataBeanFactory> sessionDataFactories = Lists.newArrayList();
+    private static final List<XnatImagescandataBeanFactory> scanDataFactories = Lists.newArrayList();
     private static ContextService contextService = null;
 
     private final File dir, xml;
@@ -167,6 +171,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     }
 
     /**
+     * Deprecated: you should use spring beans instead
      * Add session data bean factory classes to the chain used to map DICOM SOP classes to XNAT session types
      *
      * @param classes session bean factory classes
@@ -174,6 +179,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
      * @return this
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public XNATSessionBuilder setSessionDataFactoryClasses(final Iterable<Class<? extends XnatImagesessiondataBeanFactory>> classes) {
         sessionDataFactoryClasses.clear();
         Iterables.addAll(sessionDataFactoryClasses, classes);
@@ -192,9 +198,25 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         xml.getParentFile().mkdirs();
         final FileWriter fw = new FileWriter(xml);
 
-        if (null == contextService && sessionDataFactoryClasses.isEmpty()) {
+        if (null == contextService && (sessionDataFactories.isEmpty() || scanDataFactories.isEmpty())) {
             contextService = XDAT.getContextService();
-            sessionDataFactoryClasses.addAll(contextService.getBean("sessionDataFactoryClasses", Collection.class));
+            try {
+                //Legacy support for a bean of a list of classes
+                sessionDataFactoryClasses.addAll(contextService.getBean("sessionDataFactoryClasses",
+                        Collection.class));
+            } catch (Exception e) {
+                // Ignore
+            }
+            try {
+                sessionDataFactories.addAll(contextService.getBeansOfType(XnatImagesessiondataBeanFactory.class).values());
+            } catch (Exception e) {
+                // Ignore
+            }
+            try {
+                scanDataFactories.addAll(contextService.getBeansOfType(XnatImagescandataBeanFactory.class).values());
+            } catch (Exception e) {
+                // Ignore
+            }
         }
 
         for (final BuilderConfig bc : builderClasses) {
@@ -275,7 +297,17 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
             dicomSessionBuilder.setIsInPrearchive(isInPrearchive);
             if (!sessionDataFactoryClasses.isEmpty()) {
-                dicomSessionBuilder.setSessionBeanFactories(sessionDataFactoryClasses);
+                // spring bean sessionDataFactories will take precedence over these in attempting to match
+                // classes added to this list will override the defaults in DICOMSessionBuilder
+                dicomSessionBuilder.setSessionBeanFactoryClasses(sessionDataFactoryClasses);
+            }
+            if (!sessionDataFactories.isEmpty()) {
+                // We expect that sessionDataFactories are going to be exclusive - we don't control the priority/order
+                dicomSessionBuilder.setSessionBeanFactories(sessionDataFactories);
+            }
+            if (!scanDataFactories.isEmpty()) {
+                // We expect that scanDataFactories are going to be exclusive - we don't control the priority/order
+                dicomSessionBuilder.setScanBeanFactories(scanDataFactories);
             }
             if (!params.isEmpty()) {
                 dicomSessionBuilder.setParameters(params);

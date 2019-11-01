@@ -227,9 +227,9 @@ dependencies {
     implementation "org.nrg:mail"
     implementation "org.nrg:notify"
 
-    implementation "org.nrg:dicom-xnat-mx"
-    implementation "org.nrg:dicom-xnat-sop"
-    implementation "org.nrg:dicom-xnat-util"
+    implementation "org.nrg:dicom-xnat-mx:${vXnatDev}"
+    implementation "org.nrg:dicom-xnat-sop:${vXnatDev}"
+    implementation "org.nrg:dicom-xnat-util:${vXnatDev}"
     implementation "org.nrg:ecat4xnat"
     implementation "org.nrg:ExtAttr"
     implementation "org.nrg:DicomImageUtils"

@@ -14,10 +14,11 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.6-SNAPSHOT</version>
+        <version>1.7.6.RAD-SNAPSHOT</version>
     </parent>
 
     <artifactId>framework</artifactId>
+    <version>1.7.6.RAD-SNAPSHOT</version>
 
     <name>NRG Common Framework</name>
     <description>Defines the common framework for NRG services and libraries.</description>

@@ -10,6 +10,7 @@
 buildscript {
     ext {
         vXnat = "1.7.6-SNAPSHOT"
+        vXnatDev = '1.7.6.RAD-SNAPSHOT'
     }
     repositories {
         mavenLocal()
@@ -44,9 +45,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = "1.7.6.RAD-SNAPSHOT"
-
-def vXnatDev = '1.7.6.RAD-SNAPSHOT'
+version = "${vXnatDev}"
 
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
@@ -189,7 +188,7 @@ configurations {
 }
 
 dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnat}"
+    mavenBom "org.nrg:parent:${vXnatDev}"
 }
 
 def vMockito = '1.10.19'
@@ -203,8 +202,8 @@ dependencies {
     annotationProcessor "org.nrg:framework"
 
     // NRG dependencies first.
-    api "org.nrg.xdat:core:${vXnatDev}"
-    api "org.nrg.xnat:xnat-data-models:${vXnatDev}"
+    api "org.nrg.xdat:core"
+    api "org.nrg.xnat:xnat-data-models"
     api "org.nrg:framework"
     api "org.springframework.security:spring-security-ldap"
     api "org.springframework.security.oauth:spring-security-oauth2"
@@ -227,9 +226,9 @@ dependencies {
     implementation "org.nrg:mail"
     implementation "org.nrg:notify"
 
-    implementation "org.nrg:dicom-xnat-mx:${vXnatDev}"
-    implementation "org.nrg:dicom-xnat-sop:${vXnatDev}"
-    implementation "org.nrg:dicom-xnat-util:${vXnatDev}"
+    implementation "org.nrg:dicom-xnat-mx"
+    implementation "org.nrg:dicom-xnat-sop"
+    implementation "org.nrg:dicom-xnat-util"
     implementation "org.nrg:ecat4xnat"
     implementation "org.nrg:ExtAttr"
     implementation "org.nrg:DicomImageUtils"

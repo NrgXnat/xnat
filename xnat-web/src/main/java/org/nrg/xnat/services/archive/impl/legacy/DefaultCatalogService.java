@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.services.archive.impl.legacy;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.*;
@@ -69,6 +68,7 @@ import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.core.io.Resource;
@@ -347,15 +347,15 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final InputStreamSource source) throws Exception {
-        return insertResources(user, catalog, null, Collections.singletonList(source), false, null, null, null, null);
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final String name, final InputStreamSource source) throws Exception {
+        return insertResources(user, catalog, null, Collections.singletonMap(name, source), false, null, null, null, null);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Collection<InputStreamSource> sources) throws Exception {
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources) throws Exception {
         return insertResources(user, catalog, null, sources, false, null, null, null, null);
     }
 
@@ -363,7 +363,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Collection<InputStreamSource> sources, final boolean preserveDirectories) throws Exception {
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources, final boolean preserveDirectories) throws Exception {
         return insertResources(user, catalog, null, sources, preserveDirectories, null, null, null, null);
     }
 
@@ -706,14 +706,18 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private static Collection<InputStreamSource> getFilesAsInputStreamSources(final Collection<File> files) throws FileNotFoundException {
+    private static Map<String, ? extends InputStreamSource> getFilesAsInputStreamSources(final Collection<File> files) throws FileNotFoundException {
         if (Iterables.any(files, Predicates.not(FILE_EXISTS))) {
             throw new FileNotFoundException("Unable to find the following source files/folders: " + StringUtils.join(Iterables.filter(files, Predicates.not(FILE_EXISTS)), ", "));
         }
-        return Lists.newArrayList(Iterables.transform(files, FILE_TO_INPUT_STREAM_SOURCE_FUNCTION));
+        final Map<String, InputStreamSource> sources = new HashMap<>();
+        for (final File file : files) {
+            sources.put(file.getName(), new FileSystemResource(file));
+        }
+        return sources;
     }
 
-    private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final Collection<InputStreamSource> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+    private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final Map<String, ? extends InputStreamSource> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
         final XnatResourcecatalog catalog;
         final String              uri;
         if (existing != null) {
@@ -725,15 +729,22 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final File destination = new File(catalog.getUri()).getParentFile();
-        for (final InputStreamSource resource : resources) {
-            if (resource instanceof Resource) {
-                final File source = ((Resource) resource).getFile();
-                if (source.isDirectory() && preserveDirectories) {
-                    FileUtils.copyDirectoryToDirectory(source, destination);
-                } else if (source.isDirectory() && !preserveDirectories) {
-                    FileUtils.copyDirectory(source, destination);
-                } else {
-                    FileUtils.copyFileToDirectory(source, destination);
+        for (final String resourceName : resources.keySet()) {
+            final InputStreamSource resource = resources.get(resourceName);
+            if (resource instanceof ByteArrayResource) {
+                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) resource).getByteArray()), destination.toPath().resolve(resourceName).toFile());
+            } else if (resource instanceof Resource) {
+                try {
+                    final File source = ((Resource) resource).getFile();
+                    if (source.isDirectory() && preserveDirectories) {
+                        FileUtils.copyDirectoryToDirectory(source, destination);
+                    } else if (source.isDirectory() && !preserveDirectories) {
+                        FileUtils.copyDirectory(source, destination);
+                    } else {
+                        FileUtils.copyFileToDirectory(source, destination);
+                    }
+                } catch (IOException e) {
+                    FileUtils.copyInputStreamToFile(resource.getInputStream(), destination.toPath().resolve(resourceName).toFile());
                 }
             } else if (resource instanceof MultipartFile) {
                 FileUtils.copyInputStreamToFile(resource.getInputStream(), destination.toPath().resolve(((MultipartFile) resource).getOriginalFilename()).toFile());
@@ -1643,12 +1654,6 @@ public class DefaultCatalogService implements CatalogService {
         @Override
         public boolean apply(@Nullable final File file) {
             return file != null && file.exists() && file.isFile();
-        }
-    };
-    private static final Function<File, InputStreamSource> FILE_TO_INPUT_STREAM_SOURCE_FUNCTION = new Function<File, InputStreamSource>() {
-        @Override
-        public InputStreamSource apply(final File file) {
-            return new FileSystemResource(file);
         }
     };
 

@@ -223,11 +223,11 @@ public interface CatalogService {
      */
     XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources, final boolean preserveDirectories) throws Exception;
 
-    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, InputStreamSource source) throws Exception;
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, final String name, InputStreamSource source) throws Exception;
 
-    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Collection<InputStreamSource> sources) throws Exception;
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Map<String, ? extends InputStreamSource> sources) throws Exception;
 
-    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Collection<InputStreamSource> sources, boolean preserveDirectories) throws Exception;
+    XnatResourcecatalog insertResourceStreams(UserI user, XnatResourcecatalog catalog, Map<String, ? extends InputStreamSource> sources, boolean preserveDirectories) throws Exception;
 
     /**
      * Creates a new resource catalog with the indicated attributes. The new resource catalog is not associated with any

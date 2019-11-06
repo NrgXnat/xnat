@@ -76,7 +76,7 @@ public class SchemaElement implements SchemaElementI {
 	 * @throws ClassNotFoundException if no java class corresponds to this element
 	 */
 	public Class<?> getCorrespondingJavaClass() throws ClassNotFoundException {
-		return Class.forName("org.nrg.xdat.om." + elementXmlNameToJavaName());
+		return Class.forName("org.nrg.xdat.om." + XftStringUtils.FormatStringToClassName(element.getFullXMLName()));
 	}
 
 	/**
@@ -85,14 +85,8 @@ public class SchemaElement implements SchemaElementI {
 	 * @throws ClassNotFoundException if no java bean class corresponds to this element
 	 */
 	public Class<?> getCorrespondingJavaBeanClass() throws ClassNotFoundException {
-		return Class.forName("org.nrg.xdat.bean." + elementXmlNameToJavaName() + "Bean");
-	}
-
-	private String elementXmlNameToJavaName() {
-		String xmlName = element.getFullXMLName();
-		String[] parts = xmlName.split(":", 2);
-		return StringUtils.capitalize(StringUtils.lowerCase(parts[0])) +
-				StringUtils.capitalize(StringUtils.lowerCase(parts[1]));
+		return Class.forName("org.nrg.xdat.bean." +
+				XftStringUtils.FormatStringToClassName(element.getFullXMLName()) + "Bean");
 	}
 
 	public String toString()

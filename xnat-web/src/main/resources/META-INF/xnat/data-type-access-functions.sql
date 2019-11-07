@@ -35,6 +35,7 @@ DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VAR
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_all_accessible_expts_of_type(username VARCHAR(255), dataType VARCHAR(255));
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -47,6 +48,7 @@ DROP VIEW IF EXISTS public.data_type_views_scan_data_types;
 DROP VIEW IF EXISTS public.data_type_views_get_xnat_hash_indices;
 DROP VIEW IF EXISTS public.data_type_views_experiments_without_data_type;
 DROP VIEW IF EXISTS public.data_type_views_member_edit_permissions;
+DROP VIEW IF EXISTS public.data_type_views_get_all_expts;
 DROP VIEW IF EXISTS public.data_type_views_missing_or_misconfigured_permissions;
 DROP VIEW IF EXISTS public.data_type_views_default_access_permissions;
 
@@ -1106,6 +1108,81 @@ BEGIN
         END IF;
     END IF;
     RETURN found_can;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE VIEW public.data_type_views_get_all_expts AS
+SELECT
+    x.id,
+    x.label,
+    x.project,
+    x.extension,
+    e.element_name,
+    FALSE AS shared,
+    '^[^/]+/project' AS attribute
+FROM
+    xnat_experimentdata x
+    LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+UNION
+SELECT
+    x.id,
+    s.label,
+    s.project,
+    x.extension,
+    e.element_name,
+    TRUE AS shared,
+    '^[^/]+/sharing/share/project' AS attribute
+FROM
+    xnat_experimentdata_share s
+    LEFT JOIN xnat_experimentdata x ON s.sharing_share_xnat_experimentda_id = x.id
+    LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_all_accessible_expts_of_type(username VARCHAR(255), dataType VARCHAR(255))
+    RETURNS TABLE (
+        id           VARCHAR(255),
+        label        VARCHAR(255),
+        project      VARCHAR(255),
+        element_name VARCHAR(255),
+        shared       BOOLEAN,
+        can_create   BOOLEAN,
+        can_read     BOOLEAN,
+        can_edit     BOOLEAN,
+        can_delete   BOOLEAN,
+        can_active   BOOLEAN)
+AS
+$$
+BEGIN
+    RETURN QUERY
+        WITH
+            all_expts AS (SELECT * FROM data_type_views_get_all_expts)
+        SELECT DISTINCT
+            x.id,
+            x.label,
+            x.project,
+            x.element_name,
+            x.shared,
+            m.create_element::BOOLEAN,
+            m.read_element::BOOLEAN,
+            m.edit_element::BOOLEAN,
+            m.delete_element::BOOLEAN,
+            m.active_element::BOOLEAN
+        FROM
+            all_expts x
+            LEFT JOIN xdat_element_access e ON x.element_name = e.element_name
+            LEFT JOIN xdat_field_mapping_set s ON e.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+            LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+            LEFT JOIN xdat_usergroup g ON e.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+            LEFT JOIN xdat_user_groupid gi ON g.id = gi.groupid
+            LEFT JOIN xdat_user u ON e.xdat_user_xdat_user_id = u.xdat_user_id OR gi.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id
+        WHERE
+            m.xdat_field_mapping_id IS NOT NULL AND
+            m.field_value IN (x.project, '*') AND
+            m.field ~ x.attribute AND
+            x.element_name = dataType AND
+            u.login IN (username, 'guest')
+        ORDER BY
+            id;
 END
 $$
     LANGUAGE plpgsql;

@@ -1251,7 +1251,7 @@ public class Permissions {
     private static final int                PROJECT_GROUP_COUNT    = PROJECT_GROUPS.size();
     private static final SqlParameterSource GUEST_QUERY_PARAMETERS = new MapSqlParameterSource("username", "guest");
 
-    private static final String QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE = "SELECT id, label, project FROM data_type_fns_get_all_accessible_expts_of_type(:username, :dataType) WHERE can_${action} = 1";
+    private static final String QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE = "SELECT id, label, project FROM data_type_fns_get_all_accessible_expts_of_type(:username, :dataType) WHERE can_${action} = TRUE";
     private static final String QUERY_ALL_READABLE_EXPTS_OF_TYPE   = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.READ));
     private static final String QUERY_ALL_EDITABLE_EXPTS_OF_TYPE   = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.EDIT));
     private static final String QUERY_ALL_DELETABLE_EXPTS_OF_TYPE  = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.DELETE));

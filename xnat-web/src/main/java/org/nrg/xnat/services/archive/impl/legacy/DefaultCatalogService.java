@@ -751,7 +751,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        refreshResourceCatalog(user, uri, Operation.Append);
+        refreshResourceCatalog(user, uri, Operation.Append, Operation.Checksum, Operation.PopulateStats);
         return catalog;
 
     }

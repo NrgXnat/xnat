@@ -69,10 +69,34 @@ var XNAT = getObject(XNAT);
     }
 
     function loadSnapshotImageNoBlocking(scanID) {
-        var element = $("#" + "scan" + scanID + "snapshot");
-        if (element && element.data('xnat-src')) {
-            element[0].src = element.data("xnat-src");
+        var element = $("#span-" + "scan" + scanID + "snapshot"),
+            exprId = element ? element.data('expt-id') : null,
+            elementLoaded = element ? element.data('loaded') : false;
+        if (exprId) {
+            if (elementLoaded) {
+                return true;
+            }
+            var src = '/data/experiments/' + exprId + '/scans/' + scanID + '/resources/SNAPSHOTS/files';
+            var origSrc = src + '?file_content=ORIGINAL&index=0';
+            var thumbSrc = src + '?file_content=THUMBNAIL&index=0';
+            $.ajax({
+                url: XNAT.url.restUrl(origSrc),
+                type: 'HEAD',
+                success: function() {
+                    element.data('loaded', true);
+                    element.html(
+                        '<a target="_blank" class="scan-original-link" href="' + origSrc + '">' +
+                        '<img class="scan-snapshot" src="' + thumbSrc + '"/>' +
+                        '</a>');
+                },
+                error: function() {
+                    element.html('No snapshot available');
+                }
+            });
+        } else if (element) {
+            element.html('No snapshot available');
         }
+
         return true;
     }
 
@@ -84,29 +108,28 @@ var XNAT = getObject(XNAT);
         // If the details modal for this scan is open, don't open it again.
         if(scanTable.scanDetailsOpen.includes(scanId)) return false;
         
-        
-        if (loadSnapshotImageNoBlocking(scanId)) {
+        scanTable.scanDetailsOpen.push(scanId);
+        var tmpl = $('#scan-' + scanId + '-details-template').html();
 
-            scanTable.scanDetailsOpen.push(scanId);
-            var tmpl = $('#scan-' + scanId + '-details-template').html();
+        XNAT.ui.dialog.message({
+            title: 'Scan ' + scanId,
+            width: 720,
+            content: tmpl,
+            isDraggable: true,
+            mask: false,
+            esc: true,
+            okLabel: 'Close',
+            afterShow: function() {
+                loadSnapshotImageNoBlocking(scanId);
+            },
+            afterClose: function(){
+                delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
+            },
+            footer: {
+                content: 'Click in the header to move this dialog around the page'
+            }
+        });
 
-            XNAT.ui.dialog.message({
-                title: 'Scan ' + scanId,
-                width: 720,
-                content: tmpl,
-                isDraggable: true,
-                mask: false,
-                esc: true,
-                okLabel: 'Close',
-                afterClose: function(){
-                    delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
-                },
-                footer: {
-                    content: 'Click in the header to move this dialog around the page'
-                }
-            });
-
-        }
     };
 
     // download all selected scans

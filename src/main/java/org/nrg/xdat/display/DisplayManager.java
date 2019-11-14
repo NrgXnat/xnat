@@ -625,7 +625,7 @@ public class DisplayManager {
                     String viewName = DISPLAY_FIELDS_VIEW + root.getGenericXFTElement().getSQLName();
                     if (!createdAlias.contains(viewName)) {
                         createdAlias.add(viewName);
-                        views.add("--DISPLAY LINK\nCREATE OR REPLACE VIEW " + viewName + " AS " + query + ";\n\n");
+                        views.add("--DISPLAY LINK\nDROP VIEW IF EXISTS " + viewName + ";\nCREATE OR REPLACE VIEW " + viewName + " AS " + query + ";\n\n");
                     }
                 } catch (Exception e1) {
                     logger.error("Error in Display Document for '" + root.getFullXMLName() + "'.\n" + e1.getMessage());

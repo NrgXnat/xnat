@@ -198,22 +198,12 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         xml.getParentFile().mkdirs();
         final FileWriter fw = new FileWriter(xml);
 
-        if (null == contextService && (sessionDataFactories.isEmpty() || scanDataFactories.isEmpty())) {
+        if (null == contextService && sessionDataFactoryClasses.isEmpty()) {
             contextService = XDAT.getContextService();
             try {
                 //Legacy support for a bean of a list of classes
                 sessionDataFactoryClasses.addAll(contextService.getBean("sessionDataFactoryClasses",
                         Collection.class));
-            } catch (Exception e) {
-                // Ignore
-            }
-            try {
-                sessionDataFactories.addAll(contextService.getBeansOfType(XnatImagesessiondataBeanFactory.class).values());
-            } catch (Exception e) {
-                // Ignore
-            }
-            try {
-                scanDataFactories.addAll(contextService.getBeansOfType(XnatImagescandataBeanFactory.class).values());
             } catch (Exception e) {
                 // Ignore
             }
@@ -300,14 +290,6 @@ public class XNATSessionBuilder implements Callable<Boolean> {
                 // spring bean sessionDataFactories will take precedence over these in attempting to match
                 // classes added to this list will override the defaults in DICOMSessionBuilder
                 dicomSessionBuilder.setSessionBeanFactoryClasses(sessionDataFactoryClasses);
-            }
-            if (!sessionDataFactories.isEmpty()) {
-                // We expect that sessionDataFactories are going to be exclusive - we don't control the priority/order
-                dicomSessionBuilder.setSessionBeanFactories(sessionDataFactories);
-            }
-            if (!scanDataFactories.isEmpty()) {
-                // We expect that scanDataFactories are going to be exclusive - we don't control the priority/order
-                dicomSessionBuilder.setScanBeanFactories(scanDataFactories);
             }
             if (!params.isEmpty()) {
                 dicomSessionBuilder.setParameters(params);

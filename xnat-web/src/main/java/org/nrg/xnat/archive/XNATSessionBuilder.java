@@ -22,6 +22,7 @@ import org.nrg.dcm.xnat.XnatImagescandataBeanFactory;
 import org.nrg.dcm.xnat.XnatImagesessiondataBeanFactory;
 import org.nrg.ecat.xnat.PETSessionBuilder;
 import org.nrg.framework.services.ContextService;
+import org.nrg.resources.SupplementalResourceBuilderUtils;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
@@ -227,6 +228,10 @@ public class XNATSessionBuilder implements Callable<Boolean> {
                 break;
             }
         }
+
+        // Insert any supplemental resources
+        SupplementalResourceBuilderUtils.addSupplementalResourcesToXml(Collections.singleton(xml),
+                Collections.singleton(dir));
 
         return Boolean.TRUE;
     }

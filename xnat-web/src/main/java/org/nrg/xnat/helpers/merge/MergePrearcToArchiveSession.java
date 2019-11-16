@@ -52,19 +52,28 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     public void finalize(final XnatImagesessiondata session) {
         final String root = destRootPath.replace('\\', '/') + "/";
         for (XnatImagescandataI scan : session.getScans_scan()) {
-            for (final XnatAbstractresourceI file : scan.getFile()) {
-                ((XnatAbstractresource) file).prependPathsWith(root);
-
-                if (XNATUtils.isNullOrEmpty(((XnatAbstractresource) file).getContent())) {
-                    ((XnatResource) file).setContent("RAW");
-                }
-
-                if (file instanceof XnatResourcecatalog) {
-                    ((XnatResourcecatalog) file).clearFiles();
-                }
-                CatalogUtils.populateStats((XnatAbstractresource)file, root);
+            for (final XnatAbstractresourceI res : scan.getFile()) {
+                updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, true);
             }
         }
+        for (final XnatAbstractresourceI res : session.getResources_resource()) {
+            updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, false);
+        }
+    }
+
+    private void updateResourceWithArchivePathAndPopulateStats(XnatAbstractresource resource, String root,
+                                                               boolean setContentToRawIfMissing) {
+        resource.prependPathsWith(root);
+
+        if (setContentToRawIfMissing && XNATUtils.isNullOrEmpty(resource.getContent())) {
+            ((XnatResource) resource).setContent("RAW");
+        }
+
+        if (resource instanceof XnatResourcecatalog) {
+            ((XnatResourcecatalog) resource).clearFiles();
+        }
+
+        CatalogUtils.populateStats(resource, root);
     }
 
     @Override

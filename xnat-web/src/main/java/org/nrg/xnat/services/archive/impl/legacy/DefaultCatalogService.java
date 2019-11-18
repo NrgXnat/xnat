@@ -57,6 +57,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
@@ -84,6 +85,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -730,24 +732,39 @@ public class DefaultCatalogService implements CatalogService {
 
         final File destination = new File(catalog.getUri()).getParentFile();
         for (final String resourceName : resources.keySet()) {
-            final InputStreamSource resource = resources.get(resourceName);
-            if (resource instanceof ByteArrayResource) {
-                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) resource).getByteArray()), destination.toPath().resolve(resourceName).toFile());
-            } else if (resource instanceof Resource) {
+            final InputStreamSource source = resources.get(resourceName);
+            if (source instanceof ByteArrayResource) {
+                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) source).getByteArray()), destination.toPath().resolve(resourceName).toFile());
+            } else if (source instanceof Resource) {
+                final Resource resource = (Resource) source;
                 try {
-                    final File source = ((Resource) resource).getFile();
-                    if (source.isDirectory() && preserveDirectories) {
-                        FileUtils.copyDirectoryToDirectory(source, destination);
-                    } else if (source.isDirectory() && !preserveDirectories) {
-                        FileUtils.copyDirectory(source, destination);
+                    final File    file        = resource.getFile();
+                    final boolean isDirectory = file.isDirectory();
+                    if (isDirectory && preserveDirectories) {
+                        FileUtils.copyDirectoryToDirectory(file, destination);
+                    } else if (isDirectory) {
+                        FileUtils.copyDirectory(file, destination);
+                    } else if (ZipI.isCompressedFile(file.getName())) {
+                        ZipI.extractFile(file, destination.toPath());
                     } else {
-                        FileUtils.copyFileToDirectory(source, destination);
+                        FileUtils.copyFileToDirectory(file, destination);
                     }
                 } catch (IOException e) {
-                    FileUtils.copyInputStreamToFile(resource.getInputStream(), destination.toPath().resolve(resourceName).toFile());
+                    FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(resourceName).toFile());
                 }
-            } else if (resource instanceof MultipartFile) {
-                FileUtils.copyInputStreamToFile(resource.getInputStream(), destination.toPath().resolve(((MultipartFile) resource).getOriginalFilename()).toFile());
+            } else if (source instanceof MultipartFile) {
+                final MultipartFile multipartFile    = (MultipartFile) source;
+                final String        originalFilename = multipartFile.getOriginalFilename();
+                if (ZipI.isCompressedFile(originalFilename)) {
+                    final File tempDirectory = Files.createTempDirectory(Long.toString(Calendar.getInstance().getTimeInMillis())).toFile();
+                    tempDirectory.deleteOnExit();
+                    final File tempZipFile = new File(tempDirectory, originalFilename);
+                    tempZipFile.deleteOnExit();
+                    multipartFile.transferTo(tempZipFile);
+                    ZipI.extractFile(tempZipFile, destination.toPath());
+                } else {
+                    FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(originalFilename).toFile());
+                }
             }
         }
 
@@ -1649,8 +1666,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                             "  xme.element_name IN (:assessorTypes) AND " +
                                                                             "  session.id = :sessionId ";
 
-    private static final Map<String, String>               EMPTY_MAP                            = ImmutableMap.of();
-    private static final Predicate<File>                   FILE_EXISTS                          = new Predicate<File>() {
+    private static final Map<String, String> EMPTY_MAP   = ImmutableMap.of();
+    private static final Predicate<File>     FILE_EXISTS = new Predicate<File>() {
         @Override
         public boolean apply(@Nullable final File file) {
             return file != null && file.exists() && file.isFile();

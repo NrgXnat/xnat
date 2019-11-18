@@ -78,8 +78,8 @@ public class ZipUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param absolutePath Absolute path used to load file.
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws FileNotFoundException When the requested file or folder can't be located.
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void write(String relativePath,String absolutePath) throws IOException
@@ -95,8 +95,8 @@ public class ZipUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param f            The file to write out.
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws FileNotFoundException When the requested file or folder can't be located.
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void write(String relativePath, File f) throws IOException
@@ -303,7 +303,7 @@ public class ZipUtils implements ZipI {
     }
     
     /**
-     * @throws IOException
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void close() throws IOException{
@@ -316,7 +316,6 @@ public class ZipUtils implements ZipI {
 
     @Override
     public void extract(File f, String dir, boolean deleteZip) throws IOException{
-                
         final class Expander extends Expand {
             public Expander() {
      	    setProject(new Project());
@@ -336,12 +335,12 @@ public class ZipUtils implements ZipI {
     }
 
     @Override
-    public ArrayList extract(InputStream is, String dir) throws IOException{
+    public List<File> extract(InputStream is, String dir) throws IOException{
     	return extract(is,dir,true,null);
     }
 
     @Override
-    public ArrayList extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
+    public List<File> extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
         ArrayList<File> extractedFiles = new ArrayList<>();
         //  Create a ZipInputStream to read the zip file
         BufferedOutputStream dest;

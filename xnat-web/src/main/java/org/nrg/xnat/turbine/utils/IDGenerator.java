@@ -94,16 +94,14 @@ public class IDGenerator implements IDGeneratorI {
 	                full =StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
 	                temp_id = site+ full;
 	            }
-	            
-	            claimedIDs.add(temp_id);
-	
-	            return temp_id;
 	        }else{
 	            int count =1;
 	            String full = StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
 	            temp_id = site+ full;
-	            return temp_id;
 	        }
+
+			claimedIDs.add(temp_id);
+			return temp_id;
 		}
 	}
 

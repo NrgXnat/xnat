@@ -1350,7 +1350,7 @@
   #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
   #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
   #set ($scanSnapshotId = "scan${scan.id}snapshot")
-  <span id="span-$scanSnapshotId" data-expt-id="$om.getId()">Loading snapshot</span>
+  <span class="span-$scanSnapshotId" data-expt-id="$om.getId()">Loading snapshot</span>
 #end
 
 #macro (elementActions $element $search_field $search_value $user $item $actions)

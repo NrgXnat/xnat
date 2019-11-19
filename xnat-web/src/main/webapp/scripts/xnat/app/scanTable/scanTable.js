@@ -69,7 +69,7 @@ var XNAT = getObject(XNAT);
     }
 
     function loadSnapshotImageNoBlocking(scanID) {
-        var element = $("#span-" + "scan" + scanID + "snapshot"),
+        var element = $(".span-" + "scan" + scanID + "snapshot"),
             exprId = element ? element.data('expt-id') : null,
             elementLoaded = element ? element.data('loaded') : false;
         if (exprId) {

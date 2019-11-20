@@ -18,9 +18,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -44,6 +42,7 @@ import edu.sdsc.grid.io.srb.SRBFileInputStream;
  * @author timo
  *
  */
+@SuppressWarnings("unused")
 public class ZipUtils implements ZipI {
 	public final static int DEFAULT_COMPRESSION=ZipOutputStream.STORED;
 	
@@ -336,56 +335,62 @@ public class ZipUtils implements ZipI {
 
     @Override
     public List<File> extract(InputStream is, String dir) throws IOException{
-    	return extract(is,dir,true,null);
+    	return new ArrayList<>(extractMap(is,dir,true,null).values());
+    }
+
+    public Map<String, File> extractMap(final InputStream is, final String dir) throws IOException {
+    	return extractMap(is,dir,true,null);
     }
 
     @Override
     public List<File> extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
-        ArrayList<File> extractedFiles = new ArrayList<>();
-        //  Create a ZipInputStream to read the zip file
-        BufferedOutputStream dest;
-        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+    	return new ArrayList<>(extractMap(is,destination,overwrite,ci).values());
+    }
+    
+    public Map<String, File> extractMap(final InputStream is, final String destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        final Map<String, File> extractedFiles = new HashMap<>();
 
-        File df = new File(destination);
-        if (!df.exists()) {
-            df.mkdirs();
+        final File destinationFolder = new File(destination);
+        if (!destinationFolder.exists()) {
+            destinationFolder.mkdirs();
         }
 
         // Loop over all of the entries in the zip file
-        int count;
-        byte data[] = new byte[FileUtils.LARGE_DOWNLOAD];
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null) {
-            if (!entry.isDirectory()) {
-                final File f = new File(destination, entry.getName());
+        final byte[]   data = new byte[FileUtils.LARGE_DOWNLOAD];
+        //  Create a ZipInputStream to read the zip file
+        try (final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                final String name = entry.getName();
+                if (!entry.isDirectory()) {
+                    final File f = new File(destination, name);
 
-                if (f.exists() && !overwrite) {
-                    _duplicates.add(entry.getName());
+                    if (f.exists() && !overwrite) {
+                        _duplicates.add(name);
+                    } else {
+                        if (f.exists()) {
+                            FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                        }
+                        f.getParentFile().mkdirs();
+
+                        // Write the file to the file system
+                        try (final BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(f), FileUtils.LARGE_DOWNLOAD)) {
+                            int count;
+                            while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
+                                dest.write(data, 0, count);
+                            }
+                        }
+                        extractedFiles.put(name, new File(f.getAbsolutePath()));
+                    }
                 } else {
-                    if (f.exists()) {
-                        FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                    final File subfolder = new File(destination, name);
+                    if (!subfolder.exists()) {
+                        subfolder.mkdirs();
                     }
-                    f.getParentFile().mkdirs();
-
-                    // Write the file to the file system
-                    FileOutputStream fos = new FileOutputStream(f);
-                    dest = new BufferedOutputStream(fos, FileUtils.LARGE_DOWNLOAD);
-                    while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
-                        dest.write(data, 0, count);
-                    }
-                    dest.flush();
-                    dest.close();
-                    extractedFiles.add(new File(f.getAbsolutePath()));
+                    extractedFiles.put(name, subfolder);
                 }
-            } else {
-                df = new File(destination, entry.getName());
-                if (!df.exists()) {
-                    df.mkdirs();
-                }
-                extractedFiles.add(df);
             }
         }
-        zis.close();
         return extractedFiles;
     }
 

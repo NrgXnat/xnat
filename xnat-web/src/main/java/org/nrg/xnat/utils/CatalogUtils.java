@@ -2317,11 +2317,6 @@ public class CatalogUtils {
         if (entry == null) {
             populateAndAddCatEntry(catalogData.catBean, uri, relativePath, f.getName(), f.length(), info);
         } else {
-            try {
-                CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, f, (CatEntryBean) entry, ci);
-            } catch (Exception e) {
-                log.error("Error moving file {} from entry {} to history", f, entry, e);
-            }
             String digest = null;
             try {
                 digest = getChecksumConfiguration() ? getHash(f) : null;

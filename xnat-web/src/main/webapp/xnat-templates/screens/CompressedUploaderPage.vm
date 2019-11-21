@@ -1,6 +1,8 @@
 <script type="text/javascript">
+    XNAT.app = getObject(XNAT.app || {});
+
     function disableForm(theform) {
-        if (document.all || document.getElementById) {
+        if (document.getElementById) {
             for (i = 0; i < theform.length; i++) {
                 var tempobj = theform.elements[i];
                 tempobj.disabled = true;
@@ -22,115 +24,6 @@
     var usrResPathBase = '/user/cache/resources/' + uploadID + '/files/';
     var destArchive = false;
     var prearchiveLinkString = '<a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">prearchive</a>';
-    var extractSummary = XNAT.ui.dialog.init({
-        title: 'Extraction/review summary',
-        id: 'extraction-summary',
-        content: spawn('div#summaryContents'),
-        destroyOnClose: false,
-        protected: true,
-        buttons: [
-            {
-                label: 'Close',
-                isDefault: true,
-                close: true
-            }
-        ]
-    });
-
-    function setExtractSummary(msg, jsonobj) {
-        var messages = "";
-        try {
-            var respPos = jsonobj.msgs[0].length - 1;
-            for (i = 0; i <= respPos; i++) {
-                var level = jsonobj.msgs[0][i].status;
-                var message = jsonobj.msgs[0][i].msg;
-                message = message.charAt(0).toUpperCase() + message.substr(1);
-                if (level == "COMPLETED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
-                        $("#extractStep").html('<span class="text-success">Complete:</span>');
-                        $("#extractPercent").text('FINISHED');
-                        $('#extractBar').css('width','100%')
-                                .css('color', 'white')
-                                .css('background-color', '#339933');
-                        // stop polling
-                        checkProgressFinal = 1;
-
-                        var dest = message.replace(/^XXX/, '').replace(/:.*/,'');
-                        var urls = message.replace(/^XXX.*:/, '').split(';');
-                        var urlsHtml;
-                        if (destArchive) {
-                            urlsHtml = $.map(urls, function(url) {
-                                var id = url.replace(/.*\//, '');
-                                return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
-                            }).join(', ');
-                        } else {
-                            urlsHtml = 'Visit the ' + prearchiveLinkString + ' to review it/them.';
-                        }
-
-                        msg = urls.length + ' session(s) successfully uploaded to ' + dest;
-                        message = msg + ': ' + urlsHtml;
-
-                        $("#overallSummaryContent").html(urlsHtml);
-                        $("#overallSummary").show();
-                    }
-                    message = '<div class="prog success">' + message + '</div>';
-                } else if (level == "PROCESSING") {
-                    message = '<div class="prog info">' + message + '</div>';
-                } else if (level == "WARNING") {
-                    message = '<div class="prog warning">' + message + '</div>';
-                } else if (level == "FAILED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
-                        $("#extractStep").html('<span class="text-error">FAILURE:</span>');
-                        $("#extractPercent").text('FAILED');
-                        $('#extractBar').css('width','100%')
-                                .css('color', 'white')
-                                .css('background-color', '#993333');
-                        // stop polling
-                        checkProgressFinal = 1;
-
-                        msg = 'Extraction/Review failed.'
-                        if (destArchive) {
-                            $("#ex").append('<br/><div class="warning">Check the ' + prearchiveLinkString +
-                                    ', your data may be available there for manual review.</div>');
-                        }
-
-                        message = message.replace(/^XXX/,'');
-                    }
-                    message = '<div class="prog error">' + message + '</div>';
-                } else {
-                    message = '<div class="prog info">' + message + '</div>';
-                }
-                messages += message;
-            }
-        } catch (e) {
-        }
-        $("#summaryContents").html(messages);
-        if (msg) {
-            $("a#stepSummary").text(msg.charAt(0).toUpperCase() + msg.substr(1));
-            $("#currentStep").show();
-        }
-    }
-
-    $(document).on('click', 'a#stepSummary', function() {
-        extractSummary.show();
-    });
-
-    function setExtractProgress(i) {
-        if (i == 0) {
-            document.getElementById("extractPercent").innerHTML = "";
-            document.getElementById("extractBar").style.width = 0 + "px";
-        } else {
-            if (i <= 100) {
-                var pixels = i * 3;
-                if (i > 10) {
-                    document.getElementById("extractPercent").innerHTML = parseInt(i) + "%";
-                }
-                document.getElementById("extractBar").style.width = pixels + "px";
-            }
-        }
-    }
 
     function evaluateDestination(ele) {
         if (ele.value == '2') {
@@ -150,7 +43,7 @@
 
     var checkProgressFinal = 0;
 
-    function validateForm(theform) {
+    function validateForm() {
         var imageArchive = document.getElementById("image_archive");
         if (!imageArchive.value) {
             xmodal.message('Upload Action', 'Please select an archive to upload.');
@@ -160,96 +53,11 @@
             xmodal.message('Upload Action', 'Please select a tar.gz, tgz, or zip archive to upload.');
             return false;
         }
-        if (document.getElementById("project").selectedIndex == 0) {
+        if (document.getElementById("project").selectedIndex === 0) {
             xmodal.message('Upload Action', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
             return false;
         }
         return true;
-    }
-
-    function callback() {
-        if (req.readyState == 4) {
-            if (req.status == 200) {
-                started = 1;
-                // handle response
-                var respDat = YAHOO.lang.JSON.parse(req.responseText);
-                var respPos = respDat.msgs[0].length - 1;
-                var extractI = 0;
-                if (respDat.msgs[0].length > 0) {
-                    if (respDat.msgs[0].length > 0) {
-                        var level = respDat.msgs[0][respPos].status;
-                        var message = respDat.msgs[0][respPos].msg;
-                    }
-                }
-
-                setExtractSummary(message, respDat);
-                if (checkProgressFinal === 1) {
-                    return;
-                }
-
-                //extract in progress
-                if (extractCount != 98) {
-                    extractCount = extractCount + 1;
-                }
-                if (extractCount < 10) {
-                    extractTimeOut = 500;
-                }
-                if (extractCount > 10) {
-                    extractTimeOut = 100;
-                }
-                if (extractCount > 20) {
-                    extractTimeOut = 1500;
-                }
-                if (extractCount > 30) {
-                    extractTimeOut = 2000;
-                }
-                if (extractCount > 50) {
-                    extractTimeOut = 2800;
-                }
-                if (extractCount > 60) {
-                    extractTimeOut = 3300;
-                }
-                if (extractCount > 70) {
-                    extractTimeOut = 4000;
-                }
-                if (extractCount > 80) {
-                    extractTimeOut = 5000;
-                }
-                if (extractCount > 85) {
-                    extractTimeOut = 6000;
-                }
-                if (extractCount > 88) {
-                    extractTimeOut = 9000;
-                }
-                setExtractProgress(extractCount);
-                setTimeout("checkProgress();", extractTimeOut);
-            }
-        }
-    }
-
-    function resetProgress() {
-        var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
-        url = url + "&remote-method=start";
-        url = url + "&ID=" + uploadID;
-        if (window.XMLHttpRequest) {
-            req = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            req = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        req.open("GET", url, true);
-        req.send(null);
-    }
-
-    function checkProgress() {
-        var url = "$content.getURI("/REST/status/$uploadID")?format=json&stamp=" + (new Date()).getTime();
-        if (window.XMLHttpRequest) {
-            req = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            req = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        req.open("GET", url, true);
-        req.onreadystatechange = callback;
-        req.send(null);
     }
 
     function errorHandler(e, base){
@@ -266,17 +74,17 @@
     }
 
     function makeTheFormGo() {
-        var form = document.getElementById("uploadFORM");
-        if(!validateForm(form)){ return; }
+        if(!validateForm()){ return; }
 
         // Upload file, then archive it asynchronously
+        var form = document.getElementById("uploadFORM");
         var file = $('#image_archive').prop('files')[0];
         var usrResPath = usrResPathBase + file.name;
         var formDataUpload = new FormData();
         formDataUpload.append("image_archive", file);
         var formDataArchive = new FormData(form);
         formDataArchive.delete("image_archive");
-        formDataArchive.append("src",  usrResPath);
+        formDataArchive.append("src", usrResPath);
         formDataArchive.append("http-session-listener", uploadID);
 
         disableForm(form);
@@ -316,20 +124,10 @@
                     processData: false,
                     cache: false,
                     success: function() {
-                        if (document.getElementById) {
-                            document.getElementById('progressBar').style.display = 'block';
-                        }
-                        else if (document.all) {
-                            document.all['progressBar'].style.display = 'block';
-                        }
-                        started = 0;
-                        checkProgressFinal = 0;
-                        setExtractProgress(0);
-                        resetProgress();
-                        checkProgress();
+                        XNAT.app.activityTab.start('Upload extraction/review for archival', uploadID);
                     },
                     error: function(xhr) {
-                        errorHandler(xhr, 'Issue requesting [pre]archival of your data');
+                        errorHandler(xhr, 'Issue requesting archival of your data');
                     },
                     complete: function() {
                         loading.close();
@@ -365,7 +163,7 @@
                     xhr.upload.addEventListener('loadend', function(event) {
                         $(".pull-progress-bar")
                                 .css("width", "100%")
-                                .text("Requesting [pre]archival...");
+                                .text("Requesting archival...");
                     }, false);
                 }
                 return xhr;
@@ -381,7 +179,7 @@
     #set($quarantineMsg=" and specify whether the resulting session should go into a quarantine state")
 #end
 
-<div style="width: 500px">
+<div>
     $sectionTitle
 
     <p>Upload zipped (.zip or .tar.gz or .tgz) DICOM or ECAT image files to a specified project.</p>
@@ -467,7 +265,7 @@
                             <div id="extractBar"
                                  style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
                                 <div id="extractPercent"
-                                     style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;">
+                                     style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font-weight:bold;padding:0;padding-top:5px;">
                                 </div>
                             </div>
                         </div>

@@ -396,6 +396,7 @@
     })();
 </script>
 <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
+<script src="${SITE_ROOT}/scripts/xnat/app/activityTab.js"></script>
 
 
     <div id="tp_fm"></div>

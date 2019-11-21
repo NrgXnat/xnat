@@ -4151,6 +4151,118 @@ textarea.xml-formatted {
     text-align: left;
 }
 
+
+/* Activity tab */
+#activity-tab {
+    -webkit-box-shadow: 0 2px 8px 0 rgba(0,0,0,.2);
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,.2);
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    -webkit-transform: translate3d(0,24px,0);
+    transform: translate3d(0,24px,0);
+    -webkit-transition: transform .15s cubic-bezier(0.4,0.0,1,1),opacity .15s cubic-bezier(0.4,0.0,1,1),visibility 0ms linear .15s;
+    transition: transform .15s cubic-bezier(0.4,0.0,1,1),opacity .15s cubic-bezier(0.4,0.0,1,1),visibility 0ms linear .15s;
+    bottom: 24px;
+    display: block;
+    left: auto;
+    max-height: 323px;
+    overflow: visible;
+    position: fixed;
+    right: 24px;
+    visibility: hidden;
+    z-index: 1001;
+}
+
+#activity-tab .panel-header {
+    -webkit-border-radius: 3px 3px 0 0;
+    border-radius: 3px 3px 0 0;
+    -webkit-align-items: center;
+    align-items: center;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    background-color: #323232;
+    border: 1px transparent solid;
+    bottom: 24px;
+    color: #fff;
+    font-size: 14px;
+    height: 52px;
+    line-height: normal;
+}
+
+#activity-tab .panel-header .title {
+    padding: 20px;
+    font-size: 1.2em;
+    -webkit-flex: 0 1 auto;
+    flex: 0 1 auto;
+    cursor: default;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#activity-tab .actions {
+    float: right;
+    height: auto;
+    margin-left: auto;
+    text-align: left;
+}
+
+#activity-tab .actions a.icn {
+    float: left;
+    text-align: center;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    padding: 0;
+    margin: 0 15px 0 0;
+}
+
+#activity-tab .actions a:hover {
+    transform: scale(1.3);
+}
+
+#activity-tab .panel-header .actions {
+    padding: 20px 0 20px 20px;
+}
+
+#activity-tab .panel-header .actions a.icn {
+    height: 20px;
+    max-width: 20px;
+}
+
+#activity-tab .panel-header .actions a.icn {
+    color: #fff;
+}
+
+#activity-tab .panel-header a.activity-max {
+    display: none;
+}
+
+#activity-tab .panel-body {
+    background-color: #fff;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    max-height: 240px;
+    min-width: 360px;
+    overflow: auto;
+    position: relative;
+    width: 360px;
+    font-size: 1.1em;
+    color: #757575;
+}
+
+#activity-tab .panel-body .item {
+    border-top: solid 1px #eee;
+    display: block;
+    padding: 20px 0 20px 20px;
+}
+
+#activity-tab .panel-body a.close {
+    display: none;
+}
+
 /* accommodate smaller viewports */
 /***********************************************/
 @media screen and (max-width: 1200px) {

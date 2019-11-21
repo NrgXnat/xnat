@@ -77,7 +77,7 @@ abu.FileUploader = function(o){
 					'</div>' +
 				'</div>' +
 			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
-				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input">' + 
+				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input btn">' +
 			'</div>' +
 			'<div class="abu-list-area"><ul class="abu-upload-list"></ul>' +
 				'<div class="response_text" style="display:none"></div>' +
@@ -228,7 +228,7 @@ abu.FileUploader = function(o){
 					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
 					 '" method="POST" enctype="multipart/form-data">' + 
 				'</form>' + 
-				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file">' + cFile.name + '</span><span class="abu-upload-file">' +  
+				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + cFile.name + '</span><span class="abu-upload-file">' +
 					" (" + ((typeof cFile.type !== 'undefined' && cFile.type !== '') ? cFile.type + ", " : '') +
 					 this.bytesToSize(cFile.size) + ") </span>" +  
 					'<div class="abu-progress">' +
@@ -345,7 +345,7 @@ abu.FileUploader = function(o){
 					$form.contentType=false;
 					status.empty();
 					var percentVal = '0%';
-					bar.width(percentVal)
+					bar.width(percentVal);
 					percent.html(percentVal);
 					uploader.uploadsStarted++;
 					uploader.uploadsInProgress++;
@@ -366,8 +366,8 @@ abu.FileUploader = function(o){
 				},
 				uploadProgress: function(event, position, total, percentComplete) {
 					var percentVal = percentComplete + '%';
-					bar.width(percentVal)
-					percent.html(percentVal);
+					bar.width(percentVal);
+					percent.html(percentComplete === 100 ? 'Saving...' : percentVal);
 				},
 				error: function(result) {
 					$(status).data("rtn",result);

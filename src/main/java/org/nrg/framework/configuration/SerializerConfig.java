@@ -9,7 +9,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.SerializerService;
@@ -107,8 +106,7 @@ public class SerializerConfig {
         final TransformerFactory factory = TransformerFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            setAttributes(factory, XMLConstants.ACCESS_EXTERNAL_DTD, XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
             return factory;
         } catch (TransformerConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on TransformerFactory implementation of type " + factory.getClass(), e);
@@ -120,8 +118,7 @@ public class SerializerConfig {
         final SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            setAttributes(factory, XMLConstants.ACCESS_EXTERNAL_DTD, XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
             return factory;
         } catch (TransformerConfigurationException e) {
             throw new NrgServiceException("Failed to set 'Secure Processing' feature on TransformerFactory implementation of type " + factory.getClass(), e);
@@ -131,6 +128,17 @@ public class SerializerConfig {
     @Bean
     public SerializerService serializerService() throws SAXNotSupportedException, SAXNotRecognizedException, ParserConfigurationException, NrgServiceException {
         return new SerializerService(objectMapperBuilder(), documentBuilderFactory(), saxParserFactory(), transformerFactory(), saxTransformerFactory());
+    }
+
+    private void setAttributes(final TransformerFactory factory, final String... attributes) {
+        for (final String attribute : attributes) {
+            try {
+                factory.setAttribute(attribute, "");
+            } catch (IllegalArgumentException e) {
+                final Class<? extends TransformerFactory> factoryClass = factory.getClass();
+                log.warn("Got an illegal argument exception setting attribute \"{}\" on a transformer factory instance of class {}. The library supplying this class should be deprecated and upgraded: {}", attribute, factoryClass.getName(), factoryClass.getProtectionDomain().getCodeSource().getLocation(), e);
+            }
+        }
     }
 
     private final List<Module> _jacksonModules = new ArrayList<>();

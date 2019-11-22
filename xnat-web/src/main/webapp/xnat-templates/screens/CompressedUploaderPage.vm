@@ -1,8 +1,3 @@
-#set($uploadName = "upload$!uploadID")
-#set($usrResPath = "/user/cache/resources/$!uploadName/files/$!{uploadName}.zip")
-#set($uploaderUrl = $content.getURI("/data$!usrResPath?XNAT_CSRF=$!XNAT_CSRF"))
-#set($archiverUrl = $content.getURI("/data/services/import?format=html&XNAT_CSRF=$!XNAT_CSRF"))
-
 <script type="text/javascript">
     function disableForm(theform) {
         if (document.all || document.getElementById) {
@@ -21,12 +16,10 @@
     var req;
 
     var extractCount = 0;
-    var uploadID = "$uploadID";
+    var uploadID = "$!uploadID";
     var started = 0;
     var extractTimeOut = 300;
-    var usrResPath ="$!usrResPath";
-    var uploaderUrl = "$!uploaderUrl";
-    var archiverUrl = "$!archiverUrl";
+    var usrResPathBase = '/user/cache/resources/' + uploadID + '/files/';
     var destArchive = false;
     var prearchiveLinkString = '<a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">prearchive</a>';
     var extractSummary = XNAT.ui.dialog.init({
@@ -164,7 +157,7 @@
             return false;
         }
         if (!(imageArchive.value.endsWith(".gz") || imageArchive.value.endsWith(".tgz") || imageArchive.value.endsWith(".zip"))) {
-            xmodal.message('Upload Action', 'Please select a tar or zip archive to upload.');
+            xmodal.message('Upload Action', 'Please select a tar.gz, tgz, or zip archive to upload.');
             return false;
         }
         if (document.getElementById("project").selectedIndex == 0) {
@@ -275,14 +268,15 @@
     function makeTheFormGo() {
         var form = document.getElementById("uploadFORM");
         if(!validateForm(form)){ return; }
-        //form.submit();
 
         // Upload file, then archive it asynchronously
+        var file = $('#image_archive').prop('files')[0];
+        var usrResPath = usrResPathBase + file.name;
         var formDataUpload = new FormData();
-        formDataUpload.append("image_archive", $('#image_archive').prop('files')[0]);
+        formDataUpload.append("image_archive", file);
         var formDataArchive = new FormData(form);
         formDataArchive.delete("image_archive");
-        formDataArchive.append("src", usrResPath);
+        formDataArchive.append("src",  usrResPath);
         formDataArchive.append("http-session-listener", uploadID);
 
         disableForm(form);
@@ -291,7 +285,7 @@
         $.ajax({
             method: 'PUT',
             contentType: false,
-            url: uploaderUrl,
+            url: XNAT.url.csrfUrl('/data' + usrResPath),
             data: formDataUpload,
             processData: false,
             cache: false,
@@ -317,7 +311,7 @@
                 $.ajax({
                     method: 'POST',
                     contentType: false,
-                    url: archiverUrl,
+                    url: XNAT.url.csrfUrl('/data/services/import'),
                     data: formDataArchive,
                     processData: false,
                     cache: false,
@@ -390,7 +384,7 @@
 <div style="width: 500px">
     $sectionTitle
 
-    <p>Upload zipped (.zip or .tar.gz) DICOM or ECAT image files to a specified project.</p>
+    <p>Upload zipped (.zip or .tar.gz or .tgz) DICOM or ECAT image files to a specified project.</p>
     <p>Selecting 'Prearchive' will place your images into a
         <a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">temporary holding space</a>,
         which allows you to review the details and match the data to the proper

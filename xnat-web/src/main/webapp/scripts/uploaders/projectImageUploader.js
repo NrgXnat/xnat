@@ -19,7 +19,8 @@ var XNAT = getObject(XNAT);
         uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##'),
         archiverUrl = XNAT.url.csrfUrl('/data/services/import'),
         id = 'projuploader-modal',
-        abuId = 'projuploader-modal-abu';
+        abuId = 'projuploader-modal-abu',
+        interval;
 
     function openUploadModal(project) {
         xmodal.open({
@@ -33,12 +34,12 @@ var XNAT = getObject(XNAT);
                 spawn('div#' + abuId)
             ]).outerHTML,
             beforeShow: function(obj) {
-                obj.$modal.find('#' + id + '-process-button').prop('disabled','disabled');
                 obj.$modal.find('#' + id + '-done-button').hide();
+                obj.$modal.find('#' + id + '-process-button').prop('disabled', true);
             },
             buttons: {
                 process: {
-                    label: 'Begin archival',
+                    label: 'Request archival',
                     isDefault: true,
                     close: false,
                     action: function() {
@@ -65,6 +66,10 @@ var XNAT = getObject(XNAT);
                                         close: true,
                                         isDefault: true,
                                         action: function() {
+                                            if (interval) {
+                                                window.clearInterval(interval);
+                                                interval = null;
+                                            }
                                             xmodal.close(id);
                                         }
                                     }
@@ -76,7 +81,12 @@ var XNAT = getObject(XNAT);
                 cancel: {
                     label: 'Cancel',
                     close: true,
-                    action: function() {}
+                    action: function() {
+                        if (interval) {
+                            window.clearInterval(interval);
+                            interval = null;
+                        }
+                    }
                 }
             }
         });
@@ -84,17 +94,17 @@ var XNAT = getObject(XNAT);
         abu.initializeUploader({
             element: $('#' + abuId),
             uploadStartedFunction: function(){
-                $('#' + id + '-process-button').prop('disabled', true);
                 $('#' + id + '-cancel-button').show();
                 $('#' + id + '-done-button').hide();
+                if (!interval) {
+                    $('#' + id + '-process-button').prop('disabled', false);
+                }
             },
             uploadCompletedFunction: function(anyFailedUploads) {
                 $('#' + id + '-cancel-button').hide();
                 $('#' + id + '-done-button').show();
                 if ($('.abu-upload-complete-text').length === 0) {
                     $('#' + id + '-process-button').prop('disabled', true);
-                } else {
-                    $('#' + id + '-process-button').prop('disabled', false);
                 }
             },
             processFunction: function(){},
@@ -130,25 +140,36 @@ var XNAT = getObject(XNAT);
     function submitForArchival(project) {
         $('#file-upload-input').prop('disabled', true).addClass('disabled');
         $('#' + id + '-process-button').prop('disabled', true);
+        var $statusDiv = $('#' + abuId + ' .abu-status');
+
+        if ($statusDiv.length === 0 && interval) {
+            // cancelled
+            window.clearInterval(interval);
+            interval = null;
+            return;
+        }
+
+        var uploadInProg = $statusDiv.children().length === 0 || abu._fileUploader.uploadsInProgress > 0 ||
+            abu._fileUploader.currentUploads > 0;
+        if (uploadInProg) {
+            if (!interval) {
+                XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
+                interval = window.setInterval(function() {
+                    submitForArchival(project);
+                }, 2000);
+            }
+            return;
+        } else if (interval) {
+            window.clearInterval(interval);
+            interval = null;
+        }
 
         var $targetFiles = $('.abu-upload-filename');
         var nfiles = $targetFiles.length;
         var canCloseUploadDialog = true;
         $targetFiles.each(function (index) {
             var timeout = index === 0 ? 0 : 1000;
-            var $statusDiv = $(this).siblings('.abu-status');
             var fname = $(this).text();
-
-            var uploadInProg = $statusDiv.children().length === 0 || abu._fileUploader.uploadsInProgress > 0 ||
-                abu._fileUploader.currentUploads > 0;
-            if (uploadInProg) {
-                canCloseUploadDialog = false;
-                // Shouldn't happen, but just in case...
-                $('#' + id + '-process-button').prop('disabled', false);
-                XNAT.ui.dialog.message(fname + ' upload still in progress, please request archival ' +
-                    'when upload completes');
-                return;
-            }
 
             var uploadFailed = $statusDiv.find('.abu-upload-fail').length > 0;
             if (uploadFailed) {

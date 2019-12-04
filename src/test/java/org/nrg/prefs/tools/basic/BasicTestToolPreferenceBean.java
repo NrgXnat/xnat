@@ -41,4 +41,13 @@ public class BasicTestToolPreferenceBean extends AbstractPreferenceBean {
     public void setPrefB(final String prefB) throws InvalidPreferenceName {
         set(prefB, "prefB");
     }
+
+    @NrgPreference(defaultValue = "Value1")
+    public BasicEnum getPrefC() {
+        return getEnumValue(BasicEnum.class, "prefC");
+    }
+
+    public void setPrefC(final BasicEnum prefC) throws InvalidPreferenceName {
+        setEnumValue(prefC, "prefC");
+    }
 }

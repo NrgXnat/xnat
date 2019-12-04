@@ -116,6 +116,10 @@ public interface PreferenceBean extends Map<String, Object> {
 
     Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
+    <T extends Enum<T>> T getEnumValue(final Class<T> enumClass, final String key, final String... subkeys) throws UnknownToolId;
+
+    <T extends Enum<T>> T getEnumValue(final Class<T> enumClass, final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
     <T> T getObjectValue(String preferenceName) throws UnknownToolId;
 
     <T> T getObjectValue(Scope scope, String entityId, String preferenceName) throws UnknownToolId;
@@ -165,6 +169,10 @@ public interface PreferenceBean extends Map<String, Object> {
     void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    <T extends Enum<T>> void setEnumValue(final T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    <T extends Enum<T>> void setEnumValue(final Scope scope, final String entityId, final T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     <T> void setObjectValue(T value, String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 

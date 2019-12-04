@@ -20,6 +20,7 @@ import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.configuration.NrgPrefsServiceTestsConfiguration;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.tools.basic.BasicEnum;
 import org.nrg.prefs.tools.basic.BasicTestTool;
 import org.nrg.prefs.tools.beans.BeanPrefsTool;
 import org.nrg.prefs.tools.beans.BeanPrefsToolPreference;
@@ -54,15 +55,28 @@ import static org.nrg.prefs.services.PreferenceBeanHelper.propertize;
 public class PreferenceBeanTests {
     @Test
     public void testBasicPrefsTool() throws InvalidPreferenceName {
+        final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
+        assertEquals(3, preferences.size());
+
         assertNotNull(_basicPrefsTool);
         assertEquals("valueA", _basicPrefsTool.getPrefA());
         assertEquals("valueB", _basicPrefsTool.getPrefB());
+        assertEquals(BasicEnum.Value1, _basicPrefsTool.getPrefC());
+        assertEquals(preferences.get("prefA"), _basicPrefsTool.getPrefA());
+        assertEquals(preferences.get("prefB"), _basicPrefsTool.getPrefB());
+        assertEquals(preferences.get("prefC"), _basicPrefsTool.getPrefC());
+
         _basicPrefsTool.setPrefA("valueAMod");
         _basicPrefsTool.setPrefB("valueBMod");
+        _basicPrefsTool.setPrefC(BasicEnum.Value2);
+
         assertEquals("valueAMod", _basicPrefsTool.getPrefA());
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
-        final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
-        assertEquals(2, preferences.size());
+        assertEquals(BasicEnum.Value2, _basicPrefsTool.getPrefC());
+        assertEquals(preferences.get("prefA"), _basicPrefsTool.getPrefA());
+        assertEquals(preferences.get("prefB"), _basicPrefsTool.getPrefB());
+        assertEquals(preferences.get("prefC"), _basicPrefsTool.getPrefC());
+
         validateBeanCache(_basicPrefsTool.getPreferenceBean(), preferences);
     }
 

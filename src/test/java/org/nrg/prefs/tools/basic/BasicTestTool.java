@@ -26,12 +26,20 @@ public class BasicTestTool {
         return _preferences.getPrefB();
     }
 
+    public BasicEnum getPrefC() {
+        return _preferences.getPrefC();
+    }
+
     public void setPrefA(final String prefA) throws InvalidPreferenceName {
         _preferences.setPrefA(prefA);
     }
 
     public void setPrefB(final String prefB) throws InvalidPreferenceName {
         _preferences.setPrefB(prefB);
+    }
+
+    public void setPrefC(final BasicEnum prefC) throws InvalidPreferenceName {
+        _preferences.setPrefC(prefC);
     }
 
     public Map<String, Object> getPreferences() {

@@ -2,7 +2,7 @@
 <!--
   ~ parent: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ Copyright (c) 2019, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.6-SNAPSHOT</version>
+    <version>1.7.6</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,7 +64,7 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.7.6-SNAPSHOT</xnat.version>
+        <xnat.version>1.7.6</xnat.version>
         <xnat-web.version>${xnat.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
@@ -81,16 +81,16 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.6-SNAPSHOT</nrg.mizer.version>
+        <nrg.mizer.version>1.0.6</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0.4-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.6-SNAPSHOT</nrg.dicom-edit6.version>
-        <nrg.dicomdb.version>5.1.2-SNAPSHOT</nrg.dicomdb.version>
+        <nrg.dicom-edit4.version>1.0.4</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0.6</nrg.dicom-edit6.version>
+        <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.5-SNAPSHOT</nrg.ecat.version>
-        <nrg.extattr.version>4.2.5-SNAPSHOT</nrg.extattr.version>
+        <nrg.ecat.version>1.0.5</nrg.ecat.version>
+        <nrg.extattr.version>4.2.5</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
@@ -466,7 +466,7 @@
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
                 <artifactId>ximgview-plugin</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <version>1.0.1</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->

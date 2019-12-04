@@ -149,6 +149,7 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
         triggerDeletedEvent(scope, entityId, namespacedPropertyId);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public List<String> setBatch(final Map<String, String> values) throws UnknownToolId, InvalidPreferenceName {
         return setBatch(EntityId.Default.getScope(), EntityId.Default.getEntityId(), values);
     }

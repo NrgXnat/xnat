@@ -10,53 +10,58 @@
 package org.nrg.xapi.exceptions;
 
 import com.google.common.base.Joiner;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 @SuppressWarnings({"Duplicates", "unused"})
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
+@ResponseStatus(UNAUTHORIZED)
+@Getter
+@Accessors(prefix = "_")
 public class NotAuthenticatedException extends XapiException {
     public NotAuthenticatedException(final String request) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = null;
     }
 
     public NotAuthenticatedException(final String request, final String resource) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = null;
         _resources.add(resource);
     }
 
     public NotAuthenticatedException(final String request, final List<String> resources) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = null;
         _resources.addAll(resources);
     }
 
     public NotAuthenticatedException(final String request, final Set<String> resources) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = null;
         _resources.addAll(resources);
     }
 
     public NotAuthenticatedException(final String request, final String project, final List<String> resources) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = project;
         _resources.addAll(resources);
     }
 
     public NotAuthenticatedException(final String request, final String project, final Set<String> resources) {
-        super(HttpStatus.UNAUTHORIZED, request);
+        super(UNAUTHORIZED, request);
         _request = request;
         _project = project;
         _resources.addAll(resources);
@@ -89,10 +94,6 @@ public class NotAuthenticatedException extends XapiException {
         }
     }
 
-    public String getrequest() {
-        return _request;
-    }
-
     public String getResource() {
         switch (_resources.size()) {
             case 0:
@@ -104,10 +105,6 @@ public class NotAuthenticatedException extends XapiException {
             default:
                 return Joiner.on(", ").join(_resources);
         }
-    }
-
-    public Set<String> getResources() {
-        return _resources;
     }
 
     private static final String MESSAGE_PROJECT           = "Request %s: An unauthenticated user tried to access the restricted project %s";

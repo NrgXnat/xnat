@@ -10,14 +10,11 @@
 
 package org.nrg.xdat.services;
 
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-
 import org.apache.axis.AxisEngine;
-import org.apache.axis.Message;
 import org.apache.axis.MessageContext;
 import org.apache.axis.session.Session;
 import org.apache.axis.transport.http.AxisHttpSession;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.user.exceptions.FailedLoginException;
@@ -28,6 +25,9 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+
 /**
  * @author timo
  *
@@ -36,25 +36,24 @@ public class CreateServiceSession  extends ServiceA{
 	static org.apache.log4j.Logger logger = Logger.getLogger(CreateServiceSession.class);
     public String execute() throws RemoteException
     {
-        MessageContext mc = AxisEngine.getCurrentMessageContext();
-        String _username= mc.getUsername();
-        String _password= mc.getPassword();
+        final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+        final String _username= messageContext.getUsername();
+        final String _password= messageContext.getPassword();
         
-        String s=null;
         try {
-            Message rspmsg =mc.getResponseMessage();
             UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
-            Session session = mc.getSession();
+            Session session = messageContext.getSession();
             session.set("user", user);
             session.set("state", "maintained");
+            messageContext.setMaintainSession(true);
+            final String sessionId;
             if (session instanceof AxisHttpSession){
-                s=((AxisHttpSession)session).getRep().getId();
+                sessionId = StringUtils.defaultIfBlank(((AxisHttpSession) session).getRep().getId(), "open");
+            } else {
+                sessionId = "open";
             }
-            mc.setMaintainSession(true);
-            if (s==null){
-                s="open";
-            }
-            AccessLogger.LogServiceAccess(_username,"","CreateServiceSession","Created session: '" + s + "'");
+            AccessLogger.LogServiceAccess(_username, messageContext, "CreateServiceSession", "Created session: '" + sessionId + "'");
+            return sessionId;
         } catch (XFTInitException e) {
             logger.error("",e);
             throw new RemoteException("",e);
@@ -77,12 +76,9 @@ public class CreateServiceSession  extends ServiceA{
             logger.error("",e);
             throw new RemoteException("",e);
         }
-        
-        return s;
     }
 
-    public static String Execute() throws RemoteException
-    {
+    public static String Execute() throws RemoteException {
         return (new CreateServiceSession()).execute();
     }
 }

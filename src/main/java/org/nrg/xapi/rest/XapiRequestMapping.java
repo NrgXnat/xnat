@@ -77,13 +77,11 @@ public @interface XapiRequestMapping {
      * <ul>
      *     <li>{@link AccessLevel#Read}</li>
      *     <li>{@link AccessLevel#Edit}</li>
-     *     <li>{@link AccessLevel#Collaborator}</li>
-     *     <li>{@link AccessLevel#Member}</li>
-     *     <li>{@link AccessLevel#Owner}</li>
+     *     <li>{@link AccessLevel#Delete}</li>
      * </ul>
      *
      * These values require that the annotated method have a parameter that indicates the project being accessed. You
-     * must annotate this parameter with the {@link ProjectId} annotation. If a single project ID is specified, XNAT
+     * must annotate this parameter with the {@link Project} annotation. If a single project ID is specified, XNAT
      * checks that the current user has the specified access level to that project. If multiple project IDs are
      * specified, XNAT checks that the current user has the specified access level for <i>all</i> of the specified
      * projects. If the user fails the access check for <i>any</i> of the specified projects, * the {@link

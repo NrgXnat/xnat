@@ -10,36 +10,39 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.io.File;
-import java.util.ArrayList;
-
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 
-public class XDATScreen_uploadCSV extends SecureScreen {
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
+public class XDATScreen_uploadCSV extends SecureScreen {
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
-            throws Exception {
-        context.put("elements",ElementSecurity.GetNonXDATElementNames());
-        
+    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+        context.put("elements", ElementSecurity.GetNonXDATElementNames());
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
-        
-        ArrayList<FieldMapping> fms = new ArrayList<FieldMapping>();
-        File dir = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv");
-        File[] files = dir.listFiles();
-        if (files!=null){
-            for(File f : dir.listFiles()){
-                fms.add(new FieldMapping(f));
-            }
-            
-            context.put("fms",fms);
+
+        final UserI user = XDAT.getUserDetails();
+        assert user != null;
+
+        final File   dir   = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get("csv"), UserDataCache.Options.Folder);
+        final File[] files = dir.listFiles();
+        if (files != null) {
+            context.put("fms", Lists.transform(Arrays.asList(files), new Function<File, FieldMapping>() {
+                @Override
+                public FieldMapping apply(final File file) {
+                    return new FieldMapping(file);
+                }
+            }));
         }
     }
-
 }

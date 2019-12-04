@@ -122,6 +122,12 @@ public interface UserGroupServiceI {
 	 */
 	List<UserGroupI> getAllGroups();
 
+	List<Map<String, Object>> getProjectGroupPermissions(String projectId);
+
+	List<Map<String, Object>> findIrregularProjectGroups();
+
+	List<Integer> fixIrregularProjectGroups();
+
 	/**
 	 * Get groups that have the specified tag.
 	 * @param tag    The tag to search for.
@@ -289,6 +295,17 @@ public interface UserGroupServiceI {
 	 * @throws Exception When something goes wrong.
 	 */
 	UserGroupI createOrUpdateGroup(String id, String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String tag, UserI authenticatedUser, List<UserI> users) throws Exception;
+
+	/**
+	 * Convenience method to create the standard owner, member, and collaborator groups for the specified project. Uses the project ID
+	 * to create the group IDs and sets the permissions and tags appropriately.
+	 *
+	 * @param projectId       The project for which the group should be created.
+	 * @param user            The user creating the project and groups.
+	 *
+	 * @return The newly created group.
+	 */
+	List<UserGroupI> createOrUpdateProjectGroups(final String projectId, final UserI user);
 
 	/**
 	 * Add user to the group (includes potential modification to the database).

@@ -2,7 +2,7 @@
 <!--
   ~ config: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ Copyright (c) 2019, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.6-SNAPSHOT</version>
+        <version>1.7.6</version>
     </parent>
 
     <artifactId>config</artifactId>

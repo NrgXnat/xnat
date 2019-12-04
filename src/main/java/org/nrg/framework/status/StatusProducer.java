@@ -12,40 +12,43 @@ package org.nrg.framework.status;
 
 import org.nrg.framework.status.StatusMessage.Status;
 
+import java.util.Arrays;
+
 import static org.nrg.framework.status.StatusMessage.Status.*;
 
 public class StatusProducer extends BasicStatusPublisher {
-    private final Object control;
-
     /**
      * Creates a new status producer for the control object.
+     *
+     * @param control The control object.
      */
     public StatusProducer(final Object control) {
-        this.control = control;
+        _control = control;
     }
 
     /**
      * Creates a new status producer for the control object and registers the submitted listeners.
      *
+     * @param control   The control object.
+     * @param listeners The listeners to register.
+     */
+    public StatusProducer(final Object control, final StatusListenerI... listeners) {
+       this(control, Arrays.asList(listeners));
+    }
+
+    /**
+     * Creates a new status producer for the control object and registers the submitted listeners.
+     *
+     * @param control   The control object.
      * @param listeners The listeners to register.
      */
     public StatusProducer(final Object control, final Iterable<StatusListenerI> listeners) {
         super(listeners);
-        this.control = control;
-    }
-
-    /**
-     * Creates a new status producer for the control object and registers the submitted listeners.
-     *
-     * @param listeners The listeners to register.
-     */
-    public StatusProducer(final Object control, final StatusListenerI... listeners) {
-        super(listeners);
-        this.control = control;
+        _control = control;
     }
 
     protected final void report(final Status status, final String message) {
-        publish(new StatusMessage(control, status, message));
+        publish(new StatusMessage(_control, status, message));
     }
 
     protected final void processing(final String message) {
@@ -63,4 +66,6 @@ public class StatusProducer extends BasicStatusPublisher {
     protected final void completed(final String message) {
         report(COMPLETED, message);
     }
+
+    private final Object _control;
 }

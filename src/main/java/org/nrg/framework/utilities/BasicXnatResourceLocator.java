@@ -24,7 +24,7 @@ public class BasicXnatResourceLocator extends AbstractXnatResourceLocator {
         super(pattern);
     }
 
-    public static Resource getResource(final String pattern) throws IOException {
+    public static Resource getResource(final String pattern) {
         return new BasicXnatResourceLocator(pattern).getResource();
     }
 

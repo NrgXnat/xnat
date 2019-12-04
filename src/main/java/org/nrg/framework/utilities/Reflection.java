@@ -14,8 +14,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.exceptions.NotConcreteTypeException;
@@ -26,8 +28,6 @@ import org.nrg.framework.orm.hibernate.exceptions.InvalidDirectParameterizedClas
 import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,26 +45,26 @@ import java.util.regex.Pattern;
 import static org.reflections.ReflectionUtils.*;
 
 @SuppressWarnings("WeakerAccess")
+@Slf4j
 public class Reflection {
     public static final String                          CAPITALIZED_NAME          = "[A-Z][A-z0-9_]*";
     public static final String                          REGEX_REFL_GETTER         = "^public.*\\.(get|is)%s\\(\\).*$";
-    @SuppressWarnings("unchecked")
     public static final List<Predicate<? super Method>> PREDICATES_ANY_GETTER     = getGetterPredicate();
     public static final String                          REGEX_REFL_SETTER         = "^public.*\\.set(%s)\\(.+\\).*$";
-    @SuppressWarnings("unchecked")
     public static final List<Predicate<? super Method>> PREDICATES_ANY_SETTER     = getSetterPredicate();
     public static final String                          REGEX_BOOL_GETTER         = "^is(?<property>[A-Z][A-z0-9_]*)$";
     public static final String                          REGEX_OBJECT_GETTER       = "^get(?<property>[A-Z][A-z0-9_]*)$";
     public static final String                          REGEX_GETTER              = "^(is|get)(?<property>[A-Z][A-z0-9_]*)$";
-    public static final String                      REGEX_SETTER              = "^set(?<property>[A-Z][A-z0-9_]*)$";
-    public static final String                      REGEX_PROPERTY            = "^(?<prefix>is|get|set)(?<property>[A-Z][A-z0-9_]*)$";
-    public static final Pattern                     PATTERN_OBJECT_GETTER     = Pattern.compile(REGEX_OBJECT_GETTER);
-    public static final Pattern                     PATTERN_BOOL_GETTER       = Pattern.compile(REGEX_BOOL_GETTER);
+    public static final String                          REGEX_SETTER              = "^set(?<property>[A-Z][A-z0-9_]*)$";
+    public static final String                          REGEX_PROPERTY            = "^(?<prefix>is|get|set)(?<property>[A-Z][A-z0-9_]*)$";
+    public static final Pattern                         PATTERN_OBJECT_GETTER     = Pattern.compile(REGEX_OBJECT_GETTER);
+    public static final Pattern                         PATTERN_BOOL_GETTER       = Pattern.compile(REGEX_BOOL_GETTER);
     @SuppressWarnings("unused")
-    public static final Pattern                     PATTERN_GETTER            = Pattern.compile(REGEX_GETTER);
-    public static final Pattern                     PATTERN_SETTER            = Pattern.compile(REGEX_SETTER);
-    public static final Pattern                     PATTERN_PROPERTY          = Pattern.compile(REGEX_PROPERTY);
-    public static       Map<String, List<Class<?>>> CACHED_CLASSES_BY_PACKAGE = Maps.newHashMap();
+    public static final Pattern                         PATTERN_GETTER            = Pattern.compile(REGEX_GETTER);
+    public static final Pattern                         PATTERN_SETTER            = Pattern.compile(REGEX_SETTER);
+    @SuppressWarnings("unused")
+    public static final Pattern                         PATTERN_PROPERTY          = Pattern.compile(REGEX_PROPERTY);
+    public static       Map<String, List<Class<?>>>     CACHED_CLASSES_BY_PACKAGE = new HashMap<>();
 
     public static <T> Class<T> getParameterizedTypeForClass(final Class<?> clazz) {
         Class<?>          working           = clazz;
@@ -102,9 +102,7 @@ public class Reflection {
         if (CACHED_CLASSES_BY_PACKAGE.containsKey(packageName)) {
             return CACHED_CLASSES_BY_PACKAGE.get(packageName);
         }
-        if (_log.isInfoEnabled()) {
-            _log.info("Identifying classes for " + packageName);
-        }
+        log.info("Identifying classes for {}", packageName);
         final ClassLoader loader = getClassLoader();
         assert loader != null;
 
@@ -152,6 +150,7 @@ public class Reflection {
      *
      * @return The annotation instance if it exists on the class or any of its subtypes, null otherwise.
      */
+    @SuppressWarnings("unused")
     public static <T extends Annotation> T findAnnotationInClassHierarchy(final Class<?> clazz, final Class<T> annotationClass) {
         Class<?> current = clazz;
         while (current != null) {
@@ -163,25 +162,21 @@ public class Reflection {
         return null;
     }
 
-    public static void injectDynamicImplementations(final String _package, final boolean failOnException, Map<String, Object> params) throws Exception {
-        List<Class<?>> classes = Reflection.getClassesForPackage(_package);
-        if (params == null) {
-            params = Maps.newHashMap();
-        }
-        if (classes != null && classes.size() > 0) {
-            for (Class<?> clazz : classes) {
+    public static void injectDynamicImplementations(final String _package, final boolean failOnException, final Map<String, Object> params) throws Exception {
+        final List<Class<?>> classes = Reflection.getClassesForPackage(_package);
+        if (classes != null && !classes.isEmpty()) {
+            for (final Class<?> clazz : classes) {
                 try {
                     if (InjectableI.class.isAssignableFrom(clazz)) {
-                        InjectableI action = (InjectableI) clazz.newInstance();
-                        action.execute(params);
+                        ((InjectableI) clazz.newInstance()).execute(ObjectUtils.defaultIfNull(params, new HashMap<String, Object>()));
                     } else {
-                        _log.error("Reflection: " + _package + "." + clazz.getName() + " is NOT an implementation of InjectableI");
+                        log.error("Reflection: {}.{} is NOT an implementation of InjectableI", _package, clazz.getName());
                     }
                 } catch (Throwable e) {
                     if (failOnException) {
                         throw e;
                     } else {
-                        _log.error("", e);
+                        log.error("", e);
                     }
                 }
             }
@@ -197,6 +192,7 @@ public class Reflection {
         }
     }
 
+    @SuppressWarnings("unused")
     public static List<Class<?>> getClassesFromParameterizedType(final Type type) throws NotParameterizedTypeException, NotConcreteTypeException {
         if (!(type instanceof ParameterizedType)) {
             throw new NotParameterizedTypeException(type, "The type " + type.toString() + " is not a parameterized type");
@@ -218,10 +214,12 @@ public class Reflection {
                ((PATTERN_OBJECT_GETTER.matcher(method.getName()).matches() && !method.getReturnType().equals(Void.TYPE)) || (PATTERN_BOOL_GETTER.matcher((method.getName())).matches() && method.getReturnType().equals(Boolean.TYPE)));
     }
 
+    @SuppressWarnings("unused")
     public static boolean isSetter(final Method method) {
         return Modifier.isPublic(method.getModifiers()) && PATTERN_SETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 1;
     }
 
+    @SuppressWarnings("unused")
     @SafeVarargs
     public static Method getGetter(final Class<?> clazz, final String property, final Predicate<? super Method>... predicates) {
         return getGetter(clazz, null, property, predicates);
@@ -236,6 +234,7 @@ public class Reflection {
         return methods.get(0);
     }
 
+    @SuppressWarnings("unused")
     @SafeVarargs
     public static Method getSetter(final Class<?> clazz, final String property, final Predicate<? super Method>... predicates) {
         return getSetter(clazz, null, property, predicates);
@@ -272,14 +271,14 @@ public class Reflection {
 
     public static Object callMethodForParameters(final Object object, final String methodName, final Object... parameters) {
         final Class<?> objectClass = object.getClass();
-        final Method   method = getMethodForParameters(objectClass, methodName, getClassTypes(parameters));
+        final Method   method      = getMethodForParameters(objectClass, methodName, getClassTypes(parameters));
         if (method == null) {
             return null;
         }
         try {
             return method.invoke(object, parameters);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            _log.error("An error occurred trying to call the method '{}.{}'", objectClass.getName(), methodName, e);
+            log.error("An error occurred trying to call the method '{}.{}'", objectClass.getName(), methodName, e);
         }
         return null;
     }
@@ -323,34 +322,31 @@ public class Reflection {
      * @throws ClassNotFoundException the class not found exception
      */
     public static List<Class<?>> findClasses(final File directory, final String packageName) throws ClassNotFoundException {
-        final List<Class<?>> classes = new ArrayList<>();
-
-        if (!directory.exists()) {
-            return classes;
+        final File[] files = directory.listFiles();
+        if (!directory.exists() || files == null || files.length == 0) {
+            return Collections.emptyList();
         }
 
-        final File[] files = directory.listFiles();
+        final ClassLoader classLoader = getClassLoader();
+        assert classLoader != null;
 
-        assert files != null;
+        final List<Class<?>> classes = new ArrayList<>();
         for (final File file : files) {
             final String fileName = file.getName();
             if (file.isDirectory()) {
                 assert !fileName.contains(".");
                 classes.addAll(findClasses(file, packageName + "." + fileName));
             } else if (fileName.endsWith(".class") && !fileName.contains("$")) {
+                final String qualifiedClassFilename = FilenameUtils.removeExtension(packageName + "." + fileName);
                 try {
-                    classes.add(Class.forName(packageName + '.' + fileName.substring(0, fileName.length() - 6)));
+                    classes.add(Class.forName(qualifiedClassFilename));
                 } catch (ExceptionInInitializerError e) {
                     // This happens to classes which depend on Spring to inject
-                    // some beans
-                    // and fail if dependency is not fulfilled
-                    final ClassLoader classLoader = getClassLoader();
-                    assert classLoader != null;
-                    classes.add(Class.forName(packageName + '.' + fileName.substring(0, fileName.length() - 6), false, classLoader));
+                    // some beans and fail if dependency is not fulfilled
+                    classes.add(Class.forName(qualifiedClassFilename, false, classLoader));
                 }
             }
         }
-
         return classes;
     }
 
@@ -443,12 +439,7 @@ public class Reflection {
         }
 
         final Constructor<T>[] constructors = (Constructor<T>[]) target.getConstructors();
-        // Honestly I don't even think this can happen, but just in case...
-        if (constructors == null || constructors.length == 0) {
-            return null;
-        }
-
-        return (Constructor<T>) getAccessibleForParameters(constructors, requestedAccess, parameterTypes);
+        return constructors.length == 0 ? null : (Constructor<T>) getAccessibleForParameters(constructors, requestedAccess, parameterTypes);
     }
 
     public static <T> Method getMethodForParameters(final Class<T> target, final String name, final Class<?>... parameterTypes) {
@@ -477,12 +468,7 @@ public class Reflection {
         }
 
         final Method[] methods = target.getMethods();
-        // Honestly I don't even think this can happen, but just in case...
-        if (methods == null || methods.length == 0) {
-            return null;
-        }
-
-        return (Method) getAccessibleForParameters(methods, requestedAccess, parameterTypes);
+        return methods.length == 0 ? null : (Method) getAccessibleForParameters(methods, requestedAccess, parameterTypes);
     }
 
     public static <T> T constructObjectFromParameters(final Class<? extends T> type, final Object... parameters) {
@@ -495,14 +481,14 @@ public class Reflection {
             final Class<?>[]               parameterTypes = getClassTypes(parameters);
             final Constructor<? extends T> constructor    = getConstructorForParameters(implClass, parameterTypes);
             if (constructor == null) {
-                _log.error("No constructor was found for the class '{}' with the following parameter types: {}", className, StringUtils.join(parameterTypes, ", "));
+                log.error("No constructor was found for the class '{}' with the following parameter types: {}", className, StringUtils.join(parameterTypes, ", "));
                 return null;
             }
             return constructor.newInstance(parameters);
         } catch (ClassNotFoundException e) {
-            _log.error("Couldn't find definition of the specified class '{}'", className);
+            log.error("Couldn't find definition of the specified class '{}'", className);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            _log.error("An error occurred trying to create an instance of the class '{}'", className, e);
+            log.error("An error occurred trying to create an instance of the class '{}'", className, e);
         }
         return null;
     }
@@ -620,12 +606,11 @@ public class Reflection {
 
     @SafeVarargs
     private static List<Method> getMethodsUpToSuperclass(final Class<?> subclass, final Class<?> terminator, final List<Predicate<? super Method>> predicates, final Predicate<? super Method>... added) {
-        final List<Method> methods   = Lists.newArrayList();
-        final Predicate[]  asArray   = predicates.toArray(new Predicate[0]);
-        final Predicate[]  submitted = added.length == 0 ? asArray : ArrayUtils.addAll(asArray, added);
+        final Predicate[] asArray   = predicates.toArray(new Predicate[0]);
+        final Predicate[] submitted = added.length == 0 ? asArray : ArrayUtils.addAll(asArray, added);
         //noinspection unchecked
-        methods.addAll(ReflectionUtils.getMethods(subclass, submitted));
-        final Class<?> superclass = subclass.getSuperclass();
+        final List<Method> methods    = new ArrayList<>(ReflectionUtils.getMethods(subclass, submitted));
+        final Class<?>     superclass = subclass.getSuperclass();
         if (superclass != null && !superclass.equals(Object.class) && (terminator == null || !terminator.equals(superclass))) {
             methods.addAll(getMethodsUpToSuperclass(superclass, terminator, predicates));
         }
@@ -633,39 +618,36 @@ public class Reflection {
     }
 
     private static List<Predicate<? super Method>> getGetterPredicate() {
-        return getGetterPredicate(null, null);
+        return getPredicate(null, true, null);
     }
 
     private static List<Predicate<? super Method>> getGetterPredicate(final String property, final List<Predicate<? super Method>> added) {
-        final String                          pattern    = String.format(REGEX_REFL_GETTER, StringUtils.isBlank(property) ? CAPITALIZED_NAME : StringUtils.capitalize(property));
-        final List<Predicate<? super Method>> predicates = Lists.newArrayList();
-        predicates.add(withPattern(pattern));
-        predicates.add(withParametersCount(0));
-        if (added != null) {
-            predicates.addAll(added);
-        }
-        return predicates;
+        return getPredicate(property, true, added);
     }
 
     private static List<Predicate<? super Method>> getSetterPredicate() {
-        return getSetterPredicate(null, null);
+        return getPredicate(null, false, null);
     }
 
     private static List<Predicate<? super Method>> getSetterPredicate(final String property, final List<Predicate<? super Method>> added) {
-        final String                          pattern    = String.format(REGEX_REFL_SETTER, StringUtils.isBlank(property) ? CAPITALIZED_NAME : StringUtils.capitalize(property));
-        final List<Predicate<? super Method>> predicates = Lists.newArrayList();
-        predicates.add(withPattern(pattern));
-        predicates.add(withReturnType(Void.TYPE));
+        return getPredicate(property, false, added);
+    }
+
+    private static List<Predicate<? super Method>> getPredicate(final String property, final boolean isGetter, final List<Predicate<? super Method>> added) {
+        final List<Predicate<? super Method>> predicates = new ArrayList<>();
+        predicates.add(withPattern(String.format(isGetter ? REGEX_REFL_GETTER : REGEX_REFL_SETTER, StringUtils.isBlank(property) ? CAPITALIZED_NAME : StringUtils.capitalize(property))));
+        if (isGetter) {
+            predicates.add(withParametersCount(0));
+        } else {
+            predicates.add(withReturnType(Void.TYPE));
+        }
         if (added != null) {
             predicates.addAll(added);
         }
         return predicates;
     }
 
-    private static final List<Class<?>> WRAPPERS   = ImmutableList.of(Boolean.class, Byte.class, Character.class, Double.class, Float.class, Integer.class, Long.class, Short.class, Void.class);
-    private static final List<Class<?>> PRIMITIVES = ImmutableList.of(boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class, short.class, void.class);
-
+    private static final List<Class<?>>           WRAPPERS          = ImmutableList.of(Boolean.class, Byte.class, Character.class, Double.class, Float.class, Integer.class, Long.class, Short.class, Void.class);
+    private static final List<Class<?>>           PRIMITIVES        = ImmutableList.of(boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class, short.class, void.class);
     private static final Map<String, Reflections> _reflectionsCache = Collections.synchronizedMap(new HashMap<String, Reflections>());
-
-    private static final Logger _log = LoggerFactory.getLogger(Reflection.class);
 }

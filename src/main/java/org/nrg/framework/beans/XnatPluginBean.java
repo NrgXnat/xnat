@@ -9,49 +9,74 @@
 
 package org.nrg.framework.beans;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
 import com.google.common.collect.*;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatDataModel;
 import org.nrg.framework.annotations.XnatPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.lang.model.element.TypeElement;
 import java.util.*;
+import java.util.regex.Pattern;
+
+import static org.nrg.framework.annotations.XnatPlugin.*;
+import static org.nrg.framework.beans.XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
+@Getter
+@Accessors(prefix = "_")
+@Slf4j
 public class XnatPluginBean {
-    public XnatPluginBean(final TypeElement element, final XnatPlugin plugin) {
-        _id = plugin.value();
-        _name = plugin.name();
-        _version = plugin.version();
-        _pluginClass = element.getQualifiedName().toString();
-        _namespace = StringUtils.defaultIfBlank(plugin.namespace(), null);
-        _description = StringUtils.defaultIfBlank(plugin.description(), null);
-        _beanName = StringUtils.defaultIfBlank(plugin.beanName(), StringUtils.uncapitalize(element.getSimpleName().toString()));
-        _entityPackages.addAll(Arrays.asList(plugin.entityPackages()));
-        _log4jPropertiesFile = StringUtils.defaultIfBlank(plugin.log4jPropertiesFile(), null);
-        for (final XnatDataModel dataModel : Arrays.asList(plugin.dataModels())) {
-            _dataModels.add(new XnatDataModelBean(dataModel));
+    @SuppressWarnings("deprecation")
+    public XnatPluginBean(final Properties properties) {
+        this(properties.getProperty(PLUGIN_CLASS),
+             properties.getProperty(PLUGIN_ID),
+             properties.getProperty(PLUGIN_NAMESPACE),
+             properties.getProperty(PLUGIN_NAME),
+             properties.getProperty(PLUGIN_VERSION),
+             properties.getProperty(PLUGIN_DESCRIPTION),
+             properties.getProperty(PLUGIN_BEAN_NAME),
+             properties.getProperty(PLUGIN_ENTITY_PACKAGES),
+             properties.getProperty(PLUGIN_LOG_CONFIGURATION, properties.getProperty(PLUGIN_LOG4J_PROPERTIES)),
+             getXnatDataModelBeansFromProperties(properties));
+
+        if (properties.containsKey(PLUGIN_LOG4J_PROPERTIES)) {
+            log.error("The log4jPropertiesFile setting is deprecated. You should use logConfigurationFile instead. You should also convert any log4j properties files to use the logback XML format. https://logback.qos.ch/translator can help! Your configuration will be added to the logging extensions, but I can't guarantee it will work properly.");
         }
     }
 
-    public XnatPluginBean(final Properties properties) {
-        this(properties.getProperty(XnatPlugin.PLUGIN_CLASS),
-             properties.getProperty(XnatPlugin.PLUGIN_ID),
-             properties.getProperty(XnatPlugin.PLUGIN_NAMESPACE),
-             properties.getProperty(XnatPlugin.PLUGIN_NAME),
-             properties.getProperty(XnatPlugin.PLUGIN_VERSION),
-             properties.getProperty(XnatPlugin.PLUGIN_DESCRIPTION),
-             properties.getProperty(XnatPlugin.PLUGIN_BEAN_NAME),
-             properties.getProperty(XnatPlugin.PLUGIN_ENTITY_PACKAGES),
-             properties.getProperty(XnatPlugin.PLUGIN_LOG4J_PROPERTIES),
-             getDataModelBeans(properties));
+    @SuppressWarnings("deprecation")
+    public XnatPluginBean(final TypeElement element, final XnatPlugin plugin) {
+        this(element.getQualifiedName().toString(),
+             plugin.value(),
+             StringUtils.defaultIfBlank(plugin.namespace(), null),
+             plugin.name(),
+             plugin.version(),
+             StringUtils.defaultIfBlank(plugin.description(), null),
+             StringUtils.defaultIfBlank(plugin.beanName(), StringUtils.uncapitalize(element.getSimpleName().toString())),
+             plugin.entityPackages(),
+             StringUtils.defaultIfBlank(plugin.logConfigurationFile(), plugin.log4jPropertiesFile()),
+             convertDataModelsToBeans(plugin.dataModels()));
+        if (StringUtils.isNotBlank(plugin.log4jPropertiesFile())) {
+            log.error("The log4jPropertiesFile setting is deprecated. You should use logConfigurationFile instead. You should also convert any log4j properties files to use the logback XML format. https://logback.qos.ch/translator can help! Your configuration will be added to the logging extensions, but I can't guarantee it will work properly.");
+        }
     }
 
-    public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final String entityPackages, final String log4jPropertiesFile, final List<XnatDataModelBean> dataModels) {
+    public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final String entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
+        this(pluginClass, id, namespace, name, version, description, beanName, entityPackages != null ? entityPackages.split("\\s*,\\s*") : new String[0], logConfigurationFile, dataModelBeans);
+    }
+
+    public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final String[] entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
+        this(pluginClass, id, namespace, name, version, description, beanName, entityPackages != null ? Arrays.asList(entityPackages) : Collections.<String>emptyList(), logConfigurationFile, dataModelBeans);
+    }
+
+    public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final List<String> entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
         _id = id;
         _name = name;
         _version = version;
@@ -59,49 +84,23 @@ public class XnatPluginBean {
         _namespace = StringUtils.defaultIfBlank(namespace, null);
         _description = StringUtils.defaultIfBlank(description, null);
         _beanName = StringUtils.defaultIfBlank(beanName, getBeanName(pluginClass));
-        _entityPackages.addAll(parseCommaSeparatedList(entityPackages));
-        _log4jPropertiesFile = StringUtils.defaultIfBlank(log4jPropertiesFile, null);
-        _dataModels.addAll(dataModels);
+        _entityPackages = entityPackages != null ? ImmutableList.copyOf(entityPackages) : Collections.<String>emptyList();
+        _logConfigurationFile = StringUtils.defaultIfBlank(logConfigurationFile, null);
+        _dataModelBeans = ImmutableList.copyOf(dataModelBeans);
+        _extendedAttributes = ArrayListMultimap.create();
     }
 
-    public String getPluginClass() {
-        return _pluginClass;
+    public static List<XnatDataModelBean> convertDataModelsToBeans(final XnatDataModel[] models) {
+        return convertDataModelsToBeans(Arrays.asList(models));
     }
 
-    public String getId() {
-        return _id;
-    }
-
-    public String getNamespace() {
-        return _namespace;
-    }
-
-    public String getName() {
-        return _name;
-    }
-
-    public String getVersion() {
-        return _version;
-    }
-
-    public String getDescription() {
-        return _description;
-    }
-
-    public String getBeanName() {
-        return _beanName;
-    }
-
-    public List<String> getEntityPackages() {
-        return ImmutableList.copyOf(_entityPackages);
-    }
-
-    public String getLog4jPropertiesFile() {
-        return _log4jPropertiesFile;
-    }
-
-    public List<XnatDataModelBean> getDataModelBeans() {
-        return ImmutableList.copyOf(_dataModels);
+    public static List<XnatDataModelBean> convertDataModelsToBeans(final List<XnatDataModel> models) {
+        return Lists.transform(models, new Function<XnatDataModel, XnatDataModelBean>() {
+            @Override
+            public XnatDataModelBean apply(final XnatDataModel model) {
+                return new XnatDataModelBean(model);
+            }
+        });
     }
 
     /**
@@ -145,8 +144,8 @@ public class XnatPluginBean {
     /**
      * Adds the indicated value to the specified extended attribute. Note that, if one or more values are already set
      * for the attribute, this adds the value to that list.
-
-     * @param key The extended attribute to set.
+     *
+     * @param key   The extended attribute to set.
      * @param value The value to add to the extended attribute values.
      */
     public void setExtendedAttribute(final String key, final String value) {
@@ -156,8 +155,8 @@ public class XnatPluginBean {
     /**
      * Adds the indicated values to the specified extended attribute. Note that, if one or more values are already set
      * for the attribute, this adds the values to that list.
-
-     * @param key The extended attribute to set.
+     *
+     * @param key    The extended attribute to set.
      * @param values The values to add to the extended attribute values.
      */
     public void setExtendedAttribute(final String key, final List<String> values) {
@@ -167,8 +166,8 @@ public class XnatPluginBean {
     /**
      * Puts the indicated value to the specified extended attribute. If any values are set for the attribute, this
      * removes them then sets the new value for the attribute.
-
-     * @param key The extended attribute to set.
+     *
+     * @param key   The extended attribute to set.
      * @param value The value to set for the extended attribute values.
      */
     public void replaceExtendedAttribute(final String key, final String value) {
@@ -178,8 +177,8 @@ public class XnatPluginBean {
     /**
      * Puts the indicated values to the specified extended attribute. If any values are set for the attribute, this adds
      * removes them then sets the new values for the attribute.
-
-     * @param key The extended attribute to set.
+     *
+     * @param key    The extended attribute to set.
      * @param values The values to set for the extended attribute values.
      */
     public void replaceExtendedAttribute(final String key, final List<String> values) {
@@ -189,8 +188,8 @@ public class XnatPluginBean {
     /**
      * Removes the indicated value from the specified extended attribute. If any other values are set for the attribute,
      * they will still be set for the attribute.
-
-     * @param key The extended attribute to set.
+     *
+     * @param key   The extended attribute to set.
      * @param value The value to remove from the extended attribute values.
      */
     public void removeExtendedAttribute(final String key, final String value) {
@@ -199,7 +198,7 @@ public class XnatPluginBean {
 
     /**
      * Removes the specified extended attribute.
-
+     *
      * @param key The extended attribute to remove.
      */
     public void removeExtendedAttribute(final String key) {
@@ -208,17 +207,17 @@ public class XnatPluginBean {
 
     public Properties asProperties() {
         final Properties properties = new Properties();
-        properties.setProperty(XnatPlugin.PLUGIN_ID, _id);
-        properties.setProperty(XnatPlugin.PLUGIN_BEAN_NAME, _beanName);
+        properties.setProperty(PLUGIN_ID, _id);
+        properties.setProperty(PLUGIN_BEAN_NAME, _beanName);
         if (StringUtils.isNotBlank(_namespace)) {
-            properties.setProperty(XnatPlugin.PLUGIN_NAMESPACE, _namespace);
+            properties.setProperty(PLUGIN_NAMESPACE, _namespace);
         }
-        properties.setProperty(XnatPlugin.PLUGIN_CLASS, _pluginClass);
-        properties.setProperty(XnatPlugin.PLUGIN_NAME, _name);
-        properties.setProperty(XnatPlugin.PLUGIN_DESCRIPTION, _description);
-        properties.setProperty(XnatPlugin.PLUGIN_ENTITY_PACKAGES, Joiner.on(", ").join(_entityPackages));
-        properties.setProperty(XnatPlugin.PLUGIN_LOG4J_PROPERTIES, _log4jPropertiesFile);
-        for (final XnatDataModelBean dataModel : _dataModels) {
+        properties.setProperty(PLUGIN_CLASS, _pluginClass);
+        properties.setProperty(PLUGIN_NAME, _name);
+        properties.setProperty(PLUGIN_DESCRIPTION, _description);
+        properties.setProperty(PLUGIN_ENTITY_PACKAGES, Joiner.on(", ").join(_entityPackages));
+        properties.setProperty(PLUGIN_LOG_CONFIGURATION, _logConfigurationFile);
+        for (final XnatDataModelBean dataModel : _dataModelBeans) {
             properties.putAll(dataModel.asProperties());
         }
         return properties;
@@ -236,34 +235,27 @@ public class XnatPluginBean {
         return Arrays.asList(entityPackages.split("\\s*,\\s*"));
     }
 
-    private static List<XnatDataModelBean> getDataModelBeans(final Properties properties) {
-        final Map<String, XnatDataModelBean> dataModels = new HashMap<>();
-        for (final String property : properties.stringPropertyNames()) {
-            if (property.startsWith(XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX)) {
+    private static List<XnatDataModelBean> getXnatDataModelBeansFromProperties(final Properties properties) {
+        return Lists.transform(Lists.newArrayList(Iterables.filter(properties.stringPropertyNames(), Predicates.contains(DATA_MODEL_PROPERTY))), new Function<String, XnatDataModelBean>() {
+            @Override
+            public XnatDataModelBean apply(final String property) {
                 final String[] atoms = property.split("\\.", 4);
-                final String dataModelKey = atoms[1] + ":" + atoms[2];
-                final XnatDataModelBean bean;
-                if (!dataModels.containsKey(dataModelKey)) {
-                    bean = new XnatDataModelBean(dataModelKey, properties);
-                    dataModels.put(dataModelKey, bean);
-                }
+                return new XnatDataModelBean(atoms[1] + ":" + atoms[2], properties);
             }
-        }
-        return new ArrayList<>(dataModels.values());
+        });
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(XnatPluginBean.class);
+    private static final Pattern DATA_MODEL_PROPERTY = Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$");
 
-    private final String _pluginClass;
-    private final String _id;
-    private final String _namespace;
-    private final String _name;
-    private final String _version;
-    private final String _description;
-    private final String _beanName;
-    private final String _log4jPropertiesFile;
-
-    private final List<String>                      _entityPackages       = Lists.newArrayList();
-    private final List<XnatDataModelBean>           _dataModels           = Lists.newArrayList();
-    private final ArrayListMultimap<String, String> _extendedAttributes   = ArrayListMultimap.create();
+    private final String                            _pluginClass;
+    private final String                            _id;
+    private final String                            _namespace;
+    private final String                            _name;
+    private final String                            _version;
+    private final String                            _description;
+    private final String                            _beanName;
+    private final String                            _logConfigurationFile;
+    private final List<String>                      _entityPackages;
+    private final List<XnatDataModelBean>           _dataModelBeans;
+    private final ArrayListMultimap<String, String> _extendedAttributes;
 }

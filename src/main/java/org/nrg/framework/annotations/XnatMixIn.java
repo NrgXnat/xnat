@@ -18,16 +18,16 @@ import java.lang.annotation.*;
  * serialization and how to use mix-in classes to apply this to other data types. This annotation provides different
  * methods to configure how mix-ins are associated with the target classes:
  *
- * <li>
- *     <ul>Specifying the {@link #value()} attribute associates the <i>current class</i> with the mix-in class specified
+ * <ul>
+ *     <li>Specifying the {@link #value()} attribute associates the <i>current class</i> with the mix-in class specified
  *     as the value. That is, <b>@XnatMixIn(Foo.class)</b> on a class <b>Bar</b> would use <b>Foo</b> as the mix-in for
- *     <b>Bar</b>.</ul>
- *     <ul>Specifying the {@link #targets()} attribute associates the current class <i>as a mix-in class</i> with one or
+ *     <b>Bar</b>.</li>
+ *     <li>Specifying the {@link #targets()} attribute associates the current class <i>as a mix-in class</i> with one or
  *     more target classes specified in the value. For example, <b>@XnatMixIn({Foo.class, Bar.class})</b> on the
- *     <b>Zed</b> class would configure <b>Zed</b> as the mix-in class for both <b>Foo</b> and <b>Bar</b>.</ul>
- *     <ul>Specifying both {@link #value()} and {@link #targets()} lets you associate a mix-in class with one or more
- *     target classes without having to modify either the mix-in or the target.</ul>
- * </li>
+ *     <b>Zed</b> class would configure <b>Zed</b> as the mix-in class for both <b>Foo</b> and <b>Bar</b>.</li>
+ *     <li>Specifying both {@link #value()} and {@link #targets()} lets you associate a mix-in class with one or more
+ *     target classes without having to modify either the mix-in or the target.</li>
+ * </ul>
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)

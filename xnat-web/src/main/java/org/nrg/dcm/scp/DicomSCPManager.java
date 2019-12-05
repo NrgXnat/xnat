@@ -10,10 +10,8 @@
 package org.nrg.dcm.scp;
 
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.base.Predicate;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.ArrayUtils;
@@ -199,7 +197,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
      * @param instances The DICOM SCP definitions to save.
      */
     @SuppressWarnings("unused")
-    public List<DicomSCPInstance> setDicomSCPInstances(final Map<String, DicomSCPInstance> instances) throws DICOMReceiverWithDuplicateTitleAndPortException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<DicomSCPInstance> setDicomSCPInstances(final Map<String, DicomSCPInstance> instances) throws DICOMReceiverWithDuplicateTitleAndPortException {
         try {
             // Have to cache these first, since the database caching does double duty with generating IDs for any new
             // instances that are in the map.
@@ -228,10 +226,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
      * @throws DICOMReceiverWithDuplicateTitleAndPortException When the new instance is enabled and there's
      *                                                         already an enabled instance with the same AE title
      *                                                         and port.
-     * @throws DicomNetworkException                           When an error occurs during DICOM communication
-     *                                                         operations.
      */
-    public DicomSCPInstance setDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicateTitleAndPortException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    public DicomSCPInstance setDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicateTitleAndPortException {
         try {
             final List<DicomSCPInstance> instances = setDicomSCPInstances(new HashMap<String, DicomSCPInstance>() {{
                 put(Integer.toString(instance.getId()), instance);
@@ -297,6 +293,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     }
 
+    @SuppressWarnings("unused")
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle) {
         try {
             return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE, new HashMap<String, Object>() {{
@@ -395,6 +392,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
      *
      * @return A map of each definition and its enabled status.
      */
+    @SuppressWarnings("unused")
     public Map<DicomSCPInstance, Boolean> areDicomSCPInstancesStarted() {
         final Map<DicomSCPInstance, Boolean> statuses = new HashMap<>();
         for (final DicomSCPInstance instance : getDicomSCPInstancesList()) {
@@ -449,7 +447,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public void resetDicomObjectIdentifierBeans() {
-        for (final DicomObjectIdentifier identifier : getDicomObjectIdentifiers().values()) {
+        for (final DicomObjectIdentifier<XnatProjectdata> identifier : getDicomObjectIdentifiers().values()) {
             if (identifier instanceof CompositeDicomObjectIdentifier) {
                 ((CompositeDicomObjectIdentifier) identifier).getProjectIdentifier().reset();
             }
@@ -464,7 +462,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         final Map<String, DicomSCPInstance> value = getMapValue(PREF_ID);
         try {
             cacheDicomScpInstances(value.values());
-        } catch (DICOMReceiverWithDuplicateTitleAndPortException | DicomNetworkException | UnknownDicomHelperInstanceException e) {
+        } catch (DICOMReceiverWithDuplicateTitleAndPortException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, e);
         }
     }
@@ -474,12 +472,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     protected DicomObjectIdentifier<XnatProjectdata> getIdentifier(final String identifier) throws UnknownDicomHelperInstanceException {
-        final DicomObjectIdentifier bean = StringUtils.isBlank(identifier) ? _context.getBean(DicomObjectIdentifier.class) : _context.getBean(identifier, DicomObjectIdentifier.class);
+        //noinspection unchecked
+        final DicomObjectIdentifier<XnatProjectdata> bean = StringUtils.isBlank(identifier) ? _context.getBean(DicomObjectIdentifier.class) : _context.getBean(identifier, DicomObjectIdentifier.class);
         if (bean == null) {
             throw new UnknownDicomHelperInstanceException(identifier, DicomObjectIdentifier.class);
         }
-        //noinspection unchecked
-        return (DicomObjectIdentifier<XnatProjectdata>) bean;
+        return bean;
     }
 
     protected DicomFileNamer getDicomFileNamer(final String identifier) throws UnknownDicomHelperInstanceException {
@@ -490,7 +488,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return bean;
     }
 
-    private List<DicomSCPInstance> cacheDicomScpInstances(final Collection<DicomSCPInstance> instances) throws DICOMReceiverWithDuplicateTitleAndPortException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    private List<DicomSCPInstance> cacheDicomScpInstances(final Collection<DicomSCPInstance> instances) throws DICOMReceiverWithDuplicateTitleAndPortException {
         final List<DicomSCPInstance>                                cached       = new ArrayList<>();
         final List<DICOMReceiverWithDuplicateTitleAndPortException> badInstances = new ArrayList<>();
         final List<Integer>                                         ids          = new ArrayList<>();
@@ -508,7 +506,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             throw new DICOMReceiverWithDuplicateTitleAndPortException(badInstances);
         }
 
-        updateDicomSCPs(getPortsForIds(ids));
+        refreshDicomScpCache(getPortsForIds(ids));
         return cached;
     }
 
@@ -536,21 +534,42 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return _template.queryForList(GET_PORTS_FOR_ENABLED_INSTANCES, EmptySqlParameterSource.INSTANCE, Integer.class);
     }
 
-    private List<String> updateDicomSCPs(final Collection<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException {
-        final List<String> aggregated = new ArrayList<>();
-        for (final int port : ports) {
-            final DicomSCP dicomSCP;
-            if (_dicomSCPs.containsKey(port)) {
-                dicomSCP = _dicomSCPs.get(port);
-                if (dicomSCP.isStarted()) {
-                    dicomSCP.stop();
-                }
-            } else {
-                dicomSCP = DicomSCP.create(this, _executorService, port);
-                _dicomSCPs.put(port, dicomSCP);
+    private void refreshDicomScpCache(final Collection<Integer> ports) {
+        for (final int removed : Iterables.filter(_dicomSCPs.keySet(), new Predicate<Integer>() {
+            @Override
+            public boolean apply(final Integer port) {
+                return !ports.contains(port);
             }
+        })) {
+            final DicomSCP dicomSCP = _dicomSCPs.get(removed);
+            log.info("Shutting down DICOM receiver(s) on port {} with AE title(s): {}", removed, StringUtils.join(dicomSCP.getAeTitles(), ", "));
+            if (dicomSCP.isStarted()) {
+                dicomSCP.stop();
+            }
+            _dicomSCPs.remove(removed);
+        }
+        final DicomSCPManager manager = this;
+        _dicomSCPs.putAll(Maps.toMap(ports, new Function<Integer, DicomSCP>() {
+            @Override
+            public DicomSCP apply(final Integer port) {
+                if (_dicomSCPs.containsKey(port)) {
+                    final DicomSCP dicomSCP = _dicomSCPs.get(port);
+                    if (dicomSCP.isStarted()) {
+                        dicomSCP.stop();
+                    }
+                }
+                return DicomSCP.create(manager, _executorService, port);
+            }
+        }));
+    }
+
+    private List<String> updateDicomSCPs(final Collection<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+        refreshDicomScpCache(ports);
+        final List<String> aggregated = new ArrayList<>();
+        for (final int port : _dicomSCPs.keySet()) {
+            final DicomSCP     dicomSCP = _dicomSCPs.get(port);
             final List<String> started = dicomSCP.start();
-            log.info("Started {} listeners on port {}: {}", started.size(), port, Joiner.on(", ").join(started));
+            log.info("Started {} listeners on port {}: {}", started.size(), port, StringUtils.join(started, ", "));
             aggregated.addAll(Lists.transform(started, new Function<String, String>() {
                 @NotNull
                 @Override

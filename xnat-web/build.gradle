@@ -1,7 +1,7 @@
 /*
  * web: build.gradle
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *  
  * Released under the Simplified BSD.
@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.7.6-SNAPSHOT"
+        vXnat = "1.7.6"
     }
     repositories {
         mavenLocal()
@@ -513,7 +513,7 @@ publishing.publications {
             root.appendNode("name", "XNAT Server")
             root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
             root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
-            root.appendNode("inceptionYear", "2016")
+            root.appendNode("inceptionYear", "2019")
 
             def scm = root.appendNode("scm")
             scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")

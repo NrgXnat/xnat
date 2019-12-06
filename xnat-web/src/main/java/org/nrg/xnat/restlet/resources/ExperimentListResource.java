@@ -215,7 +215,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             builder.append(") perm ON expt.id=perm.id ");
 
             builder.append(" RIGHT JOIN xnat_imageSessionData isd ON perm.id=isd.id  ");
-            builder.append(" WHERE (insert_date > (NOW() - INTERVAL '").append(days).append(" day') OR activation_date > (NOW() - INTERVAL '").append(days).append(" day') OR last_modified > (NOW() - INTERVAL '").append(days).append(" day') OR workflow_date > (NOW() - INTERVAL '").append(days).append(" day')) ");
+            builder.append(" WHERE emd.status != '").append(ViewManager.OBSOLETE).append("' AND (insert_date > (NOW() - INTERVAL '").append(days).append(" day') OR activation_date > (NOW() - INTERVAL '").append(days).append(" day') OR last_modified > (NOW() - INTERVAL '").append(days).append(" day') OR workflow_date > (NOW() - INTERVAL '").append(days).append(" day')) ");
             builder.append(" )SEARCH ORDER BY action_date DESC");
             if(limit) {
             	 builder.append(" LIMIT 60");

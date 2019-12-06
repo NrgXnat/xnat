@@ -10,11 +10,11 @@
 package org.nrg.xapi.rest.notifications;
 
 import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.NotificationsPreferences;
@@ -23,8 +23,6 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,15 +31,18 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
 @Api(description = "XNAT Notifications management API")
 @XapiRestController
 @RequestMapping(value = "/notifications")
+@Slf4j
 public class NotificationsApi extends AbstractXapiRestController {
-
     public static final String POST_PROPERTIES_NOTES = "Sets the mail service host, port, username, password, and protocol. You can set "
                                                        + "extra properties on the mail sender (e.g. for configuring SSL or TLS transport) by "
                                                        + "specifying the property name and value. Any parameters submitted that are not one "
@@ -71,19 +72,15 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
-    public ResponseEntity<Properties> getNotificationsProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
+    public ResponseEntity<Properties> getNotificationsProperties(@ApiParam(hidden = true) final HttpServletRequest request) {
         final String username = getSessionUser().getUsername();
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + username + " requested the site configuration.");
-        }
+        log.debug("User {} requested the site configuration.", username);
 
         final Properties preferences = _notificationsPrefs.asProperties();
 
         if (!_appInfo.isInitialized()) {
-            if (_log.isInfoEnabled()) {
-                _log.info("The site is being initialized by user {}. Setting default values from context.", username);
-            }
-            preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
+            log.info("The site is being initialized by user {}. Setting default values from context.", username);
+            preferences.put(SITE_URL, XnatHttpUtils.getServerRoot(request));
         }
 
         preferences.put("emailRecipientErrorMessages", _notificationsPrefs.getEmailRecipientErrorMessages());
@@ -94,13 +91,13 @@ public class NotificationsApi extends AbstractXapiRestController {
         return new ResponseEntity<>(preferences, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets a map of notifications properties.", notes = "Sets the notifications properties specified in the map.", response = Void.class)
+    @ApiOperation(value = "Sets a map of notifications properties.", notes = "Sets the notifications properties specified in the map.")
     @ApiResponses({@ApiResponse(code = 200, message = "Notifications properties successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set notifications properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
-    public ResponseEntity<Void> setNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
+    public ResponseEntity<Void> setNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) {
         logSetProperties(properties);
 
         for (final String name : properties.stringPropertyNames()) {
@@ -118,13 +115,11 @@ public class NotificationsApi extends AbstractXapiRestController {
                 } else {
                     _notificationsPrefs.set(properties.getProperty(name), name);
                 }
-                if (_log.isInfoEnabled()) {
-                    _log.info("Set property {} to value: {}", name, properties.get(name));
-                }
+                log.info("Set property {} to value: {}", name, properties.get(name));
             } catch (InvalidPreferenceName invalidPreferenceName) {
-                _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+                log.error("Got an invalid preference name error for the preference '{}', which is weird because the site configuration is not strict", name);
             } catch (IOException e) {
-                _log.error("An error occurred deserializing the preference: " + name + ", which is just lame.");
+                log.error("An error occurred deserializing the preference '{}', which is just lame.", name);
             }
         }
         return new ResponseEntity<>(HttpStatus.OK);
@@ -139,7 +134,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "smtp", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<Properties> getSmtpServerProperties() {
-        _log.debug("User {} requested the site SMTP service configuration.", getSessionUser().getUsername());
+        log.debug("User {} requested the site SMTP service configuration.", getSessionUser().getUsername());
         return new ResponseEntity<>(_notificationsPrefs.getSmtpServer().asProperties(), HttpStatus.OK);
     }
 
@@ -195,9 +190,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"smtp/host/{host}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setHostProperty(@ApiParam(value = "The value to set for the email host.", required = true) @PathVariable final String host) {
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail host to: " + host);
-        }
+        log.info("User {} setting mail host to: {}", getSessionUser().getLogin(), host);
         _notificationsPrefs.setSmtpHostname(host);
         return getSmtpServerProperties();
     }
@@ -211,9 +204,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"smtp/port/{port}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setPortProperty(@ApiParam(value = "The value to set for the email port.", required = true) @PathVariable final int port) {
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail port to: " + port);
-        }
+        log.info("User {} setting mail port to: {}", getSessionUser().getLogin(), port);
         _notificationsPrefs.setSmtpPort(port);
         return getSmtpServerProperties();
     }
@@ -227,9 +218,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"smtp/protocol/{protocol}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setProtocolProperty(@ApiParam(value = "The value to set for the email protocol.", required = true) @PathVariable final String protocol) {
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail protocol to: " + protocol);
-        }
+        log.info("User {} setting mail protocol to: {}", getSessionUser().getLogin(), protocol);
         _notificationsPrefs.setSmtpProtocol(protocol);
         return getSmtpServerProperties();
     }
@@ -243,7 +232,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"smtp/username/{username}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setUsernameProperty(@ApiParam(value = "The value to set for the email username.", required = true) @PathVariable final String username) {
-        _log.info("User {} setting mail username to: {}", getSessionUser().getUsername(), username);
+        log.info("User {} setting mail username to: {}", getSessionUser().getUsername(), username);
         _notificationsPrefs.setSmtpUsername(username);
         return getSmtpServerProperties();
     }
@@ -257,7 +246,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"smtp/password/{password}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setPasswordProperty(@ApiParam(value = "The value to set for the email password.", required = true) @PathVariable final String password) {
-        _log.info("User {} setting mail password", getSessionUser().getUsername());
+        log.info("User {} setting mail password", getSessionUser().getUsername());
         _notificationsPrefs.setSmtpPassword(password);
         return getSmtpServerProperties();
     }
@@ -275,7 +264,7 @@ public class NotificationsApi extends AbstractXapiRestController {
         if (!_notificationsPrefs.getSmtpServer().getMailProperties().containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        _log.info("User {} retrieving value for property {}", getSessionUser().getLogin(), property);
+        log.info("User {} retrieving value for property {}", getSessionUser().getLogin(), property);
         return new ResponseEntity<>(_notificationsPrefs.getSmtpMailProperty(property), HttpStatus.OK);
     }
 
@@ -304,7 +293,7 @@ public class NotificationsApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"smtp/property/{property}/{value}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<String> setExtendedPropertyFromPath(@ApiParam(value = "The name of the extended mail property to set.", required = true) @PathVariable final String property,
                                                               @ApiParam(value = "The value to set for the extended mail property.", required = true) @PathVariable final String value) {
-        _log.info("User {} setting mail password", getSessionUser().getUsername());
+        log.info("User {} setting mail password", getSessionUser().getUsername());
         return new ResponseEntity<>(_notificationsPrefs.setSmtpMailProperty(property, value), HttpStatus.OK);
     }
 
@@ -321,13 +310,12 @@ public class NotificationsApi extends AbstractXapiRestController {
         if (!_notificationsPrefs.getSmtpServer().getMailProperties().containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        _log.info("User {} removing value for property {}", getSessionUser().getLogin(), property);
+        log.info("User {} removing value for property {}", getSessionUser().getLogin(), property);
         return new ResponseEntity<>(_notificationsPrefs.removeSmtpMailProperty(property), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets the email message for contacting help.",
-                  notes = "Sets the email message that people should receive when contacting help.",
-                  response = Void.class)
+                  notes = "Sets the email message that people should receive when contacting help.")
     @ApiResponses({@ApiResponse(code = 200, message = "Help email message successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the help email message."),
@@ -426,8 +414,7 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of user registration.",
-                  notes = "Sets whether admins should be notified of user registration.",
-                  response = Void.class)
+                  notes = "Sets whether admins should be notified of user registration.")
     @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of user registration successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of user registration."),
@@ -551,8 +538,7 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email addresses for error notifications.",
-                  notes = "Sets the email addresses that should be subscribed to error notifications.",
-                  response = Void.class)
+                  notes = "Sets the email addresses that should be subscribed to error notifications.")
     @ApiResponses({@ApiResponse(code = 200, message = "Error subscribers successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the error subscribers."),
@@ -651,40 +637,13 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     private void cleanProperties(final Properties properties) {
-        if (properties.containsKey("hostname")) {
-            properties.remove("hostname");
-        }
-        if (properties.containsKey("port")) {
-            properties.remove("port");
-        }
-        if (properties.containsKey("protocol")) {
-            properties.remove("protocol");
-        }
-        if (properties.containsKey("username")) {
-            properties.remove("username");
-        }
-        if (properties.containsKey("password")) {
-            properties.remove("password");
-        }
-        if (properties.containsKey("smtpHostname")) {
-            properties.remove("smtpHostname");
-        }
-        if (properties.containsKey("smtpPort")) {
-            properties.remove("smtpPort");
-        }
-        if (properties.containsKey("smtpProtocol")) {
-            properties.remove("smtpProtocol");
-        }
-        if (properties.containsKey("smtpUsername")) {
-            properties.remove("smtpUsername");
-        }
-        if (properties.containsKey("smtpPassword")) {
-            properties.remove("smtpPassword");
+        for (final String property : PROPERTIES_TO_CLEAN) {
+            properties.remove(property);
         }
     }
 
     private void logConfigurationSubmit(final String host, final int port, final String username, final String password, final String protocol, final Properties properties) {
-        if (_log.isInfoEnabled()) {
+        if (log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ");
             message.append(getSessionUser().getLogin()).append(" setting mail properties to:\n");
             message.append(" * Host:     ").append(StringUtils.equals(NOT_SET, host) ? "No value submitted..." : host).append("\n");
@@ -697,12 +656,12 @@ public class NotificationsApi extends AbstractXapiRestController {
                     message.append(" * ").append(property).append(": ").append(properties.get(property)).append("\n");
                 }
             }
-            _log.info(message.toString());
+            log.info(message.toString());
         }
     }
 
-    private static final Logger _log    = LoggerFactory.getLogger(NotificationsApi.class);
-    private static final String NOT_SET = "NotSet";
+    private static final String       NOT_SET             = "NotSet";
+    private static final List<String> PROPERTIES_TO_CLEAN = Arrays.asList("hostname", "port", "protocol", "username", "password", "smtpHostname", "smtpPort", "smtpProtocol", "smtpUsername", "smtpPassword");
 
     private final NotificationsPreferences _notificationsPrefs;
     private final XnatAppInfo              _appInfo;

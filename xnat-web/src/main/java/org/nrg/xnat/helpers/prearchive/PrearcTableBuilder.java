@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 /**
  * @author timo
  */
@@ -274,7 +276,7 @@ public class PrearcTableBuilder implements PrearcTableBuilderI {
 
         public PrearchiveCode getPrearchiveCode() {
             final String project = getProject();
-            if (project == null || project.equals(PrearcUtils.COMMON)) {
+            if (project == null || project.equals(UNASSIGNED)) {
                 logger.info("Found null or unassigned project, returning prearchive code of Manual");
                 return PrearchiveCode.Manual;  // Unassigned projects will not have a known prearchive code
             }

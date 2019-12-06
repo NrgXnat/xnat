@@ -14,26 +14,29 @@ import org.apache.velocity.context.Context;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.modules.screens.SecureReport;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.utils.UserUtils;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class UserCacheFileAssignment extends SecureReport {
-
 	@Override
 	public void finalProcessing(RunData data, Context context) {
-		XnatExperimentdata expt=((XnatExperimentdata)om);
-		String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(TurbineUtils.getUser(data));
-		File dir = new File (userPath,expt.getId());
+		XnatExperimentdata expt        =((XnatExperimentdata)om);
+		final UserI        user = XDAT.getUserDetails();
+		assert user != null;
+
+		final File dir = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get(expt.getId()));
 		
 		JSONObject parent= new JSONObject();
 		try {
@@ -42,13 +45,16 @@ public class UserCacheFileAssignment extends SecureReport {
 		} catch (JSONException e) {
 			logger.error("",e);
 		}
-		
-		for(File f: dir.listFiles()){
-			convertDirToJSON(parent,f,"/");
+
+		final File[] files = dir.listFiles();
+		if (files != null) {
+			for(File f: files){
+				convertDirToJSON(parent,f,"/");
+			}
 		}
+
 		context.put("srcFiles",parent);
-		
-		
+
 		try {
 			context.put("destFiles",convertOMtoJSON(expt,expt.getPrimaryProject(false)));
 		} catch (JSONException e) {
@@ -163,11 +169,12 @@ public class UserCacheFileAssignment extends SecureReport {
 			
 			if(f.isDirectory()){
 				o.put("labelStyle", "icon-of");
-				for(final File c:f.listFiles()){
-					convertDirToJSON(o, c,header+f.getName()+"/");
+				final File[] files = f.listFiles();
+				if (files != null) {
+					for(final File c: files){
+						convertDirToJSON(o, c,header+f.getName()+"/");
+					}
 				}
-			}else{
-				//file
 			}
 		} catch (JSONException e) {
 			logger.error("",e);

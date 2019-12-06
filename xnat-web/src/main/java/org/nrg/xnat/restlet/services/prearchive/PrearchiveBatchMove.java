@@ -9,35 +9,28 @@
 
 package org.nrg.xnat.restlet.services.prearchive;
 
-import org.nrg.action.ClientException;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
+import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.xnat.archive.Operation.Move;
+import static org.restlet.data.Status.*;
+
 /**
  * @author tolsen01
  */
+@Slf4j
 public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
-
-    private static final String NEW_PROJECT = "newProject";
-    private static final Logger logger = LoggerFactory.getLogger(PrearchiveBatchMove.class);
-
     /**
      * Sets up the move operation class.
      *
@@ -45,91 +38,87 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
      * @param request  The Restlet request.
      * @param response The Restlet response.
      */
-    public PrearchiveBatchMove(Context context, Request request, Response response) {
+    public PrearchiveBatchMove(final Context context, final Request request, final Response response) {
         super(context, request, response);
     }
 
     @Override
-    public void handleParam(String key, Object o) throws ClientException {
+    public void handleParam(final String key, final Object value) {
         switch (key) {
             case SRC:
-                srcs.add((String) o);
+                getSources().add((String) value);
                 break;
             case NEW_PROJECT:
-                newProject = (String) o;
+                newProject = (String) value;
                 break;
             case ASYNC:
-                if (o.equals("false")) {
-                    async = false;
+                if (value.equals("false")) {
+                    setAsync(false);
                 }
-                break;
         }
     }
 
     @Override
     public void handlePost() {
+        if (!loadVariables()) {
+            return;
+        }
 
-        try {
-            loadBodyVariables();
-            //maintain parameters
-            loadQueryVariables();
-        } catch (ClientException e) {
-            getResponse().setStatus(e.getStatus(), e);
+        final List<SessionDataTriple> triples = getSessionDataTriples();
+        if (triples == null) {
             return;
         }
 
         final UserI user = getUser();
-        if (newProject == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Move operation requires 'newProject'");
-            return;
-        } else {
+        for (final SessionDataTriple triple : triples) {
             try {
-                if (!PrearcUtils.canModify(user, newProject)) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
-                    return;
-                }
-            } catch (Exception e) {
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-                return;
-            }
-        }
+                if (PrearcDatabase.setStatus(triple.getFolderName(), triple.getTimestamp(), triple.getProject(), PrearcUtils.PrearcStatus.QUEUED_MOVING)) {
+                    final SessionData session = PrearcDatabase.getSession(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
+                    final File sessionDir = PrearcUtils.getPrearcSessionDir(user, triple.getProject(), triple.getTimestamp(), triple.getFolderName(), false);
 
-        final List<SessionDataTriple> ss = new ArrayList<>();
-
-        for (final String src : srcs) {
-            File sessionDir;
-            try {
-                SessionDataTriple s = buildSessionDataTriple(src);
-                if (!PrearcUtils.canModify(user, s.getProject())) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
-                    return;
-                }
-                ss.add(s);
-                sessionDir = PrearcUtils.getPrearcSessionDir(user, s.getProject(), s.getTimestamp(), s.getFolderName(), false);
-
-                if (PrearcDatabase.setStatus(s.getFolderName(), s.getTimestamp(), s.getProject(), PrearcUtils.PrearcStatus.QUEUED_MOVING)) {
-                    SessionData session = PrearcDatabase.getSession(s.getFolderName(), s.getTimestamp(), s.getProject());
-
-                    final Map<String, String> parameters = new HashMap<>();
+                    final Map<String, Object> parameters = new HashMap<>();
                     parameters.put(PrearchiveOperationRequest.PARAM_DESTINATION, newProject);
 
-                    XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, session, sessionDir, "Move", parameters));
+                    XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
                 }
+            } catch (SessionException e) {
+                switch (e.getError()) {
+                    case AlreadyExists:
+                        getResponse().setStatus(CLIENT_ERROR_CONFLICT, "A prearchive resource with session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " already exists in the project " + triple.getProject());
+                        break;
+
+                    case DoesntExist:
+                        getResponse().setStatus(CLIENT_ERROR_NOT_FOUND, "No prearchive resource with session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " exists in the project " + triple.getProject());
+                        break;
+
+                    case NoProjectSpecified:
+                        getResponse().setStatus(CLIENT_ERROR_BAD_REQUEST, "No project specified to move session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp());
+                        break;
+
+                    case InvalidStatus:
+                        getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Can't move session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject() + " as it has an invalid status");
+                        break;
+
+                    case InvalidSession:
+                        getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "The session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject() + " is invalid (it's not missing, but something's wrong with it)");
+                        break;
+
+                    case DatabaseError:
+                        getResponse().setStatus(SERVER_ERROR_INTERNAL, e, "A database error occurred trying to move the session " + triple.getFolderName() + " and timestamp " + triple.getTimestamp() + " in project " + triple.getProject());
+                        break;
+                }
+                return;
             } catch (Exception e) {
-                logger.error("", e);
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+                log.error("", e);
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, e);
                 return;
             }
         }
 
-        final Response response = getResponse();
-        try {
-            response.setEntity(updatedStatusRepresentation(ss, overrideVariant(getPreferredVariant())));
-        } catch (Exception e) {
-            logger.error("", e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-        }
+        setTriplesRepresentation(triples);
     }
+
+    private static final String NEW_PROJECT = "newProject";
 
     private String newProject = null;
 }

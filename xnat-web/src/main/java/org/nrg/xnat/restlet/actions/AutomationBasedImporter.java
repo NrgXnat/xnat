@@ -139,7 +139,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	 *            the params
 	 */
 	public AutomationBasedImporter(Object listenerControl, UserI u, FileWriterWrapperI fw, Map<String, Object> params) {
-		super(listenerControl, u, fw, params);
+		super(listenerControl, u);
 		this.user = u;
 		this.fw = fw;
 		this.params = params;

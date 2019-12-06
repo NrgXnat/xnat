@@ -13,7 +13,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
+import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 
 /**
@@ -25,6 +29,28 @@ import java.util.Date;
  */
 @ApiModel(description = "Contains the properties that define a user on the system.")
 public class User {
+    public static final RowMapper<User> Mapper = new RowMapper<User>() {
+        @Override
+        public User mapRow(final ResultSet resultSet, final int index) throws SQLException {
+            final Timestamp lastModified        = resultSet.getTimestamp("last_modified");
+            final Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
+            return new User(resultSet.getInt("id"),
+                            resultSet.getString("username"),
+                            resultSet.getString("firstName"),
+                            resultSet.getString("lastName"),
+                            resultSet.getString("email"),
+                            null,
+                            null,
+                            null,
+                            true,
+                            lastModified != null ? new Date(lastModified.getTime()) : null,
+                            null,
+                            resultSet.getInt("enabled") == 1,
+                            resultSet.getInt("verified") == 1,
+                            lastSuccessfulLogin != null ? new Date(lastSuccessfulLogin.getTime()) : null);
+        }
+    };
+
     /**
      * The user's unique key.
      **/
@@ -166,6 +192,7 @@ public class User {
      *
      * @return The date and time of the last successful login attempt for the most recently used authentication provider.
      */
+    @SuppressWarnings("unused")
     @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
     public Date getLastSuccessfulLogin() {
         return _lastSuccessfulLogin;
@@ -174,6 +201,7 @@ public class User {
     /**
      * Sets the date and time of the last successful login attempt for the most recently used authentication provider.
      */
+    @SuppressWarnings("unused")
     public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
         _lastSuccessfulLogin = lastSuccessfulLogin;
     }
@@ -184,6 +212,7 @@ public class User {
         return String.format("%s %s", getFirstName(), getLastName());
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password and salt to return null.")
     public boolean isSecured() {
         return _secured;
@@ -210,13 +239,13 @@ public class User {
                "}\n";
     }
 
-    public User(int id, String username, String first, String last, String email, String dbname, String password, String salt, boolean secured, Date lastModified, UserAuthI authorization, boolean isEnabled, boolean isVerified, Date lastSuccessfulLogin){
+    public User(int id, String username, String first, String last, String email, String dbName, String password, String salt, boolean secured, Date lastModified, UserAuthI authorization, boolean isEnabled, boolean isVerified, Date lastSuccessfulLogin) {
         _id = id;
         _username = username;
         _firstName = first;
         _lastName = last;
         _email = email;
-        _dbName = dbname;
+        _dbName = dbName;
         _password = password;
         _salt = salt;
         _secured = secured;
@@ -227,22 +256,22 @@ public class User {
         _lastSuccessfulLogin = lastSuccessfulLogin;
     }
 
-    public User(){
+    public User() {
 
     }
 
-    private Integer     _id;
-    private String      _username;
-    private String      _firstName;
-    private String      _lastName;
-    private String      _email;
-    private String      _dbName;
-    private String      _password;
-    private String      _salt;
-    private boolean     _secured;
-    private Date        _lastModified;
-    private UserAuthI   _authorization;
-    private Boolean     _isEnabled;
-    private Boolean     _isVerified;
-    private Date        _lastSuccessfulLogin;
+    private Integer   _id;
+    private String    _username;
+    private String    _firstName;
+    private String    _lastName;
+    private String    _email;
+    private String    _dbName;
+    private String    _password;
+    private String    _salt;
+    private boolean   _secured;
+    private Date      _lastModified;
+    private UserAuthI _authorization;
+    private Boolean   _isEnabled;
+    private Boolean   _isVerified;
+    private Date      _lastSuccessfulLogin;
 }

@@ -15,6 +15,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.task.XnatTask;
@@ -26,8 +27,6 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -46,10 +45,10 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 /**
  * The Class XnatTaskApi.
  */
-@Api(description = "The XNAT Task API")
+@Api
 @XapiRestController
+@Slf4j
 public class XnatTaskApi extends AbstractXapiRestController {
-    
     /**
      * Instantiates a new xnat task api.
      *
@@ -101,7 +100,7 @@ public class XnatTaskApi extends AbstractXapiRestController {
         try {
             return new ResponseEntity<>(getTaskPropertiesList(), HttpStatus.OK);
         } catch (Throwable t) {
-            _log.error("XnatTaskApi exception:  " + t.toString());
+            log.error("XnatTaskApi exception: {}", t.getMessage(), t);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -118,8 +117,9 @@ public class XnatTaskApi extends AbstractXapiRestController {
                 final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
                 // Add configuration element properties
                 if (properties.containsKey(XnatTask.TASK_ID) && properties.containsKey(XnatTask.CLASS)) {
-                	try {
-						final Class<?> clazz = Class.forName(properties.getProperty(XnatTask.CLASS));
+                    final String className = properties.getProperty(XnatTask.CLASS);
+                    try {
+						final Class<?> clazz = Class.forName(className);
 						final List<String> configEleYaml = _xnatTaskService.getConfigurationElementsYaml(clazz);
 						final Gson gson = new Gson();
 						final String configEleJson = gson.toJson(configEleYaml);
@@ -127,26 +127,17 @@ public class XnatTaskApi extends AbstractXapiRestController {
 							properties.put("configurationElementsYaml", configEleJson);
 						}
 					} catch (ClassNotFoundException e) {
-						_log.trace("Could not find class for class value in task properties file (class=?)", properties.getProperty(XnatTask.CLASS));
+						log.trace("Could not find class for class value in task properties file: {}", className);
 					}
                 }
                 taskList.add(properties);
             }
         } catch (IOException e) {
-            _log.debug("Could not load XnatTask class properties resources (META-INF/xnat/task/*-xnat-task.properties)");
+            log.debug("Could not load XnatTask class properties resources (META-INF/xnat/task/*-xnat-task.properties)");
         }
         return taskList;
     }
 
-    /**
-     * The Constant _log.
-     */
-    private static final Logger _log = LoggerFactory.getLogger(XnatTaskApi.class);
-    
-    /** The _xnat node info service. */
     private final XnatNodeInfoService _xnatNodeInfoService;
-    
-    /** The _xnat task service. */
-    private final XnatTaskService _xnatTaskService;
-    
+    private final XnatTaskService     _xnatTaskService;
 }

@@ -23,7 +23,7 @@ public interface XMLPathShortcutsI {
      * @param readOnly Whether read-only fields should be included.
      * @return The parameters that match known fields.
      */
-    Map<String, Object> identifyFields(final Map<String, Object> params, final String type, boolean readOnly);
+    Map<String, Object> identifyFields(final Map<String, ?> params, final String type, boolean readOnly);
 
     /**
      * Gets all of the shortcuts for the indicated data type.
@@ -41,5 +41,6 @@ public interface XMLPathShortcutsI {
      * @param type The data type.
      * @return A map of all of the fields for the indicated type that include an embedded data type.
      */
+    @SuppressWarnings("unused")
     Map<String, String> getEmbeddedTypeShortcuts(final String type);
 }

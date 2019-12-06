@@ -102,12 +102,12 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         setDetails(request, authRequest);
 
         try {
-            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "SUCCESS");
+            AccessLogger.LogServiceAccess(username, request, "Authentication", "SUCCESS");
             final Authentication authentication;
             try {
                 authentication = getAuthenticationManager().authenticate(authRequest);
             } catch (UsernameAuthMappingNotFoundException e) {
-                log.info("User {} attempted to log using {} provider {}, creating new user auth and diverting to account merge page.");
+                log.info("User {} attempted to log using authentication provider ID {}, creating new user auth and diverting to account merge page.", username, providerName);
                 request.getSession().setAttribute(UsernameAuthMappingNotFoundException.class.getSimpleName(), e);
                 response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/RegisterExternalLogin.vm");
                 return null;
@@ -141,7 +141,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         return null;
     }
 
-    public static void logFailedAttempt(final String username, final HttpServletRequest request) {
+    static void logFailedAttempt(final String username, final HttpServletRequest request) {
         if (!StringUtils.isBlank(username)) {
             final Integer uid = retrieveUserId(username);
             if (uid != null) {
@@ -151,11 +151,11 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                     log.error("An exception occurred trying to log a failed login attempt for the user {}", username, exception);
                 }
             }
-            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "FAILED");
+            AccessLogger.LogServiceAccess(username, request, "Authentication", "FAILED");
         }
     }
 
-    public static Integer retrieveUserId(final String username) {
+    private static Integer retrieveUserId(final String username) {
         if (StringUtils.isBlank(username)) {
             return null;
         }

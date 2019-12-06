@@ -13,6 +13,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -55,8 +58,8 @@ public class Index extends SecureScreen {
             context.put("last_login", lastLogin);
         }
 
-        context.put("proj_count", XDAT.getTotalCounts().get("xnat:projectData"));
-        context.put("sub_count", XDAT.getTotalCounts().get("xnat:subjectData"));
-        context.put("isd_count", PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_imageSessionData", "count", user.getDBName(), user.getUsername()));
+        context.put("proj_count", XDAT.getTotalCounts().get(XnatProjectdata.SCHEMA_ELEMENT_NAME));
+        context.put("sub_count", XDAT.getTotalCounts().get(XnatSubjectdata.SCHEMA_ELEMENT_NAME));
+        context.put("isd_count", XDAT.getTotalCounts().get(XnatImagesessiondata.SCHEMA_ELEMENT_NAME));
     }
 }

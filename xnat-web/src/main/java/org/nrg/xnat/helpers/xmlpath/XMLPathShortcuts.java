@@ -260,7 +260,7 @@ public class XMLPathShortcuts implements XMLPathShortcutsI {
      * @param readOnly  Whether read-only fields should be considered
      * @return The usable fields from the list of parameters.
      */
-    public static Map<String, Object> identifyUsableFields(final Map<String, Object> params, final String type, boolean readOnly) {
+    public static Map<String, Object> identifyUsableFields(final Map<String, ?> params, final String type, boolean readOnly) {
         return XMLPathShortcuts.getInstance().identifyFields(params, type, readOnly);
     }
 
@@ -273,11 +273,11 @@ public class XMLPathShortcuts implements XMLPathShortcutsI {
     /**
      * {@inheritDoc}
      */
-    public Map<String, Object> identifyFields(final Map<String, Object> params, final String type, boolean readOnly) {
+    public Map<String, Object> identifyFields(final Map<String, ?> params, final String type, boolean readOnly) {
         final Map<String, Object> relevant = new HashMap<>();
 
         if (params != null) {
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
+            for (Map.Entry<String, ?> entry : params.entrySet()) {
                 for (final String reg : REGEXP) {
                     if ((entry.getKey()).matches(reg)) {
                         relevant.put(entry.getKey(), entry.getValue());

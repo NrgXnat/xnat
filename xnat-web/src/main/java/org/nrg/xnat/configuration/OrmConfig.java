@@ -17,6 +17,7 @@ import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
 import org.springframework.beans.factory.FactoryBean;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -105,6 +107,12 @@ public class OrmConfig {
     @Bean
     public TransactionTemplate transactionTemplate(final PlatformTransactionManager transactionManager) {
         return new TransactionTemplate(transactionManager);
+    }
+
+    // TODO: Convert instances of DatabaseHelper in the code to use singleton instance.
+    @Bean
+    public DatabaseHelper databaseHelper(final NamedParameterJdbcTemplate template, final TransactionTemplate transactionTemplate) {
+        return new DatabaseHelper(template, transactionTemplate);
     }
 
     private static final String     XNAT_ENTITIES_PACKAGES       = "META-INF/xnat/entities/**/*-entity-packages.txt";

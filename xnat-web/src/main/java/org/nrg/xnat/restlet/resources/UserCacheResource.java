@@ -9,12 +9,13 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
@@ -33,9 +34,12 @@ import org.restlet.resource.Variant;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipOutputStream;
 
+@Slf4j
 public class UserCacheResource extends SecureResource {
 	private static final String _ON_SUCCESS_RETURN_JS = "_onSuccessReturnJS";
 	private static final String _ON_FAILURE_RETURN_JS = "_onFailureReturnJS";
@@ -43,13 +47,18 @@ public class UserCacheResource extends SecureResource {
 	private static final String _ON_SUCCESS_RETURN_HTML = "_onSuccessReturnHTML";
 	private static final String _ON_FAILURE_RETURN_HTML = "_onFailureReturnHTML";
 
-	static Logger logger = Logger.getLogger(UserCacheResource.class);
-
 	private enum CompressionMethod { ZIP, TAR, GZ, NONE }
 	
 	public UserCacheResource(Context context, Request request, Response response) {
 		super(context, request, response);
 		getVariants().add(new Variant(MediaType.TEXT_HTML));
+		_globalCachePath = Paths.get(XDAT.getSiteConfigPreferences().getCachePath());
+		_userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
+		_userPath = _userDataCache.getUserDataCache(getUser()).toAbsolutePath().toString();
+		_pXname = (String)getParameter(getRequest(),"XNAME");
+		_pFile = (String)getParameter(getRequest(),"FILE");
+		_hasPXname = StringUtils.isNotBlank(_pXname);
+		_hasPFile = StringUtils.isBlank(_pFile);
 	}
 
 	@Override
@@ -74,142 +83,77 @@ public class UserCacheResource extends SecureResource {
 	
 	@Override
 	public void handleGet() {
-		
 		try {
-			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
-	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
-	        String pFILE = (String)getParameter(getRequest(),"FILE");
-	        
-	        if (pXNAME == null && pFILE == null) {
-	        	
-	        	returnXnameList(userPath);
-	        	
-	        } else if (pXNAME != null && pFILE == null) {
-	        	
+	        if (!_hasPXname && !_hasPFile) {
+	        	returnXnameList(_userPath);
+	        } else if (_hasPXname && !_hasPFile) {
 	        	if (isZIPRequest()) {
-	        		returnZippedFiles(userPath,pXNAME);
+	        		returnZippedFiles(_userPath, _pXname);
 	        	} else {
-	        		returnFileList(userPath,pXNAME);
+	        		returnFileList(_userPath, _pXname);
 	        	}
-	        	
-	        } else if (pXNAME != null && pFILE != null) {
-	        	
+	        } else if (_hasPXname) {
 	        	if (isZIPRequest()) {
-	        		returnZippedFiles(userPath,pXNAME,pFILE);
+	        		returnZippedFiles(_userPath, _pXname, _pFile);
 	        	} else {
-	        		returnFile(userPath,pXNAME,pFILE);
+	        		returnFile(_userPath, _pXname, _pFile);
 	        	}
-	        	
 	        }
-        
 		} catch (Exception e) {
-			fail(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			logger.error("",e);
+			fail(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+			log.error("", e);
 		}
     }
 	
 	@Override
 	public void handleDelete() {
-		
 		try {
-			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
-	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
-	        String pFILE = (String)getParameter(getRequest(),"FILE");
-	        
-	        if (pXNAME == null && pFILE == null) {
-	        	
+			if (!_hasPXname && !_hasPFile) {
 	        	fail(Status.CLIENT_ERROR_BAD_REQUEST,"Invalid Operation.");
-	        	
-	        } else if (pXNAME != null && pFILE == null) {
-	        	
-	        	deleteUserResource(userPath,pXNAME);
-	        	
-	        } else if (pXNAME != null && pFILE != null) {
-	        	
-        		deleteUserFiles(userPath,pXNAME,pFILE);
-	        	
+			} else if (_hasPXname && !_hasPFile) {
+	        	deleteUserResource(_userPath, _pXname);
+			} else if (_hasPXname) {
+        		deleteUserFiles(_userPath, _pXname, _pFile);
 	        }
-        
 		} catch (Exception e) {
 			fail(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			logger.error("",e);
+			log.error("", e);
 		}
     }
 	
 	@Override
 	public void handlePost() {
-		
-		String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
-	    String pXNAME = (String)getParameter(getRequest(),"XNAME");
-	    String pFILE = (String)getParameter(getRequest(),"FILE");
-	        
-	    if (pXNAME == null && pFILE == null) {
-	     	
+		if (!_hasPXname && !_hasPFile) {
 	    	fail(Status.CLIENT_ERROR_BAD_REQUEST,"Invalid Operation.");
-	        	
-	    } else if (pXNAME != null && pFILE == null) {
-	        	
-	       	if (this.isQueryVariableTrue("inbody")) {
+		} else if (_hasPXname && !_hasPFile) {
+	       	if (isQueryVariableTrue("inbody")) {
 	       		fail(Status.CLIENT_ERROR_BAD_REQUEST,"Please use HTTP PUT request to specify a file name in the URL.");
-	       	} else  if (uploadUserFile(userPath,pXNAME)) {
+	       	} else if (uploadUserFile(_userPath, _pXname)) {
 	       		success(Status.SUCCESS_CREATED,"File(s) successfully uploaded");
 	       	} else {
 	       		fail(Status.SERVER_ERROR_INTERNAL,"Unable to complete upload.");
 	       	}
-	    } else if (pXNAME != null && pFILE != null) {
+		} else if (_hasPXname) {
 	    	fail(Status.CLIENT_ERROR_BAD_REQUEST,"Please use HTTP PUT request to specify a file name in the URL.");
 	    }
-        
-    }	
+    }
 	
-	public void fail(Status status, String msg){
-		this.getResponse().setStatus(status,msg);
-		
-		String _return =this.retrieveParam(_ON_FAILURE_RETURN_JS);
-		if(_return !=null){
-			getResponse().setEntity(new StringRepresentation("<script>"+_return + "</script>", MediaType.TEXT_HTML));
-		}else{
-			_return =this.retrieveParam(_ON_FAILURE_RETURN_HTML);
-			if(_return !=null){
-				getResponse().setEntity(new StringRepresentation(_return , MediaType.TEXT_HTML));
-			}
-		}
+	public void fail(final Status status, final String message){
+		setResponseAttributes(status, message, _ON_FAILURE_RETURN_JS, _ON_FAILURE_RETURN_HTML);
 	}
-	
+
 	public void success(Status status, String msg){
-		this.getResponse().setStatus(status,msg);
-		
-		String _return =this.retrieveParam(_ON_SUCCESS_RETURN_JS);
-		if(_return !=null){
-			getResponse().setEntity(new StringRepresentation("<script>"+_return + "</script>", MediaType.TEXT_HTML));
-		}else{
-			_return =this.retrieveParam(_ON_SUCCESS_RETURN_HTML);
-			if(_return !=null){
-				getResponse().setEntity(new StringRepresentation(_return , MediaType.TEXT_HTML));
-			}
-		}
+		setResponseAttributes(status, msg, _ON_SUCCESS_RETURN_JS, _ON_SUCCESS_RETURN_HTML);
 	}
 	
 	@Override
 	public void handlePut() {
-		
 		try {
-			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
-	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
-	        String pFILE = (String)getParameter(getRequest(),"FILE");
-	        
-	        if (pXNAME == null && pFILE == null) {
-	        	
+	        if (StringUtils.isAllBlank(_pXname, _pFile)) {
 	        	fail(Status.CLIENT_ERROR_BAD_REQUEST,"Invalid Operation.");
-	        	
-	        } else if (pXNAME != null && pFILE == null) {
-	        	
-	        	createUserResource(userPath,pXNAME);
-	        	
-	        } else if (pXNAME != null) {
+	        } else if (StringUtils.isNotBlank(_pXname) && StringUtils.isBlank(_pFile)) {
+	        	createUserResource(_userPath, _pXname);
+	        } else if (StringUtils.isNotBlank(_pXname)) {
 //	        	commenting this out because we currently need this feature.
 //	        	if (this.isQueryVariableTrue("extract")) {
 //	        		// PUT Specification wants to enable a GET request on the same URL.  Wouldn't want to put extracted files without the 
@@ -218,18 +162,29 @@ public class UserCacheResource extends SecureResource {
 //	        		fail(Status.CLIENT_ERROR_BAD_REQUEST,"File extraction not supported under HTTP PUT requests.");
 //	        		return;
 //	        	} 
-	        	uploadUserFile(userPath,pXNAME,pFILE);
-	        	
+	        	uploadUserFile(_userPath, _pXname, _pFile);
 	        }
-        
 		} catch (Exception e) {
 			fail(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			logger.error("",e);
+			log.error("", e);
 		}
     }
 
+	private void setResponseAttributes(final Status status, final String msg, final String returnJs, final String returnHtml) {
+		getResponse().setStatus(status, msg);
+
+		final String js = retrieveParam(returnJs);
+		if (StringUtils.isNotBlank(js)) {
+			getResponse().setEntity(new StringRepresentation("<script>" + js + "</script>", MediaType.TEXT_HTML));
+		} else {
+			final String html = retrieveParam(returnHtml);
+			if (StringUtils.isNotBlank(html)) {
+				getResponse().setEntity(new StringRepresentation(html, MediaType.TEXT_HTML));
+			}
+		}
+	}
+
 	private void returnXnameList(String userPath) {
-	
         File[] fileArray = new File(userPath).listFiles();
         ArrayList<String> columns= new ArrayList<>();
         columns.add("Resource");
@@ -249,28 +204,21 @@ public class UserCacheResource extends SecureResource {
 	}
 	
 	// TODO - Make recursive list optional?
-	@SuppressWarnings("unchecked")
 	private void returnFileList(String userPath,String pXNAME) {
 		
 		File dir = new File (userPath,pXNAME);
 		
 		if (dir.exists() && dir.isDirectory()) {
-			
-			ArrayList<File> fileList = new ArrayList<>();
-			fileList.addAll(FileUtils.listFiles(dir,null,true));
+
+			final List<File> fileList = new ArrayList<>(FileUtils.listFiles(dir, null, true));
 			//Implement a sorting comparator on file list: Unnecessary, it is sorted by the representTable method.
-	        ArrayList<String> columns= new ArrayList<>();
-	        columns.add("Name");
-	        columns.add("Size");
-	        columns.add("URI");
-	        
+
 	        XFTTable table=new XFTTable();
-	        table.initTable(columns);
+	        table.initTable(COLUMNS);
 
 			for (final File file : fileList) {
 	        	String path=constructPath(file);
-	        	Object[] oarray = new Object[] { path.substring(1), file.length(), constructURI(path) };
-	        	table.insertRow(oarray);
+	        	table.insertRow(new Object[] { path.substring(1), file.length(), constructURI(path) });
 	        }
 		
 	        sendTableRepresentation(table,true);
@@ -303,7 +251,7 @@ public class UserCacheResource extends SecureResource {
 				this.getResponse().setStatus(Status.SUCCESS_OK);
 			} catch (IOException e) {
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-				logger.error("",e);
+				log.error("", e);
 			}
 	        
 		} else {
@@ -407,15 +355,15 @@ public class UserCacheResource extends SecureResource {
 		
 		
 		if(this.isQueryVariableTrue("inbody")){
-			return handleInbodyUserFileUpload(userPath,dirString,fileName);
+			return handleInbodyUserFileUpload(dirString, fileName);
 		} else {
-			return handleAttachedUserFileUpload(userPath,dirString,fileName);
+			return handleAttachedUserFileUpload(dirString, fileName);
 		}
 		
 	}
 	
 	
-	private boolean handleInbodyUserFileUpload(String userPath, String dirString, String fileName) {
+	private boolean handleInbodyUserFileUpload(String dirString, String fileName) {
 		
 		try {
 			
@@ -436,14 +384,12 @@ public class UserCacheResource extends SecureResource {
 			
 		} catch (Exception e) {
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			logger.error("",e);
+			log.error("", e);
 			return false;
 		}
 		
 	}
-	
-	private Map<String,String> bodyParams=Maps.newHashMap();
-	
+
 	private String retrieveParam(String key){
 		String param=this.getQueryVariable(key);
 		if(param==null){
@@ -457,7 +403,7 @@ public class UserCacheResource extends SecureResource {
 	
 
 	@SuppressWarnings("deprecation")
-	private boolean handleAttachedUserFileUpload(String userPath, String dirString, String requestedName) {
+	private boolean handleAttachedUserFileUpload(String dirString, String requestedName) {
 		
 		org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
 		org.restlet.ext.fileupload.RestletFileUpload upload = new  org.restlet.ext.fileupload.RestletFileUpload(factory);
@@ -503,15 +449,15 @@ public class UserCacheResource extends SecureResource {
 	    
 		} catch (Exception e) {
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			logger.error("",e);
+			log.error("", e);
 			return false;
 		}
 		
 	}
 
-	private boolean extractCompressedFile(InputStream is,String dirString,String fileName,CompressionMethod method) throws IOException {
+	private boolean extractCompressedFile(InputStream is,String dirString,String fileName,CompressionMethod method) {
 	
-       ZipI zipper = null;
+       final ZipI zipper;
        if (method == CompressionMethod.TAR) {
            zipper = new TarUtils();
        } else if (method == CompressionMethod.GZ) {
@@ -536,14 +482,13 @@ public class UserCacheResource extends SecureResource {
 	private CompressionMethod getCompressionMethod(String fileName) {
 		
 		// Assume file name represents correct compression method
-        String file_extension = null;
-        if (fileName.indexOf(".")!=-1) {
-        	file_extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-        	if (Arrays.asList(XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()).contains(file_extension)) {
+        if (fileName.contains(".")) {
+			final String extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+        	if (Arrays.asList(XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()).contains(extension)) {
 	        	return CompressionMethod.ZIP;
-	        } else if (file_extension.equalsIgnoreCase(".tar")) {
+	        } else if (extension.equalsIgnoreCase(".tar")) {
 	        	return CompressionMethod.TAR;
-	        } else if (file_extension.equalsIgnoreCase(".gz")) {
+	        } else if (extension.equalsIgnoreCase(".gz")) {
 	        	return CompressionMethod.GZ;
 	        }
         }
@@ -551,15 +496,15 @@ public class UserCacheResource extends SecureResource {
         
 	}
 
-	private void sendTableRepresentation(XFTTable table,boolean containsURI) {
+	private void sendTableRepresentation(XFTTable table, final boolean containsURI) {
         
 		MediaType mt = overrideVariant(this.getPreferredVariant());
-		Hashtable<String, Object> params = new Hashtable<String, Object>();
+		Hashtable<String, Object> params = new Hashtable<>();
 		if (table != null) {
 			params.put("totalRecords", table.size());
 		}
 		
-		Map<String,Map<String,String>> cp = new Hashtable<String,Map<String,String>>();
+		Map<String,Map<String,String>> cp = new Hashtable<>();
 		if (containsURI) {
 			cp.put("URI", new Hashtable<String,String>());
 			String rootPath = this.getRequest().getRootRef().getPath();
@@ -634,14 +579,14 @@ public class UserCacheResource extends SecureResource {
     }
     
     public static String constructPath(File f){
+
     	String filePart = f.getAbsolutePath().replace(ArcSpecManager.GetInstance().getGlobalCachePath(),"");
     	filePart = filePart.replaceFirst("^[^\\\\/]+[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+","");
     	return filePart;
     }
 	
-	@SuppressWarnings("unchecked")
 	private void returnZippedFiles(String userPath, String pXNAME, String pFILE) throws ActionException {
-		ArrayList<File> fileList=new ArrayList<File>();
+		ArrayList<File> fileList= new ArrayList<>();
 		String zipFileName; 
 		String fileString = pFILE + getRequest().getResourceRef().getRemainingPart().replaceFirst("\\?.*$", "");
 		
@@ -673,13 +618,11 @@ public class UserCacheResource extends SecureResource {
 		
 	}
 
-	@SuppressWarnings("unchecked")
 	private void returnZippedFiles(String userPath, String pXNAME) throws ActionException {
 		
 		File dir = new File (userPath,pXNAME);
 		if (dir.exists() && dir.isDirectory()) {
-			ArrayList<File> fileList = new ArrayList<File>();
-			fileList.addAll(FileUtils.listFiles(dir,null,true));
+			ArrayList<File> fileList = new ArrayList<>(FileUtils.listFiles(dir,null,true));
 			sendZippedFiles(userPath,pXNAME,pXNAME,fileList);
 		} else {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"User directory not found or is not a directory.");
@@ -687,7 +630,7 @@ public class UserCacheResource extends SecureResource {
 		
 	}
 	
-	private void sendZippedFiles(String userPath,String pXNAME,String fileName,ArrayList<File> fileList) throws ActionException {
+	private void sendZippedFiles(String userPath,String pXNAME,String fileName,List<File> fileList) throws ActionException {
 		
 		ZipRepresentation zRep;
 		if(getRequestedMediaType()!=null && getRequestedMediaType().equals(MediaType.APPLICATION_GNU_TAR)){
@@ -704,5 +647,17 @@ public class UserCacheResource extends SecureResource {
 		this.getResponse().setEntity(zRep);
 		
 	}
-	
+
+	private static final ArrayList<String> COLUMNS = new ArrayList<>(Arrays.asList("Name", "Size", "URI"));
+
+	private Map<String,String> bodyParams = new HashMap<>();
+
+	private final UserDataCache _userDataCache;
+	private final Path          _globalCachePath;
+	private final String        _userPath;
+	private final String        _pXname;
+	private final String        _pFile;
+	private final boolean _hasPXname;
+	private final boolean _hasPFile;
+
 }

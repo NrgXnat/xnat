@@ -15,18 +15,17 @@ import org.nrg.framework.status.StatusProducer;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
-@SuppressWarnings("rawtypes")
 public class ListenerUtils {
+    public static <T extends StatusProducer & Callable> T addListeners(final StatusProducer producer, final T destination) {
+        return producer != null ? addListeners(producer.getListeners(), destination) : destination;
+    }
 
-	
-	public static <T extends StatusProducer & Callable> T addListeners(StatusProducer src, T dest){
-		return addListeners(src.getListeners(),dest);
-	}
-	
-	public static <T extends StatusProducer & Callable> T addListeners(Collection<StatusListenerI> src, T dest){
-		for(final StatusListenerI listener: src){
-			dest.addStatusListener(listener);
-		}
-		return dest;
-	}
+    public static <T extends StatusProducer & Callable> T addListeners(final Collection<StatusListenerI> listeners, final T destination) {
+        if (listeners != null) {
+            for (final StatusListenerI listener : listeners) {
+                destination.addStatusListener(listener);
+            }
+        }
+        return destination;
+    }
 }

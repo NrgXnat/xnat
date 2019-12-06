@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+
 public enum DatabaseSession {
 	// a project column is allowed to hold a null value to indicate
 	// an unassigned project.
@@ -33,7 +35,7 @@ public enum DatabaseSession {
 		}
 		@Override
 		public String searchSql (Object o) {
-			if (null == o|| ((String)o).equals(PrearcUtils.COMMON)) {
+			if (null == o|| o.equals(UNASSIGNED)) {
 				return this.nullSql();
 			}
 			else {
@@ -242,7 +244,7 @@ public enum DatabaseSession {
 		PROJECTNAME () {
 			@Override
 			public void setInsertStatement(int columnIndex, PreparedStatement s, Object o) throws SQLException {
-				if (((String) o).equals(PrearcUtils.COMMON)) {
+				if (((String) o).equals(UNASSIGNED)) {
 					ColType.VARCHAR.setInsertStatement(columnIndex, s, null);	
 				}
 				else {
@@ -255,7 +257,7 @@ public enum DatabaseSession {
 			public <T extends Object> T getFromResult(int columnIndex, ResultSet r) throws SQLException {
 				Object res = ColType.VARCHAR.getFromResult(columnIndex, r);
 				if (null == res) {
-					return (T) PrearcUtils.COMMON;
+					return (T) UNASSIGNED;
 				}
 				else {
 					return (T) res;

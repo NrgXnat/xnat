@@ -25,7 +25,7 @@ import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.ProjectId;
+import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
@@ -67,7 +67,7 @@ import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
-@Api(description = "XNAT Archive and Resource Management API")
+@Api("XNAT Archive and Resource Management API")
 @XapiRestController
 @RequestMapping(value = "/archive")
 @Slf4j
@@ -123,7 +123,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+    public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
         validateResourceRequest(user, resources);
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, false).get("id"), HttpStatus.OK);
@@ -144,7 +144,7 @@ public class CatalogApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "downloadwithsize", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public ResponseEntity<Map<String,String>> createDownloadSessionsCatalogWithSize(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+    public ResponseEntity<Map<String,String>> createDownloadSessionsCatalogWithSize(@ApiParam("The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
         validateResourceRequest(user, resources);
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources, true), HttpStatus.OK);
@@ -185,7 +185,7 @@ public class CatalogApi extends AbstractXapiRestController {
         try {
             final UserI user = getSessionUser();
 
-            log.info("User {} requested download catalog: {}", catalogId);
+            log.info("User {} requested download catalog: {}", user.getUsername(), catalogId);
             final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
             if (catalog == null) {
                 throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
@@ -312,7 +312,7 @@ public class CatalogApi extends AbstractXapiRestController {
         }
     }
 
-    private void validateResourceRequest(final UserI user, @ProjectId @RequestBody @ApiParam("The resources to be cataloged.") final Map<String, List<String>> resources) throws NoContentException {
+    private void validateResourceRequest(final UserI user, @Project @RequestBody @ApiParam("The resources to be cataloged.") final Map<String, List<String>> resources) throws NoContentException {
         final boolean hasProjectId  = resources.containsKey("projectId");
         final boolean hasProjectIds = resources.containsKey("projectIds");
         if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {

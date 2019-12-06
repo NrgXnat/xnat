@@ -16,11 +16,13 @@ import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -53,17 +55,22 @@ public class AutomatedScriptRequestListener {
      * On request.
      *
      * @param request the request
+     *
      * @throws Exception the exception
      */
     public void onRequest(final AutomatedScriptRequest request) throws Exception {
-        final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
+        final UserI user = Users.getUser(request.getUsername());
+
+        final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(user, request.getScriptWorkflowId());
+        assert workflow != null;
         workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
         WorkflowUtils.save(workflow, workflow.buildEvent());
-        final AutomationCompletionEventI automationCompletionEvent = request.getAutomationCompletionEvent();
-        final AutomationEventImplementerI automationEvent = request.getAutomationEvent();
+
+        final AutomationCompletionEventI  automationCompletionEvent = request.getAutomationCompletionEvent();
+        final AutomationEventImplementerI automationEvent           = request.getAutomationEvent();
 
         final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("user", request.getUser());
+        parameters.put("user", user);
         parameters.put("scriptId", request.getScriptId());
         parameters.put("event", request.getEvent());
         parameters.put("srcEventId", request.getSrcEventId());
@@ -71,15 +78,15 @@ public class AutomatedScriptRequestListener {
         parameters.put("srcEventClass", srcEventClass);
         // For backwards compatibility
         if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent) {
-        	final WorkflowStatusEvent wfse = (WorkflowStatusEvent) automationEvent;
-        	if (wfse!=null && wfse.getWorkflow()!=null) {
-        		parameters.put("srcWorkflowId", wfse.getWorkflow().getWorkflowId());
-        	} 
+            final WorkflowStatusEvent workflowStatusEvent = (WorkflowStatusEvent) automationEvent;
+            if (workflowStatusEvent.getWorkflow() != null) {
+                parameters.put("srcWorkflowId", workflowStatusEvent.getWorkflow().getWorkflowId());
+            }
         } else if (srcEventClass.contains("WrkWorkflowdata")) {
-        	parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
+            parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
         }
-        if (parameters.get("srcWorkflowId")==null) {
-        	parameters.put("srcWorkflowId", null);
+        if (parameters.get("srcWorkflowId") == null) {
+            parameters.put("srcWorkflowId", null);
         }
         parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
         parameters.put("dataType", request.getDataType());
@@ -101,16 +108,16 @@ public class AutomatedScriptRequestListener {
             }
         } catch (NrgServiceException e) {
             final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
-                    request.getScriptId(),
-                    request.getUser().getLogin(),
-                    request.getEvent(),
-                    request.getDataType(),
-                    request.getDataId(),
-                    request.getExternalId());
-            if (scriptOut==null) {
-            	scriptOut = new ScriptOutput();
-            	scriptOut.setStatus(Status.ERROR);
-            	scriptOut.setOutput(message);
+                                                 request.getScriptId(),
+                                                 request.getUsername(),
+                                                 request.getEvent(),
+                                                 request.getDataType(),
+                                                 request.getDataId(),
+                                                 request.getExternalId());
+            if (scriptOut == null) {
+                scriptOut = new ScriptOutput();
+                scriptOut.setStatus(Status.ERROR);
+                scriptOut.setOutput(message);
             }
             AdminUtils.sendAdminEmail("Script execution failure", message);
             log.error(message, e);
@@ -124,21 +131,22 @@ public class AutomatedScriptRequestListener {
                 _eventService.triggerEvent(automationCompletionEvent);
                 final List<String> notifyList = automationCompletionEvent.getNotificationList();
                 if (notifyList != null && !notifyList.isEmpty()) {
-                	final String scriptOutStr = 
-                 	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
-                   			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
-                   				"<h3>No output was returned from the script run</h3>";	
+                    final String scriptOutStr =
+                            (automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
+                            scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
+                            "<h3>No output was returned from the script run</h3>";
                     final String EMAIL_SUBJECT = "Automation Results (" + request.getScriptId() + ")";
                     AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutStr, false, notifyList.toArray(new String[0]));
                 }
             }
         }
     }
-    
+
     /**
      * Script output to html string.
      *
      * @param scriptOutputs the script outputs
+     *
      * @return the string
      */
     private String scriptOutputToHtmlString(List<ScriptOutput> scriptOutputs) {
@@ -148,11 +156,11 @@ public class AutomatedScriptRequestListener {
         StringBuilder sb = new StringBuilder();
         for (ScriptOutput scriptOut : scriptOutputs) {
             sb.append("<br><b>SCRIPT EXECUTION RESULTS</b><br>");
-			// NOTE:  Lets not report success status, because we really only know failures.  The script itself 
-			// may report errors, so let's let the script do status reporting when it seems to have executed successfully.
-			if (!scriptOut.getStatus().equals(Status.SUCCESS)) {
-				sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
-			}
+            // NOTE:  Lets not report success status, because we really only know failures.  The script itself
+            // may report errors, so let's let the script do status reporting when it seems to have executed successfully.
+            if (!scriptOut.getStatus().equals(Status.SUCCESS)) {
+                sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
+            }
             if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null && scriptOut.getResults().toString().length() > 0) {
                 sb.append("<br><b>SCRIPT RESULTS</b><br>");
                 sb.append(scriptOut.getResults().toString().replace("\n", "<br>"));
@@ -169,9 +177,13 @@ public class AutomatedScriptRequestListener {
         return sb.toString();
     }
 
-    /** The _service. */
+    /**
+     * The _service.
+     */
     private ScriptRunnerService _service;
-	
-    /** The _event service. */
-	private DataTypeAwareEventService _eventService;
+
+    /**
+     * The _event service.
+     */
+    private DataTypeAwareEventService _eventService;
 }

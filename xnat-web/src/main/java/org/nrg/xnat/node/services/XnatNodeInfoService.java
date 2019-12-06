@@ -12,6 +12,8 @@ package org.nrg.xnat.node.services;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 
+import java.util.List;
+
 /**
  * The Interface XnatNodeInfoService.
  */
@@ -31,7 +33,15 @@ public interface XnatNodeInfoService extends BaseHibernateService<XnatNodeInfo> 
 	 * Record node shutdown.
 	 */
 	void recordNodeShutdown();
-	
+
+	/**
+	 * Gets the xnat node info list by node id.
+	 *
+	 * @param nodeId the node id
+	 * @return the xnat node info list by node id
+	 */
+	List<XnatNodeInfo> getXnatNodeInfoByNodeId(final String nodeId);
+
 	/**
 	 * Gets the xnat node info by node id and hostname.
 	 *

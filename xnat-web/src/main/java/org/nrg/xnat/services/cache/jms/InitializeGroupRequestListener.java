@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
 
@@ -105,6 +106,7 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
      * @return The completion time/date.
      */
     @Override
+    @Nullable
     public Date getCompleted() {
         return _completed == null ? null : new Date(_completed.getTime());
     }

@@ -6,6 +6,7 @@ import org.nrg.dcm.Extractor;
 import org.nrg.framework.utilities.SortedSets;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -16,6 +17,11 @@ import java.util.SortedSet;
  * Returns the next available session label for the given project, subject, and DICOM modality.
  */
 public class NextAvailableSessionLabelExtractor implements IdentifierReferencingExtractor, SubjectReferencingExtractor {
+    @SuppressWarnings("unused")
+    public NextAvailableSessionLabelExtractor(final JdbcTemplate template) {
+        _template = new NamedParameterJdbcTemplate(template);
+    }
+
     public NextAvailableSessionLabelExtractor(final NamedParameterJdbcTemplate template) {
         _template = template;
     }

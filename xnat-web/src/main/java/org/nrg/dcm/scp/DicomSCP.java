@@ -1,10 +1,11 @@
 package org.nrg.dcm.scp;
 
-import com.google.common.base.Joiner;
+import com.google.common.base.Function;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.net.Device;
 import org.dcm4che2.net.NetworkApplicationEntity;
@@ -15,8 +16,6 @@ import org.dcm4che2.net.service.VerificationService;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.xnat.utils.NetUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -24,6 +23,7 @@ import java.util.concurrent.Executor;
 
 import static org.dcm4che2.data.UID.*;
 
+@Slf4j
 public class DicomSCP {
     private DicomSCP(final Executor executor, final Device device, final int port, final DicomSCPManager manager) {
         _executor = executor;
@@ -72,32 +72,39 @@ public class DicomSCP {
 
     public List<String> start() throws DicomNetworkException, UnknownDicomHelperInstanceException {
         if (isStarted()) {
-            logger.info("The DICOM SCP on port {} has already started its configured receivers.", _port);
+            log.info("The DICOM SCP on port {} has already started its configured receivers.", _port);
             return Collections.emptyList();
         }
 
-        if (!NetUtils.isPortAvailable(_device.getNetworkConnection()[0].getPort())) {
-            logger.error("DICOM SCP port {} is in use; starting with the DICOM receiver disabled. The following AEs will be unavailable on this port: {}", _port, Joiner.on(", ").join(getAeTitles()));
+        log.debug("Trying to start DICOM SCP receiver(s) on port {}", _port, new Exception());
+
+        final int port = _device.getNetworkConnection()[0].getPort();
+        if (port != _port) {
+            log.error("The port configured for this DICOM SCP receiver on creation is {}, but the port I found in the configured network connection is {}. That's not right, so things may get weird around here.", _port, port);
+        }
+
+        if (!NetUtils.isPortAvailable(port, 3, 2)) {
+            log.error("Unable to access DICOM SCP port {}. The port may be already in use, but I can't tell from the information I have now. Starting with the DICOM receiver disabled. The following AEs will be unavailable on this port: {}", _port, StringUtils.join(extractAeTitles(), ", "));
             return Collections.emptyList();
         }
 
         final List<DicomSCPInstance> instances = _manager.getEnabledDicomSCPInstancesByPort(_port);
 
         if (instances.size() == 0) {
-            logger.warn("No enabled DICOM SCP instances found for port {}, nothing to start", _port);
+            log.warn("No enabled DICOM SCP instances found for port {}, nothing to start", _port);
             return Collections.emptyList();
         }
 
-        logger.info("Starting DICOM SCP on {}:{}, found {} enabled DICOM SCP instances for this port", _device.getNetworkConnection()[0].getHostname(), _device.getNetworkConnection()[0].getPort(), instances.size());
+        log.info("Starting DICOM SCP on {}:{}, found {} enabled DICOM SCP instances for this port", _device.getNetworkConnection()[0].getHostname(), port, instances.size());
 
         for (final DicomSCPInstance instance : instances) {
             addApplicationEntity(instance);
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Application Entities: ");
+        if (log.isDebugEnabled()) {
+            log.debug("Application Entities: ");
             for (final NetworkApplicationEntity ae : _dicomServicesByApplicationEntity.keySet()) {
-                logger.debug("{}: {}", ae.getAETitle(), _dicomServicesByApplicationEntity.get(ae));
+                log.debug("{}: {}", ae.getAETitle(), _dicomServicesByApplicationEntity.get(ae));
             }
         }
 
@@ -105,26 +112,26 @@ public class DicomSCP {
 
         final List<String> aeTitles = new ArrayList<>();
         for (final NetworkApplicationEntity applicationEntity : _dicomServicesByApplicationEntity.keySet()) {
-            logger.trace("Setting up AE {}", applicationEntity.getAETitle());
+            log.trace("Setting up AE {}", applicationEntity.getAETitle());
             applicationEntity.register(cEcho);
 
             final List<TransferCapability> transferCapabilities = Lists.newArrayList();
             transferCapabilities.add(new TransferCapability(VerificationSOPClass, VERIFICATION_SOP_TS, TransferCapability.SCP));
 
             for (final DicomService service : _dicomServicesByApplicationEntity.get(applicationEntity)) {
-                logger.trace("adding {}", service);
+                log.trace("adding {}", service);
                 applicationEntity.register(service);
                 for (final String sopClass : service.getSopClasses()) {
                     transferCapabilities.add(new TransferCapability(sopClass, TSUIDS, TransferCapability.SCP));
                 }
             }
 
-            applicationEntity.setTransferCapability(transferCapabilities.toArray(new TransferCapability[transferCapabilities.size()]));
+            applicationEntity.setTransferCapability(transferCapabilities.toArray(new TransferCapability[0]));
             aeTitles.add(applicationEntity.getAETitle() + ":" + _port);
         }
 
         final Set<NetworkApplicationEntity> applicationEntities = _dicomServicesByApplicationEntity.keySet();
-        _device.setNetworkApplicationEntity(applicationEntities.toArray(new NetworkApplicationEntity[applicationEntities.size()]));
+        _device.setNetworkApplicationEntity(applicationEntities.toArray(new NetworkApplicationEntity[0]));
         try {
             _device.startListening(_executor);
         } catch (IOException e) {
@@ -137,7 +144,7 @@ public class DicomSCP {
     }
 
     public List<String> stop() {
-        logger.info("stopping DICOM SCP");
+        log.info("Stopping DICOM SCP");
         if (!isStarted()) {
             return Collections.emptyList();
         }
@@ -174,6 +181,15 @@ public class DicomSCP {
             builder.append(":").append(_port);
         }
         return builder.append("}").toString();
+    }
+
+    private List<String> extractAeTitles() {
+        return Lists.transform(_manager.getEnabledDicomSCPInstancesByPort(_port), new Function<DicomSCPInstance, String>() {
+            @Override
+            public String apply(final DicomSCPInstance instance) {
+                return instance.getAeTitle();
+            }
+        });
     }
 
     private void setStarted(boolean started) {
@@ -218,14 +234,12 @@ public class DicomSCP {
     // can be received but will give the XNAT processing pipeline fits
     // (e.g., anything compressed).
     private static final String[] TSUIDS = {ExplicitVRLittleEndian,
-            ExplicitVRBigEndian, ImplicitVRLittleEndian, JPEGBaseline1,
-            JPEGExtended24, JPEGLosslessNonHierarchical14, JPEGLossless,
-            JPEGLSLossless, JPEGLSLossyNearLossless, JPEG2000LosslessOnly,
-            JPEG2000, JPEG2000Part2MultiComponentLosslessOnly,
-            JPEG2000Part2MultiComponent, JPIPReferenced, JPIPReferencedDeflate,
-            MPEG2, RLELossless, RFC2557MIMEEncapsulation, XMLEncoding};
-
-    private static final Logger logger = LoggerFactory.getLogger(DicomSCP.class);
+                                            ExplicitVRBigEndian, ImplicitVRLittleEndian, JPEGBaseline1,
+                                            JPEGExtended24, JPEGLosslessNonHierarchical14, JPEGLossless,
+                                            JPEGLSLossless, JPEGLSLossyNearLossless, JPEG2000LosslessOnly,
+                                            JPEG2000, JPEG2000Part2MultiComponentLosslessOnly,
+                                            JPEG2000Part2MultiComponent, JPIPReferenced, JPIPReferencedDeflate,
+                                            MPEG2, RLELossless, RFC2557MIMEEncapsulation, XMLEncoding};
 
     private boolean _started;
 

@@ -20,7 +20,7 @@ public class PGSQLMapping extends TypeMappingA {
 		mapping.put("boolean","INTEGER");
 		mapping.put("float","FLOAT");
 		mapping.put("double","FLOAT");
-		mapping.put("decimal","DECIMAL");
+		mapping.put("decimal","NUMERIC");
 		mapping.put("integer","INTEGER");
 		mapping.put("nonPositiveInteger","INTEGER");
 		mapping.put("negativeInteger","INTEGER");

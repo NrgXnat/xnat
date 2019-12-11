@@ -7,8 +7,7 @@
         <li class="yuimenuitem">
             <a id="uploadImages" data-project="$project.getId()">Upload Images</a>
         </li>
-        <script type="text/javascript" src="$content.getURI("scripts/uploaders/projectImageUploader.js")"></script>
-        <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>
         <link type="text/css" rel="stylesheet" href="$content.getURI("style/uploaders/fileuploader.css")">

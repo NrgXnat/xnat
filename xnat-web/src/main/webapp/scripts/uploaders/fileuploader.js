@@ -77,7 +77,10 @@ abu.FileUploader = function(o){
 					'</div>' +
 				'</div>' +
 			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
-				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input btn">' +
+				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input btn" ' +
+					((this._options.acceptFilePattern) ? 'accept="' + this._options.acceptFilePattern + '"'
+						: ''
+					) + '>' +
 			'</div>' +
 			'<div class="abu-list-area"><ul class="abu-upload-list"></ul>' +
 				'<div class="response_text" style="display:none"></div>' +

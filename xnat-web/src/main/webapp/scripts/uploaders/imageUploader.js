@@ -13,16 +13,20 @@ var XNAT = getObject(XNAT);
 }(function(){
     // NOTE: fileuploader.js expects the id variable below to be xmodal-abu,
     // but I don't want to use that bc I want to do my own button handling
-    var uploadName = 'upload' + getDateBasedId(),
+    var uploadName,
         fNameReplace = 'XNAME',
-        usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace,
-        uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##'),
+        usrResPath,
+        uploaderUrl,
         archiverUrl = XNAT.url.csrfUrl('/data/services/import'),
         id = 'projuploader-modal',
         abuId = 'projuploader-modal-abu',
         interval;
 
-    function openUploadModal(project) {
+    function openUploadModal(project, overwrite) {
+        uploadName = 'upload' + getDateBasedId();
+        usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
+        uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
+
         xmodal.open({
             id: id,
             kind: 'dialog',
@@ -43,7 +47,7 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function() {
-                        submitForArchival(project);
+                        submitForArchival(project, overwrite);
                     }
                 },
                 done: {
@@ -113,7 +117,8 @@ var XNAT = getObject(XNAT);
             showCloseOption: false,
             showExtractOption: false,
             showVerboseOption: false,
-            showUpdateOption: false
+            showUpdateOption: false,
+            acceptFilePattern: 'application/zip, application/x-gzip, application/x-tgz'
         });
 
         abu._fileUploader.buildUploaderDiv();
@@ -133,11 +138,7 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function getDateBasedId() {
-        return (new Date()).toISOString().replace(/[^\w]/gi,'');
-    }
-
-    function submitForArchival(project) {
+    function submitForArchival(project, overwrite) {
         $('#file-upload-input').prop('disabled', true).addClass('disabled');
         $('#' + id + '-process-button').prop('disabled', true);
         var $statusDiv = $('#' + abuId + ' .abu-status');
@@ -155,7 +156,7 @@ var XNAT = getObject(XNAT);
             if (!interval) {
                 XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
                 interval = window.setInterval(function() {
-                    submitForArchival(project);
+                    submitForArchival(project, overwrite);
                 }, 2000);
             }
             return;
@@ -185,6 +186,9 @@ var XNAT = getObject(XNAT);
                 formDataArchive.append("http-session-listener", uploadId);
                 formDataArchive.append("project", project);
                 formDataArchive.append("prearchive_code", "0");
+                if (overwrite) {
+                    formDataArchive.append("overwrite", overwrite);
+                }
 
                 $.ajax({
                     method: 'POST',
@@ -215,7 +219,11 @@ var XNAT = getObject(XNAT);
         });
     }
 
+    function getDateBasedId() {
+        return (new Date()).toISOString().replace(/[^\w]/gi,'');
+    }
+
     $(document).on('click', 'a#uploadImages', function() {
-        openUploadModal($(this).data('project'));
+        openUploadModal($(this).data('project'), $(this).data('overwrite'));
     });
 }));

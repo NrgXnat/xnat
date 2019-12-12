@@ -95,10 +95,9 @@ var XNAT = getObject(XNAT);
 
     activityTab.close = function(idx) {
         activityTab.stop();
+        $('#activity-tab #idx' + idx).remove();
         if (noOtherActivities()) {
-            $('#activity-tab').remove();
-        } else {
-            $('#activity-tab #idx' + idx).remove();
+            $('#activity-tab').css('visibility', 'hidden');
         }
     };
 

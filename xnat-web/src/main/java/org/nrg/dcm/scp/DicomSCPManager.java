@@ -231,10 +231,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         final int instanceId = instance.getId();
         log.debug("Saving DicomScpInstance {}: {}", instanceId, instance);
 
-        final Optional<DicomSCPInstance> optional = getOptionalDicomSCPInstance(instanceId);
+        final Optional<DicomSCPInstance> optional      = getOptionalDicomSCPInstance(instanceId);
+        final boolean                    isNewInstance = !optional.isPresent();
+        final DicomSCPInstance           existing      = optional.orNull();
 
         // If existing and submitted are the same, then no change.
-        if (optional.isPresent() && optional.get().equals(instance)) {
+        if (!isNewInstance && existing.equals(instance)) {
             log.trace("No change found for existing DicomSCPInstance {}, just returning", instanceId);
             return instance;
         }
@@ -252,7 +254,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
 
         final DicomSCPInstance persisted = cacheInstance(instance);
-        log.debug("{} DicomSCPInstance {}: {}", instanceId == 0 ? "Saved new" : "Updated existing", persisted.getId(), persisted);
+        log.debug("{} DicomSCPInstance {}: {}", isNewInstance ? "Saved new" : "Updated existing", persisted.getId(), persisted);
 
         try {
             set(new JSONObject(persisted.toMap()).toString(), "dicomSCPInstances:" + persisted.getId());
@@ -260,8 +262,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             log.error("Invalid preference name '{}': something is very wrong here.", PREF_ID, invalidPreferenceName);
         }
 
-        log.debug("DicomSCPInstance {} was modified, cycling port {}", persisted.getId(), persisted.getPort());
-        cycleDicomSCPPorts(Collections.singleton(persisted.getPort()));
+        if (isNewInstance && !instance.isEnabled()) {
+            log.debug("Created new DicomSCPInstance {}, but it's not enabled, so I'm not cycling its port {}", persisted.getId(), persisted.getPort());
+        } else {
+            log.debug("{} DicomSCPInstance {}, cycling port {}", isNewInstance ? "Created" : "Modified", persisted.getId(), persisted.getPort());
+            cycleDicomSCPPorts(Collections.singleton(persisted.getPort()));
+        }
 
         return persisted;
     }
@@ -522,8 +528,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         } catch (DICOMReceiverWithDuplicatePropertiesException e) {
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.
             return instance;
-        } finally {
-            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
         }
     }
 

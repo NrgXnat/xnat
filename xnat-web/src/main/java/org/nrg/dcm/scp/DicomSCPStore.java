@@ -72,8 +72,9 @@ public class DicomSCPStore {
             log.debug("Found {} DICOM SCPs without enabled DICOM SCP instances, stopping on ports: {}", disabled.size(), disabled);
             results.addAll(stop(disabled));
         }
-        log.debug("Got request to cycle {} updated DICOM SCPs, stopping on ports: {}", updated.size(), updated);
-        results.addAll(start(updated));
+        final Set<Integer> modified = Sets.difference(updated, disabled);
+        log.debug("Got request to cycle {} updated DICOM SCPs, cycling ports: {}", modified.size(), modified);
+        results.addAll(start(modified));
         return results;
     }
 

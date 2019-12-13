@@ -20,6 +20,7 @@ import static org.dcm4che2.data.UID.RFC2557MIMEEncapsulation;
 import static org.dcm4che2.data.UID.RLELossless;
 import static org.dcm4che2.data.UID.VerificationSOPClass;
 import static org.dcm4che2.data.UID.XMLEncoding;
+import static org.nrg.dcm.scp.DicomSCPInstance.formatDicomSCPInstanceKey;
 
 import com.google.common.base.Function;
 import com.google.common.collect.LinkedHashMultimap;
@@ -27,6 +28,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,7 +102,7 @@ public class DicomSCP {
             return Collections.emptyList();
         }
 
-        log.debug("Trying to start DICOM SCP receiver(s) on port {}", _port, new Exception());
+        log.debug("Trying to start DICOM SCP receiver(s) on port {}", _port);
 
         final int port = _device.getNetworkConnection()[0].getPort();
         if (port != _port) {
@@ -118,9 +121,15 @@ public class DicomSCP {
             return Collections.emptyList();
         }
 
-        log.info("Starting DICOM SCP on {}:{}, found {} enabled DICOM SCP instances for this port", _device.getNetworkConnection()[0].getHostname(), port, instances.size());
+        try {
+            final InetAddress localHost = InetAddress.getLocalHost();
+            log.info("Starting DICOM SCP on {}{}:{}, found {} enabled DICOM SCP instances for this port", StringUtils.defaultIfBlank(_device.getNetworkConnection()[0].getHostname(), localHost.getHostName()), InetAddress.getByAddress(localHost.getAddress()).toString(), port, instances.size());
+        } catch (UnknownHostException e) {
+            log.warn("Got an error retrieving localhost via InetAddress.getLocalhost()", e);
+        }
 
         for (final DicomSCPInstance instance : instances) {
+            log.debug("Adding DICOM SCP instance {}: {}", instance.getId(), instance);
             addApplicationEntity(instance);
         }
 
@@ -161,12 +170,7 @@ public class DicomSCP {
 
         setStarted(true);
 
-        return Lists.transform(getAeTitles(), new Function<String, String>() {
-            @Override
-            public String apply(final String aeTitle) {
-                return aeTitle + ":" + port;
-            }
-        });
+        return getAeTitles();
     }
 
     public List<String> stop() {
@@ -184,7 +188,7 @@ public class DicomSCP {
             }
             applicationEntity.setTransferCapability(new TransferCapability[0]);
             final String aeTitle = applicationEntity.getAETitle();
-            aeTitles.add(aeTitle + ":" + _port);
+            aeTitles.add(formatDicomSCPInstanceKey(aeTitle, + _port));
             _applicationEntities.remove(aeTitle);
         }
         _dicomServicesByApplicationEntity.clear();

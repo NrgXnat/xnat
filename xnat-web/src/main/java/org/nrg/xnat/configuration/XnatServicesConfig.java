@@ -21,8 +21,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import java.io.IOException;
-
 /**
  * This configuration manages configuration and instantiation of core XNAT/XDAT/XFT services.
  */
@@ -39,7 +37,7 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template, final DatabaseHelper helper) throws IOException {
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template, final DatabaseHelper helper) {
         return new UserGroupManager(cache, template, eventService, helper);
     }
 }

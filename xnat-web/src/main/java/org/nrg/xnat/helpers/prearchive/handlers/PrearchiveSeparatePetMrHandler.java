@@ -63,8 +63,8 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                     for (final String modality : sessions.keySet()) {
                         final SessionData   sessionData = sessions.get(modality);
                         final PrearcSession session     = new PrearcSession(sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), null, getUser());
-                        if (receiving || !session.isAutoArchive()) {
-                            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, getSessionData(), getSessionDir());
+                        if (receiving && session.isAutoArchive()) {
+                            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir());
                             XDAT.sendJmsRequest(request);
                         }
                     }

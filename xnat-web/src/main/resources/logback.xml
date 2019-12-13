@@ -419,6 +419,9 @@
     <logger name="org.nrg.framework.services.NrgEventService" additivity="false" level="WARN">
         <appender-ref ref="events"/>
     </logger>
+    <logger name="org.nrg.dcm.scp" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
     <logger name="org.nrg.dcm" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
     </logger>

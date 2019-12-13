@@ -1,22 +1,20 @@
 package org.nrg.dcm.scp;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
+
+import javax.annotation.Nonnull;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+
+import static org.nrg.dcm.scp.DicomSCPInstance.formatDicomSCPInstanceKey;
 
 @Slf4j
 public class DicomSCPStore {
@@ -26,7 +24,7 @@ public class DicomSCPStore {
     }
 
     public Set<Integer> ports() {
-        return _dicomSCPs.keySet();
+        return ImmutableSet.copyOf(_dicomSCPs.keySet());
     }
 
     public Collection<? extends DicomSCP> get() {
@@ -41,7 +39,9 @@ public class DicomSCPStore {
         }
         final DicomSCP dicomSCP = DicomSCP.create(_manager, _executorService, port);
         _dicomSCPs.put(port, dicomSCP);
-        return Lists.transform(dicomSCP.start(), new ReceiverTransform(port, true));
+        final List<String> aeTitles = dicomSCP.start();
+        log.debug("Created and started new DICOM SCP on port {}, got {} AE titles for this port: {}", port, aeTitles.size(), aeTitles.isEmpty() ? "<nothing>" : StringUtils.join(aeTitles, ", "));
+        return Lists.transform(aeTitles, new ReceiverTransform(port, true));
     }
 
     public DicomSCP get(final int port) {
@@ -50,10 +50,18 @@ public class DicomSCPStore {
 
     public List<Triple<String, Integer, Boolean>> stop(final int port) {
         if (!_dicomSCPs.containsKey(port)) {
+            log.debug("Request to stop DICOM SCP on port {}, but that doesn't exist.", port);
             return Collections.emptyList();
         }
-        final DicomSCP dicomSCP = _dicomSCPs.remove(port);
-        return dicomSCP.isStarted() ? Lists.transform(dicomSCP.stop(), new ReceiverTransform(port, false)) : Collections.<Triple<String, Integer, Boolean>>emptyList();
+        final DicomSCP     dicomSCP  = _dicomSCPs.remove(port);
+        final boolean      isStarted = dicomSCP.isStarted();
+        final List<String> aeTitles  = isStarted ? dicomSCP.stop() : Collections.<String>emptyList();
+        if (isStarted) {
+            log.debug("Request to stop DICOM SCP on port {}, removed instance, stopped it, included {} AE titles: {}", port, aeTitles.size(), StringUtils.join(aeTitles, ", "));
+        } else {
+            log.debug("Request to stop DICOM SCP on port {}, removed instance, but it wasn't started, just disposing of it", port);
+        }
+        return isStarted ? Lists.transform(aeTitles, new ReceiverTransform(port, false)) : Collections.<Triple<String, Integer, Boolean>>emptyList();
     }
 
     public List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -70,7 +78,7 @@ public class DicomSCPStore {
     }
 
     public List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException {
-        return stop(_dicomSCPs.keySet());
+        return stop(ports());
     }
 
     @Nonnull
@@ -85,15 +93,19 @@ public class DicomSCPStore {
 
     @Nonnull
     private List<Triple<String, Integer, Boolean>> toggle(final Set<Integer> ports, final boolean enable) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+        log.debug("Got request to {} operations on {} ports: {}", enable ? "start" : "stop", ports.size(), StringUtils.join(ports, ", "));
         final List<Triple<String, Integer, Boolean>> results = new ArrayList<>();
         for (final int port : ports) {
+            log.info("{} operations on port {}", enable ? "Starting" : "Stopping", port);
             final List<Triple<String, Integer, Boolean>> titles = enable ? start(port) : stop(port);
             if (titles.isEmpty()) {
                 log.warn("Tried to {} operations on port {}, but no AE titles were returned.", enable ? "start" : "stop", port);
             } else {
+                log.debug("Got {} AE titles when {} port {}: {}", titles.size(), enable ? "starting" : "stopping", port, StringUtils.join(titles, ", "));
                 results.addAll(titles);
             }
         }
+        log.debug("{} operations on ports {}, got {} total AEs in response: {}", enable ? "Started" : "Stopped", ports, results.size(), StringUtils.join(Lists.transform(results, AE_TRIPLE_TO_AE_PORT), ", "));
         return results;
     }
 
@@ -111,6 +123,13 @@ public class DicomSCPStore {
         private final int     _port;
         private final boolean _enabled;
     }
+
+    private static final Function<Triple<String, Integer, Boolean>, String> AE_TRIPLE_TO_AE_PORT = new Function<Triple<String, Integer, Boolean>, String>() {
+        @Override
+        public String apply(final Triple<String, Integer, Boolean> entity) {
+            return formatDicomSCPInstanceKey(entity.getLeft(), entity.getMiddle());
+        }
+    };
 
     private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
 

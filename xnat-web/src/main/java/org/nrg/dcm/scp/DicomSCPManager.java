@@ -12,6 +12,7 @@ package org.nrg.dcm.scp;
 import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -20,14 +21,7 @@ import com.google.common.collect.Maps;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -237,16 +231,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         final int instanceId = instance.getId();
         log.debug("Saving DicomScpInstance {}: {}", instanceId, instance);
 
-        try {
-            final DicomSCPInstance existingScp = getDicomSCPInstance(instanceId);
+        final Optional<DicomSCPInstance> optional = getOptionalDicomSCPInstance(instanceId);
 
-            // If existing and submitted are the same, then no change.
-            if (existingScp.equals(instance)) {
-                log.trace("No change found for existing DicomSCPInstance {}, just returning", instanceId);
-                return instance;
-            }
-        } catch (NotFoundException e) {
-            // This is okay: it's a new instance.
+        // If existing and submitted are the same, then no change.
+        if (optional.isPresent() && optional.get().equals(instance)) {
+            log.trace("No change found for existing DicomSCPInstance {}, just returning", instanceId);
+            return instance;
         }
 
         final String aeTitle = instance.getAeTitle();
@@ -261,7 +251,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             // This is okay: it doesn't duplicate AE title and port.
         }
 
-        final DicomSCPInstance persisted = instanceId == 0 ? cacheInstance(instance) : instance;
+        final DicomSCPInstance persisted = cacheInstance(instance);
         log.debug("{} DicomSCPInstance {}: {}", instanceId == 0 ? "Saved new" : "Updated existing", persisted.getId(), persisted);
 
         try {
@@ -270,10 +260,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             log.error("Invalid preference name '{}': something is very wrong here.", PREF_ID, invalidPreferenceName);
         }
 
-        if (persisted.isEnabled()) {
-            log.debug("DicomSCPInstance {} is enabled, cycling port {}", persisted.getId(), persisted.getPort());
-            cycleDicomSCPPorts(Collections.singleton(persisted.getPort()));
-        }
+        log.debug("DicomSCPInstance {} was modified, cycling port {}", persisted.getId(), persisted.getPort());
+        cycleDicomSCPPorts(Collections.singleton(persisted.getPort()));
 
         return persisted;
     }
@@ -495,6 +483,15 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     }
 
+    private Optional<DicomSCPInstance> getOptionalDicomSCPInstance(final int instanceId) {
+        try {
+            return Optional.of(getDicomSCPInstance(instanceId));
+        } catch (NotFoundException e) {
+            // This is okay: it's a new instance.
+            return Optional.absent();
+        }
+    }
+
     private void clearCaches() {
         final int deleted = _template.update(DELETE_ALL_INSTANCES, EmptySqlParameterSource.INSTANCE);
         log.trace("Cleared DICOM SCP instances table, removed {} existing instances", deleted);
@@ -516,6 +513,9 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private DicomSCPInstance toggleEnabled(final boolean enabled, final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         log.debug("Handling request to {} instance {}", enabled ? "enable" : "disable", id);
         final DicomSCPInstance instance = getDicomSCPInstance(id);
+        if (enabled == instance.isEnabled()) {
+            return instance;
+        }
         instance.setEnabled(enabled);
         try {
             return saveDicomSCPInstance(instance);

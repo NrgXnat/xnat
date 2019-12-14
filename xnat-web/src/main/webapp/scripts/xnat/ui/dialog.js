@@ -1161,7 +1161,7 @@ window.xmodal = getObject(window.xmodal);
                 close: firstDefined(opts.okClose, true),
                 isDefault: true,
                 isSubmit: true,
-                action: opts.okAction || diddly
+                action: opts.action || opts.okAction || diddly
             }]
         }, opts);
 

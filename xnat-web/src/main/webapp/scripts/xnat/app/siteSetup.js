@@ -105,7 +105,7 @@ var XNAT = getObject(XNAT);
                     var $forms = $(this).find('form');
                     $forms.addClass('json silent');
 
-                    xmodal.loading.open('#multi-save');
+                    XNAT.dialog.loading.open();
 
                     // reset success count on new submission
                     multiform.success = 0;
@@ -193,12 +193,14 @@ var XNAT = getObject(XNAT);
                             url: XNAT.url.rootUrl('/xapi/siteConfig'),
                             data: JSON.stringify({initialized:true}),
                             success: function(){
-                                xmodal.loading.close('#multi-save');
-                                xmodal.message({
+                                XNAT.dialog.loading.closeAll();
+                                XNAT.dialog.message({
                                     title: false,
                                     esc: false,
-                                    content: 'Your XNAT site is ready to use. Click "OK" to continue to the home page.',
-                                    action: function(){
+                                    content: '<div class="success">Initial site configuration has been completed!</div>',
+                                    footerContent: 'Click "OK" to continue to the home page.',
+                                    // okLabel: 'Continue',
+                                    okAction: function(){
                                         // window.location.href = XNAT.url.rootUrl('/setup?init=true');
                                         window.location.href = XNAT.url.rootUrl('/');
                                         //$forms.each.triggerHandler('reload-data');
@@ -206,8 +208,8 @@ var XNAT = getObject(XNAT);
                                 });
                             }
                         }).fail(function(e, txt, jQxhr){
-                            xmodal.loading.close('#multi-save');
-                            xmodal.message({
+                            XNAT.dialog.loading.closeAll();
+                            XNAT.dialog.message({
                                 title: 'Error',
                                 content: [
                                     'An error occurred during initialization',
@@ -224,8 +226,8 @@ var XNAT = getObject(XNAT);
 
                     waitForIt(100, errorCheck, function(){
                         if (multiform.errors) {
-                            xmodal.closeAll();
-                            xmodal.message('Error', 'Please correct the highlighted errors and re-submit the form.');
+                            XNAT.dialog.closeAll();
+                            XNAT.dialog.message('Error', 'Please correct the highlighted errors and re-submit the form.');
                             return false;
                         }
                         initialize();

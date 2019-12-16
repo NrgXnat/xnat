@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.services.impl.hibernate;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -23,8 +24,6 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.repositories.PreferenceRepository;
 import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +34,7 @@ import java.util.Map;
 import java.util.Properties;
 
 @Service
+@Slf4j
 public class HibernatePreferenceService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferenceService {
     @Autowired
     public HibernatePreferenceService(final ToolService toolService) {
@@ -122,7 +122,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
                 get a null entry in the list where the deleted pref used to be, so you have to check and skip it. Root
                 cause of this needs to be found, but this is a hacky workaround in the meantime.
             */
-            if (preference != null && (unfiltered || preferenceNames.contains(preference.getName()))) {
+            if (preference != null && (unfiltered || preferenceNames.contains(StringUtils.substringBefore(preference.getName(), ":")))) {
                 properties.setProperty(preference.getName(), preference.getValue());
             }
         }
@@ -135,15 +135,11 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
             if (tool.isStrict() && !isValidPreference(tool, preferenceName)) {
                 throw new InvalidPreferenceName("The tool " + tool.getToolId() + " doesn't support the preference " + preferenceName + " and is set to use a strict preferences list.");
             }
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
-            }
+            log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
             preference = new Preference(tool, preferenceName, scope, resolvedEntityId, value);
             getDao().create(preference);
         } else {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
-            }
+            log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
             preference.setValue(value);
             getDao().update(preference);
         }
@@ -161,9 +157,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         // TODO: Should maybe throw an exception when beans don't include tool ID, but this may be a valid situation?
         final String toolId = tool.getToolId();
         if (!getBeansById().containsKey(toolId)) {
-            if (_log.isInfoEnabled()) {
-                _log.info("Checked for the preference setting {} in a non-existent tool {}.", preferenceName, toolId);
-            }
+            log.info("Checked for the preference setting {} in a non-existent tool {}.", preferenceName, toolId);
             return false;
         }
         final Map<String, PreferenceInfo> defaultPreferences = getBeansById().get(toolId).getDefaultPreferences();
@@ -184,8 +178,6 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         }
         return _beansById;
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(HibernatePreferenceService.class);
 
     private final ToolService _toolService;
 

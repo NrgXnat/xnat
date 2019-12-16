@@ -9,10 +9,13 @@
 
 package org.nrg.prefs.tests;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+import org.assertj.core.api.Condition;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -42,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.nrg.prefs.services.PreferenceBeanHelper.propertize;
 
 /**
@@ -56,26 +59,20 @@ public class PreferenceBeanTests {
     @Test
     public void testBasicPrefsTool() throws InvalidPreferenceName {
         final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
-        assertEquals(3, preferences.size());
+        assertThat(preferences).size().isEqualTo(3);
 
-        assertNotNull(_basicPrefsTool);
-        assertEquals("valueA", _basicPrefsTool.getPrefA());
-        assertEquals("valueB", _basicPrefsTool.getPrefB());
-        assertEquals(BasicEnum.Value1, _basicPrefsTool.getPrefC());
-        assertEquals(preferences.get("prefA"), _basicPrefsTool.getPrefA());
-        assertEquals(preferences.get("prefB"), _basicPrefsTool.getPrefB());
-        assertEquals(preferences.get("prefC"), _basicPrefsTool.getPrefC());
+        assertThat(_basicPrefsTool).isNotNull();
+        assertThat(_basicPrefsTool.getPrefA()).isEqualTo("valueA").isEqualTo(preferences.get("prefA"));
+        assertThat(_basicPrefsTool.getPrefB()).isEqualTo("valueB").isEqualTo(preferences.get("prefB"));
+        assertThat(_basicPrefsTool.getPrefC()).isEqualTo(BasicEnum.Value1).isEqualTo(preferences.get("prefC"));
 
         _basicPrefsTool.setPrefA("valueAMod");
         _basicPrefsTool.setPrefB("valueBMod");
         _basicPrefsTool.setPrefC(BasicEnum.Value2);
 
-        assertEquals("valueAMod", _basicPrefsTool.getPrefA());
-        assertEquals("valueBMod", _basicPrefsTool.getPrefB());
-        assertEquals(BasicEnum.Value2, _basicPrefsTool.getPrefC());
-        assertEquals(preferences.get("prefA"), _basicPrefsTool.getPrefA());
-        assertEquals(preferences.get("prefB"), _basicPrefsTool.getPrefB());
-        assertEquals(preferences.get("prefC"), _basicPrefsTool.getPrefC());
+        assertThat(_basicPrefsTool.getPrefA()).isEqualTo("valueAMod").isEqualTo(preferences.get("prefA"));
+        assertThat(_basicPrefsTool.getPrefB()).isEqualTo("valueBMod").isEqualTo(preferences.get("prefB"));
+        assertThat(_basicPrefsTool.getPrefC()).isEqualTo(BasicEnum.Value2).isEqualTo(preferences.get("prefC"));
 
         validateBeanCache(_basicPrefsTool.getPreferenceBean(), preferences);
     }
@@ -83,56 +80,58 @@ public class PreferenceBeanTests {
     @Test
     @Ignore("This tests for something (using non-bean property names) that I don't want to have happen any more.")
     public void testPropertiesTestTool() throws InvalidPreferenceName {
-        assertNotNull(_propertiesPrefsTool);
-        assertEquals("valueA", _propertiesPrefsTool.getPropertyA());
-        assertEquals("valueB", _propertiesPrefsTool.getPropertyB());
+        assertThat(_propertiesPrefsTool).isNotNull();
+        assertThat(_propertiesPrefsTool.getPropertyA()).isEqualTo("valueA");
+        assertThat(_propertiesPrefsTool.getPropertyB()).isEqualTo("valueB");
         _propertiesPrefsTool.setPropertyA("valueAMod");
         _propertiesPrefsTool.setPropertyB("valueBMod");
-        assertEquals("valueAMod", _propertiesPrefsTool.getPropertyA());
-        assertEquals("valueBMod", _propertiesPrefsTool.getPropertyB());
+        assertThat(_propertiesPrefsTool.getPropertyA()).isEqualTo("valueAMod");
+        assertThat(_propertiesPrefsTool.getPropertyB()).isEqualTo("valueBMod");
         final Map<String, Object> preferences = _propertiesPrefsTool.getPreferences();
-        assertEquals(2, preferences.size());
+        assertThat(preferences).size().isEqualTo(2);
         validateBeanCache(_propertiesPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Test
     public void testRelaxedPrefsTool() throws InvalidPreferenceName {
-        assertNotNull(_relaxedPrefsTool);
-        assertEquals(null, _relaxedPrefsTool.getRelaxedPrefA());
-        assertEquals(null, _relaxedPrefsTool.getRelaxedPrefB());
+        assertThat(_relaxedPrefsTool).isNotNull();
+        assertThat(_relaxedPrefsTool.getRelaxedPrefA()).isNull();
+        assertThat(_relaxedPrefsTool.getRelaxedPrefB()).isNull();
         _relaxedPrefsTool.setRelaxedPrefA("valueASet");
         _relaxedPrefsTool.setRelaxedPrefB("valueBSet");
         _relaxedPrefsTool.setRelaxedPrefC("valueCSet");
-        assertEquals("valueASet", _relaxedPrefsTool.getRelaxedPrefA());
-        assertEquals("valueBSet", _relaxedPrefsTool.getRelaxedPrefB());
-        assertEquals("valueCSet", _relaxedPrefsTool.getRelaxedPrefC());
+        assertThat(_relaxedPrefsTool.getRelaxedPrefA()).isEqualTo("valueASet");
+        assertThat(_relaxedPrefsTool.getRelaxedPrefB()).isEqualTo("valueBSet");
+        assertThat(_relaxedPrefsTool.getRelaxedPrefC()).isEqualTo("valueCSet");
         _relaxedPrefsTool.setRelaxedPrefA("valueAMod");
         _relaxedPrefsTool.setRelaxedPrefB("valueBMod");
         _relaxedPrefsTool.setRelaxedPrefC("valueCMod");
-        assertEquals("valueAMod", _relaxedPrefsTool.getRelaxedPrefA());
-        assertEquals("valueBMod", _relaxedPrefsTool.getRelaxedPrefB());
-        assertEquals("valueCMod", _relaxedPrefsTool.getRelaxedPrefC());
+        assertThat(_relaxedPrefsTool.getRelaxedPrefA()).isEqualTo("valueAMod");
+        assertThat(_relaxedPrefsTool.getRelaxedPrefB()).isEqualTo("valueBMod");
+        assertThat(_relaxedPrefsTool.getRelaxedPrefC()).isEqualTo("valueCMod");
         _relaxedPrefsTool.setRelaxedWhatever("freeForm", "This can be anything!");
-        assertEquals("This can be anything!", _relaxedPrefsTool.getRelaxedWhatever("freeForm"));
+        assertThat(_relaxedPrefsTool.getRelaxedWhatever("freeForm")).isEqualTo("This can be anything!");
+
         final Map<String, Object> preferences = _relaxedPrefsTool.getPreferences();
-        assertEquals(4, preferences.size());
+        assertThat(preferences).size().isEqualTo(4);
+
         validateBeanCache(_relaxedPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Test(expected = InvalidPreferenceName.class)
     public void testStrictPrefsTool() throws InvalidPreferenceName {
-        assertNotNull(_strictPrefsTool);
-        assertEquals("strictValueA", _strictPrefsTool.getStrictPrefA());
-        assertEquals("strictValueB", _strictPrefsTool.getStrictPrefB());
+        assertThat(_strictPrefsTool).isNotNull();
+        assertThat(_strictPrefsTool.getStrictPrefA()).isEqualTo("strictValueA");
+        assertThat(_strictPrefsTool.getStrictPrefB()).isEqualTo("strictValueB");
         _strictPrefsTool.setStrictPrefA("strictValueAMod");
         _strictPrefsTool.setStrictPrefB("strictValueBMod");
-        assertEquals("strictValueAMod", _strictPrefsTool.getStrictPrefA());
-        assertEquals("strictValueBMod", _strictPrefsTool.getStrictPrefB());
+        assertThat(_strictPrefsTool.getStrictPrefA()).isEqualTo("strictValueAMod");
+        assertThat(_strictPrefsTool.getStrictPrefB()).isEqualTo("strictValueBMod");
         final String prefC = _strictPrefsTool.getStrictPrefC();
-        assertNull(prefC);
+        assertThat(prefC).isBlank();
 
         final Map<String, Object> preferences = _strictPrefsTool.getPreferences();
-        assertEquals(2, preferences.size());
+        assertThat(preferences).size().isEqualTo(2);
 
         validateBeanCache(_strictPrefsTool.getPreferenceBean(), preferences);
 
@@ -142,117 +141,112 @@ public class PreferenceBeanTests {
 
     @Test
     public void testBeanPrefsTool() throws InvalidPreferenceName, IOException {
-        assertNotNull(_beanPrefsTool);
+        assertThat(_beanPrefsTool).isNotNull();
 
         final PreferenceBean bean = _beanPrefsTool.getPreferenceBean();
-        assertNotNull(bean);
+        assertThat(bean).isNotNull();
 
         // {'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}
         final BeanPrefsToolPreference prefA = _beanPrefsTool.getPrefA();
-        assertNotNull(prefA);
-        assertEquals("CCIR", prefA.getScpId());
-        assertTrue(prefA.isEnabled());
+
+        assertThat(prefA).isNotNull().hasFieldOrPropertyWithValue("scpId", "CCIR").hasFieldOrPropertyWithValue("enabled", true);
+
         prefA.setEnabled(false);
         _beanPrefsTool.setPrefA(prefA);
         final BeanPrefsToolPreference modifiedAs = _beanPrefsTool.getPrefA();
-        assertNotNull(modifiedAs);
-        assertEquals("CCIR", modifiedAs.getScpId());
-        assertFalse(modifiedAs.isEnabled());
+
+        assertThat(modifiedAs).isNotNull().hasFieldOrPropertyWithValue("scpId", "CCIR").hasFieldOrPropertyWithValue("enabled", false);
 
         // ['XNAT','CCIR']
         final List<String> prefBs = _beanPrefsTool.getPrefBs();
-        assertNotNull(prefBs);
-        assertEquals(2, prefBs.size());
-        assertTrue(prefBs.contains("XNAT"));
-        assertFalse(prefBs.contains("CCF"));
+        assertThat(prefBs).isNotNull().size().isEqualTo(2);
+        assertThat(prefBs).containsExactlyInAnyOrder("XNAT", "CCIR").doesNotContain("CCF");
+
         prefBs.remove("XNAT");
         prefBs.add("CCF");
         _beanPrefsTool.setPrefBs(prefBs);
         final List<String> modifiedBs = _beanPrefsTool.getPrefBs();
-        assertNotNull(modifiedBs);
-        assertEquals(2, modifiedBs.size());
-        assertFalse(modifiedBs.contains("XNAT"));
-        assertTrue(modifiedBs.contains("CCF"));
+
+        assertThat(modifiedBs).isNotNull().size().isEqualTo(2);
+        assertThat(modifiedBs).containsExactlyInAnyOrder("CCF", "CCIR").doesNotContain("XNAT");
+
         bean.set("[]", "prefBs");
         final List<String> overriddenBs = _beanPrefsTool.getPrefBs();
-        assertNotNull(overriddenBs);
-        assertEquals(0, overriddenBs.size());
+
+        assertThat(overriddenBs).isNotNull().isEmpty();
+
         bean.set("['XNAT','CCIR','CCF']", "prefBs");
         overriddenBs.addAll(_beanPrefsTool.getPrefBs());
-        assertEquals(3, overriddenBs.size());
+
+        assertThat(overriddenBs).size().isEqualTo(3).returnToIterable().containsExactlyInAnyOrder("XNAT", "CCIR", "CCF");
 
         // [{'scpId':'XNAT','aeTitle':'XNAT','port':8104,'enabled':true},
         //  {'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}]
         final List<BeanPrefsToolPreference> prefCs = _beanPrefsTool.getPrefCs();
-        assertNotNull(prefCs);
-        assertEquals(2, prefCs.size());
-        assertTrue(prefCs.get(0).getScpId().equals("XNAT") || prefCs.get(1).getScpId().equals("XNAT"));
-        assertTrue(prefCs.get(0).getScpId().equals("CCIR") || prefCs.get(1).getScpId().equals("CCIR"));
-        final BeanPrefsToolPreference xnat;
-        final BeanPrefsToolPreference ccir;
-        if (prefCs.get(0).getScpId().equals("XNAT")) {
-            xnat = prefCs.get(0);
-            ccir = prefCs.get(1);
-        } else {
-            xnat = prefCs.get(1);
-            ccir = prefCs.get(0);
-        }
-        assertEquals("XNAT", xnat.getAeTitle());
-        assertEquals("CCIR", ccir.getAeTitle());
-        assertTrue(xnat.isEnabled());
-        assertTrue(ccir.isEnabled());
+        assertThat(prefCs).isNotNull();
+        assertThat(prefCs).size().isEqualTo(2);
+        assertThat(prefCs).extracting("scpId", "port", "enabled").containsOnly(tuple("XNAT", 8104, true), tuple("CCIR", 8104, true));
+
+        final boolean                 isZeroXnat = prefCs.get(0).getScpId().equals("XNAT");
+        final BeanPrefsToolPreference xnat       = prefCs.get(isZeroXnat ? 0 : 1);
+        final BeanPrefsToolPreference ccir       = prefCs.get(isZeroXnat ? 1 : 0);
+
+        assertThat(xnat).hasFieldOrPropertyWithValue("aeTitle", "XNAT").hasFieldOrPropertyWithValue("port", 8104).hasFieldOrPropertyWithValue("enabled", true);
+        assertThat(ccir).hasFieldOrPropertyWithValue("aeTitle", "CCIR").hasFieldOrPropertyWithValue("port", 8104).hasFieldOrPropertyWithValue("enabled", true);
+
         ccir.setEnabled(false);
         _beanPrefsTool.setPrefC(ccir);
-        final BeanPrefsToolPreference ccf = new BeanPrefsToolPreference();
-        ccf.setScpId("CCF");
-        ccf.setAeTitle("CCF");
-        ccf.setPort(8104);
-        _beanPrefsTool.setPrefC(ccf);
+
+        _beanPrefsTool.setPrefC(BeanPrefsToolPreference.builder().scpId("CCF").aeTitle("CCF").identifier("CCF").port(8104).build());
         final List<BeanPrefsToolPreference> modifiedCs = _beanPrefsTool.getPrefCs();
-        assertNotNull(modifiedCs);
-        assertEquals(3, modifiedCs.size());
-        assertTrue(modifiedCs.get(0).getScpId().equals("XNAT") || modifiedCs.get(1).getScpId().equals("XNAT") || modifiedCs.get(2).getScpId().equals("XNAT"));
-        assertTrue(modifiedCs.get(0).getScpId().equals("CCIR") || modifiedCs.get(1).getScpId().equals("CCIR") || modifiedCs.get(2).getScpId().equals("CCIR"));
-        assertTrue(modifiedCs.get(0).getScpId().equals("CCF") || modifiedCs.get(1).getScpId().equals("CCF") || modifiedCs.get(2).getScpId().equals("CCF"));
+
+        assertThat(modifiedCs).isNotNull().size().isEqualTo(3);
+        assertThat(modifiedCs).extracting("scpId", "port", "enabled").containsOnly(tuple("XNAT", 8104, true), tuple("CCIR", 8104, false), tuple("CCF", 8104, true));
+
+        _beanPrefsTool.deletePrefC("XNAT");
+        final List<BeanPrefsToolPreference> deletedCs = _beanPrefsTool.getPrefCs();
+
+        assertThat(deletedCs).isNotNull().size().isEqualTo(2);
+        assertThat(deletedCs).extracting("scpId", "port", "enabled").containsOnly(tuple("CCIR", 8104, false), tuple("CCF", 8104, true));
 
         // {'XNAT':'192.168.10.1,'CCIR':'192.168.10.100'}
         final Map<String, String> prefDs = _beanPrefsTool.getPrefDs();
-        assertNotNull(prefDs);
-        assertEquals(2, prefDs.size());
-        assertTrue(prefDs.containsKey("XNAT"));
-        assertTrue(prefDs.containsKey("CCIR"));
-        assertFalse(prefDs.containsKey("CCF"));
-        assertEquals("192.168.10.1", prefDs.get("XNAT"));
-        assertEquals("192.168.10.100", prefDs.get("CCIR"));
+
+        assertThat(prefDs).isNotNull().size().isEqualTo(2);
+        assertThat(prefDs).containsEntry("XNAT", "192.168.10.1").containsEntry("CCIR", "192.168.10.100");
+        assertThat(prefDs.get("XNAT")).isEqualTo("192.168.10.1");
+        assertThat(prefDs.get("CCIR")).isEqualTo("192.168.10.100");
+
         _beanPrefsTool.deletePrefD("XNAT");
         _beanPrefsTool.setPrefD("CCF", "192.168.10.255");
         final Map<String, String> modifiedDs = _beanPrefsTool.getPrefDs();
-        assertNotNull(modifiedDs);
-        assertEquals(2, modifiedDs.size());
-        assertFalse(modifiedDs.containsKey("XNAT"));
-        assertTrue(prefDs.containsKey("CCIR"));
-        assertTrue(modifiedDs.containsKey("CCF"));
+
+        assertThat(modifiedDs).isNotNull().size().isEqualTo(2);
+        assertThat(modifiedDs).containsEntry("CCIR", "192.168.10.100").containsEntry("CCF", "192.168.10.255");
+        assertThat(_beanPrefsTool.getPrefD("CCIR")).isEqualTo("192.168.10.100");
+        assertThat(_beanPrefsTool.getPrefD("CCF")).isEqualTo("192.168.10.255");
 
         // {'XNAT':{'port':8104,'scpId':'XNAT','identifier':'XNAT','aeTitle':'XNAT','enabled':true},
         //  'CCIR':{'port':8104,'scpId':'CCIR','identifier':'CCIR','aeTitle':'CCIR','enabled':true}}
         final Map<String, BeanPrefsToolPreference> prefEs = _beanPrefsTool.getPrefEs();
-        assertNotNull(prefEs);
-        assertEquals(2, prefEs.size());
-        assertTrue(prefEs.containsKey("XNAT"));
-        assertTrue(prefEs.containsKey("CCIR"));
-        assertEquals("XNAT", prefEs.get("XNAT").getAeTitle());
-        assertEquals("CCIR", prefEs.get("CCIR").getAeTitle());
+        assertThat(prefEs).isNotNull()
+                          .size().isEqualTo(2).returnToMap()
+                          .hasEntrySatisfying("XNAT", new BeanPrefsToolPreferenceCondition("XNAT", 8104, true))
+                          .hasEntrySatisfying("CCIR", new BeanPrefsToolPreferenceCondition("CCIR", 8104, true));
 
         // []
         final List<String> prefFs = _beanPrefsTool.getPrefFs();
-        assertNotNull(prefFs);
-        assertEquals(0, prefFs.size());
+
+        assertThat(prefFs).isNotNull().size().isEqualTo(0);
+
         bean.set("['one','two','three']", "prefFs");
         prefFs.addAll(_beanPrefsTool.getPrefFs());
-        assertEquals(3, prefFs.size());
+
+        assertThat(prefFs).size().isEqualTo(3).returnToIterable().containsExactlyInAnyOrder("one", "two", "three");
 
         final Map<String, Object> preferences = _beanPrefsTool.getPreferences();
-        assertEquals(6, preferences.size());
+
+        assertThat(preferences).size().isEqualTo(6);
 
         validateBeanCache(_beanPrefsTool.getPreferenceBean(), preferences);
     }
@@ -264,7 +258,7 @@ public class PreferenceBeanTests {
 
     @Ignore
     @Test
-    public void testSimpleToolAndPreference() throws NrgServiceException {
+    public void testSimpleToolAndPreference() {
     }
 
     /**
@@ -272,50 +266,80 @@ public class PreferenceBeanTests {
      */
     @Ignore
     @Test
-    public void testMultipleToolsAndPreference() throws NrgServiceException {
+    public void testMultipleToolsAndPreference() {
     }
 
     @Ignore
     @Test
-    public void testToolWithScope() throws NrgServiceException {}
+    public void testToolWithScope() {}
 
     @Ignore
     @Test
-    public void testLoadSiteConfigurationProperties() throws IOException, InvalidPreferenceName, UnknownToolId {
+    public void testLoadSiteConfigurationProperties() throws IOException, UnknownToolId {
         final Properties properties = new Properties();
         properties.load(Properties.class.getResourceAsStream("/org/nrg/prefs/configuration/siteConfiguration.properties"));
-        assertNotNull(properties);
-        assertTrue(properties.size() > 0);
+        assertThat(properties).isNotNull().isNotEmpty();
+
         final Map<String, String> defaults = new HashMap<>();
         for (final String property : properties.stringPropertyNames()) {
             defaults.put(property, properties.getProperty(property));
         }
-        assertTrue(defaults.size() > 0);
+        assertThat(defaults).isNotNull().isNotEmpty();
+
         // _service.createTool("siteConfig", "Site Configuration", "This is the main tool for mapping the site configuration", defaults, false, AbstractPreferenceBean.class.getName(), null);
         // Assert.assertEquals("true", _service.getPreferenceValue("siteConfig", "enableDicomReceiver"));
         // Assert.assertEquals("org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", _service.getPreferenceValue("siteConfig", "checksums.property.changed.listener"));
     }
 
     private void validateBeanCache(final PreferenceBean bean, final Map<String, Object> preferences) {
-        @SuppressWarnings("unchecked")
-        final List<Method> getters = Reflection.getGetters(bean.getClass(), AbstractPreferenceBean.class, ReflectionUtils.withAnnotation(NrgPreference.class));
+        @SuppressWarnings("unchecked") final List<Method> getters = Reflection.getGetters(bean.getClass(), AbstractPreferenceBean.class, ReflectionUtils.withAnnotation(NrgPreference.class));
         for (final Method getter : getters) {
             final String name = propertize(getter.getName());
-            assertTrue(preferences.containsKey(name));
+            assertThat(preferences).containsKey(name);
+
             final Object value = preferences.get(name);
-            assertNotNull(value);
-            assertTrue(getter.getReturnType().isAssignableFrom(value.getClass()));
+            assertThat(value).isNotNull();
+            assertThat(getter.getReturnType()).isAssignableFrom(value.getClass());
             try {
                 if (value instanceof List) {
-                    //noinspection unchecked
-                    assertTrue(((List) value).containsAll((List) getter.invoke(bean)));
+                    //noinspection unchecked,rawtypes
+                    assertThat(((List) value)).containsAll((List) getter.invoke(bean));
                 } else {
-                    assertEquals(value, getter.invoke(bean));
+                    assertThat(getter.invoke(bean)).isEqualTo(value);
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
-                fail("An " + e.getClass().getName() + " error occurred invoking the " + getter.getName() + " method on the " + bean.getClass().getName() + " class: " + e.getMessage());
+                fail("An error of type %s error occurred invoking the %s() method on the %s class: %s", e.getClass().getName(), getter.getName(), bean.getClass().getName(), e.getMessage());
             }
         }
+    }
+
+    @Data
+    @Accessors(prefix = "_")
+    @EqualsAndHashCode(callSuper = false)
+    private static class BeanPrefsToolPreferenceCondition extends Condition<BeanPrefsToolPreference> {
+        BeanPrefsToolPreferenceCondition(final String scpId, final int port, final boolean enabled) {
+            this(scpId, scpId, scpId, port, enabled);
+        }
+
+        BeanPrefsToolPreferenceCondition(final String scpId, final String identifier, final String aeTitle, final int port, final boolean enabled) {
+            _preference = new BeanPrefsToolPreference();
+            _preference.setScpId(scpId);
+            _preference.setIdentifier(identifier);
+            _preference.setAeTitle(aeTitle);
+            _preference.setPort(port);
+            _preference.setEnabled(enabled);
+        }
+
+        @Override
+        public boolean matches(final BeanPrefsToolPreference preference) {
+            if (preference == null) {
+                return false;
+            }
+            _preference.setFileNamer(preference.getFileNamer());
+            return _preference.equals(preference);
+        }
+
+        private final BeanPrefsToolPreference _preference;
     }
 
     @Inject

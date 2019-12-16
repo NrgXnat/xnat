@@ -22,10 +22,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -430,7 +427,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo                         info    = getPreferenceInfo(preferenceName);
-        @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) info.getValueType(), String.class, info.getItemType());
+        @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map<String, ?>>) info.getValueType(), String.class, info.getItemType());
         try {
             final Map<String, Object> map           = deserialize("{}", mapType);
             final Set<String>         propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
@@ -460,7 +457,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             log.warn("Could not retrieve preference information.  Cannot determine list type.");
             return null;
         }
-        @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
+        @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List<?>>) info.getValueType(), info.getItemType());
         try {
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
                 final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName, scope, entityId);
@@ -544,7 +541,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
-        final String current              = getValue(namespacedPropertyId);
+        final String current              = getSerializedObjectValue(scope, entityId, namespacedPropertyId);
         final String trimmed              = value.trim();
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
@@ -553,6 +550,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 for (final String property : properties.stringPropertyNames()) {
                     _preferenceService.setPreferenceValue(getToolId(), property, scope, entityId, properties.getProperty(property));
                     existing.remove(property);
+                }
+                if (!existing.isEmpty()) {
+                    for (final String deleted : existing.stringPropertyNames()) {
+                        _preferenceService.deletePreference(getToolId(), deleted, scope, entityId);
+                    }
                 }
             } catch (IOException | IllegalAccessException | InvocationTargetException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to set the " + namespacedPropertyId + " preference setting.", e);
@@ -726,12 +728,24 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
+        final Set<String> existing = Sets.newHashSet(Iterables.filter(_preferenceService.getToolPropertyNames(getToolId(), scope, entityId), new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable final String key) {
+                return StringUtils.equals(preferenceName, StringUtils.substringBefore(key, ":"));
+            }
+        }));
         for (final String key : map.keySet()) {
             final String id = getNamespacedPropertyId(preferenceName, key);
+            existing.remove(id);
             try {
                 set(scope, entityId, serialize(map.get(key)), id);
             } catch (IOException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
+            }
+        }
+        if (!existing.isEmpty()) {
+            for (final String delete : existing) {
+                delete(scope, entityId, delete);
             }
         }
     }
@@ -970,6 +984,41 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         log.debug("Performing default preference post-processing.");
     }
 
+    protected String getSerializedObjectValue(final Scope scope, final String entityId, final String namespacedPropertyId) {
+        final String prefKeyName = StringUtils.substringBefore(namespacedPropertyId, ":");
+        if (!_preferences.containsKey(prefKeyName)) {
+            return null;
+        }
+        final PreferenceInfo info      = _preferences.get(prefKeyName);
+        final Class<?>       valueType = info.getValueType();
+        final boolean        isList    = valueType.isArray() || List.class.isAssignableFrom(valueType);
+        final boolean        isMap     = Map.class.isAssignableFrom(valueType);
+
+        if (isList) {
+            final List<Object> list = getListValue(scope, entityId, prefKeyName);
+            try {
+                return serialize(list);
+            } catch (IOException e) {
+                log.error("An error occurred trying to serialize a list for the property {}", namespacedPropertyId, e);
+                return null;
+            }
+        }
+
+        if (isMap) {
+            final Map<String, ?> map = getMapValue(scope, entityId, prefKeyName);
+            if (map != null) {
+                try {
+                    return serialize(map);
+                } catch (IOException e) {
+                    log.error("An error occurred trying to serialize a map for the property {}", namespacedPropertyId, e);
+                    return null;
+                }
+            }
+        }
+
+        return getValue(scope, entityId, namespacedPropertyId);
+    }
+
     @SuppressWarnings("unused")
     protected boolean isInitFromConfig() {
         return _initFromConfig;
@@ -1032,8 +1081,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         super.put(key, value);
     }
 
-    private void storeToCacheAsType(final String key, final String value, final PreferenceInfo info) {
-        final PreferenceTransformer transformer = _preferenceService.getTransformer(info);
+    private <T> void storeToCacheAsType(final String key, final String value, final PreferenceInfo info) {
+        final PreferenceTransformer<T> transformer = _preferenceService.getTransformer(info);
+
         final Object cacheValue;
         if (transformer != null) {
             if (info.getItemType() == null) {
@@ -1048,7 +1098,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 cacheValue = null;
             }
         } else if (info.isEnum()) {
-            //noinspection unchecked
+            //noinspection unchecked,rawtypes
             cacheValue = Enum.valueOf((Class<? extends Enum>) info.getValueType(), value);
         } else {
             cacheValue = null;
@@ -1058,7 +1108,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
     }
 
-    private Map getMapOrNull(final String value, final PreferenceTransformer transformer) {
+    private <T> Map<String, T> getMapOrNull(final String value, final PreferenceTransformer<T> transformer) {
         try {
             return transformer.mapOf(value);
         } catch (UnsupportedOperationException ignored) {
@@ -1136,7 +1186,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                                     migrateAliasedPreference(alias, overrideValue);
                                 } else {
                                     try {
-                                        if (!property.contains(":") || !(tempO != null && HashMap.class.isAssignableFrom(tempO.getClass()) && ((HashMap) tempO).size() > 0)) {
+                                        if (!property.contains(":") || !(tempO != null && HashMap.class.isAssignableFrom(tempO.getClass()) && ((HashMap<?, ?>) tempO).size() > 0)) {
                                             //Don't add the default version of this property is there is already a non-empty map of properties for it
                                             create(properties.getProperty(property), property);
                                         }
@@ -1246,7 +1296,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private String findAliasedPreference(final String property) {
-        if (!_aliasedPreferences.keySet().contains(property)) {
+        if (!_aliasedPreferences.containsKey(property)) {
             return null;
         }
         for (final String alias : _aliasedPreferences.get(property)) {
@@ -1338,7 +1388,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
         // For persistence purposes, we treat arrays and lists the same.
         if (isArray || isList) {
-            @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) valueType, itemType);
+            @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List<?>>) valueType, itemType);
             if (!BeanUtils.isSimpleValueType(itemType)) {
                 if (StringUtils.isBlank(key)) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
@@ -1360,7 +1410,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 properties.setProperty(info.getProperty(), value);
             }
         } else if (isMap) {
-            @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) valueType, String.class, itemType);
+            @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map<String, ?>>) valueType, String.class, itemType);
             final Map<String, ?>                         map     = deserialize(StringUtils.defaultIfBlank(value, "{}"), mapType);
             if (!BeanUtils.isSimpleValueType(itemType)) {
                 if (StringUtils.isBlank(key)) {

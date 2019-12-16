@@ -180,7 +180,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                        )
                                                    }))
                                                    @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, UnknownDicomHelperInstanceException, DicomNetworkException {
-        if (_manager.hasDicomSCPInstance(id)) {
+        if (!_manager.hasDicomSCPInstance(id)) {
             throw new NotFoundException("Could not find DICOM SCP instance with ID " + id);
         }
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we

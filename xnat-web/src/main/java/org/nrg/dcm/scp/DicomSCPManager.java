@@ -583,7 +583,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     // Update queries: updating DicomSCPs required.
     private static final String CREATE_OR_UPDATE_INSTANCE     = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
-    private static final String GET_PORTS_FOR_INSTANCES_BY_ID = "SELECT DISTINCT port FROM dicom_scp_instances WHERE id IN (:ids)";
+    private static final String GET_PORTS_FOR_INSTANCES_BY_ID = "SELECT DISTINCT port FROM dicom_scp_instance WHERE id IN (:ids)";
     private static final String DELETE_INSTANCES_BY_ID        = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
     private static final String DELETE_ALL_INSTANCES          = "DELETE FROM dicom_scp_instance";
 

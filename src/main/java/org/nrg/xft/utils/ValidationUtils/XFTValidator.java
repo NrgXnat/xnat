@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.utils.ValidationUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 @Slf4j
 public class XFTValidator {
@@ -59,9 +60,9 @@ public class XFTValidator {
 		final GenericWrapperElement element = GenericWrapperElement.GetElement(xsiType);
 
 		if (((XFTItem) item).instanceOf("xnat:projectData") && !StringUtils.equals(item.getXSIType(), "xnat:projectData_alias")) {
-			checkReservedPropertyValue(results, element, item, "xnat:projectData/ID", "Unassigned");
-			checkReservedPropertyValue(results, element, item, "xnat:projectData/secondary_ID", "Unassigned");
-			checkReservedPropertyValue(results, element, item, "xnat:projectData/name", "Unassigned");
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/ID", UNASSIGNED);
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/secondary_ID", UNASSIGNED);
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/name", UNASSIGNED);
 		}
 
         final String       prefix  = element.getWrapped().getSchema().getXMLNS();
@@ -1248,9 +1249,5 @@ public class XFTValidator {
 
 		return al;
 	}
-
-
-
-
 }
 

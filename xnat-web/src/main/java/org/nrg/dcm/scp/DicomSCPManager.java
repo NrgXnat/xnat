@@ -9,26 +9,11 @@
 
 package org.nrg.dcm.scp;
 
-import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
-
 import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
-import javax.inject.Provider;
-import javax.sql.DataSource;
-
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +55,18 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.PreDestroy;
+import javax.inject.Provider;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+
+import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
 @Service
 @Slf4j
@@ -189,7 +186,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         _handlerProxy.handlePreference(preference, value);
     }
 
-    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'enabled': true}}", key = "id")
+    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'customProcessing': false, 'enabled': true}}", key = "id")
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
         return getMapValue(PREF_ID);
     }
@@ -215,6 +212,25 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         } catch (InvalidPreferenceName invalidPreferenceName) {
             log.error("Invalid preference name '{}': something is very wrong here.", PREF_ID, invalidPreferenceName);
         }
+    }
+
+    /**
+     * Sets the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
+     * instance ID} matches an existing DICOM SCP instance, that instance will be updated. If not, the {@link NotFoundException}
+     * is thrown.
+     *
+     * @param instance The instance to be set.
+     *
+     * @throws NotFoundException                               When an instance with the same ID does not already exist.
+     * @throws DICOMReceiverWithDuplicateTitleAndPortException When the new instance is enabled and there's
+     *                                                         already an enabled instance with the same AE title
+     *                                                         and port.
+     */
+    public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException {
+        if (hasDicomSCPInstance(instance.getId())) {
+            return saveDicomSCPInstance(instance);
+        }
+        throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
     }
 
     /**
@@ -272,11 +288,17 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return persisted;
     }
 
-    public void deleteDicomSCPInstances(final Set<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public void deleteDicomSCPInstances(final Set<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         log.debug("Got request to delete {} DicomSCPInstances: {}", ids.size(), StringUtils.join(ids, ", "));
         final Map<String, DicomSCPInstance> instances = getDicomSCPInstances();
+        final Set<String>                   stringIds = Sets.newHashSet(Iterables.transform(ids, Functions.toStringFunction()));
+        if (!instances.keySet().containsAll(stringIds)) {
+            throw new NotFoundException("Got request to delete DICOM SCP instances with ID(s): " + StringUtils.join(stringIds, ", ") + ". The following IDs are invalid identifiers: " + StringUtils.join(Sets.difference(stringIds, instances.keySet()), ", "));
+        }
+        final Set<Integer> ports = new HashSet<>();
         for (final int id : ids) {
             final DicomSCPInstance instance = instances.remove(Integer.toString(id));
+            ports.add(instance.getPort());
             log.debug("Removed instance {}: {}", id, instance);
         }
         try {
@@ -284,11 +306,17 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         } catch (DICOMReceiverWithDuplicatePropertiesException ignored) {
             // Shouldn't happen: dupes would have been caught on previous, we're just deleting.
         }
-        uncacheDicomScpInstances(ids);
+
+        log.debug("Deleted {} DICOM SCP instances affecting {} ports, so cycling each of those: {}", ids.size(), ports.size(), StringUtils.join(ports, ", "));
+        cycleDicomSCPPorts(ports);
     }
 
-    public void deleteDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException {
-        deleteDicomSCPInstances(Collections.singleton(id));
+    public void deleteDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
+        try {
+            deleteDicomSCPInstances(Collections.singleton(id));
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Could not find DICOM SCP instance with ID " + id);
+        }
     }
 
     /**
@@ -503,18 +531,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         log.trace("Cleared DICOM SCP instances table, removed {} existing instances", deleted);
     }
 
-    private void uncacheDicomScpInstances(final Set<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
-        final Set<Integer> ports = getPortsForInstancesWithIds(ids);
-        log.debug("Got request to uncache {} instances affecting {} ports", ids.size(), ports.size());
-
-        final int updated = _template.update(DELETE_INSTANCES_BY_ID, new MapSqlParameterSource("ids", ids));
-        log.debug("Deleted {} rows from the database for {} instances", updated, ids.size());
-        if (updated > 0) {
-            log.debug("Deleted {} rows, so cycling {} affected ports: {}", updated, ports.size(), StringUtils.join(ports, ", "));
-            cycleDicomSCPPorts(ports);
-        }
-    }
-
     @Nonnull
     private DicomSCPInstance toggleEnabled(final boolean enabled, final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         log.debug("Handling request to {} instance {}", enabled ? "enable" : "disable", id);
@@ -529,10 +545,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.
             return instance;
         }
-    }
-
-    private Set<Integer> getPortsForInstancesWithIds(final Set<Integer> ids) {
-        return new HashSet<>(_template.queryForList(GET_PORTS_FOR_INSTANCES_BY_ID, new MapSqlParameterSource("ids", ids), Integer.class));
     }
 
     private List<Triple<String, Integer, Boolean>> cycleDicomSCPPorts(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -582,10 +594,9 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_PORTS_FOR_ENABLED_INSTANCES   = "SELECT DISTINCT port FROM dicom_scp_instance WHERE enabled = TRUE";
 
     // Update queries: updating DicomSCPs required.
-    private static final String CREATE_OR_UPDATE_INSTANCE     = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
-    private static final String GET_PORTS_FOR_INSTANCES_BY_ID = "SELECT DISTINCT port FROM dicom_scp_instance WHERE id IN (:ids)";
-    private static final String DELETE_INSTANCES_BY_ID        = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
-    private static final String DELETE_ALL_INSTANCES          = "DELETE FROM dicom_scp_instance";
+    private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
+    private static final String DELETE_INSTANCES_BY_ID    = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
+    private static final String DELETE_ALL_INSTANCES      = "DELETE FROM dicom_scp_instance";
 
     private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("enableDicomReceiver") {
         @Override
@@ -597,13 +608,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = new RowMapper<DicomSCPInstance>() {
         @Override
         public DicomSCPInstance mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
-            return new DicomSCPInstance(resultSet.getInt("id"),
-                                        resultSet.getString("ae_title"),
-                                        resultSet.getInt("port"),
-                                        resultSet.getString("identifier"),
-                                        resultSet.getString("file_namer"),
-                                        resultSet.getBoolean("enabled"),
-                                        resultSet.getBoolean("custom_processing"));
+            return DicomSCPInstance.builder()
+                                   .id(resultSet.getInt("id"))
+                                   .aeTitle(resultSet.getString("ae_title"))
+                                   .port(resultSet.getInt("port"))
+                                   .identifier(resultSet.getString("identifier"))
+                                   .fileNamer(resultSet.getString("file_namer"))
+                                   .enabled(resultSet.getBoolean("enabled"))
+                                   .customProcessing(resultSet.getBoolean("custom_processing")).build();
         }
     };
 

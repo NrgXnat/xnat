@@ -180,13 +180,10 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                        )
                                                    }))
                                                    @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, UnknownDicomHelperInstanceException, DicomNetworkException {
-        if (!_manager.hasDicomSCPInstance(id)) {
-            throw new NotFoundException("Could not find DICOM SCP instance with ID " + id);
-        }
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
         instance.setId(id);
-        return _manager.saveDicomSCPInstance(instance);
+        return _manager.updateDicomSCPInstance(instance);
     }
 
     @ApiOperation(value = "Deletes the DICOM SCP receiver definition object with the specified ID.", notes = "This call will stop the receiver if it's currently running.")
@@ -200,9 +197,6 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
     public void deleteDicomSCPInstance(@ApiParam(value = "The ID of the DICOM SCP receiver definition to delete.", required = true) @PathVariable("id") final int id) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
-        if (!_manager.hasDicomSCPInstance(id)) {
-            throw new NotFoundException("Could not find DICOM SCP instance with ID " + id);
-        }
         _manager.deleteDicomSCPInstance(id);
     }
 

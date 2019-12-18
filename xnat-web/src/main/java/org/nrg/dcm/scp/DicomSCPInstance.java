@@ -10,16 +10,16 @@
 package org.nrg.dcm.scp;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.util.HashMap;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.*;
 import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @EqualsAndHashCode
 @Accessors(prefix = "_")
@@ -55,6 +55,8 @@ public class DicomSCPInstance {
     private int     _port;
     private String  _identifier;
     private String  _fileNamer;
+    @Builder.Default
     private boolean _enabled          = true;
+    @Builder.Default
     private boolean _customProcessing = false;
 }

@@ -461,6 +461,9 @@
     <logger name="org.nrg.xnat" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
+    <logger name="org.nrg.xnat.archive" additivity="false" level="WARN">
+        <appender-ref ref="xdat"/>
+    </logger>
     <logger name="org.nrg.xnat.utils" additivity="false" level="WARN">
         <appender-ref ref="xdat"/>
     </logger>

@@ -221,8 +221,8 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 						return;
 						}
 						//IS NEW
-						if(assessor.getId()==null || assessor.getId().equals("")){
-						assessor.setId(XnatExperimentdata.CreateNewID());
+						if(StringUtils.isBlank(assessor.getId())){
+							assessor.setId(XnatExperimentdata.CreateNewID());
 						}
 					}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Specified experiment already exists.");

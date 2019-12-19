@@ -429,7 +429,9 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 
             if (existing == null) {
                 try {
-                    if (!XNATUtils.hasValue(src.getId())) src.setId(XnatExperimentdata.CreateNewID());
+                    if (StringUtils.isBlank(src.getId())) {
+                        src.setId(XnatExperimentdata.CreateNewID());
+                    }
                 } catch (Exception e) {
                     failed("unable to create new session ID");
                     throw new ServerException("unable to create new session ID", e);
@@ -443,7 +445,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 src.setId(existing.getId());
                 preventConcurrentArchiving(existing.getId(), user);
             }
-
 
             final PersistentWorkflowI workflow;
             final EventMetaI c;
@@ -822,10 +823,12 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     }
 
     public void validateSession() throws ServerException {
-        try {
-            if (!XNATUtils.hasValue(src.getId())) src.setId(XnatExperimentdata.CreateNewID());
-        } catch (Exception e) {
-            throw new ServerException("unable to create new session ID", e);
+        if (StringUtils.isBlank(src.getId())) {
+            try {
+                src.setId(XnatExperimentdata.CreateNewID());
+            } catch (Exception e) {
+                throw new ServerException("unable to create new session ID", e);
+            }
         }
 
         try {
@@ -856,39 +859,45 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     private synchronized void getOrCreateSubject(final String subjectLabel, final boolean allowNewSubject, final EventMetaI c) throws ServerException {
         log.debug("Trying to get or create the subject {} in project {}", subjectLabel, project);
         final XnatSubjectdata existing = retrieveMatchingSubject(subjectLabel, project, user);
-        if (existing == null) {
-            if (!allowNewSubject) {
-                log.debug("Subject {} does not exist in project {}, but not allowed to create new subjects, sorry", subjectLabel, project);
-                return;
-            }
-
-            log.debug("Subject {} does not exist in project {}, creating", subjectLabel, project);
-            processing("creating new subject");
-            final XnatSubjectdata subject = new XnatSubjectdata(user);
-            subject.setProject(project);
-            subject.setLabel(subjectLabel);
-            try {
-                // subject.setId(XnatSubjectdata.CreateNewID());
-                log.debug("Subject {} in project {} now has ID {}", subjectLabel, project, subject.getId());
-            } catch (Exception e) {
-                failed("unable to create new subject ID");
-                throw new ServerException("Unable to create new subject ID", e);
-            }
-            try {
-                SaveItemHelper.authorizedSave(subject, user, false, false, c);
-                XDAT.triggerXftItemEvent(subject, CREATE);
-                log.info("Successfully create subject {} with ID {} in project {}", subjectLabel, subject.getId(), project);
-            } catch (Exception e) {
-                failed("unable to save new subject " + subject.getId());
-                throw new ServerException("Unable to save new subject " + subject.getId(), e);
-            }
-
-            processing("created new subject " + subjectLabel);
-            src.setSubjectId(subject.getId());
-        } else {
+        if (existing != null) {
             src.setSubjectId(existing.getId());
             processing("matches existing subject " + subjectLabel);
+            return;
         }
+
+        if (!allowNewSubject) {
+            log.debug("Subject {} does not exist in project {}, but not allowed to create new subjects, sorry", subjectLabel, project);
+            return;
+        }
+
+        log.debug("Subject {} does not exist in project {}, creating", subjectLabel, project);
+        processing("Creating new subject in project " + project + " with label " + subjectLabel);
+        final XnatSubjectdata subject = new XnatSubjectdata(user);
+        subject.setProject(project);
+        subject.setLabel(subjectLabel);
+
+        final String subjectId;
+        try {
+            subjectId = XnatSubjectdata.CreateNewID();
+        } catch (Exception e) {
+            failed("Unable to create new subject ID");
+            throw new ServerException("Unable to create new subject ID", e);
+        }
+
+        subject.setId(subjectId);
+        log.debug("Subject {} in project {} now has ID {}", subjectLabel, project, subjectId);
+
+        try {
+            SaveItemHelper.authorizedSave(subject, user, false, false, c);
+            XDAT.triggerXftItemEvent(subject, CREATE);
+            log.info("Successfully create subject {} with ID {} in project {}", subjectLabel, subjectId, project);
+        } catch (Exception e) {
+            failed("unable to save new subject " + subjectId);
+            throw new ServerException("Unable to save new subject " + subjectId, e);
+        }
+
+        processing("Created new subject " + subjectLabel + " in project " + project + " with ID " + subjectId);
+        src.setSubjectId(subjectId);
     }
 
     /************************************

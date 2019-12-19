@@ -121,17 +121,19 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
 
     private void createSubject(final String projectId, final String subjectLabel) throws Exception {
         log.info("Creating new subject {} in project {}", subjectLabel, projectId);
-        final XnatSubjectdata subject = new XnatSubjectdata(getUser());
-        subject.setId(XnatSubjectdata.CreateNewID());
-        subject.setProject(projectId);
-        subject.setLabel(subjectLabel);
+        final String subjectId;
         try {
-            // subject.setId(XnatSubjectdata.CreateNewID());
-            log.debug("Subject {} in project {} now has ID {}", subjectLabel, projectId, subject.getId());
+            subjectId = XnatSubjectdata.CreateNewID();
         } catch (Exception e) {
             failed("unable to create new subject ID");
             throw new ServerException("Unable to create new subject ID", e);
         }
+
+        log.debug("Creating subject in project {} with ID {} and label {}", projectId, subjectId, subjectLabel);
+        final XnatSubjectdata subject = new XnatSubjectdata(getUser());
+        subject.setId(subjectId);
+        subject.setProject(projectId);
+        subject.setLabel(subjectLabel);
 
         final PersistentWorkflowI workflow;
         final EventMetaI          eventMeta;

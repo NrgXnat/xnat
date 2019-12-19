@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -484,7 +485,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         }
 
         try {
-            if (session.getId()==null || session.getId().equals("")){
+            if (StringUtils.isBlank(session.getId())){
                 session.setId(XnatExperimentdata.CreateNewID());
             }
         } catch (Exception e) {
@@ -512,7 +513,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         }
 
         try {
-            if (temp.getId()==null || temp.getId().equals("")){
+            if (StringUtils.isBlank(temp.getId())){
                 temp.setId(XnatExperimentdata.CreateNewID());
             }
         } catch (Exception e) {

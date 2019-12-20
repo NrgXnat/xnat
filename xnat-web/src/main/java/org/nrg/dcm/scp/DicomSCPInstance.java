@@ -9,28 +9,35 @@
 
 package org.nrg.dcm.scp;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import lombok.*;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import lombok.*;
-import lombok.experimental.Accessors;
-
-@Getter
-@Setter
-@Builder
+// XNAT-6115: The @Builder, @JsonDeserialize, and @JsonPOJOBuilder annotations force Jackson to use the Lombok-generated
+// builder instance when deserializing JSON to a DicomSCPInstance object. This works around the issue where boolean properties
+// that aren't set in the JSON are set to false. Using the builder, which has the default value for enabled set to true,
+// means that, if enabled is not specified in the JSON, the instance is automatically enabled.
+@Data
+@Builder(builderClassName = "InstanceBuilder", toBuilder = true)
+@NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
 @Accessors(prefix = "_")
+@Slf4j
+@JsonDeserialize(builder = DicomSCPInstance.InstanceBuilder.class)
 public class DicomSCPInstance {
     public static String formatDicomSCPInstanceKey(final String aeTitle, final int port) {
         return aeTitle + ":" + port;
     }
 
-    @JsonCreator
-    public DicomSCPInstance() {
-        // Default constructor
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class InstanceBuilder {
+        // This empty class is a placeholder for Lombok.
     }
 
     @Override

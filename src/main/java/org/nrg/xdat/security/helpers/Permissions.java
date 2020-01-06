@@ -794,7 +794,7 @@ public class Permissions {
     }
 
     public static boolean canDeleteProject(final UserI user, final String projectId) {
-        if (Roles.isSiteAdmin(user)) {
+        if (Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)) {
             return true;
         }
         final String access = getUserProjectAccess(user, projectId);

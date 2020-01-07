@@ -66,10 +66,10 @@
         //headerMenuBar.render(); 
         var oButton1 = new YAHOO.widget.Button("button1");
         var oButton2 = new YAHOO.widget.Button("button2");
-        #if($data.getSession().getAttribute("userHelper").canDelete($project))
+        #if($canEditOrDeleteProject)
             var oButton3 = new YAHOO.widget.Button("button3");
         #end
-        #if($data.getSession().getAttribute("userHelper").canCreate($project))
+        #if($canEditOrDeleteProject)
             var oButton4 = new YAHOO.widget.Button("button4");
             var oButton5 = new YAHOO.widget.Button("button5");
         #end

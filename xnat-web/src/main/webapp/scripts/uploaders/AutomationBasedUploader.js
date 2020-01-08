@@ -816,7 +816,7 @@ XNAT.app.abu.updateModalAction = function(){
 						target=target.replace("/data/projects",    "/data/archive/projects");
 						target=target.replace("/data/experiments", "/data/archive/experiments");
 						
-						abu._fileUploader._currentAction = serverRoot + "/data/services/triage/projects/" + XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
+						abu._fileUploader._currentAction = serverRoot + "/data/services/triage/projects/" + XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
 					}else{
 						$("#triageMessage").css('display', 'none');
 						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;

@@ -546,7 +546,15 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             }
 
             try {
-                preArchive(user,src,params,existing);
+                try {
+                    preArchive(user, src, params, existing);
+                } catch (RuntimeException e) {
+                    if (e.getCause() != null) {
+                        throw e.getCause();
+                    } else {
+                        throw e;
+                    }
+                }
                 
                 processing("validating loaded data");
                 validateSession();
@@ -675,7 +683,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 throw e;
             } catch (Throwable e) {
                 log.error("", e);
-                throw new ServerException(e.getMessage(), new Exception());
+                throw new ServerException(e.getMessage(), new Exception(e));
             }
         } finally {
             unlock();

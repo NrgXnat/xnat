@@ -829,6 +829,9 @@ XNAT.app.abu.updateModalAction = function(){
 						$("#formatBox").val("");
 						$("#contentBox").val("");
 					}
+
+					// may be undefined and should then default to true
+					$('#extractRequestBox').prop('checked', resourceConfigs[i].unzip !== false);
 					
 					XNAT.app.abu.populateEventHandlerSelect();
 					return;
@@ -841,7 +844,6 @@ XNAT.app.abu.updateModalAction = function(){
 XNAT.app.abu.updateOptionsCheckboxes = function(selectVal) {
 	// First set default values that will take effect if there is no event handlers (e.g. configured resource uploads with no scripts);
 	$("#extractRequestBoxDiv").show();
-	$("#extractRequestBox").attr('checked',true);
 	$("#closeBoxDiv").hide();
 	$("#closeBox").attr('checked',false);
 	$("#emailBoxDiv").hide();

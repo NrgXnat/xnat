@@ -81,6 +81,7 @@ XNAT.app.pResources={
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='overwrite' type='checkbox' id='pResource.overwrite'/> <label for='pResource.overwrite'>Allow overwrite</label></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='triage' type='checkbox' id='pResource.triage'/> <label for='pResource.triage'>Force Quarantine</label></div>";
 		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='format' type='checkbox' id='pResource.format'/> <label for='pResource.format'>Show Format & Content</label></div>";
+		temp_html+=" <div class='row'><div class='rowTitle'>&nbsp;</div><input class='pResourceField' style='width:10px;' data-prop-name='unzip' type='checkbox' id='pResource.unzip' checked/> <label for='pResource.unzip'>Extract compressed files by default</label></div>";
 		temp_html+=" </div>";
 		temp_html+=" <div style='clear:both;'></div>";
 		temp_html+=" <div class='row3'><button id='cruCancelBut' onclick='$(\"#pResource_form\").html(\"\");$(\"#pResource_form\").hide();$(\"#pResource_exist\").height(430)'>Cancel</button><button class='default' id='cruAddBut' onclick='XNAT.app.pResources.add();'>Add</button></div>";
@@ -333,7 +334,7 @@ XNAT.app.pResources={
 	render:function(eventHandlers){
 		//identify columns
 		if(this.configs!=undefined && this.configs.length>0){
-			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-directory</dd><dd class='colM col6'>Overwrite?</dd><dd class='colN col5'>Quarantine</dd><dd class='colS col5'>Format/Content</dd><dd class='colT col6'>Options</dd></dl></dl>	";			
+			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-dir</dd><dd class='colM col6'>Overwrite?</dd><dd class='colN col5'>Quarantine</dd><dd class='colS col5'>Format/Content</dd><dd class='unzip'>Extract?</dd><dd class='colT col6'>Options</dd></dl></dl>	";
 			jq.each(this.configs,function(i1,v1){
 				var elementName=window.available_elements_getByName(v1.type);
 				if(elementName!=undefined && elementName.singular!=undefined){
@@ -341,7 +342,9 @@ XNAT.app.pResources={
 				}else{
 					elementName=v1.type;
 				}
-				tmpHtml+="<dl class='item'><dd class='col1'><button onclick='XNAT.app.pResources.remove(\"" + i1 +"\");'>Remove</button></dd><dd class='colL col2'>"+ elementName +"</dd><dd class='colM col3'>"+v1.name +"</dd><dd class='colM col4'>"+v1.label +"</dd><dd class='colL col5'>"+v1.subdir +"&nbsp;</dd><dd class='colM col6'>"+((v1.overwrite)?v1.overwrite:"false") +"</dd><dd class='colN col5'>"+((v1.triage)?v1.triage:"false") +"</dd><dd class='colS col5'>"+((v1.format)?v1.format:"false") +"</dd><dd class='colT col6'>";
+				tmpHtml+="<dl class='item'><dd class='col1'><button onclick='XNAT.app.pResources.remove(\"" + i1 +"\");'>Remove</button></dd><dd class='colL col2'>"+ elementName +"</dd><dd class='colM col3'>"+v1.name +"</dd><dd class='colM col4'>"+v1.label +"</dd><dd class='colL col5'>"+v1.subdir +"&nbsp;</dd><dd class='colM col6'>"+((v1.overwrite)?v1.overwrite:"false") +"</dd><dd class='colN col5'>"+((v1.triage)?v1.triage:"false") +"</dd><dd class='colS col5'>"+((v1.format)?v1.format:"false") +
+					"</dd><dd class='unzip'>" +((v1.unzip)?v1.unzip:"false") +
+					"</dd><dd class='colT col6'>";
 				if(v1.level){
 					tmpHtml+="Level:"+v1.level;
 				}

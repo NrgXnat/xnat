@@ -229,6 +229,15 @@ public class PreferenceInfo {
         return _itemType != null && Map.class.isAssignableFrom(_valueType);
     }
 
+    /**
+     * Indicates whether this preference is an enum based on the {@link #getValueType() value type} of the preference.
+     *
+     * @return Returns true if this preference is an enum object.
+     */
+    public boolean isEnum() {
+        return Enum.class.isAssignableFrom(_valueType);
+    }
+
     @Override
     public String toString() {
         return _name + (StringUtils.isNotBlank(_property) ? " (stored as " + _property + ")" : "");

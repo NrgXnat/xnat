@@ -11,11 +11,11 @@ package org.nrg.prefs.tools.alias;
 
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+@SuppressWarnings("unused")
 @Component
 public class AliasMigrationTestTool {
     @Autowired

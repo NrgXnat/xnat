@@ -419,6 +419,9 @@
     <logger name="org.nrg.framework.services.NrgEventService" additivity="false" level="WARN">
         <appender-ref ref="events"/>
     </logger>
+    <logger name="org.nrg.dcm.scp" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
     <logger name="org.nrg.dcm" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
     </logger>
@@ -456,6 +459,9 @@
         <appender-ref ref="orm"/>
     </logger>
     <logger name="org.nrg.xnat" additivity="false" level="ERROR">
+        <appender-ref ref="xdat"/>
+    </logger>
+    <logger name="org.nrg.xnat.archive" additivity="false" level="WARN">
         <appender-ref ref="xdat"/>
     </logger>
     <logger name="org.nrg.xnat.utils" additivity="false" level="WARN">

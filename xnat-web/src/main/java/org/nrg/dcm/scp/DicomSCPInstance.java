@@ -9,88 +9,35 @@
 
 package org.nrg.dcm.scp;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import lombok.*;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@SuppressWarnings("WeakerAccess")
+// XNAT-6115: The @Builder, @JsonDeserialize, and @JsonPOJOBuilder annotations force Jackson to use the Lombok-generated
+// builder instance when deserializing JSON to a DicomSCPInstance object. This works around the issue where boolean properties
+// that aren't set in the JSON are set to false. Using the builder, which has the default value for enabled set to true,
+// means that, if enabled is not specified in the JSON, the instance is automatically enabled.
+@Data
+@Builder(builderClassName = "InstanceBuilder", toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+@Accessors(prefix = "_")
+@Slf4j
+@JsonDeserialize(builder = DicomSCPInstance.InstanceBuilder.class)
 public class DicomSCPInstance {
     public static String formatDicomSCPInstanceKey(final String aeTitle, final int port) {
         return aeTitle + ":" + port;
     }
 
-    @JsonCreator
-    public DicomSCPInstance() {
-        // Default constructor
-    }
-
-    public DicomSCPInstance(final int id, final String aeTitle, final int port, final String identifier, final String fileNamer, final boolean enabled, final boolean customProcessing) {
-        setId(id);
-        setPort(port);
-        setAeTitle(aeTitle);
-        setIdentifier(identifier);
-        setFileNamer(fileNamer);
-        setEnabled(enabled);
-        setCustomProcessing(customProcessing);
-    }
-
-    public int getId() {
-        return _id;
-    }
-
-    public void setId(final int id) {
-        _id = id;
-    }
-
-    public int getPort() {
-        return _port;
-    }
-
-    public void setPort(final int port) {
-        _port = port;
-    }
-
-    public String getAeTitle() {
-        return _aeTitle;
-    }
-
-    public void setAeTitle(final String aeTitle) {
-        _aeTitle = aeTitle;
-    }
-
-    public String getIdentifier() {
-        return _identifier;
-    }
-
-    public void setIdentifier(final String identifier) {
-        _identifier = identifier;
-    }
-
-    public String getFileNamer() {
-        return _fileNamer;
-    }
-
-    public void setFileNamer(final String fileNamer) {
-        _fileNamer = fileNamer;
-    }
-
-    public boolean isEnabled() {
-        return _enabled;
-    }
-
-    public void setEnabled(final boolean enabled) {
-        _enabled = enabled;
-    }
-
-    public boolean getCustomProcessing() {
-        return _customProcessing;
-    }
-
-    public void setCustomProcessing(final boolean customProcessing) {
-        _customProcessing = customProcessing;
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class InstanceBuilder {
+        // This empty class is a placeholder for Lombok.
     }
 
     @Override
@@ -98,59 +45,25 @@ public class DicomSCPInstance {
         return formatDicomSCPInstanceKey(_aeTitle, _port);
     }
 
-    @Override
-    public boolean equals(final Object object) {
-        if (this == object) {
-            return true;
-        }
-
-        if (!(object instanceof DicomSCPInstance)) {
-            return false;
-        }
-
-        final DicomSCPInstance instance = (DicomSCPInstance) object;
-
-        return new EqualsBuilder()
-                .append(getId(), instance.getId())
-                .append(getPort(), instance.getPort())
-                .append(isEnabled(), instance.isEnabled())
-                .append(getAeTitle(), instance.getAeTitle())
-                .append(getIdentifier(), instance.getIdentifier())
-                .append(getFileNamer(), instance.getFileNamer())
-                .append(getCustomProcessing(), instance.getCustomProcessing())
-                .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(getId())
-                .append(getPort())
-                .append(getAeTitle())
-                .append(getIdentifier())
-                .append(getFileNamer())
-                .append(isEnabled())
-                .append(getCustomProcessing())
-                .toHashCode();
-    }
-
     public Map<String, Object> toMap() {
-        return new HashMap<String, Object>() {{
-            put("id", _id == 0 ? null : _id);
-            put("aeTitle", _aeTitle);
-            put("port", _port);
-            put("identifier", _identifier);
-            put("fileNamer", _fileNamer);
-            put("enabled", _enabled);
-            put("customProcessing", _customProcessing);
-        }};
+        final Map<String, Object> map = new HashMap<>();
+        map.put("id", _id == 0 ? null : _id);
+        map.put("aeTitle", _aeTitle);
+        map.put("port", _port);
+        map.put("identifier", _identifier);
+        map.put("fileNamer", _fileNamer);
+        map.put("enabled", _enabled);
+        map.put("customProcessing", _customProcessing);
+        return map;
     }
 
-    private int    _id;
-    private int    _port;
-    private String _aeTitle;
-    private String _identifier;
-    private String _fileNamer;
-    private boolean _enabled = true;
+    private int     _id;
+    private String  _aeTitle;
+    private int     _port;
+    private String  _identifier;
+    private String  _fileNamer;
+    @Builder.Default
+    private boolean _enabled          = true;
+    @Builder.Default
     private boolean _customProcessing = false;
 }

@@ -12,10 +12,9 @@ package org.nrg.xnat.turbine.utils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.*;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -25,12 +24,15 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.CatEntryMetafieldBean;
+import org.nrg.xdat.model.ArcPathinfoI;
+import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -41,8 +43,6 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
  * @author Tim
@@ -260,7 +260,18 @@ public class XNATUtils {
 //    public static String GetCurrentArchiveFolder() throws org.nrg.xnat.exceptions.UndefinedArchive,org.nrg.xnat.exceptions.InvalidArchiveStructure,IOException{
 //        return GetInstance().getCurrentArchiveFolder();
 //    }
-    
+
+    public static void setArcProjectPaths(final ArcProjectI arcProject, final SiteConfigPreferences preferences) throws Exception {
+        final String       arcProjectId = arcProject.getId();
+        final ArcPathinfoI paths        = arcProject.getPaths();
+        paths.setPipelinepath(Paths.get(preferences.getPipelinePath(), arcProjectId).toString());
+        paths.setArchivepath(Paths.get(preferences.getArchivePath(), arcProjectId).toString());
+        paths.setPrearchivepath(Paths.get(preferences.getPrearchivePath(), arcProjectId).toString());
+        paths.setCachepath(Paths.get(preferences.getCachePath(), arcProjectId).toString());
+        paths.setFtppath(Paths.get(preferences.getFtpPath(), arcProjectId).toString());
+        paths.setBuildpath(Paths.get(preferences.getBuildPath(), arcProjectId).toString());
+        arcProject.setPaths(paths);
+    }
 
     public static void populateCatalogBean(CatCatalogBean cat, String header,File f){
     	if (f.isDirectory()){

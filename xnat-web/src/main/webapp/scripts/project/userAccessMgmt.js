@@ -769,7 +769,7 @@ var XNAT = getObject(XNAT || {});
             group + '<span class="pull-right"><a href="#!" onclick="XNAT.projectAccess.modifyGroup(\''+groupId+'\', \''+projectId+'\')">Edit</a></span>';
     }
 
-    XNAT.projectAccess.showGroups = function(){
+    XNAT.projectAccess.showGroups = function(canCreateGroups){
         if (!XNAT.projectAccess.groups.length) {
             errorHandler({
                 statusText: 'Function: showGroups',
@@ -806,9 +806,14 @@ var XNAT = getObject(XNAT || {});
                     }).element
                 );
                 container.spawn('p');
-                container.spawn('a', {
-                    href: rootUrl('/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project')
-                }, '<button class="btn" type="button">Create Custom Group</button>');
+                if (canCreateGroups){
+                    container.spawn('a', {
+                        href: rootUrl('/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project')
+                    }, '<button class="btn" type="button">Create Custom Group</button>');
+                }
+                else {
+                    container.spawn('button.btn.disabled',{title: "Not allowed for this user on this project"},"Create Custom Group");
+                }
             },
             buttons: [
                 {

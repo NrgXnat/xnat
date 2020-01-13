@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -35,10 +38,12 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -55,6 +60,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
 public class PrearcUtils {
     private final static Logger logger = LoggerFactory.getLogger(PrearcUtils.class);
@@ -267,18 +273,15 @@ public class PrearcUtils {
                 }
                 List<ArcProjectI> projectsList = ArcSpecManager.GetInstance().getProjects_project();
 
-                SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
-                for(ArcProjectI proj:projectsList){
-                    if(StringUtils.equals(project,proj.getId())){
-                        org.nrg.xdat.model.ArcPathinfoI paths = proj.getPaths();
-                        paths.setPipelinepath(Paths.get(siteConfigPreferences.getPipelinePath(),proj.getId()).toString());
-                        paths.setArchivepath(Paths.get(siteConfigPreferences.getArchivePath(),proj.getId()).toString());
-                        paths.setPrearchivepath(Paths.get(siteConfigPreferences.getPrearchivePath(),proj.getId()).toString());
-                        paths.setCachepath(Paths.get(siteConfigPreferences.getCachePath(),proj.getId()).toString());
-                        paths.setFtppath(Paths.get(siteConfigPreferences.getFtpPath(),proj.getId()).toString());
-                        paths.setBuildpath(Paths.get(siteConfigPreferences.getBuildPath(),proj.getId()).toString());
-                        proj.setPaths(paths);
+                final SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
+                final Optional<ArcProjectI> arcProject = Iterables.tryFind(projectsList, new Predicate<ArcProjectI>() {
+                    @Override
+                    public boolean apply(final ArcProjectI arcProject) {
+                        return StringUtils.equals(project, arcProject.getId());
                     }
+                });
+                if (arcProject.isPresent()) {
+                    setArcProjectPaths(arcProject.get(), siteConfigPreferences);
                 }
             } else {
                 //check to see if it used a project alias

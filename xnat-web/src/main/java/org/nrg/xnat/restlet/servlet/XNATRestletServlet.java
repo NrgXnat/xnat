@@ -45,7 +45,7 @@ public class XNATRestletServlet extends ServerServlet {
 
     @Override
     public void destroy() {
-        XDAT.getContextService().getBean(DicomSCPManager.class).stop();
+        XDAT.getContextService().getBean(DicomSCPManager.class).shutdown();
     }
 
     private static final long serialVersionUID = -4149339105144231596L;

@@ -24,6 +24,7 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.util.RunData;
@@ -591,25 +592,13 @@ public class StoreXAR extends RawScreen {
         }
         
         try {
-       
-            if (session.getId()==null || session.getId().equals("")){
-
+            if (StringUtils.isBlank(session.getId())){
                 session.setId(XnatExperimentdata.CreateNewID());
-
             }
         } catch (Exception e) {
-
             logger.error("",e);
-
         }
-
     }
-
-
-
-
-
-
 
     private void populateAssessor(XnatImageassessordata temp){
 
@@ -644,17 +633,11 @@ public class StoreXAR extends RawScreen {
 
 
         try {
-            if (temp.getId()==null || temp.getId().equals("")){
-
+            if (StringUtils.isBlank(temp.getId())){
                 temp.setId(XnatExperimentdata.CreateNewID());
-
             }
         } catch (Exception e) {
-
             logger.error("",e);
-
         }
-
     }
-
 }

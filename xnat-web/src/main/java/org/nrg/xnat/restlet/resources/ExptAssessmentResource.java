@@ -278,7 +278,7 @@ public class ExptAssessmentResource extends ItemResource {
 							return;
 						}
 						//IS NEW
-						if(assessor.getId()==null || assessor.getId().equals("")){
+						if(StringUtils.isBlank(assessor.getId())){
 							assessor.setId(XnatExperimentdata.CreateNewID());
 						}
 					}else{

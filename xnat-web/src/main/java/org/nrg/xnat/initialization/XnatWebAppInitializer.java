@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import ch.qos.logback.classic.servlet.LogbackServletContextListener;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.transport.http.AdminServlet;
@@ -24,7 +25,6 @@ import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
-import org.nrg.xnat.servlet.Log4JServlet;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
@@ -48,6 +48,20 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
+        context.addListener(new LogbackServletContextListener());
+
+        /*
+        final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+        final JoranConfigurator configurator = new JoranConfigurator();
+        try (final InputStream configStream = FileUtils.openInputStream(logbackPropertiesUserFile)) {
+            configurator.setContext(loggerContext);
+            configurator.doConfigure(configStream); // loads logback file
+        } catch (JoranException e) {
+            e.printStackTrace();
+        }
+        */
+
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
 
         // If the context path is not empty (meaning this isn't the root application), then we'll get true: Restlet will
@@ -68,7 +82,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         addServlet(XDATServlet.class, 1, "/xdat/*");
         addServlet(Turbine.class, 2, "/app/*");
         addServlet(XNATRestletServlet.class, 2, "/REST/*", "/data/*");
-        addServlet(Log4JServlet.class, 3, "/updatelog4j/*");
         addServlet(XDATAjaxServlet.class, 4, "/ajax/*", "/servlet/XDATAjaxServlet", "/servlet/AjaxServlet");
         addServlet(AxisServlet.class, 5, "/servlet/AxisServlet", "*.jws", "/services/*");
         addServlet(AdminServlet.class, 6, "/servlet/AdminServlet");
@@ -77,7 +90,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected String[] getServletMappings() {
-        return new String[]{"/admin/*", "/xapi/*", "/pages/*"};
+        return new String[]{"/admin/*", "/xapi/*", "/pages/*", "/schemas/*"};
     }
 
     @Override
@@ -109,7 +122,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             root = System.getProperty("java.io.tmpdir");
             subfolder = "xnat";
         }
-        final String prefix = "xnat_" + Long.toString(System.nanoTime());
+        final String prefix = "xnat_" + System.nanoTime();
         try {
             final Path path = Paths.get(root, subfolder);
             path.toFile().mkdirs();

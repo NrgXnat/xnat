@@ -17,9 +17,18 @@
 
     <pg:init/>
 
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="max-age=0">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="-1">
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
+
+    <title>${empty title ? 'XNAT' : title}</title>
+
     ${headTop}
 
-    <c:set var="versionString" value="v=175rc1"/>
+    <c:set var="versionString" value="v=175"/>
 
     <c:set var="lastAccessed" value="${fn:split(cookie.SESSION_EXPIRATION_TIME.value, ',')[0]}"/>
 
@@ -33,20 +42,11 @@
         <c:set var="minjs" value="${js}"/>
     </c:if>
 
-    <title>${empty title ? 'XNAT' : title}</title>
-
     <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="USERNAME" value="${sessionScope.username}"/>
 
     <c:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="session"/>
-
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="cache-control" content="max-age=0">
-    <meta http-equiv="cache-control" content="no-cache">
-    <meta http-equiv="expires" content="-1">
-    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
     <pg:jsvars/>
 

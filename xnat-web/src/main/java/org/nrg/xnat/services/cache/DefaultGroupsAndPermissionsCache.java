@@ -50,7 +50,6 @@ import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -63,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -76,16 +76,17 @@ import java.util.regex.Pattern;
 
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
+import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static org.nrg.xft.event.XftItemEventI.*;
 
-@SuppressWarnings({"Duplicates", "SqlDialectInspection", "SqlNoDataSourceInspection"})
+@SuppressWarnings("Duplicates")
 @Service("groupsAndPermissionsCache")
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
     @Autowired
-    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate) throws SQLException {
+    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final DatabaseHelper helper) throws SQLException {
         super(cacheManager,
               XftItemEventCriteria.builder().xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME).actions(CREATE, UPDATE, DELETE).build(),
               XftItemEventCriteria.builder().xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME).xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME).actions(CREATE, DELETE, SHARE).build(),
@@ -94,7 +95,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
         _template = template;
         _jmsTemplate = jmsTemplate;
-        _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+        _helper = helper;
         _totalCounts = new HashMap<>();
         _missingElements = new HashMap<>();
         _userChecks = new ConcurrentHashMap<>();
@@ -424,8 +425,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public List<UserGroupI> getGroupsForTag(final String tag) {
         // Get the group IDs associated with the tag.
-        log.info("Getting groups for tag {}", tag);
         final List<String> groupIds = getTagGroups(tag);
+        log.info("Getting {} groups for tag {}", groupIds.size(), tag);
         return getUserGroupList(groupIds);
     }
 
@@ -607,10 +608,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         status.put("processedCount", Integer.toString(processedCount));
         status.put("processed", StringUtils.join(processed, ", "));
 
-        if (unprocessed.isEmpty()) {
-            final Date   completed = _listener.getCompleted();
-            final String duration  = DurationFormatUtils.formatPeriodISO(start.getTime(), completed.getTime());
+        final Date completed = _listener.getCompleted();
 
+        if (unprocessed.isEmpty() && completed != null) {
+            final String duration = DurationFormatUtils.formatPeriodISO(start.getTime(), completed.getTime());
             status.put("completed", DATE_FORMAT.format(completed));
             status.put("duration", duration);
             status.put("message", "Cache initialization is complete. Processed " + processedCount + " groups in " + duration);
@@ -625,7 +626,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         status.put("unprocessed", StringUtils.join(unprocessed, ", "));
         status.put("current", DATE_FORMAT.format(now));
         status.put("duration", duration);
-        status.put("message", "Cache initialization is on-going, with " + processedCount + " groups processed and " + unprocessedCount + " groups remaining, time elapsed so far is " + duration);
+        status.put("message", unprocessed.isEmpty()
+                              ? "Cache initialization is on-going, with " + processedCount + " groups processed and no groups remaining, time elapsed so far is " + duration
+                              : "Cache initialization is on-going, with " + processedCount + " groups processed and " + unprocessedCount + " groups remaining, time elapsed so far is " + duration);
+
         return status;
     }
 
@@ -987,7 +991,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return Collections.emptyMap();
         }
 
-        final String cacheId  = getCacheIdForUserElements(username, READABLE);
+        final String cacheId = getCacheIdForUserElements(username, READABLE);
 
         // Check whether the element types are cached and, if so, return that.
         log.trace("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
@@ -1052,7 +1056,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (guestBrowseableElementDisplays != null) {
             return guestBrowseableElementDisplays;
         }
-        return resetBrowseableElementDisplays(_guest);
+        return resetBrowseableElementDisplays(getGuest());
     }
 
     private void clearAllUserProjectAccess() {
@@ -1372,19 +1376,46 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private void resetTotalCounts() {
+        _totalCounts.clear();
         resetProjectCount();
-        final Long subjectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_subjectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectCount);
+        resetSubjectCount();
+        resetImageSessionCount();
         final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
         for (final Map<String, Object> elementCount : elementCounts) {
-            _totalCounts.put((String) elementCount.get("element_name"), (Long) elementCount.get("count"));
+            final String elementName = (String) elementCount.get("element_name");
+            final Long   count       = (Long) elementCount.get("count");
+            if (StringUtils.isBlank(elementName)) {
+                try {
+                    _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
+                    final List<Map<String, Object>> orphans = _template.queryForList(QUERY_ORPHANED_EXPERIMENTS, EmptySqlParameterSource.INSTANCE);
+                    log.warn("Found {} elements that are not associated with a valid data type:\n\n{}\n\nYou can correct some of these orphaned experiments by running the query:\n\n{}\n\nAny experiment IDs and data types returned from that query indicate data types that can not be resolved on the system (i.e. they don't exist in the primary data-type table).", count, StringUtils.join(Lists.transform(orphans, new Function<Map<String, Object>, String>() {
+                        @Override
+                        public String apply(final Map<String, Object> experiment) {
+                            final String experimentId = (String) experiment.get("experiment_id");
+                            final String dataType     = (String) experiment.get("data_type");
+                            final int    extensionId  = (Integer) experiment.get("xdat_meta_element_id");
+                            return " * " + experimentId + " was a " + dataType + ", " + (extensionId >= 0 ? "should be extension ID " + extensionId : "data type doesn't appear in xdat_meta_element table");
+                        }
+                    }), "\n"), QUERY_CORRECT_ORPHANED_EXPERIMENTS);
+                } catch (SQLException | IOException e) {
+                    log.error("An error occurred trying to check the database for the data type access functions. This occurred while trying to locate experiments with invalid data types.", e);
+                }
+            } else {
+                _totalCounts.put(elementName, count);
+            }
         }
     }
 
     private void resetProjectCount() {
-        _totalCounts.clear();
-        final Long projectCount = _template.queryForObject("SELECT COUNT(*) FROM xnat_projectData", EmptySqlParameterSource.INSTANCE, Long.class);
-        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectCount);
+        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_projectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+    }
+
+    private void resetSubjectCount() {
+        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_subjectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+    }
+
+    private void resetImageSessionCount() {
+        _totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_imagesessiondata", EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private Map<String, ElementDisplay> resetGuestBrowseableElementDisplays() {
@@ -1608,7 +1639,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
     }
 
-    private List<UserGroupI> getUserGroupList(final List groupIds) {
+    private List<UserGroupI> getUserGroupList(final List<String> groupIds) {
         if (groupIds == null || groupIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -1729,11 +1760,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final DateFormat   DATE_FORMAT   = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
 
-    private static final String QUERY_GET_GROUPS_FOR_USER            = "SELECT groupid " +
-                                                                       "FROM xdat_user_groupid xug " +
-                                                                       "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
-                                                                       "WHERE xu.login = :username " +
-                                                                       "ORDER BY groupid";
     private static final String QUERY_GET_GROUP_FOR_USER_AND_TAG     = "SELECT id " +
                                                                        "FROM xdat_usergroup xug " +
                                                                        "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
@@ -1813,7 +1839,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                        "  xfm.delete_element  AS delete_element, " +
                                                                        "  xfm.active_element  AS active_element " +
                                                                        "FROM xdat_user u " +
-                                                                       "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id " +
+                                                                       "  LEFT JOIN xdat_user_groupid i ON u.xdat_user_id = i.groups_groupid_xdat_user_xdat_user_id " +
+                                                                       "  LEFT JOIN xdat_usergroup g ON i.groupid = g.id " +
+                                                                       "  LEFT JOIN xdat_element_access xea ON u.xdat_user_id = xea.xdat_user_xdat_user_id OR g.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
                                                                        "  LEFT JOIN xdat_element_access_meta_data xeamd ON xea.element_access_info = xeamd.meta_data_id " +
                                                                        "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
                                                                        "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
@@ -1893,6 +1921,17 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                        "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
                                                                        "GROUP BY " +
                                                                        "  element_name";
+    private static final String QUERY_ORPHANED_EXPERIMENTS           = "SELECT " +
+                                                                       "    experiment_id, " +
+                                                                       "    data_type, " +
+                                                                       "    coalesce(xdat_meta_element_id, -1) AS xdat_meta_element_id " +
+                                                                       "FROM " +
+                                                                       "    data_type_views_experiments_without_data_type";
+    private static final String QUERY_CORRECT_ORPHANED_EXPERIMENTS   = "SELECT\n" +
+                                                                       "    orphaned_experiment,\n" +
+                                                                       "    original_data_type\n" +
+                                                                       "FROM\n" +
+                                                                       "    data_type_fns_correct_experiment_extension()";
     private static final String GUEST_USERNAME                       = "guest";
     private static final String ACTIONS_PREFIX                       = "actions";
     private static final String TAG_PREFIX                           = "tag";

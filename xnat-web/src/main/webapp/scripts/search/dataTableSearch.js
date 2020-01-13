@@ -774,11 +774,11 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                             submenuitems = Array.concat(submenuitems, this.search.options);
                         }
 
-                        if (spec != null && spec.actions != undefined && spec.actions.length > 0) {
-                            for (var sC = 0; sC < spec.actions.length; sC++) {
+                        if (spec != null && spec.actions !== undefined) {
+                            for (var key in spec.actions) {
                                 submenuitems.push({
-                                    value: spec.actions[sC].action,
-                                    text: spec.actions[sC].display,
+                                    value: key,
+                                    text: spec.actions[key],
                                     onclick: { fn: this.search.menuSend, scope: this.search }
                                 });
                             }

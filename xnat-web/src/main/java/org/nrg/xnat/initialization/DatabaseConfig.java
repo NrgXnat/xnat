@@ -12,12 +12,10 @@ package org.nrg.xnat.initialization;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.beans.Beans;
 import org.postgresql.Driver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -61,13 +59,13 @@ public class DatabaseConfig {
     public JdbcTemplate jdbcTemplate(final DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
-    
+
     @Bean
     public NamedParameterJdbcTemplate namedParameterJdbcTemplate(final JdbcTemplate template) {
         return new NamedParameterJdbcTemplate(template);
     }
 
-    @Bean(name="dbUsername")
+    @Bean(name = "dbUsername")
     public String dbUsername(final Environment environment) {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
         return properties.getProperty("username");

@@ -1,3 +1,4 @@
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/actions.vm -->
 #elementActionsBoxNoEnd($element $search_field $search_value $user $item)
 
 		#addCustomScreens("$element" "actionsBox")
@@ -40,3 +41,4 @@
 					 _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getIdentifier($project) ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements_getByName("$om.getXSIType()").singular,date:"",primary_label:"$!om.getIdentifier($project)","hasProject":"true"});
 
 				</script>
+<!-- END xnat-templates/screens/xnat_subjectData/actions.vm -->

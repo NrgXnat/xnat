@@ -11,7 +11,6 @@ package org.nrg.xnat.helpers.prearchive;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -24,7 +23,6 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -39,12 +37,12 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
-import org.nrg.xnat.restlet.services.Archiver;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.restlet.data.Status;
@@ -62,6 +60,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
 
 @Slf4j
@@ -70,6 +69,7 @@ public final class PrearcDatabase {
     final static String table = "prearchive";
     final static String tableWithSchema = PoolDBUtils.search_schema_name + "." + PrearcDatabase.table;
     private final static String tableSql = PrearcDatabase.createTableSql();
+    private static final String QUERY_PREARC_TABLE_COLUMNS = "SELECT column_name FROM information_schema.columns WHERE table_schema = '" + PoolDBUtils.search_schema_name + "' AND table_name = '" + PrearcDatabase.table + "'";
     public static boolean ready = false;
 
     // an object that synchronizes the cache with some permanent store
@@ -953,13 +953,14 @@ public final class PrearcDatabase {
     }
 
     private static String _archive(PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners, boolean waitFor) throws SyncFailedException {
+        log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         final String prearcDIR = session.getFolderName();
         final String timestamp = session.getTimestamp();
         final String project = session.getProject();
 
         final PrearcSessionArchiver archiver;
         try {
-            archiver = Archiver.buildArchiver(session, overrideExceptions, allowSessionMerge, overwriteFiles, user, waitFor);
+            archiver = new PrearcSessionArchiver(session, user, session.getAdditionalValues(), overrideExceptions, allowSessionMerge, waitFor, overwriteFiles);
         } catch (Exception e1) {
             PrearcUtils.log(project, timestamp, prearcDIR, e1);
             throw new IllegalStateException(e1);
@@ -1031,7 +1032,7 @@ public final class PrearcDatabase {
             new LockAndSync<Void>(session, timestamp, project, sd.getStatus()) {
                 Void extSync() throws SyncFailedException {
                     final Map<String, String> params = new LinkedHashMap<>();
-                    if (!Strings.isNullOrEmpty(project) && !PrearcUtils.COMMON.equals(project)) {
+                    if (!Strings.isNullOrEmpty(project) && !UNASSIGNED.equals(project)) {
                         params.put("project", project);
                         params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
                     } else {
@@ -2317,12 +2318,7 @@ public final class PrearcDatabase {
      * @throws SQLException
      */
     public static String printCols() throws SQLException {
-        ResultSet rs = PrearcDatabase.conn.createStatement().executeQuery("SHOW COLUMNS FROM " + PrearcDatabase.tableWithSchema);
-        ArrayList<String> as = new ArrayList<String>();
-        while (rs.next()) {
-            as.add(rs.getString(1));
-        }
-        return StringUtils.join(as.toArray(new String[as.size()]), ",");
+        return StringUtils.join(XDAT.getJdbcTemplate().queryForList(QUERY_PREARC_TABLE_COLUMNS, String.class), ", ");
     }
 
     /**
@@ -2389,6 +2385,9 @@ public final class PrearcDatabase {
             Object o = null;
             try {
                 o = this.op();
+            } catch (SessionException e) {
+                // Don't log session exceptions: they should be handled by whoever called this.
+                throw e;
             } catch (Exception e) {
                 log.error("", e);
                 throw e;
@@ -2400,7 +2399,8 @@ public final class PrearcDatabase {
     }
 
     /**
-     * Check that session arguments are valid and there is unique session that matches the arguments. If 'proj' is null it is assumed that the session is "Unassigned"
+     * Check that session arguments are valid and there is unique session that matches the arguments. If 'proj' is null
+     * it is assumed that the session is {@link ProjectAccessPredicate#UNASSIGNED unassigned}.
      *
      * @param sess
      * @param timestamp

@@ -8,7 +8,6 @@ import org.nrg.framework.task.XnatTaskI;
 import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.SQLException;
@@ -60,14 +59,14 @@ public abstract class AbstractXnatTask extends AbstractXnatRunnable implements X
      */
     @Override
     public void run() {
-        DefaultLoggingService.start(this);
+        _taskService.start(this);
 
         try {
             if (shouldRunTask()) {
                 runTask();
             }
         } finally {
-            DefaultLoggingService.finish(this);
+            _taskService.finish(this);
         }
     }
 

@@ -54,9 +54,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpSession;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
@@ -65,33 +62,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-@Api(description = "User Management API")
+@Api("User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
 @Slf4j
 public class UsersApi extends AbstractXapiRestController {
-    public static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<User>() {
-        @Override
-        public User mapRow(final ResultSet resultSet, final int index) throws SQLException {
-            final int       userId                  = resultSet.getInt("id");
-            final String    username                = resultSet.getString("username");
-            final String    firstName               = resultSet.getString("firstName");
-            final String    lastName                = resultSet.getString("lastName");
-            final String    email                   = resultSet.getString("email");
-            final Timestamp lastModified            = resultSet.getTimestamp("last_modified");
-            final Date      lastModifiedDate        = lastModified != null ? new Date(lastModified.getTime()) : null;
-            final boolean   enabled                 = resultSet.getInt("enabled") == 1;
-            final boolean   verified                = resultSet.getInt("verified") == 1;
-            final Timestamp lastSuccessfulLogin     = resultSet.getTimestamp("lastSuccessfulLogin");
-            final Date      lastSuccessfulLoginDate = lastSuccessfulLogin != null ? new Date(lastSuccessfulLogin.getTime()) : null;
-            return new User(userId, username, firstName, lastName, email, null, null, null, true, lastModifiedDate, null, enabled, verified, lastSuccessfulLoginDate);
-        }
-    };
-
-    public static final String QUERY_USER_PROFILES = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id";
-    public static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id";
-    public static final String QUERY_USER_PROFILE  = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login=:username";
-
     @Autowired
     public UsersApi(final UserManagementServiceI userManagementService,
                     final UserFactory factory,
@@ -297,7 +272,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = User)
+    @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, UserInitException {
         final UserI user;
         try {
@@ -718,7 +693,7 @@ public class UsersApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "{username}/groups", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Authorizer)
     @AuthDelegate(UserGroupXapiAuthorization.class)
     public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable("username") @Username final String username,
-                                                               @ApiParam(value = "The groups to which the user should be added.", required = true) @RestUserGroup @RequestBody final List<String> groups) {
+                                                               @ApiParam(value = "The groups to which the user should be added.", required = true) @UserGroup @RequestBody final List<String> groups) {
         final Collection<String> failed = new ArrayList<>();
 
         try {
@@ -795,7 +770,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups/{group}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Authorizer)
     @AuthDelegate(UserGroupXapiAuthorization.class)
-    public ResponseEntity<Boolean> usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The user's new group.", required = true) @RestUserGroup @PathVariable("group") final String group) {
+    public ResponseEntity<Boolean> usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The user's new group.", required = true) @UserGroup @PathVariable("group") final String group) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -925,6 +900,11 @@ public class UsersApi extends AbstractXapiRestController {
         private final boolean _invalidate;
     }
 
+    private static final String QUERY_USER_PROFILES = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id";
+    private static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id";
+    private static final String QUERY_USER_PROFILE  = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login=:username";
+
+    private static final RowMapper<User>         USER_ROW_MAPPER                 = org.nrg.xapi.model.users.User.Mapper;
     private static final SessionInfoToIdFunction INFO_TO_ID_FUNCTION             = new SessionInfoToIdFunction(false);
     private static final SessionInfoToIdFunction INFO_TO_ID_INVALIDATOR_FUNCTION = new SessionInfoToIdFunction(true);
 

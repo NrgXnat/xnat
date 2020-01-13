@@ -43,6 +43,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -85,6 +86,7 @@ import org.restlet.data.*;
 import org.restlet.ext.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.xml.sax.SAXException;
@@ -98,7 +100,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -106,6 +107,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
@@ -146,10 +148,10 @@ public abstract class SecureResource extends Resource {
 
     public static final MediaType TEXT_CSV = MediaType.register("text/csv", "CSV");
 
-    protected List<String> actions          = null;
-    public String          userName         = null;
-    public String          requested_format;
-    public String          filepath;
+    protected    List<String> actions = null;
+    public final String       userName;
+    public       String       requested_format;
+    public       String       filepath;
 
     public SecureResource(Context context, Request request, Response response) {
         super(context, request, response);
@@ -158,6 +160,16 @@ public abstract class SecureResource extends Resource {
         if (null == _serializer) {
             getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
+        }
+        _template = XDAT.getNamedParameterJdbcTemplate();
+        if (_template == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
+            throw new NrgServiceRuntimeException("ERROR: Named parameter JDBC template was not properly initialized.");
+        }
+        _userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
+        if (_userDataCache == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
+            throw new NrgServiceRuntimeException("ERROR: User data cache was not properly initialized.");
         }
 
         requested_format = getQueryVariable("format");
@@ -178,6 +190,7 @@ public abstract class SecureResource extends Resource {
             // expects that the user exists in the session (either via traditional
             // session or set via the XnatSecureGuard
             _user = ObjectUtils.defaultIfNull(XDAT.getUserDetails(), Users.getGuest());
+            userName = _user.getUsername();
             logAccess();
         } catch (UserNotFoundException | UserInitException e) {
             throw new RuntimeException("An error occurred where it really should not have occurred", e);
@@ -199,9 +212,7 @@ public abstract class SecureResource extends Resource {
 
     public void logAccess() {
         final String url = getRequest().getResourceRef().toString();
-        if (!(Method.GET.equals(getRequest().getMethod()) && url.contains("resources/SNAPSHOTS"))) {
-            AccessLogger.LogServiceAccess(getUser().getUsername(), getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
-        }
+        AccessLogger.LogResourceAccess(getUser().getUsername(), getRequest(), url, "");
     }
 
     public MediaType getRequestedMediaType() {
@@ -267,6 +278,14 @@ public abstract class SecureResource extends Resource {
 
     protected SerializerService getSerializer() {
         return _serializer;
+    }
+
+    protected NamedParameterJdbcTemplate getTemplate() {
+        return _template;
+    }
+
+    protected UserDataCache getUserDataCache() {
+        return _userDataCache;
     }
 
     private Form _body;
@@ -449,8 +468,7 @@ public abstract class SecureResource extends Resource {
         return representTable(table, mt, params, null);
     }
 
-    @SuppressWarnings("unchecked")
-    public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> cp) {
+    public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> columnProperties) {
         if (table != null) {
             if (getQueryVariable("sortBy") != null) {
                 final String sortBy = getQueryVariable("sortBy");
@@ -461,27 +479,23 @@ public abstract class SecureResource extends Resource {
             }
 
             //try to map to an inserted implementation
-            Class clazz = getExtensionTableRepresentations().get(mt.toString());
+            final Class<?> clazz = getExtensionTableRepresentations().get(mt.toString());
             if (clazz != null) {
                 try {
-                    Class[] parameterTypes = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
-                    Object[] parameters = {table, cp, params, mt};
-                    Constructor<OutputRepresentation> rep = clazz.getConstructor(parameterTypes);
-
-                    return rep.newInstance(parameters);
+                    return clazz.asSubclass(OutputRepresentation.class).getConstructor(OBJECT_REPRESENTATION_CTOR_PARAM_TYPES).newInstance(table, columnProperties, params, mt);
                 } catch (Exception e) {
                     logger.error("", e);
                 }
             }
 
             if (mt.equals(MediaType.TEXT_XML)) {
-                return new XMLTableRepresentation(table, cp, params, MediaType.TEXT_XML);
+                return new XMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_XML);
             } else if (mt.equals(MediaType.APPLICATION_JSON)) {
-                return new JSONTableRepresentation(table, cp, params, MediaType.APPLICATION_JSON);
+                return new JSONTableRepresentation(table, columnProperties, params, MediaType.APPLICATION_JSON);
             } else if (mt.equals(MediaType.APPLICATION_EXCEL) || mt.equals(TEXT_CSV)) {
-                return new CSVTableRepresentation(table, cp, params, mt);
+                return new CSVTableRepresentation(table, columnProperties, params, mt);
             } else if (mt.equals(APPLICATION_XLIST)) {
-                Representation rep = new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, false);
+                Representation rep = new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, false);
                 rep.setMediaType(MediaType.TEXT_HTML);
                 return rep;
             } else {
@@ -495,10 +509,10 @@ public abstract class SecureResource extends Resource {
                         return new StandardTurbineScreen(MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), params);
                     } catch (TurbineException e) {
                         logger.error("", e);
-                        return new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, true);
+                        return new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, true);
                     }
                 } else {
-                    return new HTMLTableRepresentation(table, cp, params, MediaType.TEXT_HTML, true);
+                    return new HTMLTableRepresentation(table, columnProperties, params, MediaType.TEXT_HTML, true);
                 }
             }
         } else {
@@ -567,9 +581,9 @@ public abstract class SecureResource extends Resource {
             try {
                 List<Class<?>> handlerClasses = Reflection.getClassesForPackage("org.nrg.xnat.restlet.representations.item.extensions");
 
-                for (Class handler : handlerClasses) {
+                for (final Class<?> handler : handlerClasses) {
                     if (ItemHandlerI.class.isAssignableFrom(handler)) {
-                        ItemHandlerI instance = (ItemHandlerI) handler.newInstance();
+                        final ItemHandlerI instance = (ItemHandlerI) handler.newInstance();
                         itemHandlers.put(instance.getHandlerString(), instance);
                     }
                 }
@@ -934,7 +948,7 @@ public abstract class SecureResource extends Resource {
             if (StringUtils.startsWithIgnoreCase(reference.toString(), processingUrl)) {
                 return reference;
             }
-            final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
+            final String siteUrlProperty = XDAT.getSiteConfigurationProperty(SITE_URL);
             try {
             	final String path = reference.getPath();
             	final String remainingPart = reference.getRemainingPart(false,false);
@@ -1165,17 +1179,18 @@ public abstract class SecureResource extends Resource {
         }
     }
 
-    public void loadParams(final String _json) throws ClientException {
+    public void loadParams(final String json) throws ClientException {
         try {
-            final JSONObject json = new JSONObject(_json);
-            String[] keys = JSONObject.getNames(json);
+            final JSONObject jsonObject = new JSONObject(json);
+            final String[]   keys = JSONObject.getNames(jsonObject);
             if (keys != null) {
                 for (final String key : keys) {
-                    handleParam(key, TurbineUtils.escapeParam(json.get(key)));
+                    final Object jsonValue = jsonObject.get(key);
+                    handleParam(key, TurbineUtils.escapeParam(jsonValue != null ? jsonValue.toString() : null));
                 }
             }
         } catch (JSONException e) {
-            logger.error("invalid JSON message " + _json, e);
+            logger.error("invalid JSON message: " + json, e);
         } catch (NullPointerException e) {
             logger.error("", e);
         }
@@ -1201,14 +1216,16 @@ public abstract class SecureResource extends Resource {
                 return null;
             } else {
                 // NOTE: modified driveFileName here to return a name when content-type is null
-                final String fileName = (filepath == null || filepath.equals("")) ? RequestUtil.deriveFileName("upload", entity, false) : filepath;
+                final String fileName = StringUtils.defaultIfBlank(filepath, RequestUtil.deriveFileName("upload", entity, false));
 
-                if (fileName == null) {
-                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message.");
+                if (StringUtils.isBlank(fileName)) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, there is no filename specified.");
                 }
-
-                if (entity == null || entity.getSize() == -1 || entity.getSize() == 0) {
-                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message.");
+                if (entity == null) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity is null.");
+                }
+                if (entity.getSize() < 1 && !entity.getMediaType().equals(MediaType.APPLICATION_ZIP)) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity size is " + entity.getSize() + " but the media type is not application/zip (i.e. streaming compressed upload).");
                 }
 
                 wrappers.add(new FileWriterWrapper(entity, fileName));
@@ -1264,7 +1281,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public String wrapPartialDataURI(String uri) {
-        return "/data" + uri;
+        return StringUtils.prependIfMissing(uri, "/data");
     }
 
     public void setResponseStatus(final ActionException e) {
@@ -1908,6 +1925,10 @@ public abstract class SecureResource extends Resource {
         }
     }
 
-    private final UserI             _user;
-    private final SerializerService _serializer;
+    private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
+
+    private final UserI                      _user;
+    private final SerializerService          _serializer;
+    private final NamedParameterJdbcTemplate _template;
+    private final UserDataCache              _userDataCache;
 }

@@ -10,6 +10,7 @@
 package org.nrg.xnat.helpers.merge;
 
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -21,13 +22,11 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.archive.XNATSessionBuilder;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
+import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,6 +36,7 @@ import java.util.concurrent.Callable;
 
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
+@Slf4j
 public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesessiondata> {
     public MergePrearcToArchiveSession(Object control, final PrearcSession prearcSession, final XnatImagesessiondata src, final String srcRootPath, final File destDIR, final XnatImagesessiondata existing, final String destRootPath, boolean addFilesToExisting, boolean overwrite_files, SaveHandlerI<XnatImagesessiondata> saver, final UserI u, final EventMetaI now) {
         super(control, prearcSession.getSessionDir(), src, srcRootPath, destDIR, existing, destRootPath, addFilesToExisting, overwrite_files, saver, u, now);
@@ -44,12 +44,13 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         _prearcSession = prearcSession;
     }
 
+    @Override
     public String getCacheBKDirName() {
         return "merge";
     }
 
-    public void finalize(XnatImagesessiondata session) throws ClientException,
-                                                              ServerException {
+    @Override
+    public void finalize(final XnatImagesessiondata session) {
         final String root = destRootPath.replace('\\', '/') + "/";
         for (XnatImagescandataI scan : session.getScans_scan()) {
             for (final XnatAbstractresourceI file : scan.getFile()) {
@@ -67,7 +68,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
     }
 
-    public void postSave(XnatImagesessiondata session) {
+    @Override
+    public void postSave(final XnatImagesessiondata session) {
         final String root      = destRootPath.replace('\\', '/') + "/";
         boolean      checksums = false;
         try {
@@ -88,17 +90,15 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                             CatalogUtils.writeCatalogToFile(cat, f, checksums);
                         }
                     } catch (Exception exception) {
-                        logger.error("An error occurred trying to write catalog data for " + ((XnatResourcecatalog) file).getUri(), exception);
+                        log.error("An error occurred trying to write catalog data for " + ((XnatResourcecatalog) file).getUri(), exception);
                     }
                 }
             }
         }
     }
 
-    public MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(
-            XnatImagesessiondata src, String srcRootPath,
-            XnatImagesessiondata dest, String destRootPath, final File rootBackUp)
-            throws ClientException, ServerException {
+    @Override
+    public MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(final XnatImagesessiondata src, final String srcRootPath, final XnatImagesessiondata dest, final String destRootPath, final File rootBackUp) throws ClientException, ServerException {
         if (dest == null) {
             return new Results<>(src);
         }
@@ -241,8 +241,6 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         final XnatSubjectdata subject = session.getSubjectData();
         return subject != null ? subject.getLabel() : "";
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(MergePrearcToArchiveSession.class);
 
     private final PrearcSession _prearcSession;
 }

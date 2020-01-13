@@ -11,35 +11,39 @@ package org.nrg.xnat.helpers;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.services.cache.UserDataCache;
+import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.merge.MergePrearchiveSessions;
 import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
-import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.PrearcImporterA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.ImageUploadHelper;
+import org.nrg.xnat.utils.functions.FileToPrearcSession;
 import org.restlet.data.Status;
+
+import javax.annotation.Nullable;
 
 public class PrearcImporterHelper extends PrearcImporterA{
     private static final String SESSION = "session";
@@ -57,17 +61,18 @@ public class PrearcImporterHelper extends PrearcImporterA{
 	
 	/**
 	 * Helper class to extract a passed zip into the prearchive.
-	 * @param uID2
-	 * @param u
-	 * @param fi
-	 * @param project_id
-	 * @param additionalValues
+	 * @param objectId          The ID of the object to import
+	 * @param user              The user requesting the import
+	 * @param fileWriter        The incoming file
+	 * @param params            Parameters for the import operation
+	 * @param allowSessionMerge Indicates whether the imported session should be merged with a session at the same coordinates
+	 * @param overwriteFiles    Indicates whether existing files should be overwritten
 	 */
-	public PrearcImporterHelper(final Object uID2, final UserI u, final FileWriterWrapperI fi, Map<String,Object> params,boolean allowSessionMerge,boolean overwriteFiles){
-    	super((uID2==null)?u:uID2,u,fi,params,allowSessionMerge,overwriteFiles);
-    	this.user=u;
-    	this.uID=(uID2==null)?u:uID2;
-		this.fi=fi;
+	public PrearcImporterHelper(final Object objectId, final UserI user, final FileWriterWrapperI fileWriter, Map<String,Object> params,boolean allowSessionMerge,boolean overwriteFiles){
+    	super((objectId==null)?user:objectId,user,fileWriter,params,allowSessionMerge,overwriteFiles);
+    	this.user=user;
+    	this.uID=(objectId==null)?user:objectId;
+		this.fi=fileWriter;
 		this.allowSessionMerge=allowSessionMerge;
 		this.overwriteFiles=overwriteFiles;
 		this.params=params;
@@ -122,10 +127,8 @@ public class PrearcImporterHelper extends PrearcImporterA{
 			}
 		}
 		
-		List<File> files;
+		final List<File> files = new ArrayList<>();
 		try {
-			files = null;
-			
 			final Map<String,Object> additionalValues=XMLPathShortcuts.identifyUsableFields(params,XMLPathShortcuts.EXPERIMENT_DATA,false);
 			if(params.containsKey(SUBJECT)){
 				additionalValues.put("xnat:subjectAssessorData/subject_ID", params.remove(SUBJECT));
@@ -155,7 +158,6 @@ public class PrearcImporterHelper extends PrearcImporterA{
 				
 				//should 2-srcs to project=null also be merged?
 				//Merge_to_destination will write it to separate folders if old_session_folder is null
-				files=new ArrayList<File>();
 				for(final File f:tempFiles){
 					File builtF=merge_to_destination(project,old_timestamp,old_session_folder,f);
 					if(!files.contains(builtF)){
@@ -163,7 +165,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 					}
 				}
 			}else{
-				files=reorganize(cacheDIR, new File(ArcSpecManager.GetInstance().getPrearchivePathForProject(project),old_timestamp),project, additionalValues);
+				files.addAll(reorganize(cacheDIR, new File(ArcSpecManager.GetInstance().getPrearchivePathForProject(project),old_timestamp),project, additionalValues));
 			}
 		} catch (ActionException e1) {
 			if(sd!=null){
@@ -175,17 +177,21 @@ public class PrearcImporterHelper extends PrearcImporterA{
 			}
 			throw e1;	
 		}
-					
-		final List<PrearcSession> sessions= new ArrayList<PrearcSession>();
-		
-		for(final File f:files){
-		    try {
-				sessions.add(new PrearcSession(f));
-			} catch (Exception e) {
-				throw new ServerException(e.getMessage(),e);
-			}
+
+		final FileToPrearcSession function = new FileToPrearcSession(user);
+		final List<PrearcSession> sessions = Lists.transform(files, function);
+
+		if (function.hasErrors()) {
+			final List<Exception> errors = function.getErrors();
+			throw new ServerException("Got " + errors.size() + " errors trying to transform the specified files to prearc sessions:\n\n * " + StringUtils.join(Lists.transform(errors, new Function<Exception, String>() {
+				@Nullable
+				@Override
+				public String apply(final Exception exception) {
+					return exception.getMessage();
+				}
+			}), "\n * "), errors.get(0));
 		}
-		
+
 		return sessions;
 	}
 	
@@ -194,12 +200,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		this.processing("Importing file (" + filename + ")");
 			
 		//BUILD CACHE PATH        
-		final File cacheDIR = new File(new File(Users.getUserCacheFile(user, "uploads"),user.getID().toString()),timestamp);
-		if (!cacheDIR.exists()){
-			this.processing("mkdir " + cacheDIR.getAbsolutePath());
-			cacheDIR.mkdirs();
-		}
-			
+		final File cacheDIR = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get("uploads", timestamp), UserDataCache.Options.Folder);
 		final File uploaded = new File(cacheDIR,cleanFileName(filename)) ;
 			                
 		this.processing("Uploading to "+uploaded.getAbsolutePath() + " ... ");

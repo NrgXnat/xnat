@@ -251,13 +251,13 @@ public class ExperimentResource extends ItemResource {
                         return;
                     }
                     //IS NEW
-                    if (_experiment.getId() == null || _experiment.getId().equals("")) {
+                    if (StringUtils.isBlank(_experiment.getId())) {
                         _experiment.setId(XnatExperimentdata.CreateNewID());
                     }
 
                     setSubject(_existing.getItem());
                 } else {
-                    if (_experiment.getId() == null || _experiment.getId().equals("")) {
+                    if (StringUtils.isBlank(_experiment.getId())) {
                         _experiment.setId(_existing.getId());
                     }
 
@@ -443,11 +443,12 @@ public class ExperimentResource extends ItemResource {
                 }
 
                 if (subject == null) {
+                    final String subjectId = XnatSubjectdata.CreateNewID();
                     final UserI user = getUser();
                     subject = new XnatSubjectdata(user);
                     subject.setProject(_project.getId());
                     subject.setLabel(assessor.getSubjectId());
-                    subject.setId(XnatSubjectdata.CreateNewID());
+                    subject.setId(subjectId);
                     if (!Permissions.canCreate(user, subject)) {
                         getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for subjects in this project.");
                         return;

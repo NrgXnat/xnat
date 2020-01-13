@@ -10,26 +10,33 @@
 package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
 public class FixMismatchedMappingElements extends AbstractInitializingTask {
     @Autowired
-    public FixMismatchedMappingElements(final XnatAppInfo appInfo, final NamedParameterJdbcTemplate template, final TransactionTemplate transactionTemplate) {
+    public FixMismatchedMappingElements(final XnatAppInfo appInfo, final DatabaseHelper helper, final UserGroupServiceI manager, final SiteConfigPreferences preferences) {
         _appInfo = appInfo;
-        _helper = new DatabaseHelper(template, transactionTemplate);
+        _helper = helper;
+        _manager = manager;
+        _siteUrl = preferences.getSiteUrl();
     }
 
     @Override
@@ -43,14 +50,34 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
             log.info("This service is the primary XNAT node, checking for mismatched field mapping elements.");
 
             try {
-                if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
-                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
+                if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_element_security", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_element_security\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
                 Users.getGuest();
-                _helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", "data_type_views_%");
+                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/data-type-access-functions.sql"));
+
+                // Loads the project group database functions. Not directly related to fixing
+                // mismatched mapping elements, but this requires most of the same tables exist
+                // before being run so letting it do double duty.
+                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
+
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");
-                _helper.callFunction("fix_mismatched_data_type_permissions", Boolean.class);
-                _helper.callFunction("fix_missing_public_element_access_mappings", Boolean.class);
+                final int mismatched = _helper.callFunction("data_type_fns_fix_mismatched_permissions", Integer.class);
+                if (mismatched > 0) {
+                    log.warn("Found and fixed {} mismatched data-type permissions", mismatched);
+                }
+                final Integer missing = _helper.callFunction("data_type_fns_fix_missing_public_element_access_mappings", Integer.class);
+                if (missing > 0) {
+                    log.warn("Found and fixed {} missing data-type permission mappings", missing);
+                }
+                final int corrected = _helper.callFunction("data_type_fns_correct_group_permissions", Integer.class);
+                if (corrected > 0) {
+                    log.warn("Found and fixed {} misconfigured data-type permission mappings", corrected);
+                }
+                final List<Map<String, Object>> irregulars = _manager.findIrregularProjectGroups();
+                if (!irregulars.isEmpty()) {
+                    log.warn("Found project groups with irregular permission mappings:\n\n * {}\n\nI'm not going to try to fix these issues automatically. You can request that these be fixed by making a POST request to the URL:\n\n   {}/xapi/access/permissions/irregular/fix", StringUtils.join(UserGroupManager.formatIrregularProjectGroups(irregulars), "\n * "), _siteUrl);
+                }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_search.xs_item_access'.", e);
             } catch (UserNotFoundException e) {
@@ -63,6 +90,8 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
         }
     }
 
-    private final XnatAppInfo    _appInfo;
-    private final DatabaseHelper _helper;
+    private final XnatAppInfo       _appInfo;
+    private final DatabaseHelper    _helper;
+    private final UserGroupServiceI _manager;
+    private final String            _siteUrl;
 }

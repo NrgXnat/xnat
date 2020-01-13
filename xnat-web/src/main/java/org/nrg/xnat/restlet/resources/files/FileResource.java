@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
@@ -35,9 +36,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 
+@Slf4j
 public class FileResource extends ItemResource {
-	final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ScanResource.class);
-
 	XnatProjectdata proj=null;
 	XnatSubjectdata sub=null;
 	XnatExperimentdata expt=null;
@@ -236,7 +236,7 @@ public class FileResource extends ItemResource {
 				response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid read permissions");
 			}
 		} catch (Exception e) {
-			logger.error("", e);
+			log.error("", e);
 		}
 	}
 
@@ -289,7 +289,7 @@ public class FileResource extends ItemResource {
 								cat.toXML(fw, true);
 								fw.close();
 							 }catch(Exception e){
-							 logger.error("",e);
+							 log.error("", e);
 							 }
 						}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"File missing");
@@ -371,7 +371,7 @@ public class FileResource extends ItemResource {
 				}
 				
 			} catch (ElementNotFoundException e) {
-	            logger.error("",e);
+	            log.error("", e);
 			}
 		}else{
 			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified catalog.");

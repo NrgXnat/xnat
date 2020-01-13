@@ -254,11 +254,8 @@ public class EditSubjectAction extends SecureAction {
             }
             
             boolean isNew=true;
-            if (subject.getId()==null)
-            {
-                //ASSIGN A PARTICIPANT ID
-                String s = XnatSubjectdata.CreateNewID();
-                found.setProperty("xnat:subjectData.ID",s);
+            if (StringUtils.isBlank(subject.getId())) {
+                found.setProperty("xnat:subjectData.ID", XnatSubjectdata.CreateNewID());
             }
             
             if(found.getCurrentDBVersion(false)!=null){

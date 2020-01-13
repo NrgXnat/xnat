@@ -1,4 +1,4 @@
-
+<!-- BEGIN xnat-templates/screens/xnat_imageSessionData/actions.vm -->
 				#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
 				#addCustomScreens("$element" "actionsBox") 
 				#parse($turbineUtils.getTemplateName("actionsBoxAddons","$om.getXSIType()",$!project))
@@ -23,4 +23,4 @@
    													_a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getSubjectData().getIdentifier($project) ($!om.getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getSubjectData().getIdentifier($project)",allowDelete:false});
 					
 				</script>
-				
+<!-- END xnat-templates/screens/xnat_imageSessionData/actions.vm -->

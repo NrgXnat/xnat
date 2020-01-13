@@ -9,19 +9,20 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.oro.io.GlobFilenameFilter;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -32,10 +33,12 @@ import org.restlet.resource.Variant;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.*;
 
+@Slf4j
 public class DIRResource extends SecureResource {
-    final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(DIRResource.class);
 	XnatProjectdata proj=null;
 
 	XnatExperimentdata expt = null;
@@ -44,7 +47,7 @@ public class DIRResource extends SecureResource {
 		super(context, request, response);
 
 		final UserI user = getUser();
-		if(user==null || user.isGuest()){
+		if(user.isGuest()){
 			response.setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
 			return;
 		}
@@ -56,13 +59,11 @@ public class DIRResource extends SecureResource {
 
 		final String exptID = (String) getParameter(request,"EXPT_ID");
 		if (exptID != null) {
-			if(exptID!=null){
-				expt=XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
-				if(expt==null && proj!=null){
-					expt=(XnatSubjectassessordata)XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), exptID,user, false);
-				}
+			expt=XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
+			if(expt==null && proj!=null){
+				expt= XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), exptID, user, false);
 			}
-			
+
 		}
 		
 		if(expt==null) {
@@ -76,17 +77,12 @@ public class DIRResource extends SecureResource {
 	public final static String[] FILE_HEADERS = {"Name","DIR","Size","URI"};
 	
 	@Override
-	public Representation getRepresentation(Variant variant) {
+	public Representation represent(final Variant variant) {
 		
-		MediaType mt=null;
-		if (isXarReference()) {
-			mt=APPLICATION_XAR;
-		} else {
-			mt=overrideVariant(variant);
-		}
+		final MediaType mediaType = isXarReference() ? APPLICATION_XAR : overrideVariant(variant);
 
 		final UserI user = getUser();
-		if (user == null || user.isGuest()) {
+		if (user.isGuest()) {
 			getResponse().setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
 			return null;
 		}
@@ -120,12 +116,12 @@ public class DIRResource extends SecureResource {
 				}else if (src.size()==1 && !src.get(0).isDirectory()){
 					final File f=src.get(0);
 					// TODO:  Need to add XAR output here?  (Probably not for single-file zipping)
-					if(isZIPRequest(mt)){
+					if(isZIPRequest(mediaType)){
 						final ZipRepresentation rep;
 						try{
-							rep=new ZipRepresentation(mt,(expt).getArchiveDirectoryName(),identifyCompression(null));
+							rep=new ZipRepresentation(mediaType,(expt).getArchiveDirectoryName(),identifyCompression(null));
 						} catch (ActionException e) {
-							logger.error("",e);
+							log.error("", e);
 							this.setResponseStatus(e);
 							return null;
 						}
@@ -133,10 +129,10 @@ public class DIRResource extends SecureResource {
 						this.setContentDisposition(String.format("%s.zip", f.getName()));
 						return rep;
 					}else{
-						return this.representFile(f, mt);
+						return this.representFile(f, mediaType);
 					}
 				}else{
-					final List<FileSet> dest= new ArrayList<FileSet>();
+					final List<FileSet> dest= new ArrayList<>();
 					
 					for(File f: src){
 						final FileSet set=new FileSet(f);
@@ -155,51 +151,49 @@ public class DIRResource extends SecureResource {
 						dest.add(set);
 					}
 			
-					if((isZIPRequest(mt) || (mt.equals(APPLICATION_XAR)) )){
+					if((isZIPRequest(mediaType) || (mediaType.equals(APPLICATION_XAR)) )){
 						final ZipRepresentation rep;
 						try{
-							rep=new ZipRepresentation(mt,(expt).getArchiveDirectoryName(),identifyCompression(null));
+							rep=new ZipRepresentation(mediaType,(expt).getArchiveDirectoryName(),identifyCompression(null));
 						} catch (ActionException e) {
-							logger.error("",e);
+							log.error("", e);
 							this.setResponseStatus(e);
 							return null;
 						}
-						if (mt.equals(APPLICATION_XAR)) {
-							try {
-								String userPath = ArcSpecManager.GetInstance().getGlobalCachePath() + "USERS" + File.separator + user.getID();
-								File outF = new File(userPath,"expt_" + (new Date()).getTime());
-								outF.deleteOnExit();
-								FileOutputStream fos=new FileOutputStream(outF);
-								SAXWriter writer = new SAXWriter(fos,true);
+						if (mediaType.equals(APPLICATION_XAR)) {
+							final File output = getUserDataCache().getUserDataCacheFile(user, Paths.get("expt_" + new Date().getTime()), UserDataCache.Options.DeleteOnExit, UserDataCache.Options.Overwrite);
+							log.info("Getting ready to write item XML to the file {}", output.getAbsolutePath());
+
+							try (final OutputStream outputStream = new FileOutputStream(output)) {
+								final SAXWriter writer = new SAXWriter(outputStream, true);
 								writer.setAllowSchemaLocation(true);
-								writer.setLocation(TurbineUtils.GetRelativePath(this.getHttpServletRequest()) + "/" + "schemas/");
-								writer.setRelativizePath(((XnatSubjectassessordata)expt).getArchiveDirectoryName()+"/");
+								writer.setLocation(TurbineUtils.GetRelativePath(getHttpServletRequest()) + "/" + "schemas/");
+								writer.setRelativizePath(expt.getArchiveDirectoryName() + "/");
 								writer.write(expt.getItem());
-								rep.addEntry(((XnatSubjectassessordata)expt).getId() + ".xml",outF);
+								rep.addEntry(expt.getId() + ".xml", output);
 							} catch (Exception e) {
-								this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,
-									"Unable to retrieve/save session XML.");
+								getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Unable to retrieve/save session XML.");
 								return null;
 							}
 						}
-						for(FileSet fs:dest){
-							rep.addAll(fs.getMatches());
+
+						for (final FileSet fileSet : dest) {
+							rep.addAll(fileSet.getMatches());
 						}
 			
-						this.setContentDisposition(rep.getDownloadName());
+						setContentDisposition(rep.getDownloadName());
 						return rep;
 					}else{
-
-						final Hashtable<String,Object> params=new Hashtable<String,Object>();
+						final Hashtable<String,Object> params= new Hashtable<>();
 						params.put("title", "Files");
 						
 						final XFTTable table = new XFTTable();
 						table.initTable(FILE_HEADERS);
 						
-						String qsParams="";
-						if(this.getQueryVariable("format")!=null){
-							if(qsParams.equals(""))qsParams+="?";else qsParams+="&";
-							qsParams+=String.format("format=%s",this.getQueryVariable("format"));
+						final StringBuilder qsParams = new StringBuilder();
+						if(getQueryVariable("format")!=null){
+							qsParams.append("?");
+							qsParams.append("format=").append(getQueryVariable("format"));
 						}
 						
 						for(final FileSet fs:dest){
@@ -211,15 +205,14 @@ public class DIRResource extends SecureResource {
 								row[2]=(f.length());
 					           
 					            final String rel=(session_dir.toURI().relativize(f.toURI())).getPath();
-					            final String qs=(f.isDirectory())?qsParams:"";
-					            row[3]=String.format("/data/experiments/%1$s/DIR/%2$s%3$s",expt.getId(),rel,qs);
+								row[3] = String.format("/data/experiments/%1$s/DIR/%2$s%3$s", expt.getId(), rel, f.isDirectory() ? qsParams.toString() : "");
 					       				            
 					            table.rows().add(row);
 							}
 						}
 						
 						
-						final Map<String,Map<String,String>> cp = new Hashtable<String,Map<String,String>>();
+						final Map<String,Map<String,String>> cp = new Hashtable<>();
 						cp.put("URI", new Hashtable<String,String>());
 						
 						String rootPath = this.getRequest().getRootRef().getPath();
@@ -231,7 +224,7 @@ public class DIRResource extends SecureResource {
 						}
 						cp.get("URI").put("serverRoot", rootPath);
 						
-						return this.representTable(table, mt, params,cp);
+						return this.representTable(table, mediaType, params,cp);
 					}
 				}
 				
@@ -249,7 +242,7 @@ public class DIRResource extends SecureResource {
 	}
 	
 	public static List<File> getFiles(File dir,String path,boolean recursive) throws InvalidFileCharacters{
-		final List<File> files=new ArrayList<File>();
+		final List<File> files= new ArrayList<>();
 		final int slash=path.indexOf("/");
 		if(slash>-1){
 			final String local=path.substring(0,slash);
@@ -266,23 +259,27 @@ public class DIRResource extends SecureResource {
 			
 			final GlobFilenameFilter glob = new GlobFilenameFilter(local);
 			final String[] children=dir.list(glob);
-			for(final String child:children){
-				final File f=new File(dir,child);
-				if(recursive && f.isDirectory()){
-					files.addAll(getFiles(f,path,true));
-				}else{
-					files.add(f);
+			if (children != null) {
+				for(final String child:children){
+					final File f=new File(dir,child);
+					if(recursive && f.isDirectory()){
+						files.addAll(getFiles(f,path,true));
+					}else{
+						files.add(f);
+					}
 				}
 			}
-			
+
 		}else{
 			if(path.trim().equals("..")){
 				throw new InvalidFileCharacters("..");
 			}
 			final GlobFilenameFilter glob = new GlobFilenameFilter((path.equals(""))?"*":path);
 			final String[] children=dir.list(glob);
-			for(final String child:children){
-				files.add(new File(dir,child));
+			if (children != null) {
+				for (final String child : children) {
+					files.add(new File(dir, child));
+				}
 			}
 		}
 		
@@ -290,7 +287,7 @@ public class DIRResource extends SecureResource {
 	}
 	
 	public static class InvalidFileCharacters extends Exception{
-		public String characters=null;
+		public String characters;
 		public InvalidFileCharacters(String chars){
 			characters=chars;
 		}
@@ -298,7 +295,7 @@ public class DIRResource extends SecureResource {
 	
 	public static class FileSet{
 		final File parent;
-		final List<File> matches=new ArrayList<File>();
+		final List<File> matches= new ArrayList<>();
 		public FileSet(File p){
 			parent=p;
 		}
@@ -320,9 +317,6 @@ public class DIRResource extends SecureResource {
 	}
 	
 	private boolean isXarReference() {
-		if (getRequest().getResourceRef().getLastSegment().equals("XAR")) {
-			return true;
-		}
-		return false;
+		return getRequest().getResourceRef().getLastSegment().equals("XAR");
 	}
 }

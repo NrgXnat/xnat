@@ -136,7 +136,16 @@ public final class DicomHeaderDump {
         }
 
         DicomObject header = this.getHeader(new File(this.file));
-        DicomObjectToStringParam formatParams = DicomObjectToStringParam.getDefaultParam();
+        //DicomObjectToStringParam formatParams = DicomObjectToStringParam.getDefaultParam();
+        DicomObjectToStringParam DEFAULT_PARAM = DicomObjectToStringParam.getDefaultParam();
+        DicomObjectToStringParam formatParams = new DicomObjectToStringParam(
+        		DEFAULT_PARAM.name, 			// name
+        		255,							// valueLength;
+        		DEFAULT_PARAM.numItems,			// numItems;
+        		DEFAULT_PARAM.lineLength,		// lineLength;
+        		DEFAULT_PARAM.numLines, 		// numLines;
+        		DEFAULT_PARAM.indent,			// indent
+        		DEFAULT_PARAM.lineSeparator);	// line separator
 
         for (Iterator<DicomElement> it = header.iterator(); it.hasNext();) {
             DicomElement e = it.next();

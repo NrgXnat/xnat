@@ -14,11 +14,10 @@ import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.model.users.ElementDisplayModel;
-import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.AuthDelegate;
-import org.nrg.xapi.rest.Username;
-import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xapi.rest.*;
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
@@ -43,10 +42,9 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api(description = "Data Access API")
+@Api("Data Access API")
 @XapiRestController
 @RequestMapping(value = "/access")
 @Slf4j
@@ -62,9 +60,10 @@ public class DataAccessApi extends AbstractXapiRestController {
     public static final String SEARCHABLE_BY_PLURAL_DESC = "searchableByPluralDesc";
 
     @Autowired
-    public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final GroupsAndPermissionsCache cache) {
+    public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final GroupsAndPermissionsCache cache, final UserGroupServiceI groupService) {
         super(userManagementService, roleHolder);
         _cache = cache;
+        _groupService = groupService;
     }
 
     @ApiOperation(value = "Gets the projects and roles associated with the current user.", response = String.class, responseContainer = "Map")
@@ -208,6 +207,47 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
+    @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
+                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "permissions/group/{projectId}", restrictTo = Admin)
+    @ResponseBody
+    public List<Map<String, Object>> getProjectPermissions(final @PathVariable @Project String projectId) {
+        return _groupService.getProjectGroupPermissions(projectId);
+    }
+
+    @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
+                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "permissions/irregular/find", restrictTo = Admin)
+    @ResponseBody
+    public List<Map<String, Object>> findIrregularPermissions() {
+        return _groupService.findIrregularProjectGroups();
+    }
+
+    @ApiOperation(value = "Finds and fixes any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Integer.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
+                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "permissions/irregular/fix", method = POST, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<List<Integer>> fixIrregularPermissions() {
+        final List<Map<String, Object>> irregulars = findIrregularPermissions();
+        if (irregulars.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        log.warn("Found project groups with irregular permission mappings, preparing to fix:\n\n * {}", StringUtils.join(UserGroupManager.formatIrregularProjectGroups(irregulars), "\n * "));
+        return ResponseEntity.ok(_groupService.fixIrregularProjectGroups());
+    }
+
     private List<ElementDisplayModel> getElementDisplayModels(final UserI user, final @PathVariable String display) throws DataFormatException {
         final UserHelperServiceI helper = UserHelper.getUserHelperService(user);
 
@@ -260,4 +300,5 @@ public class DataAccessApi extends AbstractXapiRestController {
     private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList(BROWSEABLE, BROWSEABLE_CREATEABLE, CREATEABLE, SEARCHABLE, SEARCHABLE_BY_DESC, SEARCHABLE_BY_PLURAL_DESC);
 
     private final GroupsAndPermissionsCache _cache;
+    private final UserGroupServiceI         _groupService;
 }

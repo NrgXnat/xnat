@@ -34,7 +34,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                             final FileWriterWrapperI fw,
                             final Map<String, Object> params)
             throws ClientException, IOException {
-        super(listenerControl, u, fw, params);
+        super(listenerControl, u);
         this.listenerControl = listenerControl;
         this.u = u;
         this.params = params;

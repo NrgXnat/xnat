@@ -176,10 +176,11 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 						}
 
 						if (this.subject == null) {
-							this.subject = new XnatSubjectdata((UserI) user);
+							final String subjectId = XnatSubjectdata.CreateNewID();
+							this.subject = new XnatSubjectdata(user);
 							this.subject.setProject(this.proj.getId());
 							this.subject.setLabel(expt.getSubjectId());
-							this.subject.setId(XnatSubjectdata.CreateNewID());
+							this.subject.setId(subjectId);
 							create(this.subject, false, true, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.AUTO_CREATE_SUBJECT));
 							expt.setSubjectId(this.subject.getId());
 						}

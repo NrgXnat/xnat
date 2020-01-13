@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import java.io.File;
-import java.util.Date;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
@@ -21,6 +18,11 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+
+import java.io.File;
+import java.util.Date;
+
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 public abstract class PrearchiveSessionScreen extends SecureScreen {
 
@@ -53,7 +55,7 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 		context.put("folder",folder);
 		context.put("status", PrearcDatabase.getSession(folder, timestamp, project).getStatus().toString());
 		context.put("session",sessionBean);
-		context.put("url", String.format("/prearchive/projects/%s/%s/%s",(project==null)?"Unassigned":project,timestamp,folder));
+		context.put("url", String.format("/prearchive/projects/%s/%s/%s", (project == null) ? UNASSIGNED : project, timestamp, folder));
 		
 		finalProcessing(sessionBean, data,context);
 	}

@@ -343,7 +343,7 @@ XNAT.app.pResources={
 					elementName=v1.type;
 				}
 				tmpHtml+="<dl class='item'><dd class='col1'><button onclick='XNAT.app.pResources.remove(\"" + i1 +"\");'>Remove</button></dd><dd class='colL col2'>"+ elementName +"</dd><dd class='colM col3'>"+v1.name +"</dd><dd class='colM col4'>"+v1.label +"</dd><dd class='colL col5'>"+v1.subdir +"&nbsp;</dd><dd class='colM col6'>"+((v1.overwrite)?v1.overwrite:"false") +"</dd><dd class='colN col5'>"+((v1.triage)?v1.triage:"false") +"</dd><dd class='colS col5'>"+((v1.format)?v1.format:"false") +
-					"</dd><dd class='unzip'>" +((v1.unzip)?v1.unzip:"false") +
+					"</dd><dd class='unzip'>" +((v1.unzip == false)?"false":"true") +
 					"</dd><dd class='colT col6'>";
 				if(v1.level){
 					tmpHtml+="Level:"+v1.level;

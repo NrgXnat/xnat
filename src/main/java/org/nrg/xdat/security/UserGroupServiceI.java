@@ -25,6 +25,7 @@ import java.util.Map;
  *
  * Added to allow different implementations of User Group activities
  */
+@SuppressWarnings("unused")
 public interface UserGroupServiceI {
 	class InvalidValueException extends Exception {
 

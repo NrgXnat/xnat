@@ -466,7 +466,7 @@
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
                 <artifactId>ximgview-plugin</artifactId>
-                <version>1.0.1</version>
+                <version>1.0.1-SNAPSHOT</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->

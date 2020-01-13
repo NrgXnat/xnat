@@ -9,7 +9,11 @@
 
 package org.nrg.prefs.tools.beans;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -17,7 +21,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -32,11 +36,11 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "{'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}")
-    public BeanPrefsToolPreference getPrefA() throws IOException {
+    public BeanPrefsToolPreference getPrefA() {
         return getObjectValue("prefA");
     }
 
-    public void setPrefA(final BeanPrefsToolPreference preference) throws IOException, InvalidPreferenceName {
+    public void setPrefA(final BeanPrefsToolPreference preference) throws InvalidPreferenceName {
         setObjectValue(preference, "prefA");
     }
 
@@ -45,7 +49,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getListValue("prefBs");
     }
 
-    public void setPrefBs(final List<String> preferences) throws IOException, InvalidPreferenceName {
+    public void setPrefBs(final List<String> preferences) throws InvalidPreferenceName {
         setListValue("prefBs", preferences);
     }
 
@@ -54,11 +58,11 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getListValue("prefCs");
     }
 
-    public void setPrefCs(final List<BeanPrefsToolPreference> preferences) throws IOException, InvalidPreferenceName {
+    public void setPrefCs(final List<BeanPrefsToolPreference> preferences) throws InvalidPreferenceName {
         setListValue("prefCs", preferences);
     }
 
-    public BeanPrefsToolPreference getPrefC(final String scpId) throws IOException {
+    public BeanPrefsToolPreference getPrefC(final String scpId) {
         final List<BeanPrefsToolPreference> prefCs = getPrefCs();
         for (final BeanPrefsToolPreference prefC : prefCs) {
             if (prefC.getScpId().equals(scpId)) {
@@ -68,7 +72,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return null;
     }
 
-    public void setPrefC(final BeanPrefsToolPreference preference) throws IOException, InvalidPreferenceName {
+    public void setPrefC(final BeanPrefsToolPreference preference) throws InvalidPreferenceName {
         final String scpId = preference.getScpId();
         final List<BeanPrefsToolPreference> prefCs = getPrefCs();
         final List<BeanPrefsToolPreference> newPrefCs = Lists.newArrayList();
@@ -86,17 +90,17 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         setPrefCs(newPrefCs);
     }
 
-    public void deletePrefC(final String scpId) throws InvalidPreferenceName, IOException {
+    public void deletePrefC(final String scpId) throws InvalidPreferenceName {
         final List<BeanPrefsToolPreference> prefCs = getPrefCs();
-        BeanPrefsToolPreference target = null;
-        for (final BeanPrefsToolPreference prefC : prefCs) {
-            if (prefC.getScpId().equals(scpId)) {
-                target = prefC;
-                break;
+        final Optional<BeanPrefsToolPreference> target = Iterables.tryFind(prefCs, new Predicate<BeanPrefsToolPreference>() {
+            @Override
+            public boolean apply(@Nullable final BeanPrefsToolPreference preference) {
+                return preference != null && StringUtils.equals(scpId, preference.getScpId());
             }
-        }
-        if (target != null) {
-            prefCs.remove(target);
+        });
+        if (target.isPresent()) {
+            final BeanPrefsToolPreference deletion = target.get();
+            prefCs.remove(deletion);
             setPrefCs(prefCs);
         }
     }
@@ -106,7 +110,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getMapValue("prefDs");
     }
 
-    public void setPrefDs(final Map<String, String> preferences) throws IOException, InvalidPreferenceName {
+    public void setPrefDs(final Map<String, String> preferences) throws InvalidPreferenceName {
         setMapValue("prefDs", preferences);
     }
 
@@ -114,7 +118,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getPrefDs().get(scpId);
     }
 
-    public void setPrefD(final String scpId, final String preference) throws InvalidPreferenceName, IOException {
+    public void setPrefD(final String scpId, final String preference) throws InvalidPreferenceName {
         final Map<String, String> prefDs = getPrefDs();
         prefDs.put(scpId, preference);
         setPrefDs(prefDs);
@@ -130,7 +134,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getMapValue("prefEs");
     }
 
-    public void setPrefEs(final Map<String, BeanPrefsToolPreference> preferences) throws IOException, InvalidPreferenceName {
+    public void setPrefEs(final Map<String, BeanPrefsToolPreference> preferences) throws InvalidPreferenceName {
         setMapValue("prefEs", preferences);
     }
 
@@ -138,13 +142,13 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getPrefEs().get(scpId);
     }
 
-    public void setPrefE(final String scpId, final BeanPrefsToolPreference preference) throws InvalidPreferenceName, IOException {
+    public void setPrefE(final String scpId, final BeanPrefsToolPreference preference) throws InvalidPreferenceName {
         final Map<String, BeanPrefsToolPreference> prefEs = getPrefEs();
         prefEs.put(scpId, preference);
         setPrefEs(prefEs);
     }
 
-    public void deletePrefE(final String scpId) throws InvalidPreferenceName, IOException {
+    public void deletePrefE(final String scpId) throws InvalidPreferenceName {
         final Map<String, BeanPrefsToolPreference> prefEs = getPrefEs();
         if (prefEs.containsKey(scpId)) {
             prefEs.remove(scpId);
@@ -157,7 +161,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
         return getListValue("prefFs");
     }
 
-    public void setPrefFs(final List<String> preferences) throws IOException, InvalidPreferenceName {
+    public void setPrefFs(final List<String> preferences) throws InvalidPreferenceName {
         setListValue("prefFs", preferences);
     }
 }

@@ -20,7 +20,6 @@ import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
-import org.nrg.prefs.transformers.CheckItemTypeException;
 import org.nrg.prefs.transformers.PreferenceTransformer;
 
 import java.util.List;
@@ -31,6 +30,7 @@ import java.util.Set;
  * The preferences service interface is the primary means of working with preferences
  * within the XNAT service context.
  */
+@SuppressWarnings("unused")
 public interface NrgPreferenceService extends NrgService {
     /**
      * Creates a {@link Tool tool} with the properties and values specified on the preferences bean and its related
@@ -90,7 +90,6 @@ public interface NrgPreferenceService extends NrgService {
      * @param entityId   The ID of the particular object associated with the preference.
      * @return Returns true if the preference exists for the tool, false otherwise.
      */
-    @SuppressWarnings("unused")
     boolean hasPreference(final String toolId, final String preference, final Scope scope, final String entityId);
 
     /**
@@ -274,7 +273,6 @@ public interface NrgPreferenceService extends NrgService {
      * @param toolId The unique tool ID.
      * @return All of the properties for the indicated tool.
      */
-    @SuppressWarnings("unused")
     Properties getToolProperties(final String toolId);
 
     /**
@@ -314,5 +312,5 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @return The valid transformer if found, null otherwise.
      */
-    PreferenceTransformer getTransformer(final PreferenceInfo preferenceInfo);
+    <T> PreferenceTransformer<T> getTransformer(final PreferenceInfo preferenceInfo);
 }

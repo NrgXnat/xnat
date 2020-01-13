@@ -24,7 +24,7 @@ import static org.nrg.xdat.security.helpers.Users.AUTHORITY_USER;
 @SuppressWarnings("deprecation")
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethod", "authMethodId"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	public XdatUserAuth() {

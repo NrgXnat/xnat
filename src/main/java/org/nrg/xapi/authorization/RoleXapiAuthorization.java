@@ -1,16 +1,19 @@
 package org.nrg.xapi.authorization;
 
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.rest.AuthorizedRoles;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Checks whether the user is a site administrator.
@@ -18,15 +21,14 @@ import java.util.List;
 @Component
 public class RoleXapiAuthorization extends AbstractXapiAuthorization {
     @Override
-    protected boolean checkImpl() {
-        final Method          method = ((MethodSignature) getJoinPoint().getSignature()).getMethod();
+    protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
+        final Method          method = ((MethodSignature) joinPoint.getSignature()).getMethod();
         final AuthorizedRoles roles  = method.getAnnotation(AuthorizedRoles.class);
         if (roles == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The restrictTo was set to Role, but not AuthorizedRoles annotation was found on the method " + method.getName());
         }
-        final Collection<String> userRoles       = Roles.getRoles(getUser());
-        final List<String>       authorizedRoles = Arrays.asList(roles.value());
-        userRoles.retainAll(authorizedRoles);
+        final Collection<String> userRoles = Roles.getRoles(user);
+        userRoles.retainAll(Arrays.asList(roles.value()));
         return userRoles.size() > 0;
     }
 

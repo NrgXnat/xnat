@@ -77,7 +77,7 @@ public class XftItemEvent implements XftItemEventI {
             try {
                 _items.add(item);
                 xsiType(item.getXSIType());
-                id(item.getIDValue());
+                id(StringUtils.defaultIfBlank(item.getIDValue(), item.getPKValueString()));
                 return this;
             } catch (XFTInitException | ElementNotFoundException e) {
                 throw new RuntimeException(e);

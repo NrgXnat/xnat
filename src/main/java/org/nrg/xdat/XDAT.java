@@ -14,10 +14,12 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
@@ -25,12 +27,14 @@ import org.apache.velocity.context.Context;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -76,13 +80,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.annotation.Nullable;
 import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -97,11 +100,11 @@ import static org.nrg.xdat.security.helpers.Users.*;
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Slf4j
 public class XDAT implements Initializable, Configurable{
-	public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
-	public static final String IP_WHITELIST_PATH               = "/system/ipWhitelist";
-	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-
-	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+	public static final  String   IP_WHITELIST_TOOL               = "ipWhitelist";
+	public static final  String   IP_WHITELIST_PATH               = "/system/ipWhitelist";
+	public static final  String   ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+	public static final  String[] DATA_TYPE_ACCESS_FUNCTIONS      = new String[]{"data_type_views_element_access", "data_type_views_mismatched_mapping_elements", "data_type_views_missing_mapping_elements", "data_type_views_orphaned_field_sets", "data_type_views_secured_identified_data_types", "data_type_views_scan_data_types", "data_type_views_experiments_without_data_type", "data_type_views_member_edit_permissions", "data_type_fns_create_public_element_access", "data_type_fns_create_new_security", "data_type_fns_create_new_permissions", "data_type_fns_fix_missing_public_element_access_mappings", "data_type_fns_fix_mismatched_permissions", "data_type_fns_drop_xnat_hash_indices", "data_type_fns_object_exists_in_table", "data_type_fns_find_orphaned_data", "data_type_fns_resolve_orphaned_data", "data_type_fns_scan_exists_in_table", "data_type_fns_find_orphaned_scans", "data_type_fns_resolve_orphaned_scans", "data_type_fns_fix_orphaned_scans", "data_type_fns_correct_experiment_extension", "data_type_fns_correct_group_permissions"};
+	private static final String   ELEMENT_NOT_FOUND_MESSAGE       = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
 
 	private static ContextService             _contextService;
 	private static DataSource                 _dataSource;
@@ -112,6 +115,7 @@ public class XDAT implements Initializable, Configurable{
 	private static NotificationService        _notificationService;
 	private static XdatUserAuthService        _xdatUserAuthService;
 	private static ConfigService              _configurationService;
+	private static SerializerService          _serializerService;
 	private static DataTypeAwareEventService  _eventService;
 	private static SiteConfigPreferences      _siteConfigPreferences;
 	private static CacheManager               _cacheManager;
@@ -123,7 +127,7 @@ public class XDAT implements Initializable, Configurable{
 
 	private String instanceSettingsLocation = null;
 
-	/**
+    /**
 	 * configure torque
 	 *
 	 * @param configuration Configuration
@@ -182,6 +186,22 @@ public class XDAT implements Initializable, Configurable{
 		try {
 			return BooleanUtils.toBoolean(getSiteConfigurationProperty(property, BooleanUtils.toStringTrueFalse(defaultValue)));
 		} catch (ConfigServiceException e) {
+			return defaultValue;
+		}
+	}
+
+	public static int getIntSiteConfigurationProperty(final String property) {
+		try {
+			return NumberUtils.toInt(getSiteConfigurationProperty(property));
+		} catch (ConfigServiceException e) {
+			throw new RuntimeException("Ran into an error trying to retrieve the site configuration property \"" + property + "\"", e);
+		}
+	}
+
+	public static int getIntSiteConfigurationProperty(final String property, final int defaultValue) {
+		try {
+			return NumberUtils.toInt(getSiteConfigurationProperty(property), defaultValue);
+		} catch (RuntimeException | ConfigServiceException e) {
 			return defaultValue;
 		}
 	}
@@ -281,6 +301,24 @@ public class XDAT implements Initializable, Configurable{
 		}
 	}
 
+	public static String getSiteId() {
+        try {
+            return getSiteConfigurationProperty("siteId", "XNAT");
+        } catch (ConfigServiceException e) {
+            log.error("An error occurred trying to retrieve the site ID setting, using the default", e);
+            return "XNAT";
+        }
+    }
+
+	public static String getSiteUrl() {
+        try {
+            return getSiteConfigurationProperty("siteUrl");
+        } catch (ConfigServiceException e) {
+            log.error("An error occurred trying to retrieve the site URL setting, returning null", e);
+            return null;
+        }
+    }
+
 	public static String getSiteLogoPath() {
         try {
             return getSiteConfigurationProperty("siteLogoPath", "");
@@ -341,7 +379,9 @@ public class XDAT implements Initializable, Configurable{
             _configFilesLocation = FileUtils.AppendSlash(location);
         }
 
-		XFT.init(overrideConfigFilesLocation ? FileUtils.AppendSlash(location) : _configFilesLocation);
+		final String exact = overrideConfigFilesLocation ? FileUtils.AppendSlash(location) : _configFilesLocation;
+        assert exact != null;
+		XFT.init(exact);
 
 		if (allowDBAccess && hasUsers()) {
 			try {
@@ -616,6 +656,44 @@ public class XDAT implements Initializable, Configurable{
 	    	_configurationService = getContextService().getBean(ConfigService.class);
 	    }
 	    return _configurationService;
+	}
+
+	/**
+	 * Returns an instance of the serializer service.
+	 * @return An instance of the {@link SerializerService} service.
+	 */
+	public static SerializerService getSerializerService() {
+		if (_serializerService == null) {
+			final SerializerService service = getContextService().getBean(SerializerService.class);
+			if (service != null) {
+				_serializerService = service;
+			} else {
+				final Map<String, String> appInfo = Maps.filterKeys(System.getenv(), new Predicate<String>() {
+					@Override
+					public boolean apply(@Nullable final String key) {
+						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL");
+					}
+				});
+				// We're running an application of some sort, not in a web application, so we need to
+				// strap on the serializer service by hand.
+				if (!appInfo.isEmpty()) {
+					log.info("Found environment variables that indicate this is running in a stand-alone application:");
+					for (final String key : appInfo.keySet()) {
+						log.info(" * \"{}\": {}", key, appInfo.get(key));
+					}
+					log.info("Because this is a stand-alone application, I will instantiate SerializerService on its own.");
+				} else {
+					log.warn("The serializer service was null, which usually happens only in a non-XNAT application context, but I didn't find anything in the environment to indicate the non-XNAT context: {}", System.getenv());
+				}
+				final SerializerConfig config = new SerializerConfig();
+				try {
+					_serializerService = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		return _serializerService;
 	}
 
 	public static DataTypeAwareEventService getEventService() {
@@ -926,20 +1004,38 @@ public class XDAT implements Initializable, Configurable{
 		return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 	}
 
+	public static List<InetAddress> getInetAddresses() {
+    	if (INET_ADDRESSES.isEmpty()) {
+			synchronized (INET_ADDRESSES) {
+				try {
+					INET_ADDRESSES.addAll(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
+				} catch (UnknownHostException exception) {
+					log.error("Localhost is unknown host... Wha?", exception);
+				}
+			}
+		}
+    	return INET_ADDRESSES;
+	}
+
+    public static Set<String> getHostNames() {
+        return new HashSet<>(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
+            @Nullable
+            @Override
+            public String apply(final InetAddress address) {
+                return address.getCanonicalHostName();
+            }
+        }));
+    }
+
 	public static Set<String> getLocalhostIPs() {
 		final Set<String> localhostIPs = new HashSet<>(LOCALHOST_IPS);
-		final String      siteUrl      = XDAT.getSiteConfigPreferences().getSiteUrl();
-		try {
-			final InetAddress[] addresses = ArrayUtils.addAll(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()), InetAddress.getAllByName(new URI(siteUrl).getHost()));
-			for (final InetAddress address : addresses) {
-				final String hostAddress = address.getHostAddress();
-				localhostIPs.add(hostAddress.contains("%") ? hostAddress.substring(0, hostAddress.indexOf("%")) : hostAddress);
-			}
-		} catch (URISyntaxException e) {
-			log.error("The configured site URL {} is an invalid URL.", siteUrl, e);
-		} catch (UnknownHostException exception) {
-			log.error("Localhost is unknown host... Wha?", exception);
-		}
+		localhostIPs.addAll(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
+            @Nullable
+            @Override
+            public String apply(final InetAddress address) {
+                return StringUtils.substringBefore(address.getHostAddress(), "%");
+            }
+        }));
 		return localhostIPs;
 	}
 
@@ -1037,5 +1133,6 @@ public class XDAT implements Initializable, Configurable{
         }), "\n");
 	}
 
-	private static final List<String> LOCALHOST_IPS = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<String>      LOCALHOST_IPS  = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<InetAddress> INET_ADDRESSES = new ArrayList<>();
 }

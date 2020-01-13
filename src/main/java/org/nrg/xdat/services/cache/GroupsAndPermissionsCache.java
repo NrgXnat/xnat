@@ -14,8 +14,18 @@ import java.util.*;
 import static org.nrg.xdat.security.SecurityManager.*;
 
 public interface GroupsAndPermissionsCache extends XnatCache {
-    String       CACHE_NAME = "GroupsAndPermissionsCache";
-    List<String> ACTIONS    = Arrays.asList(READ, EDIT, CREATE);
+    String       CACHE_NAME                = "GroupsAndPermissionsCache";
+    List<String> ACTIONS                   = Arrays.asList(READ, EDIT, CREATE);
+    String       QUERY_GET_GROUPS_FOR_USER = "SELECT " +
+                                             "    g.groupid " +
+                                             "FROM " +
+                                             "    xdat_user_groupid g " +
+                                             "    LEFT JOIN xdat_user u ON g.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id " +
+                                             "WHERE " +
+                                             "    g.groupid IS NOT NULL AND " +
+                                             "    u.login = :username " +
+                                             "ORDER BY " +
+                                             "    g.groupid";
 
     interface Listener {
         /**
@@ -40,10 +50,12 @@ public interface GroupsAndPermissionsCache extends XnatCache {
         Date getStart();
 
         /**
-         * Accessor for time/date cache initialization was completed.
+         * Accessor for time/date cache initialization was completed. This returns null
+         * if initialization has not yet completed.
          *
          * @return The completion time/date.
          */
+        @Nullable
         Date getCompleted();
 
         /**
@@ -94,7 +106,7 @@ public interface GroupsAndPermissionsCache extends XnatCache {
     /**
      * Get the searchable element displays for the indicated user.
      *
-     * @param user   The user for which to retrieve action element displays.
+     * @param user The user for which to retrieve action element displays.
      *
      * @return The searchable element displays for the indicated user.
      */
@@ -196,6 +208,7 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * Gets a list of all of the user IDs associated with the specified group.
      *
      * @param groupId The ID of the group to retrieve.
+     *
      * @return A list of all user IDs associated with the group.
      */
     List<String> getUserIdsForGroup(String groupId);

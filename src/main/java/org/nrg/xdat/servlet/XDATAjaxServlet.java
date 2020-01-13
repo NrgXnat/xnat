@@ -9,104 +9,121 @@
 
 package org.nrg.xdat.servlet;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xft.security.UserI;
+import org.springframework.http.HttpStatus;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * @author timo
  */
+@Slf4j
 public final class XDATAjaxServlet extends HttpServlet {
-    private final static long serialVersionUID = 1L;
-    private final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATAjaxServlet.class);
 
-    /* (non-Javadoc)
-     * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+    /**
+     * {@inheritDoc}
      */
     @Override
-    protected void doGet(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException, IOException {
-        doOp(arg0, arg1);
+    public void init(final ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
     }
 
-    /* (non-Javadoc)
-     * @see javax.servlet.http.HttpServlet#doPost(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+    /**
+     * {@inheritDoc}
      */
     @Override
-    protected void doPost(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException, IOException {
-        doOp(arg0, arg1);
+    protected void doGet(final HttpServletRequest request, final HttpServletResponse response) {
+        doOp(request, response);
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void doDelete(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException,IOException {
-	doOp(arg0, arg1);
+    protected void doPost(final HttpServletRequest request, final HttpServletResponse response) {
+        doOp(request, response);
     }
-    
+
     @Override
-    protected void doPut(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException,IOException {
-	doOp(arg0, arg1);
+    protected void doDelete(final HttpServletRequest request, final HttpServletResponse response) {
+        doOp(request, response);
     }
-    
-    private void doOp(final HttpServletRequest req, final HttpServletResponse res) throws ServletException, IOException {
-        final String classname = req.getParameter("remote-class");
-        final String methodname = req.getParameter("remote-method");
-       
-        final ServletConfig sc = this.getServletConfig();
-        
+
+    @Override
+    protected void doPut(final HttpServletRequest request, final HttpServletResponse response) {
+        doOp(request, response);
+    }
+
+    private void doOp(final HttpServletRequest request, final HttpServletResponse response) {
+        final String   className = request.getParameter("remote-class");
+        final Class<?> clazz;
+        final Object   object;
         try {
-            final Class c = Class.forName(classname);
-            final Object o = c.newInstance();
-            
-            Class[] pClasses = new Class[]{HttpServletRequest.class,HttpServletResponse.class,ServletConfig.class};
-            try {
-                Method m= c.getMethod(methodname, pClasses);
-                Object [] objects = new Object[]{req,res,sc};
-                try {
-                    m.invoke(o, objects);
-                } catch (IllegalArgumentException e) {
-                    logger.error("",e);
-                } catch (InvocationTargetException e) {
-                    logger.error("",e);
-                }
-            } catch (SecurityException e) {
-                logger.error(classname + ":" + methodname,e);
-            } catch (NoSuchMethodException e) {
-            	pClasses = new Class[]{HttpServletRequest.class,HttpServletResponse.class};
-                try {
-                    final Method m = c.getMethod(methodname, pClasses);
-                    final Object[] objects = new Object[]{req,res};
-                    try {
-                        m.invoke(o, objects);
-                    } catch (IllegalArgumentException e2) {
-                        logger.error("",e);
-                    } catch (InvocationTargetException e2) {
-                        logger.error("",e);
-                    }
-                } catch (SecurityException e2) {
-                    logger.error(classname + ":" + methodname,e);
-                } catch (NoSuchMethodException e2) {
-                    logger.error(classname + ":" + methodname,e);
-                }
-            }
+            clazz = Class.forName(className);
+            object = clazz.newInstance();
         } catch (ClassNotFoundException e) {
-            logger.error(classname + ":" + methodname,e);
+            log.error("Couldn't find the {} class", className, e);
+            AccessLogger.LogAjaxServiceAccess(getUsername(), request, BAD_REQUEST);
+            return;
         } catch (InstantiationException e) {
-            logger.error(classname + ":" + methodname,e);
+            log.error("Couldn't create an instance of the {} class (maybe no default constructor?)", className, e);
+            AccessLogger.LogAjaxServiceAccess(getUsername(), request, BAD_REQUEST);
+            return;
         } catch (IllegalAccessException e) {
-            logger.error(classname + ":" + methodname,e);
+            log.error("Can't access the default constructor for the {} class", className, e);
+            AccessLogger.LogAjaxServiceAccess(getUsername(), request, BAD_REQUEST);
+            return;
+        }
+
+        final String methodName = request.getParameter("remote-method");
+        try {
+            callClassMethod(clazz, object, methodName, request, response, getServletConfig());
+        } catch (NoSuchMethodException e) {
+            try {
+                callClassMethod(clazz, object, methodName, request, response);
+            } catch (NoSuchMethodException e2) {
+                log.error("Couldn't find the {}.{}(HttpServletRequest, HttpServletResponse, ServletConfig) method", className, methodName, e);
+                AccessLogger.LogAjaxServiceAccess(getUsername(), request, BAD_REQUEST);
+            }
         }
     }
 
-    /* (non-Javadoc)
-     * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
-     */
-    @Override
-    public void init(ServletConfig arg0) throws ServletException {
-        super.init(arg0);
+    private void callClassMethod(final Class<?> clazz, final Object instance, final String methodName, final Object... objects) throws NoSuchMethodException {
+        final HttpServletRequest request = (HttpServletRequest) objects[0];
+        final Method             method  = clazz.getMethod(methodName, objects.length == 3 ? CLASSES_WITH_CONFIG : CLASSES_WITHOUT_CONFIG);
+        try {
+            method.invoke(instance, objects);
+            AccessLogger.LogAjaxServiceAccess(getUsername(), request);
+            return;
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal arguments specified for the {}.{}({}) method", clazz.getName(), methodName, objects.length == 3 ? CLASS_NAMES_WITH_CONFIG : CLASS_NAMES_WITHOUT_CONFIG, e);
+        } catch (InvocationTargetException e) {
+            log.error("An error occurred trying to call the {}.{}({}) method", clazz.getName(), methodName, objects.length == 3 ? CLASS_NAMES_WITH_CONFIG : CLASS_NAMES_WITHOUT_CONFIG, e);
+        } catch (IllegalAccessException e) {
+            log.error("Can't access the {}.{}({}) method", clazz.getName(), methodName, objects.length == 3 ? CLASS_NAMES_WITH_CONFIG : CLASS_NAMES_WITHOUT_CONFIG, e);
+        } catch (SecurityException e) {
+            log.error("A security exception occurred calling the {}.{}({}) method", clazz.getName(), methodName, objects.length == 3 ? CLASS_NAMES_WITH_CONFIG : CLASS_NAMES_WITHOUT_CONFIG, e);
+        }
+        AccessLogger.LogAjaxServiceAccess(getUsername(), request, BAD_REQUEST);
     }
+
+    private String getUsername() {
+        final UserI user = XDAT.getUserDetails();
+        return user != null ? user.getUsername() : "unknown";
+    }
+
+    private static final Class<?>[] CLASSES_WITH_CONFIG        = new Class[]{HttpServletRequest.class, HttpServletResponse.class, ServletConfig.class};
+    private static final Class<?>[] CLASSES_WITHOUT_CONFIG     = new Class[]{HttpServletRequest.class, HttpServletResponse.class};
+    private static final String     CLASS_NAMES_WITH_CONFIG    = "HttpServletRequest, HttpServletResponse, ServletConfig";
+    private static final String     CLASS_NAMES_WITHOUT_CONFIG = "HttpServletRequest, HttpServletResponse";
+    private static final String     BAD_REQUEST                = HttpStatus.BAD_REQUEST.toString();
 }

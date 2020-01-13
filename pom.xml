@@ -1,7 +1,7 @@
 <!--
   ~ core: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2005-2018, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.5.3</version>
+        <version>1.7.6</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
@@ -35,21 +35,17 @@
         <finalName>xdat-${project.version}</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
-              <plugin>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <quiet>true</quiet>
-                    <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
-            </plugin> 
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
@@ -108,10 +104,6 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -211,6 +203,10 @@
             <artifactId>velocity-tools</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.noelios.restlet</groupId>
+            <artifactId>com.noelios.restlet.ext.servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>ecs</groupId>
             <artifactId>ecs</artifactId>
         </dependency>
@@ -221,12 +217,6 @@
         <dependency>
             <groupId>stratum</groupId>
             <artifactId>stratum</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xerces</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lowagie</groupId>
@@ -276,6 +266,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Unit testing dependencies -->

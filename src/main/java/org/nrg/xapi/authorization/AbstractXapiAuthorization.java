@@ -1,90 +1,92 @@
 package org.nrg.xapi.authorization;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
-import org.nrg.xapi.rest.ProjectId;
-import org.nrg.xapi.rest.RestUserGroup;
-import org.nrg.xapi.rest.Username;
+import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xapi.rest.*;
 import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 
 /**
  * Provides base functionality for XAPI request authorizers.
  */
+@Slf4j
 public abstract class AbstractXapiAuthorization implements XapiAuthorization {
-    protected abstract boolean checkImpl();
+    protected abstract boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotFoundException;
 
     protected abstract boolean considerGuests();
 
     @Override
-    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException {
+    public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException, NotFoundException {
         // We can just cut everything off if the user is a guest: it can't be admin, auth, user, edit, coll, member, owner.
         // However, if accessLevel is something else, and considerGuests returns true, we should not cut things off
-        if ((!considerGuests() || accessLevel.equalsAny(Admin, Authenticated, User, Edit, Collaborator, Member, Owner)) && user.isGuest()) {
+        final boolean isGuest = user.isGuest();
+        //noinspection deprecation
+        if ((!considerGuests() || accessLevel.equalsAny(Admin, Authenticated, DataAdmin, DataAccess, User, Edit, Delete, Collaborator, Member, Owner)) && isGuest) {
             throw new NotAuthenticatedException(request.getRequestURL().toString());
         }
 
-        _accessLevel = accessLevel;
-        _joinPoint = joinPoint;
-        _user = user;
-        _username = user.getUsername();
-        _request = request;
-        _requestMethod = request.getMethod();
-
         // If access level is administrator, all we need to do is check whether this user is an administrator.
-        if (!checkImpl()) {
-            throw new InsufficientPrivilegesException(getUsername(), getRequestPath());
+        try {
+            if (!checkImpl(accessLevel, joinPoint, user, request)) {
+                if (isGuest) {
+                    throw new NotAuthenticatedException(request.getRequestURI());
+                }
+                throw new InsufficientPrivilegesException(user.getUsername(), request.getRequestURI());
+            }
+        } catch (NotFoundException e) {
+            if (isGuest) {
+                throw new NotAuthenticatedException(request.getRequestURI());
+            }
+            if (!Groups.hasAllDataAccess(user)) {
+                throw new InsufficientPrivilegesException(user.getUsername(), request.getRequestURI());
+            }
+            throw e;
         }
-    }
-
-    public AccessLevel getAccessLevel() {
-        return _accessLevel;
-    }
-
-    protected JoinPoint getJoinPoint() {
-        return _joinPoint;
-    }
-
-    protected UserI getUser() {
-        return _user;
-    }
-
-    protected String getUsername() {
-        return _username;
-    }
-
-    protected HttpServletRequest getRequest() {
-        return _request;
-    }
-
-    protected String getRequestPath() {
-        return _requestMethod;
     }
 
     protected List<String> getUsernames(final JoinPoint joinPoint) {
         return getAnnotatedParameters(joinPoint, Username.class);
     }
 
-    protected List<String> getProjectIds(final JoinPoint joinPoint) {
-        return getAnnotatedParameters(joinPoint, ProjectId.class);
+    protected List<String> getProjects(final JoinPoint joinPoint) {
+        @SuppressWarnings("deprecation") final List<String> projectIds = getAnnotatedParameters(joinPoint, ProjectId.class);
+        if (!projectIds.isEmpty()) {
+            log.warn("You are using a plugin that uses the deprecated @ProjectId annotation. Please check for an updated version of the plugin, as this deprecated annotation may not be supported in future versions of XNAT.");
+            projectIds.addAll(getAnnotatedParameters(joinPoint, Project.class));
+            return new ArrayList<>(new HashSet<>(projectIds));
+        } else {
+            // TODO: Eventually this should be the only call in here once we remove @ProjectId
+            return getAnnotatedParameters(joinPoint, Project.class);
+        }
+    }
+
+    protected List<String> getSubjects(final JoinPoint joinPoint) {
+        return getAnnotatedParameters(joinPoint, Subject.class);
+    }
+
+    protected List<String> getExperiments(final JoinPoint joinPoint) {
+        return getAnnotatedParameters(joinPoint, Experiment.class);
     }
 
     protected List<String> getGroups(final JoinPoint joinPoint) {
-        return getAnnotatedParameters(joinPoint, RestUserGroup.class);
+        return getAnnotatedParameters(joinPoint, UserGroup.class);
     }
 
     protected <T> List<? extends T> getParameters(final JoinPoint joinPoint, final Class<T> superclass) {
@@ -97,10 +99,12 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         return parameters;
     }
 
+    @SuppressWarnings("unused")
     protected List<Class<?>> getParameterTypes(final JoinPoint joinPoint) {
         return Arrays.asList(((MethodSignature) joinPoint.getSignature()).getMethod().getParameterTypes());
     }
 
+    @SuppressWarnings("unused")
     protected <T> List<Class<? extends T>> getParameterTypes(final JoinPoint joinPoint, final Class<T> superclass) {
         final Method                   method = ((MethodSignature) joinPoint.getSignature()).getMethod();
         final List<Class<? extends T>> types  = Lists.newArrayList();
@@ -112,8 +116,9 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         return types;
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected List<String> getAnnotatedParameters(final JoinPoint joinPoint, final Class<? extends Annotation> annotation) {
-        final int    parameterIndex = getAnnotatedParameterIndex(((MethodSignature) joinPoint.getSignature()).getMethod(), annotation);
+        final int parameterIndex = getAnnotatedParameterIndex(((MethodSignature) joinPoint.getSignature()).getMethod(), annotation);
         if (parameterIndex == -1) {
             return NO_PARAMETERS;
         }
@@ -122,12 +127,25 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
             return Collections.singletonList((String) candidate);
         }
         if (candidate instanceof List) {
+            // TODO: This could eventually be a list of objects that need to be converted to IDs.
             //noinspection unchecked
             return (List<String>) candidate;
         }
+        if (candidate instanceof XFTItem) {
+            try {
+                return Collections.singletonList(((XFTItem) candidate).getIDValue());
+            } catch (XFTInitException e) {
+                log.error("Error initializing XFT", e);
+            } catch (ElementNotFoundException e) {
+                log.error("Element not found: {}", e.ELEMENT);
+            }
+            return Collections.emptyList();
+        }
 
-        final String singular = StringUtils.uncapitalize(annotation.getSimpleName());
-        final String plural   = singular + "s";
+        final String singular   = StringUtils.uncapitalize(annotation.getSimpleName());
+        final String plural     = singular + "s";
+        final String singularId = StringUtils.uncapitalize(annotation.getSimpleName()) + "Id";
+        final String pluralIds  = singularId + "s";
 
         if (candidate instanceof Map) {
             final Map map = (Map) candidate;
@@ -135,11 +153,19 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
                 //noinspection unchecked
                 return (List<String>) map.get(plural);
             }
+            if (map.containsKey(pluralIds)) {
+                //noinspection unchecked
+                return (List<String>) map.get(pluralIds);
+            }
             if (map.containsKey(singular)) {
                 return Collections.singletonList((String) map.get(singular));
             }
+            if (map.containsKey(singularId)) {
+                return Collections.singletonList((String) map.get(singularId));
+            }
         }
-        throw new RuntimeException("Found parameter " + parameterIndex + " annotated with @" + annotation.getSimpleName() + " for the method " + joinPoint.getSignature().getName() + " but the annotated parameter is not a String, List of strings, or a map containing a key named " + singular + " or " + plural + ".");
+
+        throw new RuntimeException("Found parameter at index " + parameterIndex + " annotated with @" + annotation.getSimpleName() + " for the method " + joinPoint.getSignature().getDeclaringTypeName() + "." + joinPoint.getSignature().getName() + "() but the annotated parameter is not a String, List of strings, or a map containing a key named " + singular + " or " + plural + ".");
     }
 
     public static int getAnnotatedParameterIndex(final Method method, final Class<? extends Annotation> annotation) {
@@ -159,11 +185,4 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
     }
 
     private static final List<String> NO_PARAMETERS = Collections.emptyList();
-
-    private AccessLevel        _accessLevel;
-    private JoinPoint          _joinPoint;
-    private UserI              _user;
-    private HttpServletRequest _request;
-    private String             _username;
-    private String             _requestMethod;
 }

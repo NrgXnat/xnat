@@ -9,23 +9,24 @@
 
 package org.nrg.xft.search;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.search.DisplayCriteria;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Tim
  */
+@Slf4j
 public class CriteriaCollection implements SQLClause {
-    static org.apache.log4j.Logger logger = Logger.getLogger(CriteriaCollection.class);
-    private ArrayList collection = new ArrayList();
-    private String joinType = "AND";
+    private ArrayList<SQLClause>   collection = new ArrayList<>();
+    private String                 joinType;
 
     public String getElementName() {
         if (size() > 0) {
-            return ((SQLClause) collection.get(0)).getElementName();
+            return collection.get(0).getElementName();
         } else {
             return "";
         }
@@ -36,18 +37,18 @@ public class CriteriaCollection implements SQLClause {
     }
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
-        String clause = "\n (";
-        Iterator clauses = getClauses();
-        int counter = 0;
+        StringBuilder clause  = new StringBuilder("\n (");
+        Iterator      clauses = getClauses();
+        int           counter = 0;
         while (clauses.hasNext()) {
             SQLClause c = (SQLClause) clauses.next();
             if (counter++ != 0) {
-                clause += " " + joinType + " ";
+                clause.append(" ").append(joinType).append(" ");
             }
-            clause += c.getSQLClause(qo);
+            clause.append(c.getSQLClause(qo));
         }
-        clause += ")";
-        return clause;
+        clause.append(")");
+        return clause.toString();
     }
 
 
@@ -85,6 +86,10 @@ public class CriteriaCollection implements SQLClause {
         return this.collection;
     }
 
+    public List<SQLClause> toList() {
+        return collection;
+    }
+
     public void addClause(String xmlPath, Object value) {
         try {
             SearchCriteria c = new SearchCriteria();
@@ -92,7 +97,7 @@ public class CriteriaCollection implements SQLClause {
             c.setValue(value);
             this.add(c);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -123,7 +128,7 @@ public class CriteriaCollection implements SQLClause {
             c.setComparison_type(comparison);
             this.add(c);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -141,7 +146,7 @@ public class CriteriaCollection implements SQLClause {
                 c.setComparison_type(comparison);
                 this.add(c);
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
             }
         } else {
             addClause(xmlPath, comparison, value);
@@ -149,15 +154,14 @@ public class CriteriaCollection implements SQLClause {
     }
 
     /**
-     * @param o The SQL clause to add.
+     * @param clause The SQL clause to add.
      */
-    @SuppressWarnings("unchecked")
-    public void addClause(SQLClause o) {
-        collection.add(o);
+    public void addClause(final SQLClause clause) {
+        collection.add(clause);
     }
 
-    public void add(SQLClause o) {
-        addClause(o);
+    public void add(final SQLClause clause) {
+        addClause(clause);
     }
 
     public int size() {
@@ -166,9 +170,9 @@ public class CriteriaCollection implements SQLClause {
 
     public int numClauses() {
         int size = 0;
-        for (final Object o : collection) {
-            if (o instanceof CriteriaCollection) {
-                size += ((CriteriaCollection) o).numClauses();
+        for (final SQLClause clause : collection) {
+            if (clause instanceof CriteriaCollection) {
+                size += clause.numClauses();
             } else {
                 size++;
             }
@@ -178,30 +182,27 @@ public class CriteriaCollection implements SQLClause {
 
     public int numSchemaClauses() {
         int size = 0;
-        for (final Object o : collection) {
-            if (o instanceof CriteriaCollection) {
-                size += ((CriteriaCollection) o).numSchemaClauses();
-            } else {
-                if (o instanceof SearchCriteria) {
-                    size++;
-                }
+        for (final SQLClause clause : collection) {
+            if (clause instanceof CriteriaCollection) {
+                size += ((CriteriaCollection) clause).numSchemaClauses();
+            } else if (clause instanceof SearchCriteria) {
+                size++;
             }
         }
         return size;
     }
 
-    public Iterator iterator() {
+    public Iterator<SQLClause> iterator() {
         return collection.iterator();
     }
 
-    public void addCriteria(ArrayList list) {
-        for (final Object aList : list) {
-            SQLClause c = (SQLClause) aList;
-            add(c);
+    public void addCriteria(final ArrayList list) {
+        for (final Object clause : list) {
+            add((SQLClause) clause);
         }
     }
 
-    public void addCriteria(SQLClause clause) {
+    public void addCriteria(final SQLClause clause) {
         add(clause);
     }
 
@@ -226,7 +227,7 @@ public class CriteriaCollection implements SQLClause {
 
     public String toString() {
         try {
-            return this.getSQLClause(null);
+            return getSQLClause(null);
         } catch (Exception e) {
             return "error";
         }

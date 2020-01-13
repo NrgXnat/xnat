@@ -9,12 +9,9 @@
 
 
 package org.nrg.xdat.services;
-import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
 
 import org.apache.axis.AxisEngine;
+import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.CriteriaCollection;
@@ -34,6 +31,11 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 
+import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+
 /**
  * @author timo
  *
@@ -42,9 +44,10 @@ public class FieldValues {
     static org.apache.log4j.Logger logger = Logger.getLogger(FieldValues.class);
     public ArrayList search(String _field,String _comparison,Object _value,String _rfield, String _order) throws RemoteException
     {
-        String _username= AxisEngine.getCurrentMessageContext().getUsername();
-        String _password= AxisEngine.getCurrentMessageContext().getPassword();
-        AccessLogger.LogServiceAccess(_username,"","FieldValues",_field + " " +  _comparison + " " + _value + " : " + _rfield);
+		final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+		String               _username             = messageContext.getUsername();
+        String               _password             = messageContext.getPassword();
+		AccessLogger.LogServiceAccess(_username, messageContext, "FieldValues", _field + " " + _comparison + " " + _value + " : " + _rfield);
         ArrayList al = new ArrayList();
         try {
             String elementName = XftStringUtils.GetRootElementName(_rfield);
@@ -145,7 +148,12 @@ public class FieldValues {
     }
     public ArrayList search(String session_id,String _field,String _comparison,Object _value,String _rfield, String _order) throws RemoteException
     {
-        AccessLogger.LogServiceAccess(session_id,"","FieldValues",_field + " " +  _comparison + " " + _value + " : " + _rfield);
+		final MessageContext messageContext = AxisEngine.getCurrentMessageContext();
+		final UserI          user           = (UserI) messageContext.getSession().get("user");
+		if (user == null) {
+			throw new RemoteException("Invalid User for session ID: " + session_id);
+		}
+		AccessLogger.LogServiceAccess(user.getUsername(), messageContext, "FieldValues", _field + " " + _comparison + " " + _value + " : " + _rfield);
         ArrayList al = new ArrayList();
         try {
             String elementName = XftStringUtils.GetRootElementName(_rfield);
@@ -182,11 +190,6 @@ public class FieldValues {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
-            if (user == null)
-            {
-                throw new Exception("Invalid User.");
-            }
             Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), user);
             
 			al =  GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,_order);

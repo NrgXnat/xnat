@@ -9,6 +9,8 @@
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -20,15 +22,12 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XMLUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -37,21 +36,16 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
 
+@Slf4j
 public class XMLWriter {
-	private static final Logger                 logger     = LoggerFactory.getLogger(XMLWriter.class);
-	private              DocumentBuilderFactory factory    = null;
-	private              DocumentBuilder        newbuilder = null;
-	private              Document               doc        = null;
 	/**
 	 * Object used to generate a new XML DOM Document
 	 */
-	public XMLWriter()
-	{
+	public XMLWriter() {
 		try {
-			factory = DocumentBuilderFactory.newInstance();
-			newbuilder = factory.newDocumentBuilder();
+			_builder = XDAT.getSerializerService().getDocumentBuilder();
 		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
+			log.error("An error occurred creating the SAX parser", e);
 		}
 	}
 
@@ -63,7 +57,7 @@ public class XMLWriter {
 	{
 		if (doc == null)
 		{
-			doc = newbuilder.newDocument();
+			doc = _builder.newDocument();
 		}
 		return doc;
 	}
@@ -183,7 +177,7 @@ public class XMLWriter {
 	private Document translateItemToDOM(XFTItem item,boolean allowSchemaLocation, String location,boolean limited) throws org.nrg.xft.exception.XFTInitException,org.nrg.xft.exception.ElementNotFoundException,FieldNotFoundException
 	{
 		Document doc = null;
-		doc = newbuilder.newDocument();
+		doc = _builder.newDocument();
 		boolean withPrefix = false;
 		if (allowSchemaLocation)
 		{
@@ -248,13 +242,13 @@ public class XMLWriter {
                 Node n = writer.itemToNode(temp,doc,temp.getXSIType(),false,false,null,false,limited);
                 root.appendChild(n);
             } catch (DOMException e) {
-                logger.error("",e);
+                log.error("", e);
             } catch (XFTInitException e) {
-                logger.error("",e);
+                log.error("", e);
             } catch (ElementNotFoundException e) {
-                logger.error("",e);
+                log.error("", e);
             } catch (FieldNotFoundException e) {
-                logger.error("",e);
+                log.error("", e);
             }
 		}
 		return doc;
@@ -503,9 +497,9 @@ public class XMLWriter {
 									if(XFT.VERBOSE)System.out.println(counter + " of " + child_count + " Subjects (" +((float) (Calendar.getInstance().getTimeInMillis()-startTime)/1000) + "s)");
 								}
 							} catch (DOMException e) {
-								logger.error("",e);
+								log.error("", e);
 							} catch (org.nrg.xft.exception.XFTInitException e) {
-								logger.error("",e);
+								log.error("", e);
 							}
 						}
 						counter++;
@@ -551,9 +545,9 @@ public class XMLWriter {
 
 	                        counter++;
 	                    } catch (DOMException e) {
-	                        logger.error("",e);
+	                        log.error("", e);
 	                    } catch (Exception e) {
-	                        logger.error("",e);
+	                        log.error("", e);
 	                    }
 					}
 			    }
@@ -598,9 +592,9 @@ public class XMLWriter {
 									parent.appendChild(temp);
 								}
 							} catch (DOMException e) {
-								logger.error("",e);
+								log.error("", e);
 							} catch (org.nrg.xft.exception.XFTInitException e) {
-								logger.error("",e);
+								log.error("", e);
 							}
 //
 //							//CLEAR PROCESSED CHILDREN
@@ -912,7 +906,7 @@ public class XMLWriter {
                         java.util.Date d = DateUtils.parseDate((String)o);
                         o=d;
                     } catch (ParseException e) {
-                        logger.error("",e);
+                        log.error("", e);
                     }
                 }
 
@@ -950,7 +944,7 @@ public class XMLWriter {
                         java.util.Date d = DateUtils.parseDateTime((String)o);
                         o=d;
                     } catch (ParseException e) {
-                        logger.error("",e);
+                        log.error("", e);
                     }
                 }
 
@@ -1055,20 +1049,6 @@ public class XMLWriter {
 	}
 
 	/**
-	 * @return Returns the DocumentBuilderFactory
-	 */
-	private DocumentBuilderFactory getFactory() {
-		return factory;
-	}
-
-	/**
-	 * @return Returns the DocumentBuilder
-	 */
-	private DocumentBuilder getNewbuilder() {
-		return newbuilder;
-	}
-
-	/**
 	 * Creates a XML DOM Document with a root element of type &#60;List&#62; and the items
 	 * as a sub nodes.
 	 * @param list
@@ -1076,21 +1056,19 @@ public class XMLWriter {
 	 */
 	public static Document XFTItemListToDOM(List list,boolean limited)
 	{
-		XMLWriter writer = new XMLWriter();
-		Document doc = writer.getNewbuilder().newDocument();
+		final XMLWriter writer = new XMLWriter();
+		final Document doc = writer._builder.newDocument();
 		try {
-			Element root = doc.createElement("List");
+			final Element root = doc.createElement("List");
 			doc.appendChild(root);
-			Iterator iter = list.iterator();
-			while (iter.hasNext())
-			{
-				XFTItem item = (XFTItem)iter.next();
-				root.appendChild(writer.itemToNode(item,doc,item.getProperName(),false,false,null,false,limited));
+			for (final Object object : list) {
+				final XFTItem item = (XFTItem) object;
+				root.appendChild(writer.itemToNode(item, doc, item.getProperName(), false, false, null, false, limited));
 			}
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			e.printStackTrace();
-		} catch (Exception e1) {
-			e1.printStackTrace();
+		} catch (XFTInitException e) {
+			log.error("An error occurred accessing XFT", e);
+		} catch (Exception e) {
+			log.error("An unexpected error occurred", e);
 		}
 
 		return doc;
@@ -1107,5 +1085,7 @@ public class XMLWriter {
 		return XFTItemListToDOM(list,false);
 	}
 
+	private DocumentBuilder _builder = null;
+	private Document        doc      = null;
 }
 

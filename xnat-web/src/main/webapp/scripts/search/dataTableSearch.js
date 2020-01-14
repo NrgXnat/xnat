@@ -566,7 +566,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             flt.parentNode.style.display = "block";
             var fullFltId = this.div_table_id + "_flt_full";
             var fltHTML = "<span title=\"Click to expand\" style=\"cursor: pointer;\" onclick=\"this.style.display='none';document.getElementById('" + fullFltId + "').style.display='inline';\">" + limitText(filter, 250) + "</span>";
-            fltHTML += "<span id=\"" + fullFltId + "\" style=\"display:none\">" + filter + "</span>";
+            fltHTML += "<span id=\"" + fullFltId + "\" class=\"full-filter-text\" style=\"display:none\">" + filter + "</span>";
             flt.innerHTML = fltHTML;
         }
     };

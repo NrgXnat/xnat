@@ -12,7 +12,7 @@
         <h3>
             <label>
                 Search by Criteria
-                <input type="checkbox" class="search-method by-criteria" value="by-criteria" checked>
+                <input type="radio" class="search-method by-criteria" value="by-criteria" name="search-by" checked>
             </label>
         </h3>
 
@@ -120,7 +120,7 @@
     <div style="padding-left:40px;" class="search-group by-id">
 
         <h3><label>Search by Exact IDs
-            <input type="checkbox" class="search-method by-id" value="by-id"></label>
+            <input type="radio" class="search-method by-id" value="by-id" name="search-by"></label>
         </h3>
 
         <select name="xnat:mrSessionData.COMBO0_FIELDS">

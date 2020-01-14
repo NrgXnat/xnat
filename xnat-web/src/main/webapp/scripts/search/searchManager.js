@@ -2119,18 +2119,18 @@ xdat_stored_search.prototype.renderFilterDisplay=function(){
 			  var step_1 = LocalSM.filter_string("%<", this.SearchWhere[0].toString(this.RootElementName,this));
 			  var step_2 = LocalSM.filter_string(">%", step_1);
 			  var step_3 = LocalSM.filter_string("%", step_2);
-              var step_4 = step_3.split("\)").join("\)&#8203;");
-              var step_5 = step_4.split(",").join(",&#8203;");
-   			  return "Filter(s):&nbsp;" + step_5;
+              var step_4 = step_3.split("\)").join("\) ");
+              var step_5 = step_4.split(",").join(", ");
+   			  return "Filter(s): " + step_5;
    			}else{
    				var rfdswT="";
    				for(var rfdswC=0;rfdswC<this.SearchWhere.length;rfdswC++){
    					if(rfdswC>0)rfdswT+=" AND ";
    					rfdswT+=this.SearchWhere[rfdswC].toString(this.RootElementName,this);
    				}
-                rfdswT = rfdswT.split("\)").join("\)&#8203;");
-                rfdswT = rfdswT.split(",").join(",&#8203;");
-   				return "Filter(s):&nbsp;" + rfdswT;
+                rfdswT = rfdswT.split("\)").join("\) ");
+                rfdswT = rfdswT.split(",").join(", ");
+   				return "Filter(s): " + rfdswT;
    			}
    		}
 }

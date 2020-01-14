@@ -267,7 +267,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(_factory.getUser(user), CREATED);
         } catch (Exception e) {
-            log.error("Error occurred modifying user " + user.getLogin());
+            log.error("Error occurred modifying user {}", user.getLogin(), e);
         }
         return new ResponseEntity<>(INTERNAL_SERVER_ERROR);
     }

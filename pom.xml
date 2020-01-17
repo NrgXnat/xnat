@@ -1,7 +1,7 @@
 <!--
   ~ core: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2005-2018, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -13,12 +13,12 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.6.RAD-SNAPSHOT</version>
+        <version>1.7.6.RAD</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.6.RAD-SNAPSHOT</version>
+    <version>1.7.6.RAD</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>

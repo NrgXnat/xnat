@@ -27,7 +27,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
@@ -78,7 +77,7 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
     @Autowired
-    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final DataTypeAwareEventService eventService, final DatabaseHelper helper) throws IOException {
+    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template, final DataTypeAwareEventService eventService, final DatabaseHelper helper) {
         _cache = cache;
         _template = template;
         _eventService = eventService;
@@ -89,8 +88,7 @@ public class UserGroupManager implements UserGroupServiceI {
         return Lists.transform(irregulars, new Function<Map<String, Object>, String>() {
             @Override
             public String apply(final Map<String, Object> mapping) {
-                //noinspection RedundantCast
-                return String.format(IRREGULAR_MAPPING_NOTE, mapping.get("id"), (int) mapping.get("xdat_field_mapping_id"), mapping.get("field"), mapping.get("mismatched_values"));
+                return StringUtils.joinWith("\t", mapping.get("id"), mapping.get("xdat_field_mapping_id"), mapping.get("field"), mapping.get("mismatched_values"));
             }
         });
     }
@@ -780,7 +778,6 @@ public class UserGroupManager implements UserGroupServiceI {
     private static final String ALL_GROUPS_QUERY         = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
     private static final String QUERY_GET_PRIMARY_KEY    = "SELECT xdat_usergroup_id FROM xdat_usergroup WHERE id = :groupId";
     private static final String CONFIRM_QUERY            = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
-    private static final String IRREGULAR_MAPPING_NOTE   = "Group \"%s\" (%d) has irregular permission settings for the data-type field \"%s\": %s";
 
     private static final String       NEW_GROUP_PERMS_TEMPLATE = "new_group_permissions.vm";
     private static final List<String> PROJECT_GROUP_DATA_TYPES = Arrays.asList(XdatUsergroup.SCHEMA_ELEMENT_NAME, XdatElementAccess.SCHEMA_ELEMENT_NAME, XdatFieldMappingSet.SCHEMA_ELEMENT_NAME, XdatFieldMapping.SCHEMA_ELEMENT_NAME);

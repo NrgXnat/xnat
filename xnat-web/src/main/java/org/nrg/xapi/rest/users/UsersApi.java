@@ -274,11 +274,11 @@ public class UsersApi extends AbstractXapiRestController {
 
     @ApiOperation(value = "Updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
-            @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to update this user."),
-            @ApiResponse(code = 404, message = "User not found."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+                   @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, UserInitException {
         final UserI user;

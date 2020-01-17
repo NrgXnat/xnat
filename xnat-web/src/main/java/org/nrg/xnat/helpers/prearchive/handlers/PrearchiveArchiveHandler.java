@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ServerException;
+import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -48,38 +49,18 @@ public class PrearchiveArchiveHandler extends AbstractPrearchiveOperationHandler
 
     private String commitSessionToArchive() throws Exception {
         if (PrearcDatabase.setStatus(getSession().getFolderName(), getSession().getTimestamp(), getSession().getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {
-            final boolean        override;
-            final boolean        append;
-            if (getSession().getSessionData() != null && getSession().getSessionData().getAutoArchive() != null) {
-                switch (getSession().getSessionData().getAutoArchive()) {
-                    case AutoArchive:
-                    case AutoArchiveOverwrite:
-                        override = false;
-                        append = true;
-                        break;
-
-                    default:
-                        override = false;
-                        append = false;
-                        break;
-                }
-            } else {
-                override = isOverrideExceptions();
-                append = isAllowSessionMerge();
-            }
+            final boolean override = getOverrideExceptions() != null ? getOverrideExceptions() : false;
+            final boolean append   = getAllowSessionMerge() != null ? getAllowSessionMerge() : getSession().getSessionData() != null && getSession().getSessionData().getAutoArchive() != null && getSession().getSessionData().getAutoArchive() != PrearchiveCode.Manual;
             return PrearcDatabase.archive(getSession(), override, append, getSession().isOverwriteFiles(), getUser(), null);
         } else {
             throw new ServerException("Unable to lock session for archiving.");
         }
     }
 
-    private boolean isBooleanParameter(final String parameterName) {
-        if (!getParameters().containsKey(parameterName)) {
-            return false;
-        }
+    private Boolean isBooleanParameter(final String parameterName) {
         final Object value = getParameters().get(parameterName);
         if (value == null) {
-            return false;
+            return null;
         }
         if (value instanceof Boolean) {
             return (Boolean) value;
@@ -89,6 +70,6 @@ public class PrearchiveArchiveHandler extends AbstractPrearchiveOperationHandler
 
     private final PrearcSession       _session;
     private final URIManager.DataURIA _destination;
-    private final boolean             _overrideExceptions;
-    private final boolean             _allowSessionMerge;
+    private final Boolean             _overrideExceptions;
+    private final Boolean             _allowSessionMerge;
 }

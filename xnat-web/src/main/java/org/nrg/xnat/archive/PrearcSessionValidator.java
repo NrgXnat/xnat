@@ -130,7 +130,9 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		
 		if(existing==null){
 			try {
-				if(!XNATUtils.hasValue(src.getId()))src.setId(XnatExperimentdata.CreateNewID());
+				if (StringUtils.isBlank(src.getId())) {
+					src.setId(XnatExperimentdata.CreateNewID());
+				}
 			} catch (Exception e) {
 				fail(9,"unable to create new session ID");
 			}

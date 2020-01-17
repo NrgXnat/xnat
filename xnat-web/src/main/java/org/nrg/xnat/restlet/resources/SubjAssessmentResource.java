@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
@@ -341,17 +342,12 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                             }
 
                             if (this.subject == null) {
-
-                                this.subject = new XnatSubjectdata(user);
-                                this.subject.setProject(this.proj.getId());
-                                this.subject.setLabel(expt.getSubjectId());
-                                this.subject.setId(XnatSubjectdata.CreateNewID());
-                                if (!Permissions.canCreate(user, this.subject)) {
-                                    this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for subjects in this project.");
+                                try {
+                                    createNewSubject(user, expt.getSubjectId());
+                                } catch (InsufficientPrivilegesException e) {
+                                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User " + user.getUsername() + " has insufficient create privileges for subjects in this project.");
                                     return;
                                 }
-                                BaseXnatSubjectdata.save(this.subject, false, true, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.AUTO_CREATE_SUBJECT));
-                                expt.setSubjectId(this.subject.getId());
                             }
                         }
                     }
@@ -398,18 +394,12 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                                     }
                                 } else {
                                     try {
-                                        this.subject = new XnatSubjectdata(user);
-                                        this.subject.setProject(this.proj.getId());
-                                        this.subject.setLabel(this.getQueryVariable("subject_ID"));
-                                        this.subject.setId(XnatSubjectdata.CreateNewID());
-                                        if (!Permissions.canCreate(user, this.subject)) {
-                                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for subjects in this project.");
-                                            return;
-                                        }
-                                        BaseXnatSubjectdata.save(this.subject, false, true, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.AUTO_CREATE_SUBJECT));
-                                        expt.setSubjectId(this.subject.getId());
+                                        createNewSubject(user, getQueryVariable("subject_ID"));
                                     } catch (ResourceException e) {
                                         this.getResponse().setStatus(e.getStatus(), "Specified user account has insufficient create privileges for subjects in this project.");
+                                    } catch (InsufficientPrivilegesException e) {
+                                        getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User " + user.getUsername() + " has insufficient create privileges for subjects in this project.");
+                                        return;
                                     }
                                 }
                             }
@@ -631,6 +621,18 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
             return null;
         }
 
+    }
+
+    private void createNewSubject(final UserI user, final String subjectLabel) throws Exception {
+        this.subject = new XnatSubjectdata(user);
+        this.subject.setProject(this.proj.getId());
+        this.subject.setLabel(subjectLabel);
+        if (!Permissions.canCreate(user, this.subject)) {
+            throw new InsufficientPrivilegesException(user.getUsername(), proj.getId());
+        }
+        this.subject.setId(XnatSubjectdata.CreateNewID());
+        BaseXnatSubjectdata.save(this.subject, false, true, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.AUTO_CREATE_SUBJECT));
+        expt.setSubjectId(this.subject.getId());
     }
 
 }

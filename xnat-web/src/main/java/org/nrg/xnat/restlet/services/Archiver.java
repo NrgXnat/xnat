@@ -115,7 +115,7 @@ public class Archiver extends BatchPrearchiveActionsA {
             return;
         }
         session.setArchiveReason(false);
-        try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), false, true)) {
+        try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), _overwrite, true)) {
             final String uri = uploader.submitSync();
             if (StringUtils.isBlank(uri)) {
                 getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not return a valid data URI.");

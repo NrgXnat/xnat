@@ -104,7 +104,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -473,7 +472,6 @@ public abstract class SecureResource extends Resource {
         return representTable(table, mt, params, null);
     }
 
-    @SuppressWarnings("unchecked")
     public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> columnProperties) {
         if (table != null) {
             if (getQueryVariable("sortBy") != null) {
@@ -485,14 +483,10 @@ public abstract class SecureResource extends Resource {
             }
 
             //try to map to an inserted implementation
-            Class clazz = getExtensionTableRepresentations().get(mt.toString());
+            final Class<?> clazz = getExtensionTableRepresentations().get(mt.toString());
             if (clazz != null) {
                 try {
-                    Class[] parameterTypes = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
-                    Object[] parameters = {table, columnProperties, params, mt};
-                    Constructor<OutputRepresentation> rep = clazz.getConstructor(parameterTypes);
-
-                    return rep.newInstance(parameters);
+                    return clazz.asSubclass(OutputRepresentation.class).getConstructor(OBJECT_REPRESENTATION_CTOR_PARAM_TYPES).newInstance(table, columnProperties, params, mt);
                 } catch (Exception e) {
                     logger.error("", e);
                 }
@@ -591,9 +585,9 @@ public abstract class SecureResource extends Resource {
             try {
                 List<Class<?>> handlerClasses = Reflection.getClassesForPackage("org.nrg.xnat.restlet.representations.item.extensions");
 
-                for (Class handler : handlerClasses) {
+                for (final Class<?> handler : handlerClasses) {
                     if (ItemHandlerI.class.isAssignableFrom(handler)) {
-                        ItemHandlerI instance = (ItemHandlerI) handler.newInstance();
+                        final ItemHandlerI instance = (ItemHandlerI) handler.newInstance();
                         itemHandlers.put(instance.getHandlerString(), instance);
                     }
                 }
@@ -1235,7 +1229,7 @@ public abstract class SecureResource extends Resource {
                 return null;
             } else {
                 // NOTE: modified driveFileName here to return a name when content-type is null
-                final String fileName = (filepath == null || filepath.equals("")) ? RequestUtil.deriveFileName("upload", entity, false) : filepath;
+                final String fileName = StringUtils.defaultIfBlank(filepath, RequestUtil.deriveFileName("upload", entity, false));
 
                 if (StringUtils.isBlank(fileName)) {
                     throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, there is no filename specified.");
@@ -1243,8 +1237,8 @@ public abstract class SecureResource extends Resource {
                 if (entity == null) {
                     throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity is null.");
                 }
-                if (entity.getSize() < 1) {
-                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity size is " + entity.getSize() + ".");
+                if (entity.getSize() < 1 && !entity.getMediaType().equals(MediaType.APPLICATION_ZIP)) {
+                    throw new FileUploadException("In-body File posts must include the file directly as the body of the message. In this case, the request entity size is " + entity.getSize() + " but the media type is not application/zip (i.e. streaming compressed upload).");
                 }
 
                 wrappers.add(new FileWriterWrapper(entity, fileName));
@@ -1953,6 +1947,8 @@ public abstract class SecureResource extends Resource {
             throw e;
         }
     }
+
+    private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
 
     private final UserI                      _user;
     private final SerializerService          _serializer;

@@ -216,16 +216,14 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     }
 
     public static XnatSubjectdata retrieveMatchingSubject(final String id, final String project, final UserI user) {
-        XnatSubjectdata sub = null;
-        if (StringUtils.isNotEmpty(project)) {
+        if (StringUtils.isNotBlank(project)) {
             // XNAT-2865 - Perform case insensitive search for subject
-            sub = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(project, id, user, false);
+            final XnatSubjectdata subject = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(project, id, user, false);
+            if (subject != null) {
+                return subject;
+            }
         }
-        if (sub == null) {
-            sub = XnatSubjectdata.getXnatSubjectdatasById(id, user, false);
-        }
-
-        return sub;
+        return XnatSubjectdata.getXnatSubjectdatasById(id, user, false);
     }
 
     /**
@@ -236,69 +234,18 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
      * @throws ServerException When an error occurs on the server.
      */
     protected void fixSubject(EventMetaI c, boolean allowNewSubject) throws ClientException, ServerException {
-        String subjectID = (String) params.get(PARAM_SUBJECT);
+        final String rawSubjectId = StringUtils.firstNonBlank((String) params.get(PARAM_SUBJECT), (String) params.get(URIManager.SUBJECT_ID), src.getSubjectId(), src.getDcmpatientname());
 
-        if (!XNATUtils.hasValue(subjectID)) {
-            subjectID = (String) params.get(URIManager.SUBJECT_ID);
-        }
-
-        if (!XNATUtils.hasValue(subjectID)) {
-            subjectID = src.getSubjectId();
-        }
-
-        if (!XNATUtils.hasValue(subjectID)) {
-            if (XNATUtils.hasValue(src.getDcmpatientname())) {
-                subjectID = XnatImagesessiondata.cleanValue(src.getDcmpatientname());
-            }
-        }
-
-        if (!XNATUtils.hasValue(subjectID)) {
+        if (rawSubjectId == null) {
             failed("Unable to identify subject.");
             throw new ClientException("Unable to identify subject.");
         }
 
-        processing("looking for subject " + subjectID);
-        XnatSubjectdata subject = retrieveMatchingSubject(subjectID, project, user);
+        final String subjectId = XnatImagesessiondata.cleanValue(rawSubjectId);
+        processing("looking for subject " + subjectId);
 
-        if (null == subject && XNATUtils.hasValue(subjectID)) {
-            final String cleaned = XnatSubjectdata.cleanValue(subjectID);
-            if (!cleaned.equals(subjectID)) {
-                subject = retrieveMatchingSubject(cleaned, project, user);
-            }
-        }
-
-        if (null == subject) {
-            if (!allowNewSubject) {
-                return;
-            }
-            processing("creating new subject");
-            subject = new XnatSubjectdata(user);
-            subject.setProject(project);
-            if (XNATUtils.hasValue(subjectID)) {
-                subject.setLabel(XnatSubjectdata.cleanValue(subjectID));
-            }
-            final String newID;
-            try {
-                newID = XnatSubjectdata.CreateNewID();
-            } catch (Exception e) {
-                failed("unable to create new subject ID");
-                throw new ServerException("Unable to create new subject ID", e);
-            }
-            subject.setId(newID);
-            try {
-                SaveItemHelper.authorizedSave(subject, user, false, false, c);
-                XDAT.triggerXftItemEvent(subject, CREATE);
-            } catch (Exception e) {
-                failed("unable to save new subject " + newID);
-                throw new ServerException("Unable to save new subject " + subject, e);
-            }
-            processing("created new subject " + subjectID);
-
-            src.setSubjectId(subject.getId());
-        } else {
-            src.setSubjectId(subject.getId());
-            processing("matches existing subject " + subjectID);
-        }
+        log.debug("Trying to get or create the subject with ID {}", subjectId);
+        getOrCreateSubject(subjectId, allowNewSubject, c);
     }
 
     /**
@@ -489,7 +436,9 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 
             if (existing == null) {
                 try {
-                    if (!XNATUtils.hasValue(src.getId())) src.setId(XnatExperimentdata.CreateNewID());
+                    if (StringUtils.isBlank(src.getId())) {
+                        src.setId(XnatExperimentdata.CreateNewID());
+                    }
                 } catch (Exception e) {
                     failed("unable to create new session ID");
                     throw new ServerException("unable to create new session ID", e);
@@ -503,7 +452,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 src.setId(existing.getId());
                 preventConcurrentArchiving(existing.getId(), user);
             }
-
 
             final PersistentWorkflowI workflow;
             final EventMetaI c;
@@ -931,10 +879,12 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 	}
 
     public void validateSession() throws ServerException {
-        try {
-            if (!XNATUtils.hasValue(src.getId())) src.setId(XnatExperimentdata.CreateNewID());
-        } catch (Exception e) {
-            throw new ServerException("unable to create new session ID", e);
+        if (StringUtils.isBlank(src.getId())) {
+            try {
+                src.setId(XnatExperimentdata.CreateNewID());
+            } catch (Exception e) {
+                throw new ServerException("unable to create new session ID", e);
+            }
         }
 
         try {
@@ -962,6 +912,49 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         return uriBuilder.toString();
     }
 
+    private synchronized void getOrCreateSubject(final String subjectLabel, final boolean allowNewSubject, final EventMetaI c) throws ServerException {
+        log.debug("Trying to get or create the subject {} in project {}", subjectLabel, project);
+        final XnatSubjectdata existing = retrieveMatchingSubject(subjectLabel, project, user);
+        if (existing != null) {
+            src.setSubjectId(existing.getId());
+            processing("matches existing subject " + subjectLabel);
+            return;
+        }
+
+        if (!allowNewSubject) {
+            log.debug("Subject {} does not exist in project {}, but not allowed to create new subjects, sorry", subjectLabel, project);
+            return;
+        }
+
+        log.debug("Subject {} does not exist in project {}, creating", subjectLabel, project);
+        processing("Creating new subject in project " + project + " with label " + subjectLabel);
+        final XnatSubjectdata subject = new XnatSubjectdata(user);
+        subject.setProject(project);
+        subject.setLabel(subjectLabel);
+
+        final String subjectId;
+        try {
+            subjectId = XnatSubjectdata.CreateNewID();
+        } catch (Exception e) {
+            failed("Unable to create new subject ID");
+            throw new ServerException("Unable to create new subject ID", e);
+        }
+
+        subject.setId(subjectId);
+        log.debug("Subject {} in project {} now has ID {}", subjectLabel, project, subjectId);
+
+        try {
+            SaveItemHelper.authorizedSave(subject, user, false, false, c);
+            XDAT.triggerXftItemEvent(subject, CREATE);
+            log.info("Successfully create subject {} with ID {} in project {}", subjectLabel, subjectId, project);
+        } catch (Exception e) {
+            failed("unable to save new subject " + subjectId);
+            throw new ServerException("Unable to save new subject " + subjectId, e);
+        }
+
+        processing("Created new subject " + subjectLabel + " in project " + project + " with ID " + subjectId);
+        src.setSubjectId(subjectId);
+    }
 
     /************************************
      * We used to use the workflow table to implement locking of the destination session when merging.

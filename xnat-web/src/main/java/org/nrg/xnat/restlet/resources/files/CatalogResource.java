@@ -302,7 +302,8 @@ public class CatalogResource extends XNATCatalogTemplate {
             }
             if (!failed.isEmpty()) {
                 if (failed.size() == getResources().size()) {
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Deletion failed for all resources");
+                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Deletion failed for all resources: " + StringUtils.join(failed, ", "));
+                    return;
                 } else {
                     getResponse().setStatus(Status.SUCCESS_MULTI_STATUS, "Deleted resources as requested, but the following resources failed somehow: " + StringUtils.join(failed, ", "));
                 }

@@ -262,11 +262,9 @@ public class SubjectResource extends ItemResource {
                             return;
                         }
                         //IS NEW
-                        if (sub.getId() == null || sub.getId().equals("")) {
+                        if (StringUtils.isBlank(sub.getId())) {
                             sub.setId(XnatSubjectdata.CreateNewID());
                         }
-
-
                     } else {
                         if (!existing.getProject().equals(sub.getProject())) {
                             this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Project must be modified through separate URI.");

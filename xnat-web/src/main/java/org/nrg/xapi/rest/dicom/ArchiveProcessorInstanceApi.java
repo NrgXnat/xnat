@@ -17,6 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.DicomSCPManager;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.XapiException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -42,7 +44,7 @@ import java.util.List;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
 
-@Api(description = "XNAT Data Archive Processor Instance API")
+@Api("XNAT Data Archive Processor Instance API")
 @XapiRestController
 @RequestMapping(value = "/processors")
 public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
@@ -78,15 +80,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         else if(!processorNames().contains(processor.getProcessorClass())){
             throw new XapiException(HttpStatus.BAD_REQUEST, "The provided processor class does not exist.");
         }
-//        if (!StringUtils.equals(ArchiveProcessorInstance.SITE_SCOPE,processor.getScope())) {
-//            _log.error("User {} tried to create site processor instance with non-site scope.", getSessionUser().getUsername());
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//        }
-        List<String> projects = processor.getProjectIdsList();
-        if (StringUtils.equals(processor.getLocation(),ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects!=null && !projects.isEmpty()){
-            _log.error("User {} tried to create processor based on project before project is set.", getSessionUser().getUsername());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        checkForValidProject(processor, processor.getLocation());
         ArchiveProcessorInstance created = _service.create(processor);
         return new ResponseEntity<>(created, HttpStatus.OK);
     }
@@ -132,11 +126,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             isDirty = true;
         }
         if (StringUtils.isNotBlank(processor.getLocation()) && !StringUtils.equals(processor.getLocation(), existingProcessor.getLocation())) {
-            List<String> projects = existingProcessor.getProjectIdsList();//Will have already been updated if necessary
-            if (StringUtils.equals(processor.getLocation(),ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects!=null && !projects.isEmpty()){
-                _log.error("User {} tried to create processor based on project before project is set.", getSessionUser().getUsername());
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+            checkForValidProject(existingProcessor, processor.getLocation());
             existingProcessor.setLocation(processor.getLocation());
             isDirty = true;
         }
@@ -171,7 +161,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
     @XapiRequestMapping(value = "site/id/{instanceId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<Boolean> deleteSiteProcessor(@PathVariable("instanceId") final long instanceId) throws Exception {
+    public ResponseEntity<Boolean> deleteSiteProcessor(@PathVariable("instanceId") final long instanceId) {
         ArchiveProcessorInstance existingProcessor = _service.findSiteProcessorById(instanceId);
         if (existingProcessor == null) {
             return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
@@ -233,11 +223,11 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
     @XapiRequestMapping(value = "site/canRemap/receiver/{aeAndPort}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authenticated)
     @ResponseBody
-    public ResponseEntity<Boolean> receiverCanRemap(@PathVariable("aeAndPort") final String aeAndPort) throws Exception {
+    public ResponseEntity<Boolean> receiverCanRemap(@PathVariable("aeAndPort") final String aeAndPort) {
         try {
-            String[] aePortArray = aeAndPort.split(":");
+            final String[] aePortArray = aeAndPort.split(":");
             final DicomSCPInstance scpInstance = _manager.getDicomSCPInstance(aePortArray[0], Integer.parseInt(aePortArray[1]));
-            if(scpInstance!=null && scpInstance.getCustomProcessing()){
+            if(scpInstance.isCustomProcessing()){
                 List<ArchiveProcessorInstance> processorInstances = _service.getAllEnabledSiteProcessorsForAe(aeAndPort);
                 for(ArchiveProcessorInstance processorInstance : processorInstances){
                     try{
@@ -254,6 +244,9 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
                     }
                 }
             }
+        }
+        catch(NotFoundException e){
+            return ResponseEntity.notFound().build();
         }
         catch(Exception e){
             _log.error("Failed to determine whether SCP receiver is able to remap.", e);
@@ -275,6 +268,13 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         }
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    private void checkForValidProject(final ArchiveProcessorInstance processor, final String location) throws DataFormatException {
+        List<String> projects = processor.getProjectIdsList();
+        if (StringUtils.equals(location, ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects != null && !projects.isEmpty()){
+            throw new DataFormatException("User " + getSessionUser().getUsername() + " tried to create processor based on project before project is set: " + StringUtils.join(projects, ", "));
+        }
     }
 
     private List<String> processorNames(){

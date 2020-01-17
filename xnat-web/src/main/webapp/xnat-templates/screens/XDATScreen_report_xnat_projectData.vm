@@ -29,6 +29,14 @@
 
     <h2 class="edit_header1" style="">#escapeCleanHTML($!item.getStringProperty("xnat:projectData/name"))</h2>
 
+    ## Create a catchall permissions check for all user types that can edit and delete the project, and use that for all future checks to hide or show features in the UI.
+    #set ($canEditOrDeleteProject = $data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user) || $data.getSession().getAttribute("userHelper").canDelete($project))
+
+    #if($canEditOrDeleteProject && !$data.getSession().getAttribute("userHelper").isOwner($project.getId()) && !$turbineUtils.isSiteAdmin($user))
+        <div class="warning" style="margin-bottom: 1em"><strong>Note:</strong> You have the ability to view and administer data in this project and all projects because your account has the "Data Admin" role. You are not an explicit Project Owner in this project nor are you a site wide administrator, but this other role does give you this increased access. Please tread lightly.</div>
+        <div class="clearfix clear"></div>
+    #end
+
     #if($data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>

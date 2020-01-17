@@ -89,7 +89,7 @@ although these should be available on the [XNAT Maven repository](https://nrgxna
 This should create a deployable web application in the location:
 
 ```shell
-build/libs/xnat-web-1.7.5.3.war
+build/libs/xnat-web-1.7.6.war
 ```
 
 Build and publish to your local Maven repository (usually located at **~/.m2/repository**) for development purposes like this:

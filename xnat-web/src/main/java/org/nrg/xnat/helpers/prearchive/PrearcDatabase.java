@@ -23,7 +23,6 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -38,6 +37,8 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
@@ -68,6 +69,7 @@ public final class PrearcDatabase {
     final static String table = "prearchive";
     final static String tableWithSchema = PoolDBUtils.search_schema_name + "." + PrearcDatabase.table;
     private final static String tableSql = PrearcDatabase.createTableSql();
+    private static final String QUERY_PREARC_TABLE_COLUMNS = "SELECT column_name FROM information_schema.columns WHERE table_schema = '" + PoolDBUtils.search_schema_name + "' AND table_name = '" + PrearcDatabase.table + "'";
     public static boolean ready = false;
 
     // an object that synchronizes the cache with some permanent store
@@ -2316,12 +2318,7 @@ public final class PrearcDatabase {
      * @throws SQLException
      */
     public static String printCols() throws SQLException {
-        final ResultSet results = PrearcDatabase.conn.createStatement().executeQuery("SHOW COLUMNS FROM " + PrearcDatabase.tableWithSchema);
-        final List<String> values = new ArrayList<String>();
-        while (results.next()) {
-            values.add(results.getString(1));
-        }
-        return StringUtils.join(values, ",");
+        return StringUtils.join(XDAT.getJdbcTemplate().queryForList(QUERY_PREARC_TABLE_COLUMNS, String.class), ", ");
     }
 
     /**
@@ -2402,7 +2399,8 @@ public final class PrearcDatabase {
     }
 
     /**
-     * Check that session arguments are valid and there is unique session that matches the arguments. If 'proj' is null it is assumed that the session is "Unassigned"
+     * Check that session arguments are valid and there is unique session that matches the arguments. If 'proj' is null
+     * it is assumed that the session is {@link ProjectAccessPredicate#UNASSIGNED unassigned}.
      *
      * @param sess
      * @param timestamp

@@ -46,7 +46,8 @@
     <div class="inline-thirds">
         <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
         <p>
-            <button class="btn" onclick="XNAT.projectAccess.showGroups();" style="margin-bottom: 6px">Manage Groups</button><br>
+            #set($canCreateCustomGroups = $data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
+            <button class="btn" onclick="XNAT.projectAccess.showGroups( $canCreateCustomGroups );" style="margin-bottom: 6px">Manage Groups</button><br>
             <button class="btn" onclick="window.location.assign('$content.getURI("/app/template/ManageProjectFeatures.vm/project/${projectIdEsc.toString().trim()}")')">Manage Features</button>
         </p>
     </div>

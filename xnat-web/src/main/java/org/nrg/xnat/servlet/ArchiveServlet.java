@@ -168,6 +168,7 @@ public class ArchiveServlet extends HttpServlet {
                         }
                     }
 
+                    entry.setCachepath(relative);
                     CatalogUtils.setCatEntryBeanMetafields(entry, relative, rf.getSize().toString());
                     cat.addEntries_entry(entry);
                 }

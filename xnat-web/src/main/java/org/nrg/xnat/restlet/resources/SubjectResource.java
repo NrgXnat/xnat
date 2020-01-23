@@ -32,6 +32,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.TurbineScreenRepresentation;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -340,13 +341,21 @@ public class SubjectResource extends ItemResource {
                             MaterializedView.deleteByUser(user);
 
                             // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
-                            boolean applyAnonScript = (null != existing && existing.getLabel().equals(sub.getLabel()));
+                            boolean applyAnonScript = (null != existing && !existing.getLabel().equals(sub.getLabel()));
 
                             if(applyAnonScript){
                                for(final XnatSubjectassessordata expt : sub.getExperiments_experiment("xnat:imageSessionData")){
                                     try{
-                                       // re-apply this project's edit script
-                                       expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, sub.getLabel(), expt.getProject(), expt.getArchiveRootPath()));
+                                        String prId = expt.getProject();
+                                        try {
+                                            if (DefaultAnonUtils.getService().isProjectScriptEnabled(prId)) {
+                                                // re-apply this project's edit script
+                                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, sub.getLabel(), prId, expt.getArchiveRootPath()));
+                                            }
+                                        }
+                                        catch(NullPointerException e){
+                                            logger.warn("NullPointerException likely caused by no project anon script configuration ever having been set, so we do not perform anonymization.", e);
+                                        }
                                     }
                                     catch (TransactionException e) {
                                        this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);

@@ -95,35 +95,10 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
         dicomInputStream.setHandler(new StopTagInputHandler(lastTag));
         dicom = dicomInputStream.readDicomObject();
 
-//        try{
-//        String script = DefaultAnonUtils.getService().getStudyScript(dicom.getString(Tag.StudyInstanceUID));
-//        getMizer().anonymize(dicom, "", "", "", script);
-//        } catch (Throwable e) {
-//            log.debug("Dicom anonymization failed: " + dicom, e);
-//            throw new ServerException(Status.SERVER_ERROR_INTERNAL,e);
-//        }
 
         boolean continueProcessingData = true;
         try {
-            iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicom, null);
-//            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
-//            Collection<ArchiveProcessor> processors = processorsMap.values();
-//            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-//            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ);
-//            if(processorInstances!=null){
-//                for(ArchiveProcessorInstance processorInstance: processorInstances) {
-//                    Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
-//                    ArchiveProcessor processor = processorsMap.get(processorClass);
-//
-//                    if (processor.accept(dicom, null, getMizer(), processorInstance, getParameters())) {
-//                        if(!processor.process(dicom, null, getMizer(), processorInstance, getParameters())){
-//                            continueProcessingData = false;
-//                            break;
-//                        }
-//                    }
-//
-//                }
-//            }
+            continueProcessingData = iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicom, null);
         } catch (Throwable e) {
             //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.
             //We may be okay just passing an empty list in this case, but since I wasn't sure, I didn't want to change how it works now where if there's a problem importing part of a zip, the whole import fails.
@@ -147,31 +122,12 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e1);
         }
 
-        continueProcessingData = true;
         try {
             final SessionData tempSession = new SessionData();
             tempSession.setProject(project == null ? null : project.getId());
             tempSession.setSubject("");
             tempSession.setFolderName("");
-            iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, tempSession);
-//            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
-//            Collection<ArchiveProcessor> processors = processorsMap.values();
-//            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-//            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED);
-//            if(processorInstances!=null){
-//                for(ArchiveProcessorInstance processorInstance: processorInstances) {
-//                    Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
-//                    ArchiveProcessor processor = processorsMap.get(processorClass);
-//
-//                    if (processor.accept(dicom, null, getMizer(), processorInstance, getParameters())) {
-//                        if(!processor.process(dicom, null, getMizer(), processorInstance, getParameters())){
-//                            continueProcessingData = false;
-//                            break;
-//                        }
-//                    }
-//
-//                }
-//            }
+            continueProcessingData = iterateOverProcessorsAtLocation(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, tempSession);
         } catch (Throwable e) {
             //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.
             //We may be okay just passing an empty list in this case, but since I wasn't sure, I didn't want to change how it works now where if there's a problem importing part of a zip, the whole import fails.
@@ -309,26 +265,7 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
         }
 
         try {
-            iterateOverProcessorsAtLocation(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE, dicom, session);
-//            Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> processorsMap = getProcessorsMap();
-//            Collection<ArchiveProcessor> processors = processorsMap.values();
-//            //Later this map will be used when iterating over the processorInstances to get the processor for the given instance
-//            List<ArchiveProcessorInstance> processorInstances = getProcessorInstanceService().getAllEnabledSiteProcessorsInOrderForLocation(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE);
-//            if(processorInstances!=null){
-//                for(ArchiveProcessorInstance processorInstance: processorInstances) {
-//                    Class<? extends ArchiveProcessor> processorClass = (Class<? extends ArchiveProcessor>)Class.forName(processorInstance.getProcessorClass());
-//                    ArchiveProcessor processor = processorsMap.get(processorClass);
-//
-//                    if (processor.accept(dicom, session, getMizer(), processorInstance, getParameters())) {
-//                        if(!processor.process(dicom, session, getMizer(), processorInstance, getParameters())){
-//                            continueProcessingData = false;
-//                            break;
-//                        }
-//                    }
-//
-//                }
-//            }
-
+            continueProcessingData = iterateOverProcessorsAtLocation(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE, dicom, session);
         } catch (Throwable e) {
             //If a processor throws an exception, processing should not proceed and that exception will be passed to the calling class.
             //We may be okay just passing an empty list in this case, but since I wasn't sure, I didn't want to change how it works now where if there's a problem importing part of a zip, the whole import fails.

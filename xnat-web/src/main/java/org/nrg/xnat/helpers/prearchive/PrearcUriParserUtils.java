@@ -92,7 +92,7 @@ public final class PrearcUriParserUtils {
 			Reference ref = new Reference(uri);
 			List<String> segs = ref.getSegments();
 			if (segs.size() > 5) {
-				throw new java.util.MissingFormatArgumentException("More in the uri past the TIMESTAMP"); 
+				throw new java.util.MissingFormatArgumentException("More in the uri past the TIMESTAMP: " + uri);
 			}
 			
 			Map<String,String> ss = new HashMap<>();

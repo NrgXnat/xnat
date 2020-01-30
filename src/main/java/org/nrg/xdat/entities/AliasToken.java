@@ -44,7 +44,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     public AliasToken() {
         _alias = UUID.randomUUID().toString();
-        _secret = RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom());
+        _secret = RandomStringUtils.random(30, 0, 0, true, true, null, new SecureRandom());
     }
 
     /**

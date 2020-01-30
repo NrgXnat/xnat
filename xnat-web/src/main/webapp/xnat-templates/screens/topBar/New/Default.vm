@@ -10,7 +10,7 @@
 
 <!-- Sequence: 10 -->
 #set($userHelper = $userHelper)
-#if ($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation || $userHelper.canCreate("xnat:projectData"))
+#if ($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation)
     <li><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">$displayManager.getSingularDisplayNameForProject()</a></li>
 #end
 <!-- -->

@@ -1,7 +1,7 @@
 /*
  * web: build.gradle
- * XNAT http://www.xnat.org
- * Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
+ * XNAT https://www.xnat.org
+ * Copyright (c) 2005-2020, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *  
  * Released under the Simplified BSD.
@@ -14,24 +14,16 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
-            name "XNAT Release Repository"
-        }
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
-            name "XNAT Snapshot Repository"
-        }
+        maven { url "https://plugins.gradle.org/m2" }
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.6.1"
+        classpath "com.bmuschko:gradle-cargo-plugin:2.7.0"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:3.1.0"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
+        classpath "io.franzbecker:gradle-lombok:3.2.0"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }
 
@@ -522,7 +514,7 @@ publishing.publications {
 
             def license = root.appendNode("licenses").appendNode("license")
             license.appendNode("name", "Simplified BSD 2-Clause License")
-            license.appendNode("url", "http://xnat.org/about/license.php")
+            license.appendNode("url", "https://xnat.org/about/license.php")
             license.appendNode("distribution", "repo")
 
             def developers = root.appendNode("developers")

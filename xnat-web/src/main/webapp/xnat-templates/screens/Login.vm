@@ -9,6 +9,7 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 <!-- BEGIN xnat-templates/screens/Login.vm -->
+
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
@@ -121,6 +122,7 @@ $page.setTitle("$siteId - Please Login")
                         <span id="register_forgot">
                             <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
                         </span>
+                        
                     <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
                 </p>
 
@@ -206,20 +208,26 @@ $page.setTitle("$siteId - Please Login")
             </p>
 
             <p class="form-submit">
-                <span id="register_forgot">
-                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
-                    <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                </span>
-                <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-            </p>
-
-            <input type="hidden" name="XNAT_CSRF" value="">
-        </form>
+            <span id="register_forgot" style="float:left">
+                <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                #if($turbineUtils.getTemplates("loginBoxMoreOptions").size() > 0)
+                    <a href="#" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
+                #end
+            </span>
+            <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+        </p>
+        <input type="hidden" name="XNAT_CSRF" value="">
+    </form>
+    </div>
+    <div id="loginBoxMoreOptions">
+        #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
+            #set($templateFileName=$screenProps.getProperty("path"))
+            #parse("/screens/$templateFileName")
+        #end
     </div>
     </div>
-
     <div class="clear"></div>
-
     #end
 </div>
 

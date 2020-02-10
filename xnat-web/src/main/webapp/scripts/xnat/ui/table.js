@@ -323,7 +323,7 @@ var XNAT = getObject(XNAT);
 
         }
         this.cells = this.bodyRows[rowIndex||0].map(function(row){
-            return
+            return row;
         });
     };
 
@@ -611,6 +611,25 @@ var XNAT = getObject(XNAT);
                 table$.find('> .invisible').removeClass('invisible');
 
             // });
+        }
+
+        function appendContent(container, content){
+            if (stringable(content)) {
+                container.innerHTML = content + '';
+                // return 'innerHTML';
+            }
+            if (isElement(content) || isFragment(content)) {
+                container.appendChild(content);
+                // return 'appendChild';
+            }
+            if (isArray(content)) {
+                forEach(content, function(_content){
+                    appendContent(container, _content);
+                });
+                // return 'array';
+            }
+            // console.log('cannot append?');
+            // return 'cannot append?';
         }
 
         function createTable(rows){
@@ -990,8 +1009,8 @@ var XNAT = getObject(XNAT);
                                         applyFn = applyFn.replace(EVALREGEX, '');
                                         itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
-                                    else if (applyFn = lookupObjectValue(window, applyFn)) {
-                                        //          ^^^ correct, we're doing assignment in an 'if' statement
+                                    else if ((applyFn = lookupObjectValue(window, applyFn))) {
+                                        //           ^^^ correct, we're doing assignment in an 'if' statement
                                         if (isFunction(applyFn)) {
                                             itemVal = applyFn.apply(item, [].concat(itemVal, _tr)) || itemVal;
                                         }
@@ -1025,32 +1044,13 @@ var XNAT = getObject(XNAT);
                     // var $td = newTable.last$('td');
                     var _td = newTable.last.td;
 
-                    function appendContent(content){
-                        if (stringable(content)) {
-                            _td.innerHTML = content + '';
-                            // return 'innerHTML';
-                        }
-                        if (isElement(content) || isFragment(content)) {
-                            _td.appendChild(content);
-                            // return 'appendChild';
-                        }
-                        if (isArray(content)) {
-                            forEach(content, function(_content){
-                                appendContent(_content);
-                            });
-                            // return 'array';
-                        }
-                        // console.log('cannot append?');
-                        // return 'cannot append?';
-                    }
-
                     if (isArray(cellContent)) {
                         forEach(cellContent, function(_content){
-                            appendContent(_content);
+                            appendContent(_td, _content);
                         })
                     }
                     else {
-                        appendContent(cellContent);
+                        appendContent(_td, cellContent);
                         // console.log(appendContent(cellContent));
                     }
                     //

@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ framework: pom.xml
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2019, Washington University School of Medicine
+  ~ XNAT https://www.xnat.org
+  ~ Copyright (c) 2020, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.6.RAD</version>
+        <version>1.7.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>framework</artifactId>
-    <version>1.7.6.RAD</version>
 
     <name>NRG Common Framework</name>
     <description>Defines the common framework for NRG services and libraries.</description>
@@ -37,13 +36,13 @@
     <licenses>
         <license>
             <name>Simplified BSD License</name>
-            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+            <url>https://www.opensource.org/licenses/BSD-2-Clause</url>
         </license>
     </licenses>
 
     <organization>
         <name>Neuroinformatics Research Group</name>
-        <url>http://nrg.wustl.edu</url>
+        <url>https://nrg.wustl.edu</url>
     </organization>
 
     <dependencies>

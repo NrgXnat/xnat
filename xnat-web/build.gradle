@@ -250,7 +250,7 @@ dependencies {
     implementation "org.hibernate:hibernate-validator"
     implementation "org.hibernate:hibernate-envers"
     implementation "net.sf.ehcache:ehcache-core"
-    implementation "com.marvinformatics.hibernate:hibernate-native-json"
+    implementation "com.vladmihalcea:hibernate-types-43"
 
     implementation "org.aspectj:aspectjweaver"
     implementation "org.aspectj:aspectjrt"

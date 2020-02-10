@@ -101,13 +101,13 @@ public class ExptFileUpload extends SecureAction {
                         session.setAttribute(uploadID + "Upload", 100);
                     }
 
-                    final String compression = ZipI.getCompression(filename, "zar");
+                    final String compression = ZipUtils.getCompression(filename, "zar");
                     if (StringUtils.isNotBlank(compression)) {
                         if (logger.isDebugEnabled()) {
                             logger.debug("Extracting file: " + filename);
                         }
                         try (final InputStream input = fi.getInputStream()){
-                            ZipI.extractFile(input, Paths.get(cache_path), compression);
+                            ZipUtils.extractFile(input, Paths.get(cache_path), compression);
                         } catch (Throwable e1) {
                             error(e1,data);
                             session.setAttribute(uploadID + "Extract", -1);

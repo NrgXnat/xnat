@@ -57,7 +57,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
-import org.nrg.xft.utils.zip.ZipI;
+import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
@@ -744,8 +744,8 @@ public class DefaultCatalogService implements CatalogService {
                         FileUtils.copyDirectoryToDirectory(file, destination);
                     } else if (isDirectory) {
                         FileUtils.copyDirectory(file, destination);
-                    } else if (ZipI.isCompressedFile(file.getName())) {
-                        ZipI.extractFile(file, destination.toPath());
+                    } else if (ZipUtils.isCompressedFile(file.getName())) {
+                        ZipUtils.extractFile(file, destination.toPath());
                     } else {
                         FileUtils.copyFileToDirectory(file, destination);
                     }
@@ -755,13 +755,13 @@ public class DefaultCatalogService implements CatalogService {
             } else if (source instanceof MultipartFile) {
                 final MultipartFile multipartFile    = (MultipartFile) source;
                 final String        originalFilename = multipartFile.getOriginalFilename();
-                if (ZipI.isCompressedFile(originalFilename)) {
+                if (ZipUtils.isCompressedFile(originalFilename)) {
                     final File tempDirectory = Files.createTempDirectory(Long.toString(Calendar.getInstance().getTimeInMillis())).toFile();
                     tempDirectory.deleteOnExit();
                     final File tempZipFile = new File(tempDirectory, originalFilename);
                     tempZipFile.deleteOnExit();
                     multipartFile.transferTo(tempZipFile);
-                    ZipI.extractFile(tempZipFile, destination.toPath());
+                    ZipUtils.extractFile(tempZipFile, destination.toPath());
                 } else {
                     FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(originalFilename).toFile());
                 }

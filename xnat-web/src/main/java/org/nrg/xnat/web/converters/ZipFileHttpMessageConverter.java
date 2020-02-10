@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.web.converters;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.springframework.http.HttpInputMessage;
@@ -24,9 +26,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Map;
-import java.util.function.Function;
-
-import static java.util.stream.Collectors.toMap;
 
 @Component
 @Slf4j
@@ -45,22 +44,30 @@ public class ZipFileHttpMessageConverter extends AbstractHttpMessageConverter<Ma
         final File directory = Files.createTempDirectory(Long.toString(Calendar.getInstance().getTimeInMillis())).toFile();
         directory.deleteOnExit();
 
-        final Map<String, File> entries = new ZipUtils().extractMap(message.getBody(), directory.getAbsolutePath());
-        return entries.keySet().stream().filter(path -> entries.get(path).isFile()).collect(toMap(Function.identity(), entries::get));
+        // With Java 8:
+        // final Map<String, File> entries = new ZipUtils().extractMap(message.getBody(), directory.getAbsolutePath());
+        // return entries.keySet().stream().filter(path -> entries.get(path).isFile()).collect(toMap(Function.identity(), entries::get));
+        return Maps.filterValues(new ZipUtils().extractMap(message.getBody(), directory.getAbsolutePath()), new Predicate<File>() {
+            @Override
+            public boolean apply(final File file) {
+                return file.isFile();
+            }
+        });
     }
 
     @Override
     protected void writeInternal(final Map<String, File> files, final HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
         final ZipUtils zipper = new ZipUtils();
         zipper.setOutputStream(outputMessage.getBody());
-        files.keySet().forEach(path -> writeFile(zipper, path, files.get(path)));
-    }
-
-    private void writeFile(final ZipUtils zipper, final String path, final File file) {
-        try {
-            zipper.write(path, file);
-        } catch (IOException e) {
-            log.warn("An error occurred writing the file {} to a Zip output stream", file.getPath());
+        // With Java 8:
+        // files.keySet().forEach(path -> writeFile(zipper, path, files.get(path)));
+        for (final String path : files.keySet()) {
+            final File file = files.get(path);
+            try {
+                zipper.write(path, file);
+            } catch (IOException e) {
+                log.warn("An error occurred writing the file {} to a Zip output stream", file.getPath());
+            }
         }
     }
 }

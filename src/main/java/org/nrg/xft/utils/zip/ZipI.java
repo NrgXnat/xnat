@@ -28,52 +28,6 @@ import java.util.zip.ZipOutputStream;
  */
 @SuppressWarnings("unused")
 public interface ZipI extends Closeable {
-    static boolean isCompressedFile(final String filename, final String... extras) {
-        return StringUtils.endsWithAny(filename.toLowerCase(), ".tar", ".tgz", ".tar.gz", ".zip", ".gz") || StringUtils.endsWithAny(filename.toLowerCase(), extras);
-    }
-
-    static String getCompression(final String filename, final String... extras) {
-        if (!isCompressedFile(filename, extras)) {
-            return "";
-        }
-        final String normalized = filename.toLowerCase();
-        if (StringUtils.endsWithAny(normalized, ".tgz", ".tar.gz")) {
-            return "tgz";
-        }
-        final String extension = FilenameUtils.getExtension(normalized);
-        if (StringUtils.equalsAny(extension, ArrayUtils.addAll(extras, "zip", "tar", "gz"))) {
-            return extension;
-        }
-        throw new RuntimeException("File " + filename + " doesn't match any of the specified extensions for compression, even though isCompressedFile() said it did.");
-    }
-
-    static void extractFile(final File file, final Path destination) throws IOException {
-        extractFile(file, destination, getCompression(file.getName()));
-    }
-
-    static void extractFile(final File file, final Path destination, final String compression) throws IOException {
-        try (final InputStream input = new FileInputStream(file)) {
-            extractFile(input, destination, compression);
-        }
-    }
-
-    static void extractFile(final InputStream input, final Path destination, final String compression) throws IOException {
-        final ZipI zipper;
-        switch (compression) {
-            case "tar":
-                zipper = new TarUtils();
-                break;
-            case "tgz":
-                zipper = new TarUtils();
-                zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
-                break;
-            default:
-                zipper = new ZipUtils();
-        }
-
-        zipper.extract(input, destination.toString());
-    }
-
     void setOutputStream(OutputStream outStream) throws IOException;
 
     void setOutputStream(OutputStream outStream, int compressionMethod) throws IOException;

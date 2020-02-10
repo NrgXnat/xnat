@@ -7,23 +7,15 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.utils.zip;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
+import edu.sdsc.grid.io.GeneralFile;
+import edu.sdsc.grid.io.srb.SRBFile;
+import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.taskdefs.Expand;
@@ -33,9 +25,13 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
 
-import edu.sdsc.grid.io.GeneralFile;
-import edu.sdsc.grid.io.srb.SRBFile;
-import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import java.io.*;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 
 /**
@@ -43,10 +39,56 @@ import edu.sdsc.grid.io.srb.SRBFileInputStream;
  *
  */
 @SuppressWarnings("unused")
+@Slf4j
 public class ZipUtils implements ZipI {
-	public final static int DEFAULT_COMPRESSION=ZipOutputStream.STORED;
-	
-    final static boolean DEBUG = false;
+    public final static int DEFAULT_COMPRESSION = ZipOutputStream.STORED;
+
+    public static boolean isCompressedFile(final String filename, final String... extras) {
+        return StringUtils.endsWithAny(filename.toLowerCase(), ".tar", ".tgz", ".tar.gz", ".zip", ".gz") || StringUtils.endsWithAny(filename.toLowerCase(), extras);
+    }
+
+    public static String getCompression(final String filename, final String... extras) {
+        if (!isCompressedFile(filename, extras)) {
+            return "";
+        }
+        final String normalized = filename.toLowerCase();
+        if (StringUtils.endsWithAny(normalized, ".tgz", ".tar.gz")) {
+            return "tgz";
+        }
+        final String extension = FilenameUtils.getExtension(normalized);
+        if (StringUtils.equalsAny(extension, ArrayUtils.addAll(extras, "zip", "tar", "gz"))) {
+            return extension;
+        }
+        throw new RuntimeException("File " + filename + " doesn't match any of the specified extensions for compression, even though isCompressedFile() said it did.");
+    }
+
+    public static void extractFile(final File file, final Path destination) throws IOException {
+        extractFile(file, destination, getCompression(file.getName()));
+    }
+
+    public static void extractFile(final File file, final Path destination, final String compression) throws IOException {
+        try (final InputStream input = new FileInputStream(file)) {
+            extractFile(input, destination, compression);
+        }
+    }
+
+    public static void extractFile(final InputStream input, final Path destination, final String compression) throws IOException {
+        final ZipI zipper;
+        switch (compression) {
+            case "tar":
+                zipper = new TarUtils();
+                break;
+            case "tgz":
+                zipper = new TarUtils();
+                zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
+                break;
+            default:
+                zipper = new ZipUtils();
+        }
+
+        zipper.extract(input, destination.toString());
+    }
+
     byte[] buf = new byte[FileUtils.LARGE_DOWNLOAD];
     ZipOutputStream out = null;
     int compression=ZipOutputStream.DEFLATED;
@@ -126,7 +168,7 @@ public class ZipUtils implements ZipI {
                 fos.close();
                 in.close();
                 
-                ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+                ZipEntry entry = new ZipEntry(relativePath);
     
                 if (compression==ZipOutputStream.STORED)
                 {
@@ -158,7 +200,7 @@ public class ZipUtils implements ZipI {
                 out.closeEntry();
                 FileUtils.DeleteFile(temp);
             }else{
-                ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+                ZipEntry entry = new ZipEntry(relativePath);
     
                 if (compression==ZipOutputStream.STORED)
                 {
@@ -215,7 +257,7 @@ public class ZipUtils implements ZipI {
             
             FileUtils.DeleteFile(temp);
         }else{
-            ZipEntry entry = new java.util.zip.ZipEntry(relativePath);        
+            ZipEntry entry = new ZipEntry(relativePath);
             out.putNextEntry(entry);
             
             // Transfer bytes from the file to the ZIP file
@@ -251,30 +293,30 @@ public class ZipUtils implements ZipI {
             FileUtils.DeleteFile(temp);
         }else{
             long startTime = Calendar.getInstance().getTimeInMillis();
-            ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+            ZipEntry entry = new ZipEntry(relativePath);
             entry.setTime(srb.lastModified());
             entry.setSize(srb.length());
             out.putNextEntry(entry);
-            
-            if(DEBUG)System.out.print(srb.getName() + "," + srb.length() + "," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{}, {}, {} ms", srb.getName(), srb.length(), Calendar.getInstance().getTimeInMillis() - startTime);
 
             SRBFileInputStream is = new SRBFileInputStream(srb);
             // Transfer bytes from the file to the ZIP file
             int len;
-            
-            if(DEBUG)System.out.print("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{}, {}, {} ms", srb.getName(), srb.length(), Calendar.getInstance().getTimeInMillis()-startTime);
 
             while ((len = is.read(tempBUF)) > 0) {
-                if(DEBUG)System.out.print(",R:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+                log.debug("R: {} ms", Calendar.getInstance().getTimeInMillis()-startTime);
                 out.write(tempBUF, 0, len);
-                if(DEBUG)System.out.print(",W:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+                log.debug("W: {}", Calendar.getInstance().getTimeInMillis()-startTime);
                 out.flush();
             }
             
             // Complete the entry
             out.closeEntry();
-            
-            if(DEBUG)System.out.println("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{} ms", Calendar.getInstance().getTimeInMillis() - startTime);
         }
     }
 

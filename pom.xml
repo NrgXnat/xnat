@@ -8,14 +8,12 @@
   ~ Released under the Simplified BSD.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.0-eventservice-SNAPSHOT</version>
+    <version>1.7.7-ML-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -53,8 +51,8 @@
 
         <java.source.version>1.8</java.source.version>
         <java.target.version>1.8</java.target.version>
-        <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- These are default property values to be overridden for specific applications and signing requirements. -->
         <signing.skip>true</signing.skip>
@@ -105,7 +103,7 @@
         <spring-oauth2.version>2.3.6.RELEASE</spring-oauth2.version>
         <spring-jwt.version>1.0.10.RELEASE</spring-jwt.version>
 
-        <swagger.version>2.7.0</swagger.version>
+        <swagger.version>2.9.2</swagger.version>
         <vladmihalcea-hibernate-types.version>2.9.3</vladmihalcea-hibernate-types.version>
 
         <activemq.version>5.7.0</activemq.version>

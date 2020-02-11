@@ -13,12 +13,11 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.6.RAD</version>
+        <version>1.7.7-SNAPSHOT</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.6.RAD</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>

@@ -1,7 +1,7 @@
 /*
  * web: build.gradle
- * XNAT http://www.xnat.org
- * Copyright (c) 2005-2019, Washington University School of Medicine and Howard Hughes Medical Institute
+ * XNAT https://www.xnat.org
+ * Copyright (c) 2005-2020, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *  
  * Released under the Simplified BSD.
@@ -9,56 +9,39 @@
 
 buildscript {
     ext {
-        vXnat = '1.7.7-SNAPSHOT'
+        vXnat = "1.7.7-SNAPSHOT"
     }
     repositories {
         mavenLocal()
         mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
-            name "XNAT Release Repository"
-        }
-        maven {
-            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
-            name "XNAT Snapshot Repository"
-        }
-        maven {
-            url "https://maven.radiologics.com/repository/snapshots"
-            name "Radiologics Snapshot Repository"
-        }
-        maven {
-            url "https://maven.radiologics.com/repository/internal"
-            name "Radiologics Release Repository"
-        }
+        maven { url "https://plugins.gradle.org/m2" }
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+        maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.6.1"
+        classpath "com.bmuschko:gradle-cargo-plugin:2.7.0"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2"
-        classpath "io.franzbecker:gradle-lombok:3.1.0"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
+        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
+        classpath "io.franzbecker:gradle-lombok:3.2.0"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }
 
 group "org.nrg.xnat"
-version = "${vXnat}"
+version = vXnat
 
-apply plugin: "com.bmuschko.cargo"
-apply plugin: "com.bmuschko.tomcat"
-apply plugin: "com.palantir.git-version"
 apply plugin: "eclipse"
 apply plugin: "groovy"
 apply plugin: "idea"
-apply plugin: "io.franzbecker.gradle-lombok"
-apply plugin: "io.spring.dependency-management"
 apply plugin: "jacoco"
 apply plugin: "java-library"
-apply plugin: "maven"
 apply plugin: "maven-publish"
 apply plugin: "war"
+apply plugin: "com.bmuschko.cargo"
+apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.palantir.git-version"
+apply plugin: "io.franzbecker.gradle-lombok"
+apply plugin: "io.spring.dependency-management"
 
 repositories {
     mavenLocal()
@@ -67,8 +50,6 @@ repositories {
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
-    maven { url "https://maven.radiologics.com/repository/snapshots" }
-    maven { url "https://maven.radiologics.com/repository/internal" }
 }
 
 sourceCompatibility = 1.7
@@ -112,7 +93,7 @@ if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.ja
 if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
-    war.baseName = "xnat-web"
+    war.archiveBaseName.set "xnat-web"
 }
 
 configurations {
@@ -188,13 +169,6 @@ configurations {
 
 dependencyManagement.imports {
     mavenBom "org.nrg:parent:${vXnat}"
-}
-
-def vMockito = '1.10.19'
-def vPowerMock = '1.7.0'
-
-configurations.all {
-    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
 }
 
 dependencies {
@@ -276,7 +250,7 @@ dependencies {
     implementation "org.hibernate:hibernate-validator"
     implementation "org.hibernate:hibernate-envers"
     implementation "net.sf.ehcache:ehcache-core"
-    implementation "com.marvinformatics.hibernate:hibernate-native-json"
+    implementation "com.vladmihalcea:hibernate-types-43"
 
     implementation "org.aspectj:aspectjweaver"
     implementation "org.aspectj:aspectjrt"
@@ -355,7 +329,6 @@ dependencies {
     runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
     runtimeOnly "net.imagej:ij"
     runtimeOnly "com.sun.media:jai_imageio"
-    runtimeOnly group: 'com.sun.media', name: 'clibwrapper_jiio', version: '1.2-pre-dr-b04'
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
     runtimeOnly "org.python:jython-standalone"
@@ -371,14 +344,10 @@ dependencies {
           "ch.qos.logback:logback-classic",
           "ch.qos.logback:logback-core"
 
-    testCompile "org.nrg:test"
-    testCompile "junit:junit"
-    testCompile "org.springframework:spring-test"
-    testCompile "org.assertj:assertj-core"
-    testCompile "org.hamcrest:hamcrest-library"
-    testCompile "org.mockito:mockito-core"
-    testCompile "org.powermock:powermock-module-junit4:${vPowerMock}"
-    testCompile "org.powermock:powermock-api-mockito:${vPowerMock}"
+    testImplementation "org.nrg:test"
+    testImplementation "junit:junit"
+    testImplementation "org.springframework:spring-test"
+    testImplementation "org.assertj:assertj-core"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
@@ -458,7 +427,7 @@ jar {
         attributes "Application-Name": "XNAT",
                 "Build-Date": buildDate,
                 "Build-Number": buildNumber,
-                "Implementation-Version": version,
+                "Implementation-Version": project.version,
                 "Implementation-Sha": gitHash,
                 "Implementation-Sha-Full": gitHashFull,
                 "Implementation-Commit": commitDistance,
@@ -521,59 +490,51 @@ task javadocJar(type: Jar) {
     from javadoc.destinationDir
 }
 
-publishing.publications {
-    mavenJava(MavenPublication) {
-        from components.java
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
 
-        artifacts {
-            artifact sourceJar
-            artifact javadocJar
-        }
+            artifacts {
+                artifact sourceJar
+                artifact javadocJar
+            }
 
-        pom.withXml {
-            def root = asNode()
-            root.appendNode("name", "XNAT Server")
-            root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
-            root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
-            root.appendNode("inceptionYear", "2019")
+            pom.withXml {
+                def root = asNode()
+                root.appendNode("name", "XNAT Server")
+                root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
+                root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                root.appendNode("inceptionYear", "2019")
 
-            def scm = root.appendNode("scm")
-            scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
-            scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
-            scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
+                def scm = root.appendNode("scm")
+                scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
+                scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
 
-            def license = root.appendNode("licenses").appendNode("license")
-            license.appendNode("name", "Simplified BSD 2-Clause License")
-            license.appendNode("url", "http://xnat.org/about/license.php")
-            license.appendNode("distribution", "repo")
+                def license = root.appendNode("licenses").appendNode("license")
+                license.appendNode("name", "Simplified BSD 2-Clause License")
+                license.appendNode("url", "https://xnat.org/about/license.php")
+                license.appendNode("distribution", "repo")
 
-            def developers = root.appendNode("developers")
-            def rherrick = developers.appendNode("developer")
-            rherrick.appendNode("id", "rherrick")
-            rherrick.appendNode("name", "Rick Herrick")
-            rherrick.appendNode("email", "jrherrick@wustl.edu")
+                def developers = root.appendNode("developers")
+                def rherrick = developers.appendNode("developer")
+                rherrick.appendNode("id", "rherrick")
+                rherrick.appendNode("name", "Rick Herrick")
+                rherrick.appendNode("email", "jrherrick@wustl.edu")
+            }
         }
     }
-}
-publishing.repositories {
-    maven {
-        credentials {
-            // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-            // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-            username propertyWithDefault("repoUsername", "username")
-            password propertyWithDefault("repoPassword", "password")
+    repositories {
+        maven {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+                username propertyWithDefault("repoUsername", "username")
+                password propertyWithDefault("repoPassword", "password")
+            }
+            url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
         }
-        url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
-    }
-    maven {
-        name "Radiologics"
-        credentials {
-            // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-            // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-            username propertyWithDefault('repoUsername', 'username')
-            password propertyWithDefault('repoPassword', 'password')
-        }
-        url project.version.endsWith("-SNAPSHOT") ? "https://maven.radiologics.com/repository/snapshots/" : "https://maven.radiologics.com/repository/internal/"
     }
 }
 

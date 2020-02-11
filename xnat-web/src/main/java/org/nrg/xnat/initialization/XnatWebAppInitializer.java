@@ -10,7 +10,6 @@
 package org.nrg.xnat.initialization;
 
 import ch.qos.logback.classic.servlet.LogbackServletContextListener;
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
@@ -25,17 +24,17 @@ import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_CLASS_ARRAY;
 
@@ -49,18 +48,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
         context.addListener(new LogbackServletContextListener());
-
-        /*
-        final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.reset();
-        final JoranConfigurator configurator = new JoranConfigurator();
-        try (final InputStream configStream = FileUtils.openInputStream(logbackPropertiesUserFile)) {
-            configurator.setContext(loggerContext);
-            configurator.doConfigure(configStream); // loads logback file
-        } catch (JoranException e) {
-            e.printStackTrace();
-        }
-        */
 
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
 
@@ -112,6 +99,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         registration.setMultipartConfig(getMultipartConfigElement());
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private MultipartConfigElement getMultipartConfigElement() {
         final String root;
         final String subfolder;
@@ -124,11 +112,25 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         }
         final String prefix = "xnat_" + System.nanoTime();
         try {
-            final Path path = Paths.get(root, subfolder);
-            path.toFile().mkdirs();
-            final Path tmpDir = Files.createTempDirectory(path, prefix);
+            final Path workPath = Paths.get(root, subfolder);
+            workPath.toFile().mkdirs();
+            final Path tmpDir = Files.createTempDirectory(workPath, prefix);
             tmpDir.toFile().deleteOnExit();
-            return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), MAX_FILE_SIZE, MAX_REQUEST_SIZE, FILE_SIZE_THRESHOLD);
+            final File config = Paths.get(root, "config/xnat-conf.properties").toFile();
+            final long maxFileSize, maxRequestSize;
+            final int  fileSizeThreshold;
+            if (config.exists() && config.isFile() && config.canRead()) {
+                final Properties properties = PropertiesLoaderUtils.loadProperties(new FileSystemResource(config));
+                maxFileSize = getMultipartSetting(PROPERTY_MAX_FILE_SIZE, "max file size", properties.getProperty(PROPERTY_MAX_FILE_SIZE), DEFAULT_MAX_FILE_SIZE);
+                maxRequestSize = getMultipartSetting(PROPERTY_MAX_REQUEST_SIZE, "max request size", properties.getProperty(PROPERTY_MAX_REQUEST_SIZE), DEFAULT_MAX_REQUEST_SIZE);
+                fileSizeThreshold = (int) getMultipartSetting(PROPERTY_FILE_SIZE_THRESHOLD, "file size threshold", properties.getProperty(PROPERTY_FILE_SIZE_THRESHOLD), DEFAULT_FILE_SIZE_THRESHOLD);
+            } else {
+                log.debug("No configuration properties found, setting max file size, max request size, and file size threshold to their default values: {}, {}, {}", DEFAULT_MAX_FILE_SIZE, DEFAULT_MAX_REQUEST_SIZE, DEFAULT_FILE_SIZE_THRESHOLD);
+                maxFileSize = DEFAULT_MAX_FILE_SIZE;
+                maxRequestSize = DEFAULT_MAX_REQUEST_SIZE;
+                fileSizeThreshold = DEFAULT_FILE_SIZE_THRESHOLD;
+            }
+            return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), maxFileSize, maxRequestSize, fileSizeThreshold);
         } catch (IOException e) {
             throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder " + root);
         }
@@ -138,9 +140,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final List<Class<?>> configs = new ArrayList<>();
         try {
             for (final XnatPluginBean plugin : XnatPluginBeanManager.scanForXnatPluginBeans().values()) {
-                if (log.isInfoEnabled()) {
-                    log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
-                }
+                log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
                 configs.add(Class.forName(plugin.getPluginClass()));
             }
         } catch (ClassNotFoundException e) {
@@ -156,6 +156,15 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final ServletRegistration.Dynamic registration = SERVLET_CONTEXT.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);
+    }
+
+    private static long getMultipartSetting(final String property, final String name, final String propertyValue, final long defaultValue) {
+        if (StringUtils.isNotBlank(propertyValue)) {
+            log.debug("Found {} property, setting {} to: {}", property, name, propertyValue);
+            return Long.parseLong(propertyValue);
+        }
+        log.debug("No {} property found, setting {} to default: {}", property, name, defaultValue);
+        return defaultValue;
     }
 
     private static class XnatTurbineConfig implements ServletConfig {
@@ -191,9 +200,12 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         private ServletContext _context;
     }
 
-    private static final long                         MAX_FILE_SIZE       = 1048576 * 20; // 20 MB max file size.
-    private static final long                         MAX_REQUEST_SIZE    = 20971520;  // 20MB max request size.
-    private static final int                          FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
-    private static final ImmutableMap<String, String> LOG4J_INIT_PARAMS   = ImmutableMap.of("log4j-init-file", "WEB-INF/classes/log4j.properties");
-    private static       ServletContext               SERVLET_CONTEXT     = null;
+    private static final int            ONE_MB                       = 1048576;
+    private static final long           DEFAULT_MAX_FILE_SIZE        = 20 * ONE_MB; // Default 20 MB max file size.
+    private static final long           DEFAULT_MAX_REQUEST_SIZE     = 20 * ONE_MB; // Default 20 MB max request size.
+    private static final int            DEFAULT_FILE_SIZE_THRESHOLD  = ONE_MB * 10; // Default file size threshold set to 10 MB.
+    private static final String         PROPERTY_MAX_FILE_SIZE       = "spring.http.multipart.max-file-size";
+    private static final String         PROPERTY_MAX_REQUEST_SIZE    = "spring.http.multipart.max-request-size";
+    private static final String         PROPERTY_FILE_SIZE_THRESHOLD = "spring.http.multipart.file-size-threshold";
+    private static       ServletContext SERVLET_CONTEXT              = null;
 }

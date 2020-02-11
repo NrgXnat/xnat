@@ -7,13 +7,14 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.springframework.core.io.InputStreamSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface RemoteFilesService {
 
@@ -82,7 +83,7 @@ public interface RemoteFilesService {
      * @throws UnsupportedRemoteFilesOperationException if project doesn't support remote resources
      */
     void pushProcessingOutputsAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
-                                                  final XnatResourcecatalog catalog, final Collection<File> files,
+                                                  final XnatResourcecatalog catalog, Map<String, ? extends InputStreamSource> files,
                                                   final boolean preserveDirectories, @Nullable Integer parentEventId)
             throws ClientException, ServerException, UnsupportedRemoteFilesOperationException;
 }

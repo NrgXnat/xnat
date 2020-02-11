@@ -26,7 +26,6 @@ import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -68,19 +67,14 @@ public class ArchiveValidator extends BatchPrearchiveActionsA {
     }
 
     protected void finishSingleSessionArchive(final PrearcSession session) throws Exception {
-        final PrearcSessionValidator              validator  = new PrearcSessionValidator(session, getUser(), getAdditionalValues());
-        final List<PrearcSessionValidator.Notice> validation = validator.validate();
+        final PrearcSessionValidator validator  = new PrearcSessionValidator(session, getUser(), getAdditionalValues());
+        final List<? extends Notice> validation = validator.validate();
 
-        Collections.sort(validation, new Comparator<Notice>() {
-            @Override
-            public int compare(Notice o1, Notice o2) {
-                return o1.getCode() - o2.getCode();
-            }
-        });
+        Collections.sort(validation);
 
         final XFTTable table = new XFTTable();
-        table.initTable(new String[]{"code", "type", "message"});
-        for (final PrearcSessionValidator.Notice notice : validation) {
+        table.initTable(COLUMNS);
+        for (final Notice notice : validation) {
             table.rows().add(new Object[]{notice.getCode(), notice.getType(), notice.getMessage()});
         }
 
@@ -91,6 +85,7 @@ public class ArchiveValidator extends BatchPrearchiveActionsA {
         throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "Cannot validate multiple sessions in one request.");
     }
 
-    private static final String PROJECT = "project";
-    private static final String DEST    = "dest";
+    private static final String   PROJECT = "project";
+    private static final String   DEST    = "dest";
+    private static final String[] COLUMNS = {"code", "type", "message"};
 }

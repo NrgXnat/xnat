@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
@@ -44,6 +45,7 @@ import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.zip.ZipOutputStream;
 
@@ -95,44 +97,17 @@ public class ExptFileUpload extends SecureAction {
                         logger.info("Uploading file " + filename + " to folder " + dir.getAbsolutePath());
                     }
 
-                    String compression_method = ".zip";
-                    final String normalized = filename.toLowerCase();
-                    if (normalized.endsWith(".tar")) {
-                        compression_method = ".tar";
-                    } else if (normalized.endsWith(".tgz") || normalized.endsWith(".tar.gz")) {
-                        compression_method = ".tgz";
-                    } else if (filename.contains(".")) {
-                        compression_method = filename.substring(filename.lastIndexOf("."));
-                    }
-
                     if (uploadID != null) {
                         session.setAttribute(uploadID + "Upload", 100);
                     }
 
-                    if (compression_method.equalsIgnoreCase(".tar") ||
-                        compression_method.equalsIgnoreCase(".gz") ||
-                        compression_method.equalsIgnoreCase(".tgz") ||
-                        compression_method.equalsIgnoreCase(".zip") ||
-                        compression_method.equalsIgnoreCase(".zar")) {
-
+                    final String compression = ZipUtils.getCompression(filename, "zar");
+                    if (StringUtils.isNotBlank(compression)) {
                         if (logger.isDebugEnabled()) {
                             logger.debug("Extracting file: " + filename);
                         }
-
-                        InputStream is = fi.getInputStream();
-
-                        ZipI zipper;
-                        if (compression_method.equalsIgnoreCase(".tar")) {
-                            zipper = new TarUtils();
-                        } else if (compression_method.equalsIgnoreCase(".tgz")) {
-                            zipper = new TarUtils();
-                            zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
-                        } else {
-                            zipper = new ZipUtils();
-                        }
-                        
-                        try {
-                            zipper.extract(is, cache_path);
+                        try (final InputStream input = fi.getInputStream()){
+                            ZipUtils.extractFile(input, Paths.get(cache_path), compression);
                         } catch (Throwable e1) {
                             error(e1,data);
                             session.setAttribute(uploadID + "Extract", -1);

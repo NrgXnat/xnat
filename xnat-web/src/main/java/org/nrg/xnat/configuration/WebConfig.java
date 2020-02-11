@@ -19,6 +19,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
+import org.nrg.xnat.web.converters.ZipFileHttpMessageConverter;
 import org.nrg.xnat.web.http.AsyncLifecycleMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -87,6 +88,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         converters.add(resourceHttpMessageConverter());
         converters.add(xftBeanHttpMessageConverter());
         converters.add(xftObjectHttpMessageConverter());
+        converters.add(zipFileHttpMessageConverter());
     }
 
     @Override
@@ -109,6 +111,11 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public HttpMessageConverter<?> xftBeanHttpMessageConverter() {
         return new XftBeanHttpMessageConverter();
+    }
+
+    @Bean
+    public HttpMessageConverter<?> zipFileHttpMessageConverter() {
+        return new ZipFileHttpMessageConverter();
     }
 
     @Bean

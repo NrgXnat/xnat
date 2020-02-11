@@ -58,12 +58,12 @@ public class TarUtils implements ZipI {
         out.setLongFileMode(TarOutputStream.LONGFILE_POSIX);
     }
 
-    public ArrayList extract(InputStream is, String dir) throws IOException {
+    public List<File> extract(InputStream is, String dir) throws IOException {
         return extract(is, dir, true, null);
     }
 
-    public ArrayList extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException {
-        ArrayList<File> extractedFiles = new ArrayList<>();
+    public List<File> extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException {
+        final List<File> extractedFiles = new ArrayList<>();
         if (_compressionMethod == ZipOutputStream.DEFLATED) {
             //f = unGzip(f,dir,deleteZip);
             is = new GZIPInputStream(is);

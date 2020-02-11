@@ -38,6 +38,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -45,6 +46,8 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 @SuppressWarnings("RedundantThrows")
@@ -794,7 +797,7 @@ public class Permissions {
     }
 
     public static boolean canDeleteProject(final UserI user, final String projectId) {
-        if (Roles.isSiteAdmin(user)) {
+        if (Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)) {
             return true;
         }
         final String access = getUserProjectAccess(user, projectId);
@@ -1045,6 +1048,36 @@ public class Permissions {
     }
 
     @SuppressWarnings("unused")
+    public static Map<String, Map<String, String>> getAllAccessibleExperimentsOfType(final NamedParameterJdbcTemplate template, final UserI user, final String dataType, final String action) {
+        final String query;
+        switch (action) {
+            case SecurityManager.READ:
+                query = QUERY_ALL_READABLE_EXPTS_OF_TYPE;
+                break;
+            case SecurityManager.EDIT:
+                query = QUERY_ALL_EDITABLE_EXPTS_OF_TYPE;
+                break;
+            case SecurityManager.DELETE:
+                query = QUERY_ALL_DELETABLE_EXPTS_OF_TYPE;
+                break;
+            default:
+                throw new RuntimeException("The action " + action + " isn't something I can check.");
+        }
+        final Map<String, Map<String, String>> experiments = new HashMap<>();
+        template.query(query, new MapSqlParameterSource("username", user.getUsername()).addValue("dataType", dataType), new RowCallbackHandler() {
+            @Override
+            public void processRow(final ResultSet resultSet) throws SQLException {
+                final String project = resultSet.getString("project");
+                if (!experiments.containsKey(project)) {
+                    experiments.put(project, new HashMap<String, String>());
+                }
+                experiments.get(project).put(resultSet.getString("id"), resultSet.getString("label"));
+            }
+        });
+        return experiments;
+    }
+
+    @SuppressWarnings("unused")
     public static Set<String> getInvalidProjectIds(final JdbcTemplate template, final Set<String> projectIds) {
         return Sets.difference(projectIds, getAllProjectIds(template));
     }
@@ -1217,6 +1250,11 @@ public class Permissions {
     private static final List<String>       PROJECT_GROUPS         = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int                PROJECT_GROUP_COUNT    = PROJECT_GROUPS.size();
     private static final SqlParameterSource GUEST_QUERY_PARAMETERS = new MapSqlParameterSource("username", "guest");
+
+    private static final String QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE = "SELECT id, label, project FROM data_type_fns_get_all_accessible_expts_of_type(:username, :dataType) WHERE can_${action} = TRUE";
+    private static final String QUERY_ALL_READABLE_EXPTS_OF_TYPE   = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.READ));
+    private static final String QUERY_ALL_EDITABLE_EXPTS_OF_TYPE   = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.EDIT));
+    private static final String QUERY_ALL_DELETABLE_EXPTS_OF_TYPE  = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.DELETE));
 
     private static PermissionsServiceI        _service;
     private static NamedParameterJdbcTemplate _template;

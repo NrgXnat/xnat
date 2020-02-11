@@ -7,25 +7,15 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.utils.zip;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
+import edu.sdsc.grid.io.GeneralFile;
+import edu.sdsc.grid.io.srb.SRBFile;
+import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.taskdefs.Expand;
@@ -35,19 +25,70 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
 
-import edu.sdsc.grid.io.GeneralFile;
-import edu.sdsc.grid.io.srb.SRBFile;
-import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import java.io.*;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 
 /**
  * @author timo
  *
  */
+@SuppressWarnings("unused")
+@Slf4j
 public class ZipUtils implements ZipI {
-	public final static int DEFAULT_COMPRESSION=ZipOutputStream.STORED;
-	
-    final static boolean DEBUG = false;
+    public final static int DEFAULT_COMPRESSION = ZipOutputStream.STORED;
+
+    public static boolean isCompressedFile(final String filename, final String... extras) {
+        return StringUtils.endsWithAny(filename.toLowerCase(), ".tar", ".tgz", ".tar.gz", ".zip", ".gz") || StringUtils.endsWithAny(filename.toLowerCase(), extras);
+    }
+
+    public static String getCompression(final String filename, final String... extras) {
+        if (!isCompressedFile(filename, extras)) {
+            return "";
+        }
+        final String normalized = filename.toLowerCase();
+        if (StringUtils.endsWithAny(normalized, ".tgz", ".tar.gz")) {
+            return "tgz";
+        }
+        final String extension = FilenameUtils.getExtension(normalized);
+        if (StringUtils.equalsAny(extension, ArrayUtils.addAll(extras, "zip", "tar", "gz"))) {
+            return extension;
+        }
+        throw new RuntimeException("File " + filename + " doesn't match any of the specified extensions for compression, even though isCompressedFile() said it did.");
+    }
+
+    public static void extractFile(final File file, final Path destination) throws IOException {
+        extractFile(file, destination, getCompression(file.getName()));
+    }
+
+    public static void extractFile(final File file, final Path destination, final String compression) throws IOException {
+        try (final InputStream input = new FileInputStream(file)) {
+            extractFile(input, destination, compression);
+        }
+    }
+
+    public static void extractFile(final InputStream input, final Path destination, final String compression) throws IOException {
+        final ZipI zipper;
+        switch (compression) {
+            case "tar":
+                zipper = new TarUtils();
+                break;
+            case "tgz":
+                zipper = new TarUtils();
+                zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
+                break;
+            default:
+                zipper = new ZipUtils();
+        }
+
+        zipper.extract(input, destination.toString());
+    }
+
     byte[] buf = new byte[FileUtils.LARGE_DOWNLOAD];
     ZipOutputStream out = null;
     int compression=ZipOutputStream.DEFLATED;
@@ -78,8 +119,8 @@ public class ZipUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param absolutePath Absolute path used to load file.
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws FileNotFoundException When the requested file or folder can't be located.
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void write(String relativePath,String absolutePath) throws IOException
@@ -95,8 +136,8 @@ public class ZipUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param f            The file to write out.
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws FileNotFoundException When the requested file or folder can't be located.
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void write(String relativePath, File f) throws IOException
@@ -127,7 +168,7 @@ public class ZipUtils implements ZipI {
                 fos.close();
                 in.close();
                 
-                ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+                ZipEntry entry = new ZipEntry(relativePath);
     
                 if (compression==ZipOutputStream.STORED)
                 {
@@ -159,7 +200,7 @@ public class ZipUtils implements ZipI {
                 out.closeEntry();
                 FileUtils.DeleteFile(temp);
             }else{
-                ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+                ZipEntry entry = new ZipEntry(relativePath);
     
                 if (compression==ZipOutputStream.STORED)
                 {
@@ -216,7 +257,7 @@ public class ZipUtils implements ZipI {
             
             FileUtils.DeleteFile(temp);
         }else{
-            ZipEntry entry = new java.util.zip.ZipEntry(relativePath);        
+            ZipEntry entry = new ZipEntry(relativePath);
             out.putNextEntry(entry);
             
             // Transfer bytes from the file to the ZIP file
@@ -252,30 +293,30 @@ public class ZipUtils implements ZipI {
             FileUtils.DeleteFile(temp);
         }else{
             long startTime = Calendar.getInstance().getTimeInMillis();
-            ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+            ZipEntry entry = new ZipEntry(relativePath);
             entry.setTime(srb.lastModified());
             entry.setSize(srb.length());
             out.putNextEntry(entry);
-            
-            if(DEBUG)System.out.print(srb.getName() + "," + srb.length() + "," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{}, {}, {} ms", srb.getName(), srb.length(), Calendar.getInstance().getTimeInMillis() - startTime);
 
             SRBFileInputStream is = new SRBFileInputStream(srb);
             // Transfer bytes from the file to the ZIP file
             int len;
-            
-            if(DEBUG)System.out.print("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{}, {}, {} ms", srb.getName(), srb.length(), Calendar.getInstance().getTimeInMillis()-startTime);
 
             while ((len = is.read(tempBUF)) > 0) {
-                if(DEBUG)System.out.print(",R:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+                log.debug("R: {} ms", Calendar.getInstance().getTimeInMillis()-startTime);
                 out.write(tempBUF, 0, len);
-                if(DEBUG)System.out.print(",W:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+                log.debug("W: {}", Calendar.getInstance().getTimeInMillis()-startTime);
                 out.flush();
             }
             
             // Complete the entry
             out.closeEntry();
-            
-            if(DEBUG)System.out.println("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+
+            log.debug("{} ms", Calendar.getInstance().getTimeInMillis() - startTime);
         }
     }
 
@@ -303,7 +344,7 @@ public class ZipUtils implements ZipI {
     }
     
     /**
-     * @throws IOException
+     * @throws IOException When an error occurs with reading or writing data.
      */
     @Override
     public void close() throws IOException{
@@ -316,7 +357,6 @@ public class ZipUtils implements ZipI {
 
     @Override
     public void extract(File f, String dir, boolean deleteZip) throws IOException{
-                
         final class Expander extends Expand {
             public Expander() {
      	    setProject(new Project());
@@ -336,57 +376,63 @@ public class ZipUtils implements ZipI {
     }
 
     @Override
-    public ArrayList extract(InputStream is, String dir) throws IOException{
-    	return extract(is,dir,true,null);
+    public List<File> extract(InputStream is, String dir) throws IOException{
+    	return new ArrayList<>(extractMap(is,dir,true,null).values());
+    }
+
+    public Map<String, File> extractMap(final InputStream is, final String dir) throws IOException {
+    	return extractMap(is,dir,true,null);
     }
 
     @Override
-    public ArrayList extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
-        ArrayList<File> extractedFiles = new ArrayList<>();
-        //  Create a ZipInputStream to read the zip file
-        BufferedOutputStream dest;
-        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+    public List<File> extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
+    	return new ArrayList<>(extractMap(is,destination,overwrite,ci).values());
+    }
+    
+    public Map<String, File> extractMap(final InputStream is, final String destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        final Map<String, File> extractedFiles = new HashMap<>();
 
-        File df = new File(destination);
-        if (!df.exists()) {
-            df.mkdirs();
+        final File destinationFolder = new File(destination);
+        if (!destinationFolder.exists()) {
+            destinationFolder.mkdirs();
         }
 
         // Loop over all of the entries in the zip file
-        int count;
-        byte data[] = new byte[FileUtils.LARGE_DOWNLOAD];
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null) {
-            if (!entry.isDirectory()) {
-                final File f = new File(destination, entry.getName());
+        final byte[]   data = new byte[FileUtils.LARGE_DOWNLOAD];
+        //  Create a ZipInputStream to read the zip file
+        try (final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                final String name = entry.getName();
+                if (!entry.isDirectory()) {
+                    final File f = new File(destination, name);
 
-                if (f.exists() && !overwrite) {
-                    _duplicates.add(entry.getName());
+                    if (f.exists() && !overwrite) {
+                        _duplicates.add(name);
+                    } else {
+                        if (f.exists()) {
+                            FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                        }
+                        f.getParentFile().mkdirs();
+
+                        // Write the file to the file system
+                        try (final BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(f), FileUtils.LARGE_DOWNLOAD)) {
+                            int count;
+                            while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
+                                dest.write(data, 0, count);
+                            }
+                        }
+                        extractedFiles.put(name, new File(f.getAbsolutePath()));
+                    }
                 } else {
-                    if (f.exists()) {
-                        FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                    final File subfolder = new File(destination, name);
+                    if (!subfolder.exists()) {
+                        subfolder.mkdirs();
                     }
-                    f.getParentFile().mkdirs();
-
-                    // Write the file to the file system
-                    FileOutputStream fos = new FileOutputStream(f);
-                    dest = new BufferedOutputStream(fos, FileUtils.LARGE_DOWNLOAD);
-                    while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
-                        dest.write(data, 0, count);
-                    }
-                    dest.flush();
-                    dest.close();
-                    extractedFiles.add(new File(f.getAbsolutePath()));
+                    extractedFiles.put(name, subfolder);
                 }
-            } else {
-                df = new File(destination, entry.getName());
-                if (!df.exists()) {
-                    df.mkdirs();
-                }
-                extractedFiles.add(df);
             }
         }
-        zis.close();
         return extractedFiles;
     }
 

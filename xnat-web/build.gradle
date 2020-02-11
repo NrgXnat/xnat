@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.7.7-SNAPSHOT"
+        vXnat = '1.7.7.RAD-SNAPSHOT'
     }
     repositories {
         mavenLocal()
@@ -17,6 +17,8 @@ buildscript {
         maven { url "https://plugins.gradle.org/m2" }
         maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
         maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+        maven { url "https://maven.radiologics.com/repository/snapshots" }
+        maven { url "https://maven.radiologics.com/repository/internal" }
     }
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.0"
@@ -50,6 +52,8 @@ repositories {
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    maven { url "https://maven.radiologics.com/repository/snapshots" }
+    maven { url "https://maven.radiologics.com/repository/internal" }
 }
 
 sourceCompatibility = 1.7
@@ -169,6 +173,13 @@ configurations {
 
 dependencyManagement.imports {
     mavenBom "org.nrg:parent:${vXnat}"
+}
+
+def vMockito = '1.10.19'
+def vPowerMock = '1.7.0'
+
+configurations.all {
+    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
 }
 
 dependencies {
@@ -348,6 +359,10 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
+    testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "org.mockito:mockito-core"
+    testImplementation "org.powermock:powermock-module-junit4:${vPowerMock}"
+    testImplementation "org.powermock:powermock-api-mockito:${vPowerMock}"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
@@ -534,6 +549,16 @@ publishing {
                 password propertyWithDefault("repoPassword", "password")
             }
             url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+        }
+        maven {
+            name "Radiologics"
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
+            }
+            url project.version.endsWith("-SNAPSHOT") ? "https://maven.radiologics.com/repository/snapshots/" : "https://maven.radiologics.com/repository/internal/"
         }
     }
 }

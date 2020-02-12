@@ -70,25 +70,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
                 // reset the status to RECEIVING and update the session timestamp.
                 final SessionData current = PrearcDatabase.getSession(getSessionData().getSessionDataTriple());
                 if (current.getStatus() != RECEIVING_INTERRUPT) {
-                    final boolean separatePetMr = PrearcUtils.isUnassigned(getSessionData()) ? PrearcUtils.shouldSeparatePetMr() : PrearcUtils.shouldSeparatePetMr(project);
-                    if (separatePetMr) {
-                        log.debug("Found create separate PET and MR sessions setting for project {}, now working to separate that.", project);
-                        final File sessionXml = new File(getSessionDir() + ".xml");
-                        if (sessionXml.exists()) {
-                            log.debug("Found the session XML in the file {}, processing.", sessionXml.getAbsolutePath());
-                            final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
-                            if (bean instanceof XnatPetmrsessiondataBean) {
-                                log.debug("Found a PET/MR session XML in the file {} with the separate PET/MR flag set to true for the site or project, creating a new request to separate the session.", sessionXml.getAbsolutePath());
-                                PrearcUtils.resetStatus(getUser(), project, timestamp, folderName, true);
-                                final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Separate, getSessionData(), getSessionDir(), getParameters());
-                                XDAT.sendJmsRequest(request);
-                            } else {
-                                log.debug("Found a session XML for a {} session in the file {}. Not PET/MR so not separating.", bean.getFullSchemaElementName(), sessionXml.getAbsolutePath());
-                            }
-                        } else {
-                            log.warn("Tried to rebuild a session from the path {}, but that session XML doesn't exist.", sessionXml.getAbsolutePath());
-                        }
-                    } else {
+                    if (!handleSeparablePetMrSession(folderName, timestamp, project)) {
                         PrearcUtils.resetStatus(getUser(), project, timestamp, folderName, true);
 
                         // we don't want to autoarchive a session that's just being rebuilt
@@ -106,5 +88,31 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean handleSeparablePetMrSession(final String folderName, final String timestamp, final String project) throws Exception {
+        final boolean separatePetMr = PrearcUtils.isUnassigned(getSessionData()) ? PrearcUtils.shouldSeparatePetMr() : PrearcUtils.shouldSeparatePetMr(project);
+        if (!separatePetMr) {
+            return false;
+        }
+
+        log.debug("Found create separate PET and MR sessions setting for project {}, now working to separate that.", project);
+        final File sessionXml = new File(getSessionDir() + ".xml");
+        if (!sessionXml.exists()) {
+            log.warn("Tried to rebuild a session from the path {}, but that session XML doesn't exist.", sessionXml.getAbsolutePath());
+            return false;
+        }
+
+        log.debug("Found the session XML in the file {}, processing.", sessionXml.getAbsolutePath());
+        final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
+        if (!(bean instanceof XnatPetmrsessiondataBean)) {
+            log.debug("Found a session XML for a {} session in the file {}. Not PET/MR so not separating.", bean.getFullSchemaElementName(), sessionXml.getAbsolutePath());
+            return false;
+        }
+
+        log.debug("Found a PET/MR session XML in the file {} with the separate PET/MR flag set to true for the site or project, creating a new request to separate the session.", sessionXml.getAbsolutePath());
+        PrearcUtils.resetStatus(getUser(), project, timestamp, folderName, true);
+        XDAT.sendJmsRequest(new PrearchiveOperationRequest(getUser(), Separate, getSessionData(), getSessionDir(), getParameters()));
+        return true;
     }
 }

@@ -22,7 +22,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.FileUtils.OldFileHandlerI;
+import org.nrg.xft.utils.FileUtils.FileHandlerI;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -74,7 +74,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         void save(A session) throws Exception;
     }
 
-    public void checkForConflict() throws ClientException, ServerException, IOException {
+    @SuppressWarnings("RedundantThrows")
+    public void checkForConflict() throws ClientException, ServerException {
         ClientException t = null;
         if (destDIR.exists() || dest != null) {
             if (!allowSessionMerge) {
@@ -136,7 +137,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             }
 
             //merge session xmls... nothing is modified until after file system is merged.
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings({"unchecked", "CastCanBeRemovedNarrowingVariableType"})
             final Results<A> update = mergeSessions((A) session, srcRootPath, dest, destRootPath, rootBackup);
 
             A merged = update.getResult();
@@ -176,13 +177,13 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             failed("An error occurred when anonymizing the data: " + e.getMessage());
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         } catch (Throwable e) {
-            logger.error("An error occurred updating existing metadata", e);
+            logger.error("An error occurred updating existing metadata for session {}: {} in project {}", src.getId(), src.getLabel(), src.getProject(), e);
             if (backupDIR != null) {
                 rollback(backupDIR, destDIR, rootBackup);
             } else {
                 rollback(destDIR, srcDIR, rootBackup);
             }
-            failed("Error updating existing metadata");
+            failed("Error updating existing metadata for session " + src.getId() + ": " + src.getLabel() + " in project " + src.getProject() + ": " + e.getMessage());
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         }
     }
@@ -319,6 +320,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             result = s;
         }
 
+        @SuppressWarnings("rawtypes")
         public Results(A s, Results r) {
             result = s;
             this.addAll(r);
@@ -341,7 +343,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             return beforeDirMerge;
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public Results<A> addAll(Results r) {
             this.after.addAll(r.getAfter());
             this.beforeDirMerge.addAll(r.getBeforeDirMerge());
@@ -349,13 +351,14 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         }
     }
 
+    @SuppressWarnings("RedundantThrows")
     public void mergeDirectories(File srcDIR2, File destDIR2, boolean overwrite) throws ClientException, ServerException {
         try {
             FileUtils.MoveDir(srcDIR2, destDIR2, overwrite, new FileFilter() {
                 public boolean accept(File pathname) {
                     return (!pathname.getName().endsWith(".log"));
                 }
-            }, new OldFileHandlerI() {
+            }, new FileHandlerI() {
                 @Override
                 public boolean handle(final File f) {
                     if (CatalogUtils.maintainFileHistory()) {

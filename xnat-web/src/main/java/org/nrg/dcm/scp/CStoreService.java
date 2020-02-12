@@ -292,7 +292,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                 boolean useDefaultImporter = true;
                 try {
                     DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
-                    useDefaultImporter = !instance.getCustomProcessing();
+                    useDefaultImporter = !instance.isCustomProcessing();
                 }
                 catch(Throwable t){
                     logger.error("Failed to get whether the SCP receiver is set up to do custom processing. Default importer will be used.",t);

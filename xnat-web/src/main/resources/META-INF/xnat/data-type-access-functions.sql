@@ -35,6 +35,7 @@ DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VAR
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_all_accessible_expts_of_type(username VARCHAR(255), dataType VARCHAR(255));
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -47,6 +48,150 @@ DROP VIEW IF EXISTS public.data_type_views_scan_data_types;
 DROP VIEW IF EXISTS public.data_type_views_get_xnat_hash_indices;
 DROP VIEW IF EXISTS public.data_type_views_experiments_without_data_type;
 DROP VIEW IF EXISTS public.data_type_views_member_edit_permissions;
+DROP VIEW IF EXISTS public.data_type_views_get_all_expts;
+DROP VIEW IF EXISTS public.data_type_views_missing_or_misconfigured_permissions;
+DROP VIEW IF EXISTS public.data_type_views_default_access_permissions;
+
+CREATE OR REPLACE VIEW public.data_type_views_default_access_permissions AS
+SELECT
+    groupNameOrId,
+    is_source,
+    create_element,
+    read_element,
+    edit_element,
+    delete_element,
+    active_element
+FROM
+    (VALUES
+         ('Owners', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+         ('Owners', FALSE, FALSE, TRUE, FALSE, FALSE, TRUE),
+         ('Members', TRUE, TRUE, TRUE, TRUE, FALSE, TRUE),
+         ('Members', FALSE, FALSE, TRUE, FALSE, FALSE, TRUE),
+         ('Collaborators', TRUE, FALSE, TRUE, FALSE, FALSE, TRUE),
+         ('Collaborators', FALSE, FALSE, TRUE, FALSE, FALSE, TRUE),
+         ('ALL_DATA_ADMIN', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+         ('ALL_DATA_ADMIN', FALSE, TRUE, TRUE, TRUE, TRUE, TRUE),
+         ('ALL_DATA_ACCESS', TRUE, FALSE, TRUE, FALSE, FALSE, TRUE),
+         ('ALL_DATA_ACCESS', FALSE, FALSE, TRUE, FALSE, FALSE, TRUE)) AS groupNames (groupNameOrId, is_source, create_element, read_element, edit_element, delete_element, active_element);
+
+CREATE OR REPLACE VIEW public.data_type_views_missing_or_misconfigured_permissions AS
+WITH
+    existing_data_access AS (
+        SELECT
+            g.id || ':' || field AS key,
+            g.id AS group_id,
+            a.element_name,
+            m.field,
+            m.field_value,
+            m.read_element::BOOLEAN,
+            m.edit_element::BOOLEAN,
+            m.create_element::BOOLEAN,
+            m.delete_element::BOOLEAN,
+            m.active_element::BOOLEAN
+        FROM
+            xdat_usergroup g
+            LEFT JOIN xdat_element_access a ON g.xdat_usergroup_id = a.xdat_usergroup_xdat_usergroup_id
+            LEFT JOIN xdat_field_mapping_set s ON a.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+            LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+        WHERE
+            a.element_name != 'xnat:projectData'),
+    all_groups AS (
+        SELECT
+            g.id,
+            g.displayname
+        FROM
+            xdat_usergroup g
+            LEFT JOIN xnat_projectdata p ON g.tag = p.id
+        WHERE
+            p.id IS NOT NULL AND g.displayname IN ('Owners', 'Members', 'Collaborators') OR
+            g.id IN ('ALL_DATA_ADMIN', 'ALL_DATA_ACCESS')),
+    all_secured_types AS (
+        SELECT
+            element_name
+        FROM
+            xdat_element_security
+        WHERE
+            secure = 1 AND
+            element_name != 'xnat:projectData'),
+    all_group_elements AS (
+        SELECT
+            g.id AS group_id,
+            g.displayname AS displayname,
+            t.element_name
+        FROM
+            all_groups g,
+            all_secured_types t),
+    required_data_access AS (
+        SELECT
+            group_id || ':' || element_name || '/project' AS key,
+            group_id,
+            displayname,
+            element_name,
+            element_name || '/project' AS field
+        FROM
+            all_group_elements
+        UNION
+        SELECT
+            group_id || ':' || element_name || '/sharing/share/project' AS key,
+            group_id,
+            displayname,
+            element_name,
+            element_name || '/sharing/share/project' AS field
+        FROM
+            all_group_elements),
+    unified AS (
+        SELECT
+            r.key AS required_key,
+            r.group_id AS required_group_id,
+            r.displayname AS required_displayname,
+            r.element_name AS required_element_name,
+            r.field AS required_field,
+            CASE WHEN r.field LIKE '%/sharing/share/project' THEN FALSE ELSE TRUE END AS is_source,
+            e.key AS existing_key,
+            e.group_id AS existing_group_id,
+            e.element_name AS existing_element_name,
+            e.field AS existing_field,
+            e.field_value AS existing_field_value,
+            e.read_element::BOOLEAN,
+            e.edit_element::BOOLEAN,
+            e.create_element::BOOLEAN,
+            e.delete_element::BOOLEAN,
+            e.active_element::BOOLEAN
+        FROM
+            required_data_access r
+            LEFT JOIN existing_data_access e ON r.key = e.key),
+    unified_permissions AS (
+        SELECT
+            required_key,
+            required_group_id,
+            required_displayname,
+            required_element_name,
+            required_field,
+            u.is_source,
+            existing_key,
+            existing_group_id,
+            existing_element_name,
+            existing_field,
+            existing_field_value,
+            u.read_element,
+            u.edit_element,
+            u.create_element,
+            u.delete_element,
+            u.active_element,
+            p.read_element AS default_read,
+            p.edit_element AS default_edit,
+            p.create_element AS default_create,
+            p.delete_element AS default_delete,
+            p.active_element AS default_active
+        FROM
+            unified u
+            LEFT JOIN data_type_views_default_access_permissions p ON p.groupNameOrId IN (u.required_group_id, u.required_displayname) AND p.is_source = u.is_source)
+SELECT *
+FROM
+    unified_permissions
+WHERE
+    existing_key IS NULL OR
+    existing_key IS NOT NULL AND (create_element != default_create OR read_element != default_read OR edit_element != default_edit OR delete_element != default_delete OR active_element != default_active);
 
 CREATE OR REPLACE VIEW public.data_type_views_element_access AS
 SELECT
@@ -963,6 +1108,81 @@ BEGIN
         END IF;
     END IF;
     RETURN found_can;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE VIEW public.data_type_views_get_all_expts AS
+SELECT
+    x.id,
+    x.label,
+    x.project,
+    x.extension,
+    e.element_name,
+    FALSE AS shared,
+    '^[^/]+/project' AS attribute
+FROM
+    xnat_experimentdata x
+    LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
+UNION
+SELECT
+    x.id,
+    s.label,
+    s.project,
+    x.extension,
+    e.element_name,
+    TRUE AS shared,
+    '^[^/]+/sharing/share/project' AS attribute
+FROM
+    xnat_experimentdata_share s
+    LEFT JOIN xnat_experimentdata x ON s.sharing_share_xnat_experimentda_id = x.id
+    LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_all_accessible_expts_of_type(username VARCHAR(255), dataType VARCHAR(255))
+    RETURNS TABLE (
+        id           VARCHAR(255),
+        label        VARCHAR(255),
+        project      VARCHAR(255),
+        element_name VARCHAR(255),
+        shared       BOOLEAN,
+        can_create   BOOLEAN,
+        can_read     BOOLEAN,
+        can_edit     BOOLEAN,
+        can_delete   BOOLEAN,
+        can_active   BOOLEAN)
+AS
+$$
+BEGIN
+    RETURN QUERY
+        WITH
+            all_expts AS (SELECT * FROM data_type_views_get_all_expts)
+        SELECT DISTINCT
+            x.id,
+            x.label,
+            x.project,
+            x.element_name,
+            x.shared,
+            m.create_element::BOOLEAN,
+            m.read_element::BOOLEAN,
+            m.edit_element::BOOLEAN,
+            m.delete_element::BOOLEAN,
+            m.active_element::BOOLEAN
+        FROM
+            all_expts x
+            LEFT JOIN xdat_element_access e ON x.element_name = e.element_name
+            LEFT JOIN xdat_field_mapping_set s ON e.xdat_element_access_id = s.permissions_allow_set_xdat_elem_xdat_element_access_id
+            LEFT JOIN xdat_field_mapping m ON s.xdat_field_mapping_set_id = m.xdat_field_mapping_set_xdat_field_mapping_set_id
+            LEFT JOIN xdat_usergroup g ON e.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+            LEFT JOIN xdat_user_groupid gi ON g.id = gi.groupid
+            LEFT JOIN xdat_user u ON e.xdat_user_xdat_user_id = u.xdat_user_id OR gi.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id
+        WHERE
+            m.xdat_field_mapping_id IS NOT NULL AND
+            m.field_value IN (x.project, '*') AND
+            m.field ~ x.attribute AND
+            x.element_name = dataType AND
+            u.login IN (username, 'guest')
+        ORDER BY
+            id;
 END
 $$
     LANGUAGE plpgsql;

@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.services.archive.impl.legacy;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.*;
@@ -42,6 +41,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -57,6 +57,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
@@ -68,20 +69,27 @@ import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamSource;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.nrg.xft.event.EventUtils.*;
 import static org.nrg.xft.event.EventUtils.TYPE.WEB_FORM;
@@ -94,9 +102,10 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
 @Slf4j
 public class DefaultCatalogService implements CatalogService {
     @Autowired
-    public DefaultCatalogService(final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager) {
+    public DefaultCatalogService(final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager, final UserDataCache userDataCache) {
         _parameterized = parameterized;
         _cache = cacheManager.getCache(CATALOG_SERVICE_CACHE);
+        _userDataCache = userDataCache;
     }
 
     @Override
@@ -125,8 +134,8 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> unescapedScanTypes   = unescapeList(scanTypes);
         final List<String> unescapedScanFormats = unescapeList(scanFormats);
 
-        long totalSize              = 0L;
-        long resourcesOfUnknownSize = 0L;
+        final AtomicLong totalSize              = new AtomicLong();
+        final AtomicLong resourcesOfUnknownSize = new AtomicLong();
 
         final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(resolvedUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
@@ -153,13 +162,13 @@ public class DefaultCatalogService implements CatalogService {
                             try {
                                 Object sizeObj = sessionsByScanTypesAndFormatsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
-                                totalSize += objSize;
+                                totalSize.getAndAdd(objSize);
                             } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = sessionsByScanTypesAndFormatsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
-                                resourcesOfUnknownSize += unknownCount;
+                                resourcesOfUnknownSize.getAndAdd(unknownCount);
                             } catch (Exception ignored) {
                             }
                         }
@@ -179,13 +188,13 @@ public class DefaultCatalogService implements CatalogService {
                             try {
                                 Object sizeObj = resourcesMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
-                                totalSize += objSize;
+                                totalSize.getAndAdd(objSize);
                             } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = resourcesMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
-                                resourcesOfUnknownSize += unknownCount;
+                                resourcesOfUnknownSize.getAndAdd(unknownCount);
                             } catch (Exception ignored) {
                             }
                         }
@@ -205,13 +214,13 @@ public class DefaultCatalogService implements CatalogService {
                             try {
                                 Object sizeObj = reconstructionsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
-                                totalSize += objSize;
+                                totalSize.getAndAdd(objSize);
                             } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = reconstructionsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
-                                resourcesOfUnknownSize += unknownCount;
+                                resourcesOfUnknownSize.getAndAdd(unknownCount);
                             } catch (Exception ignored) {
                             }
                         }
@@ -231,13 +240,13 @@ public class DefaultCatalogService implements CatalogService {
                             try {
                                 Object sizeObj = assessorsMap.get("size");
                                 long   objSize = Long.parseLong(sizeObj.toString());
-                                totalSize += objSize;
+                                totalSize.getAndAdd(objSize);
                             } catch (Exception ignored) {
                             }
                             try {
                                 Object unknownObj   = assessorsMap.get("resourcesOfUnknownSize");
                                 long   unknownCount = Long.parseLong(unknownObj.toString());
-                                resourcesOfUnknownSize += unknownCount;
+                                resourcesOfUnknownSize.getAndAdd(unknownCount);
                             } catch (Exception ignored) {
                             }
                         }
@@ -253,11 +262,10 @@ public class DefaultCatalogService implements CatalogService {
 
         storeToCache(resolvedUser, catalog);
 
-        Map<String, String> idAndSize = new HashMap<>();
+        final Map<String, String> idAndSize = new HashMap<>();
         idAndSize.put("id", catalog.getId());
-        idAndSize.put("size", totalSize + "");
-        idAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize + "");
-
+        idAndSize.put("size", totalSize.toString());
+        idAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize.toString());
         return idAndSize;
     }
 
@@ -294,7 +302,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        return insertResources(user, parentUri, Collections.singletonList(resource), label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(Collections.singletonList(resource)), false, label, description, format, content, tags);
     }
 
     /**
@@ -302,41 +310,63 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        return insertResources(user, parentUri, resources, false, label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(resources), false, label, description, format, content, tags);
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        final Collection<File> missing = Lists.newArrayList();
-        for (final File source : resources) {
-            if (!source.exists()) {
-                missing.add(source);
-            }
-        }
-        if (!missing.isEmpty()) {
-            throw new FileNotFoundException("Unable to find the following source files/folders: " + Joiner.on(", ").join(missing));
-        }
+        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(resources), preserveDirectories, label, description, format, content, tags);
+    }
 
-        final XnatResourcecatalog catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final File resource) throws Exception {
+        return insertResources(user, catalog, null, getFilesAsInputStreamSources(Collections.singletonList(resource)), false, null, null, null, null);
+    }
 
-        final File destination = new File(catalog.getUri()).getParentFile();
-        for (final File source : resources) {
-            if (source.isDirectory() && preserveDirectories) {
-                FileUtils.copyDirectoryToDirectory(source, destination);
-            } else if (source.isDirectory() && !preserveDirectories) {
-                FileUtils.copyDirectory(source, destination);
-            } else {
-                FileUtils.copyFileToDirectory(source, destination);
-            }
-        }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources) throws Exception {
+        return insertResources(user, catalog, null, getFilesAsInputStreamSources(resources), false, null, null, null, null);
+    }
 
-        refreshResourceCatalog(user, parentUri);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources, final boolean preserveDirectories) throws Exception {
+        return insertResources(user, catalog, null, getFilesAsInputStreamSources(resources), preserveDirectories, null, null, null, null);
+    }
 
-        return catalog;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final String name, final InputStreamSource source) throws Exception {
+        return insertResources(user, catalog, null, Collections.singletonMap(name, source), false, null, null, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources) throws Exception {
+        return insertResources(user, catalog, null, sources, false, null, null, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources, final boolean preserveDirectories) throws Exception {
+        return insertResources(user, catalog, null, sources, preserveDirectories, null, null, null, null);
     }
 
     /**
@@ -676,6 +706,71 @@ public class DefaultCatalogService implements CatalogService {
                 log.debug("Something failed when trying to delete temporary file at {}", temporary.getPath());
             }
         }
+    }
+
+    private static Map<String, ? extends InputStreamSource> getFilesAsInputStreamSources(final Collection<File> files) throws FileNotFoundException {
+        if (Iterables.any(files, Predicates.not(FILE_EXISTS))) {
+            throw new FileNotFoundException("Unable to find the following source files/folders: " + StringUtils.join(Iterables.filter(files, Predicates.not(FILE_EXISTS)), ", "));
+        }
+        final Map<String, InputStreamSource> sources = new HashMap<>();
+        for (final File file : files) {
+            sources.put(file.getName(), new FileSystemResource(file));
+        }
+        return sources;
+    }
+
+    private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final Map<String, ? extends InputStreamSource> resources, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        final XnatResourcecatalog catalog;
+        final String              uri;
+        if (existing != null) {
+            catalog = existing;
+            uri = UriParserUtils.getArchiveUri(catalog.getParent());
+        } else {
+            catalog = createAndInsertResourceCatalog(user, parentUri, label, description, format, content, tags);
+            uri = parentUri;
+        }
+
+        final File destination = new File(catalog.getUri()).getParentFile();
+        for (final String resourceName : resources.keySet()) {
+            final InputStreamSource source = resources.get(resourceName);
+            if (source instanceof ByteArrayResource) {
+                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) source).getByteArray()), destination.toPath().resolve(resourceName).toFile());
+            } else if (source instanceof Resource) {
+                final Resource resource = (Resource) source;
+                try {
+                    final File    file        = resource.getFile();
+                    final boolean isDirectory = file.isDirectory();
+                    if (isDirectory && preserveDirectories) {
+                        FileUtils.copyDirectoryToDirectory(file, destination);
+                    } else if (isDirectory) {
+                        FileUtils.copyDirectory(file, destination);
+                    } else if (ZipUtils.isCompressedFile(file.getName())) {
+                        ZipUtils.extractFile(file, destination.toPath());
+                    } else {
+                        FileUtils.copyFileToDirectory(file, destination);
+                    }
+                } catch (IOException e) {
+                    FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(resourceName).toFile());
+                }
+            } else if (source instanceof MultipartFile) {
+                final MultipartFile multipartFile    = (MultipartFile) source;
+                final String        originalFilename = multipartFile.getOriginalFilename();
+                if (ZipUtils.isCompressedFile(originalFilename)) {
+                    final File tempDirectory = Files.createTempDirectory(Long.toString(Calendar.getInstance().getTimeInMillis())).toFile();
+                    tempDirectory.deleteOnExit();
+                    final File tempZipFile = new File(tempDirectory, originalFilename);
+                    tempZipFile.deleteOnExit();
+                    multipartFile.transferTo(tempZipFile);
+                    ZipUtils.extractFile(tempZipFile, destination.toPath());
+                } else {
+                    FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(originalFilename).toFile());
+                }
+            }
+        }
+
+        refreshResourceCatalog(user, uri, Operation.Append, Operation.Checksum, Operation.PopulateStats);
+        return catalog;
+
     }
 
     private Boolean checkObjectExists(final String table, final String column, final String primaryKey) {
@@ -1073,7 +1168,7 @@ public class DefaultCatalogService implements CatalogService {
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
         final Cache.ValueWrapper cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
         if (cached == null) {
-            final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
+            final File cacheFile = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
             if (cacheFile.exists()) {
                 final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile);
                 if (catalog != null) {
@@ -1094,7 +1189,7 @@ public class DefaultCatalogService implements CatalogService {
 
     private void storeToCache(final UserI user, final CatCatalogBean catalog) {
         final String catalogId = catalog.getId();
-        final File   file      = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
+        final File   file      = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
         file.getParentFile().mkdirs();
 
         try {
@@ -1220,16 +1315,18 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
-        Long totalSize              = 0L;
-        Long resourcesOfUnknownSize = 0L;
         if (StringUtils.isBlank(session)) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
         }
+
         // If there's any one of these that is null or has no value, that should
         // filter out everything, so don't even bother with the whole exercise.
         if (isAnyBlankList(scanTypes, scanFormats)) {
             return null;
         }
+
+        final AtomicLong totalSize              = new AtomicLong();
+        final AtomicLong resourcesOfUnknownSize = new AtomicLong();
 
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId("RAW");
@@ -1262,9 +1359,9 @@ public class DefaultCatalogService implements CatalogService {
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
                 if (scanSize != null) {
-                    totalSize += scanSize;
+                    totalSize.getAndAdd(scanSize);
                 } else {
-                    resourcesOfUnknownSize++;
+                    resourcesOfUnknownSize.getAndIncrement();
                 }
             }
         } catch (UnsupportedEncodingException ignored) {
@@ -1273,10 +1370,10 @@ public class DefaultCatalogService implements CatalogService {
         if (catalog.getEntries_entry().isEmpty()) {
             return null;
         } else {
-            HashMap<String, Object> catalogAndSize = new HashMap<>();
+            final Map<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
-            catalogAndSize.put("size", totalSize);
-            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            catalogAndSize.put("size", totalSize.longValue());
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize.longValue());
             return catalogAndSize;
         }
     }
@@ -1285,10 +1382,6 @@ public class DefaultCatalogService implements CatalogService {
         if (resources == null || resources.isEmpty()) {
             return null;
         }
-        Long                 totalSize              = 0L;
-        Long                 resourcesOfUnknownSize = 0L;
-        final CatCatalogBean catalog                = new CatCatalogBean();
-        catalog.setId(StringUtils.upperCase(type));
 
         // Limit the resource URIs to those associated with the current session.
         final MapSqlParameterSource parameters = new MapSqlParameterSource();
@@ -1298,6 +1391,12 @@ public class DefaultCatalogService implements CatalogService {
         if (existing.isEmpty()) {
             return null;
         }
+
+        final AtomicLong totalSize              = new AtomicLong();
+        final AtomicLong resourcesOfUnknownSize = new AtomicLong();
+
+        final CatCatalogBean catalog = new CatCatalogBean();
+        catalog.setId(StringUtils.upperCase(type));
 
         for (final Map<String, Object> resourceMap : existing) {
             try {
@@ -1310,9 +1409,9 @@ public class DefaultCatalogService implements CatalogService {
                 log.debug("Created resource entry for project {} session {} resource {} of type {} with name {}: {}", project, session, resourceString, type, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
                 if (resourceSize != null) {
-                    totalSize += resourceSize;
+                    totalSize.getAndAdd(resourceSize);
                 } else {
-                    resourcesOfUnknownSize++;
+                    resourcesOfUnknownSize.getAndIncrement();
                 }
             } catch (UnsupportedEncodingException ignored) {
                 //
@@ -1321,10 +1420,10 @@ public class DefaultCatalogService implements CatalogService {
         if (catalog.getEntries_entry().isEmpty()) {
             return null;
         } else {
-            HashMap<String, Object> catalogAndSize = new HashMap<>();
+            final Map<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
-            catalogAndSize.put("size", totalSize);
-            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            catalogAndSize.put("size", totalSize.longValue());
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize.longValue());
             return catalogAndSize;
         }
     }
@@ -1333,9 +1432,11 @@ public class DefaultCatalogService implements CatalogService {
         if ((assessorTypes == null) || assessorTypes.isEmpty()) {
             return null;
         }
-        Long                 totalSize              = 0L;
-        Long                 resourcesOfUnknownSize = 0L;
-        final CatCatalogBean catalog                = new CatCatalogBean();
+
+        final AtomicLong totalSize              = new AtomicLong();
+        final AtomicLong resourcesOfUnknownSize = new AtomicLong();
+
+        final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(StringUtils.upperCase("assessors"));
 
         // Limit the resource URIs to those associated with the current session.
@@ -1361,9 +1462,9 @@ public class DefaultCatalogService implements CatalogService {
                         log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
                         catalog.addEntries_entry(entry);
                         if (scanSize != null) {
-                            totalSize += scanSize;
+                            totalSize.getAndAdd(scanSize);
                         } else {
-                            resourcesOfUnknownSize++;
+                            resourcesOfUnknownSize.getAndIncrement();
                         }
                     }
                 } catch (Exception e) {
@@ -1378,8 +1479,8 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             HashMap<String, Object> catalogAndSize = new HashMap<>();
             catalogAndSize.put("catalog", catalog);
-            catalogAndSize.put("size", totalSize);
-            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize);
+            catalogAndSize.put("size", totalSize.longValue());
+            catalogAndSize.put("resourcesOfUnknownSize", resourcesOfUnknownSize.longValue());
             return catalogAndSize;
         }
     }
@@ -1436,14 +1537,8 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         // If ANY of the operations are All, give them all as well.
-        for (final Operation operation : operations) {
-            if (operation == Operation.All) {
-                return Operation.ALL;
-            }
-        }
-
         // If All isn't specified, just return a list of the actual values.
-        return operations;
+        return Iterables.contains(operations, Operation.All) ? Operation.ALL : operations;
     }
 
     private static final String CATALOG_FORMAT           = "%s-%s";
@@ -1571,8 +1666,15 @@ public class DefaultCatalogService implements CatalogService {
                                                                             "  xme.element_name IN (:assessorTypes) AND " +
                                                                             "  session.id = :sessionId ";
 
-    private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
+    private static final Map<String, String> EMPTY_MAP   = ImmutableMap.of();
+    private static final Predicate<File>     FILE_EXISTS = new Predicate<File>() {
+        @Override
+        public boolean apply(@Nullable final File file) {
+            return file != null && file.exists() && file.isFile();
+        }
+    };
 
     private final NamedParameterJdbcTemplate _parameterized;
     private final Cache                      _cache;
+    private final UserDataCache              _userDataCache;
 }

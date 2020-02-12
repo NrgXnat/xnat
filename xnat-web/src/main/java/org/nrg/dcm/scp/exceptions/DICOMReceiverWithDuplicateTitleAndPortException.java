@@ -9,38 +9,52 @@
 
 package org.nrg.dcm.scp.exceptions;
 
+import static org.nrg.dcm.scp.DicomSCPInstance.formatDicomSCPInstanceKey;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.Nonnull;
+
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.dcm.scp.DicomSCPInstance;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
-import org.springframework.http.HttpStatus;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-
-@ResponseStatus(HttpStatus.BAD_REQUEST)
+@ResponseStatus(BAD_REQUEST)
 @Getter
 @Accessors(prefix = "_")
-public class DICOMReceiverWithDuplicateTitleAndPortException extends NrgServiceException {
+public class DICOMReceiverWithDuplicateTitleAndPortException extends DICOMReceiverWithDuplicatePropertiesException {
     public DICOMReceiverWithDuplicateTitleAndPortException(@Nonnull final String aeTitle, @Nonnull final Integer port) {
-        super(NrgServiceError.AlreadyInitialized);
-        _duplicates.add(new ImmutablePair<>(aeTitle, port));
+        this(Collections.singletonList(Pair.of(aeTitle, port)));
     }
 
     public DICOMReceiverWithDuplicateTitleAndPortException(@Nonnull final DicomSCPInstance instance) {
         this(instance.getAeTitle(), instance.getPort());
     }
 
-    public DICOMReceiverWithDuplicateTitleAndPortException(@Nonnull final List<DICOMReceiverWithDuplicateTitleAndPortException> exceptions) {
-        super(NrgServiceError.AlreadyInitialized);
-        for (final DICOMReceiverWithDuplicateTitleAndPortException exception : exceptions) {
-            _duplicates.addAll(exception.getDuplicates());
+    public DICOMReceiverWithDuplicateTitleAndPortException(@Nonnull final List<Pair<String, Integer>> duplicates) {
+        if (duplicates.isEmpty()) {
+            throw new NrgServiceRuntimeException("Can't create an instance of this class from an empty list.");
         }
+        _duplicates.addAll(duplicates);
+    }
+
+    @SuppressWarnings("unused")
+    public static DICOMReceiverWithDuplicateTitleAndPortException fromExceptionList(@Nonnull final List<DICOMReceiverWithDuplicateTitleAndPortException> exceptions) {
+        return new DICOMReceiverWithDuplicateTitleAndPortException(Lists.newArrayList(Iterables.concat(Lists.transform(exceptions, new Function<DICOMReceiverWithDuplicateTitleAndPortException, List<Pair<String, Integer>>>() {
+            @Override
+            public List<Pair<String, Integer>> apply(final DICOMReceiverWithDuplicateTitleAndPortException exception) {
+                return exception.getDuplicates();
+            }
+        }))));
     }
 
     public String getAeTitle() {
@@ -53,7 +67,7 @@ public class DICOMReceiverWithDuplicateTitleAndPortException extends NrgServiceE
 
     @Override
     public String toString() {
-        return "Tried to create or update a DICOM SCP receiver with the title and port " + getAeTitle() + ":" + getPort() + ", but a receiver with the same title and port already exists.";
+        return "Tried to create or update a DICOM SCP receiver with the title and port " + formatDicomSCPInstanceKey(getAeTitle(), getPort()) + ", but a receiver with the same title and port already exists.";
     }
 
     private final List<Pair<String, Integer>> _duplicates = new ArrayList<>();

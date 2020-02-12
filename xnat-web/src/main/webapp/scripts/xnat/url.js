@@ -100,18 +100,21 @@ var XNAT = getObject(XNAT||{});
     };
 
     url.fullUrl = function(_url){
-        if (window.location.origin) {
-            return window.location.origin + rootUrl(_url);
-        }
-        return url.getProtocol() + '//' + url.getDomain() + url.getPort(':') + rootUrl(_url);
+        return window.location.origin ? window.location.origin + rootUrl(_url) : urlWithProtocol(url.getProtocol(), _url);
     };
 
     // use this to generate a download protocol for the XNAT Desktop Client
     function xnatUrl(_url){
-        var xprotocol = (url.getProtocol() === 'https:') ? 'xnats:' : 'xnat:';
-        return xprotocol + '//' + url.getDomain() + rootUrl(_url);
+        return urlWithProtocol(url.getProtocol() === 'https:' ? 'xnats:' : 'xnat:', _url);
     }
     url.xnatUrl = xnatUrl;
+
+    function urlWithProtocol(protocol, path) {
+        // Create URL object then convert back to string. This handles converting https://domain:443 to https://domain
+        // and http://domain:80 to http://domain (i.e. eliminating explicit inclusion of default port for protocol).
+        return new URL(protocol + '//' + url.getDomain() + url.getPort(':') + rootUrl(path)).toString()
+    }
+    url.urlWithProtocol = urlWithProtocol;
 
     // better encodeURIComponent() that catches
     // these additional characters: !'()*

@@ -142,8 +142,8 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 						return;
 						}
 						//IS NEW
-						if(sub.getId()==null || sub.getId().equals("")){
-						sub.setId(XnatSubjectdata.CreateNewID());
+						if(StringUtils.isBlank(sub.getId())){
+							sub.setId(XnatSubjectdata.CreateNewID());
 						}
 					}else{
 					this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Subject already exists.");

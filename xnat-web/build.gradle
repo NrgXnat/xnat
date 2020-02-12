@@ -8,7 +8,7 @@
  */
 buildscript {
     ext {
-        vXnat = "1.8.0-eventservice-SNAPSHOT"
+        vXnat = "1.7.7-ML-SNAPSHOT"
     }
     repositories {
         mavenLocal()

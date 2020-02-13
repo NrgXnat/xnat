@@ -361,7 +361,7 @@ public class UserGroup implements UserGroupI {
         if (features != null) {
             for (final GroupFeature feature : features) {
                 if (feature.isBlocked()) {
-                    addFeature(feature.getFeature());
+                    addBlockedFeature(feature.getFeature());
                 } else if (feature.isOnByDefault()) {
                     addFeature(feature.getFeature());
                 }

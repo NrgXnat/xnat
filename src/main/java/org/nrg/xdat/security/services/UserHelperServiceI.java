@@ -73,6 +73,10 @@ public abstract class UserHelperServiceI {
     public boolean canCreate(String xmlPath, Object value) throws Exception{
         return Permissions.canCreate(getUser(), xmlPath, value);
     }
+    
+    public boolean canRead(String rootElement){
+    	return Permissions.canAny(getUser(), rootElement, SecurityManager.READ);
+    }
 
 	public boolean canRead(ItemI item) throws Exception{
 		return Permissions.canRead(getUser(), item);

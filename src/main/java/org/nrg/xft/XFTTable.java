@@ -186,7 +186,17 @@ public class XFTTable implements XFTTableI {
     public void insertRowItems(Object... items) {
         insertRow(items);
     }
-
+    
+    /**
+     * Inserts row into table and increments row counter.
+     * @param row of Objects
+     */
+    public void insertRows(Collection<Object[]> rows)
+    {
+        for(Object[] row:rows){
+            insertRow(row);
+        }
+    }
     /**
      * Inserts row into table and increments row counter.
      *

@@ -12,6 +12,7 @@ package org.nrg.xdat.schema;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.*;
@@ -67,6 +68,25 @@ public class SchemaElement implements SchemaElementI {
 	public String getSQLMultiViewName()
 	{
 	    return element.getMultiViewName();
+	}
+
+	/**
+	 * Return the org.nrg.xdat.om class that corresponds to this schema element
+	 * @return the class
+	 * @throws ClassNotFoundException if no java class corresponds to this element
+	 */
+	public Class<?> getCorrespondingJavaClass() throws ClassNotFoundException {
+		return Class.forName("org.nrg.xdat.om." + XftStringUtils.FormatStringToClassName(element.getFullXMLName()));
+	}
+
+	/**
+	 * Return the org.nrg.xdat.bean class that corresponds to this schema element
+	 * @return the class
+	 * @throws ClassNotFoundException if no java bean class corresponds to this element
+	 */
+	public Class<?> getCorrespondingJavaBeanClass() throws ClassNotFoundException {
+		return Class.forName("org.nrg.xdat.bean." +
+				XftStringUtils.FormatStringToClassName(element.getFullXMLName()) + "Bean");
 	}
 
 	public String toString()

@@ -246,10 +246,10 @@ public class CatalogUtils {
             final List<String> projects = template.query(QUERY_PROJECT_FROM_RESOURCE,
                     new MapSqlParameterSource("abstractResourceId", id), RESOURCE_PROJECT_ROW_MAPPER);
             if (projects.isEmpty()) {
-                log.error("No projects associated with resource {}", catRes);
+                log.warn("No projects associated with resource {}", catRes);
                 return null;
             } else if (projects.size() > 1) {
-                log.error("Multiple projects associated with resource id={}: {}. Using the first...", id, projects);
+                log.warn("Multiple projects associated with resource id={}: {}. Using the first...", id, projects);
             }
             return projects.get(0);
         }

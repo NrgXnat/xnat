@@ -16,14 +16,18 @@
         <!-- Sequence: 10 -->
     </ul>
 </li>
-<li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All $!displayManager.getPluralDisplayNameForProject()</a>
-    <ul id="browse-projects" class="shadowed dark-shadow">
-        <!-- Sequence: 11 -->
-        #if($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation)
-            <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
-        #end
-    </ul>
-</li>
+
+#if($siteConfig.securityAllowNonPrivateProjects || $turbineUtils.isSiteAdmin($user))
+    <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All $!displayManager.getPluralDisplayNameForProject()</a>
+        <ul id="browse-projects" class="shadowed dark-shadow">
+            <!-- Sequence: 11 -->
+            #if($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation)
+                <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
+            #end
+        </ul>
+    </li>
+#end
+
 <li class="hidden"><a href="#!" class="nolink">Favorite $!displayManager.getPluralDisplayNameForProject()</a>
     <ul id="favorite-projects">
         <!-- Sequence: 20 -->

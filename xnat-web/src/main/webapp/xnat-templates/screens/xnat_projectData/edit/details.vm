@@ -1,3 +1,10 @@
+#* @vtlvariable name="arcP" type="org.nrg.xdat.om.ArcProject" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="parentTemplate" type="java.lang.String" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
 ## YAML for spawning project details
 <script id="project-data-form" type="text/yaml">
 
@@ -109,7 +116,7 @@
                 ##<input class="abbreviation" id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")">
                 ##<p class="project-id">$item.getProperty("xnat:projectData/ID")</p>
             #else
-                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="14" maxlength="14" onchange="this.value=stringCamelCaps(this.value);">
+                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="14" maxlength="32" onchange="this.value=stringCamelCaps(this.value);">
             #end
             <div class="requirementStatement">
                 <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the database and <b>cannot be changed.</b></span>
@@ -190,9 +197,7 @@
         #end
 
         var investigators = XNAT.app.investigators = getObject(XNAT.app.investigators);
-        var projectID = XNAT.data.context.projectID;
-
-        investigators.project = projectID;
+        investigators.project = XNAT.data.context.projectID;
         investigators.primary = null;
         investigators.others = [];
         investigators.count = 0;
@@ -205,9 +210,9 @@
 
 //        window.other_investigators = new Array();
 
-        #set ($investigators = $om.getInvestigators_investigator())
-        #foreach($inv in $investigators)
-            #if (!$inv.getXnatInvestigatordataId.equals($primaryInv))
+        #set ($primaryInv = $!om.getProperty("pi_xnat_investigatordata_id"))
+        #foreach($inv in $om.investigators_investigator)
+            #if (!$inv.xnatInvestigatordataId.equals($primaryInv))
                 investigators.others.push('$inv.getXnatInvestigatordataId()');
                 //window.other_investigators.push("$inv.getXnatInvestigatordataId()");
             #end
@@ -220,7 +225,7 @@
     })();
 
     function stringCamelCaps(val) {
-        if (val == "")return "";
+        if (val === "")return "";
         var temp = val;
         var regex = /^[0-9A-Za-z_-]+$/g;
         if (!(regex.test(temp))) {
@@ -230,7 +235,7 @@
         var newVal = '';
         temp = temp.split(' ');
         for (var c = 0; c < temp.length; c++) {
-            if (c == 0)
+            if (c === 0)
                 newVal += temp[c].substring(0, 1) +
                     temp[c].substring(1, temp[c].length);
             else
@@ -248,7 +253,6 @@
     (function(){
 
         var investigators = XNAT.app.investigators = getObject(XNAT.app.investigators);
-        var projectID = XNAT.data.context.projectID;
 
         // existing container for ALL investigator elements
         var iBox = $('#investigatorBox');

@@ -20,6 +20,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -143,35 +144,15 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
     static void logFailedAttempt(final String username, final HttpServletRequest request) {
         if (!StringUtils.isBlank(username)) {
-            final Integer uid = retrieveUserId(username);
-            if (uid != null) {
-                try {
-                    Users.recordUserLogin(request);
-                } catch (Exception exception) {
-                    log.error("An exception occurred trying to log a failed login attempt for the user {}", username, exception);
-                }
+            try {
+                 UserI user = Users.getUser(username);
+                 Users.recordFailedUserLogin(user,request);
+            }catch(UserNotFoundException unfe) { 
+                /** If the user isn't found in the system don't log anything. **/
+            }catch(Exception e ) {
+                log.error("An exception occurred trying to log a failed login attempt for the user {}", username, e);
             }
             AccessLogger.LogServiceAccess(username, request, "Authentication", "FAILED");
-        }
-    }
-
-    private static Integer retrieveUserId(final String username) {
-        if (StringUtils.isBlank(username)) {
-            return null;
-        }
-
-        if (checked.containsKey(username)) {
-            return checked.get(username);
-        }
-
-        synchronized (checked) {
-            final Integer userId = Users.getUserId(username);
-            if (userId == null) {
-                return null;
-            }
-
-            checked.put(username, userId);
-            return userId;
         }
     }
 

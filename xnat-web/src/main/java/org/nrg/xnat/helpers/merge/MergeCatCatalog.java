@@ -46,24 +46,31 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
     final boolean overwrite;
     final EventMetaI ci;
     final File destCatFile;
+    final String destProject;
 
-    public MergeCatCatalog(final CatCatalogI src, final CatCatalogI dest, final boolean overwrite, final EventMetaI ci, final File destCatFile) {
+    public MergeCatCatalog(final CatCatalogI src, final CatCatalogI dest, final boolean overwrite, final EventMetaI ci,
+                           final File destCatFile, String destProject) {
         this.src = src;
         this.dest = dest;
         this.overwrite = overwrite;
         this.ci = ci;
         this.destCatFile = destCatFile;
+        this.destProject = destProject;
     }
 
     public MergeSessionsA.Results<Boolean> call() throws Exception {
-        return merge(src, dest, overwrite, ci, destCatFile);
+        return merge(src, dest, overwrite, ci, destCatFile, destProject);
     }
 
-    private static MergeSessionsA.Results<Boolean> merge(final CatCatalogI src, final CatCatalogI dest, final boolean overwrite, final EventMetaI ci, final File destCatFile) throws Exception {
+    private static MergeSessionsA.Results<Boolean> merge(final CatCatalogI src, final CatCatalogI dest,
+                                                         final boolean overwrite, final EventMetaI ci,
+                                                         final File destCatFile, final String destProject)
+            throws Exception {
+
         boolean merge = false;
         MergeSessionsA.Results<Boolean> result = new MergeSessionsA.Results<Boolean>();
         for (final CatCatalogI subCat : src.getSets_entryset()) {
-            final MergeSessionsA.Results<Boolean> r = merge(subCat, dest, overwrite, ci, destCatFile);
+            final MergeSessionsA.Results<Boolean> r = merge(subCat, dest, overwrite, ci, destCatFile, destProject);
             if (r.result) {
                 merge = true;
             }
@@ -94,8 +101,11 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
                     result.getAfter().add(new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            File f = FileUtils.BuildHistoryFile(CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath()), EventUtils.getTimestamp(ci));
-                            CatalogUtils.addCatHistoryEntry(destCatFile, f.getAbsolutePath(), (CatEntryBean) entry, ci);
+                            File destFile = CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath(), destProject);
+                            if (destFile != null) {
+                                File f = FileUtils.BuildHistoryFile(destFile, EventUtils.getTimestamp(ci));
+                                CatalogUtils.addCatHistoryEntry(destCatFile, destProject, f.getAbsolutePath(), (CatEntryBean) entry, ci);
+                            }
                             return true;
                         }
                     });

@@ -31,7 +31,7 @@ public class FullFileHistoryBuilder extends FileHistoryBuilderAbst implements Fl
 		
 		
 	public List<FlattenedItemI> handleCatFile(File catFile,boolean isHistory,Callable<Integer> idGenerator, List<FlattenedItemA.ItemObject> parents) throws Exception{
-		final CatCatalogBean cat = CatalogUtils.getCatalog(catFile);
+		final CatCatalogBean cat = CatalogUtils.getCatalog(catFile, null);
 		
 		List<FlattenedItemI> files=new ArrayList<FlattenedItemI>();
 		

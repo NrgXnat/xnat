@@ -283,6 +283,23 @@ checksums:
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
         overhead to the archive process.
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
+    name: uiShowPrearchiveFileActions
+    label: Show preachive file actions?
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
+        This is a useful feature, but can be disabled for backwards compatibility.
+        
+triagePath:
+    kind: panel.input.text
+    name: triagePath
+    label: Quarantine Location
+    validation: required onblur
+    description: "Location of XNAT Quarantine."
+    
 #checksumsPropertyChangedListener:
 #    kind: panel.input.text
 #    id: checksumsPropertyChangedListener
@@ -1274,6 +1291,7 @@ petTracers:
             name: sitewidePetTracers
             label: "Pet Tracers"
             code: text
+            validation: max-length:1000
             description: >
                 This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
 
@@ -1407,9 +1425,11 @@ fileSystem:
         ${ftpPath}
         ${buildPath}
         ${pipelinePath}
+        ${triagePath}
         ${inboxPath}
         ${zipExtensions}
         ${checksums}
+        ${uiShowPrearchiveFileActions}
 asyncOperations:
     kind: panel.form
     name: asyncOperations
@@ -1468,6 +1488,20 @@ setScanTypeMapping:
         scanTypeMapping:
             kind: panel.input.switchbox
             label: Scan Type Mapping?
+            onText: Enabled
+            offText: Disabled
+            
+manualQC:
+    kind: panel.form
+    label: Manual QC
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiShowAddManualQCAction:
+            kind: panel.input.switchbox
+            label: Manual QC Actions Menu Item
+            description: Show "Add QC Entry" in the image session actions menu?
             onText: Enabled
             offText: Disabled
 
@@ -1657,6 +1691,7 @@ root:
             label: Miscellaneous
             contents:
                 ${setScanTypeMapping}
+                ${manualQC}
                 ${developmentUtilities}
 
 

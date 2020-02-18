@@ -15,6 +15,7 @@ package org.nrg.xnat.restlet.resources.prearchive;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
+import org.nrg.action.ServerException;
 import org.nrg.dcm.Dcm2Jpg;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
@@ -85,14 +86,24 @@ public class PrearcSessionResourceFiles extends PrearcScanResourceList {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 			return null;
 		}
+
+		final String project = info.session.getProject();
+		final CatalogUtils.CatalogData catalogData;
+		try {
+			catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(info.session.getPrearchivepath(), res, false, project
+            );
+		} catch (ServerException e) {
+			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+			return null;
+		}
+
+		final String rootPath = catalogData.catPath;
+		final CatCatalogI catalog = catalogData.catBean;
 		
-		final String rootPath=CatalogUtils.getCatalogFile(info.session.getPrearchivepath(), ((XnatResourcecatalogI)res)).getParentFile().getAbsolutePath();
-		
-		final CatCatalogI catalog=CatalogUtils.getCleanCatalog(info.session.getPrearchivepath(), res, false);
-		
-		if(StringUtils.isNotEmpty(filepath)){
-			final CatEntryI entry=CatalogUtils.getEntryByURI(catalog, filepath);
-			File f= CatalogUtils.getFile(entry, rootPath);
+		if (StringUtils.isNotEmpty(filepath)) {
+			final CatEntryI entry = CatalogUtils.getEntryByURI(catalog, filepath);
+			File f = CatalogUtils.getFile(entry, rootPath, project);
+			if (f == null) return null;
 			
             if (mt.equals(MediaType.IMAGE_JPEG) && StringUtils.equals(resource_id, "DICOM") && Dcm2Jpg.isDicom(f)) {
                 try {
@@ -110,7 +121,8 @@ public class PrearcSessionResourceFiles extends PrearcScanResourceList {
 			final XFTTable table=new XFTTable();
 	        table.initTable(columns);
 	        for (final CatEntryI entry: CatalogUtils.getEntriesByFilter(catalog,null)) {
-	        	File f=CatalogUtils.getFile(entry, rootPath);
+	        	File f = CatalogUtils.getFile(entry, rootPath, project);
+	        	if (f == null) continue;
 	        	Object[] oarray = new Object[] { f.getName(), (prettyPrint)?CatalogUtils.formatSize(f.length()):f.length(), constructURI(entry.getUri())};
 	        	table.insertRow(oarray);
 	        }

@@ -7,19 +7,26 @@ $page.setVlinkColor($ui.vlink)
 #set($days = [ 1..31 ])
 #set($years = [ $!turbineUtils.getYear()..1900])
 #if ($data.getParameters().getString("popup"))
-    #set ($popup = $data.getParameters().getString("popup") )
+	#set ($popup = "true")
 #else
     #set ($popup = "false")
 #end
+
 <form ID="form1" name="form1" method="post" action="$link.setAction("ModifyScanTypes")">
 
     <table width="100%">
         <TR>
             <TD align="left" valign="middle">
-                <DIV class="edit_title">Scan Type Cleanup
-                    #if($om.getProperty("id"))
-                        for $om.getProperty("id")
-                    #end</DIV>
+#if($queryResults.rows().isEmpty())
+                <div class="edit_title">No Scan Types available for cleanup</div>
+            </td>
+        </tr>
+#else
+                    <DIV class="edit_title">Scan Type Cleanup
+                        #if($om.getProperty("id"))
+                            for $om.getProperty("id")
+                        #end</DIV>
+                    
             </TD>
         </TR>
     </TABLE>
@@ -71,5 +78,6 @@ $page.setVlinkColor($ui.vlink)
         <tr>
             <td><input type="submit" name="eventSubmit_doInsert" value="Submit"/></td>
         </tr>
+#end
     </table>
 </form>

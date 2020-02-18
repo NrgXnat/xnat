@@ -9,6 +9,7 @@
 
 ##Section of Manage tab that starts the Project Resource Configuration dialog
 <!-- Sequence: 100 -->
+#if($user.checkFeature($om,"configurable_resource_uploader"))
 #if($data.getSession().getAttribute("userHelper").canCreate($project))
 <h3>Project Resource Settings</h3>
 <div>
@@ -51,6 +52,11 @@
 		<script type="text/javascript" src="$content.getURI("scripts/project/projResourceMgmt.js")"></script>
         <script>
             XNAT.app.pResources.id='$om.getId()';
+            #if($siteConfig.getBooleanValue("uiHideResourceUploaderScripts"))
+                XNAT.app.pResources.allowAutomationScripts=false;
+            #else
+                XNAT.app.pResources.allowAutomationScripts=true;
+            #end
         </script>
         <style>
             #pResource_settings_dialog_mask {
@@ -192,4 +198,5 @@
 
         </style>
 </div>
+#end
 #end

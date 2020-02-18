@@ -60,7 +60,7 @@ function FileViewer(_obj){
 
 	this.handleFailure=function() {
         if (!window.leaving) {
-            closeModalPanel("refresh_file");
+            XNAT.ui.dialog.close("refresh_file");
             xmodal.message('File Viewer', "Error loading files");
         }
 	};
@@ -124,15 +124,13 @@ function FileViewer(_obj){
                 _this.refreshCatalogs("file");
             },
             failure: function (o) {
-                closeModalPanel("file");
+                XNAT.ui.dialog.close("file");
                 displayError("ERROR " + o.status + ": Failed to delete file.");
             },
             cache: false, // Turn off caching for IE
             scope: this
         };
-
-        openModalPanel("file", "Deleting '" + container.item.file_name + "'");
-
+        XNAT.ui.dialog.static.wait("Deleting '" + container.item.file_name + "'",{id: "file"});
         var params = "";
         params += "event_reason=" + event_reason;
         params += "&event_type=WEB_FORM";
@@ -199,14 +197,14 @@ function FileViewer(_obj){
                 _this.refreshCatalogs("file");
             },
             failure: function (o) {
-                closeModalPanel("file");
+                XNAT.ui.dialog.close("file");
                 displayError("ERROR " + o.status + ": Failed to delete file.");
             },
             cache: false, // Turn off caching for IE
             scope: this
         };
 
-        openModalPanel("file","Deleting resource '" + container.item.reconId +"'");
+        XNAT.ui.dialog.static.wait("Deleting resource '" + container.item.reconId +"'",{id:"file"});
 	    
 	   var params="";		
 	   params+="event_reason="+event_reason;
@@ -275,7 +273,7 @@ function FileViewer(_obj){
 			},
 			failure:function(o){
                 if (!window.leaving) {
-                    closeModalPanel("file");
+                    XNAT.ui.dialog.close("file");
                     displayError("ERROR " + o.status+ ": Failed to delete file.");
                 }
 			},
@@ -285,7 +283,7 @@ function FileViewer(_obj){
 
        window.viewer.requiresRefresh = true;
 		
-		openModalPanel("file","Deleting folder '" + container.item.file_name +"'");
+		XNAT.ui.dialog.static.wait("Deleting folder '" + container.item.file_name +"'",{id:"file"});
 		var params="";		
 		params+="event_reason="+event_reason;
 		params+="&event_type=WEB_FORM";
@@ -322,7 +320,7 @@ function FileViewer(_obj){
    };
    
    this.processCatalogs=function(o){
-   		closeModalPanel("catalogs");
+   		XNAT.ui.dialog.close("catalogs");
    		this.clearCatalogs();
    		
     	var catalogs= eval("(" + o.responseText +")").ResultSet.Result;
@@ -350,15 +348,15 @@ function FileViewer(_obj){
    };
    
    this.resetCounts=function(){
-        for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
-            var scans=this.obj.categories[this.obj.categories.ids[catC]];
-   			scans=null;
-   		}
-    };
+       for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
+           var scans=this.obj.categories[this.obj.categories.ids[catC]];
+               scans=null;
+       }
+   };
    
    this.refreshCatalogs=function(msg_id){
-		closeModalPanel(msg_id);
-		openModalPanel("catalogs","Refreshing Catalog Information");
+	   	XNAT.ui.dialog.close(msg_id);
+		XNAT.ui.dialog.static.wait("Refreshing Catalog Information",{id:"catalogs"});
 		var catCallback={
 			success:this.processCatalogs,
 			failure:this.handleFailure,
@@ -373,7 +371,7 @@ function FileViewer(_obj){
 	this.render=function(){
 		if(this.loading==0){
 			this.requestRender=true;
-			openModalPanel("catalogs","Loading File Summaries");
+			XNAT.ui.dialog.static.wait("Loading File Summaries",{id:"catalogs"});
 			this.init();
 		}else if(this.loading==1){
 			//in process
@@ -628,7 +626,7 @@ function FileViewer(_obj){
                 xmodal.message({
                     title: _this.obj.objectId + ' Refreshed',
                     content: 'The aggregate file count and size values have been updated for your ' +
-                             _this.obj.objectType + '. Click OK to reload the page.',
+                    ((_this.obj.objectType==undefined)?"item":_this.obj.objectType) + '. Click OK to reload the page.',
                     action: function() { window.location.reload() }
                 });
             },
@@ -984,6 +982,9 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 
                 if(sp == splitPath.length - 1){
                     var filename = splitPath[sp];
+                    if (file.Name) {
+                        filename = file.Name;
+                    }
                     filename=filename.split(".").join(".&shy;");
                     filename=filename.split("_").join("_&shy;");
                     var _html="<a target='_blank' onclick=\"location.href='" +serverRoot + file.URI + "';\">" + filename + "</a>";
@@ -1152,9 +1153,9 @@ function UploadFileForm(_obj){
 							coll_select.options[coll_select.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 						}
 	   	  			}
-						if(coll_select.options.length==0){
-							coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
-						}
+					//	if(coll_select.options.length==0){
+					//		coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
+					//	}
 	   	  		}else{
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
@@ -1269,9 +1270,9 @@ function UploadFileForm(_obj){
 					input.options[input.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 				}
 			}
-				if(input.options.length==0){
-					input.options[input.options.length]=new Option("NO LABEL","");
-				}
+			//	if(input.options.length==0){
+			//		input.options[input.options.length]=new Option("NO LABEL","");
+			//	}
    	  }
    	  
 //   	  div.appendChild(document.createElement("br"));
@@ -1475,6 +1476,12 @@ function UploadFileForm(_obj){
 		if(file_name > ''){
 			file_dest +="/"+ file_name;
 		}
+		
+		if((file_name != "" ? file_name : $("#local_file").val()).match(/[%#{}]/g)){
+			xmodal.message('File Viewer', "The filename contains invalid characters ('%' and '#' and '{}' are not allowed). Please rename file and try again.");
+			return;
+		}
+
 		
 		if(document.getElementById("local_file").value.endsWith(".zip")
 		  || document.getElementById("local_file").value.endsWith(".gz")
@@ -1807,12 +1814,12 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
 
     var callback = {
         upload: function (response) {
-            XNAT.app.maintainLogin = false;
+			XNAT.app.timeout.maintainLogin = false;
             window.viewer.requiresRefresh = true;
             window.viewer.refreshCatalogs("add_file");
             this.cancel();
             // CNDA-497: Filtered out <pre> text, which is sent on successful completion (i.e. no message)
-            if (response.responseText && !response.responseText.match(/^<pre.*?><\/pre>$/)) {
+            if (response.responseText && !response.responseText.toLowerCase().match(/^<pre.*?><\/pre>$/)) {
                 try {
                     var parsedResponse = YAHOO.lang.JSON.parse(response.responseText);
                     if (parsedResponse.duplicates) {
@@ -1841,14 +1848,14 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
             }
         },
         failure: function (obj1) {
-            XNAT.app.maintainLogin = false;
+			XNAT.app.timeout.maintainLogin = false;
             xmodal.message('Upload File', obj1.toString());
             this.cancel();
         },
         cache: false, // Turn off caching for IE
         scope: this
     };
-	openModalPanel("add_file", "Uploading File.");
+    XNAT.ui.dialog.static.wait("Uploading File.", {id: "add_file"});
 	
 	var method = 'POST';
 	if(container.file_name > ''){
@@ -1859,7 +1866,7 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
 	var params="&event_reason="+event_reason;
 	params+="&event_type=WEB_FORM";
 	params+="&event_action=File(s) uploaded";
-    XNAT.app.maintainLogin = true;
+	XNAT.app.timeout.maintainLogin = true;
 	YAHOO.util.Connect.asyncRequest(method,container.file_dest+params,callback);
 };
 
@@ -1867,13 +1874,13 @@ XNAT.app._addFolder = function (arg1, arg2, container) {
     var event_reason = (container == undefined || container.dialog == undefined) ? "" : container.dialog.event_reason;
     var callback = {
         success: function (obj1) {
-            closeModalPanel("add_folder");
+            XNAT.ui.dialog.close("add_folder");
             window.viewer.requiresRefresh = true;
             window.viewer.refreshCatalogs("add_folder");
             this.cancel();
         },
         failure: function (obj1) {
-            closeModalPanel("add_folder");
+            XNAT.ui.dialog.close("add_folder");
             if (obj1.status == 409) {
                 xmodal.message('Add Folder Error', 'Specified resource already exists.');
             } else {
@@ -1894,7 +1901,7 @@ XNAT.app._addFolder = function (arg1, arg2, container) {
         cache: false, // Turn off caching for IE
         scope: this
     };
-    openModalPanel("add_folder", "Creating folder.");
+    XNAT.ui.dialog.static.wait( "Creating folder.",{id:"add_folder"});
 
     var params = "&event_reason=" + event_reason;
     params += "&event_type=WEB_FORM";
@@ -1902,11 +1909,3 @@ XNAT.app._addFolder = function (arg1, arg2, container) {
     YAHOO.util.Connect.asyncRequest('PUT', container.file_dest + params, callback);
 };
 
-jq(document).ready(function() {
-    // refresh timeout interval so that the page doesn't lose its session while uploading.
-    setInterval(function(){XNAT.app.renewLogin()},60000);
-});
-
-XNAT.app.renewLogin = function ()  {
-    if (XNAT.app.maintainLogin) {XNAT.app.timeout.handleOk();}
-};

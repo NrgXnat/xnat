@@ -168,6 +168,24 @@
   #end
 #end
 
+#macro (xdatStringBoxWSizeClass $name $item $defaultValue $vr $size $classes)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658</span>
+  #end
+#end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
+    $item.getProperty($name)
+    #else
+    <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$item.getStringProperty($name)"/>
+    #end
+  #else
+  <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$defaultValue"/>
+  #end
+#end
+
 #macro (xdatTextArea $name $item $defaultValue $vr $rows $cols)
 <!-- macro: xdatTextArea -->
   #if ($vr)
@@ -1332,20 +1350,7 @@
   #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
   #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
   #set ($scanSnapshotId = "scan${scan.id}snapshot")
-  <span id="span-$scanSnapshotId"></span>
-  <script>
-      XNAT.xhr.get(XNAT.url.restUrl('/data/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0'))
-              .success(function(data){
-                  $('#span-${scanSnapshotId}').empty().append(
-                      '<a target="_blank" class="scan-original-link" href="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">' +
-                          '<img id="$scanSnapshotId" class="scan-snapshot" data-xnat-src="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")">' +
-                      '</a>'
-                  );
-              })
-              .fail(function(){
-                  $('#span-${scanSnapshotId}').empty().append('No snapshot available');
-              })
-  </script>
+  <span class="span-$scanSnapshotId" data-expt-id="$om.getId()">Loading snapshot</span>
 #end
 
 #macro (elementActions $element $search_field $search_value $user $item $actions)

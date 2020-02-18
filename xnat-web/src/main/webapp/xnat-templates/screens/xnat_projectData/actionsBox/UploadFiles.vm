@@ -1,3 +1,4 @@
+#if($user.checkFeature($om,"configurable_resource_uploader"))
 #if($om.canEdit($user))
  <li id="abu_adl_files_li" class="yuimenuitem">
     <a id="abu_adl_files_a" class="abuLink uploadLink" style="display:block" href="" onclick="return false;" data-type="xnat:projectData" data-uri="$content.getURI("/data/projects/$om.getId()")">Upload Additional Files</a>
@@ -14,4 +15,5 @@
 ##    <script>
 ##		XNAT.app.crConfigs.project='$!om.getId()';
 ##    </script>
+#end
 #end

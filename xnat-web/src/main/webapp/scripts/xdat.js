@@ -809,7 +809,7 @@ function removeAppendedIcon(obj){
 			obj = (document.getElementById(obj));
 		}
 
-		if(obj.appendedIcon!=undefined){
+		if(obj != null && obj.appendedIcon!=undefined){
 			obj.appendedIcon.parentNode.removeChild(obj.appendedIcon);
 			obj.appendedIcon=null;
 		}

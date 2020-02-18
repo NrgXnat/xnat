@@ -63,7 +63,7 @@ import java.util.*;
 
 @Configuration
 @ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat",
-                "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
+                "org.nrg.dicomtools.filters", "org.nrg.resources", "org.nrg.framework.datacache.impl.hibernate",
                 "org.nrg.framework.services.impl", "org.nrg.notify.daos", "org.nrg.prefs.repositories",
                 "org.nrg.xdat.daos", "org.nrg.xdat.security.validators", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xdat.services.cache.impl",
                 "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",

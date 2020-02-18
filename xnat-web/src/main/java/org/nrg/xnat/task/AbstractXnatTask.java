@@ -45,7 +45,11 @@ public abstract class AbstractXnatTask extends AbstractXnatRunnable implements X
         _taskService = taskService;
         _waitForInitialization = waitForInitialization;
         _appInfo = appInfo;
-        _helper = new DatabaseHelper(template);
+        if (template != null) {
+            _helper = new DatabaseHelper(template);
+        } else {
+            _helper = null;
+        }
     }
 
     /**

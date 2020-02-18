@@ -118,9 +118,9 @@ RestSharer = function(_array,_config) {
    			if(oRecord.getData("processed")==1){
    				el.innerHTML="<i class=\"fa fa-check\" style=\"color: darkorange\"></i>";
    			}else if(oRecord.getData("processed")==2){
-   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\"></i>";
+   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\" title=\""+oRecord.getData("xsiType")+" shared\"></i>";
    			}else if(oRecord.getData("processed")==3){
-   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: #c66\"></i>";
+   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: #c66\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
    			}else{
    				el.innerHTML="";
    			}
@@ -130,9 +130,15 @@ RestSharer = function(_array,_config) {
    
   	   this.dt.subscribe("textboxChangeEvent", function(oArgs){   
              var elTextbox = oArgs.target;   
-             var oRecord = this.getRecord(elTextbox); 
+             var oRecord = this.dt.getRecord(elTextbox); 
              oRecord.setData("new_label",elTextbox.value);   
-       });
+             
+             if(oRecord.getData("new_label") != "" && oRecord.getData("processed") == 3 && oRecord.getData("msg") != undefined){
+                     oRecord.setData("msg",undefined);
+                     this.dt.updateCell(oRecord,"processed",undefined);
+                     this.leaveOpen = false;
+             }
+       }.bind(this));
   	   this.dt.subscribe("checkboxClickEvent", function(oArgs){   
              var elCheckbox = oArgs.target;   
              var oRecord = this.getRecord(elCheckbox);   
@@ -157,51 +163,62 @@ RestSharer = function(_array,_config) {
     	
     	for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
     		var oRecord=this.dt.getRecord(rsDtC);
-    		if(oRecord.getData("checked") &&
-    		 (oRecord.getData("processed")==null|| oRecord.getData("processed")==undefined)){
-    			this.dt.updateCell(oRecord,"processed",1);
-    			
-    			shareCB={
-					success:function(o){
-						closeModalPanel("a_share");
-						this.dt.updateCell(o.argument.oRecord,"processed",2);
-						this.process();
-					},
-					failure:function(o){
-						closeModalPanel("a_share");
-						if(o.status!=409){
-						  this.stopped=true;
-						  this.dt.updateCell(o.argument.oRecord,"processed",3);
-                          xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
-						}else{
-							this.dt.updateCell(o.argument.oRecord,"processed",3);
-						  	//alert("Failed to share " + oRecord.getData("label") + ".  \r\n\r\nThis item has either already been shared into this " + XNAT.app.displayNames.singular.project.toLowerCase() + ", or there is already an item in this " + XNAT.app.displayNames.singular.project.toLowerCase() + " with the requested label.");
-						    this.process();
-                        }
-					},
-                    cache:false, // Turn off caching for IE
-					scope:this,
-				    argument:{"oRecord":oRecord}
-				}
-    			processing=true;
-    			openModalPanel("a_share","Sharing data into " + this.config.project.label);
-    			var params="?XNAT_CSRF=" + csrfToken;
-    			params+="&event_reason=standard sharing"
-    			if(oRecord.getData("new_label")!=""){
+    		if(oRecord.getData("checked")){
+    			if(oRecord.getData("new_label")==""){
+    				oRecord.setData("msg","New Label cannot be blank.");
+    				this.dt.updateCell(oRecord,"processed",3);
+    				this.leaveOpen=true;
+    				continue;
+    			}
+    			if(oRecord.getData("processed")==null|| oRecord.getData("processed")==undefined){
+    				this.dt.updateCell(oRecord,"processed",1);
+    				shareCB={
+    					success:function(o){
+    						closeModalPanel("a_share");
+    						this.dt.updateCell(o.argument.oRecord,"processed",2);
+    						this.oncomplete.fire(o.argument.oRecord.getData("new_label"),o.argument.oRecord.getData("xsiType"));
+    						this.process();
+    					},
+    					failure:function(o){
+    						closeModalPanel("a_share");
+    						if(o.status!=409){
+    							this.stopped=true;
+    							this.dt.updateCell(o.argument.oRecord,"processed",3);
+    							xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
+    							this.leaveOpen=true;
+    						}else{
+    							o.argument.oRecord.setData("msg","This item has either already been shared into this " + 
+    																XNAT.app.displayNames.singular.project.toLowerCase() + 
+    																", or there is already an item in this " + 
+    																XNAT.app.displayNames.singular.project.toLowerCase() + 
+    																" with the requested label.");
+    							this.dt.updateCell(o.argument.oRecord,"processed",3);
+    							this.leaveOpen=true;
+    							this.process();
+    						}
+    					},
+    					cache:false, // Turn off caching for IE
+    					scope:this,
+    					argument:{"oRecord":oRecord}
+    				}
+    				processing=true;
+    				openModalPanel("a_share","Sharing data into " + this.config.project.label);
+    				var params="?XNAT_CSRF=" + csrfToken;
+    				params+="&event_reason=standard sharing"
     				params+="&label="+oRecord.getData("new_label");
     				if(oRecord.getData("redirect")!=null){
     					this.new_label=oRecord.getData("new_label");
     				}
+    				YAHOO.util.Connect.asyncRequest('PUT',serverRoot + oRecord.getData("ru") + "/projects/"+ this.config.project.id+ params,shareCB,null,this);
+    				break;
     			}
-    			YAHOO.util.Connect.asyncRequest('PUT',serverRoot + oRecord.getData("ru") + "/projects/"+ this.config.project.id+ params,shareCB,null,this);
-    			break;
     		}
     	}
     	
     	if(!processing){
-    		this.oncomplete.fire(this.new_label);
-//            window.location.reload();
-    		this.popup.destroy();
+    		if(this.leaveOpen==undefined){
+    			this.popup.destroy();
+    		}
     	}
     }
 };

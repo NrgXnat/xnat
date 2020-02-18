@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -22,6 +23,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,6 +87,13 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
+            
+            // Add custom content into the velocity context.
+            // Define new objects of type PostAddProjectContextPopulator to have them injected here.
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
+            for (PostAddProjectContextPopulator p : contextPopulators) {
+                context.put(p.getName(), p.getObject());
+            }
                         
 			if (StringUtils.isBlank(id)) {
 			    context.put("page_title","New " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase());

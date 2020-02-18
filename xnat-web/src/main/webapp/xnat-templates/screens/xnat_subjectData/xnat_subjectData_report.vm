@@ -42,6 +42,9 @@ height:12px;
 width:1px;
 }
 </STYLE>
+
+#addCustomScreens($om.getXSIType() "report/preDetails")
+
 <div ID="subject_summary_module" style="display:none">
  <DIV id="subjectSummary" class="yui-navset">
   <ul class="yui-nav" style="">

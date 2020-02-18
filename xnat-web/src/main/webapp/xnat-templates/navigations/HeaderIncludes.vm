@@ -139,7 +139,7 @@ $navigation.setTemplate("/BaseJS.vm")
     XNAT.app.showLeftBarFavorites = realValue($!siteConfig.uiShowLeftBarFavorites);
     XNAT.app.showLeftBarSearch =  realValue($!siteConfig.uiShowLeftBarSearch);
     XNAT.app.showLeftBarBrowse = realValue($!siteConfig.uiShowLeftBarBrowse);
-
+    
     #if ($project)
         #if ($project.getId())
         window.projectScope = "$!project.getId()";
@@ -245,6 +245,12 @@ $navigation.setTemplate("/BaseJS.vm")
 ##<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar.js"></script>
 <script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.${js}"></script>
 <script src="${SITE_ROOT}/scripts/ezCalendar.${js}"></script>
+
+<!--triage stuff-->
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_delete.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_approve.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_approve.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_delete.js')"></script>
 
 
 ## pull in the XNAT app JavaScript files

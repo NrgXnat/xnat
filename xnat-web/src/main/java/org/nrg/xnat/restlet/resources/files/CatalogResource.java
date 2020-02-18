@@ -20,9 +20,9 @@ import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
@@ -40,6 +40,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -106,11 +107,14 @@ public class CatalogResource extends XNATCatalogTemplate {
                 }
 
                 if (resource.getItem().instanceOf("xnat:resourceCatalog")) {
-                    final CatCatalogBean cat = ((XnatResourcecatalog) resource).getCleanCatalog(proj.getRootArchivePath(), isQueryVariableTrue("includeRootPath"), null, null);
-                    if (cat != null) {
-                        return new BeanRepresentation(cat, MediaType.TEXT_XML);
+                    try {
+                        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(
+                                proj.getRootArchivePath(), ((XnatResourcecatalog) resource), isQueryVariableTrue("includeRootPath"), proj.getId());
+                        return new BeanRepresentation(catalogData.catBean, MediaType.TEXT_XML);
+                    } catch (ServerException e) {
+                        getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog file: " +
+                                e.getMessage());
                     }
-                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog file.");
                 } else {
                     return new ItemXMLRepresentation(resource.getItem(), MediaType.TEXT_XML);
                 }
@@ -279,17 +283,20 @@ public class CatalogResource extends XNATCatalogTemplate {
             }
 
             final List<String> failed = new ArrayList<>();
+            final String archivePath  = proj.getRootArchivePath();
+            final String project      = proj.getId();
             for (final XnatAbstractresource resource : getResources()) {
                 final String              resourceId = getResourceDisplay(resource);
-                final PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, xsiType, securityId, (proj == null) ? null : proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_CATALOG + " " + resourceId));
+                final PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, xsiType, securityId, proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_CATALOG + " " + resourceId));
                 final EventMetaI          meta       = workflow.buildEvent();
 
                 try {
-                    resource.deleteWithBackup(proj.getRootArchivePath(), user, meta);
+                    resource.deleteWithBackup(archivePath, project, user, meta);
                     SaveItemHelper.authorizedRemoveChild(parentItem, xmlPath, resource.getItem(), user, meta);
                     PersistentWorkflowUtils.complete(workflow, meta);
                 } catch (Exception e) {
                     failed.add(getResourceDisplay(resource));
+                    workflow.setDetails(e.getMessage());
                     PersistentWorkflowUtils.fail(workflow, meta);
                 }
             }

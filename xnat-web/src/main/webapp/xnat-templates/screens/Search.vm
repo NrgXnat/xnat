@@ -2,6 +2,7 @@
 
 <!-- BEGIN xnat-templates/screens/Search.vm -->
 
+#addGlobalCustomScreens("search/plugins/pre")
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_stored_search.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_search_field.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria.js")"></script>
@@ -11,6 +12,7 @@
 <script type="text/javascript" src="$content.getURI("scripts/search/searchManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/search/dataTableSearch.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/search/dataTableStoredSearch.js")"></script>
+#addGlobalCustomScreens("search/plugins/post")
 
 <div id="l_tv" style="display:none"></div>
 

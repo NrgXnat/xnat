@@ -1,0 +1,3 @@
+#if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowAdminManageSiteFeatures","false")))
+<li><a href="$link.setPage("ManageFeatures.vm")">Manage Features</a></li>
+#end

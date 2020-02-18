@@ -37,6 +37,7 @@ import static org.nrg.xft.identifier.IDGeneratorFactory.*;
                 "org.nrg.xnat.services.investigators.impl.xft",
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation",
+                "org.nrg.xnat.services.triage",
                 "org.nrg.xft.identifier"})
 public class XnatServicesConfig {
     @Bean

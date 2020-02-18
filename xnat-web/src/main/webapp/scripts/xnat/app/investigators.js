@@ -379,6 +379,9 @@ var XNAT = getObject(XNAT);
                                     self.dataTable();
                                 }
                                 dialog.close();
+                            },
+                            fail: function(){
+                                ui.banner.top(5000, 'Unable to save Investigator.', 'error');
                             }
                         });
                         //xhr.form(obj.$modal.find('form'))

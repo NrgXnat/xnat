@@ -1,3 +1,4 @@
+#* @vtlmacrolibrary path="../../../../xdat-templates/macros/TurbineMacros.vm" *#
 #* @vtlvariable name="arcP" type="org.nrg.xdat.om.ArcProject" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
@@ -5,6 +6,7 @@
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
 #* @vtlvariable name="parentTemplate" type="java.lang.String" *#
 #* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 ## YAML for spawning project details
 <script id="project-data-form" type="text/yaml">
 
@@ -47,23 +49,6 @@
 
     # more to come...?
 
-</script>
-
-<script>
-//    (function(){
-//
-//        var _yaml = $$('!#project-data-form').innerText;
-//        var parsed = YAML.parse(_yaml)
-//
-//        console.log(parsed);
-//
-//        XNAT.app.projectInfoPanels = parsed;
-//
-//        XNAT.spawner
-//            .spawn(parsed)
-//            .render('#layout_content');
-//
-//    })();
 </script>
 
 <style>
@@ -116,7 +101,7 @@
                 ##<input class="abbreviation" id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")">
                 ##<p class="project-id">$item.getProperty("xnat:projectData/ID")</p>
             #else
-                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="14" maxlength="32" onchange="this.value=stringCamelCaps(this.value);">
+                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="32" maxlength="32" onchange="this.value=stringCamelCaps(this.value);">
             #end
             <div class="requirementStatement">
                 <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the database and <b>cannot be changed.</b></span>
@@ -124,6 +109,9 @@
         </td>
     </tr>
 
+   ## Add custom details
+   #addCustomScreens("xnat:projectData" "edit/details")
+    
     <tr>
         <th>
             <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>
@@ -146,7 +134,6 @@
         </td>
     </tr>
 
-    #addCustomScreens($om.getXSIType() "edit/details")
     #set($pathInfo = $arcP.getPaths())
 
     <input type="hidden" name="arc:project/current_arc" value="arc001">
@@ -173,10 +160,11 @@
         <td>
             <!-- #investigatorBox gets replaced via JS -->
             <div id="investigatorBox">Loading...</div>
-
-            <div class="requirementStatement">
-                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
-            </div>
+            #if($siteConfig.uiAllowMoreProjectInvestigators)
+                <div class="requirementStatement">
+                    <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
+                 </div>
+            #end
         </td>
     </tr>
 
@@ -202,26 +190,20 @@
         investigators.others = [];
         investigators.count = 0;
 
-        //window.invest_manager = new InvestigatorManager();
-
         #if($om.getProperty("pi_xnat_investigatordata_id"))
             investigators.primary = '$!om.getProperty("pi_xnat_investigatordata_id")';
         #end
-
-//        window.other_investigators = new Array();
 
         #set ($primaryInv = $!om.getProperty("pi_xnat_investigatordata_id"))
         #foreach($inv in $om.investigators_investigator)
             #if (!$inv.xnatInvestigatordataId.equals($primaryInv))
                 investigators.others.push('$inv.getXnatInvestigatordataId()');
-                //window.other_investigators.push("$inv.getXnatInvestigatordataId()");
             #end
         #end
 
         investigators.primary = investigators.primary || 'NULL';
 
         console.log(investigators.primary);
-
     })();
 
     function stringCamelCaps(val) {
@@ -298,18 +280,17 @@
         var editPrimary = spawn('a#edit-primary|href=#!', 'Edit Selected');
 
         editPrimary.onclick = function(){
-//            investigators.primary = primaryMenu.getSelected(0);
             if (investigators.primary !== 'NULL') {
                 primaryMenu.dialog(investigators.primary)
             }
         }
-
+        
         // xnat:projectData/investigators/investigator[1]/xnat_investigatordata_id
         // OTHER INVESTIGATORS
         var otherBox = spawn('div#other-investigators', {
             style: { margin: '15px 0' }
         }, [ ['b', 'Other Investigators: '], ['br'] ]);
-
+        
         otherMenu.createMenu({
             id: 'others-menu',
             name: 'otherInvestigators',
@@ -319,7 +300,7 @@
         });
 
         otherMenu.createMenuItems(investigators.others);
-
+        
         otherMenu.render(otherBox, 600);
 
         // button for creating new (other) investigators
@@ -328,8 +309,12 @@
         createOther.onclick = function(){
             otherMenu.dialog('', primaryMenu);
         };
-
+        
+#if($siteConfig.uiAllowMoreProjectInvestigators)
         iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, otherBox, createOther]);
+#else
+        iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, ' &nbsp; ', createOther]);
+#end
 
     })();
 </script>

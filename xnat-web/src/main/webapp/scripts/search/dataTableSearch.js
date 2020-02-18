@@ -566,7 +566,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             flt.parentNode.style.display = "block";
             var fullFltId = this.div_table_id + "_flt_full";
             var fltHTML = "<span title=\"Click to expand\" style=\"cursor: pointer;\" onclick=\"this.style.display='none';document.getElementById('" + fullFltId + "').style.display='inline';\">" + limitText(filter, 250) + "</span>";
-            fltHTML += "<span id=\"" + fullFltId + "\" style=\"display:none\">" + filter + "</span>";
+            fltHTML += "<span id=\"" + fullFltId + "\" class=\"full-filter-text\" style=\"display:none\">" + filter + "</span>";
             flt.innerHTML = fltHTML;
         }
     };
@@ -801,6 +801,20 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                 }
                             }
                         }
+
+                       //you can add custom listing actions by adding {action:'actionClassName',display:text} to XNAT.app.typeBasedListingOptions
+                       var typeOptions = getTypeBasedListingOptions(this.en);
+                        if (typeOptions) {
+                            if (typeOptions != undefined && typeOptions.length > 0) {
+                                for (var toC = 0; toC < typeOptions.length; toC++) {
+                                    submenuitems.push({
+                                        value: typeOptions[toC].action,
+                                        text: typeOptions[toC].display,
+                                        onclick: { fn: this.search.menuSend, scope: this.search }
+                                    });
+                                }
+                            }
+                        }
                     }
 
 
@@ -1023,3 +1037,26 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
 
     }
 };
+
+function addTypeBasedListingOptions(xsiType, menuMap) {
+	if(!XNAT.app.typeBasedListingOptions){
+		XNAT.app.typeBasedListingOptions = {};
+	}	
+	
+	if(!XNAT.app.typeBasedListingOptions[xsiType]){
+		XNAT.app.typeBasedListingOptions[xsiType]=[];
+	}
+	
+	XNAT.app.typeBasedListingOptions[xsiType].push(menuMap);
+}
+
+function getTypeBasedListingOptions(xsiType) {
+	if(!XNAT.app.typeBasedListingOptions){
+		XNAT.app.typeBasedListingOptions = {};
+	}	
+	
+	if(!XNAT.app.typeBasedListingOptions[xsiType]){
+		XNAT.app.typeBasedListingOptions[xsiType]=[];
+	}
+    return XNAT.app.typeBasedListingOptions[xsiType];
+}

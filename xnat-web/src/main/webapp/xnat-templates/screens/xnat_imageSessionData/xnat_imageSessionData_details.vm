@@ -1,4 +1,5 @@
 <!--BEGIN xnat_imageSessionData_details.vm -->
+#addCustomScreens($om.getXSIType() "report/preDetails")
 <table border="0" width="920" >
     <tr>
         <td valign="top">

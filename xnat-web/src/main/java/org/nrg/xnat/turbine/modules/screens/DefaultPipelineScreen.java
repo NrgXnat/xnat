@@ -166,7 +166,15 @@ public abstract class DefaultPipelineScreen extends SecureReport {
                 context.put("search_value", TurbineUtils.GetPassedParameter("search_value", data));
                 project = (String) TurbineUtils.GetPassedParameter("project", data);
                 pipelinePath = (String) context.get("pipelinePath");
-
+                if(pipelinePath==null){
+                    String pipeSubPath=(String)TurbineUtils.GetPassedParameter("pipeSubPath", data);
+                    if(pipeSubPath!=null){
+                        File f=new File(XDAT.getSiteConfigPreferences().getPipelinePath(),pipeSubPath.replace("^","/"));
+                        if(f.exists()){
+                            pipelinePath=f.getAbsolutePath();
+                        }
+                    }
+                }
                 context.put("project", project);
 
                 om = BaseElement.GetGeneratedItem(item);

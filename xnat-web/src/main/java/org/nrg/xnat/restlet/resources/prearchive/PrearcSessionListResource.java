@@ -104,7 +104,7 @@ public final class PrearcSessionListResource extends SecureResource {
      * @see org.restlet.resource.Resource#represent(org.restlet.resource.Variant)
      */
     @Override
-    public Representation represent(final Variant variant) {
+    public Representation represent(final Variant variant) { 
         final MediaType mediaType = overrideVariant(variant);
 
         try {
@@ -112,7 +112,7 @@ public final class PrearcSessionListResource extends SecureResource {
             if (StringUtils.isNotBlank(getTag())) {
                 table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(Lists.transform(new ArrayList<>(PrearcDatabase.getSessionByUID(getTag())), Functions.SESSION_DATA_TO_SESSION_DATA_TRIPLE)));
             } else {
-                final List<String> projects = new ArrayList<>(StringUtils.isNotBlank(getProject()) ? Arrays.asList(getProject().split("\\s*,\\s*")) : getPermissions().getUserReadableProjects(getUser().getUsername()));
+                final List<String> projects = new ArrayList<>(StringUtils.isNotBlank(getProject()) ? Arrays.asList(getProject().split("\\s*,\\s*")) : getPermissions().getUserEditableProjects(getUser().getUsername()));
                 if (isDataAccess()) {
                     projects.add(null);
                 }

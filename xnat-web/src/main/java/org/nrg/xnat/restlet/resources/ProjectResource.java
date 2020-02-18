@@ -43,6 +43,7 @@ import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
+import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
@@ -251,6 +252,15 @@ public class ProjectResource extends ItemResource {
                         } else {
                             SaveItemHelper.authorizedSave(item, user, false, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN));
                             if (StringUtils.isNotBlank(accessibility) && !StringUtils.equals(workingProject.getPublicAccessibility(), accessibility)) {
+                                // If we don't allow non private projects, we shouldn't allow accessibility to change. 
+                                final boolean nonPrivateAllowed = XDAT.getBoolSiteConfigurationProperty("securityAllowNonPrivateProjects", true);
+                                if(!nonPrivateAllowed) {
+                                    log.debug("Unable to change project accessibility because securityAllowNonPrivateProjects is set to " + String.valueOf(nonPrivateAllowed));
+                                    log.debug("Non-private projects are not allowed. Update siteConfig preference if you wish to allow non-private projects.");
+                                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                                    return;
+                                }
+                                
                                 final PersistentWorkflowI workflow = WorkflowUtils.buildProjectWorkflow(user, project, newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.MODIFY_PROJECT_ACCESS));
                                 Permissions.setDefaultAccessibility(workingProject.getId(), accessibility, false, user, workflow.buildEvent());
                             }

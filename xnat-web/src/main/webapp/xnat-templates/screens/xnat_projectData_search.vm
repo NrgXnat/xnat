@@ -17,7 +17,7 @@
                 #xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
             </td>
             <td>
-                <h5>Name:</h5>
+                <h5>Title:</h5>
                 #xdatSearchField($schemaElement $schemaElement.getDisplayField("NAME"))
             </td>
             <td>

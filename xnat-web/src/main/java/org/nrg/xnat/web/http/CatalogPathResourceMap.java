@@ -16,6 +16,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.model.*;
@@ -202,13 +203,18 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                 //  xnat:publicationResource |              1
                 //  (6 rows)
                 if (resource instanceof XnatResourcecatalogI) {
-                    final File        catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) resource);
-                    final CatCatalogI catalog     = CatalogUtils.getCatalog(catalogFile);
-                    if (catalog == null) {
-                        log.warn("The catalog entry {} references the file {}, but that doesn't appear to be a valid catalog. The associated resource file path was {}.", currentEntry.getName(), catalogFile.getAbsolutePath(), uri.getResourceFilePath());
+                    final CatalogUtils.CatalogData catalogData;
+                    try {
+                        catalogData = CatalogUtils.CatalogData.getOrCreate(_archiveRoot,
+                                (XnatResourcecatalogI) resource, null);
+                    } catch (ServerException e) {
+                        log.error("The catalog entry {} doesn't appear to be a valid catalog. " +
+                                "The associated resource file path was {}.", resourceName, resourceUri, e);
                         return;
                     }
-                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogFile.getParent()), new Function<File, Mapping<String, Resource>>() {
+
+                    final CatCatalogI catalog     = catalogData.catBean;
+                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogData.catPath, null), new Function<File, Mapping<String, Resource>>() {
                         @Nullable
                         @Override
                         public Mapping<String, Resource> apply(@Nullable final File file) {

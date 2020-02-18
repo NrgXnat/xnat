@@ -1028,7 +1028,7 @@ var XNAT = getObject(XNAT);
         return xmodal.iframe({
             src: _url,
             name: 'advanced-user-settings',
-            width: 800,
+            width: 850,
             height: '80%',
             title: 'Edit User Info',
             // footer: false,

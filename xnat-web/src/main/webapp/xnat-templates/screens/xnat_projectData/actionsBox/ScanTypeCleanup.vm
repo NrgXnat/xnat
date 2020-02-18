@@ -1,0 +1,10 @@
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+    #if($project.getUseScanTypeMapping() && !$siteConfig.getBooleanValue("uiHideScanTypeCleanup"))
+        <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","scanTypeCleanup").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">
+                Scan Type Cleanup
+            </a>
+        </li>
+    #end
+</li>
+#end

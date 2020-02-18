@@ -111,6 +111,7 @@
                 tempScan.stats = '<div id="scan${scanIdTrim}Actions" data-scan-id="${scanIdTrim}" class="scanActions"></div>';
                 #end
             tempScan.setProperty("xnat_imageScanData_id", '#escapeAllUnescapeParam("$!scan.getProperty('xnat_imagescandata_id')")');
+            tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
 
             window.scanSet.scans.push(tempScan);
 
@@ -133,6 +134,7 @@
         if(window.scanSet.scans.length==0){
             for(var newC=0;newC<5;newC++){
                 var tempScan = window.classMapping.newInstance("xnat:ctScanData");
+                tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
                 window.scanSet.new_scans.push(tempScan);
             }
         }

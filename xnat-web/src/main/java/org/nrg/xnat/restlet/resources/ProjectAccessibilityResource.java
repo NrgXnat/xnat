@@ -11,6 +11,7 @@ package org.nrg.xnat.restlet.resources;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.event.EventMetaI;
@@ -76,6 +77,15 @@ public class ProjectAccessibilityResource extends SecureResource {
         try {
             final UserI user = getUser();
             if (!Permissions.canDelete(user, project)) {
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                return;
+            }
+            
+            // If we don't allow non private projects, we shouldn't allow accessibility to change. 
+            final boolean nonPrivateAllowed = XDAT.getBoolSiteConfigurationProperty("securityAllowNonPrivateProjects", true);
+            if(!nonPrivateAllowed){
+                log.debug("Unable to change project accessibility because securityAllowNonPrivateProjects is set to" + String.valueOf(nonPrivateAllowed));
+                log.debug("Non-private projects are not allowed. Update siteConfig preference if you wish to allow non-private projects.");
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
                 return;
             }

@@ -1028,8 +1028,8 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private static Map<String, ? extends InputStreamSource> getFilesAsInputStreamSources(final Collection<File> files) throws FileNotFoundException {
-        if (Iterables.any(files, Predicates.not(FILE_EXISTS))) {
-            throw new FileNotFoundException("Unable to find the following source files/folders: " + StringUtils.join(Iterables.filter(files, Predicates.not(FILE_EXISTS)), ", "));
+        if (Iterables.any(files, Predicates.not(FILE_OR_DIR_EXISTS))) {
+            throw new FileNotFoundException("Unable to find the following source files/folders: " + StringUtils.join(Iterables.filter(files, Predicates.not(FILE_OR_DIR_EXISTS)), ", "));
         }
         final Map<String, InputStreamSource> sources = new HashMap<>();
         for (final File file : files) {
@@ -2109,11 +2109,11 @@ public class DefaultCatalogService implements CatalogService {
             "  xme.element_name IN (:assessorTypes) AND " +
             "  session.id = :sessionId ";
 
-    private static final Map<String, String> EMPTY_MAP   = ImmutableMap.of();
-    private static final Predicate<File>     FILE_EXISTS = new Predicate<File>() {
+    private static final Map<String, String> EMPTY_MAP          = ImmutableMap.of();
+    private static final Predicate<File>     FILE_OR_DIR_EXISTS = new Predicate<File>() {
         @Override
         public boolean apply(@Nullable final File file) {
-            return file != null && file.exists() && file.isFile();
+            return file != null && file.exists();
         }
     };
 

@@ -74,7 +74,7 @@ public interface RemoteFilesService {
      * @param user          The user
      * @param item          The item whose security settings we'll use to allow/deny the operation
      * @param catalog       The catalog resource
-     * @param files         Collection of files/dirs to push
+     * @param inputs        Map of files/dirs to push
      * @param preserveDirectories   If true, files are added to catalog with relative directory paths; if false,
      *                              we attmept to use only names
      * @param parentEventId Nullable eventId for parent workflow
@@ -83,7 +83,7 @@ public interface RemoteFilesService {
      * @throws UnsupportedRemoteFilesOperationException if project doesn't support remote resources
      */
     void pushProcessingOutputsAndAddUrlsToCatalog(final UserI user, final ArchivableItem item,
-                                                  final XnatResourcecatalog catalog, Map<String, ? extends InputStreamSource> files,
+                                                  final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> inputs,
                                                   final boolean preserveDirectories, @Nullable Integer parentEventId)
             throws ClientException, ServerException, UnsupportedRemoteFilesOperationException;
 }

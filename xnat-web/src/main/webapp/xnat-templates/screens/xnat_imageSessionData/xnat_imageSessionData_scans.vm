@@ -15,7 +15,10 @@
 #end
 
 <link rel="stylesheet" href="$content.getURI("scripts/xnat/app/scanTable/scanTable.css")"></link>
-
+#if($siteConfig.getBooleanValue("projectUploadZipFromActionsBox"))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
+#end
 <div class="data-table-container" style="width: #if($siteConfig.uiDisplaySeriesDescription) 1089px #else 889px #end" id="selectable-table-scans">
     <div class="data-table-titlerow">
         <h3 class="data-table-title">Scans</h3>
@@ -66,7 +69,18 @@
             #set ($scanWFiles = 0)
             #if ($om.getSortedScans().isEmpty())
                 <tr valign="top">
-                    <td colspan="6"><em>No scans found in this session.</em></td>
+                    <td>
+                        #if ($siteConfig.getBooleanValue("projectUploadZipFromActionsBox") && $item.canEdit($user))
+                            <span class="inline-actions">
+                                    <a id="uploadImages" data-project="$om.getProject()" data-session="$om.getLabel()" data-overwrite="append">
+                                        <i class="fa fa-upload" title="Upload images"></i>
+                                    </a>
+                                </span>
+                        #end
+                    </td>
+                    <td colspan="5">
+                        <em>No scans found in this session.</em>
+                    </td>
                 </tr>
             #else
                 <script>

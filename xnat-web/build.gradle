@@ -315,9 +315,12 @@ dependencies {
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "junit:junit"
     providedCompile "javax.servlet:javax.servlet-api"
-    providedCompile "org.hamcrest:hamcrest-core:1.3"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
+
+    providedCompile("stratum:stratum:1.0") {
+        transitive = false
+    }
 
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
@@ -348,6 +351,10 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
+    testImplementation "org.hamcrest:hamcrest-core:2.2"
+    testImplementation "org.mockito:mockito-core"
+    testImplementation "org.powermock:powermock-module-junit4"
+    testImplementation "org.powermock:powermock-api-mockito2"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

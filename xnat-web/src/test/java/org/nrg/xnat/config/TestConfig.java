@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.services.archive.impl.legacy.DefaultCatalogService;
@@ -30,16 +31,18 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 @Configuration
 public class TestConfig {
     @Bean
-    public CatalogService catalogService(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                         CacheManager cacheManager) {
-        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager);
+    public CatalogService catalogService(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                         final CacheManager cacheManager,
+                                         final UserDataCache userDataCache) {
+        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
     }
 
     @Bean
-    public DefaultCatalogService catalogServiceNoRemote(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                        CacheManager cacheManager) {
+    public DefaultCatalogService catalogServiceNoRemote(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                                        final CacheManager cacheManager,
+                                                        final UserDataCache userDataCache) {
         // return type DefaultCatalogService so we can re-set RemoteFilesService to null
-        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager);
+        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
     }
 
 
@@ -52,9 +55,15 @@ public class TestConfig {
     public NamedParameterJdbcTemplate namedParameterJdbcTemplate() {
         return Mockito.mock(NamedParameterJdbcTemplate.class);
     }
+
     @Bean
     public CacheManager cacheManager() {
         return Mockito.mock(CacheManager.class);
+    }
+
+    @Bean
+    public UserDataCache userDataCache() {
+        return Mockito.mock(UserDataCache.class);
     }
 
     @Bean

@@ -169,7 +169,7 @@ var XNAT = getObject(XNAT);
         }
         else {
             // lastly, if not an input element, try to set the innerHTML
-            if (input0.hasOwnProperty('innerHTML')) input0.innerHTML = val;
+            if ('innerHTML' in input0) input0.innerHTML = val;
         }
 
         return [inputName, val];

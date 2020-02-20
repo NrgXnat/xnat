@@ -101,8 +101,10 @@ var XNAT = getObject(XNAT || {});
         if (this.isUrl){
             // save via ajax
             return xhr.request(extend(true, {
-                method: method || _this.opts.submitMethod || _this.opts.method,
+                method: method || _this.opts.submitMethod || _this.opts.method || 'POST',
                 url: url || _this.opts.submitUrl || _this.opts.url,
+                // processData: false,
+                data: this.code,
                 success: function(){
                     _this.dialog.close()
                 }
@@ -176,29 +178,37 @@ var XNAT = getObject(XNAT || {});
         var _this = this,
             fn = {};
 
+        var cfg = cloneObject(opts);
+
         var modal = {};
-        modal.width = 880;
-        modal.height = 580;
+        modal.width = cfg.width ? Number((cfg.width + '').replace(/[a-z]+$/i, '')) : 880;
+        modal.height = cfg.height ? Number((cfg.height + '').replace(/[a-z]+$/i, '')) : 580;
         modal.scroll = false;
         modal.content = '';
 
-        opts = cloneObject(opts);
+        var beforeEditor = cfg.before ? spawn('div.before-editor', [cfg.before]) : '';
+        var codeEditor   = spawn('div.code-editor');
+        var afterEditor = cfg.after ? spawn('div.after-editor', [cfg.after]) : '';
 
-        // insert additional content above editor
+        codeEditor.style.width = (modal.width - 40) + 'px';
+        codeEditor.style.height = (modal.height - 140) + 'px';
+        codeEditor.style.position = 'relative';
+        codeEditor.style.opacity = '0.01';
+
         if (opts.before) {
-            modal.content += '<div class="before-editor">' + opts.before + '</div>';
             delete opts.before; // don't pass this to xmodal.open()
         }
-        
-        // div container for code editor
-        modal.content += '<div class="code-editor" style="width:840px;height:440px;position:relative;"></div>';
-        
-        // insert additional content BELOW editor
+
         if (opts.after) {
-            modal.content += '<div class="after-editor">' + opts.after + '</div>';
             delete opts.after; // don't pass this to xmodal.open()
         }
-        
+
+        modal.content += spawn('div.code-editor-container', [
+            beforeEditor,
+            codeEditor,
+            afterEditor
+        ]).outerHTML;
+
         modal.title = 'XNAT Code Editor';
         modal.title += (_this.language) ? ' - ' + _this.language : '';
         // modal.closeBtn = false;
@@ -211,27 +221,37 @@ var XNAT = getObject(XNAT || {});
                 'Changes are not submitted automatically.<br>The containing form will need to be submitted to save.') +
             '</span>';
 
-        // the 'beforeShow' and 'afterShow' methods
+        // the code editor 'beforeShow' and 'afterShow' methods
         // get an extra argument - the Editor instance
 
         var _beforeShow = opts.beforeShow;
 
-        fn.beforeShow = function(dialog){
-            _this.$editor = this.$modal.find('div.code-editor');
-            _this.load();
+        fn.beforeShow = function(obj){
+            _this.$editor = obj.$modal.find('div.code-editor');
             if (isFunction(_beforeShow)) {
                 // '_this' is the Editor instance
-                _beforeShow.call(this, dialog, _this)
+                _beforeShow.call(this, obj, _this)
             }
         };
 
         var _afterShow = opts.afterShow;
 
-        fn.afterShow = function(dialog){
+        fn.afterShow = function(obj){
+
+            // try to adjust editor area height based on 'before' and/or 'after' content
+            _this.$editor.css({
+                height: _this.$editor.height() - obj.$modal.find('div.before-editor').outerHeight(true) - obj.$modal.find('div.after-editor').outerHeight(true)
+            });
+
+            // load after editor height has been set
+            _this.load();
+            _this.$editor.css('opacity', 1);
+
             if (isFunction(_afterShow)) {
                 // '_this' is the Editor instance
-                _afterShow.call(this, dialog, _this)
+                _afterShow.call(this, obj, _this)
             }
+
             _this.aceEditor.focus();
         };
 

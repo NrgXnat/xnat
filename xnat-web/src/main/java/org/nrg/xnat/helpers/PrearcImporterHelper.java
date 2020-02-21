@@ -94,7 +94,6 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		final String old_session_folder=(String)params.get(PrearcUtils.PREARC_SESSION_FOLDER);
 		String old_timestamp=(String)params.get(PrearcUtils.PREARC_TIMESTAMP);
 			
-		//TODO this should use PrearcUtils.makeTimes...
 		final String new_timestamp = PrearcUtils.makeTimestamp();
 		
 		final File cacheDIR=write_to_cache(user,fi,new_timestamp);
@@ -197,7 +196,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 	}
 	
 	private File write_to_cache(final UserI user, final FileWriterWrapperI fi,final String timestamp) throws ServerException{
-			final String filename = fi.getName();
+		final String filename = fi.getName();
 		this.processing("Importing file (" + filename + ")");
 			
 		//BUILD CACHE PATH        

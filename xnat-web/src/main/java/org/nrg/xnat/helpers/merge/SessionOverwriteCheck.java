@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.helpers.merge;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.*;
 import org.nrg.xft.event.EventMetaI;
@@ -19,6 +21,7 @@ import org.nrg.xnat.utils.CatalogUtils;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+@Slf4j
 public class SessionOverwriteCheck implements Callable<Boolean> {
 	final XnatImagesessiondataI src,dest;
 	final String srcRootPath,destRootPath;
@@ -38,7 +41,9 @@ public class SessionOverwriteCheck implements Callable<Boolean> {
 	public Boolean call(){
 		final List<XnatImagescandataI> srcScans=src.getScans_scan();
 		final List<XnatImagescandataI> destScans=dest.getScans_scan();
-		
+
+		final String srcProject = src.getProject();
+		final String destProject = dest.getProject();
 		for(final XnatImagescandataI srcScan: srcScans){
 			final XnatImagescandataI destScan = MergeUtils.getMatchingScan(srcScan,destScans);
 			if(destScan==null){
@@ -51,12 +56,21 @@ public class SessionOverwriteCheck implements Callable<Boolean> {
 					if(destRes==null){
 					}else{
 						if(destRes instanceof XnatResourcecatalogI){
-							final CatCatalogBean srcCat=CatalogUtils.getCleanCatalog(srcRootPath, (XnatResourcecatalogI)srcRes, false,u,c);
+							try {
+								final CatalogUtils.CatalogData srcCatalogData =
+										CatalogUtils.CatalogData.getOrCreateAndClean(srcRootPath, (XnatResourcecatalogI) srcRes, false, srcProject,
+                                                u, c);
 
-							final CatCatalogBean destCat=CatalogUtils.getCleanCatalog(destRootPath, (XnatResourcecatalogI)destRes, false,u,c);
-							
-							if(detectOverwrite(srcCat,destCat)){
-								return true;
+								final CatCatalogBean srcCat = srcCatalogData.catBean;
+								final CatalogUtils.CatalogData destCatalogData =
+										CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, (XnatResourcecatalogI) destRes, false, destProject,
+                                                u, c);
+								final CatCatalogBean destCat = destCatalogData.catBean;
+								if (detectOverwrite(srcCat,destCat)) {
+									return true;
+								}
+							} catch (ServerException e) {
+								log.error("Unable to create or read catalog", e);
 							}
 						}else if(destRes instanceof XnatResourceseriesI){
 							return true;

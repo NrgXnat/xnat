@@ -15,7 +15,10 @@
 #end
 
 <link rel="stylesheet" href="$content.getURI("scripts/xnat/app/scanTable/scanTable.css")"></link>
-
+#if($siteConfig.getBooleanValue("projectUploadZipFromActionsBox"))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
+#end
 <div class="data-table-container" style="width: #if($siteConfig.uiDisplaySeriesDescription) 1089px #else 889px #end" id="selectable-table-scans">
     <div class="data-table-titlerow">
         <h3 class="data-table-title">Scans</h3>
@@ -47,6 +50,7 @@
                 </th>
                 <th class="left">Scan</th>
                 <th class="left">Type</th>
+                <th class="left">Series Class</th>
                 #if($siteConfig.uiDisplaySeriesDescription)
                     <th class="left">Series Desc</th>
                     #set($fileIndex="4")
@@ -65,7 +69,18 @@
             #set ($scanWFiles = 0)
             #if ($om.getSortedScans().isEmpty())
                 <tr valign="top">
-                    <td colspan="6"><em>No scans found in this session.</em></td>
+                    <td>
+                        #if ($siteConfig.getBooleanValue("projectUploadZipFromActionsBox") && $item.canEdit($user))
+                            <span class="inline-actions">
+                                    <a id="uploadImages" data-project="$om.getProject()" data-session="$om.getLabel()" data-overwrite="append">
+                                        <i class="fa fa-upload" title="Upload images"></i>
+                                    </a>
+                                </span>
+                        #end
+                    </td>
+                    <td colspan="5">
+                        <em>No scans found in this session.</em>
+                    </td>
                 </tr>
             #else
                 <script>
@@ -95,12 +110,15 @@
                                 #if ($item.canEdit($user))
                                     <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
                                 #end
-                                #if ($data.getSession().getAttribute("userHelper").canDelete($item))
-                                    <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
-                                        <i class="fa fa-trash"></i>
-                                    </a>
+                                #if($item.getStatus()!="obsolete" && $item.getStatus()!="locked")
+                                    #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                        #if ($data.getSession().getAttribute("userHelper").canDelete($item))
+                                            <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        #end
+                                    #end
                                 #end
-
                             </span>
                             <a href="#!" class="view-scan-details" data-id="${scanID}">
                                 #escapeHTML(${scanID})
@@ -109,6 +127,11 @@
                         <td class="scan-${scanID}-type" style="width: 200px;">
                             #if($!scan.getProperty("type"))
                                 #escapeHTML($!scan.getProperty("type"))
+                            #end
+                        </td>
+                        <td class="scan-${scanID}-series_class" style="width: 200px;">
+                            #if($!scan.getProperty("series_class"))
+                                #escapeHTML($!scan.getProperty("series_class"))
                             #end
                         </td>
                         #if($siteConfig.uiDisplaySeriesDescription)
@@ -149,10 +172,14 @@
                                 #end
                                 </span>
                             </div>
-                            #if ($item.canEdit($user))
-                                <div class="inline-actions pull-right text-right" style="width:15%;">
-                                    <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
-                                </div>
+                            #if($item.getStatus()!="obsolete")
+                                #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                    #if ($item.canEdit($user))
+                                        <div class="inline-actions pull-right text-right" style="width:15%;">
+                                            <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
+                                        </div>
+                                    #end
+                                #end
                             #end
                         </td>
                         <td class="run-menu inline-actions-menu-container" style="position: relative; width: 24px; display: none;">

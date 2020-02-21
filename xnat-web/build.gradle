@@ -54,7 +54,6 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-
 if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
@@ -294,6 +293,10 @@ dependencies {
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
+    providedCompile("stratum:stratum:1.0") {
+        transitive = false
+    }
+
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"
@@ -328,8 +331,10 @@ dependencies {
     testImplementation "org.assertj:assertj-core"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.hamcrest:hamcrest-core"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "org.powermock:powermock-api-mockito2"
+    testImplementation "org.powermock:powermock-module-junit4"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

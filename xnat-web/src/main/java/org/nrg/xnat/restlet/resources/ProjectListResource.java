@@ -552,14 +552,15 @@ public class ProjectListResource extends QueryOrganizerResource {
             ProjectListResource projResource = (ProjectListResource) resource;
             XFTTable table;
             UserI user = resource.getUser();
+            final Boolean allDataOverride = this.allDataOverride(resource);
             try {
                 final String re = projResource.getRootElementName();
 
-                final QueryOrganizer qo = new QueryOrganizer(re, user, ViewManager.ALL);
+                final QueryOrganizer qo = new QueryOrganizer(re, !allDataOverride ? user : null, ViewManager.ALL);
 
                 projResource.populateQuery(qo);
-
-                if (!Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP)) {
+                
+                if (!Groups.isMember(user, Groups.ALL_DATA_ADMIN_GROUP) && !allDataOverride) {
                     String restriction = SecurityManager.READ;
 
                     if (resource.containsQueryVariable("restrict")){
@@ -609,6 +610,9 @@ public class ProjectListResource extends QueryOrganizerResource {
                 params.put("totalRecords", table.size());
             }
             return resource.representTable(table, mt, params);
+        }
+        private final Boolean allDataOverride(SecureResource resource) {
+            return Roles.isSiteAdmin(resource.getUser()) && resource.containsQueryVariable("allDataOverride") && (Boolean.parseBoolean(resource.getQueryVariable("allDataOverride")) == true); 
         }
     }
 }

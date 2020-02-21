@@ -29,7 +29,6 @@ public final class CatalogZipStreamingResponseBody extends AbstractZipStreamingR
      * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
      * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
      * sets the size of the transfer buffer to {@link FileUtils#LARGE_DOWNLOAD}.
-     *
      * @param user        The user requesting the catalog download.
      * @param catalog     The catalog to zip and stream.
      * @param archiveRoot The root archive folder.
@@ -43,13 +42,13 @@ public final class CatalogZipStreamingResponseBody extends AbstractZipStreamingR
      * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
      * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
      * sets the size of the transfer buffer to {@link FileUtils#LARGE_DOWNLOAD}.
-     *
      * @param user        The user requesting the catalog download.
      * @param catalog     The catalog to zip and stream.
      * @param archiveRoot The root archive folder.
      * @param testMode    Whether the zip should be run in test mode.
      */
-    public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot, final boolean testMode) {
+    public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot,
+                                           final boolean testMode) {
         super(archiveRoot, Users.getUserCacheFile(user, "catalogs", catalog.getId() + ".csv"));
         _mapper = new CatalogPathResourceMap(catalog, archiveRoot, testMode);
     }

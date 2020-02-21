@@ -430,7 +430,9 @@ YAHOO.util.Event.onDOMReady( function()
             	
             	//finished form field validation
                 if (!validators._ok) {
-                    YAHOO.util.Event.stopEvent(env);
+                	if(env != undefined){
+                        YAHOO.util.Event.stopEvent(env);
+                	}
                     showContent();
                     if(this.focus!=undefined)
                         this.focus.focus();
@@ -446,7 +448,9 @@ YAHOO.util.Event.onDOMReady( function()
                     result = true;
                 }
                 if(!result){
-                    YAHOO.util.Event.stopEvent(env);
+                	if(env != undefined){
+                        YAHOO.util.Event.stopEvent(env);
+                	}
                     showContent();
                     return false;
                 }
@@ -457,7 +461,9 @@ YAHOO.util.Event.onDOMReady( function()
 	                if(formValidators!=undefined){
 	                	for(var iFVc=0;iFVc<formValidators.length;iFVc++){
 	                		if (formValidators[iFVc].validate!=undefined && !(formValidators[iFVc].validate())) {
-	                			YAHOO.util.Event.stopEvent(env);
+	                			if(env != undefined){
+	                			    YAHOO.util.Event.stopEvent(env);
+	                			}
 	                            showContent();
 	                            return false;
 		                    }
@@ -485,7 +491,9 @@ YAHOO.util.Event.onDOMReady( function()
                 return result;
         	}catch(e){
                 xmodal.message('Email Validation Error', "An error occurred during form validation.");
-        		YAHOO.util.Event.stopEvent(env);
+                if(env != undefined){
+        		    YAHOO.util.Event.stopEvent(env);
+                }
                 showContent();
                 return false;
         	}

@@ -1436,6 +1436,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
         final MapSqlParameterSource parameters               = new MapSqlParameterSource("projectIds", readableProjectIds);
         final Map<String, Long>     readableExperimentCounts = _template.query(QUERY_USER_READABLE_EXPERIMENT_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
+        final Map<String, Long>     readableScanCounts       = _template.query(QUERY_USER_READABLE_SCAN_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
+        readableExperimentCounts.putAll(readableScanCounts);
         final Long                  readableSubjectCount     = _template.queryForObject(QUERY_USER_READABLE_SUBJECT_COUNT, parameters, Long.class);
         readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, readableSubjectCount);
         return readableExperimentCounts;
@@ -1921,6 +1923,29 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                        "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
                                                                        "GROUP BY " +
                                                                        "  element_name";
+    private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT " +
+                                                                       "  element_name, " +
+                                                                       "  COUNT(*) AS element_count " +
+                                                                       "FROM " +
+                                                                       "  (SELECT xnat_imageScanData.xnat_imagescandata_id" +
+                                                                       "   FROM " +
+                                                                       "     (SELECT SEARCH.* " +
+                                                                       "      FROM " +
+                                                                       "        (SELECT DISTINCT ON (xnat_imagescandata_id) * " +
+                                                                       "         FROM " +
+                                                                       "           (SELECT xnat_imageScanData.xnat_imagescandata_id, xnat_imageScanData.project AS scanProject, sharedScans.project AS scanSharedProject " +
+                                                                       "            FROM " +
+                                                                       "              xnat_imageScanData xnat_imageScanData " +
+                                                                       "              LEFT JOIN xnat_imageScanData_share sharedScans ON xnat_imageScanData.xnat_imagescandata_id = sharedScans.sharing_share_xnat_imagescandat_xnat_imagescandata_id) SECURITY " +
+                                                                       "         WHERE " +
+                                                                       "           scanProject IN (:projectIds) OR " +
+                                                                       "           scanSharedProject IN (:projectIds)) SECURITY " +
+                                                                       "        LEFT JOIN xnat_imageScanData SEARCH ON SECURITY.xnat_imagescandata_id = SEARCH.xnat_imagescandata_id) xnat_imageScanData) SEARCH " +
+                                                                       "  LEFT JOIN xnat_imageScanData scan ON search.xnat_imagescandata_id = scan.xnat_imagescandata_id " +
+                                                                       "  LEFT JOIN xdat_meta_element xme ON scan.extension = xme.xdat_meta_element_id " +
+                                                                       "GROUP BY " +
+                                                                       "  element_name";
+
     private static final String QUERY_ORPHANED_EXPERIMENTS           = "SELECT " +
                                                                        "    experiment_id, " +
                                                                        "    data_type, " +

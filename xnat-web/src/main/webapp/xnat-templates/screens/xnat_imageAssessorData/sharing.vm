@@ -158,6 +158,10 @@ $om.getAssessmentCount($pp.getProperty("project"))
          window.Sharer.init();
 
          window.Sharer.oncomplete.subscribe(function(e,args){ 
+         
+            if(args[1] != "$displayManager.getSingularDisplayNameForElement($om.getXSIType())"){
+                return; // Don't update the table if we shared an assessor of this data type 
+            }
             var newSP={
                id:window.Sharer.config.project.id,
                name:window.Sharer.config.project.label,

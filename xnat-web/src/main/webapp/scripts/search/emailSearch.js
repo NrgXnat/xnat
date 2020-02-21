@@ -70,10 +70,10 @@ function EmailPopupForm(_search,_div){
 	        this.emailer.emailMsgTab.innerHTML="<DIV style='color:red'>Sending...</DIV>";
 
 	        var email_url = "remote-class=org.nrg.xdat.ajax.EmailCustomSearch&remote-method=send";
-	        email_url +="&toAddress=" + toAddresses;
-	        email_url +="&subject=" + subject;
+	        email_url +="&toAddress=" + encodeURIComponent(toAddresses);
+	        email_url +="&subject=" + encodeURIComponent(subject);
 	        email_url +="&message=" + encodeURIComponent(message);
-	        email_url +="&from=" + from;
+	        email_url +="&from=" + encodeURIComponent(from);
 	        email_url +="&search_xml=" + encodeURIComponent(this.emailer._search);
 	        email_url +="&XNAT_CSRF=" + csrfToken;
 

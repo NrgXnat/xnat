@@ -323,7 +323,7 @@ var XNAT = getObject(XNAT);
 
         }
         this.cells = this.bodyRows[rowIndex||0].map(function(row){
-            return
+            return row;
         });
     };
 
@@ -491,6 +491,11 @@ var XNAT = getObject(XNAT);
             else {
                 opts.sortable = opts.sortable.split(',').map(function(item){return item.trim()});
             }
+            if (typeof opts.sortAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
+                // Skip jquery sort, we'll add our own.
+                // Perhaps better to "overload" utils.js > sortTableToo ??
+                addClassName(tableConfig, 'sort-ready');
+            }
         }
 
         tableConfig = extend(true, {
@@ -608,6 +613,25 @@ var XNAT = getObject(XNAT);
             // });
         }
 
+        function appendContent(container, content){
+            if (stringable(content)) {
+                container.innerHTML = content + '';
+                // return 'innerHTML';
+            }
+            if (isElement(content) || isFragment(content)) {
+                container.appendChild(content);
+                // return 'appendChild';
+            }
+            if (isArray(content)) {
+                forEach(content, function(_content){
+                    appendContent(container, _content);
+                });
+                // return 'array';
+            }
+            // console.log('cannot append?');
+            // return 'cannot append?';
+        }
+
         function createTable(rows){
 
             var props = [], objRows = [],
@@ -693,9 +717,41 @@ var XNAT = getObject(XNAT);
                         //if (!opts.sortable) return;
                         if (val.sort || opts.sortable === true || (opts.sortable||[]).indexOf(name) !== -1) {
                             addClassName(newTable.last.th, 'sort');
-                            newTable.last.th.appendChild(spawn('i.arrows', '&nbsp;'))
-                        }
+                            newTable.last.th.id = 'sort-by-' + name;
+                            newTable.last.th.appendChild(spawn('i.arrows', '&nbsp;'));
 
+                            if (typeof opts.sortAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
+                                var sortFn = opts.sortAjax;
+                                if (typeof opts.sortAndFilterAjax === 'function') {
+                                    sortFn = function(sortCol, sortDir){
+                                        opts.sortAndFilterAjax.call(newTable, "sort", sortCol, sortDir)
+                                    }
+                                }
+                                $(newTable.last.th).on('click', function() {
+                                    // Coped from utils.js tableSort>click.sort function
+                                    var $th = $(this),
+                                        sorted = /asc|desc/i.test(this.className),
+                                        sortClass = 'asc';
+
+                                    if (sorted) {
+                                        // if already sorted, switch to descending order
+                                        if (/asc/i.test(this.className)) {
+                                            sortClass = 'desc';
+                                        } else {
+                                            sortClass = '';
+                                        }
+                                    }
+
+                                    // only modify cells in the same row, don't allow secondary sort
+                                    $th.closest('tr').find('th.sort').removeClass('asc desc');
+
+                                    if (sortClass) {
+                                        $th.addClass(sortClass);
+                                        sortFn.call(newTable, name, sortClass);
+                                    }
+                                });
+                            }
+                        }
                     });
                 }
             }
@@ -770,6 +826,7 @@ var XNAT = getObject(XNAT);
 
                     if (filterColumns.indexOf(name) > -1){
                         tdElement.className = 'filter ' + name;
+                        tdElement.id = 'filter-by-' + name;
 
                         if (typeof customFilters[name] === 'function'){
                             tdContent.push(customFilters[name].call(newTable, newTable.table));
@@ -781,37 +838,58 @@ var XNAT = getObject(XNAT);
                             $filterInput = $.spawn('input.filter-data', {
                                 type: 'text',
                                 title: name + ':filter',
-                                placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : '')
+                                placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : ''),
+                                style: 'width: 90%;'
                             });
                             filterInputs.push($filterInput);
 
-                            $filterInput.on('focus', function(){
-                                $(this).select();
-                                // clear all filters on focus
-                                //$table.find('input.filter-data').val('');
-                                // save reference to the data rows on focus
-                                // (should make filtering slightly faster)
-                                // $dataRows = $table.find('tr[data-filter]');
-                                cacheRows();
-                            });
+                            if (typeof opts.filterAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
+                                $filterInput.on('focus', function(){
+                                    $(this).select();
+                                });
 
-                            $filterInput.on('keyup', function(e){
-                                var val = this.value;
-                                var key = e.which;
-                                // don't do anything on 'tab' keyup
-                                if (key == 9) return false;
-                                if (key == 27){ // key 27 = 'esc'
-                                    this.value = val = '';
+                                var filterFn = opts.filterAjax;
+                                if (typeof opts.sortAndFilterAjax === 'function') {
+                                    filterFn = function(fname, fval) {
+                                        opts.sortAndFilterAjax.call(newTable, "filter", fname, fval)
+                                    };
                                 }
-                                if (!val || key == 8) {
-                                    $dataRows.removeClass('filter-' + name);
-                                }
-                                if (!val) {
-                                    // no value, no filter
-                                    return false
-                                }
-                                filterRows(val, name);
-                            });
+
+                                $filterInput.on('keyup', function(){
+                                    var val = this.value;
+                                    setTimeout(function() {
+                                        filterFn.call(newTable, name, val);
+                                    }, 500);
+                                });
+                            } else {
+                                $filterInput.on('focus', function(){
+                                    $(this).select();
+                                    // clear all filters on focus
+                                    //$table.find('input.filter-data').val('');
+                                    // save reference to the data rows on focus
+                                    // (should make filtering slightly faster)
+                                    // $dataRows = $table.find('tr[data-filter]');
+                                    cacheRows();
+                                });
+
+                                $filterInput.on('keyup', function(e){
+                                    var val = this.value;
+                                    var key = e.which;
+                                    // don't do anything on 'tab' keyup
+                                    if (key == 9) return false;
+                                    if (key == 27){ // key 27 = 'esc'
+                                        this.value = val = '';
+                                    }
+                                    if (!val || key == 8) {
+                                        $dataRows.removeClass('filter-' + name);
+                                    }
+                                    if (!val) {
+                                        // no value, no filter
+                                        return false
+                                    }
+                                    filterRows(val, name);
+                                });
+                            }
 
                             tdContent.push($filterInput[0]);
                         }
@@ -931,8 +1009,8 @@ var XNAT = getObject(XNAT);
                                         applyFn = applyFn.replace(EVALREGEX, '');
                                         itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
-                                    else if (applyFn = lookupObjectValue(window, applyFn)) {
-                                        //          ^^^ correct, we're doing assignment in an 'if' statement
+                                    else if ((applyFn = lookupObjectValue(window, applyFn))) {
+                                        //           ^^^ correct, we're doing assignment in an 'if' statement
                                         if (isFunction(applyFn)) {
                                             itemVal = applyFn.apply(item, [].concat(itemVal, _tr)) || itemVal;
                                         }
@@ -966,32 +1044,13 @@ var XNAT = getObject(XNAT);
                     // var $td = newTable.last$('td');
                     var _td = newTable.last.td;
 
-                    function appendContent(content){
-                        if (stringable(content)) {
-                            _td.innerHTML = content + '';
-                            // return 'innerHTML';
-                        }
-                        if (isElement(content) || isFragment(content)) {
-                            _td.appendChild(content);
-                            // return 'appendChild';
-                        }
-                        if (isArray(content)) {
-                            forEach(content, function(_content){
-                                appendContent(_content);
-                            });
-                            // return 'array';
-                        }
-                        // console.log('cannot append?');
-                        // return 'cannot append?';
-                    }
-
                     if (isArray(cellContent)) {
                         forEach(cellContent, function(_content){
-                            appendContent(_content);
+                            appendContent(_td, _content);
                         })
                     }
                     else {
-                        appendContent(cellContent);
+                        appendContent(_td, cellContent);
                         // console.log(appendContent(cellContent));
                     }
                     //

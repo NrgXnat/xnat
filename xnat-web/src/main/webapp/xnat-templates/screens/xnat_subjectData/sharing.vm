@@ -164,33 +164,43 @@ XNAT.app.subject.shared_projects.push({id:"$pp.getProperty("project")",
         });
    		});
 				
-				function restShare(_shareAll){
-				  if(document.getElementById("s_projects").selectedIndex>0){
-				   if(XNAT.app.subject==undefined)XNAT.app.subject=new Object();
-				   XNAT.app.subject.share_expts=new Array();
-				   for(var _sAC=0;_sAC<_a.length;_sAC++){
-				     if((_a[_sAC].hasProject=="true" || _shareAll) && _a[_sAC].canRead==true)XNAT.app.subject.share_expts.push(_a[_sAC]);
-				   }
-   XNAT.app.subject.Sharer=new RestSharer(XNAT.app.subject.share_expts,{defaultHeight:450,defaultWidth:700,project:{id:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].value,label:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].text}});
-   XNAT.app.subject.Sharer.init();
-   XNAT.app.subject.Sharer.oncomplete.subscribe(function(e,args){
-			     	var newSP={id:XNAT.app.subject.Sharer.config.project.id,
-     name:XNAT.app.subject.Sharer.config.project.label,
-     label:args[0],
-     group:"",
-     expts:0,
-     canEdit:true};
-			     XNAT.app.subject.cfDT.addRow(newSP);
-			     XNAT.app.subject.	shared_projects.push(newSP);
-     document.getElementById("s_projects").remove(document.getElementById("s_projects").selectedIndex);
-     document.getElementById("s_projects").selectedIndex=0;
-     refreshSharing();
-		   },this,this);
-				  }else{
-                      xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().");
-				  }
-				}
-				
+function restShare(_shareAll){
+	if(document.getElementById("s_projects").selectedIndex>0){
+		if(XNAT.app.subject==undefined){
+			XNAT.app.subject=new Object();
+		}
+		XNAT.app.subject.share_expts=new Array();
+		for(var _sAC=0;_sAC<_a.length;_sAC++){
+			if((_a[_sAC].hasProject=="true" || _shareAll) && _a[_sAC].canRead==true){
+				XNAT.app.subject.share_expts.push(_a[_sAC]);
+			}
+		}
+		XNAT.app.subject.Sharer=new RestSharer(XNAT.app.subject.share_expts,{defaultHeight:450,defaultWidth:700,project:{id:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].value,label:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].text}});
+		XNAT.app.subject.Sharer.init();
+		XNAT.app.subject.Sharer.oncomplete.subscribe(function(e,args){
+			
+			if(args[1] != "$displayManager.getSingularDisplayNameForElement($om.getXSIType())"){
+				return; // Don't update the table if we shared an assessor of this data type 
+			}
+			
+			var newSP= {	id:       XNAT.app.subject.Sharer.config.project.id,
+							name:     XNAT.app.subject.Sharer.config.project.label,
+							label:    args[0],
+							group:    "",
+							expts:    0,
+							canEdit:  true
+						};
+			XNAT.app.subject.cfDT.addRow(newSP);
+			XNAT.app.subject.shared_projects.push(newSP);
+			document.getElementById("s_projects").remove(document.getElementById("s_projects").selectedIndex);
+			document.getElementById("s_projects").selectedIndex=0;
+			refreshSharing();
+		},this,this);
+	}else{
+		xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().");
+	}
+}
+
 				function modifyLabel(row){
     var config ={uri:serverRoot +"/REST/projects/" + row.id +"/subjects",header:"$displayManager.getSingularDisplayNameForSubject()","currentLabel":row.label,"project":row.id,"row":row};
 

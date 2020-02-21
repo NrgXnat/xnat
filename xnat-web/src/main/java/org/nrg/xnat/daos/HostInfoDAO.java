@@ -18,7 +18,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.entities.HostInfo;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.slf4j.LoggerFactory;
 @Repository
 public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 	 
@@ -56,8 +56,8 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 		try {
 			return getHostNumber(InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {
-			return "";
+			LoggerFactory.getLogger(HostInfoDAO.class).error("",e);
+			return "0";
 		}
 	}
-
 }

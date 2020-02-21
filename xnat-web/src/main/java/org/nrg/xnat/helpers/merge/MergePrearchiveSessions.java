@@ -46,6 +46,8 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 		final List<File> toDelete= new ArrayList<>();
 		processing("Merging new meta-data into existing meta-data.");
 		try {
+			final String srcProject  = src.getProject();
+			final String destProject = dest.getProject();
 			for(final XnatImagescandataI srcScan: srcScans){
 				final XnatImagescandataI destScan = MergeUtils.getMatchingScan(srcScan,destScans);
 				if(destScan==null){
@@ -60,7 +62,8 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 							destScan.addFile(srcRes);
 						}else{
 							if(destRes instanceof XnatResourcecatalogI){
-								MergeSessionsA.Results<File> r=mergeCatalogs(srcRootPath,(XnatResourcecatalogI)srcRes,destRootPath,(XnatResourcecatalogI)destRes);
+								MergeSessionsA.Results<File> r=mergeCatalogs(srcProject, srcRootPath, (XnatResourcecatalogI) srcRes,
+										destProject, destRootPath, (XnatResourcecatalogI) destRes);
 								if(r!=null){
 									toDelete.add(r.result);
 									result.addAll(r);

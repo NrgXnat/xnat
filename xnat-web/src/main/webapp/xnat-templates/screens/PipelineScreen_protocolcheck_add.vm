@@ -59,18 +59,18 @@ $newpipeline.getDescription()
 	   <TD><input type="text" size="45" id=$dblQts${schemaType}.parameters.parameter[1].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[1].csvValues$dblQts value="DEFAULT"/> 
    	    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[1].description$dblQts name=$dblQts${schemaType}.parameters.parameter[1].description$dblQts value="The catalog_content value is used to select among the many entries in the catalog file"/>
 	  </tr>
-	 <TR>
-	   <TD><input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[5].name$dblQts name=$dblQts${schemaType}.parameters.parameter[5].name$dblQts value="notify"/><b>Notification options:</b></TD> 
-	   <TD><input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="0"> Do not notify &nbsp; <input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="1"checked>Do Notify <input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="2">Notify a list of people ONLY if validation fails</TD>
-   	    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[5].description$dblQts name=$dblQts${schemaType}.parameters.parameter[5].description$dblQts value="Notify parameter"/>
-	  </tr>
 
 	  	<TR>
 	  		<TD colspan="2" align="center"><input type="button" ONCLICK="javascript:window.close();" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit"  name="eventSubmit_doAddprojectpipeline" value="Submit"/></TD>
 		</TR>
 
  </table>
-
+ ## notification parameter, used to be a radio button
+	<input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[5].name$dblQts name=$dblQts${schemaType}.parameters.parameter[5].name$dblQts value="notify"/> 
+	 <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="1" />
+	 <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[5].description$dblQts name=$dblQts${schemaType}.parameters.parameter[5].description$dblQts value="Notify parameter"/>
+	
+		 
 ## session parameter
 
 	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[2].name$dblQts name=$dblQts${schemaType}.parameters.parameter[2].name$dblQts value="session"/> 

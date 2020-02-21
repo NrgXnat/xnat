@@ -90,6 +90,21 @@ public final class DicomHeaderDump {
             }
         }
     }
+    
+    /**
+     *  If this element has nested tags it doesn't have a value and trying to 
+        extract one using dcm4che will result in an UnsupportedOperationException 
+     * @param e 
+     * @param length 
+     * @return
+     */
+    private String getValueAsString(final DicomElement e, final int length) {
+        try {
+            return !e.hasDicomObjects() ? escapeHTML(e.getValueAsString(null, length)) : "";
+        }catch(UnsupportedOperationException usex) {
+            return "UnsupportedBinarySequence";
+        }
+    }
 
     /**
      * Convert a tag into a row of the XFTTable.
@@ -102,11 +117,8 @@ public final class DicomHeaderDump {
     String[] makeRow(final DicomObject object, final DicomElement element, final String parentTag, final int maxLen) {
         final String tag = TagUtils.toString(element.tag());
 
-        // If this element has nested tags it doesn't have a value and trying to 
-        // extract one using dcm4che will result in an UnsupportedOperationException 
-        // so check first.
-        final String value = !element.hasDicomObjects() ? escapeHTML(element.getValueAsString(null, maxLen)) : "";
-
+        final String value = this.getValueAsString(element,maxLen);
+       
         final String vr = element.vr().toString();
 
         // This fixes the unfortunate tendency of DICOM tags to use good typographical but poor programming practices.
@@ -149,23 +161,30 @@ public final class DicomHeaderDump {
 
         for (Iterator<DicomElement> it = header.iterator(); it.hasNext();) {
             DicomElement e = it.next();
-            if (fields.isEmpty() || fields.containsKey(e.tag())) {
-                if (e.hasDicomObjects()) {
-                    for (int i = 0; i < e.countItems(); i++) {
-                        DicomObject o = e.getDicomObject(i);
-                        t.insertRow(makeRow(header, e, TagUtils.toString(e.tag()), formatParams.valueLength));
-                        for (Iterator<DicomElement> it1 = o.iterator(); it1.hasNext();) {
-                            DicomElement e1 = it1.next();
-                            t.insertRow(makeRow(header, e1, TagUtils.toString(e.tag()), formatParams.valueLength));
-                        }
-                    }
-                } else if (SiemensShadowHeader.isShadowHeader(header, e)) {
-                    SiemensShadowHeader.addRows(t, header, e, fields.get(e.tag()));
-                } else {
-                    t.insertRow(makeRow(header, e, null, formatParams.valueLength));		
-                }
+            try{
+                write( t, header, formatParams, e);
+            }catch(Exception ex){
+                logger.error("Error reading dicom tag,"+ e.tag(),ex);
             }
         }
         return t;
+    }
+    public void write(XFTTable t,DicomObject header,DicomObjectToStringParam formatParams,DicomElement e){
+        if (fields.isEmpty() || fields.containsKey(e.tag())) {
+            if (e.hasDicomObjects()) {
+                for (int i = 0; i < e.countItems(); i++) {
+                    DicomObject o = e.getDicomObject(i);
+                    t.insertRow(makeRow(header, e, TagUtils.toString(e.tag()), formatParams.valueLength));
+                    for (Iterator<DicomElement> it1 = o.iterator(); it1.hasNext();) {
+                        DicomElement e1 = it1.next();
+                        t.insertRow(makeRow(header, e1, TagUtils.toString(e.tag()), formatParams.valueLength));
+                    }
+                }
+            } else if (SiemensShadowHeader.isShadowHeader(header, e)) {
+                SiemensShadowHeader.addRows(t, header, e, fields.get(e.tag()));
+            } else {
+                t.insertRow(makeRow(header, e, null, formatParams.valueLength));		
+            }
+        }
     }
 }

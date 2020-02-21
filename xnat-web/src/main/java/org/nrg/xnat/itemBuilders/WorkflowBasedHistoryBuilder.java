@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
@@ -237,12 +238,18 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 					String project=i.getStringProperty("ID");
 					CriteriaCollection cc= new CriteriaCollection("OR");
 					cc.addClause("wrk:workflowData/ID", project);
-					
+
 					CriteriaCollection inner= new CriteriaCollection("AND");
 					inner.addClause("wrk:workflowData/ExternalID", project);
 					inner.addClause("wrk:workflowData/category", "!=","DATA");
 					
+					CriteriaCollection inner2= new CriteriaCollection("AND");
+					inner2.addClause("wrk:workflowData/ID", ((XnatProjectdata)i).getArcSpecification().getArcProjectId());
+					inner2.addClause("wrk:workflowData/data_type", "arc:project");
+					
 					cc.add(inner);
+					cc.add(inner2);
+					
 					
 					wrks.addAll(WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false));
 				} catch (Exception e) {

@@ -11,12 +11,10 @@ $page.setBgColor($ui.bgcolor)
 
 ## Dependency for markdown parsing
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
-
+#if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
+    <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
+#end
 <div id="login_area">
-    #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
-        <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
-    #end
-
     <div id="login_welcome" class="login-box-container-flex">
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>

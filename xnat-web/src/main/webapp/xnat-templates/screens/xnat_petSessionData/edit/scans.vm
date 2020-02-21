@@ -99,6 +99,7 @@
 	#end
     tempScan.setProperty("series_description",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getSeriesDescription())")');
     tempScan.setProperty("xnat_imageScanData_id",'#escapeJS("$!turbineUtils.unescapeParam($!scan.getProperty('xnat_imagescandata_id'))")');
+      tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
     window.scanSet.scans.push(tempScan);
   #end
   #end
@@ -112,6 +113,7 @@
       if(window.scanSet.scans.length==0){
         for(var newC=0;newC<2;newC++){
           var tempScan = window.classMapping.newInstance("xnat:petScanData");
+            tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
           window.scanSet.new_scans.push(tempScan);
         }
       }

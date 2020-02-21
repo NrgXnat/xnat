@@ -15,7 +15,12 @@
 <div id="front_search" class="yui-navset"></div>
 
 <script type="text/javascript">
+    XNAT.frontTabSearchItems = XNAT.frontTabSearchItems || [];
+</script>
 
+#addGlobalCustomScreens("quick_search/plugins/pre")
+
+<script type="text/javascript">
     (function(){
 
         // add 'xnat-home' class to <body> on home page
@@ -53,6 +58,12 @@
             content: '<div id="quick-search-ct" data-type="ctSessionData" class="quick-search-tab"></div>'
         }));
 
+        $.each(XNAT.frontTabSearchItems, function(i, e) {
+            frontTabs.addTab(new YAHOO.widget.Tab({
+                label: '<span data-tab="'+e['dataTab']+'">'+e['tabTitle']+'</span>',
+                content: '<div id="'+e['dataTab']+'" data-type="'+e['dataType']+'" class="quick-search-tab"></div>'
+            }));
+        });
 
         // get the tab contents with jQuery's $().load() method
         // instead of loading on tab click with YUI
@@ -65,7 +76,10 @@
             if (container[0].hasAttribute('data-loaded')) return;
 
             var dataType = container.data('type');
-            var url = XNAT.url.rootUrl('/app/template/DataTypeSearch.vm/dataType/xnat:' + dataType, '', true, false);
+            if (!dataType.match(/^[A-Za-z]*:/)) {
+                dataType = 'xnat:' + dataType;
+            }
+            var url = XNAT.url.rootUrl('/app/template/DataTypeSearch.vm/dataType/' + dataType, '', true, false);
 
             // get JUST the <form> from the returned HTML
             url += ' form.data-type-search'

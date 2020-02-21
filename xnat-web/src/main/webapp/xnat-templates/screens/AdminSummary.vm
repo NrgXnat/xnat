@@ -12,7 +12,7 @@ var server= "$content.getURI("images")/";
 
 </script>
 
-<form id="durationForm" method="GET" action="$link.setPage("AdminSummary.vm").addPathInfo("popup","true")">
+<form id="durationForm" method="GET" action="$link.setPage("AdminSummary.vm")">
 ##<form id="durationForm" method="GET" action="$link.setPage("AdminSummary.vm")">
 From:
 <select name="duration1">

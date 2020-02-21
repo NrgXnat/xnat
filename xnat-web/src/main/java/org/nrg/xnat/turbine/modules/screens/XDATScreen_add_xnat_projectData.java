@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -22,6 +23,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +39,15 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
     public String getElementName() {
 	    return XnatProjectdata.SCHEMA_ELEMENT_NAME;
 	}
+    
+    @Override
+    protected boolean isAuthorized(final RunData data) throws Exception {
+        if(!XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation()) {
+            return super.isAuthorizedAdmin(data);
+        }else {
+            return super.isAuthorized(data);
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -83,6 +94,13 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
             context.put("petAssessors", petAssessors);
 	        context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
 
+            // Add custom content into the velocity context.
+            // Define new objects of type PostAddProjectContextPopulator to have them injected here.
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
+            for (PostAddProjectContextPopulator p : contextPopulators) {
+                context.put(p.getName(), p.getObject());
+            }
+             
             if (StringUtils.isNotBlank(id)) {
                 final ArcProject arcProject = ArcSpecManager.GetInstance().getProjectArc(id);
                 if (arcProject != null) {

@@ -158,8 +158,8 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 	        }
 	
 	        for (Class<?> clazz : classes) {
-	            if (clazz.isInstance(FilteredExptListHandlerI.class)) {
-	            	handlers.add((FilteredExptListHandlerI)clazz.newInstance());
+	            if (FilteredExptListHandlerI.class.isAssignableFrom(clazz)) {
+	                handlers.add((FilteredExptListHandlerI)clazz.newInstance());
 	            }
 	        }
     	}
@@ -168,7 +168,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
     }
     
     //FilteredExptListHandlerI allows additional experiment list handlers to be added via modules
-    interface FilteredExptListHandlerI {
+    public interface FilteredExptListHandlerI {
     	boolean canHandle(SecureResource resource);
     	XFTTable build(ExperimentListResource resource,Hashtable<String,Object> params) throws Exception;
     }
@@ -215,7 +215,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             builder.append(") perm ON expt.id=perm.id ");
 
             builder.append(" RIGHT JOIN xnat_imageSessionData isd ON perm.id=isd.id  ");
-            builder.append(" WHERE (insert_date > (NOW() - INTERVAL '").append(days).append(" day') OR activation_date > (NOW() - INTERVAL '").append(days).append(" day') OR last_modified > (NOW() - INTERVAL '").append(days).append(" day') OR workflow_date > (NOW() - INTERVAL '").append(days).append(" day')) ");
+            builder.append(" WHERE emd.status != '").append(ViewManager.OBSOLETE).append("' AND (insert_date > (NOW() - INTERVAL '").append(days).append(" day') OR activation_date > (NOW() - INTERVAL '").append(days).append(" day') OR last_modified > (NOW() - INTERVAL '").append(days).append(" day') OR workflow_date > (NOW() - INTERVAL '").append(days).append(" day')) ");
             builder.append(" )SEARCH ORDER BY action_date DESC");
             if(limit) {
             	 builder.append(" LIMIT 60");

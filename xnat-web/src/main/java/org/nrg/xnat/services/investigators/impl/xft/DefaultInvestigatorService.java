@@ -75,7 +75,7 @@ public class DefaultInvestigatorService implements InvestigatorService {
             item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".institution", investigator.getInstitution());
             item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".email", investigator.getEmail());
             item.setProperty(XnatInvestigatordata.SCHEMA_ELEMENT_NAME + ".phone", investigator.getPhone());
-            if (!SaveItemHelper.authorizedSave(item, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.CREATE_INVESTTGATOR))) {
+            if (!SaveItemHelper.authorizedSave(item, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.CREATE_INVESTTGATOR, EventUtils.CREATE_INVESTTGATOR, EventUtils.CREATE_INVESTTGATOR))) {
                 log.error("Failed to create a new investigator \"{}\" for user {}. Check the logs for possible errors or exceptions.", investigator, user.getUsername());
                 return null;
             }
@@ -164,7 +164,7 @@ public class DefaultInvestigatorService implements InvestigatorService {
 
         final boolean saved;
         try {
-            saved = SaveItemHelper.authorizedSave(existing, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.MODIFY_INVESTTGATOR));
+            saved = SaveItemHelper.authorizedSave(existing, user, false, false, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, EventUtils.MODIFY_INVESTTGATOR, EventUtils.MODIFY_INVESTTGATOR, EventUtils.MODIFY_INVESTTGATOR));
         } catch (Exception e) {
             throw new XftItemException("Failed to save the investigator with ID " + investigatorId + ": " + investigator.toString(), e);
         }

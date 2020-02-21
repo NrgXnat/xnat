@@ -11,14 +11,18 @@ package org.nrg.xnat.restlet.actions;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
@@ -83,7 +87,7 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		final SAXReader reader = new SAXReader(user);
 		final XFTItem temp2 = reader.parse(xml.getAbsolutePath());
 		final XnatImagesessiondata newmr = (XnatImagesessiondata)BaseElement.GetGeneratedItem(temp2);
-        XnatImagescandata newscan=null;
+		XnatImagescandata newscan=null;
         
 		
     	if(newmr.getScans_scan().size()>1){
@@ -100,12 +104,23 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
         newscan.setImageSessionId(tempMR.getImageSessionId());
         newscan.setId(tempMR.getId());
         newscan.setXnatImagescandataId(tempMR.getXnatImagescandataId());
-    	
-	    if(!allowDataDeletion){
-    		while(newscan.getFile().size()>0)newscan.removeFile(0);
+
+		List<String> filesToRemove = new ArrayList<>();
+	    if(allowDataDeletion) {
+			for (XnatAbstractresourceI cat : tempMR.getFile()) {
+				if (cat instanceof XnatResourcecatalog) {
+					filesToRemove.add(((XnatResourcecatalog) cat).getUri());
+				}
+			}
+		} else {
+			XnatAbstractresourceI res = newscan.getFile().get(0);
+			if (res instanceof XnatResourcecatalog) {
+				filesToRemove.add(((XnatResourcecatalog) res).getUri());
+			}
+			newscan.removeFile(0);
 		}
 
-        final ValidationResultsI vr = newmr.validate();        
+        final ValidationResultsI vr = newscan.validate();        
         
         if (vr != null && !vr.isValid())
         {
@@ -115,14 +130,17 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
         	final XnatProjectdata proj = mr.getProjectData();
         	if(SaveItemHelper.authorizedSave(newscan,user,false,allowDataDeletion,c)){
 				try {
-				MaterializedView.deleteByUser(user);
-
-				if(proj.getArcSpecification().getQuarantineCode()!=null && proj.getArcSpecification().getQuarantineCode().equals(1)){
-					mr.quarantine(user);
-				}
-					} catch (Exception e) {
-						logger.error("",e);
+					for (String uri : filesToRemove) {
+						new File(uri).delete();
 					}
+					MaterializedView.deleteByUser(user);
+
+					if(proj.getArcSpecification().getQuarantineCode()!=null && proj.getArcSpecification().getQuarantineCode().equals(1)){
+						mr.quarantine(user);
+					}
+				} catch (Exception e) {
+					logger.error("",e);
+				}
 			}
         }
 

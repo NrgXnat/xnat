@@ -65,7 +65,20 @@
                 View DICOM Headers
             </a>
 		</td>
+	</tr>
 	#end
+	
+	#if ($scan.getParameters_ecatcalibrationfactor())
+	<tr>
+		<td></td>
+		<td>
+			<a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/ecatdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=EcatScanTable.vm")">
+					View ECAT Headers
+			</a>
+		</td>
+	</tr>
+	#end
+	
 </table>
 
 <!-- END /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->

@@ -74,7 +74,7 @@ var XNAT = getObject(XNAT);
     // gets list of ALL projects on the system
     function getAllProjects(success, failure){
         return XNAT.xhr.getJSON({
-            url: XNAT.url.restUrl('/data/projects', ['format=json']),
+            url: XNAT.url.restUrl('/data/projects', ['allDataOverride=true','format=json']),
             success: success,
             error: failure
         })

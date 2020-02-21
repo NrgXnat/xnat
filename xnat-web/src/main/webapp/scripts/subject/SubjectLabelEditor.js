@@ -93,7 +93,13 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 					}
 
 					if (confirm("Modifying the label of a " + that.header + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  Are you sure you want to make this change?")) {
-						that.modifyLabel();
+				    	if(showReason){
+                			var justification=new XNAT.app.requestJustification("label_change","Label Modification Justification",that.modifyLabel,that);
+                		}else{
+                			var passthrough= new XNAT.app.passThrough(that.modifyLabel,that);
+                			passthrough.fire();
+                		}
+					//	that.modifyLabel();
 					}
 				}
 			};
@@ -220,7 +226,7 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 		return newVal;
 	};
 
-	this.modifyLabel = function() {
+	this.modifyLabel = function(arg1,arg2,container) {
 		var settingsCallback = {
 			success : function(o) {
 				closeModalPanel("modify_new_label");
@@ -235,8 +241,11 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 			},
 			scope : this
 		};
-
+		
+		var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
+		
 		var params = "";
+		params+="&event_reason="+event_reason;
 		params += "&event_type=WEB_FORM";
 		params += "&event_action=Modified label";
 

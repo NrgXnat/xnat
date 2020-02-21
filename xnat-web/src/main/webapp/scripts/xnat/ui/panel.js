@@ -847,6 +847,14 @@ var XNAT = getObject(XNAT || {});
                             console.log('something is broken: ' + e);
                         }
                     }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    XNAT.dialog.message({
+                        title: textStatus +': ' + errorThrown,
+                        content: '' +
+                            '<p>' + jqXHR.responseText + '</p>',
+                        width: 500
+                    });
                 }
             };
 

@@ -10,7 +10,7 @@
 package org.nrg.xnat.restlet.resources.files;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.*;
@@ -23,7 +23,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.resources.ItemResource;
-import org.nrg.xnat.restlet.resources.ScanResource;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -264,29 +264,25 @@ public class FileResource extends ItemResource {
 						}
 						
 						XnatResourcecatalog catResource=(XnatResourcecatalog)resource;
-						
-						File catFile = catResource.getCatalogFile(proj.getRootArchivePath());
-						
-						String parentPath=catFile.getParent();
-						
-						CatCatalogBean cat=catResource.getCleanCatalog(proj.getRootArchivePath(), false,null,null);
-						
-						CatEntryI entry = retrieveEntry(cat, index + "/" + filename);
+						CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(
+								proj.getRootArchivePath(), catResource, false, proj.getId());
+
+						CatEntryI entry = retrieveEntry(catalogData.catBean, index + "/" + filename);
 						
 						if(entry==null){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to identify specified file.");
 							return;
 						}
 						
-						File f = new File(parentPath,entry.getUri());
+						File f = new File(catalogData.catPath, entry.getUri());
 						
 						if(f.exists()){
 							FileUtils.DeleteFile(f);
-							this.removeEntry(cat, entry);
+							this.removeEntry(catalogData.catBean, entry);
 							try
 							{
-							    FileWriter fw = new FileWriter(catFile);
-								cat.toXML(fw, true);
+							    FileWriter fw = new FileWriter(catalogData.catFile);
+								catalogData.catBean.toXML(fw, true);
 								fw.close();
 							 }catch(Exception e){
 							 log.error("", e);
@@ -354,19 +350,23 @@ public class FileResource extends ItemResource {
 				}
 				
 				XnatResourcecatalog catResource=(XnatResourcecatalog)resource;
-				
-				File catFile = catResource.getCatalogFile(proj.getRootArchivePath());
-				
-				String parentPath=catFile.getParent();
-				
-				CatCatalogI cat=catResource.getCleanCatalog(proj.getRootArchivePath(), false,null,null);
-				
-				CatEntryI entry = retrieveEntry(cat, index + "/" + filename);
+
+				CatalogUtils.CatalogData catalogData;
+				try {
+					catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(
+							proj.getRootArchivePath(), catResource, false, proj.getId());
+				} catch (ServerException e) {
+					this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to read catalog " +
+							e.getMessage());
+					return null;
+				}
+
+				CatEntryI entry = retrieveEntry(catalogData.catBean, index + "/" + filename);
 				
 				if(entry==null){
 					this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to identify specified file.");
 				}else{
-					File f = new File(parentPath,entry.getUri());
+					File f = new File(catalogData.catPath, entry.getUri());
 					return representFile(f,mt);
 				}
 				

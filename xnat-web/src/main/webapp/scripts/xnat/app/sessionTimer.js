@@ -35,6 +35,8 @@ var XNAT = getObject(XNAT);
     XNAT.app.timeout = timeout = timer =
         getObject(XNAT.app.timeout || {});
 
+    XNAT.app.timeout.maintainLogin = false;
+
     XNAT.app.siteRoot = siteRoot =
         XNAT.app.siteRoot || XNAT.url.rootUrl();
 
@@ -214,7 +216,6 @@ var XNAT = getObject(XNAT);
         // return for later use with timeout.getValues()
         return getTimeoutValues;
     })();
-
 
     // set SESSION_TIMEOUT_* cookies on load
     cookie.SESSION_TIMEOUT_TIME.set(timeout.endTime);
@@ -579,10 +580,20 @@ var XNAT = getObject(XNAT);
         };
 
 
+        var renewalCounter = 1;
         // check every second to see if our timeout time has been reached
         timeout.check = function(){
 
             // debugLog('timeout.check()');
+
+            if (XNAT.app.timeout.maintainLogin) {
+                if (renewalCounter === 60) {
+                    timeout.renew();
+                    renewalCounter = 0;
+                } else {
+                    renewalCounter++;
+                }
+            }
 
             timeout.getValues();
 

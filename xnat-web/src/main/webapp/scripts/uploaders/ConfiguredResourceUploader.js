@@ -137,7 +137,7 @@ XNAT.app.crUploader={
 		
 		//render select options
 		$.each(configs,function(index,value){
-			$('#cruSel').append($("<option value='" + value.name +"' data-message='" + ((value.description)?value.description:"") +"' data-level='" + ((value.level)?value.level:"") +"' data-overwrite='" + ((value.overwrite)?value.overwrite:"") +"' data-label='" + value.label +"' data-subdir='" + value.subdir +"'>" + value.name +"</option>"));
+			$('#cruSel').append($("<option value='" + value.name +"' data-message='" + ((value.description)?value.description:"") +"' data-level='" + ((value.level)?value.level:"") +"' data-overwrite='" + ((value.overwrite)?value.overwrite:"") +"' data-triage='" + ((value.triage)?value.triage:"") +"' data-format='" + ((value.format)?value.format:"") +"' data-label='" + value.label +"' data-subdir='" + value.subdir +"'>" + value.name +"</option>"));
 		});
 	
 		if(this.registered==undefined){
@@ -147,13 +147,28 @@ XNAT.app.crUploader={
 			$('#cruSel').change(function(){
 				if($(this).val()!=""){
 					var desc=$("#cruSel option:selected").attr("data-message");
-					if(desc!=null && desc!=undefined){
-						$('#cruMsg').html(desc);
+					
+					var triage=$("#cruSel option:selected").attr("data-triage");
+					var allowFormat=$("#cruSel option:selected").attr("data-format");
+
+					if(allowFormat){
+						$('#divFormat').css( "display","block");
 					}else{
-						$('#cruMsg').html("");
+						$('#divFormat').css( "display","none" );
+					}
+					if(triage){
+						triageMessage=' (Your files will be uploaded to the project quarantine location and will await review by project administrators) ';
+					}else{
+						triageMessage='';
+					}
+					
+					if(desc!=null && desc!=undefined){
+						$('#cruMsg').html(desc + triageMessage);
+					}else{
+						$('#cruMsg').html("" + triageMessage);
 					}
 				}else{
-					$('#cruMsg').html("");
+					$('#cruMsg').html("" + triageMessage);
 				}
 			});
 		}
@@ -186,6 +201,8 @@ XNAT.app.crUploader={
 		var selector=$("#cruSel option:selected");
 		this.overwrite=selector.attr("data-overwrite");
 		this.level=selector.attr("data-level");
+		this.triage=selector.attr("data-triage");
+		this.allowFormat=selector.attr("data-format");
 
 		var params="";		
 		params+="&event_type=WEB_FORM";
@@ -223,17 +240,40 @@ XNAT.app.crUploader={
 			params+="&overwrite=true";
 		}
 		
+		if(frm.cru2_file_content.value!=""){
+			params+="&content="+frm.cru2_file_content.value;
+		}
+		if(frm.cru2_file_format.value!=""){
+			params+="&format="+frm.cru2_file_format.value;
+		}
+		
 		var lvl="";
 		if(this.level!='default' && this.level!='' && this.level!=undefined){
 			lvl="/" + this.level;
 		}
 		
-		YAHOO.util.Connect.asyncRequest('POST',this.uri + lvl  +"/resources/"+ $(selector).attr('data-label') +"/files"+filepath+"?XNAT_CSRF=" + csrfToken +params,callback);
+		if(this.triage){
+			var target="";
+			target=this.uri + lvl  +"/resources/"+$(selector).attr('data-label');
+			target=target.replace("/data/projects", "/data/archive/projects");
+			params+="&target="+target;
+			params+="&overwrite="+this.overwrite;
+			YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/data/services/triage/projects/"+this.project+"/resources/"+ (new Date()).getTime() +"/files"+filepath+"?XNAT_CSRF=" + csrfToken+params,callback);
+		}else{
+			YAHOO.util.Connect.asyncRequest('POST',this.uri + lvl  +"/resources/"+ $(selector).attr('data-label') +"/files"+filepath+"?XNAT_CSRF=" + csrfToken +params,callback);
+		}
 	},
 	handleUpload:function(response,o2,o3){
 		//handles the response form the upload operation
 		//because this is a file upload, both successes and failures will use this method
-		if(response.responseText==undefined || response.responseText=="" || response.responseText.match(/^<pre.*?><\/pre>$/)){
+		var triage=$("#cruSel option:selected").attr("data-triage");
+		if(response.responseText==undefined || response.responseText=="" || response.responseText.toLowerCase().match(/^<pre.*?><\/pre>$/)){
+			if(triage){
+				showMessage("page_body","Upload successful.","Your files have be successfully uploaded to the project quarantine location and will await review by project administrators.");
+
+			}else{
+				showMessage("page_body","Upload successful.","Your files have been successfully uploaded.");
+			}
 			showMessage("page_body","Upload successful.","Your files have been successfully uploaded.");
 			document.getElementById("cru_upload_frm").upload_file.value="";
 			if(window.viewer!=undefined && window.viewer.loading>0){
@@ -298,6 +338,8 @@ tmpUploadFrm+='				<div>Select destination directory for uploaded files:</div>';
 tmpUploadFrm+='				<div><select id="cruSel"><option value="">SELECT</option></select></div>';
 tmpUploadFrm+='				<div id="cruMsg" style="padding:4px;"></div>';
 tmpUploadFrm+='				<div style="margin-top:12px;margin-bottom:16px;">Local File: <input type="file" id="cru_upload_file" name="upload_file"/></div>';
+tmpUploadFrm+='				<div id="divFormat" style="display:none;margin-bottom:4px;"><table><tr><td>Content:</td><td><input id="cru2_file_content" name="cru2_file_content" type="text"/></td></tr>';
+tmpUploadFrm+='				<tr><td>Format:</td><td><input id="cru2_file_format" name="cru2_file_format" type="text"/></td></tr></table></div>';
 if(showReason){
 	tmpUploadFrm+='				<div style="margin-bottom:16px;">Justification:<br><textarea id="cru_event_reason" name="event_reason" cols="50" rows="3"></textarea></div>';
 }
@@ -308,6 +350,6 @@ tmpUploadFrm+='</div> ';
 $("body").append(tmpUploadFrm);
 
 //initialize modal upload dialog
-XNAT.app.crUploader.dialog=new YAHOO.widget.Dialog("cru_dialog", { fixedcenter:true, visible:false, width:"500px", height:"300px", modal:true, close:true, draggable:true } ),
+XNAT.app.crUploader.dialog=new YAHOO.widget.Dialog("cru_dialog", { fixedcenter:true, visible:false, width:"500px", height:"360px", modal:true, close:true, draggable:true } ),
 XNAT.app.crUploader.dialog.cfg.queueProperty("buttons", [{ text:"Cancel", handler:{fn:function(){XNAT.app.crUploader.dialog.hide();}}},{ text:"Upload", handler:{fn:function(){XNAT.app.crUploader.doUpload();}}, isDefault:true}]);
 }

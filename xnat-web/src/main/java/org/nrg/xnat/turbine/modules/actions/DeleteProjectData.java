@@ -86,11 +86,12 @@ public class DeleteProjectData extends SecureAction {
                                         if (removeFiles) {
                                             final List<XFTItem> hash = expt.getItem().getChildrenOfType("xnat:abstractResource", true);
 
+                                            String archivePath = project.getRootArchivePath();
                                             for (XFTItem resource : hash) {
                                                 ItemI om = BaseElement.GetGeneratedItem(resource);
                                                 if (om instanceof XnatAbstractresource) {
                                                     XnatAbstractresource resourceA = (XnatAbstractresource) om;
-                                                    resourceA.deleteWithBackup(project.getRootArchivePath(), user, ci);
+                                                    resourceA.deleteWithBackup(archivePath, projectId, user, ci);
                                                     if (!deleteProject) {
                                                         builder.element(resourceA);
                                                     }
@@ -120,11 +121,12 @@ public class DeleteProjectData extends SecureAction {
                                                     if (removeFiles) {
                                                         final List<XFTItem> hash = ((XnatImageassessordata) expt).getItem().getChildrenOfType("xnat:abstractResource", false);
 
+                                                        String archivePath = project.getRootArchivePath();
                                                         for (XFTItem resource : hash) {
                                                             ItemI om = BaseElement.GetGeneratedItem(resource);
                                                             if (om instanceof XnatAbstractresource) {
                                                                 XnatAbstractresource resourceA = (XnatAbstractresource) om;
-                                                                resourceA.deleteWithBackup(project.getRootArchivePath(), user, ci);
+                                                                resourceA.deleteWithBackup(archivePath, projectId, user, ci);
                                                                 if (!deleteProject) {
                                                                     builder.element(resourceA);
                                                                 }

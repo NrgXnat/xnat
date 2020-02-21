@@ -137,7 +137,102 @@ function SearchXMLManager(_xml){
 		try{if(this.dialogPopup!=undefined)this.dialogPopup.destroy();}catch(o){}
 		try{if(this.filterPopup!=undefined)this.filterPopup.destroy();}catch(o){}
 		try{if(this.joinPopup!=undefined)this.joinPopup.destroy();}catch(o){}
+		try{if(this.valuePopup!=undefined)this.valuePopup.destroy();}catch(o){}
+	}
+
+	this.renderValueForm=function(selectedFieldOption){
+		this.selectedFieldValueOption=selectedFieldOption;
+		
+		var popupDIV = document.createElement("DIV");
+		popupDIV.id="search_value_popup";
+		var popupHD = document.createElement("DIV");
+		popupHD.className="hd";
+		popupDIV.appendChild(popupHD);
+		var popupBD = document.createElement("DIV");
+		popupBD.className="bd";
+
+		popupBD.style.overflow="auto";
+		popupBD.style.padding="10px";
+
+		popupDIV.appendChild(popupBD);
+
+
+		var popupFT = document.createElement("DIV");
+		popupFT.className="ft";
+		popupFT.style.height="20px";
+		popupDIV.appendChild(popupFT);
+
+		popupHD.innerHTML="Filtered Column Definition";
+
+	    var existingDIV=document.createElement("div");
+	    existingDIV.style.border="solid thin #DEDEDE";
+	    existingDIV.style.padding="3px";
+	    existingDIV.style.overflow="auto";
+
+		popupBD.appendChild(existingDIV);
+
+		if(!this.searchDOM){
+			this.searchDOM=new xdat_stored_search();
 		}
+
+		//BEGIN current fields section
+		var all_fields_table = document.createElement("div");
+		all_fields_table.id="filter_value_table";
+		all_fields_table.style.marginTop="5pt";
+		//all_fields_table.style.overflow="auto";
+
+		existingDIV.appendChild(all_fields_table);
+
+		var si_t=document.createElement("table");
+		var si_tb=document.createElement("tbody");
+
+		var si_tr=document.createElement("tr");
+		var si_th1=document.createElement("td");
+		si_th1.colSpan="4";
+		si_th1.innerHTML="You've selected a column which requires an additional value (<b>" + selectedFieldOption.text +"</b>).  Please specify a value to use to filter your result.";
+		si_tr.appendChild(si_th1);
+		si_tb.appendChild(si_tr);
+
+		var si_tr=document.createElement("tr");
+		var si_td1=document.createElement("td");
+		si_td1.vAlign="top";
+		var si_td2=document.createElement("td");
+		si_td2.vAlign="top";
+
+		si_td1.innerHTML="Filter Value:";
+		this.valueDefinitionInput=si_td2.appendChild(document.createElement("input"));
+		this.valueDefinitionInput.type="text";
+
+		si_tr.appendChild(si_td1);
+		si_tr.appendChild(si_td2);
+		si_tb.appendChild(si_tr);
+		si_t.appendChild(si_tb);
+		all_fields_table.appendChild(si_t);
+
+
+		//add to page
+		var tp_fm=document.getElementById("tp_fm");
+		tp_fm.appendChild(popupDIV);
+
+
+		this.valuePopup=new YAHOO.widget.Dialog(popupDIV,{zIndex:9999,width:_joinW+"px",height:_joinH+"px",visible:false,fixedcenter:true,modal:true});
+		this.valuePopup.sm=this;
+
+	    var myButtons = [ { text:"Submit", handler:handleValueSubmit, isDefault:true },
+						  { text:"Cancel", handler:handleValueCancel } ];
+		this.valuePopup.cfg.queueProperty("buttons", myButtons);
+
+		this.valuePopup.render();
+
+
+		this.valuePopup.show();
+
+		this.valuePopup.hideEvent.subscribe(function(obj1,obj2,obj3){
+			this.valuePopup.destroy();
+			YAHOO.util.Event.preventDefault(obj1);
+		},this,this);
+	}
+	
 
 	this.renderFilterForm2=function(element_name, field_id, oColumn){
 		var popupDIV = document.createElement("DIV");
@@ -372,13 +467,13 @@ function SearchXMLManager(_xml){
 		            xsf.FieldId=tF.id;
 			        if(tF.header!=undefined && tF.header!=null){
 					     xsf.Header=tF.header;
-				}else{
+			        }else{
 					     xsf.Header=tF.id;
-			}
+			        }
 		            this.searchDOM.appendField(xsf);
-		}
+				}
 				this.onsubmit.fire(this.searchDOM);
-		}
+			}
 		},this,true);
 		si_td4.appendChild(this.versionButton);
 
@@ -660,19 +755,23 @@ function SearchXMLManager(_xml){
 		lImg.onclick=function(){
 			for(var cfSc=0;cfSc<this.afS.options.length;cfSc++){
 				if(this.afS.options[cfSc].selected){
-					this.manager.currentFields.push({
-						"ElementName":this.afS.options[cfSc].element_name,
-	  					"FieldId":this.afS.options[cfSc].field_id,
-	  					"Header":this.afS.options[cfSc].header,
-	  					"Type":this.afS.options[cfSc].type});
-                    for(var pfSc=0;pfSc<this.manager.pFs.length;pfSc++){
-                        var pF = this.manager.pFs[pfSc];
-                        if(pF.ELEMENT_NAME==this.afS.options[cfSc].element_name
-                            && pF.FIELD_ID==this.afS.options[cfSc].field_id){
-                            // ...then remove it from the potential fields column
-                            this.manager.pFs.splice(pfSc,1);
-                        }
-                    }
+					if(this.afS.options[cfSc].requires_value=="true"){
+						this.manager.renderValueForm(this.afS.options[cfSc]);
+					}else{
+						this.manager.currentFields.push({
+							"ElementName":this.afS.options[cfSc].element_name,
+		  					"FieldId":this.afS.options[cfSc].field_id,
+		  					"Header":this.afS.options[cfSc].header,
+		  					"Type":this.afS.options[cfSc].type});
+	                    for(var pfSc=0;pfSc<this.manager.pFs.length;pfSc++){
+	                        var pF = this.manager.pFs[pfSc];
+	                        if(pF.ELEMENT_NAME==this.afS.options[cfSc].element_name
+	                            && pF.FIELD_ID==this.afS.options[cfSc].field_id){
+	                            // ...then remove it from the potential fields column
+	                            this.manager.pFs.splice(pfSc,1);
+	                        }
+	                    }
+					}
 				}
 			}
 			this.manager.renderCurrentFieldsDT();
@@ -837,6 +936,7 @@ function SearchXMLManager(_xml){
 					tO.element_name=this.pFs[_efC].ELEMENT_NAME;
 					tO.field_id=this.pFs[_efC].FIELD_ID;
 					tO.header=this.pFs[_efC].HEADER;
+					tO.requires_value=this.pFs[_efC].REQUIRES_VALUE;
 					tO.type=this.pFs[_efC].TYPE;
 					tO.style.backgroundColor=this.gbc(this.pFs[_efC].ELEMENT_NAME);
 					this.afS.options[this.afS.options.length]=tO;
@@ -869,6 +969,38 @@ function SearchXMLManager(_xml){
 			this.cfS.options[cfSC].style.backgroundColor=this.gbc(this.currentFields[cfSC].ElementName);
 			if(sel!=undefined && sel.contains(cfSC))this.cfS.options[cfSC].selected=true;
 		}
+	}
+}
+
+var handleValueCancel = function() {
+	this.sm.valuePopup.destroy();
+}
+
+var handleValueSubmit = function(obj1, obj2, obj3, obj4) {
+	var enteredValue=this.sm.valueDefinitionInput.value;
+	try{
+		if(enteredValue=="")
+		{
+			displayError("Please specify a filter value.");
+			return false;
+		}
+
+		if(! (new RegExp('^[A-Za-z0-9 _]+$')).test(enteredValue)){
+			displayError("Invalid characters specified.");
+			return false;
+		}
+	
+		this.sm.currentFields.push({
+			"ElementName":this.sm.selectedFieldValueOption.element_name,
+			"FieldId":this.sm.selectedFieldValueOption.field_id+"="+enteredValue,
+			"Header":enteredValue,
+			"Type":this.sm.selectedFieldValueOption.type,
+			"Value":enteredValue});
+		this.sm.renderCurrentFieldsDT();
+		this.sm.renderPotentialFields();
+		this.sm.valuePopup.destroy();
+	}catch(e){
+		displayError(e.message);
 	}
 }
 
@@ -963,18 +1095,25 @@ xdat_stored_search.prototype.setFieldSequence=function(name,field,index){
 	}
 }
 
-xdat_stored_search.prototype.addField=function(element_name,field_id,header,type){
+xdat_stored_search.prototype.addField=function(element_name,field_id,header,type,value){
 	for(var sfAFC=0;sfAFC<this.SearchField.length;sfAFC++){
 		var sf=this.SearchField[sfAFC];
-		if(sf.ElementName==element_name && sf.FieldId==field_id){
+		if(sf.ElementName==element_name && sf.FieldId==field_id && sf.Value==value){
 			return;
 		}
 	}
 	var xsf=new xdat_search_field();
     xsf.ElementName=element_name;
-    xsf.FieldId=field_id;
-    xsf.Header=header;
     xsf.Type=type;
+    
+    if(value==undefined){
+        xsf.FieldId=field_id;
+        xsf.Header=header;
+    }else{
+        xsf.FieldId=field_id+"="+value;
+        xsf.Header=value;
+        xsf.Value=value;
+    }
 
 	this.appendField(xsf);
 }
@@ -1980,18 +2119,18 @@ xdat_stored_search.prototype.renderFilterDisplay=function(){
 			  var step_1 = LocalSM.filter_string("%<", this.SearchWhere[0].toString(this.RootElementName,this));
 			  var step_2 = LocalSM.filter_string(">%", step_1);
 			  var step_3 = LocalSM.filter_string("%", step_2);
-              var step_4 = step_3.split("\)").join("\)&#8203;");
-              var step_5 = step_4.split(",").join(",&#8203;");
-   			  return "Filter(s):&nbsp;" + step_5;
+              var step_4 = step_3.split("\)").join("\) ");
+              var step_5 = step_4.split(",").join(", ");
+   			  return "Filter(s): " + step_5;
    			}else{
    				var rfdswT="";
    				for(var rfdswC=0;rfdswC<this.SearchWhere.length;rfdswC++){
    					if(rfdswC>0)rfdswT+=" AND ";
    					rfdswT+=this.SearchWhere[rfdswC].toString(this.RootElementName,this);
    				}
-                rfdswT = rfdswT.split("\)").join("\)&#8203;");
-                rfdswT = rfdswT.split(",").join(",&#8203;");
-   				return "Filter(s):&nbsp;" + rfdswT;
+                rfdswT = rfdswT.split("\)").join("\) ");
+                rfdswT = rfdswT.split(",").join(", ");
+   				return "Filter(s): " + rfdswT;
    			}
    		}
 }

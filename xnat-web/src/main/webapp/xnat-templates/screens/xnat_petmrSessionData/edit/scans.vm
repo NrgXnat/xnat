@@ -38,6 +38,7 @@
         this.modalitySelector.onResponse.subscribe(function(){
             var mod=this.modalitySelector.modality;
             var tempScan = window.classMapping.newInstance(mod);
+            tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
             window.scanSet.new_scans.push(tempScan);
             window.scanSet.onLoad.fire();
         },this,this);
@@ -88,6 +89,7 @@
 		tempScan.stats='<div id="scan${scan.getId()}Actions" data-scan-id="$scan.getId()" class="scanActions"></div>';
 	#end
             tempScan.setProperty("xnat_imageScanData_id","$!turbineUtils.unescapeParam($!scan.getProperty('xnat_imagescandata_id'))");
+            tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
             window.scanSet.scans.push(tempScan);
 
             if(!options.types["$!scan.getXSIType()"]) {

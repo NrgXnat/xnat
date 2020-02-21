@@ -6,7 +6,11 @@
 		#elseif($!scan.getStringProperty("xnat:qcScanData/pass").equals("0"))
 			<span style="color:red">Failed</span>
 		#else
-			<span style="color:gold">Unknown ($!scan.getStringProperty("xnat:qcScanData/pass")</span>
+			#if ($!scan.getStringProperty("xnat:qcScanData/pass"))
+				<span style="color:gold">Unknown ($!scan.getStringProperty("xnat:qcScanData/pass"))</span>
+			#else
+				N/A
+			#end
 		#end
 	</td>
 </tr>

@@ -12,33 +12,32 @@
  */
 package org.nrg.xnat.restlet.resources.prearchive;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ActionException;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatResourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xft.XFTTable;
-import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
-
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.List;
 
 /**
  * @author tolsen01
  *
  */
+@Slf4j
 public class PrearcSessionResourcesList extends PrearcSessionResourceA {
-	static Logger logger = Logger.getLogger(PrearcSessionResourcesList.class);
-	
+
 	public PrearcSessionResourcesList(Context context, Request request,
 			Response response) {
 		super(context, request, response);
@@ -68,17 +67,35 @@ public class PrearcSessionResourcesList extends PrearcSessionResourceA {
 			return null;
 		}
 		
-        final XFTTable table=new XFTTable();
-        table.initTable(columns);
-        for(final XnatImagescandataI scan: info.session.getScans_scan()){
-	        for (final XnatAbstractresourceI res : scan.getFile()) {
-	        	final String rootPath=CatalogUtils.getCatalogFile(info.session.getPrearchivepath(), ((XnatResourcecatalogI)res)).getParentFile().getAbsolutePath();
-	        	CatalogUtils.Stats stats=CatalogUtils.getFileStats(CatalogUtils.getCleanCatalog(info.session.getPrearchivepath(), (XnatResourcecatalogI)res, false), rootPath);
-	        	Object[] oarray = new Object[] { "scans", scan.getId(),res.getLabel(), stats.count, stats.size};
-	        	table.insertRow(oarray);
-	        }
-        }
-        
-        return representTable(table, mt, new Hashtable<String,Object>());
+		final XFTTable table=new XFTTable();
+		table.initTable(columns);
+		String project = info.session.getProject();
+		String prearchivePath = info.session.getPrearchivepath();
+		for(final XnatImagescandataI scan: info.session.getScans_scan()){
+			for (final XnatAbstractresourceI res : scan.getFile()) {
+				if(res instanceof XnatResourcecatalogI){
+					try {
+						final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(prearchivePath, (XnatResourcecatalogI) res, false, project
+						);
+						CatalogUtils.Stats stats = CatalogUtils.getFileStats(catalogData.catBean, catalogData.catPath,
+								catalogData.project);
+						table.insertRow(new Object[] { "scans", scan.getId(), res.getLabel(), stats.count, stats.size});
+					} catch (ServerException e) {
+						log.error("Unable to read catalog for resource {}", res.getXnatAbstractresourceId(), e);
+					}
+				}else if(res instanceof XnatResourceI){
+					File f= new File(prearchivePath,((XnatResourceI)res).getUri());
+					if(f.exists()){
+						Object[] oarray = new Object[] { "scans", scan.getId(),res.getLabel(), 1, f.length()};
+						table.insertRow(oarray);
+					}else{
+						Object[] oarray = new Object[] { "scans", scan.getId(),res.getLabel(), 0, 0};
+						table.insertRow(oarray);
+					}
+				}
+			}
+		}
+		
+		return representTable(table, mt, new Hashtable<String,Object>());
 	}
 }

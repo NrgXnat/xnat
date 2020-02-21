@@ -167,12 +167,7 @@ $page.setVlinkColor($ui.vlink)
             </td>
             <td><p id='dateMsg'></p></td>
         </tr>
-        <tr>
-            <th align="left">Visit ID</th>
-            <td align="left">
-                #xdatTextBox("${datatype}.visit_id" $item "" $vr)
-            </td>
-        </tr>
+        #parse("/screens/visit/edit.vm")
         #parse($turbineUtils.getTemplateName("_fields",$om.getXSIType(),$project,"upload"))
     </table>
 

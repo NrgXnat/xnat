@@ -122,6 +122,7 @@ public class HibernateGroupFeatureService extends AbstractHibernateEntityService
 			token.setGroupId(id);
 			token.setTag(tag);
 		    token.setFeature(feature);
+		    token.setBlocked(Boolean.TRUE);
 		    getDao().create(token);
 		}
 	}

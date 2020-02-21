@@ -23,6 +23,7 @@ import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
@@ -64,11 +65,15 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
@@ -1139,6 +1144,65 @@ public class TurbineUtils {
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
         }
+    }
+    
+    public String getConfigValue(String project, String toolName, String path, boolean inherit, String _default){
+    	Long projectId=null;
+    	if(project != null){
+    		try {
+				Number p=(Number)PoolDBUtils.ReturnStatisticQuery("SELECT projectData_info FROM xnat_projectData WHERE ID='" + project + "'", "projectdata_info", null, null);
+				if(p!=null){
+					projectId=p.longValue();
+				}
+			} catch (SQLException e) {
+				logger.error("",e);
+			} catch (Exception e) {
+				logger.error("",e);
+			}
+    	}
+		
+    	Configuration config=XDAT.getConfigService().getConfig(toolName, path, projectId);
+    	
+    	if(projectId!=null && config==null && inherit){
+    		config=XDAT.getConfigService().getConfig(toolName, path, null);
+    	}
+    	
+    	if(config==null){
+    		return _default;
+    	}else{
+    		return config.getContents();
+    	}
+    }
+    
+    public boolean getBooleanConfigValue(String project, String toolName, String path, boolean inherit, boolean _default){
+    	String config=this.getConfigValue(project, toolName, path, inherit, null);
+    	
+    	if(config==null){
+    		return _default;
+    	}else{
+    		if(config.endsWith("\n")){
+    			config=config.substring(0, config.length()-1);
+    		}
+    		return this.toBoolean(config);
+    	}
+    }
+    
+    public String getConfigValue(String project, String toolName, String path, boolean inherit,String key, String _default){
+		String thevalue=(String)TurbineUtils.GetInstance().getConfigValue(project, toolName, path, inherit, _default);
+		if (StringUtils.equals(_default,thevalue)){
+			return _default;
+		}
+		try{
+			JSONObject obj=new JSONObject(thevalue);
+			if(StringUtils.isEmpty(key)){
+				return thevalue;	
+			}else{
+				
+				return obj.getString(key);
+			}
+		}catch(JSONException ex){
+			return _default;
+		}
     }
 
     public String getTemplateName(String module, String dataType, String project) {

@@ -168,6 +168,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public synchronized void init() throws Exception {
+        log.info("Initializing user: "+ this.getUsername());
         clearLocalCache();
     }
 
@@ -547,6 +548,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public List<String> getRoleNames() {
         if (_roleNames.size() == 0 || rolesNotUpdatedFromService) {
             try {
+                log.info("Loading role names for user: "+ this.getUsername());
                 _roleNames.addAll(loadRoleNames());
             } catch (Exception e) {
                 log.error("An unknown error occurred", e);
@@ -567,6 +569,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected List<ElementDisplay> getBrowseableElementDisplays() {
+        log.info("Loading browseable elements for user: "+ this.getUsername());
         return new ArrayList<>(getBrowseableElementDisplayMap().values());
     }
 
@@ -620,6 +623,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected List<ElementDisplay> getSearchableElementDisplays(final Comparator comparator) {
         try {
+            log.info("Loading searchable elements for user: "+ this.getUsername());
             final List<ElementDisplay> searchables = getGroupsAndPermissionsCache().getSearchableElementDisplays(this);
             if (!searchables.isEmpty()) {
                 Collections.sort(searchables, comparator);
@@ -643,6 +647,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected List<XdatStoredSearch> getStoredSearches() {
         if (_storedSearches.isEmpty()) {
             try {
+                log.info("Loading stored searches for user: "+ this.getUsername());
                 _storedSearches.addAll(XdatStoredSearch.GetPreLoadedSearchesByAllowedUser(getLogin()));
             } catch (Exception e) {
                 log.error("An unknown error occurred", e);

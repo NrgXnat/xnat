@@ -472,15 +472,31 @@ window.xmodal = getObject(window.xmodal);
         this.style.height = this.style.height || this.height || 'auto';
         this.style.top = this.style.top || this.top || '3%';
 
-        // only set min/max if defined
-        ['minWidth', 'maxWidth', 'minHeight', 'maxHeight'].forEach(function(prop){
-            if (_this[prop]) {
-                _this.style[prop] = _this[prop]
-            }
-        });
-
         // add styles to the dialog
         this.dialog$.css(this.style);
+
+        // only set min/max if defined as a number or 'px' value
+        if (this.minWidth || this.maxWidth || this.minHeight || this.maxHeight) {
+            // don't stop rendering of the entire dialog if something goes wrong
+            try {
+                ['minWidth', 'maxWidth', 'minHeight', 'maxHeight'].forEach(function(prop){
+                    var parts, val, unit;
+                    if (_this[prop]) {
+                        parts = ('' + _this[prop]).split(/[a-z]/i);
+                        val = Number(parts[0].trim());
+                        unit = (parts[1] || '').trim();
+                        // if no 'unit' was found, it's px
+                        if (!unit || /px/i.test(unit)) {
+                            _this.dialog$.css(prop, pxSuffix(val));
+                            _this.dialogBody$.css(prop, pxSuffix(val - _this.headerHeight - _this.footerHeight));
+                        }
+                    }
+                });
+            }
+            catch(e){
+                console.warn(e);
+            }
+        }
 
         if (this.maxxed) {
             this.dialog$.addClass('maxxed');
@@ -564,26 +580,26 @@ window.xmodal = getObject(window.xmodal);
     };
 
     // re-calculate height of modal body if window.innerHeight has changed
-    Dialog.fn.setHeight = function(scale){
+    Dialog.fn.setHeight = function(){
         debugLog('Dialog.fn.setHeight');
         return this.ready(function(){
 
-            // console.log('dialog-resize');
-
-            var winHt = window.innerHeight;
-            var ftrHt = this.footerHeight || 50;
-            var hdrHt = this.headerHeight || 40;
+            console.log('dialog#setHeight');
 
             // no need to set height if there's no content
             if (this.content === false) {
                 return this;
             }
 
-            scale = scale || this.maxxed ? 0.98 : 0.9;
+            var dlgHt, hdrHt, ftrHt;
 
-            this.bodyHeight = (winHt * scale) - ftrHt - hdrHt - 2;
-            this.dialogBody$.css('maxHeight', this.bodyHeight);
-            this.windowHeight = winHt;
+            if (this.dialog$ && this.dialog$.is(':visible')) {
+                dlgHt = this.dialog$.is(':visible') ? this.dialog$.outerHeight() : 500;
+                hdrHt = this.header$ && this.header$.is(':visible') ? this.header$.outerHeight() || 40 : 0;
+                ftrHt = this.footer$ && this.footer$.nodeType !== Node.DOCUMENT_FRAGMENT_NODE ? this.footer$.outerHeight() : 0;
+            }
+
+            this.dialogBody$.css('height', dlgHt - ftrHt - hdrHt - 2);
 
         });
     };
@@ -709,6 +725,8 @@ window.xmodal = getObject(window.xmodal);
                 window.html$.addClass('xnat-dialog-open');
                 $(document.body).addClass('xnat-dialog-open').css('top', -dialog.bodyPosition);
             }
+
+            this.setHeight();
 
             // if (!dialog.openDialogs.length) {
             //     window.scrollTo(0, 0);
@@ -955,7 +973,7 @@ window.xmodal = getObject(window.xmodal);
         }
         this.dialog$.addClass('maxxed');
         this.maxxed = true;
-        this.setHeight(0.98);
+        this.setHeight();
         return this;
     };
 

@@ -286,16 +286,15 @@ dependencies {
     implementation "ch.qos.logback:logback-classic"
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
+    implementation "com.google.auto.value:auto-value-annotations"
+    implementation("stratum:stratum:1.0") {
+        transitive = false
+    }
 
-    providedCompile "com.google.auto.value:auto-value-annotations"
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "javax.servlet:javax.servlet-api"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
-
-    providedCompile("stratum:stratum:1.0") {
-        transitive = false
-    }
 
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"

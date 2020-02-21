@@ -167,8 +167,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.10</lombok.version>
-        <lombok.checksum>2836e954823bfcbad45e78c18896e3d01058e6f643749810c608b7005ee7b2fa</lombok.checksum>
+        <lombok.version>1.18.12</lombok.version>
+        <lombok.checksum>49381508ecb02b3c173368436ef71b24c0d4418ad260e6cc98becbcf4b345406</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>

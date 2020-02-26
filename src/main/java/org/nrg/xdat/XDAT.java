@@ -20,8 +20,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.stratum.lifecycle.Configurable;
-import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.entities.Configuration;
@@ -99,7 +97,7 @@ import static org.nrg.xdat.security.helpers.Users.*;
 // TODO: Remove all @SuppressWarnings() annotations.
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Slf4j
-public class XDAT implements Initializable, Configurable{
+public class XDAT {
 	public static final  String   IP_WHITELIST_TOOL               = "ipWhitelist";
 	public static final  String   IP_WHITELIST_PATH               = "/system/ipWhitelist";
 	public static final  String   ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
@@ -127,23 +125,10 @@ public class XDAT implements Initializable, Configurable{
 
 	private String instanceSettingsLocation = null;
 
-    /**
-	 * configure torque
-	 *
-	 * @param configuration Configuration
-	 * @see org.apache.stratum.lifecycle.Configurable
-	 */
-	@Override
 	public void configure(org.apache.commons.configuration.Configuration configuration) 	{
 		instanceSettingsLocation = configuration.getString("instance_settings_directory");
 	}
 
-	/**
-	 * initialize Torque
-	 *
-	 * @see org.apache.stratum.lifecycle.Initializable
-	 */
-	@Override
 	public void initialize()
 	{
 		try {

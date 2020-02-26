@@ -215,10 +215,6 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>stratum</groupId>
-            <artifactId>stratum</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.lowagie</groupId>
             <artifactId>itext</artifactId>
         </dependency>

@@ -318,6 +318,10 @@ dependencies {
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
+    runtimeOnly("stratum:stratum:1.0") {
+        transitive = false
+    }
+
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"

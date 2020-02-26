@@ -68,10 +68,10 @@
         <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
         <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
         <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
+        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
@@ -168,8 +168,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.10</lombok.version>
-        <lombok.checksum>2836e954823bfcbad45e78c18896e3d01058e6f643749810c608b7005ee7b2fa</lombok.checksum>
+        <lombok.version>1.18.12</lombok.version>
+        <lombok.checksum>49381508ecb02b3c173368436ef71b24c0d4418ad260e6cc98becbcf4b345406</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -226,7 +226,6 @@
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>
 
         <springockito.version>1.0.5</springockito.version>
-        <stratum.version>1.0</stratum.version>
         <torque.version>3.3</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.20</user-agent-utils.version>
@@ -244,7 +243,7 @@
         <gradle-tomcat.version>2.5</gradle-tomcat.version>
         <gradle-cargo.version>2.7</gradle-cargo.version>
         <gradle-dependency-management.version>1.0.9.RELEASE</gradle-dependency-management.version>
-        <gradle-lombok.version>3.2.0</gradle-lombok.version>
+        <gradle-lombok.version>3.3.0</gradle-lombok.version>
         <tomcat-embed.version>7.0.99</tomcat-embed.version>
 
         <!-- Maven plugin versions -->
@@ -406,6 +405,11 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
+                <version>${xnat-web.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.web</groupId>
+                <artifactId>xnat-web</artifactId>
                 <version>${xnat-web.version}</version>
             </dependency>
             <dependency>
@@ -1501,45 +1505,6 @@
                 <version>${ecs.version}</version>
             </dependency>
             <dependency>
-                <groupId>stratum</groupId>
-                <artifactId>stratum</artifactId>
-                <version>${stratum.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-betwixt</groupId>
-                        <artifactId>commons-betwixt</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-messenger</groupId>
-                        <artifactId>commons-messenger</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.jms</groupId>
-                        <artifactId>jms</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>mockobjects</groupId>
-                        <artifactId>mockobjects</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ojb</groupId>
-                        <artifactId>ojb</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>quartz</groupId>
-                        <artifactId>quartz</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.lowagie</groupId>
                 <artifactId>itext</artifactId>
                 <version>${itext.version}</version>
@@ -1748,7 +1713,7 @@
                 <version>${gradle-tomcat-plugin.version}</version>
             </dependency>
             <dependency>
-                <groupId>gradle.plugin.com.palantir.gradle.gitversion</groupId>
+                <groupId>com.palantir.gradle.gitversion</groupId>
                 <artifactId>gradle-git-version</artifactId>
                 <version>${gradle-git-version}</version>
             </dependency>

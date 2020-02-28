@@ -69,7 +69,7 @@ RestDeleter = function(_array,_config) {
 	
 	this.handleDelete=function(){
 		if(showReason && document.getElementById("del_event_reason").value==""){
-            xmodal.message('Delete Action', 'Please specify a justification for this operation.');
+            XNAT.dialog.message('Delete Action', 'Please specify a justification for this operation.');
 			return;
 		}
 		
@@ -106,7 +106,7 @@ RestDeleter = function(_array,_config) {
     		}
     	}else if(this.manager.processing){
     		this.manager.stopped=true;
-            xmodal.message('Cancel Action', 'Please wait for current process to complete.<br/><br/>Further actions are cancelled.');
+            XNAT.dialog.message('Cancel Action', 'Please wait for current process to complete.<br/><br/>Further actions are cancelled.');
     	}else{
     		// If the cancel action has been configured, use the callback
     		// otherwise reload the page. Added for XNAT-2408.
@@ -159,7 +159,7 @@ RestDeleter = function(_array,_config) {
 							this.currentTR.pDivColor.style.backgroundColor="red";
 				  	   	  	this.currentTR.pDivColor.style.color="black";
 				  	   	  	this.currentTR.pDivColor.innerHTML="&nbsp;error&nbsp;";
-                            xmodal.message('ERROR ' + o.status, 'Failed to delete ' + this.currentTR.entry.label + '.');
+                            XNAT.dialog.message('ERROR ' + o.status, 'Failed to delete ' + this.currentTR.entry.label + '.');
 						},
                         cache:false, // Turn off caching for IE
 						scope:this
@@ -169,20 +169,22 @@ RestDeleter = function(_array,_config) {
 		    		break;	
     			}
     		}
-    		
-    		if(!matched){
-    			var msg_op = {};
-    			if(this.redirect){
-    				msg_op.action = function(){ 
-    					window.location.href = deleter.redirect;
-    				}.bind(deleter);
-	    		}else if(this.redirectHome){
-	    			msg_op.action = function(){ window.location.href=serverRoot + "/"; }
-	    		}else{
-	    			msg_op.action = function(){ window.location.reload(); }
-	    		}
-                xmodal.message('Delete Action','All items were successfully deleted.','OK',msg_op);
-    		}
+
+			if (!matched) {
+				var msg_op = {};
+				if (this.redirect) {
+					msg_op.action = function(){
+						window.location.href = window.deleter.redirect;
+					}.bind(window.deleter);
+				}
+				else if (this.redirectHome) {
+					msg_op.action = function(){ window.location.href = serverRoot + "/"; }
+				}
+				else {
+					msg_op.action = function(){ window.location.reload(); }
+				}
+				XNAT.dialog.message('Delete Action', 'All items were successfully deleted.', 'OK', msg_op);
+			}
     	}else{
     		closeModalPanel("stopAction");
     	}

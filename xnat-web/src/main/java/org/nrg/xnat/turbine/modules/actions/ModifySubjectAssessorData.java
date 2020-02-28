@@ -159,7 +159,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
             {
                 try {
                     if(!Permissions.canEdit(XDAT.getUserDetails(), sa)){
-                    	error(new InvalidPermissionException("Unable to modify experient "+ sa.getId()),data);
+                    	error(new InvalidPermissionException("Unable to modify experiment "+ sa.getId()),data);
                     	return;
                     }
                 	

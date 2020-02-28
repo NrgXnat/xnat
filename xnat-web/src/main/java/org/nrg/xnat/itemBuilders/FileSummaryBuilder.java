@@ -49,11 +49,11 @@ public class FileSummaryBuilder implements FlattenedItemModifierI{
 		
 			Map<String,Map<String,Integer>> summary=new HashMap<>();
 			
-			merge(summary,CatalogUtils.retrieveAuditySummary(CatalogUtils.getCatalog(catFile)));
+			merge(summary,CatalogUtils.retrieveAuditySummary(CatalogUtils.getCatalog(catFile, null)));
 			
 			List<File> historicalCats=CatalogUtils.findHistoricalCatFiles(catFile);
 			for(File hisCatFile:historicalCats){
-				merge(summary,CatalogUtils.retrieveAuditySummary(CatalogUtils.getCatalog(hisCatFile)));
+				merge(summary,CatalogUtils.retrieveAuditySummary(CatalogUtils.getCatalog(hisCatFile, null)));
 			}
 			
 			List<FileSummary> files = new ArrayList<>();

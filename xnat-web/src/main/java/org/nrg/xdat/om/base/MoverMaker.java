@@ -15,12 +15,8 @@ import java.util.concurrent.Callable;
 
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImageassessordata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResource;
-import org.nrg.xdat.om.XnatResourceseries;
-import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -33,6 +29,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
+
+import javax.annotation.Nullable;
 
 public class MoverMaker {
 	public static boolean check(ItemI i, UserI u) throws InvalidItemException, Exception{
@@ -49,11 +47,18 @@ public class MoverMaker {
         current.setId(m.getId());
 		current.setProject(newProject.getId());
 		current.setLabel(newLabel);
+		if (m instanceof XnatImagesessiondata) {
+			for (XnatImagescandataI scan : ((XnatImagesessiondata) m).getScans_scan()) {
+				scan.setProject(newProject.getId());
+				((XnatImagesessiondata) current).addScans_scan(scan);
+			}
+		}
+
         if (m instanceof XnatSubjectassessordata) {
             ((XnatSubjectassessordata) current).setSubjectId(((XnatSubjectassessordata) m).getSubjectId());
         } else if (m instanceof XnatImageassessordata) {
             ((XnatImageassessordata) current).setImagesessionId(((XnatImageassessordata) m).getImagesessionId());
-        }
+		}
 		SaveItemHelper.authorizedSave(current.getItem(), u, false, false, c);
 	}
 	
@@ -69,11 +74,16 @@ public class MoverMaker {
 		final UserI u;
 		XnatAbstractresource r = null;
 		final EventMetaI c;
+		final String currentProject;
+		final String destinationProject;
 		
-		public Mover(File newSessionDir, String existingSessionDir, String existingRootPath, UserI u, EventMetaI c) {
+		public Mover(File newSessionDir, String existingSessionDir, String existingRootPath, String currentProject,
+					 String destinationProject, UserI u, EventMetaI c) {
 			this.newSessionDir = newSessionDir;
 			this.existingSessionDir = existingSessionDir;
 			this.existingRootPath = existingRootPath;
+			this.currentProject = currentProject;
+			this.destinationProject = destinationProject;
 			this.u = u;
 			this.c=c;
 		}
@@ -84,12 +94,14 @@ public class MoverMaker {
 		
 		@Override
 		public Void call() throws Exception {
-			r.moveTo(newSessionDir, existingSessionDir, existingRootPath, u,c);
+			r.moveTo(newSessionDir, existingSessionDir, existingRootPath, currentProject, destinationProject, u, c);
 			return null;
 		}
 	}
 	
-	public static Mover moveResource(XnatAbstractresourceI r, String current_label, MoveableI m, File newSessionDir, String existingRootPath, UserI u,EventMetaI c) throws IOException, Exception {
+	public static Mover moveResource(XnatAbstractresourceI r, String current_label, MoveableI m, File newSessionDir,
+									 String existingRootPath, @Nullable String destinationProject, UserI u, EventMetaI c)
+			throws IOException, Exception {
 		String uri= null;
 		if(r instanceof XnatResource){
 			uri=((XnatResource)r).getUri();
@@ -126,10 +138,12 @@ public class MoverMaker {
 				//don't attempt to move sessions which are outside of the Session Directory.
 				throw new Exception("Non-standard file location for file(s):" + uri);
 			}
-			return new Mover(newSessionDir, existingSessionDir, existingRootPath, u,c);
+			return new Mover(newSessionDir, existingSessionDir, existingRootPath, m.getProject(), destinationProject,
+					u, c);
 			//((XnatAbstractresource)m).moveTo(newSessionDir,existingSessionDir,existingRootPath,u);
 		}else{
-			return new Mover(newSessionDir, null, existingRootPath, u,c);
+			return new Mover(newSessionDir, null, existingRootPath, m.getProject(), destinationProject,
+					u, c);
 			//((XnatAbstractresource)m).moveTo(newSessionDir,null,existingRootPath,u);
 		}
 	}

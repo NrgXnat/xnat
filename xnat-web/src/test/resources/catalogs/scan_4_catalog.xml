@@ -1,0 +1,891 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cat:DCMCatalog UID="1.3.12.2.1107.5.2.32.35177.3.2008061813403944727093885.0.0.0" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:prov="http://www.nbirn.net/prov" xmlns:scr="http://nrg.wustl.edu/scr" xmlns:val="http://nrg.wustl.edu/val" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<cat:metaFields>
+	<cat:metaField name="AUDIT">14:Wed Jan 09 18:05:57 GMT 2019=Added:176</cat:metaField>
+</cat:metaFields>
+<cat:entries>
+	<cat:entry ID="TESTID.MR.999.4.53.20080618.133713.agkqek.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485352036494176" URI="TESTID.MR.999.4.53.20080618.133713.agkqek.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="4dcb184fe566523b94bee851e18f02ba" format="DICOM" instanceNumber="53" name="TESTID.MR.999.4.53.20080618.133713.agkqek.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.135.20080618.133713.uhosc1.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485992471894507" URI="TESTID.MR.999.4.135.20080618.133713.uhosc1.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="281bc65bcfd34b3e6fd7293dd68701cd" format="DICOM" instanceNumber="135" name="TESTID.MR.999.4.135.20080618.133713.uhosc1.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.169.20080618.133713.17r84o2.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490239729194581" URI="TESTID.MR.999.4.169.20080618.133713.17r84o2.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="be23e8835ea8d9d1b0e03d47639d0f7f" format="DICOM" instanceNumber="169" name="TESTID.MR.999.4.169.20080618.133713.17r84o2.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.60.20080618.133713.xtgzy.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348548898694206" URI="TESTID.MR.999.4.60.20080618.133713.xtgzy.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="75bbf3f6db2958412669ab4ed4ccf622" format="DICOM" instanceNumber="60" name="TESTID.MR.999.4.60.20080618.133713.xtgzy.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.99.20080618.133713.8njr85.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485718721494363" URI="TESTID.MR.999.4.99.20080618.133713.8njr85.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c9dd21e028290f80d3695999cfaa2947" format="DICOM" instanceNumber="99" name="TESTID.MR.999.4.99.20080618.133713.8njr85.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.33.20080618.133713.1ifc9kk.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348526141694098" URI="TESTID.MR.999.4.33.20080618.133713.1ifc9kk.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ed9fc0d7be5959e9b4c6d9faaae3927c" format="DICOM" instanceNumber="33" name="TESTID.MR.999.4.33.20080618.133713.1ifc9kk.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.7.20080618.133713.k32z1p.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485010811893989" URI="TESTID.MR.999.4.7.20080618.133713.k32z1p.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="78633ce1dd001306c63d25f2d65272dc" format="DICOM" instanceNumber="7" name="TESTID.MR.999.4.7.20080618.133713.k32z1p.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485243849794118" URI="TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="15ebf16df97970bd3b0473eced96d084" format="DICOM" instanceNumber="38" name="TESTID.MR.999.4.38.20080618.133713.1va8eb6.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.130.20080618.133713.38q2ga.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485953869294487" URI="TESTID.MR.999.4.130.20080618.133713.38q2ga.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="50bae9f546346ac0f149d9fdb81caa8a" format="DICOM" instanceNumber="130" name="TESTID.MR.999.4.130.20080618.133713.38q2ga.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.74.20080618.133713.1xn71iv.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485535581794262" URI="TESTID.MR.999.4.74.20080618.133713.1xn71iv.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="7c7f5ffdf1f194f002750dd34fccf63c" format="DICOM" instanceNumber="74" name="TESTID.MR.999.4.74.20080618.133713.1xn71iv.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.94.20080618.133713.pynn6b.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485681890894343" URI="TESTID.MR.999.4.94.20080618.133713.pynn6b.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6ea9c01ddac00aef1eebac2b0ac47703" format="DICOM" instanceNumber="94" name="TESTID.MR.999.4.94.20080618.133713.pynn6b.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.174.20080618.133713.3iqlrm.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490277681794591" URI="TESTID.MR.999.4.174.20080618.133713.3iqlrm.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="cd0c798a42bcb50961e6af9f2cd176aa" format="DICOM" instanceNumber="174" name="TESTID.MR.999.4.174.20080618.133713.3iqlrm.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.118.20080618.133713.wothg6.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485859104294439" URI="TESTID.MR.999.4.118.20080618.133713.wothg6.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="e1553c4b979f1f0627353b3f4c43f842" format="DICOM" instanceNumber="118" name="TESTID.MR.999.4.118.20080618.133713.wothg6.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.121.20080618.133713.1os0qbc.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485881951994451" URI="TESTID.MR.999.4.121.20080618.133713.1os0qbc.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5d1029f2e19bca42bd9e31a54abded97" format="DICOM" instanceNumber="121" name="TESTID.MR.999.4.121.20080618.133713.1os0qbc.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.156.20080618.133713.vf1khn.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490144009594555" URI="TESTID.MR.999.4.156.20080618.133713.vf1khn.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="f1df6c6090d1c2ef9f98bdb996f2954f" format="DICOM" instanceNumber="156" name="TESTID.MR.999.4.156.20080618.133713.vf1khn.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.162.20080618.133713.2fbpqu.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490187797494567" URI="TESTID.MR.999.4.162.20080618.133713.2fbpqu.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a919dabc6e1c5745703b8940471b47e5" format="DICOM" instanceNumber="162" name="TESTID.MR.999.4.162.20080618.133713.2fbpqu.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.111.20080618.133713.1aoqsil.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348588475794409" URI="TESTID.MR.999.4.111.20080618.133713.1aoqsil.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="26c99e7a40556f0905d370e3f99ec32b" format="DICOM" instanceNumber="111" name="TESTID.MR.999.4.111.20080618.133713.1aoqsil.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.84.20080618.133713.em8mlh.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348566519094300" URI="TESTID.MR.999.4.84.20080618.133713.em8mlh.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ff8fc4dfeabb86a1d80d13c6acec676d" format="DICOM" instanceNumber="84" name="TESTID.MR.999.4.84.20080618.133713.em8mlh.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.140.20080618.133713.141scb.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490021942694523" URI="TESTID.MR.999.4.140.20080618.133713.141scb.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="e294c87211bb3dbe95d227988d13e621" format="DICOM" instanceNumber="140" name="TESTID.MR.999.4.140.20080618.133713.141scb.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.18.20080618.133713.f3upwg.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485094421994037" URI="TESTID.MR.999.4.18.20080618.133713.f3upwg.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="df547669f5b1046414ba2a0bb552053a" format="DICOM" instanceNumber="18" name="TESTID.MR.999.4.18.20080618.133713.f3upwg.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.59.20080618.133713.cui0da.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485411407894208" URI="TESTID.MR.999.4.59.20080618.133713.cui0da.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="fadc0b44709918528f424566b535f94e" format="DICOM" instanceNumber="59" name="TESTID.MR.999.4.59.20080618.133713.cui0da.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.132.20080618.133713.3d6bw5.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485969102394495" URI="TESTID.MR.999.4.132.20080618.133713.3d6bw5.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ba79b5dde2f2030d85688f87cc9d7e26" format="DICOM" instanceNumber="132" name="TESTID.MR.999.4.132.20080618.133713.3d6bw5.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.143.20080618.133713.1eoa602.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490046584894529" URI="TESTID.MR.999.4.143.20080618.133713.1eoa602.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="bc8c3e146b153c678dd418c698ce7a3b" format="DICOM" instanceNumber="143" name="TESTID.MR.999.4.143.20080618.133713.1eoa602.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.55.20080618.133713.10br38p.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485367410694186" URI="TESTID.MR.999.4.55.20080618.133713.10br38p.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="04230472bbaf9f773f913ecabab7211e" format="DICOM" instanceNumber="55" name="TESTID.MR.999.4.55.20080618.133713.10br38p.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.4.20080618.133713.1wswhkm.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813484990854893981" URI="TESTID.MR.999.4.4.20080618.133713.1wswhkm.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b08521f87b965c9a88e37af6b50f8d49" format="DICOM" instanceNumber="4" name="TESTID.MR.999.4.4.20080618.133713.1wswhkm.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.108.20080618.133713.10vleg7.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485787410094397" URI="TESTID.MR.999.4.108.20080618.133713.10vleg7.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="68ce8beb993bbb06836806d1e605bc88" format="DICOM" instanceNumber="108" name="TESTID.MR.999.4.108.20080618.133713.10vleg7.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.76.20080618.133713.1f4ka6.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485548384194268" URI="TESTID.MR.999.4.76.20080618.133713.1f4ka6.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b181c0a76d89ee5612b88ccee0c74440" format="DICOM" instanceNumber="76" name="TESTID.MR.999.4.76.20080618.133713.1f4ka6.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.54.20080618.133713.1pwnxjn.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485363467694182" URI="TESTID.MR.999.4.54.20080618.133713.1pwnxjn.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d99c354a976f8eba36fe845a1d4b6960" format="DICOM" instanceNumber="54" name="TESTID.MR.999.4.54.20080618.133713.1pwnxjn.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.152.20080618.133713.juyoth.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490114853094547" URI="TESTID.MR.999.4.152.20080618.133713.juyoth.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1f526747d148416b98f260ea824a6ff6" format="DICOM" instanceNumber="152" name="TESTID.MR.999.4.152.20080618.133713.juyoth.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.90.20080618.133713.svyj60.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485656739394327" URI="TESTID.MR.999.4.90.20080618.133713.svyj60.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="816827ce16132c2773505e2be7a801d2" format="DICOM" instanceNumber="90" name="TESTID.MR.999.4.90.20080618.133713.svyj60.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.75.20080618.133713.kl6xgj.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485538381894264" URI="TESTID.MR.999.4.75.20080618.133713.kl6xgj.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="df686b32e662f034b557af5c63b2770b" format="DICOM" instanceNumber="75" name="TESTID.MR.999.4.75.20080618.133713.kl6xgj.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.100.20080618.133713.bh8vwp.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485732300994367" URI="TESTID.MR.999.4.100.20080618.133713.bh8vwp.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8a5893863d9ccd0dff90843864082d89" format="DICOM" instanceNumber="100" name="TESTID.MR.999.4.100.20080618.133713.bh8vwp.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.97.20080618.133713.rv40ax.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485711146794355" URI="TESTID.MR.999.4.97.20080618.133713.rv40ax.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="f71342691818e157f0aa7667006342f6" format="DICOM" instanceNumber="97" name="TESTID.MR.999.4.97.20080618.133713.rv40ax.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.17.20080618.133713.my5721.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485087022094029" URI="TESTID.MR.999.4.17.20080618.133713.my5721.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="dceb44f145e8d84fb93caab5acc85eed" format="DICOM" instanceNumber="17" name="TESTID.MR.999.4.17.20080618.133713.my5721.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.161.20080618.133713.1nx8ew5.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490182761194565" URI="TESTID.MR.999.4.161.20080618.133713.1nx8ew5.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6dc743a0683fc4c35c54ea724677c75a" format="DICOM" instanceNumber="161" name="TESTID.MR.999.4.161.20080618.133713.1nx8ew5.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.126.20080618.133713.1y3jyld.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485917375094471" URI="TESTID.MR.999.4.126.20080618.133713.1y3jyld.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="659af767c4acffe1dc6c9d4b582a2235" format="DICOM" instanceNumber="126" name="TESTID.MR.999.4.126.20080618.133713.1y3jyld.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.114.20080618.133713.askcqn.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485833085394422" URI="TESTID.MR.999.4.114.20080618.133713.askcqn.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6f044434d1f936f58fe9dd5c39d18645" format="DICOM" instanceNumber="114" name="TESTID.MR.999.4.114.20080618.133713.askcqn.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.123.20080618.133713.1wstdp7.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348591453494459" URI="TESTID.MR.999.4.123.20080618.133713.1wstdp7.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5bda4506c32a907158f5b102559a0104" format="DICOM" instanceNumber="123" name="TESTID.MR.999.4.123.20080618.133713.1wstdp7.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.158.20080618.133713.1r0ohyq.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490158608094559" URI="TESTID.MR.999.4.158.20080618.133713.1r0ohyq.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a15761053d693696dfaf11fd3c406485" format="DICOM" instanceNumber="158" name="TESTID.MR.999.4.158.20080618.133713.1r0ohyq.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.171.20080618.133713.18ro3sy.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490253746894585" URI="TESTID.MR.999.4.171.20080618.133713.18ro3sy.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="731482fd9353de2c924179e74be7179d" format="DICOM" instanceNumber="171" name="TESTID.MR.999.4.171.20080618.133713.18ro3sy.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.12.20080618.133713.rod1dk.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485049630594013" URI="TESTID.MR.999.4.12.20080618.133713.rod1dk.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="56968dda7b3e8f73d3b61e6edc358cae" format="DICOM" instanceNumber="12" name="TESTID.MR.999.4.12.20080618.133713.rod1dk.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.105.20080618.133713.3mseni.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485765871394385" URI="TESTID.MR.999.4.105.20080618.133713.3mseni.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="9b284b9277b5457fb77e4bb6dac07f96" format="DICOM" instanceNumber="105" name="TESTID.MR.999.4.105.20080618.133713.3mseni.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.77.20080618.133713.k3sdal.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485555390694272" URI="TESTID.MR.999.4.77.20080618.133713.k3sdal.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="157e5d02555cc415fb5afc57b3a08498" format="DICOM" instanceNumber="77" name="TESTID.MR.999.4.77.20080618.133713.k3sdal.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.134.20080618.133713.1729za8.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485978414294503" URI="TESTID.MR.999.4.134.20080618.133713.1729za8.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="06d57f93d2c328b9e18c9cacea5fefea" format="DICOM" instanceNumber="134" name="TESTID.MR.999.4.134.20080618.133713.1729za8.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.137.20080618.133713.1050lhr.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181349001358294515" URI="TESTID.MR.999.4.137.20080618.133713.1050lhr.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="333b9090cb8e6c600741be5502d9faf7" format="DICOM" instanceNumber="137" name="TESTID.MR.999.4.137.20080618.133713.1050lhr.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.72.20080618.133713.qcwaw4.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348555959994252" URI="TESTID.MR.999.4.72.20080618.133713.qcwaw4.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="057b3a57d0c723ea027fe40d1d0b06d7" format="DICOM" instanceNumber="72" name="TESTID.MR.999.4.72.20080618.133713.qcwaw4.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.1.20080618.133713.o1ekqg.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813484966064693969" URI="TESTID.MR.999.4.1.20080618.133713.o1ekqg.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="bd8783c2eb9a9b2b346a13e43df652c5" format="DICOM" instanceNumber="1" name="TESTID.MR.999.4.1.20080618.133713.o1ekqg.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192038</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.93.20080618.133713.187u0u5.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485677262594339" URI="TESTID.MR.999.4.93.20080618.133713.187u0u5.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="0b3f784e79b2c7998b14b776f325228c" format="DICOM" instanceNumber="93" name="TESTID.MR.999.4.93.20080618.133713.187u0u5.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.129.20080618.133713.jeal17.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485941922094483" URI="TESTID.MR.999.4.129.20080618.133713.jeal17.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="27c653c414f8b27a693074197b2347e6" format="DICOM" instanceNumber="129" name="TESTID.MR.999.4.129.20080618.133713.jeal17.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.85.20080618.133713.19zdz0d.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485616229994304" URI="TESTID.MR.999.4.85.20080618.133713.19zdz0d.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="268ba6293eb7aac97dba694a9e000c2e" format="DICOM" instanceNumber="85" name="TESTID.MR.999.4.85.20080618.133713.19zdz0d.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.113.20080618.133713.1law64q.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485822704894417" URI="TESTID.MR.999.4.113.20080618.133713.1law64q.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="274516227770694b6750020185fc5687" format="DICOM" instanceNumber="113" name="TESTID.MR.999.4.113.20080618.133713.1law64q.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.35.20080618.133713.1qy5v8o.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485223700094106" URI="TESTID.MR.999.4.35.20080618.133713.1qy5v8o.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="20f75dd794759aff80acc2928e4dbc02" format="DICOM" instanceNumber="35" name="TESTID.MR.999.4.35.20080618.133713.1qy5v8o.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.40.20080618.133713.y4la8l.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485266482694130" URI="TESTID.MR.999.4.40.20080618.133713.y4la8l.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="0f629c1a1d8e5f75c15ced43144ad817" format="DICOM" instanceNumber="40" name="TESTID.MR.999.4.40.20080618.133713.y4la8l.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.26.20080618.133713.mtiwwu.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485153768394068" URI="TESTID.MR.999.4.26.20080618.133713.mtiwwu.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="de1497d1b92d98c45e641f44559ea13a" format="DICOM" instanceNumber="26" name="TESTID.MR.999.4.26.20080618.133713.mtiwwu.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.172.20080618.133713.1j5v3tz.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490263299394587" URI="TESTID.MR.999.4.172.20080618.133713.1j5v3tz.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="e49f32bdd30ba2aba4273a361d239103" format="DICOM" instanceNumber="172" name="TESTID.MR.999.4.172.20080618.133713.1j5v3tz.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.16.20080618.133713.7wtdqf.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485088460094033" URI="TESTID.MR.999.4.16.20080618.133713.7wtdqf.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b19043ea7d7e6b6e84c0d27cb897e086" format="DICOM" instanceNumber="16" name="TESTID.MR.999.4.16.20080618.133713.7wtdqf.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.23.20080618.133713.3t7mk9.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485130308594055" URI="TESTID.MR.999.4.23.20080618.133713.3t7mk9.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="415dfec7637040ea076292061e54c49d" format="DICOM" instanceNumber="23" name="TESTID.MR.999.4.23.20080618.133713.3t7mk9.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.122.20080618.133713.1l4vwx3.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485896468794455" URI="TESTID.MR.999.4.122.20080618.133713.1l4vwx3.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="f1da86c70ade6d6bf2cea40514668370" format="DICOM" instanceNumber="122" name="TESTID.MR.999.4.122.20080618.133713.1l4vwx3.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.120.20080618.133713.1af9945.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485877849894447" URI="TESTID.MR.999.4.120.20080618.133713.1af9945.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a669172b730de23c6e06e6dc35e06484" format="DICOM" instanceNumber="120" name="TESTID.MR.999.4.120.20080618.133713.1af9945.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.73.20080618.133713.1ta1r0z.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485511067594256" URI="TESTID.MR.999.4.73.20080618.133713.1ta1r0z.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8ac01c4be09ef983fdf9f8f98c7eac15" format="DICOM" instanceNumber="73" name="TESTID.MR.999.4.73.20080618.133713.1ta1r0z.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.104.20080618.133713.10vz30f.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485757009694381" URI="TESTID.MR.999.4.104.20080618.133713.10vz30f.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b5be0583de3c8960fdc8bf37bc1f79b7" format="DICOM" instanceNumber="104" name="TESTID.MR.999.4.104.20080618.133713.10vz30f.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.25.20080618.133713.vaa79l.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485144462594064" URI="TESTID.MR.999.4.25.20080618.133713.vaa79l.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ec0253aba5afe798a27c0d638c707bbe" format="DICOM" instanceNumber="25" name="TESTID.MR.999.4.25.20080618.133713.vaa79l.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.32.20080618.133713.qylc35.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485195813894094" URI="TESTID.MR.999.4.32.20080618.133713.qylc35.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="4df791b6a382864086dfc2abce1968c4" format="DICOM" instanceNumber="32" name="TESTID.MR.999.4.32.20080618.133713.qylc35.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.131.20080618.133713.1ik01mv.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485954524694489" URI="TESTID.MR.999.4.131.20080618.133713.1ik01mv.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="db9f679035f995ea947d0d4a7d1bd04e" format="DICOM" instanceNumber="131" name="TESTID.MR.999.4.131.20080618.133713.1ik01mv.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.151.20080618.133713.xc9g4w.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181349017123994545" URI="TESTID.MR.999.4.151.20080618.133713.xc9g4w.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="2e82aa43bc34423a72801165f4ecfa34" format="DICOM" instanceNumber="151" name="TESTID.MR.999.4.151.20080618.133713.xc9g4w.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.13.20080618.133713.gbtb0l.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485054751494015" URI="TESTID.MR.999.4.13.20080618.133713.gbtb0l.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="dc8bffb88664fab9de1666ad3352188d" format="DICOM" instanceNumber="13" name="TESTID.MR.999.4.13.20080618.133713.gbtb0l.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.36.20080618.133713.6bg5j9.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485227768794108" URI="TESTID.MR.999.4.36.20080618.133713.6bg5j9.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="243363ad434fe174bcf390a71dcd3705" format="DICOM" instanceNumber="36" name="TESTID.MR.999.4.36.20080618.133713.6bg5j9.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.10.20080618.133713.o7yu1.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485031644594005" URI="TESTID.MR.999.4.10.20080618.133713.o7yu1.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d9bd43089922368ed0e9238b8890688c" format="DICOM" instanceNumber="10" name="TESTID.MR.999.4.10.20080618.133713.o7yu1.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.95.20080618.133713.eg7g3f.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485693631894347" URI="TESTID.MR.999.4.95.20080618.133713.eg7g3f.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="e1585d8b19bab505187ca335abe80be2" format="DICOM" instanceNumber="95" name="TESTID.MR.999.4.95.20080618.133713.eg7g3f.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.67.20080618.133713.1wlagbs.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485462933194234" URI="TESTID.MR.999.4.67.20080618.133713.1wlagbs.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="4534b347e2da58d753d0f5386a123746" format="DICOM" instanceNumber="67" name="TESTID.MR.999.4.67.20080618.133713.1wlagbs.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.155.20080618.133713.3ew8zv.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490137465994553" URI="TESTID.MR.999.4.155.20080618.133713.3ew8zv.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="393bf487c53eb161b1db73e865ab659f" format="DICOM" instanceNumber="155" name="TESTID.MR.999.4.155.20080618.133713.3ew8zv.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.128.20080618.133713.1dbqo9k.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485937246294479" URI="TESTID.MR.999.4.128.20080618.133713.1dbqo9k.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="602418273ecf60f5371b6d59a50abb05" format="DICOM" instanceNumber="128" name="TESTID.MR.999.4.128.20080618.133713.1dbqo9k.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.64.20080618.133713.12o3w74.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485445737994226" URI="TESTID.MR.999.4.64.20080618.133713.12o3w74.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8563c394ab1f7a31ffcaeab81d272897" format="DICOM" instanceNumber="64" name="TESTID.MR.999.4.64.20080618.133713.12o3w74.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.116.20080618.133713.19qpmet.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485850262994431" URI="TESTID.MR.999.4.116.20080618.133713.19qpmet.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="851170e06a05f51486260e1d6089f61d" format="DICOM" instanceNumber="116" name="TESTID.MR.999.4.116.20080618.133713.19qpmet.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.166.20080618.133713.1wjaemm.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490217925894575" URI="TESTID.MR.999.4.166.20080618.133713.1wjaemm.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="965b08e7575f18a70090cfa995b66c5c" format="DICOM" instanceNumber="166" name="TESTID.MR.999.4.166.20080618.133713.1wjaemm.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.65.20080618.133713.9p7tak.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485444784494224" URI="TESTID.MR.999.4.65.20080618.133713.9p7tak.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="7fce919f0c5a35935153f80b0ecb6d26" format="DICOM" instanceNumber="65" name="TESTID.MR.999.4.65.20080618.133713.9p7tak.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.149.20080618.133713.166ooh8.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490092014794541" URI="TESTID.MR.999.4.149.20080618.133713.166ooh8.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8fc1afeca9912a1df10a1fe9a7671dee" format="DICOM" instanceNumber="149" name="TESTID.MR.999.4.149.20080618.133713.166ooh8.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.22.20080618.133713.1eq4e9f.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485122430294051" URI="TESTID.MR.999.4.22.20080618.133713.1eq4e9f.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d7b0b5996c96f52d8d69a95f8a99c32a" format="DICOM" instanceNumber="22" name="TESTID.MR.999.4.22.20080618.133713.1eq4e9f.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.43.20080618.133713.1wux9vd.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485280115994138" URI="TESTID.MR.999.4.43.20080618.133713.1wux9vd.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b4ecd96b0cbf3c7d9b7ca8b5b896a378" format="DICOM" instanceNumber="43" name="TESTID.MR.999.4.43.20080618.133713.1wux9vd.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.112.20080618.133713.1soxkeu.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485817805494413" URI="TESTID.MR.999.4.112.20080618.133713.1soxkeu.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ccd7f6d8f33ebd9bf5abc70ea6623f21" format="DICOM" instanceNumber="112" name="TESTID.MR.999.4.112.20080618.133713.1soxkeu.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.49.20080618.133713.2rbi4z.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485323457394160" URI="TESTID.MR.999.4.49.20080618.133713.2rbi4z.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="39d4ddef12c6bf452bbde84167c3f04c" format="DICOM" instanceNumber="49" name="TESTID.MR.999.4.49.20080618.133713.2rbi4z.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.176.20080618.133713.3z855b.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490292317394595" URI="TESTID.MR.999.4.176.20080618.133713.3z855b.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="47c66df3cf2723e6194ca76765c66dc4" format="DICOM" instanceNumber="176" name="TESTID.MR.999.4.176.20080618.133713.3z855b.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.61.20080618.133713.p1om2i.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485415283194210" URI="TESTID.MR.999.4.61.20080618.133713.p1om2i.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="cbea13c032fd31482f3f5d0ea6f4e994" format="DICOM" instanceNumber="61" name="TESTID.MR.999.4.61.20080618.133713.p1om2i.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.3.20080618.133713.6m1qj5.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813484991754993983" URI="TESTID.MR.999.4.3.20080618.133713.6m1qj5.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8a3f42b08eac975326e61b4dfdf7cf73" format="DICOM" instanceNumber="3" name="TESTID.MR.999.4.3.20080618.133713.6m1qj5.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.86.20080618.133713.13w7gdo.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485621268394311" URI="TESTID.MR.999.4.86.20080618.133713.13w7gdo.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6e6e0e9547c2a947e284717752e506d2" format="DICOM" instanceNumber="86" name="TESTID.MR.999.4.86.20080618.133713.13w7gdo.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.37.20080618.133713.ynkgj.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485232680594112" URI="TESTID.MR.999.4.37.20080618.133713.ynkgj.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="06d93d59a7268997d3b2e04241e171c6" format="DICOM" instanceNumber="37" name="TESTID.MR.999.4.37.20080618.133713.ynkgj.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.14.20080618.133713.nfpl8s.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485066028694021" URI="TESTID.MR.999.4.14.20080618.133713.nfpl8s.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6dbf4df0c22e180ad28a2b37cdc8e521" format="DICOM" instanceNumber="14" name="TESTID.MR.999.4.14.20080618.133713.nfpl8s.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.62.20080618.133713.914cby.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485425530994216" URI="TESTID.MR.999.4.62.20080618.133713.914cby.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1c59e7a4a7d7a0996cd23046e0303895" format="DICOM" instanceNumber="62" name="TESTID.MR.999.4.62.20080618.133713.914cby.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.2.20080618.133713.4gle6u.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813484970425993973" URI="TESTID.MR.999.4.2.20080618.133713.4gle6u.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="0dc1d80c3cf71d594fce3ba9662b8654" format="DICOM" instanceNumber="2" name="TESTID.MR.999.4.2.20080618.133713.4gle6u.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.146.20080618.133713.1kp36ww.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490071123694535" URI="TESTID.MR.999.4.146.20080618.133713.1kp36ww.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="331695795d71412ed3203c4104eff686" format="DICOM" instanceNumber="146" name="TESTID.MR.999.4.146.20080618.133713.1kp36ww.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.63.20080618.133713.m02ji6.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485426867194218" URI="TESTID.MR.999.4.63.20080618.133713.m02ji6.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="64f8e19b95087518ee6ee2e96ecaa1f2" format="DICOM" instanceNumber="63" name="TESTID.MR.999.4.63.20080618.133713.m02ji6.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.96.20080618.133713.1glfuly.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485696706894351" URI="TESTID.MR.999.4.96.20080618.133713.1glfuly.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="3e166f8acbb08f051e17cdad35524b83" format="DICOM" instanceNumber="96" name="TESTID.MR.999.4.96.20080618.133713.1glfuly.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.34.20080618.133713.5t0o1y.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348529989994102" URI="TESTID.MR.999.4.34.20080618.133713.5t0o1y.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="dbf8517fca7723aa2bfb3987d0beadf4" format="DICOM" instanceNumber="34" name="TESTID.MR.999.4.34.20080618.133713.5t0o1y.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.31.20080618.133713.1oxxdge.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485190823894088" URI="TESTID.MR.999.4.31.20080618.133713.1oxxdge.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="eb542801eee6a646c20cfabc0a72cefc" format="DICOM" instanceNumber="31" name="TESTID.MR.999.4.31.20080618.133713.1oxxdge.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.157.20080618.133713.1pg27ys.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490152589294557" URI="TESTID.MR.999.4.157.20080618.133713.1pg27ys.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="fd5088f3d7d510669becf360b50b3375" format="DICOM" instanceNumber="157" name="TESTID.MR.999.4.157.20080618.133713.1pg27ys.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.91.20080618.133713.25oia.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485658350994331" URI="TESTID.MR.999.4.91.20080618.133713.25oia.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="641e5c0f7fe911ec61a1a39ac5fb72d4" format="DICOM" instanceNumber="91" name="TESTID.MR.999.4.91.20080618.133713.25oia.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.139.20080618.133713.1dqxmwk.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490020703394521" URI="TESTID.MR.999.4.139.20080618.133713.1dqxmwk.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="be77370975a0e5f1f60b90e903dabd39" format="DICOM" instanceNumber="139" name="TESTID.MR.999.4.139.20080618.133713.1dqxmwk.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.46.20080618.133713.1b0k89z.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348531745594148" URI="TESTID.MR.999.4.46.20080618.133713.1b0k89z.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="15d51bf35ccfbb1f893ef7df4e1e4315" format="DICOM" instanceNumber="46" name="TESTID.MR.999.4.46.20080618.133713.1b0k89z.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.58.20080618.133713.1lhmqjz.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485390049594198" URI="TESTID.MR.999.4.58.20080618.133713.1lhmqjz.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="10196f3a0a4c24b0ef6a4bb421854931" format="DICOM" instanceNumber="58" name="TESTID.MR.999.4.58.20080618.133713.1lhmqjz.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.142.20080618.133713.13oorog.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490041048894527" URI="TESTID.MR.999.4.142.20080618.133713.13oorog.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="3ddcf13da07d1b591664f2bb907ceeae" format="DICOM" instanceNumber="142" name="TESTID.MR.999.4.142.20080618.133713.13oorog.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.88.20080618.133713.160zn37.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485641785294319" URI="TESTID.MR.999.4.88.20080618.133713.160zn37.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="dccd39ca745ee0cafa684b18cf3b60dc" format="DICOM" instanceNumber="88" name="TESTID.MR.999.4.88.20080618.133713.160zn37.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.28.20080618.133713.pruhx7.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485169018294078" URI="TESTID.MR.999.4.28.20080618.133713.pruhx7.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b8d203b023ba2852099c3850673ad0f0" format="DICOM" instanceNumber="28" name="TESTID.MR.999.4.28.20080618.133713.pruhx7.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.127.20080618.133713.psou7p.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485932430794475" URI="TESTID.MR.999.4.127.20080618.133713.psou7p.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d188481e36a06246af1205823c733f9d" format="DICOM" instanceNumber="127" name="TESTID.MR.999.4.127.20080618.133713.psou7p.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.78.20080618.133713.1kr2hag.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485562938394276" URI="TESTID.MR.999.4.78.20080618.133713.1kr2hag.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="3034964ea1f4a0286aa53a5bdd001af6" format="DICOM" instanceNumber="78" name="TESTID.MR.999.4.78.20080618.133713.1kr2hag.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.27.20080618.133713.jcuy4p.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485158588494072" URI="TESTID.MR.999.4.27.20080618.133713.jcuy4p.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="dc476a49616be8511ece7b1012735558" format="DICOM" instanceNumber="27" name="TESTID.MR.999.4.27.20080618.133713.jcuy4p.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.164.20080618.133713.1dfz82p.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181349022790794571" URI="TESTID.MR.999.4.164.20080618.133713.1dfz82p.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c90a77434396db19b2aa11909dad6da6" format="DICOM" instanceNumber="164" name="TESTID.MR.999.4.164.20080618.133713.1dfz82p.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.136.20080618.133713.10vcz9e.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485997165194511" URI="TESTID.MR.999.4.136.20080618.133713.10vcz9e.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="7ac7934bde1591c70babc9d9a325e257" format="DICOM" instanceNumber="136" name="TESTID.MR.999.4.136.20080618.133713.10vcz9e.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.81.20080618.133713.jnddx.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485585941294288" URI="TESTID.MR.999.4.81.20080618.133713.jnddx.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d7704feb80776b86ce41e7e9ce096137" format="DICOM" instanceNumber="81" name="TESTID.MR.999.4.81.20080618.133713.jnddx.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.82.20080618.133713.15dirk0.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485591986294292" URI="TESTID.MR.999.4.82.20080618.133713.15dirk0.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="9dfe47a573234aadaff940d4693a29a0" format="DICOM" instanceNumber="82" name="TESTID.MR.999.4.82.20080618.133713.15dirk0.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.92.20080618.133713.ac7p0o.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485672437194335" URI="TESTID.MR.999.4.92.20080618.133713.ac7p0o.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="93df3731c9e78fc67a572bb69ac5b228" format="DICOM" instanceNumber="92" name="TESTID.MR.999.4.92.20080618.133713.ac7p0o.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.56.20080618.133713.d7aqu3.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485380567194190" URI="TESTID.MR.999.4.56.20080618.133713.d7aqu3.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a57b87eaa7e71c27eff76b77c60fa823" format="DICOM" instanceNumber="56" name="TESTID.MR.999.4.56.20080618.133713.d7aqu3.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.42.20080618.133713.jtfle.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485272327094134" URI="TESTID.MR.999.4.42.20080618.133713.jtfle.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c68a7059f24577a805d68050fdb71c8c" format="DICOM" instanceNumber="42" name="TESTID.MR.999.4.42.20080618.133713.jtfle.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.45.20080618.133713.r37h8.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485294728494146" URI="TESTID.MR.999.4.45.20080618.133713.r37h8.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="3b94803e90612f601e91a216c0a0ca7b" format="DICOM" instanceNumber="45" name="TESTID.MR.999.4.45.20080618.133713.r37h8.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.57.20080618.133713.1u7r0jf.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485384778194192" URI="TESTID.MR.999.4.57.20080618.133713.1u7r0jf.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="601fba875b0a6addae642f394b64d362" format="DICOM" instanceNumber="57" name="TESTID.MR.999.4.57.20080618.133713.1u7r0jf.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.89.20080618.133713.1ezr9w6.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485642861294323" URI="TESTID.MR.999.4.89.20080618.133713.1ezr9w6.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="68c3ef47fb683dd2c109d0c59aa616bd" format="DICOM" instanceNumber="89" name="TESTID.MR.999.4.89.20080618.133713.1ezr9w6.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.39.20080618.133713.16g0t25.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485247540194122" URI="TESTID.MR.999.4.39.20080618.133713.16g0t25.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="668515e69c95f30fb7ffeb5e14e9374a" format="DICOM" instanceNumber="39" name="TESTID.MR.999.4.39.20080618.133713.16g0t25.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.145.20080618.133713.ukp2t5.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490061666294533" URI="TESTID.MR.999.4.145.20080618.133713.ukp2t5.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1e9b374d58076b7bfeb126a4714677fa" format="DICOM" instanceNumber="145" name="TESTID.MR.999.4.145.20080618.133713.ukp2t5.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.98.20080618.133713.cq6bco.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485716014394359" URI="TESTID.MR.999.4.98.20080618.133713.cq6bco.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6424006a221396980d0ad2e3b2b1fc82" format="DICOM" instanceNumber="98" name="TESTID.MR.999.4.98.20080618.133713.cq6bco.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.106.20080618.133713.1jowcz9.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485772182994389" URI="TESTID.MR.999.4.106.20080618.133713.1jowcz9.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8819c0dc06e1b6e181bc204f9820f666" format="DICOM" instanceNumber="106" name="TESTID.MR.999.4.106.20080618.133713.1jowcz9.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.160.20080618.133713.1trs213.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490173203694563" URI="TESTID.MR.999.4.160.20080618.133713.1trs213.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="68c574cc21bf4203a0b0d80de9c2ff6b" format="DICOM" instanceNumber="160" name="TESTID.MR.999.4.160.20080618.133713.1trs213.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.133.20080618.133713.6flg0w.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485974007094497" URI="TESTID.MR.999.4.133.20080618.133713.6flg0w.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="9eb07b19951cd56928289ef61a545eb0" format="DICOM" instanceNumber="133" name="TESTID.MR.999.4.133.20080618.133713.6flg0w.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.80.20080618.133713.7okibc.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485577442094284" URI="TESTID.MR.999.4.80.20080618.133713.7okibc.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="29235ef5226ee7b9b517cd8e3bd20293" format="DICOM" instanceNumber="80" name="TESTID.MR.999.4.80.20080618.133713.7okibc.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.102.20080618.133713.d8zb6q.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485741757794373" URI="TESTID.MR.999.4.102.20080618.133713.d8zb6q.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="4c565db9277755984f92dd3801b14a77" format="DICOM" instanceNumber="102" name="TESTID.MR.999.4.102.20080618.133713.d8zb6q.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.30.20080618.133713.pwa9y0.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485186004894086" URI="TESTID.MR.999.4.30.20080618.133713.pwa9y0.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="fcc99e12e6fcc69ad98395da7672b25b" format="DICOM" instanceNumber="30" name="TESTID.MR.999.4.30.20080618.133713.pwa9y0.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.109.20080618.133713.13siq4x.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485794257794401" URI="TESTID.MR.999.4.109.20080618.133713.13siq4x.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="7d955b2934ea0cd2304180bb552d3114" format="DICOM" instanceNumber="109" name="TESTID.MR.999.4.109.20080618.133713.13siq4x.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.52.20080618.133713.4eoud9.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485348725594174" URI="TESTID.MR.999.4.52.20080618.133713.4eoud9.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="303aa39be8f8a23633dc315ab8841c54" format="DICOM" instanceNumber="52" name="TESTID.MR.999.4.52.20080618.133713.4eoud9.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.5.20080618.133713.18ylcwk.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813484996612093985" URI="TESTID.MR.999.4.5.20080618.133713.18ylcwk.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="2654e13400ffd280b181919a62260248" format="DICOM" instanceNumber="5" name="TESTID.MR.999.4.5.20080618.133713.18ylcwk.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192038</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.119.20080618.133713.1vlt004.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485873197794443" URI="TESTID.MR.999.4.119.20080618.133713.1vlt004.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="054d2ea6c1e022d3b7168d98a5db8e55" format="DICOM" instanceNumber="119" name="TESTID.MR.999.4.119.20080618.133713.1vlt004.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.87.20080618.133713.9hm62h.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485636846094315" URI="TESTID.MR.999.4.87.20080618.133713.9hm62h.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="45646183d27027ff03b99dc84246589f" format="DICOM" instanceNumber="87" name="TESTID.MR.999.4.87.20080618.133713.9hm62h.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.101.20080618.133713.1n1y5na.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485736949994369" URI="TESTID.MR.999.4.101.20080618.133713.1n1y5na.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="be55702f72d60d091431e79503fb2cab" format="DICOM" instanceNumber="101" name="TESTID.MR.999.4.101.20080618.133713.1n1y5na.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.41.20080618.133713.18rq602.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485265330794126" URI="TESTID.MR.999.4.41.20080618.133713.18rq602.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1b55ccd43576092a3a02c7402b61482e" format="DICOM" instanceNumber="41" name="TESTID.MR.999.4.41.20080618.133713.18rq602.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.110.20080618.133713.ykxbtn.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348582583194405" URI="TESTID.MR.999.4.110.20080618.133713.ykxbtn.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c11b91b0d11990c65956528729ebaf0d" format="DICOM" instanceNumber="110" name="TESTID.MR.999.4.110.20080618.133713.ykxbtn.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.163.20080618.133713.tz1psf.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490197850094569" URI="TESTID.MR.999.4.163.20080618.133713.tz1psf.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1a76709ec3b78fab8c85f097bf197ebf" format="DICOM" instanceNumber="163" name="TESTID.MR.999.4.163.20080618.133713.tz1psf.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.117.20080618.133713.1l0fcmf.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485855276194435" URI="TESTID.MR.999.4.117.20080618.133713.1l0fcmf.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="158b65aa7a5e44ee5c8e06c2734064d3" format="DICOM" instanceNumber="117" name="TESTID.MR.999.4.117.20080618.133713.1l0fcmf.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.79.20080618.133713.18uhwoj.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485570850594280" URI="TESTID.MR.999.4.79.20080618.133713.18uhwoj.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5c74d5a0fdf103ebaecc27fe2f82e49e" format="DICOM" instanceNumber="79" name="TESTID.MR.999.4.79.20080618.133713.18uhwoj.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.48.20080618.133713.1xnjhlw.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485317457894156" URI="TESTID.MR.999.4.48.20080618.133713.1xnjhlw.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c57fba96c6b02d6e278ede6e6d8817f3" format="DICOM" instanceNumber="48" name="TESTID.MR.999.4.48.20080618.133713.1xnjhlw.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.147.20080618.133713.15ce4i9.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490076851894537" URI="TESTID.MR.999.4.147.20080618.133713.15ce4i9.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5622be1b1086f8d94290a81315016bcc" format="DICOM" instanceNumber="147" name="TESTID.MR.999.4.147.20080618.133713.15ce4i9.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.29.20080618.133713.7j2n4.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485173787094082" URI="TESTID.MR.999.4.29.20080618.133713.7j2n4.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="546bfe0352c5dac74a1be70b154d57d3" format="DICOM" instanceNumber="29" name="TESTID.MR.999.4.29.20080618.133713.7j2n4.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.47.20080618.133713.17o7j1w.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348539002794152" URI="TESTID.MR.999.4.47.20080618.133713.17o7j1w.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1ce552a895172bd174765f58a51daa7f" format="DICOM" instanceNumber="47" name="TESTID.MR.999.4.47.20080618.133713.17o7j1w.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.141.20080618.133713.suo2h3.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490036221294525" URI="TESTID.MR.999.4.141.20080618.133713.suo2h3.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="b554a2362d839c50380c0150c7824451" format="DICOM" instanceNumber="141" name="TESTID.MR.999.4.141.20080618.133713.suo2h3.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.153.20080618.133713.qgdqu8.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490122288294549" URI="TESTID.MR.999.4.153.20080618.133713.qgdqu8.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="f7ddd2984fa23dfc2484b6fb5dc09192" format="DICOM" instanceNumber="153" name="TESTID.MR.999.4.153.20080618.133713.qgdqu8.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.173.20080618.133713.zwmqrp.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490268328194589" URI="TESTID.MR.999.4.173.20080618.133713.zwmqrp.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="0f1956857a0a8011f10382eefe1af632" format="DICOM" instanceNumber="173" name="TESTID.MR.999.4.173.20080618.133713.zwmqrp.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.103.20080618.133713.2vysjp.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485752215194377" URI="TESTID.MR.999.4.103.20080618.133713.2vysjp.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="4897c29976ac0add138ced9c1d54b32e" format="DICOM" instanceNumber="103" name="TESTID.MR.999.4.103.20080618.133713.2vysjp.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.148.20080618.133713.1okgvgs.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490085690694539" URI="TESTID.MR.999.4.148.20080618.133713.1okgvgs.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="791a2a11ca61b3063a0c47c5dbc037c3" format="DICOM" instanceNumber="148" name="TESTID.MR.999.4.148.20080618.133713.1okgvgs.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.66.20080618.133713.19xtel.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485451112594230" URI="TESTID.MR.999.4.66.20080618.133713.19xtel.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ce99c6a1cd8b7f6f3fb59fc3b2435c4e" format="DICOM" instanceNumber="66" name="TESTID.MR.999.4.66.20080618.133713.19xtel.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.125.20080618.133713.1mjt9jb.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485916427294467" URI="TESTID.MR.999.4.125.20080618.133713.1mjt9jb.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="7f0d8c3ce4c03882772dd5514304e849" format="DICOM" instanceNumber="125" name="TESTID.MR.999.4.125.20080618.133713.1mjt9jb.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.19.20080618.133713.18xpaeb.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348512140394041" URI="TESTID.MR.999.4.19.20080618.133713.18xpaeb.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6050a119b5eb8f78d8683191ca98f9aa" format="DICOM" instanceNumber="19" name="TESTID.MR.999.4.19.20080618.133713.18xpaeb.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.11.20080618.133713.1v7le14.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485045525594009" URI="TESTID.MR.999.4.11.20080618.133713.1v7le14.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d6af49f9a3aa48fc9a518106cbb40bc0" format="DICOM" instanceNumber="11" name="TESTID.MR.999.4.11.20080618.133713.1v7le14.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.9.20080618.133713.cqkgpw.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485028000494001" URI="TESTID.MR.999.4.9.20080618.133713.cqkgpw.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="67699dd7cc76348f93e03e8bbb3b6977" format="DICOM" instanceNumber="9" name="TESTID.MR.999.4.9.20080618.133713.cqkgpw.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.124.20080618.133713.149he5d.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348592292794463" URI="TESTID.MR.999.4.124.20080618.133713.149he5d.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="08c3d04b39e07b4b6890b9d3578f6c1c" format="DICOM" instanceNumber="124" name="TESTID.MR.999.4.124.20080618.133713.149he5d.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.144.20080618.133713.6m0ihk.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490056670094531" URI="TESTID.MR.999.4.144.20080618.133713.6m0ihk.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="aa5a1589d954d47f22a6acf8c9badbba" format="DICOM" instanceNumber="144" name="TESTID.MR.999.4.144.20080618.133713.6m0ihk.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.71.20080618.133713.hld0ch.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348552246894250" URI="TESTID.MR.999.4.71.20080618.133713.hld0ch.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="aaf6deb7ababb26e1b8a6edb5a1ff876" format="DICOM" instanceNumber="71" name="TESTID.MR.999.4.71.20080618.133713.hld0ch.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.170.20080618.133713.ave497.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490248204894583" URI="TESTID.MR.999.4.170.20080618.133713.ave497.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="bcfa35e37d387287f6f2d8134e4b3a1c" format="DICOM" instanceNumber="170" name="TESTID.MR.999.4.170.20080618.133713.ave497.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.6.20080618.133713.1186zc.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485012023993993" URI="TESTID.MR.999.4.6.20080618.133713.1186zc.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="e6c4405bda1d7fd5f9b830a9ddd405a0" format="DICOM" instanceNumber="6" name="TESTID.MR.999.4.6.20080618.133713.1186zc.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.83.20080618.133713.14yq856.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348561105994296" URI="TESTID.MR.999.4.83.20080618.133713.14yq856.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="1c3b115467252b4b47682b8905e15c3c" format="DICOM" instanceNumber="83" name="TESTID.MR.999.4.83.20080618.133713.14yq856.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.150.20080618.133713.edjz1b.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.20080618134901264794543" URI="TESTID.MR.999.4.150.20080618.133713.edjz1b.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5444b65dd39f0e6180550a446d087846" format="DICOM" instanceNumber="150" name="TESTID.MR.999.4.150.20080618.133713.edjz1b.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.20.20080618.133713.adau1n.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.200806181348517280594043" URI="TESTID.MR.999.4.20.20080618.133713.adau1n.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a77f41588e7e986b38a0d4bcac45e3b1" format="DICOM" instanceNumber="20" name="TESTID.MR.999.4.20.20080618.133713.adau1n.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.50.20080618.133713.cg7cp4.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485333805094166" URI="TESTID.MR.999.4.50.20080618.133713.cg7cp4.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="86b59b7025b4368b4d80bae7355567ad" format="DICOM" instanceNumber="50" name="TESTID.MR.999.4.50.20080618.133713.cg7cp4.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.168.20080618.133713.378q7f.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490233072894579" URI="TESTID.MR.999.4.168.20080618.133713.378q7f.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ea4770421f68e5b0ca6e977f42e19ed4" format="DICOM" instanceNumber="168" name="TESTID.MR.999.4.168.20080618.133713.378q7f.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.8.20080618.133713.1br2cjp.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485016558593995" URI="TESTID.MR.999.4.8.20080618.133713.1br2cjp.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="58d6c78aaa5975d81cb8757012ad0674" format="DICOM" instanceNumber="8" name="TESTID.MR.999.4.8.20080618.133713.1br2cjp.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.44.20080618.133713.1j3lj9h.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485286118194140" URI="TESTID.MR.999.4.44.20080618.133713.1j3lj9h.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="873a0291eec6762bd9945e8cdc6e7be8" format="DICOM" instanceNumber="44" name="TESTID.MR.999.4.44.20080618.133713.1j3lj9h.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.70.20080618.133713.1m9w07v.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485481962894244" URI="TESTID.MR.999.4.70.20080618.133713.1m9w07v.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="a304ec89beae0c0830c3eb3fe508b37b" format="DICOM" instanceNumber="70" name="TESTID.MR.999.4.70.20080618.133713.1m9w07v.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.24.20080618.133713.14ro20x.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485138587894060" URI="TESTID.MR.999.4.24.20080618.133713.14ro20x.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="8871654c12847fae23912776b04ac4c7" format="DICOM" instanceNumber="24" name="TESTID.MR.999.4.24.20080618.133713.14ro20x.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.167.20080618.133713.1qr4wm0.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490225752394577" URI="TESTID.MR.999.4.167.20080618.133713.1qr4wm0.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="5f3802642cdeb4402c78272af4c298d3" format="DICOM" instanceNumber="167" name="TESTID.MR.999.4.167.20080618.133713.1qr4wm0.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192042</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.175.20080618.133713.gjhjgq.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490283835194593" URI="TESTID.MR.999.4.175.20080618.133713.gjhjgq.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="711027261a4bd75fb0d895bed52c4159" format="DICOM" instanceNumber="175" name="TESTID.MR.999.4.175.20080618.133713.gjhjgq.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192040</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.154.20080618.133713.11o08e0.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490129418394551" URI="TESTID.MR.999.4.154.20080618.133713.11o08e0.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="470638a8e5b878cdecef215ce74b4fca" format="DICOM" instanceNumber="154" name="TESTID.MR.999.4.154.20080618.133713.11o08e0.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.51.20080618.133713.1yseyxq.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485338051594170" URI="TESTID.MR.999.4.51.20080618.133713.1yseyxq.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="830b74b7dabc35986d733d1bedaf0ef8" format="DICOM" instanceNumber="51" name="TESTID.MR.999.4.51.20080618.133713.1yseyxq.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192046</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.159.20080618.133713.1bt8aal.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490167704794561" URI="TESTID.MR.999.4.159.20080618.133713.1bt8aal.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="fe2e8f4a241482a3d7c0404e92ef1beb" format="DICOM" instanceNumber="159" name="TESTID.MR.999.4.159.20080618.133713.1bt8aal.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.15.20080618.133713.1fmndts.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485069578394025" URI="TESTID.MR.999.4.15.20080618.133713.1fmndts.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="6bfeab94d77fdbc6d7d5fb6625b4ed29" format="DICOM" instanceNumber="15" name="TESTID.MR.999.4.15.20080618.133713.1fmndts.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.165.20080618.133713.1c1ad1y.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490211726394573" URI="TESTID.MR.999.4.165.20080618.133713.1c1ad1y.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="ba9bc7754902da29e5effe7793d55ffa" format="DICOM" instanceNumber="165" name="TESTID.MR.999.4.165.20080618.133713.1c1ad1y.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.69.20080618.133713.s0jp11.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485472590794240" URI="TESTID.MR.999.4.69.20080618.133713.s0jp11.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="40ec052c4b41756ad3bef0ec251c75f7" format="DICOM" instanceNumber="69" name="TESTID.MR.999.4.69.20080618.133713.s0jp11.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.115.20080618.133713.lthbjn.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485837720894427" URI="TESTID.MR.999.4.115.20080618.133713.lthbjn.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="d44a25941703fc757056b1c56c5283f0" format="DICOM" instanceNumber="115" name="TESTID.MR.999.4.115.20080618.133713.lthbjn.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.21.20080618.133713.s34bcy.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485116700994049" URI="TESTID.MR.999.4.21.20080618.133713.s34bcy.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="3ed0d4a2cf23dd380e90959f53dd6da8" format="DICOM" instanceNumber="21" name="TESTID.MR.999.4.21.20080618.133713.s34bcy.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.107.20080618.133713.1b1r6p0.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485780055794393" URI="TESTID.MR.999.4.107.20080618.133713.1b1r6p0.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="db28f89fe8c367d4a98716e7b60d98df" format="DICOM" instanceNumber="107" name="TESTID.MR.999.4.107.20080618.133713.1b1r6p0.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.138.20080618.133713.7rll88.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813490015770894519" URI="TESTID.MR.999.4.138.20080618.133713.7rll88.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="45413c2ce2f86c76582fe7dfbc95a38a" format="DICOM" instanceNumber="138" name="TESTID.MR.999.4.138.20080618.133713.7rll88.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192044</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+	<cat:entry ID="TESTID.MR.999.4.68.20080618.133713.1di99pm.dcm" UID="1.3.12.2.1107.5.2.32.35177.3.2008061813485467508894236" URI="TESTID.MR.999.4.68.20080618.133713.1di99pm.dcm" createdBy="admin" createdEventId="14" createdTime="2019-01-09T18:05:57.343" digest="c075766e12c082d7e0ca2d066d4b693c" format="DICOM" instanceNumber="68" name="TESTID.MR.999.4.68.20080618.133713.1di99pm.dcm" xsi:type="cat:dcmEntry">
+		<cat:metaFields>
+			<cat:metaField name="size_in_bytes">192048</cat:metaField>
+		</cat:metaFields>
+	</cat:entry>
+</cat:entries>
+<cat:dimensions x="256" y="256" z="176"/>
+<cat:voxelRes x="1.0" y="1.0" z="1.0"/>
+<cat:orientation>Sag</cat:orientation>
+</cat:DCMCatalog>

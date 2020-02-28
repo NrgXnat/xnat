@@ -294,7 +294,7 @@ window.xmodal = getObject(window.xmodal);
 
                     // is there a 'maximize' button in the header?
                     // defaults to NO maximize button
-                    this.maxBtn = firstDefined(this.maxBtn || undef, false);
+                    this.maxBtn = firstDefined(this.maxBtn, false);
 
                     // header buttons (close, maximize)
                     this.headerButtons = {};
@@ -401,7 +401,7 @@ window.xmodal = getObject(window.xmodal);
                         className: 'ok',
                         isDefault: true,
                         action: this.okAction || diddly,
-                        close: this.okClose || true
+                        close: firstDefined(this.okClose, true)
                     });
                     // default 'cancel' button
                     this.buttons.push({
@@ -410,7 +410,7 @@ window.xmodal = getObject(window.xmodal);
                         className: 'cancel',
                         isDefault: false,
                         action: this.cancelAction || diddly,
-                        close: this.cancelClose || true
+                        close: firstDefined(this.cancelClose, true)
                     });
                 }
 
@@ -882,6 +882,10 @@ window.xmodal = getObject(window.xmodal);
         this.ready(function(){
             // destroy by default when calling .close() method
             var _destroy = firstDefined(destroy, true);
+            if (this.nuke === false || this.destroyOnClose === false) {
+                // explicit "do not destroy"
+                _destroy = false;
+            }
 
             if (isFunction(this.onClose)) {
                 this.onCloseResult = this.onClose.call(this, this);
@@ -907,7 +911,7 @@ window.xmodal = getObject(window.xmodal);
 
             // TODO: to destroy or not to destroy?
             // TODO: ANSWER - ALWAYS DESTROY ON CLOSE
-            if (this.nuke || this.destroyOnClose || _destroy) {
+            if (_destroy) {
                 this.destroy();
             }
         });
@@ -1154,10 +1158,10 @@ window.xmodal = getObject(window.xmodal);
             nuke: true, // destroy on close?
             buttons: opts.buttons || [{
                 label: opts.buttonLabel || opts.okLabel || 'OK',
-                close: firstDefined(opts.okClose || undef, true),
+                close: firstDefined(opts.okClose, true),
                 isDefault: true,
                 isSubmit: true,
-                action: opts.okAction || diddly
+                action: opts.action || opts.okAction || diddly
             }]
         }, opts);
 
@@ -1184,7 +1188,7 @@ window.xmodal = getObject(window.xmodal);
         if (opts.buttons.length === 1) {
             opts.buttons.push({
                 label: opts.cancelLabel || 'Cancel',
-                close: firstDefined(opts.cancelClose || undef, true),
+                close: firstDefined(opts.cancelClose, true),
                 isCancel: true,
                 action: opts.cancelAction || diddly
             })

@@ -12,6 +12,7 @@ package org.nrg.xnat.helpers.uri;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -22,15 +23,14 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public class URIManager {
     private final static Logger logger = LoggerFactory.getLogger(URIManager.class);
-
-    public enum TEMPLATE_TYPE {ARC, PREARC, CACHE}
+    
+    public enum TEMPLATE_TYPE {ARC, PREARC, CACHE, TRIAGE}
 
     public static final String XNAME               = "XNAME";
     public static final String RECON_ID            = "RECON_ID";
@@ -59,7 +59,6 @@ public class URIManager {
 
     private URIManager() {
         add(TEMPLATE_TYPE.CACHE, "/user/cache/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, URIManager.UserCacheURI.class);
-
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}", Template.MODE_EQUALS, ProjSubjExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}", Template.MODE_EQUALS, ProjSubjURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}", Template.MODE_EQUALS, ProjSubjExptURI.class);
@@ -86,6 +85,8 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/subjects/{SUBJECT_ID}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesSubjURI.class);
+        
+        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/files",Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
 
         //resources alone
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjExptURI.class);
@@ -99,6 +100,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/subjects/{SUBJECT_ID}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesSubjURI.class);
 
         add(TEMPLATE_TYPE.ARC, "/archive", Template.MODE_EQUALS, URIManager.ArchiveURI.class);
@@ -108,6 +110,13 @@ public class URIManager {
         add(TEMPLATE_TYPE.PREARC, "/prearchive/projects/{" + URIManager.PROJECT_ID + "}/{" + PrearcUtils.PREARC_TIMESTAMP + "}", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
         add(TEMPLATE_TYPE.PREARC, "/prearchive/projects/{" + URIManager.PROJECT_ID + "}", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
         add(TEMPLATE_TYPE.PREARC, "/prearchive", Template.MODE_EQUALS, URIManager.PrearchiveURI.class);
+        
+        add(TEMPLATE_TYPE.TRIAGE,"/services/triage/projects/{" + URIManager.PROJECT_ID + "}/resources/{" + XNAME + "}",Template.MODE_STARTS_WITH,URIManager.TriageURI.class);
+        
+        // Register Plugin URIS
+        for(ManageableXnatURIContainer uriContainer : this.getUriContainers()) {
+            add(uriContainer.getTemplateType(), uriContainer.getTemplate(), uriContainer.getMode(), uriContainer.getUri());
+        }
     }
 
     public static Collection<TemplateInfo> getTemplates(TEMPLATE_TYPE type) {
@@ -153,6 +162,13 @@ public class URIManager {
 
         public String getUri() {
             return uri;
+        }
+    }
+    
+    public static class TriageURI extends DataURIA  {
+        
+        public TriageURI(Map<String, Object> props, String uri) {
+            super(props,uri);
         }
     }
 
@@ -205,6 +221,10 @@ public class URIManager {
 
     private void add(final TEMPLATE_TYPE type, final String template, final int MODE, final Class<? extends URIManager.DataURIA> clazz) {
         TEMPLATES.put(type, new TemplateInfo<>(template, MODE, clazz));
+    }
+    
+    private Collection<ManageableXnatURIContainer> getUriContainers(){
+        return XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
     }
 
 }

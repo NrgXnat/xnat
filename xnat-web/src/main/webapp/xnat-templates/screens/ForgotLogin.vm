@@ -9,7 +9,7 @@ $page.setTitle("$siteId - Register")
     <div class="login-box-container-fixed">
         <form name="form2" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="register_form">
             <p>Did you forget your username? Enter your email address and the matching username will be emailed to you.</p>
-            <p><label for="email">Email</label><input type="text" name="email" value="$!email"></p>
+            <p><label for="email">Email</label><input type="text" name="email" value="$!email" required></p>
             <p class="form-submit"><input type="submit" value="Request"></p>
 
             <hr style="margin: 2em 0" />
@@ -29,7 +29,7 @@ $page.setTitle("$siteId - Register")
         #end
         <form name="form3" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="login_form">
             <p>Did you forget your password? Enter your username and a new password will be emailed to you.</p>
-            <p><label for="username">Username</label><input type="text" name="username" value="$!username"></p>
+            <p><label for="username">Username</label><input type="text" name="username" value="$!username" required></p>
             <p class="form-submit"><input type="submit" value="Request"> </p>
 
             #foreach($key in $data.getParameters().getKeys())

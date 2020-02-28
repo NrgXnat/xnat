@@ -55,6 +55,7 @@
 <div id="availableUserList" class="hidden"></div>
 <div class="clearfix clear pad10v"></div>
 
+#if($siteConfig.securityAllowNonPrivateProjects)
 <div id="access_container">
     #set($guest=$om.getPublicAccessibility())
     #if($guest=="")
@@ -89,6 +90,8 @@
     </table>
 </div>
 <div class="clearfix clear pad10v"></div>
+#end
+
 
 <div>
     <h4 style="margin: 0 0 3px;">${projectDisplayNameSingular.toString().trim()} Invitations</h4>

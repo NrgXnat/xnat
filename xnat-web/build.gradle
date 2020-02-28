@@ -294,6 +294,10 @@ dependencies {
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
+    runtimeOnly("stratum:stratum:1.0") {
+        transitive = false
+    }
+
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"
@@ -330,6 +334,9 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-config"
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "org.hamcrest:hamcrest-core:2.2"
+    testImplementation "org.powermock:powermock-module-junit4"
+    testImplementation "org.powermock:powermock-api-mockito2"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

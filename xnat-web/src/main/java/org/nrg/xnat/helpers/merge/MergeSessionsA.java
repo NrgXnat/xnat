@@ -14,7 +14,6 @@ import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -47,6 +46,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     protected final Object     control;
     final           UserI      user;
     final           EventMetaI c;
+    protected A     merged;
 
     private static final Logger logger = LoggerFactory.getLogger(MergeSessionsA.class);
 
@@ -140,7 +140,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             @SuppressWarnings({"unchecked", "CastCanBeRemovedNarrowingVariableType"})
             final Results<A> update = mergeSessions((A) session, srcRootPath, dest, destRootPath, rootBackup);
 
-            A merged = update.getResult();
+            this.merged = update.getResult();
 
             //If we wrote to the src directory's catalogs, would the overwrite persist them into the new space (overwriting the old ones).
             //What if the same catalog had two different catalog file names.  This would cause duplicate catalogs.
@@ -156,10 +156,10 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             mergeDirectories(srcDIR, destDIR, overwriteFiles);
 
-            finalize(merged);
+            finalize(this.merged);
 
             processing("Updating stored metadata.");
-            saver.save(merged);
+            saver.save(this.merged);
 
             for (Callable<Boolean> followup : update.getAfter()) {
                 try {
@@ -169,9 +169,9 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }
 
-            postSave(merged);
+            postSave(this.merged);
 
-            return merged;
+            return this.merged;
         } catch (MizerException e) {
             logger.error("An error occurred when anonymizing the data. This occurred prior to moving files, so no rollback is performed.", e);
             failed("An error occurred when anonymizing the data: " + e.getMessage());
@@ -187,6 +187,15 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         }
     }
+    
+	public A getMerged() {
+		return merged;
+	}
+
+	public void setMerged(A merged) {
+		this.merged = merged;
+	}
+
 
     public void postSave(A session) {
 
@@ -284,21 +293,24 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
     public abstract Results<A> mergeSessions(final A src, final String srcRootPath, final A dest, final String destRootPath, final File rootbackup) throws ClientException, ServerException;
 
-    public MergeSessionsA.Results<File> mergeCatalogs(final String srcRootPath, final XnatResourcecatalogI srcRes, final String destRootPath, final XnatResourcecatalogI destRes) throws Exception {
-        final CatCatalogBean srcCat = CatalogUtils.getCleanCatalog(srcRootPath, srcRes, false, user, c);
+    public MergeSessionsA.Results<File> mergeCatalogs(final String srcProject, final String srcRootPath, final XnatResourcecatalogI srcRes,
+                                                      final String destProject, final String destRootPath, final XnatResourcecatalogI destRes) throws Exception {
+        final CatalogUtils.CatalogData src = CatalogUtils.CatalogData.getOrCreateAndClean(srcRootPath, srcRes, false, srcProject,
+                user, c);
+        final CatalogUtils.CatalogData dest = CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, destRes, false, destProject,
+                user, c);
 
-        //WARNING: this command will create a catalog if it doesn't already exist
-        final CatCatalogBean cat = CatalogUtils.getCleanCatalog(destRootPath, destRes, false, user, c);
-
-        MergeCatCatalog merge = new MergeCatCatalog(srcCat, cat, allowSessionMerge, c, CatalogUtils.getCatalogFile(destRootPath, destRes));
+        MergeCatCatalog merge = new MergeCatCatalog(src.catBean, dest.catBean, allowSessionMerge, c,
+                dest.catFile, dest.project);
 
         MergeSessionsA.Results<Boolean> r = merge.call();
         if (r.result != null && r.result) {
             try {
                 //write merged destination file to src directory for merge process to move
-                CatalogUtils.writeCatalogToFile(cat, CatalogUtils.getCatalogFile(srcRootPath, srcRes));
+                src.catBean = dest.catBean; // overwrite src.catBean with dest.catBean
+                CatalogUtils.writeCatalogToFile(src);
 
-                return new MergeSessionsA.Results<>(CatalogUtils.getCatalogFile(destRootPath, destRes), r);
+                return new MergeSessionsA.Results<>(dest.catFile, r);
             } catch (Exception e) {
                 failed("Failed to update XML Specification document.");
                 throw new ServerException(e.getMessage(), e);

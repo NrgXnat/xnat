@@ -266,7 +266,7 @@ public class ReconResource extends ItemResource {
 				if (removeFiles != null) {
 					for (XnatAbstractresourceI om : recon.getOut_file()) {
 						XnatAbstractresource resourceA = (XnatAbstractresource) om;
-						resourceA.deleteWithBackup(session.getArchiveRootPath(), user, ci);
+						resourceA.deleteWithBackup(session.getArchiveRootPath(), session.getProject(), user, ci);
 					}
 				}
 				SaveItemHelper.authorizedDelete(recon.getItem().getCurrentDBVersion(), user, ci);

@@ -37,6 +37,13 @@ var XNAT = getObject(XNAT);
         return document.getElementById(id);
     }
 
+    function downloadFileInPage(URL) {
+        var link = document.createElement('a');
+        link.href = URL;
+        link.download = '';
+        link.click();
+    }
+
     // list of project data is build on the download page
     // XDATScreen_download_sessions.vm
     // XNAT.app.projectDownload.items
@@ -335,7 +342,7 @@ var XNAT = getObject(XNAT);
                                 action: function(){
                                     // *DON'T* tickle the server every minute to keep the session alive
                                     // window.setInterval(XNAT.app.timer.touch, 60*1000);
-                                    window.open(URL)
+                                    downloadFileInPage(URL);
                                 }
                             }
                         )
@@ -379,7 +386,7 @@ var XNAT = getObject(XNAT);
                                 isDefault: true,
                                 close: true,
                                 action: function(){
-                                    window.open(URL)
+                                    downloadFileInPage(URL);
                                 }
                             }
                         )

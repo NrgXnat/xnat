@@ -91,6 +91,10 @@ var XNAT = getObject(XNAT || {});
                     var message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
                     XNAT.ui.banner.top(2000, message, 'success');
                 }
+                if(user == username){
+                    // If the user changes their own access level, we need to reload
+                    location.reload();
+                }
             },
             fail: function(e){
                 errorHandler(e);
@@ -107,6 +111,10 @@ var XNAT = getObject(XNAT || {});
             url: removeUserUrl(user,group),
             success: function(){
                 XNAT.ui.banner.top(2000, '<b>' + user + '</b> removed from project.', 'success');
+                if(user == username){
+                    // If the user removes themselves, we need to reload the page
+                    location.reload();
+                }
             },
             fail: function(e){
                 errorHandler(e);

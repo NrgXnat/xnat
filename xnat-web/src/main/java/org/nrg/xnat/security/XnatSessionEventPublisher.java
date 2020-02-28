@@ -94,7 +94,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
                             log.debug("Got a session destroyed event for the guest user");
                         } else{
                             //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
-                            final int count = getTemplate().update(UPDATE_QUERY, new MapSqlParameterSource(PARAM_SESSION_ID, sessionId).addValue(PARAM_TIMESTAMP, new Timestamp(_calendar.getTimeInMillis())).addValue(PARAM_USER_ID, userId));
+                            final int count = getTemplate().update(UPDATE_QUERY, new MapSqlParameterSource(PARAM_SESSION_ID, sessionId).addValue(PARAM_TIMESTAMP, new Timestamp(Calendar.getInstance(TimeZone.getDefault()).getTimeInMillis())).addValue(PARAM_USER_ID, userId));
                             log.debug("Got a session destroyed event for user ID {}, updated {} rows in xdat_user_login to record this.", userId, count);
                         }
                     } else if (userCandidate instanceof String) {
@@ -118,7 +118,6 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
         _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
         _cache = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(GroupsAndPermissionsCache.class);
-        _calendar = Calendar.getInstance(TimeZone.getDefault());
     }
 
     @Override
@@ -175,5 +174,4 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     private NamedParameterJdbcTemplate _template;
     private GroupsAndPermissionsCache  _cache;
     private Integer                    _guestUserId;
-    private Calendar                   _calendar;
 }

@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.dcm4che2.data.ElementDictionary;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.*;
@@ -38,6 +39,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.util.Template;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,12 +47,17 @@ import java.util.*;
 
 
 public final class DicomDump extends SecureResource {
+	//dump all discovered fields from all dicom files in session,scan etc
+	private static final String SUMMARY_VALUE = "true";
+	private static final String SUMMARY_ATTR = "summary";
+
     // "src" attribute the contains the uri to the desired resources
     private static final String SRC_ATTR = "src";
     private static final String FIELD_PARAM = "field";
     // image type supported.
     private static final List<String> imageTypes = new ArrayList<>();
 
+    private static final int MAXFILENUMBER=10000;
     private static final ElementDictionary TAG_DICTIONARY = ElementDictionary.getDictionary();
 
     // The global environment
@@ -136,6 +143,12 @@ public final class DicomDump extends SecureResource {
                 }
             }
         }
+
+        @Nullable
+        String getProject() {
+            final Object proj = env.attrs.get("PROJECT_ID");
+            return proj != null ? (String) proj : null;
+        }
     }
 
 
@@ -156,10 +169,11 @@ public final class DicomDump extends SecureResource {
             @Override
             CatFilterWithPath getFilter(final Env env, final UserI user) {
                 final Object filename = env.attrs.get(FILENAME_PARAM);
+                final String project = env.getProject();
                 return new CatFilterWithPath() {
                     public boolean accept(CatEntryI entry) {
-                        final File f = CatalogUtils.getFile(entry, path);
-                        return f.getName().equals(filename);
+                        final File f = CatalogUtils.getFile(entry, path, project);
+                        return f != null && f.getName().equals(filename);
                     }
                 };
             }
@@ -262,6 +276,11 @@ public final class DicomDump extends SecureResource {
             }
             return null;
         }
+
+		public Iterable<File> retrieveAll(Env env, UserI user) throws Exception {
+            final Iterable<File> matches = env.r.getFiles(env, user, getFilter(env, user), MAXFILENUMBER);
+            return matches;    
+        }
     }
 
     /**
@@ -281,8 +300,15 @@ public final class DicomDump extends SecureResource {
         PREARCHIVE() {
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
-                this.rootPath = CatalogUtils.getCatalogFile(this.x.getPrearchivepath(), r).getParentFile().getAbsolutePath();
-                return CatalogUtils.getCleanCatalog(this.x.getPrearchivepath(), r, false);
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -303,7 +329,15 @@ public final class DicomDump extends SecureResource {
             @Override
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 this.rootPath = (new File(r.getUri())).getParent();
-                return CatalogUtils.getCleanCatalog(this.rootPath, r, true);
+                CatalogUtils.CatalogData catalogData;
+                try {
+                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.rootPath, r, true, this.x.getProject()
+                    );
+                } catch (ServerException e) {
+                    return null;
+                }
+                this.rootPath = catalogData.catPath;
+                return catalogData.catBean;
             }
 
             @Override
@@ -454,9 +488,11 @@ public final class DicomDump extends SecureResource {
                 final String type = resource.getLabel();
                 if (imageTypes.contains(type)) {
                     final CatCatalogI catalog = env.a.getCatalog(resource);
+                    final String project = env.getProject();
                     filter.setPath(env.a.rootPath);
                     for (CatEntryI match : CatalogUtils.getEntriesByFilter(catalog, filter)) {
-                        files.add(CatalogUtils.getFile(match, env.a.rootPath));
+                        File f = CatalogUtils.getFile(match, env.a.rootPath, project);
+                        if (f != null) files.add(f);
                         if (files.size() >= enough) {
                             return files;
                         }
@@ -576,25 +612,36 @@ public final class DicomDump extends SecureResource {
         }
     };
 
-    public Representation represent(final Variant variant) {
+    public Representation represent(final Variant variant) throws ResourceException{
         final MediaType mt = overrideVariant(variant);
         try {
-            String file = this.env.h.retrieve(this.env, getUser());
-            DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
-            final XFTTable t = d.render();
+        	//need extra param
+        	final XFTTable t;
+        	String summary=this.getQueryVariable(DicomDump.SUMMARY_ATTR);
+            if (SUMMARY_VALUE.equals(summary)){
+            	Iterable<File> files = this.env.h.retrieveAll(this.env, this.getUser());
+            	DicomSummaryHeaderDump d = new DicomSummaryHeaderDump(files, env.fields);
+                t = d.render();
+            }else{//default..
+            	String file = this.env.h.retrieve(this.env, this.getUser());
+                DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
+                t = d.render();
+            }
+           // String file = this.env.h.retrieve(this.env, getUser());
+           // DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
             return this.representTable(t, mt, new Hashtable<String, Object>());
         } catch (FileNotFoundException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (IOException e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (ClientException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         } catch (Throwable e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            return null;
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "There was an error rendering Dicom Header", e);
         }
     }
 }

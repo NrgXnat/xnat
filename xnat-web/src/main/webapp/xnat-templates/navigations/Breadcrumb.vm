@@ -30,6 +30,21 @@
         #set($subjectId = $subject.getId())
     #end
 #end
+
+#macro(makeDefaultLink)
+    #if($!om && $om.getId())
+        #set($xsitype = "#escapeHTML($om.getXSIType())")
+        #if($!projectId)
+            #set ($defaultLink = $link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId"))
+        #else
+            #set ($defaultLink = $link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()"))
+        #end
+        '$defaultLink'
+    #else
+        '#'
+    #end
+#end
+
 <script src="$content.getURI("scripts/xnat/ui/breadcrumbs.js")"></script>
 <script language="javascript">
 
@@ -116,7 +131,7 @@
                         #if($om.getId())
                             // 108
                             crumbs.push({
-                                link:  null,
+                                link:  #makeDefaultLink(),
                                 label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                             });
 
@@ -195,7 +210,7 @@
                             // 186
                             crumbs.push({
                                 id:    '$!om.getId()',
-                                link:  null,
+                                link:  #makeDefaultLink(),
                                 label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                             });
 
@@ -254,10 +269,11 @@
 
                     #else
                         #if($om.getId())
+                            #set ($xsitype = "#escapeHTML($om.getXSIType())");
                             // 248
                             crumbs.push({
                                 id:    '$!om.getId()',
-                                link:  null,
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
                                 label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                             });
 
@@ -334,7 +350,7 @@
                             // 325
                             crumbs.push({
                                 id:    '$!om.getId()',
-                                link:  null,
+                                link:  #makeDefaultLink(),
                                 label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                             });
 
@@ -375,10 +391,11 @@
                         #if($om.getId())
                             // 367
                             // prevent 'bonus' breadcrumb on project page
+                            var l = #makeDefaultLink();
                             if (!window.isProjectPage){
                                 crumbs.push({
                                     id:    '$!om.getId()',
-                                    link:  null,
+                                    link:  #makeDefaultLink(),
                                     label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                                 });
                             }
@@ -418,7 +435,7 @@
                             // 411
                             crumbs.push({
                                 id:    '$!om.getId()',
-                                link:  null,
+                                link:  #makeDefaultLink(),
                                 label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
                             });
 

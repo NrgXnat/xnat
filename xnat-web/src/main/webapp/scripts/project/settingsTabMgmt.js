@@ -31,7 +31,9 @@ function fullConfigHandler() {
             document.getElementById('registration_save_button').onclick = saveSettings;
             document.getElementById('notifications_save_button').onclick = saveSettings;
             document.getElementById('anonymization_save_button').onclick = saveSettings;
-            document.getElementById('seriesImportFilter_save_button').onclick = saveSettings;
+            if(document.getElementById('seriesImportFilter_save_button')){
+        		document.getElementById('seriesImportFilter_save_button').onclick = saveSettings;
+        	    }
             document.getElementById('dicomReceiver_save_button').onclick = saveSettings;
 
             xmodal.loading.close();
@@ -59,7 +61,7 @@ function fullConfigHandler() {
     var data = buildSettingsUpdateRequestBody([
         'siteId','uiDebugExtensionPoints', 'siteDescriptionType', 'siteDescriptionText', 'siteDescriptionPage', 'siteUrl', 'siteAdminEmail', 'siteLoginLanding', 'siteLandingLayout', 'siteHome', 'siteHomeLayout'
         , 'enableCsrfToken', 'enableCsrfEmail', 'restrictUserListAccessToAdmins', 'uiAllowNonAdminProjectCreation', 'allowNonAdminsToClaimUnassignedSessions', 'requireSaltedPasswords', 'passwordExpirationType', 'passwordExpirationInterval', 'passwordExpirationDate'
-        , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath'
+        , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath', 'rtriagePath'
         , 'requireLogin', 'enableNewRegistrations', 'emailVerification'
         , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smt.enabled'
         , 'anonScript', 'anonEnabled', 'dcmPort', 'dcmAe', 'enableDicomReceiver'
@@ -87,7 +89,9 @@ function configurationTabManagerInit() {
         document.getElementById('registration_save_button').onclick = fullConfigHandler;
         document.getElementById('notifications_save_button').onclick = fullConfigHandler;
         document.getElementById('anonymization_save_button').onclick = fullConfigHandler;
-        document.getElementById('seriesImportFilter_save_button').onclick = fullConfigHandler;
+        if(document.getElementById('seriesImportFilter_save_button')){
+            document.getElementById('seriesImportFilter_save_button').onclick = fullConfigHandler;
+    }
         document.getElementById('dicomReceiver_save_button').onclick = fullConfigHandler;
     }
 }
@@ -239,8 +243,9 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
         // http://api.jquery.com/input-selector/
 
         window.toggleControlsOnAnonEnabled();
-        window.toggleControlsOnFilterEnabled();
-
+        if(window.toggleControlsOnFilterEnabled){
+            window.toggleControlsOnFilterEnabled();
+        }
     };
 
     this.resetForm = function() {
@@ -303,7 +308,7 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
     this.validateSettings = function() {
         for (var index = 0; index < this.controls.length; index++) {
             var control = this.controls[index];
-            if (control.type == 'text') {
+            if (control.type == 'text' && !$(control).hasClass("optional")) {
                 if (!control.value) {
                     return false;
                 }

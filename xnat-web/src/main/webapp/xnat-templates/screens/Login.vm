@@ -9,6 +9,7 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 <!-- BEGIN xnat-templates/screens/Login.vm -->
+
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
@@ -21,23 +22,23 @@ $page.setTitle("$siteId - Please Login")
 //    XNAT.cookie.set('SESSION_LOGOUT_REDIRECT', 'true');
 </script>
 
-<div id="login_area">
-
-    <!--[if lte IE 8]>
-    <div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
-            $!systemName does not support Internet Explorer version 8 or below.
-        <br><br>
-        We recommend using a modern browser such as
-        <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
-        <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>,
-        <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>, or a newer
-        version of Internet Explorer (version 9.0 or higher).
-    </div>
-    <![endif]-->
+<!--[if lte IE 8]>
+<div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
+        $!systemName does not support Internet Explorer version 8 or below.
+    <br><br>
+    We recommend using a modern browser such as
+    <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
+    <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>,
+    <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>, or a newer
+    version of Internet Explorer (version 9.0 or higher).
+</div>
+<![endif]-->
 
 #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
-    <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
+<div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
 #end
+
+<div id="login_area">
 
 #if($turbineUtils.GetPassedParameter("par",$data))
 ## create custom layout when parameters are passed to the login page from an external link.
@@ -121,6 +122,7 @@ $page.setTitle("$siteId - Please Login")
                         <span id="register_forgot">
                             <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
                         </span>
+                        
                     <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
                 </p>
 
@@ -206,20 +208,26 @@ $page.setTitle("$siteId - Please Login")
             </p>
 
             <p class="form-submit">
-                <span id="register_forgot">
-                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
-                    <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                </span>
-                <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-            </p>
-
-            <input type="hidden" name="XNAT_CSRF" value="">
-        </form>
+            <span id="register_forgot" style="float:left">
+                <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                #if($turbineUtils.getTemplates("loginBoxMoreOptions").size() > 0)
+                    <a href="#" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
+                #end
+            </span>
+            <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+        </p>
+        <input type="hidden" name="XNAT_CSRF" value="">
+    </form>
+    </div>
+    <div id="loginBoxMoreOptions">
+        #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
+            #set($templateFileName=$screenProps.getProperty("path"))
+            #parse("/screens/$templateFileName")
+        #end
     </div>
     </div>
-
     <div class="clear"></div>
-
     #end
 </div>
 

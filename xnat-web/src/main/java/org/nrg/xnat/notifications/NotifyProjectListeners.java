@@ -11,9 +11,10 @@ package org.nrg.xnat.notifications;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatEntryI;
@@ -34,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+@Slf4j
 public class NotifyProjectListeners implements Callable<Boolean> {
 	private static final String NOTIFICATIONS = "notifications";
-	static Logger logger = Logger.getLogger(NotifyProjectListeners.class);
 	private final XnatExperimentdata _expt;
 	private final String _template,_subject,_action;
 	private final UserI _user;
@@ -104,7 +105,7 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 				return false;
 			}
 		} catch (Exception e) {
-			logger.error("", e);
+			log.error("", e);
 			return false;
 		}
 	}
@@ -130,19 +131,24 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 			
 			File matchedFile=null;
 			if(res!=null){
-				final CatCatalogBean cat=CatalogUtils.getCatalog(project.getRootArchivePath(), res);
-				final File catalog_xml=CatalogUtils.getCatalogFile(project.getRootArchivePath(), res);
-				
-				if(cat!=null && catalog_xml!=null){
+				try {
+					final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(project.getRootArchivePath(), res, project.getId()
+					);
+					final CatCatalogBean cat = catalogData.catBean;
+					final File catalog_xml = catalogData.catFile;
+
 					CatEntryI entry=null;
 					for(String name:names){
 						entry=CatalogUtils.getEntryByURI(cat, name);
 						if(entry!=null)break;
 					}
-					
+
 					if(entry!=null){
-						matchedFile=CatalogUtils.getFile(entry, catalog_xml.getParent());
+						matchedFile=CatalogUtils.getFile(entry, catalog_xml.getParent(), project.getId());
 					}
+				} catch (ServerException e) {
+					log.error("Unable to read or create catalog for resource {}", 
+							res.getXnatAbstractresourceId(), e);
 				}
 			}
 			

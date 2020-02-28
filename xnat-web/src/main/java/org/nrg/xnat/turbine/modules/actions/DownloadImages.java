@@ -34,6 +34,7 @@ import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.srb.XNATDirectory;
+import org.nrg.xnat.utils.CatalogUtils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -175,25 +176,13 @@ public class DownloadImages extends SecureAction {
                                     }
                                 }
                                 
-                                entry.setCachepath(path);
                                 entry.setName(f.getName());
-                                
+                                CatalogUtils.setCatEntryBeanMetafields(entry, path, Long.toString(f.length()));
                                 CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                                meta.setMetafield(path);
-                                meta.setName("RELATIVE_PATH");
-                                entry.addMetafields_metafield(meta);
-                                
-                                meta = new CatEntryMetafieldBean();
                                 meta.setMetafield(key);
                                 meta.setName("GROUP");
                                 entry.addMetafields_metafield(meta);
                                 
-                                
-                                meta = new CatEntryMetafieldBean();
-                                meta.setMetafield(new Long(f.length()).toString());
-                                meta.setName("SIZE");
-                                entry.addMetafields_metafield(meta);
-
                                 catalog.addEntries_entry(entry);
                             }else{
                                 XNATDirectory dir = (XNATDirectory)o;
@@ -214,24 +203,15 @@ public class DownloadImages extends SecureAction {
                                     
                                     fileMap.put(identifier, entryF.getValue());
                                     
-                                    entry.setCachepath(relative);
                                     entry.setName(entryF.getValue().getName());
+                                    CatalogUtils.setCatEntryBeanMetafields(entry, relative,
+                                            Long.toString(entryF.getValue().length()));
                                     
                                     CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                                    meta.setMetafield(relative);
-                                    meta.setName("RELATIVE_PATH");
-                                    entry.addMetafields_metafield(meta);
-                                    
-                                    meta = new CatEntryMetafieldBean();
                                     meta.setMetafield(key);
                                     meta.setName("GROUP");
                                     entry.addMetafields_metafield(meta);
                                     
-                                    meta = new CatEntryMetafieldBean();
-                                    meta.setMetafield(new Long(entryF.getValue().length()).toString());
-                                    meta.setName("SIZE");
-                                    entry.addMetafields_metafield(meta);
-
                                     catalog.addEntries_entry(entry);
                                 }
                             }
@@ -273,23 +253,13 @@ public class DownloadImages extends SecureAction {
                             }
                         }
                         
-                        entry.setCachepath(path);
                         entry.setName(f.getName());
+                        CatalogUtils.setCatEntryBeanMetafields(entry, path,
+                                Long.toString(f.length()));
                         
                         CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(path);
-                        meta.setName("RELATIVE_PATH");
-                        entry.addMetafields_metafield(meta);
-                        
-                        meta = new CatEntryMetafieldBean();
                         meta.setMetafield(key);
                         meta.setName("GROUP");
-                        entry.addMetafields_metafield(meta);
-                        
-                        
-                        meta = new CatEntryMetafieldBean();
-                        meta.setMetafield(new Long(f.length()).toString());
-                        meta.setName("SIZE");
                         entry.addMetafields_metafield(meta);
 
                         catalog.addEntries_entry(entry);

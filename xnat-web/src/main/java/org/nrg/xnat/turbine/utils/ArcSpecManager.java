@@ -32,6 +32,11 @@ import java.util.ArrayList;
 
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
+import java.util.Date;
+import java.sql.SQLException;
+import org.nrg.xft.db.PoolDBUtils;
+import org.restlet.util.DateUtils;
+
 /**
  * @author timo
  *
@@ -53,9 +58,20 @@ public class ArcSpecManager {
     public synchronized static  ArcArchivespecification GetInstance(){
     	return GetInstance(true);
     }
+    public static Date lastModified=null;
     
     public synchronized static  ArcArchivespecification GetInstance(boolean dbInit){
-        if (arcSpec==null){
+        Date currentModDate=null;
+        try {
+            currentModDate = (Date)PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
+        } catch (SQLException e1) {
+            logger.error("",e1);
+        } catch (Exception e1) {
+            logger.error("",e1);
+        }
+        
+        if (arcSpec==null || (lastModified!=null && currentModDate!=null && DateUtils.before(lastModified, currentModDate))){
+            lastModified=currentModDate;
             logger.info("Initializing ArcSpec...");
             arcSpec = GetFreshInstance();
 

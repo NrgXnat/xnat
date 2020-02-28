@@ -26,7 +26,7 @@ function confirmValues(_focus){
 	  if(subBox.value!=""){
 	  	 if(subBox.obj.selectedIndex!=undefined){
 	  	 	if(subBox.obj.options[subBox.obj.selectedIndex].style.color=="red"){
-                                document.getElementById("subj_msg").innerHTML="* This " + XNAT.app.displayNames.singular.subject.toLowerCase() + " does not exist, and will be automatically created.  To populate demographic details for this " + XNAT.app.displayNames.singular.subject.toLowerCase() + " please use the 'Add New " + XNAT.app.displayNames.singular.subject + "' link.";
+                                document.getElementById("subj_msg").innerHTML="<i class='fa fa-asterisk' title='Required' style='margin-left: 5px;'></i> This " + XNAT.app.displayNames.singular.subject.toLowerCase() + " does not exist, and will be automatically created.  To populate demographic details for this " + XNAT.app.displayNames.singular.subject.toLowerCase() + " please use the 'Add New " + XNAT.app.displayNames.singular.subject + "' link.";
 	  	 	}else{
 	  	 		document.getElementById("subj_msg").innerHTML="";
 	  	 	}
@@ -189,6 +189,9 @@ function confirmValues(_focus){
 
 function getValueById(id){
 	var box=document.getElementById(id);
+	if(!box){
+		return null;
+	}
 	if(box.value==undefined){
 		if(box.selectedIndex!=undefined){
 			return {"value":box.options[box.selectedIndex].value,obj:box};

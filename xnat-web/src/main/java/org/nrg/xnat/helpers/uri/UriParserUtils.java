@@ -14,14 +14,18 @@ import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xnat.helpers.uri.URIManager.DataURIA;
 import org.restlet.util.Template;
 import org.restlet.util.Variable;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -80,6 +84,43 @@ public final class UriParserUtils {
                     return uri;
                 }
             }
+        } else if(dataUri.startsWith("/services/triage")){
+			if(dataUri.equals("/services/triage")){
+				final Map<String,Object> t=Collections.emptyMap();
+				return new URIManager.TriageURI(t,dataUri);
+			}
+			
+			for(final URIManager.TemplateInfo template: URIManager.getTemplates(URIManager.TEMPLATE_TYPE.TRIAGE)){
+				Map<String,Object> map=new UriParser(template.key,template.MODE).readUri(dataUri);
+				if(map.size()>0){
+					return template.wrap(map,dataUri);
+				}
+			}
+			
+		} else {
+        	// Parse Custom Plugin URIs
+        	Collection<ManageableXnatURIContainer> containers = XDAT.getContextService().getBeansOfType(ManageableXnatURIContainer.class).values();
+        	for (ManageableXnatURIContainer uriContainer : containers) {
+        		if(dataUri.startsWith(uriContainer.getBaseTemplate())) {
+        			if(dataUri.equals(uriContainer.getBaseTemplate())) {
+        				try {
+        					final Map<String,Object> t=Collections.emptyMap();
+        					Constructor<? extends DataURIA> uriConstructor = uriContainer.getUri().getConstructor(Map.class,String.class);
+        					return uriConstructor.newInstance(t,dataUri);
+        				} catch (Exception e) {
+        					log.error("Unable to create URI Class " + uriContainer.getClass().getName(),e);
+        					throw new MalformedURLException();
+        				}
+        			}
+        			
+        			for(final URIManager.TemplateInfo template: URIManager.getTemplates(uriContainer.getTemplateType())){
+        				Map<String,Object> map=new UriParser(template.key,template.MODE).readUri(dataUri);
+        				if(map.size()>0){
+        					return template.wrap(map,dataUri);
+        				}
+        			}
+        		}
+        	}
         }
 
         log.warn("No valid data URI format was found for the data URI '{}'", dataUri);
@@ -113,10 +154,11 @@ public final class UriParserUtils {
                     } else if (item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                         log.debug("Found an XFTItem object of type xnat:xnat:imageScanData (actually {}) with ID '{}'", item.getXSIType(), itemId);
                         parameters.put(XnatImagescandata.SCHEMA_ELEMENT_NAME, itemId);
+                        parameters.put(XnatExperimentdata.SCHEMA_ELEMENT_NAME, item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID"));
                     } else {
                         log.error("Found XFTItem of type {} with ID '{}', I don't know how to deal with this in the current context, so I'm ignoring it.", item.getXSIType(), itemId);
                     }
-                } catch (XFTInitException | ElementNotFoundException e) {
+                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
                     log.error("An error occurred trying to retrieve the ID value for the XFT item of type {} with primary key: {}", ((XFTItem) object).getXSIType(), ((XFTItem) object).getPK().toString());
                 }
             } else if (XnatProjectdata.class.isAssignableFrom(objectClass)) {
@@ -140,9 +182,11 @@ public final class UriParserUtils {
                 log.debug("Found an XnatReconstructedimagedata object with ID '{}'", id);
                 parameters.put(XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME, id);
             } else if (XnatImagescandata.class.isAssignableFrom(objectClass)) {
-                final String id = ((XnatImagescandata) object).getId();
+                XnatImagescandata scan = (XnatImagescandata) object;
+                final String id = scan.getId();
                 log.debug("Found an XnatImagescandata object (actually {}) with ID '{}'", objectClass.getName(), id);
                 parameters.put(XnatImagescandata.SCHEMA_ELEMENT_NAME, id);
+                parameters.put(XnatExperimentdata.SCHEMA_ELEMENT_NAME, scan.getImageSessionId());
             } else if (object instanceof String) {
                 final String value = (String) object;
                 final String name  = StringUtils.equalsAny(value, "in", "out") ? "type" : "xname";

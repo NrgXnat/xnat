@@ -220,7 +220,16 @@ var XNAT = getObject(XNAT);
         if (opts.placeholder) {
             opts.element.placeholder = opts.placeholder;
         }
-
+        
+        if(opts.min){
+            opts.element.min = opts.min;
+        }
+        if(opts.max){
+            opts.element.max = opts.max;
+        }
+        if(opts.step){
+            opts.element.step = opts.step;
+        }
         // use an existing element (passed as the second argument)
         // or spawn a new one
         element = element || spawn('input', opts.element);

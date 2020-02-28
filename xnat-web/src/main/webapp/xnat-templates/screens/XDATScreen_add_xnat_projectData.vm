@@ -39,6 +39,7 @@ $page.setVlinkColor($ui.vlink)
         #access-description { max-width: 74%; }
     </style>
 
+    #if($siteConfig.securityAllowNonPrivateProjects)
     ## this div will eventually be created by Spawner
     <div id="project-accessibility" class="container">
         <div class="withColor containerTitle">Step 2: Define ${PROJECT_DISPLAY_NAME} Accessibility</div>
@@ -68,6 +69,9 @@ $page.setVlinkColor($ui.vlink)
             </div>
         </div>
     </div>
+    #else
+    <input type="hidden" id="private_access" name="accessibility" value="private"/>
+    #end
 
     <script>
 
@@ -143,6 +147,10 @@ $page.setVlinkColor($ui.vlink)
             __projTitle.addClass('invalid');
             invalid_count++;
         }
+        
+        ## Add custom project validation
+        #addCustomScreens("xnat:projectData" "edit/validation")
+
         if (invalid_count > 0) {
             __form.find('.invalid').first().focus();
             return false;

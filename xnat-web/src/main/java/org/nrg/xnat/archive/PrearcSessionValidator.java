@@ -21,6 +21,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.helpers.merge.MergePrearcToArchiveSession;
 import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
 import org.nrg.xnat.helpers.merge.MergeUtils;
@@ -72,7 +73,12 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 			//check if the UIDs match
 			if(StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())){
 				if(!StringUtils.equals(existing.getUid(), src.getUid())){
-					conflict(5,UID_MOD);
+					SessionMergingConfigMapper mapper=new SessionMergingConfigMapper();
+					if(!mapper.getUidModSetting(existing.getProject())){
+						conflict(5,UID_MOD);
+					}else{
+						conflict(19,"StudyInstanceUIDs do not match. Continue to override.");
+					}
 				}
 			}
 

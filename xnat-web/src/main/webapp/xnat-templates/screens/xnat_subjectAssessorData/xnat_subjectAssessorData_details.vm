@@ -1,8 +1,9 @@
-			<!--BEGIN xnat_subjectAssessorData_details.vm -->
-			<table border="0" width="95%" >
-				 <tr>
-  					<td valign="top">
-  					<!--BEGIN EXPT SUMMARY TABS -->
+<!--BEGIN xnat_subjectAssessorData_details.vm -->
+#addCustomScreens($om.getXSIType() "report/preDetails")
+<table border="0" width="95%" >
+     <tr>
+        <td valign="top">
+        <!--BEGIN EXPT SUMMARY TABS -->
 <STYLE>
 span.spacer{
 height:12px;

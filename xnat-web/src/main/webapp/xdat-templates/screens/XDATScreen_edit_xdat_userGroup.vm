@@ -262,8 +262,11 @@ $page.setVlinkColor($ui.vlink)
         #set($elementSecurity = $elementManager.get(5))
         #if( !$elementSecurity.getSchemaElement().instanceOf("xnat:imageSessionData") && $elementSecurity.getSchemaElement().instanceOf("xnat:subjectAssessorData"))
             #set($inserted = $inserted + 1)
-    		#set($pi="")
-    		#set($pi=$ug.getRootPermissionObject("${elementName}","${elementName}/project","$ug.getTag()"))		
+            #set($pi="")
+            #set($permList = $ug.getPermissionsByDataTypeAndField("${elementName}","${elementName}/project"))
+            #if($permList.size()>0)
+                #set($pi=$permList.get(0))
+            #end
 			#if($pi!="" && ($pi.getRead() || $pi.getCreate() || $pi.getEdit() || $pi.getDelete()))
 				<input type="hidden" value="1" name="${elementName}_${elementName}/project_$!{pValue}_wasSet"/>
 			#end

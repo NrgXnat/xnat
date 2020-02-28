@@ -69,10 +69,18 @@ abu.FileUploader = function(o){
 						'Verbose status output?' +
 						'</div>' : ""
 					) +
+					'<div class="abu-options-cb" id="formatAndContentBoxDiv" style="display:none;margin-bottom:4px;"><table><tr><td>Content:</td><td><input id="contentBox" name="fileContent" type="text"/></td></tr>' +
+					'<tr><td>Format:</td><td><input id="formatBox" name="formatBox" type="text"/></td></tr></table></div>'+
+					'<div class="abu-options-cb" id="triageMessage" style="display: none;">' +
+					'<br>Your files will be uploaded to the project quarantine location and will await review by project administrators' + 
+					'</div>' +
 					'</div>' +
 				'</div>' +
 			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
-				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input">' + 
+				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input btn" ' +
+					((this._options.acceptFilePattern) ? 'accept="' + this._options.acceptFilePattern + '"'
+						: ''
+					) + '>' +
 			'</div>' +
 			'<div class="abu-list-area"><ul class="abu-upload-list"></ul>' +
 				'<div class="response_text" style="display:none"></div>' +
@@ -219,9 +227,11 @@ abu.FileUploader = function(o){
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +
 					 (($("#updateBox").length>0) ? (($("#updateBox").is(':checked')) ? "&update=true" : "&update=false") : "") +
+					 (($("#contentBox").length>0) ? (($("#contentBox").val().length>0) ? "&content="+$("#contentBox").val() : "") : "") +
+					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
 					 '" method="POST" enctype="multipart/form-data">' + 
 				'</form>' + 
-				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file">' + cFile.name + '</span><span class="abu-upload-file">' +  
+				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + cFile.name + '</span><span class="abu-upload-file">' +
 					" (" + ((typeof cFile.type !== 'undefined' && cFile.type !== '') ? cFile.type + ", " : '') +
 					 this.bytesToSize(cFile.size) + ") </span>" +  
 					'<div class="abu-progress">' +
@@ -233,7 +243,7 @@ abu.FileUploader = function(o){
 			this.currentUploads++;
 			var formData = new FormData();
 			formData.append("file" + adj_i,cFile,cFile.name);
-			this.uploadFile("#file-upload-form-" + adj_i,formData);
+			this.uploadFile(adj_i,formData);
 			this.manageUploads();
 		}
 	}.bind(this)
@@ -271,7 +281,8 @@ abu.FileUploader = function(o){
 		this.anyFailedUploads = false;
 	}.bind(this)
 
-	this.uploadFile = function(formSelector,formData) {
+	this.uploadFile = function(idx,formData) {
+		var formSelector = "#file-upload-form-" + idx;
 		var infoSelector = formSelector.replace("-upload-form-","-info-div-");
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
@@ -279,6 +290,20 @@ abu.FileUploader = function(o){
 		$(formSelector).on("submit",function(e, uploader) {
 			 $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
+					
+					// Don't allow % and # characters in the filename.
+					if (formData.get("file"+idx).name.match(/[%#{}]/g)){
+						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%' and '#' and '{}' are not allowed). Not Uploaded.</a>");
+						$(infoSelector).find(".abu-progress").css("display","none");
+						status.css("display","inline-block");
+						uploader.uploadsStarted++;
+						uploader.uploadsInProgress++;
+						arr.abort();
+						this.complete();
+						return false;
+					}
+					
+					XNAT.app.timeout.maintainLogin = true;
 					var formURL = $form.url;
 					if (typeof formURL !== 'undefined' && formURL.toLowerCase().indexOf("overwrite=true")>=0 && formURL.indexOf("/files")>0) {
 						// See if file already exists
@@ -323,7 +348,7 @@ abu.FileUploader = function(o){
 					$form.contentType=false;
 					status.empty();
 					var percentVal = '0%';
-					bar.width(percentVal)
+					bar.width(percentVal);
 					percent.html(percentVal);
 					uploader.uploadsStarted++;
 					uploader.uploadsInProgress++;
@@ -344,8 +369,8 @@ abu.FileUploader = function(o){
 				},
 				uploadProgress: function(event, position, total, percentComplete) {
 					var percentVal = percentComplete + '%';
-					bar.width(percentVal)
-					percent.html(percentVal);
+					bar.width(percentVal);
+					percent.html(percentComplete === 100 ? 'Saving...' : percentVal);
 				},
 				error: function(result) {
 					$(status).data("rtn",result);
@@ -394,6 +419,7 @@ abu.FileUploader = function(o){
 					if (uploader.currentUploads==0) {
 						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
 						uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
+						XNAT.app.timeout.maintainLogin = false;
 					}
 					uploader.manageUploads();
 				}

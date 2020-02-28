@@ -150,11 +150,17 @@ var XNAT = getObject(XNAT);
 
     dataTypeAccess.reqCount = 0;
 
-    if (getFreshData && window.loadDataTypes) {
-        window.setTimeout(function(){
-            cacheLoadingMessage.open();
-        }, 1);
-    }
+    var loadingTimer = (function(){
+        if (getFreshData && window.loadDataTypes) {
+            return window.setTimeout(function(){
+                cacheLoadingMessage.fadeIn(100);
+            }, 2000);
+        }
+        else {
+            cacheLoadingMessage.destroy();
+            return null;
+        }
+    })();
 
     // make sure there aren't duplicate data type elements
     function collectDataTypes(datatypes){
@@ -321,29 +327,35 @@ var XNAT = getObject(XNAT);
             dataTypeAccess.getElements[type] = dataTypeAccess.getElements[type] || dataTypeAccess.getElements(type).ready(function(){
                 console.log('ready: ' + type);
                 if (dataTypeAccess.displays[dataTypeAccess.displays.length - 1] === type) {
-                    // poll every 10ms to check for completion of all data retrieval
+                    // poll every 5 ms to check for completion of all data retrieval
                     waitForIt(
-                        10,
+                        5,
                         function(){
                             console.log('refresh: ' + getFreshData);
                             return !getFreshData || dataTypeAccess.reqCount >= (dataTypeAccess.displays.length + 1);
                         },
                         function(){
                             console.log('ALL LOADED');
-                            if (getFreshData) {
-                                window.setTimeout(function(){
-                                    cacheLoadingMessage.dialog$.fadeOut(50, function(){
-                                        cacheLoadingMessage.destroy()
-                                    });
-                                    // window.location.reload(true);
-                                }, 10);
+                            if (loadingTimer) {
+                                window.clearTimeout(loadingTimer);
+                                cacheLoadingMessage.dialog$.fadeOut(100, function(){
+                                    cacheLoadingMessage.destroy();
+                                });
                             }
-                            else {
-                                // make sure the loading dialog closes
-                                window.setTimeout(function(){
-                                    cacheLoadingMessage.destroy()
-                                }, 10);
-                            }
+                            // if (getFreshData) {
+                            //     window.setTimeout(function(){
+                            //         cacheLoadingMessage.dialog$.fadeOut(50, function(){
+                            //             cacheLoadingMessage.destroy()
+                            //         });
+                            //         // window.location.reload(true);
+                            //     }, 10);
+                            // }
+                            // else {
+                            //     // make sure the loading dialog closes
+                            //     window.setTimeout(function(){
+                            //         cacheLoadingMessage.destroy()
+                            //     }, 10);
+                            // }
                         }
                     );
                 }

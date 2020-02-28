@@ -581,6 +581,22 @@ public class Users {
             log.warn("Tried to record user login from a request, but no user was associated with the request or context.");
         }
     }
+    
+    /**
+     * Creates a record of the specified user failing to log into the system.
+     *
+     * @param user    The user logging in
+     * @param request The request object
+     * @throws Exception When an error occurs.
+     */
+    public static void recordFailedUserLogin(final UserI user, final HttpServletRequest request) throws Exception {
+        final XFTItem item = XFTItem.NewItem(XdatUserLogin.SCHEMA_ELEMENT_NAME, user);
+        item.setProperty(USER_XDAT_USER_ID, user.getID());
+        item.setProperty(LOGIN_DATE, Calendar.getInstance(TimeZone.getDefault()).getTime());
+        item.setProperty(IP_ADDRESS, AccessLogger.GetRequestIp(request));
+        SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null)); // XnatBasicAuthenticationFilter
+    }
+    
     /**
      * Creates a record of the specified user logging into the system.
      *

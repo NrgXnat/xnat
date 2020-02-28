@@ -14,12 +14,14 @@ import com.google.common.collect.Iterables;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import javax.annotation.Nullable;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ResourceUtils;
 
 import java.io.*;
 import java.net.URI;
@@ -255,53 +257,106 @@ public  class FileUtils
         }
     }
 
-    public static String AppendRootPath(String root,String local)
-    {
-        if (root==null || root.equals(""))
-        {
-            return local;
-        } else {
-            if (IsAbsolutePath(local))
-            {
-                return local;
-            }
+	/**
+	 * Prepend root path to local path if local isn't absolute or URL-like
+	 *
+	 * (Updated to recognize any URL-like path as absolute)
+	 *
+	 * @param root      root path to prepend
+	 * @param local     local path
+	 * @return full path
+	 */
+	public static String AppendRootPath(@Nullable String root, String local)
+	{
+		if (StringUtils.isEmpty(root)) {
+			return local;
+		} else {
+			if (IsAbsolutePath(local)) {
+				return local;
+			}
+			while (local.startsWith("\\") || local.startsWith("/")) {
+				local = local.substring(1);
+			}
+			root = FileUtils.AppendSlash(root, "");
+			return root + local;
+		}
+	}
 
-            while (local.startsWith("\\") || local.startsWith("/"))
-            {
-                local = local.substring(1);
-            }
+	/**
+	 * Append trailing slash to first argument. If empty, return null
+	 * @param root string to which we append the slash
+	 * @return root with string appended or null
+	 */
+	public static String AppendSlash(@Nullable String root)
+	{
+    	return AppendSlash(root, null);
+	}
 
-            root = AppendSlash(root);
-
-            return root + local;
-        }
+	/**
+	 * Append trailing slash to first argument. If empty, return second argument
+	 * @param root string to which we append the slash
+	 * @param dflt string we return if root is empty
+	 * @return root with string appended or dflt
+	 */
+	public static String AppendSlash(@Nullable String root, @Nullable String dflt)
+	{
+		if (StringUtils.isEmpty(root)) {
+			return dflt;
+		} else {
+			if (!root.endsWith("/") && !root.endsWith("\\")){
+				root += File.separator;
+			}
+			return root;
+		}
     }
 
-    public static String AppendSlash(String root)
-    {
-        if (root==null || root.equals(""))
-        {
-            return null;
-        } else {
+	/**
+	 * Is path URL-like? (*://)
+	 *
+	 * @param path 	path to test
+	 * @return T/F
+	 */
+	public static boolean IsUrl(String path)
+	{
+		return IsUrl(path, false);
+	}
 
-            if (!root.endsWith("/") && !root.endsWith("\\")) {
-                root += File.separator;
-            }
+	/**
+	 * Is path URL-like? (*://)
+	 *
+	 * @param path			the path
+	 * @param remoteOnly	if true, will exclude file:// paths
+	 * @return T/F
+	 */
+	public static boolean IsUrl(String path, boolean remoteOnly)
+	{
+		if (remoteOnly) {
+			return (path.matches("^[A-Za-z0-9]+://.*") || ResourceUtils.isUrl(path)) && !path.startsWith("file://");
+		} else {
+			return path.matches("^[A-Za-z0-9]+://.*") || ResourceUtils.isUrl(path);
+		}
+	}
 
-            return root;
-        }
-    }
-
-    public static boolean IsAbsolutePath(final String path) {
-        if (StringUtils.startsWithAny(path, "file:", "http:", "https:", "srb:")) {
-            return true;
-        }
-        if (File.separator.equals("/")) {
-            return path.startsWith("/");
-        }
-        return path.contains(":\\") || path.contains(":/");
-    }
-
+	/**
+	 * Is path absolute or URL-like (*://)?
+	 *
+	 * Updated to recognize any URL-like path as absolute, not just http, https, file, srb protocols
+	 *
+	 * @param path	path to test
+	 * @return true if absolute or URL-like, false if local
+	 */
+	public static boolean IsAbsolutePath(String path)
+	{
+		if (IsUrl(path)) {
+			return true;
+		}
+		if (File.separator.equals("/")) {
+			return path.startsWith("/");
+		} else {
+			return (path.contains(":\\") || path.contains(":/"));
+		}
+	}
+	
     public static String RemoveAbsoluteCharacters(String p) {
         if (p.contains(":\\")) {
             p = p.substring(p.indexOf(":\\") + 2);

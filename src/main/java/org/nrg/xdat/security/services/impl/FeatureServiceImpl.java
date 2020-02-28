@@ -77,10 +77,14 @@ public class FeatureServiceImpl implements FeatureServiceI {
             if (groupFeature == null) {
                 _groupFeatureService.addFeatureToGroup(group.getId(), group.getTag(), feature);
             } else {
+                if(groupFeature.isBlocked()) {
+                   groupFeature.setBlocked(false);
+                }
                 groupFeature.setOnByDefault(true);
                 _groupFeatureService.update(groupFeature);
             }
-
+            
+            ((UserGroup) group).removeBlockedFeature(feature);
             ((UserGroup) group).addFeature(feature);
 
             try {
@@ -274,9 +278,8 @@ public class FeatureServiceImpl implements FeatureServiceI {
                 groupFeature.setBlocked(false);
                 _groupFeatureService.update(groupFeature);
             }
-
-            userGroup.removeFeature(feature);
-            userGroup.addBlockedFeature(feature);
+            userGroup.removeBlockedFeature(feature);
+            userGroup.addFeature(feature);
 
             try {
                 //group objects are cached by an old caching implementation which listened for events

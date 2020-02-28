@@ -856,7 +856,11 @@ public class Permissions {
     public static String getProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) {
         final NamedParameterJdbcTemplate found = getTemplate(template);
         if (found != null) {
-            return getProjectAccessByQuery(found, projectId);
+            try {
+                return getProjectAccessByQuery(found, projectId);
+            }catch(Exception e) {
+                log.debug("Unable to get project access by query",e);
+            }
         }
         try {
             final UserI guest = Users.getGuest();

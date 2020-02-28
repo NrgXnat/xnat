@@ -1913,7 +1913,7 @@ public class DBAction {
      */
     private static XFTItem UpdateItem(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
         // MARK MODIFIED AS TRUE
-        StoreHistoryAndMeta(oldI, newI, user, overrideQuarantine ? quarantine : oldI.getGenericSchemaElement().isQuarantine(quarantine), cache);
+        StoreHistoryAndMeta(oldI, newI, user, overrideQuarantine ? quarantine : oldI.getStatus().equals(ViewManager.QUARANTINE), cache);
 
         //COPY PK VALUES INTO NEW ITEM
         newI.getProps().putAll(oldI.getPkValues());

@@ -53,6 +53,7 @@ public class EmailReportAction extends EmailAction {
 			try {
 				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), tos, ccs, bccs, subject, message, text);
 			    data.setMessage("Message sent.");
+			    context.put("messageType", "success");
 			} catch (Exception e) {
 			    logger.error("Unable to send mail");
 			    data.setMessage("Unable to send mail.");

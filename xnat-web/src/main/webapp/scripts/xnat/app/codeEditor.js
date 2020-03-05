@@ -184,16 +184,19 @@ var XNAT = getObject(XNAT || {});
         modal.width = cfg.width ? Number((cfg.width + '').replace(/[a-z]+$/i, '')) : 880;
         modal.height = cfg.height ? Number((cfg.height + '').replace(/[a-z]+$/i, '')) : 580;
         modal.scroll = false;
-        modal.content = '';
 
-        var beforeEditor = cfg.before ? spawn('div.before-editor', [cfg.before]) : '';
-        var codeEditor   = spawn('div.code-editor');
-        var afterEditor = cfg.after ? spawn('div.after-editor', [cfg.after]) : '';
-
-        codeEditor.style.width = (modal.width - 40) + 'px';
-        codeEditor.style.height = (modal.height - 140) + 'px';
-        codeEditor.style.position = 'relative';
-        codeEditor.style.opacity = '0.01';
+        modal.content = spawn('div.code-editor-container', [
+            cfg.before ? ['div.before-editor', [cfg.before]] : '',
+            ['div.code-editor', {
+                style: {
+                    width: (modal.width - 40) + 'px',
+                    height: (modal.height - 140) + 'px',
+                    position: 'relative',
+                    opacity: '0.01'
+                }
+            }],
+            cfg.after ? ['div.after-editor', [cfg.after]] : ''
+        ]).outerHTML;
 
         if (opts.before) {
             delete opts.before; // don't pass this to xmodal.open()
@@ -202,12 +205,6 @@ var XNAT = getObject(XNAT || {});
         if (opts.after) {
             delete opts.after; // don't pass this to xmodal.open()
         }
-
-        modal.content += spawn('div.code-editor-container', [
-            beforeEditor,
-            codeEditor,
-            afterEditor
-        ]).outerHTML;
 
         modal.title = 'XNAT Code Editor';
         modal.title += (_this.language) ? ' - ' + _this.language : '';
@@ -255,8 +252,8 @@ var XNAT = getObject(XNAT || {});
             _this.aceEditor.focus();
         };
 
-        modal.buttons = {
-            save: {
+        modal.buttons = [
+            {
                 label: _this.isUrl ? 'Submit Changes' : 'Apply Changes',
                 action: function(){
                     _this.save();
@@ -264,13 +261,13 @@ var XNAT = getObject(XNAT || {});
                 isDefault: true,
                 close: false
             },
-            close: {
+            {
                 label: 'Cancel'
             }
-        };
+        ];
         
         // override modal options with {opts}
-        this.dialog = xmodal.open(extend({}, modal, opts, fn));
+        this.dialog = XNAT.dialog.open(extend({}, modal, opts, fn));
         
         return this;
 

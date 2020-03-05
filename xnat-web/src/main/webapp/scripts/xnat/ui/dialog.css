@@ -16,7 +16,8 @@ body { display: block !important ; overflow-y: scroll ; }
 html.xnat-dialog-open,
 body.xnat-dialog-open {
     position: fixed;
-    width: 100%; height: 100%;
+    width: 100%;
+    /*height: 100%;*/
 }
 
 body.xnat-dialog-open {

@@ -766,9 +766,10 @@ div.warning {
     background-color: #f7f7f7;
     border: 1px #ccc solid;
     color: #444;
-    font-size: 12px;
-    padding: 10px;
+    font-size: 13px;
+    padding: 10px 10px 10px 32px;
     position: relative;
+    border-radius: 3px;
 }
 
 div.alert:before,
@@ -782,6 +783,9 @@ div.warning:before {
     font-family: FontAwesome;
     padding: 0 4px;
     vertical-align: top;
+    position: absolute;
+    left: 8px;
+    top: 10px;
 }
 
 div.alert,

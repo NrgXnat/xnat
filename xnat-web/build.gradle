@@ -131,8 +131,13 @@ configurations {
     }
 }
 
-dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnat}"
+dependencyManagement {
+    imports {
+        mavenBom "org.nrg:parent:${vXnat}"
+    }
+    generatedPomCustomization {
+        enabled = false
+    }
 }
 
 def vStratum = dependencyManagement.importedProperties["stratum.version"]
@@ -140,6 +145,9 @@ def vStratum = dependencyManagement.importedProperties["stratum.version"]
 dependencies {
     annotationProcessor "org.nrg:framework"
     annotationProcessor "com.google.auto.value:auto-value"
+
+    api platform("org.nrg:parent:${vXnat}")
+    implementation platform("org.nrg:parent:${vXnat}")
 
     // NRG dependencies first.
     api "org.nrg.xdat:core"
@@ -350,6 +358,20 @@ tomcatRunWar.contextPath = "/"
     task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
 }
 
+["Java", "War"].each { type ->
+    ["Local", "Repository"].each { target ->
+        def artifactName = type == "Java" ? "Jar" : type
+        def taskName = "publish${artifactName}To${target}"
+        logger.info "Creating task ${taskName}"
+        tasks.create(name: taskName) {
+            description = "Publishes the Maven ${type} publications to Maven ${target}."
+            dependsOn tasks.withType(AbstractPublishToMaven).matching {
+                it.name == "publishMaven${type}PublicationToMaven${target}"
+            }
+        }
+    }
+}
+
 task deployToTomcat(type: Copy, dependsOn: war) {
     from war.archivePath
     into "${propertyWithDefault("tomcatHome", ".")}/webapps"
@@ -485,6 +507,36 @@ publishing {
                 artifact sourceJar
                 artifact javadocJar
             }
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode("name", "XNAT Server")
+                root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
+                root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                root.appendNode("inceptionYear", "2019")
+
+                def scm = root.appendNode("scm")
+                scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
+                scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
+
+                def license = root.appendNode("licenses").appendNode("license")
+                license.appendNode("name", "Simplified BSD 2-Clause License")
+                license.appendNode("url", "https://xnat.org/about/license.php")
+                license.appendNode("distribution", "repo")
+
+                def developers = root.appendNode("developers")
+                def rherrick = developers.appendNode("developer")
+                rherrick.appendNode("id", "rherrick")
+                rherrick.appendNode("name", "Rick Herrick")
+                rherrick.appendNode("email", "jrherrick@wustl.edu")
+            }
+        }
+        mavenWar(MavenPublication) {
+            groupId = "${project.group}.${rootProject.name}"
+            artifactId = "xnat-${rootProject.name}"
+
+            from components.web
 
             pom.withXml {
                 def root = asNode()

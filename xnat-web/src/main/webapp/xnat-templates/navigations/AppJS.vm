@@ -46,7 +46,7 @@
         <!-- Theme CSS -->
         #set ($THEME_CSS = "/themes/${theme}/css/theme.css")
         #if ($turbineUtils.resourceExists($THEME_CSS))
-            ## /themes/theme-name/style/theme.css
+            ## /themes/theme-name/css/theme.css
             <!-- THEME_CSS: ${THEME_CSS} -->
             <link rel="stylesheet" type="text/css" href="$content.getURI($THEME_CSS)">
         #elseif ($!themedStyle)

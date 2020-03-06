@@ -66,11 +66,11 @@
         <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
         <xnat-web.version>${project.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${project.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
+        <xnat-data-models.version>${project.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <xdat.version>${project.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>

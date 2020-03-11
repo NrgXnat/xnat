@@ -10,8 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import edu.sdsc.grid.io.GeneralFile;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -25,8 +24,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.db.DBAction;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
@@ -35,6 +32,7 @@ import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.UserUtils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -49,14 +47,14 @@ import java.util.zip.ZipOutputStream;
  * @author timo
  *
  */
+@Slf4j
 public class DownloadImages extends SecureAction {
-	static Logger logger = Logger.getLogger(DownloadImages.class);
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @SuppressWarnings("deprecation")
     public void doPerform(RunData data, Context context) throws Exception {
-        System.out.println("BEGIN DownloadImages.java");
+        log.info("BEGIN DownloadImages.java");
         UserI user = TurbineUtils.getUser(data);
         long startTime = Calendar.getInstance().getTimeInMillis();
         XnatImagesessiondata mr = (XnatImagesessiondata)data.getSession().getAttribute("download_session");
@@ -161,7 +159,7 @@ public class DownloadImages extends SecureAction {
                                 
                                 String relative = f.getAbsolutePath();
                                 
-                                Object file_id = cacheFileLink(url + identifier, relative, mr.getDBName(), user.getLogin());
+                                Object file_id = UserUtils.cacheFileLink(url + identifier, relative, mr.getDBName(), user.getLogin());
                                 
                                 entry.setUri(uri + file_id);
                                 
@@ -281,7 +279,7 @@ public class DownloadImages extends SecureAction {
                     long startTime1 = Calendar.getInstance().getTimeInMillis();
                     mr.loadSRBFiles();
 
-                    System.out.println("Finished loading SRB Files: " + (System.currentTimeMillis()-startTime1) + "ms");
+                    log.info("Finished loading SRB Files: {} ms", System.currentTimeMillis() - startTime1);
                     startTime1 = Calendar.getInstance().getTimeInMillis();
                     
                     ArrayList<XNATDirectory> al = new ArrayList<XNATDirectory>();
@@ -294,7 +292,7 @@ public class DownloadImages extends SecureAction {
                         }
                     }
 
-                    System.out.println("Finished file groups: " + (System.currentTimeMillis()-startTime1) + "ms");
+                    log.info("Finished file groups: {} ms", System.currentTimeMillis() - startTime1);
                     startTime1 = Calendar.getInstance().getTimeInMillis();
                                                
                     ZipI zip = null;
@@ -311,10 +309,10 @@ public class DownloadImages extends SecureAction {
                     for(XNATDirectory sub : al){
                         try {
                             zip.write(sub);
-                            System.out.println("Loaded ("+ sub.getPath() +"): " + (System.currentTimeMillis()-startTime1) + "ms");
+                            log.info("Loaded ({}): {} ms", sub.getPath(), System.currentTimeMillis() - startTime1);
                             startTime1 = Calendar.getInstance().getTimeInMillis();
                         } catch (Throwable e) {
-                            logger.error("",e);
+                            log.error("", e);
                         }
                     }
                     
@@ -402,54 +400,9 @@ public class DownloadImages extends SecureAction {
             }
             
         } catch (Exception e) {
-        	logger.error("",e);
+        	log.error("", e);
             data.setMessage(e.getMessage());
         } 
-        System.out.println("END DownloadImages.java " + (System.currentTimeMillis()-startTime) + "ms");
-		    
+        log.info("END DownloadImages.java " + (System.currentTimeMillis()-startTime) + "ms");
     }
-
-    public static boolean ARCHIVE_PATH_CHECKED = false;
-
-    public static Boolean CreatedArchivePathCache(String dbName, String login) throws Exception {
-        if (!ARCHIVE_PATH_CHECKED) {
-            String query = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_archive_path_cache');";
-            String exists = (String) PoolDBUtils.ReturnStatisticQuery(query, "relname", dbName, login);
-
-            if (exists != null) {
-                ARCHIVE_PATH_CHECKED = true;
-            } else {
-                query = "CREATE TABLE xs_archive_path_cache" +
-                        "\n(" +
-                        "\n  id serial," +
-                        "\n  create_date timestamp DEFAULT now()," +
-                        "\n  username VARCHAR(255)," +
-                        "\n  url text," +
-                        "\n  _token VARCHAR(255)," +
-                        "\n  absolute_path text" +
-                        "\n) " +
-                        "\nWITH OIDS;";
-
-                PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
-
-                ARCHIVE_PATH_CHECKED = true;
-            }
-        }
-        return true;
-    }
-
-    public static Object cacheFileLink(String url, String absolutePath, String dbName, String login) throws Exception {
-        CreatedArchivePathCache(dbName, login);
-        Object o = RandomStringUtils.randomAlphanumeric(64);
-        Object exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
-        while (exists != null) {
-            o = RandomStringUtils.randomAlphanumeric(64);
-            exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
-        }
-        String query = "INSERT INTO xs_archive_path_cache (username,url,_token,absolute_path) VALUES ('" + login + "'," + DBAction.ValueParser(url, "string", true) + ",'" + o + "'," + DBAction.ValueParser(absolutePath, "string", true) + ");";
-        PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
-        return o;
-    }
-
-
 }

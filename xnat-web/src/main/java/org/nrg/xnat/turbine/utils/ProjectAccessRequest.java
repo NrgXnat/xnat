@@ -39,6 +39,7 @@ import javax.mail.MessagingException;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,8 +48,6 @@ import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.*;
 import static org.nrg.xft.event.XftItemEventI.OPERATION;
 
 public class ProjectAccessRequest {
-    public static boolean CREATED_PAR_TABLE = false;
-
     public static final String PAR_BY_ID = " par_id=%s";
     public static final String PAR_BY_GUID = " guid='%s'";
     public static final String PAR_BY_USER_AND_PROJ_ID = " user_id=%s AND proj_id='%s'";
@@ -249,7 +248,7 @@ public class ProjectAccessRequest {
      * @throws Exception When an unexpected error occurs.
      */
     public void save(UserI user) throws Exception{
-        if (!CREATED_PAR_TABLE) {
+        if (!CREATED_PAR_TABLE.get()) {
             CreatePARTable();
         }
 
@@ -313,6 +312,10 @@ public class ProjectAccessRequest {
      */
     public List<String> process(UserI user, boolean accept, EventUtils.TYPE eventType, String reason, String comment) throws Exception {
         return process(user, accept, eventType, reason, comment, true);
+    }
+
+    public static boolean isParTableCreated() {
+        return CREATED_PAR_TABLE.get();
     }
 
     public static ProjectAccessRequest RequestPARById(Integer id, UserI user) {
@@ -383,7 +386,7 @@ public class ProjectAccessRequest {
 
     public static void CreatePAR(String pID, String level, UserI user){
         try {
-            if (!CREATED_PAR_TABLE) {
+            if (!CREATED_PAR_TABLE.get()) {
                 CreatePARTable();
             }
 
@@ -394,17 +397,14 @@ public class ProjectAccessRequest {
         }
     }
 
-
     public static synchronized void CreatePARTable() {
         try {
-            if (!CREATED_PAR_TABLE) {
+            if (!CREATED_PAR_TABLE.get()) {
 
                 String query = "SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_par_table');";
                 String exists = (String) PoolDBUtils.ReturnStatisticQuery(query, "relname", PoolDBUtils.getDefaultDBName(), null);
 
                 if (exists != null) {
-                    CREATED_PAR_TABLE=true;
-
                     //check for email column (added 6/2/08)
                     boolean containsEmail = false, containsGuid = false;
                     PoolDBUtils con = new PoolDBUtils();
@@ -448,12 +448,11 @@ public class ProjectAccessRequest {
                             "\n  guid VARCHAR(64)," +
                             "\n  CONSTRAINT xs_par_table_pkey PRIMARY KEY (par_id),"+
                             "\n  CONSTRAINT xs_par_table_guid_key UNIQUE (guid)"+
-                    "\n) "+
-                    "\nWITH OIDS;";
+                    "\n)";
 
                     PoolDBUtils.ExecuteNonSelectQuery(query, PoolDBUtils.getDefaultDBName(), null);
-                    CREATED_PAR_TABLE = true;
                 }
+                CREATED_PAR_TABLE.set(true);
             }
         } catch (Exception exception) {
             _logger.error("Error occurred while creating PAR table", exception);
@@ -464,7 +463,7 @@ public class ProjectAccessRequest {
     	XnatProjectdata project = (XnatProjectdata) context.get("projectOM");
     	ProjectAccessRequest request = null;
 		try {
-            if (!CREATED_PAR_TABLE) {
+            if (!CREATED_PAR_TABLE.get()) {
 	             CreatePARTable();
 	         }
 
@@ -563,7 +562,7 @@ public class ProjectAccessRequest {
     }
 
     private static XFTTable runInitQuery(final String query, final UserI user) throws SQLException, DBPoolException {
-        if (!CREATED_PAR_TABLE) {
+        if (!CREATED_PAR_TABLE.get()) {
             CreatePARTable();
         }
 
@@ -638,6 +637,7 @@ public class ProjectAccessRequest {
 
     private static final Logger _logger = Logger.getLogger(ProjectAccessRequest.class);
     private static final String QUERY_GET_PAR = "SELECT par_id, proj_id, level, create_date, user_id, approval_date, approved, approver_id, firstname || ' ' || lastname || '(' || xdat_user.email || ')' as user_string, xs_par_table.email, guid FROM xs_par_table LEFT JOIN xdat_user ON xs_par_table.user_id = xdat_user.xdat_user_id WHERE %s;";
+    private static final AtomicBoolean CREATED_PAR_TABLE = new AtomicBoolean();
 
     private Integer _requestId = null;
     private String _projectId = null;

@@ -47,7 +47,7 @@ public class XDATScreen_report_xnat_projectData extends SecureReport {
                 ItemAccessHistory.LogAccess(user, item, "report");
             }
 
-            if (ProjectAccessRequest.CREATED_PAR_TABLE) {
+            if (ProjectAccessRequest.isParTableCreated()) {
                 context.put("par_count", PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(par_id)::int4 AS count FROM xs_par_table WHERE proj_id='" + project.getId() + "'", "count", user.getDBName(), user.getLogin()));
             }
 

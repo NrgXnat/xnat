@@ -10,13 +10,10 @@
 package org.nrg.xnat.servlet;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
-import org.nrg.xdat.bean.CatEntryMetafieldBean;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -25,8 +22,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.DBAction;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -42,6 +37,7 @@ import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.UserUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -153,7 +149,7 @@ public class ArchiveServlet extends HttpServlet {
 
                     String relative = rf.getAbsolutePath();
 
-                    Object id = cacheFileLink(subString + rf.getXdatPath(), relative, i.getDBName(), user.getLogin());
+                    Object id = UserUtils.cacheFileLink(subString + rf.getXdatPath(), relative, i.getDBName(), user.getLogin());
 
                     entry.setUri(uri + id);
 
@@ -187,53 +183,6 @@ public class ArchiveServlet extends HttpServlet {
         } catch (Exception e) {
             log.error("An unknown exception occurred", e);
         }
-    }
-
-    public static boolean ARCHIVE_PATH_CHECKED = false;
-
-    public static Boolean CreatedArchivePathCache(String dbName, String login) throws Exception {
-        if (!ARCHIVE_PATH_CHECKED) {
-            String query = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_archive_path_cache');";
-            String exists = (String) PoolDBUtils.ReturnStatisticQuery(query, "relname", dbName, login);
-
-            if (exists != null) {
-                ARCHIVE_PATH_CHECKED = true;
-            } else {
-                query = "CREATE TABLE xs_archive_path_cache" +
-                        "\n(" +
-                        "\n  id serial," +
-                        "\n  create_date timestamp DEFAULT now()," +
-                        "\n  username VARCHAR(255)," +
-                        "\n  url text," +
-                        "\n  _token VARCHAR(255)," +
-                        "\n  absolute_path text" +
-                        "\n) " +
-                        "\nWITH OIDS;";
-
-                PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
-
-                ARCHIVE_PATH_CHECKED = true;
-            }
-        }
-        return true;
-    }
-
-    public static Object cacheFileLink(String url, String absolutePath, String dbName, String login) throws Exception {
-        CreatedArchivePathCache(dbName, login);
-        Object o = RandomStringUtils.randomAlphanumeric(64);
-        Object exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
-        while (exists != null) {
-            o = RandomStringUtils.randomAlphanumeric(64);
-            exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
-        }
-        String query = "INSERT INTO xs_archive_path_cache (username,url,_token,absolute_path) VALUES ('" + login + "'," + DBAction.ValueParser(url, "string", true) + ",'" + o + "'," + DBAction.ValueParser(absolutePath, "string", true) + ");";
-        PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
-        return o;
-    }
-
-    public Object retrieveCacheFileLink(String o, String dbName, String login) throws Exception {
-        o = StringUtils.remove(o, '\'');
-        return PoolDBUtils.ReturnStatisticQuery("SELECT absolute_path FROM xs_archive_path_cache WHERE _token='" + o + "';", "absolute_path", dbName, login);
     }
 
     protected String getRootPath(ItemI i) {
@@ -434,14 +383,14 @@ public class ArchiveServlet extends HttpServlet {
             if (user != null)
                 getCatalog(user, path.substring(9), req, res);
         } else if (path.startsWith("cache/")) {
-            String o = path.substring(6);
+            String cacheId = path.substring(6);
             try {
                 String dbName = GenericWrapperElement.GetElement("xdat:user").getDbName();
                 String login = null;
                 if (user != null) {
                     login = user.getLogin();
                 }
-                String filePath = (String) retrieveCacheFileLink(o, dbName, login);
+                String filePath = UserUtils.retrieveCacheFileLink(cacheId, dbName, login);
                 if (filePath != null) {
                     File f = new File(filePath);
                     if (f.exists()) {

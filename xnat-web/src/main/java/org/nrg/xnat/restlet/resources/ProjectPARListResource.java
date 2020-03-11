@@ -56,7 +56,7 @@ public class ProjectPARListResource extends SecureResource {
 	public Representation represent(Variant variant) {
 		XFTTable table = new XFTTable();
 		Hashtable<String,Object> params= new Hashtable<>();
-		if (ProjectAccessRequest.CREATED_PAR_TABLE) {
+		if (ProjectAccessRequest.isParTableCreated()) {
 			try {
 				final UserI user = getUser();
 				table = XFTTable

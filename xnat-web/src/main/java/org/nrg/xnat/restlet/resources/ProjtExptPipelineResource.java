@@ -61,6 +61,10 @@ public class ProjtExptPipelineResource extends SecureResource {
 							exptID, user, false);
 
 					if (expt == null) {
+						if (proj == null) {
+							response.setStatus(Status.CLIENT_ERROR_GONE);
+							return;
+						}
 						expt = XnatExperimentdata.GetExptByProjectIdentifier(
 								proj.getId(), exptID, user, false);
 					}

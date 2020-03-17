@@ -293,7 +293,7 @@ abu.FileUploader = function(o){
 					
 					// Don't allow % and # characters in the filename.
 					if (formData.get("file"+idx).name.match(/[\[\]%#{}]/g)){
-						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Not Uploaded.</a>");
+						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.</a>");
 						$(infoSelector).find(".abu-progress").css("display","none");
 						status.css("display","inline-block");
 						uploader.uploadsStarted++;

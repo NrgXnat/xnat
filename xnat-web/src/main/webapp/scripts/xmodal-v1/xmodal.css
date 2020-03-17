@@ -114,7 +114,10 @@ div.xmodal .footer .button.hidden:hover,
 div.xmodal .footer .button.disabled:hover { cursor: not-allowed !important ; }
 
 /* Override bootstrap */
-div.xmodal button.close {opacity: 1; }
+div.xmodal button.close {
+    opacity: 1;
+    text-shadow: none;
+}
 
 div.xmodal.loading .title .close { display: none ; }
 div.xmodal.loading .body .inner { text-align: center ; }

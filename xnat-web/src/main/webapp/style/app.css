@@ -1972,6 +1972,10 @@ div.containerTitle.withColor {
     border-bottom: 1px solid #033769;
 }
 
+#main_nav * {
+    box-sizing: content-box; /* prevent bootstrap from changing this */
+}
+
 #main_nav > .inner {
     width: 1160px;
     margin: 0 auto;
@@ -2739,6 +2743,10 @@ span.close:hover {
 .results_summary td {
     background: #fff;
     text-align: center;
+}
+
+.report-section {
+    margin: 1em 0;
 }
 
 /* //////////  styles for tooltips  ////////// */
@@ -4234,6 +4242,7 @@ textarea.xml-formatted {
 
 #activity-tab .actions a:hover {
     transform: scale(1.3);
+    text-decoration: none;
 }
 
 #activity-tab .panel-header .actions {
@@ -4264,6 +4273,7 @@ textarea.xml-formatted {
     width: 360px;
     font-size: 1.1em;
     color: #757575;
+    padding:0;
 }
 
 #activity-tab .panel-body .item {
@@ -4274,6 +4284,8 @@ textarea.xml-formatted {
 
 #activity-tab .panel-body a.close {
     display: none;
+    text-shadow: none;
+    font-size: inherit;
 }
 
 /* accommodate smaller viewports */

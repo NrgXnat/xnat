@@ -44,6 +44,13 @@ div.xnat-dialog {
     /*font-family: Arial, Helvetica, sans-serif ; */
 }
 
+/* Override bootstrap */
+div.xnat-dialog .close {
+    opacity: 1;
+    text-shadow: none;
+    font-size: inherit;
+}
+
 div.xnat-dialog,
 div.xnat-dialog > div,
 div.xnat-dialog > div > .inner {

@@ -1,4 +1,6 @@
 var XNAT = getObject(XNAT);
+XNAT.app = getObject(XNAT.app || {});
+XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -22,12 +24,19 @@ var XNAT = getObject(XNAT);
         abuId = 'projuploader-modal-abu',
         interval;
 
-    function openUploadModal(project, session, overwrite) {
+    XNAT.app.imageUploader.openUploadModal = function(config) {
         uploadName = 'upload' + getDateBasedId();
         usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
         uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
 
-        var loc = session ? 'session: ' + session : 'project: ' + project;
+        var loc;
+        if (config.session) {
+            loc = 'session: ' + config.session;
+        } else if (config.subject) {
+            loc = 'subject: ' + config.subject;
+        } else {
+            loc = 'project: ' + config.project;
+        }
 
         xmodal.open({
             id: id,
@@ -50,7 +59,7 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function() {
-                        submitForArchival(project, session, overwrite);
+                        submitForArchival(config);
                     }
                 },
                 done: {
@@ -141,7 +150,7 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function submitForArchival(project, session, overwrite) {
+    function submitForArchival(config) {
         $('#file-upload-input').prop('disabled', true).addClass('disabled');
         $('#' + id + '-process-button').prop('disabled', true);
         var $statusDiv = $('#' + abuId + ' .abu-status');
@@ -159,7 +168,7 @@ var XNAT = getObject(XNAT);
             if (!interval) {
                 XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
                 interval = window.setInterval(function() {
-                    submitForArchival(project, session, overwrite);
+                    submitForArchival(config);
                 }, 2000);
             }
             return;
@@ -187,13 +196,10 @@ var XNAT = getObject(XNAT);
                 var formDataArchive = new FormData();
                 formDataArchive.append("src", usrResPath.replace(fNameReplace, fname));
                 formDataArchive.append("http-session-listener", uploadId);
-                formDataArchive.append("project", project);
                 formDataArchive.append("prearchive_code", "0");
-                if (session) {
-                    formDataArchive.append("session", session);
-                }
-                if (overwrite) {
-                    formDataArchive.append("overwrite", overwrite);
+
+                for (var key of Object.keys(config)) {
+                    formDataArchive.append(key, config[key]);
                 }
 
                 $.ajax({
@@ -229,7 +235,7 @@ var XNAT = getObject(XNAT);
         return (new Date()).toISOString().replace(/[^\w]/gi,'');
     }
 
-    $(document).on('click', 'a#uploadImages', function() {
-        openUploadModal($(this).data('project'), $(this).data('session'), $(this).data('overwrite'));
+    $(document).on('click', 'a#uploadImages, a.uploadImages', function() {
+        XNAT.app.imageUploader.openUploadModal($(this).data());
     });
 }));

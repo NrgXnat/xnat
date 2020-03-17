@@ -1,6 +1,8 @@
+#if(!$protocolsModule)
         <tr>
             <th align="left">Visit ID</th>
             <td align="left">
                 #xdatTextBox("${datatype}.visit_id" $item "" $vr)
             </td>
         </tr>
+#end

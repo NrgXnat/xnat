@@ -9,6 +9,10 @@
 
 package org.nrg.xdat.preferences;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.constants.Scope;
@@ -20,11 +24,6 @@ import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.services.NrgPreferenceService;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
     /**
@@ -45,7 +44,11 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
      *
      * @param preferenceService The {@link NrgPreferenceService preference service instance}.
      * @param eventService      The {@link NrgEventServiceI event service instance}.
+     *
+     * @deprecated You should always use the {@link #EventTriggeringAbstractPreferenceBean(NrgPreferenceService, NrgEventServiceI, ConfigPaths, OrderedProperties)} version
+     *     of this constructor to allow initialization and override preference settings to be configured.
      */
+    @Deprecated
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService) {
         this(preferenceService, eventService, null);
     }
@@ -70,7 +73,11 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
      * @param preferenceService The {@link NrgPreferenceService preference service instance}.
      * @param eventService      The {@link NrgEventServiceI event service instance}.
      * @param configPaths       The {@link ConfigPaths configuration paths instance}.
+     *
+     * @deprecated You should always use the {@link #EventTriggeringAbstractPreferenceBean(NrgPreferenceService, NrgEventServiceI, ConfigPaths, OrderedProperties)} version
+     *     of this constructor to allow initialization and override preference settings to be configured.
      */
+    @Deprecated
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths) {
         this(preferenceService, eventService, configPaths, null);
     }

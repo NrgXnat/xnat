@@ -9,6 +9,12 @@
 
 package org.nrg.prefs.beans;
 
+import static com.google.common.base.Predicates.containsPattern;
+import static com.google.common.base.Predicates.equalTo;
+import static com.google.common.base.Predicates.or;
+import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
+import static org.nrg.framework.utilities.Reflection.getGetter;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -19,10 +25,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +66,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -49,19 +83,6 @@ import org.reflections.ReflectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import java.io.*;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
-
-import static com.google.common.base.Predicates.*;
-import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
-import static org.nrg.framework.utilities.Reflection.getGetter;
-
 @Slf4j
 public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
     /**
@@ -69,7 +90,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * preferences.
      *
      * @param preferenceService The preference service to use for managing preference values.
+     *
+     * @deprecated Use the {@link #AbstractPreferenceBean(NrgPreferenceService, ConfigPaths, OrderedProperties)} constructor instead.
      */
+    @Deprecated
     protected AbstractPreferenceBean(final NrgPreferenceService preferenceService) {
         this(preferenceService, null);
     }
@@ -81,7 +105,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      *
      * @param preferenceService The preference service to use for managing preference values.
      * @param configFolderPaths The configuration folder paths to search for initialization properties.
+     *
+     * @deprecated Use the {@link #AbstractPreferenceBean(NrgPreferenceService, ConfigPaths, OrderedProperties)} constructor instead.
      */
+    @Deprecated
     protected AbstractPreferenceBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths) {
         this(preferenceService, configFolderPaths, null);
     }
@@ -176,7 +203,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * @return The preferences for the current implementation as a map.
      *
      * @deprecated Preference beans are now themselves maps. This method calls the {@link #getPreferences(Set)} method.
-     *         You can also call use streams or Guava methods to filter the bean itself as a map.
+     *     You can also call use streams or Guava methods to filter the bean itself as a map.
      */
     @Override
     @Deprecated
@@ -192,7 +219,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * @return The preferences for the current implementation as a map.
      *
      * @deprecated Preference beans are now themselves maps. This method calls the {@link #getPreferences(Set)} method.
-     *         You can also call use streams or Guava methods to filter the bean itself as a map.
+     *     You can also call use streams or Guava methods to filter the bean itself as a map.
      */
     @Override
     @Deprecated
@@ -225,7 +252,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public final Class<? extends PreferenceEntityResolver> getResolver() {
-        if (!_resolverInitialized) {
+        if (!_resolverInitialized.get()) {
             final NrgPreferenceBean annotation = getNrgPreferenceBean();
             if (annotation != null) {
                 final Class<? extends PreferenceEntityResolver>[] resolvers = annotation.resolver();
@@ -234,7 +261,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 } else {
                     _resolver = resolvers[0];
                 }
-                _resolverInitialized = true;
+                _resolverInitialized.set(true);
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + getClass().getName() + " must be annotated with the NrgPreferenceBean annotation.");
             }
@@ -922,7 +949,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Nonnull
     @Override
     public Set<Map.Entry<String, Object>> entrySet() {
-        final Map<String, Object> map = Maps.newHashMap();
+        final Map<String, Object> map = new HashMap<>();
         for (final String key : keySet()) {
             map.put(key, getProperty(key));
         }
@@ -1021,11 +1048,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @SuppressWarnings("unused")
     protected boolean isInitFromConfig() {
-        return _initFromConfig;
+        return _initFromConfig.get();
     }
 
     protected String getNamespacedPropertyId(final String key, final String... names) {
-        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(resolveAlias(key), names));
+        return StringUtils.join(Lists.asList(resolveAlias(key), names), NAMESPACE_DELIMITER);
     }
 
     protected PreferenceInfo getPreferenceInfo(final String preference) {
@@ -1129,13 +1156,13 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
 
         final String       toolId                   = tool.getToolId();
-        final List<String> preferenceIds            = Lists.newArrayList();
+        final List<String> preferenceIds            = new ArrayList<>();
         final Properties   initializationProperties = getInitializationProperties();
         initializationProperties.putAll(resolvePreferenceAliases(_initPrefs.getPropertiesForNamespace(toolId)));
         final Properties overrideProperties = cleanOverrides(_initPrefs.getProperties("prefs-override"));
 
         if (_initPrefs.getProperties("prefs-init").size() > 0 || overrideProperties.size() > 0) {
-            _initFromConfig = true;
+            _initFromConfig.set(true);
         }
 
         if (!_preferences.isEmpty()) {
@@ -1229,7 +1256,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             if (tool.isStrict()) {
                 log.warn("Extra initialization properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
                          tool.getToolId(),
-                         Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
+                         StringUtils.join(initializationProperties.stringPropertyNames(), COMMA_SPACE_SEPARATOR));
             } else {
                 for (final String property : initializationProperties.stringPropertyNames()) {
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
@@ -1245,7 +1272,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             if (tool.isStrict()) {
                 log.warn("Extra override properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
                          tool.getToolId(),
-                         Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
+                         StringUtils.join(overrideProperties.stringPropertyNames(), COMMA_SPACE_SEPARATOR));
             } else {
                 for (final String property : overrideProperties.stringPropertyNames()) {
                     final String value = overrideProperties.getProperty(property);
@@ -1502,7 +1529,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private static TypeFactory getTypeFactory() {
-        return _typeFactory;
+        return TYPE_FACTORY;
     }
 
     private static String getPreferencePrimaryKey(final String preferenceName) {
@@ -1526,7 +1553,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }};
 
-    private static final TypeFactory _typeFactory = _mapper.getTypeFactory();
+    private static final TypeFactory TYPE_FACTORY          = _mapper.getTypeFactory();
+    private static final String      COMMA_SPACE_SEPARATOR = ", ";
 
     private       NrgPreferenceService _preferenceService;
     private final ConfigPaths          _configFolderPaths;
@@ -1537,8 +1565,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     private final Map<String, List<String>>   _aliasedPreferences = new HashMap<>();
     private final Map<String, Method>         _methods            = new HashMap<>();
 
-    private boolean _resolverInitialized = false;
-    private boolean _initFromConfig      = false;
+    private final AtomicBoolean _resolverInitialized = new AtomicBoolean();
+    private final AtomicBoolean _initFromConfig      = new AtomicBoolean();
 
     private NrgPreferenceBean                         _annotation;
     private String                                    _toolId;

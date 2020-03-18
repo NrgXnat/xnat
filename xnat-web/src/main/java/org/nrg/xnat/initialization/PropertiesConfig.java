@@ -114,13 +114,13 @@ public class PropertiesConfig {
     }
 
     @Bean
-    public OrderedProperties initPrefs(final ConfigPaths configPaths) {
+    public OrderedProperties initPrefs() {
         // Initialize from the system defaults.
         final OrderedProperties initPrefs = new OrderedProperties(IniImporter.getIniProperties("/META-INF/xnat/defaults/sys-init.properties"));
 
         // Now try to get any override properties that are configured.
-        initPrefs.addProperties("prefs-init", IniImporter.getIniProperties(configPaths, "prefs-init.ini"));
-        initPrefs.addProperties("prefs-override", IniImporter.getIniProperties(configPaths, "prefs-override.ini"));
+        initPrefs.addProperties("prefs-init", IniImporter.getIniProperties(configPaths(), "prefs-init.ini"));
+        initPrefs.addProperties("prefs-override", IniImporter.getIniProperties(configPaths(), "prefs-override.ini"));
 
         return initPrefs;
     }

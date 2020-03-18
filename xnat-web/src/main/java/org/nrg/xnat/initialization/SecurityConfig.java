@@ -9,16 +9,36 @@
 
 package org.nrg.xnat.initialization;
 
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import javax.servlet.SessionCookieConfig;
+import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xnat.security.*;
-import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
-import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
+import org.nrg.xnat.security.OnXnatLogin;
+import org.nrg.xnat.security.XnatAuthenticationEntryPoint;
+import org.nrg.xnat.security.XnatAuthenticationEventPublisher;
+import org.nrg.xnat.security.XnatAuthenticationFilter;
+import org.nrg.xnat.security.XnatBasicAuthConfigurer;
+import org.nrg.xnat.security.XnatExpiredPasswordFilter;
+import org.nrg.xnat.security.XnatInitCheckFilter;
+import org.nrg.xnat.security.XnatLogoutSuccessHandler;
+import org.nrg.xnat.security.XnatProviderManager;
+import org.nrg.xnat.security.XnatRedirectStrategy;
+import org.nrg.xnat.security.XnatSecurityExtension;
+import org.nrg.xnat.security.XnatUrlAuthenticationFailureHandler;
+import org.nrg.xnat.security.preferences.SecurityPreferences;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatMulticonfigAuthenticationProvider;
@@ -30,6 +50,7 @@ import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -70,28 +91,21 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
 
-import javax.servlet.SessionCookieConfig;
-import javax.sql.DataSource;
-import java.util.*;
-
-import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
-import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
-
 @Configuration
 @EnableWebSecurity
+@ComponentScan({"org.nrg.xnat.security.alias", "org.nrg.xnat.security.preferences", "org.nrg.xnat.security.provider"})
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final ConfigPaths configPaths, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
+    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource, final SecurityPreferences securityPreferences) {
         _preferences = preferences;
         _appInfo = appInfo;
         _aliasTokenService = aliasTokenService;
         _userAuthService = userAuthService;
-        _configPaths = configPaths;
         _dateValidation = dateValidation;
-        _messageSource = messageSource;
         _template = template;
         _dataSource = dataSource;
+        _securityPreferences = securityPreferences;
 
         _dbAuthProviderName = messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault());
     }
@@ -179,11 +193,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
-        return new AliasTokenAuthenticationProvider(aliasTokenService, userAuthService);
-    }
-
-    @Bean
     public XnatAuthenticationFilter customAuthenticationFilter() {
         return new XnatAuthenticationFilter();
     }
@@ -236,11 +245,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public AuthenticationProviderConfigurationLocator authenticationProviderConfigurationLocator() {
-        return new AuthenticationProviderConfigurationLocator(_configPaths, _messageSource);
-    }
-
-    @Bean
     @Override
     protected AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManager();
@@ -248,6 +252,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
+        if (builder == null) {
+            return;
+        }
+
         final AuthenticationProvider dbAuthProvider = xnatDatabaseAuthenticationProvider();
         builder.parentAuthenticationManager(customAuthenticationManager());
         builder.authenticationProvider(dbAuthProvider);
@@ -258,7 +266,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             }
         }
 
-        if (_extensions.size() > 0) {
+        if (!_extensions.isEmpty()) {
             for (final XnatSecurityExtension extension : _extensions) {
                 log.info("Now processing the security extension {} for authentication manager configuration", extension.getAuthMethod());
                 extension.configure(builder);
@@ -271,14 +279,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // Set whether session cookie should be set to secure only based on the site URL. This can only be done during application start-up, so
         // changing to the site URL to use https won't change the secure setting until the application has been restarted. Cookies should ALWAYS
         // be http-only so we can just set that now and be done with it.
-        final String  siteUrl  = _template.queryForObject(QUERY_SITE_URL, EmptySqlParameterSource.INSTANCE, String.class);
-        final boolean isSecure = StringUtils.startsWithIgnoreCase(siteUrl, "https");
-        log.info("Found site URL '{}' (empty string indicates uninitialized site URL), setting session cookie configuration set to {}", siteUrl, isSecure);
+        final String  siteUrl              = _template.queryForObject(QUERY_SITE_URL, EmptySqlParameterSource.INSTANCE, String.class);
+        final boolean isSecure             = StringUtils.startsWithIgnoreCase(siteUrl, "https");
+        final boolean allowInsecureCookies = _securityPreferences.getAllowInsecureCookies();
+        if (allowInsecureCookies) {
+            log.info("Found site URL '{}' (empty string indicates uninitialized site URL), protocol indicates session cookie configuration {} be set to secure, allowInsecureCookies is true so setting to false regardless", siteUrl, isSecure ? "should" : "should not");
+        } else {
+            log.info("Found site URL '{}' (empty string indicates uninitialized site URL), setting session cookie configuration set to {}", siteUrl, isSecure);
+        }
 
         final SessionCookieConfig config = XnatWebAppInitializer.getServletContext().getSessionCookieConfig();
-        config.setSecure(isSecure);
+        config.setSecure(isSecure && !allowInsecureCookies);
         config.setHttpOnly(true);
-
 
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
@@ -355,11 +367,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final XnatAppInfo                _appInfo;
     private final AliasTokenService          _aliasTokenService;
     private final XdatUserAuthService        _userAuthService;
-    private final ConfigPaths                _configPaths;
     private final DateValidation             _dateValidation;
-    private final MessageSource              _messageSource;
     private final NamedParameterJdbcTemplate _template;
     private final DataSource                 _dataSource;
+    private final SecurityPreferences        _securityPreferences;
     private final String                     _dbAuthProviderName;
 
     private final List<AuthenticationProvider> _providers  = new ArrayList<>();

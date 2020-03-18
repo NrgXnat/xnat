@@ -26,8 +26,10 @@ import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicatePropertiesException;
 import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
@@ -75,8 +77,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     public static final String TOOL_ID = "dicomScpManager";
 
     @Autowired
-    public DicomSCPManager(final ExecutorService executorService, final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
-        super(preferenceService, eventService);
+    public DicomSCPManager(final ExecutorService executorService, final NrgPreferenceService preferenceService, final ConfigPaths configPaths, final OrderedProperties initPrefs, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
+        super(preferenceService, eventService, configPaths, initPrefs);
 
         _provider = receivedFileUserProvider;
         _context = context;
@@ -595,7 +597,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     // Update queries: updating DicomSCPs required.
     private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
-    private static final String DELETE_INSTANCES_BY_ID    = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
     private static final String DELETE_ALL_INSTANCES      = "DELETE FROM dicom_scp_instance";
 
     private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("enableDicomReceiver") {

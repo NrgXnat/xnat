@@ -171,8 +171,13 @@ configurations {
     }
 }
 
-dependencyManagement.imports {
-    mavenBom "org.nrg:parent:${vXnat}"
+dependencyManagement {
+    imports {
+        mavenBom "org.nrg:parent:${vXnat}"
+    }
+    generatedPomCustomization {
+        enabled = false
+    }
 }
 
 def vMockito = '1.10.19'
@@ -184,6 +189,9 @@ configurations.all {
 
 dependencies {
     annotationProcessor "org.nrg:framework"
+
+    api platform("org.nrg:parent:${vXnat}")
+    implementation platform("org.nrg:parent:${vXnat}")
 
     // NRG dependencies first.
     api "org.nrg.xdat:core"
@@ -326,7 +334,6 @@ dependencies {
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "junit:junit"
     providedCompile "javax.servlet:javax.servlet-api"
-    providedCompile "org.hamcrest:hamcrest-core:1.3"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
@@ -359,10 +366,10 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
-    testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "org.hamcrest:hamcrest-core:2.2"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.powermock:powermock-module-junit4:${vPowerMock}"
-    testImplementation "org.powermock:powermock-api-mockito:${vPowerMock}"
+    testImplementation "org.powermock:powermock-module-junit4"
+    testImplementation "org.powermock:powermock-api-mockito2"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
@@ -377,6 +384,20 @@ tomcatRunWar.contextPath = "/"
 
 [tomcatRun, tomcatRunWar].each { task ->
     task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
+}
+
+["Java", "War"].each { type ->
+    ["Local", "Repository"].each { target ->
+        def artifactName = type == "Java" ? "Jar" : type
+        def taskName = "publish${artifactName}To${target}"
+        logger.info "Creating task ${taskName}"
+        tasks.create(name: taskName) {
+            description = "Publishes the Maven ${type} publications to Maven ${target}."
+            dependsOn tasks.withType(AbstractPublishToMaven).matching {
+                it.name == "publishMaven${type}PublicationToMaven${target}"
+            }
+        }
+    }
 }
 
 task deployToTomcat(type: Copy, dependsOn: war) {
@@ -514,6 +535,36 @@ publishing {
                 artifact sourceJar
                 artifact javadocJar
             }
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode("name", "XNAT Server")
+                root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
+                root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                root.appendNode("inceptionYear", "2019")
+
+                def scm = root.appendNode("scm")
+                scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+                scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
+                scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
+
+                def license = root.appendNode("licenses").appendNode("license")
+                license.appendNode("name", "Simplified BSD 2-Clause License")
+                license.appendNode("url", "https://xnat.org/about/license.php")
+                license.appendNode("distribution", "repo")
+
+                def developers = root.appendNode("developers")
+                def rherrick = developers.appendNode("developer")
+                rherrick.appendNode("id", "rherrick")
+                rherrick.appendNode("name", "Rick Herrick")
+                rherrick.appendNode("email", "jrherrick@wustl.edu")
+            }
+        }
+        mavenWar(MavenPublication) {
+            groupId = "${project.group}.${rootProject.name}"
+            artifactId = "xnat-${rootProject.name}"
+
+            from components.web
 
             pom.withXml {
                 def root = asNode()

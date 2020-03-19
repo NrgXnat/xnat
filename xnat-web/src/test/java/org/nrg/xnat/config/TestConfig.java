@@ -31,16 +31,16 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 @Configuration
 public class TestConfig {
     @Bean
-    public CatalogService catalogService(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                         CacheManager cacheManager,
-                                         UserDataCache userDataCache) {
+    public CatalogService catalogService(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                         final CacheManager cacheManager,
+                                         final UserDataCache userDataCache) {
         return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
     }
 
     @Bean
-    public DefaultCatalogService catalogServiceNoRemote(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                        CacheManager cacheManager,
-                                                        UserDataCache userDataCache) {
+    public DefaultCatalogService catalogServiceNoRemote(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                                        final CacheManager cacheManager,
+                                                        final UserDataCache userDataCache) {
         // return type DefaultCatalogService so we can re-set RemoteFilesService to null
         return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
     }
@@ -55,6 +55,7 @@ public class TestConfig {
     public NamedParameterJdbcTemplate namedParameterJdbcTemplate() {
         return Mockito.mock(NamedParameterJdbcTemplate.class);
     }
+
     @Bean
     public CacheManager cacheManager() {
         return Mockito.mock(CacheManager.class);

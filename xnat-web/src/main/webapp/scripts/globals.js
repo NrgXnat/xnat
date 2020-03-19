@@ -337,6 +337,14 @@ function stringable(val){
     return /string|number|boolean/.test(typeof val);
 }
 
+function isElement(it){
+    return it && it.nodeType && it.nodeType === Node.ELEMENT_NODE;
+}
+
+function isFragment(it){
+    return it && it.nodeType && it.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+}
+
 // copy an object
 function objectCopy(obj){
 
@@ -1537,7 +1545,7 @@ function waitForIt(interval, test, callback){
 // then execute callback
 function waitForElement(interval, selector, callback){
     var counter = 0;
-    var $element;
+    var selected;
     waitForIt(interval || 1, function(){
         if (++counter > 10000) {
             return true;
@@ -1545,8 +1553,8 @@ function waitForElement(interval, selector, callback){
         if (jsdebug) {
             // console.log('waiting for element: ' + selector);
         }
-        $element = $(selector);
-        return $element.length
+        selected = document.querySelector(selector);
+        return !!selected
     }, function(){
         if (counter > 10000) {
             console.warn("can't find element: " + selector);
@@ -1555,7 +1563,7 @@ function waitForElement(interval, selector, callback){
             if (jsdebug) {
                 // console.log('element found: ' + selector);
             }
-            callback.call($element[0], $element);
+            callback.call(selected, selected);
         }
     })
 }

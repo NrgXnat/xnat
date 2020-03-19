@@ -35,15 +35,26 @@
                         <c:import url="/xapi/notifications" var="notifications"/>
 
                         <script>
-                            var XNAT = getObject(XNAT);
-                            XNAT.data = extend({}, XNAT.data, {
-                                siteConfig: ${siteConfig},
-                                notifications: ${notifications}
-                            });
-                            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
-                            XNAT.data['/xapi/notifications'] = XNAT.data.notifications;
-                            // get rid of the 'targetSource' property
-                            delete XNAT.data.siteConfig.targetSource;
+                            (function(XNAT){
+
+                                function returnValue(val){
+                                    return val;
+                                }
+
+                                XNAT.data = extend({}, XNAT.data, {
+                                    siteConfig: returnValue(${siteConfig}),
+                                    notifications: returnValue(${notifications})
+                                });
+
+                                XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
+                                XNAT.data['/xapi/notifications'] = XNAT.data.notifications;
+
+                                // get rid of the 'targetSource' property
+                                delete XNAT.data.siteConfig.targetSource;
+
+                                window.XNAT = XNAT;
+
+                            })(getObject(window.XNAT));
                         </script>
 
                         <header id="content-header">
@@ -67,30 +78,33 @@
                         </div>
                         <!-- /#site-setup-panels -->
 
-                        <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
+                        <c:url var="siteSetup" value="/scripts/xnat/app/siteSetup.js"/>
+                        <script src="${siteSetup}"></script>
 
                         <script>
+                            (function(XNAT){
 
-                            //XNAT.app.setupComplete = function(){
-                            //    XNAT.xhr.form('#site-setup', {});
-                            //};
+                                //XNAT.app.setupComplete = function(){
+                                //    XNAT.xhr.form('#site-setup', {});
+                                //};
 
-                            XNAT.xhr.get({
-                                url:     XNAT.url.rootUrl('/setup/site-setup.yaml'),
-                                //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),
-                                success: function (data) {
-                                    if (typeof data === 'string') {
-                                        data = YAML.parse(data);
+                                XNAT.xhr && XNAT.xhr.get({
+                                    url:     XNAT.url.rootUrl('/setup/site-setup.yaml'),
+                                    //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),
+                                    success: function (data) {
+                                        if (typeof data === 'string') {
+                                            data = YAML.parse(data);
+                                        }
+
+                                        console.log(data);
+
+                                        XNAT.spawner && XNAT.spawner.spawn(data).render('#site-setup-panels');
                                     }
+                                });
 
-                                    console.log(data);
+                                window.XNAT = XNAT;
 
-                                    XNAT.spawner
-                                        .spawn(data)
-                                        .render('#site-setup-panels');
-                                }
-                            });
-
+                            })(getObject(window.XNAT));
                         </script>
 
                     </pg:restricted>

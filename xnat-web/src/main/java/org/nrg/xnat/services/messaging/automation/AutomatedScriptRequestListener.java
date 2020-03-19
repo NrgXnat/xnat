@@ -9,13 +9,21 @@
 
 package org.nrg.xnat.services.messaging.automation;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
 import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.messaging.JmsRequestListener;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -25,10 +33,8 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
 
 /**
  * The listener interface for receiving automatedScriptRequest events.
@@ -39,26 +45,24 @@ import java.util.Map;
  * the automatedScriptRequest event occurs, that object's appropriate
  * method is invoked.
  */
+@Component
+@Getter(AccessLevel.PRIVATE)
+@Accessors(prefix = "_")
 @Slf4j
-public class AutomatedScriptRequestListener {
+public class AutomatedScriptRequestListener implements JmsRequestListener<AutomatedScriptRequest> {
     @Autowired
-    public void setScriptRunnerService(final ScriptRunnerService service) {
-        _service = service;
-    }
-
-    @Autowired
-    public void setEventService(final DataTypeAwareEventService eventService) {
+    public AutomatedScriptRequestListener(final ScriptRunnerService scriptRunnerService, final DataTypeAwareEventService eventService) {
+        _scriptRunnerService = scriptRunnerService;
         _eventService = eventService;
     }
 
     /**
-     * On request.
-     *
-     * @param request the request
-     *
-     * @throws Exception the exception
+     * {@inheritDoc}
      */
+    @Override
+    @JmsListener(id = "automatedScriptRequest", destination = "automatedScriptRequest")
     public void onRequest(final AutomatedScriptRequest request) throws Exception {
+        log.info("Now handling request: {}", request);
         final UserI user = Users.getUser(request.getUsername());
 
         final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(user, request.getScriptWorkflowId());
@@ -99,7 +103,7 @@ public class AutomatedScriptRequestListener {
         }
         ScriptOutput scriptOut = null;
         try {
-            scriptOut = _service.runScript(_service.getScript(request.getScriptId()), parameters);
+            scriptOut = _scriptRunnerService.runScript(_scriptRunnerService.getScript(request.getScriptId()), parameters);
             if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
                 WorkflowUtils.complete(workflow, workflow.buildEvent());
             }
@@ -132,9 +136,9 @@ public class AutomatedScriptRequestListener {
                 final List<String> notifyList = automationCompletionEvent.getNotificationList();
                 if (notifyList != null && !notifyList.isEmpty()) {
                     final String scriptOutStr =
-                            (automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
-                            scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
-                            "<h3>No output was returned from the script run</h3>";
+                        (automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
+                        scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
+                        "<h3>No output was returned from the script run</h3>";
                     final String EMAIL_SUBJECT = "Automation Results (" + request.getScriptId() + ")";
                     AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutStr, false, notifyList.toArray(new String[0]));
                 }
@@ -153,37 +157,30 @@ public class AutomatedScriptRequestListener {
         if (scriptOutputs == null) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
-        for (ScriptOutput scriptOut : scriptOutputs) {
-            sb.append("<br><b>SCRIPT EXECUTION RESULTS</b><br>");
+        final StringBuilder buffer = new StringBuilder();
+        for (final ScriptOutput scriptOut : scriptOutputs) {
+            buffer.append("<br><b>SCRIPT EXECUTION RESULTS</b><br>");
             // NOTE:  Lets not report success status, because we really only know failures.  The script itself
             // may report errors, so let's let the script do status reporting when it seems to have executed successfully.
             if (!scriptOut.getStatus().equals(Status.SUCCESS)) {
-                sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
+                buffer.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
             }
             if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null && scriptOut.getResults().toString().length() > 0) {
-                sb.append("<br><b>SCRIPT RESULTS</b><br>");
-                sb.append(scriptOut.getResults().toString().replace("\n", "<br>"));
+                buffer.append("<br><b>SCRIPT RESULTS</b><br>");
+                buffer.append(scriptOut.getResults().toString().replace("\n", "<br>"));
             }
-            if (scriptOut.getOutput() != null && scriptOut.getOutput().length() > 0) {
-                sb.append("<br><b>SCRIPT STDOUT</b><br>");
-                sb.append(scriptOut.getOutput().replace("\n", "<br>"));
+            if (StringUtils.isNotBlank(scriptOut.getOutput())) {
+                buffer.append("<br><b>SCRIPT STDOUT</b><br>");
+                buffer.append(scriptOut.getOutput().replace("\n", "<br>"));
             }
-            if (scriptOut.getErrorOutput() != null && scriptOut.getErrorOutput().length() > 0) {
-                sb.append("<br><b>SCRIPT STDERR/EXCEPTION</b><br>");
-                sb.append(scriptOut.getErrorOutput().replace("\n", "<br>"));
+            if (StringUtils.isNotBlank(scriptOut.getErrorOutput())) {
+                buffer.append("<br><b>SCRIPT STDERR/EXCEPTION</b><br>");
+                buffer.append(scriptOut.getErrorOutput().replace("\n", "<br>"));
             }
         }
-        return sb.toString();
+        return buffer.toString();
     }
 
-    /**
-     * The _service.
-     */
-    private ScriptRunnerService _service;
-
-    /**
-     * The _event service.
-     */
-    private DataTypeAwareEventService _eventService;
+    private final ScriptRunnerService       _scriptRunnerService;
+    private final DataTypeAwareEventService _eventService;
 }

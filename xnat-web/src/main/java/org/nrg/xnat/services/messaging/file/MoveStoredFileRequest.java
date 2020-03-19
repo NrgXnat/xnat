@@ -58,6 +58,11 @@ public class MoveStoredFileRequest implements Serializable {
         }), Predicates.<StoredFile>notNull()))));
     }
 
+    @Override
+    public String toString() {
+        return "Move stored file request on file " + _filePath + " in project " + _project + " requested by " + _user.getUsername();
+    }
+
     private static final long serialVersionUID = 42L;
 
     private final ResourceModifierA _resourceModifier;

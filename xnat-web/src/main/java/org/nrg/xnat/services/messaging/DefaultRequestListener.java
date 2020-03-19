@@ -10,10 +10,19 @@
 package org.nrg.xnat.services.messaging;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.messaging.JmsRequestListener;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
 
+@Component
 @Slf4j
-public class DefaultRequestListener {
+public class DefaultRequestListener implements JmsRequestListener<Object> {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @JmsListener(id = "defaultRequest", destination = "defaultRequest")
     public void onRequest(final Object request) {
-        log.info("Just received a request of type: {}", request.getClass().getName());
+        log.info("Now handling request of type {}: {}", request.getClass().getName(), request);
     }
 }

@@ -9,10 +9,14 @@
 
 package org.nrg.xnat.configuration;
 
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-// import org.springframework.jms.annotation.EnableJms;
+import org.springframework.context.annotation.ImportResource;
+import org.springframework.jms.annotation.EnableJms;
 
 @Configuration
-// @EnableJms
+@EnableJms
+@ImportResource("WEB-INF/conf/mq-context.xml")
+@ComponentScan({"org.nrg.framework.messaging", "org.nrg.xnat.services.messaging"})
 public class MqConfig {
 }

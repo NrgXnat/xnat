@@ -9,15 +9,15 @@
 
 package org.nrg.xnat.services.messaging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ErrorHandler;
 
+// @Component
+@Slf4j
 public class XnatMqErrorHandler implements ErrorHandler {
     @Override
-    public void handleError(Throwable throwable) {
-        _log.error("An error occurred in the XNAT MQ handling", throwable);
+    public void handleError(final Throwable throwable) {
+        log.error("An error occurred in the XNAT MQ handling", throwable);
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(XnatMqErrorHandler.class);
 }

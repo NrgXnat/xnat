@@ -768,8 +768,7 @@ public class PoolDBUtils {
                     "\n  username VARCHAR(255),"+
                     "\n  search_xml text,"+
 					"\n  random_id_string VARCHAR(255)"+
-                    "\n) "+
-                    "\nWITH OIDS;";
+                    "\n);";
 
                     PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
 
@@ -1055,12 +1054,12 @@ public class PoolDBUtils {
 	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
 	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +
 															  "\n(" +
-															  "\n  elementName varchar(255) NOT NULL," +
-															  "\n  ids varchar(255) NOT NULL," +
+															  "\n  id SERIAL PRIMARY KEY," +
+															  "\n  elementName VARCHAR(255) NOT NULL," +
+															  "\n  ids VARCHAR(255) NOT NULL," +
 															  "\n  create_date timestamp DEFAULT now()," +
-															  "\n  contents text" +
-															  "\n) " +
-															  "\nWITH OIDS;";
+															  "\n  contents TEXT" +
+															  "\n);";
 
 	private static Float VERSION = null;
 

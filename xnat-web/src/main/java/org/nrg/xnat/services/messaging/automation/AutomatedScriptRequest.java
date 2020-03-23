@@ -113,6 +113,11 @@ public class AutomatedScriptRequest implements Serializable {
         return new JSONObject(_argumentMap).toString();
     }
 
+    @Override
+    public String toString() {
+        return "Automated launch of script " + _scriptId + " requested by " + _username + " on " + _dataType + " object " + _dataId;
+    }
+
     private final String                      _srcEventId;
     private final String                      _srcEventClass;
     private final String                      _username;

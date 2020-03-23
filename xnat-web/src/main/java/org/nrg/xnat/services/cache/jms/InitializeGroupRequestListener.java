@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.messaging.JmsRequestListener;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -22,7 +23,7 @@ import static org.nrg.framework.exceptions.NrgServiceError.UserServiceError;
 
 @Component
 @Slf4j
-public class InitializeGroupRequestListener implements GroupsAndPermissionsCache.Listener {
+public class InitializeGroupRequestListener implements GroupsAndPermissionsCache.Listener, JmsRequestListener<InitializeGroupRequest> {
     @Autowired
     public InitializeGroupRequestListener() {
         _groupIds = new HashSet<>();
@@ -38,8 +39,13 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
         }
     }
 
-    @JmsListener(destination = "initializeGroup", containerFactory = "listenerContainerFactory")
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @JmsListener(id = "initializeGroupRequest", destination = "initializeGroupRequest")
     public void onRequest(final InitializeGroupRequest request) {
+        log.info("Now handling request: {}", request);
         final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
         final String       groupId   = request.getGroupId();
 

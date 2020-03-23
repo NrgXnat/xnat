@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.messaging.JmsRequestListener;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.event.XftItemEventI;
@@ -22,6 +23,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
@@ -34,13 +36,19 @@ import static lombok.AccessLevel.PRIVATE;
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
-public class MoveStoredFileRequestListener {
+public class MoveStoredFileRequestListener implements JmsRequestListener<MoveStoredFileRequest> {
     @Autowired
-    public void setUserProjectCache(final UserProjectCache cache) {
+    public MoveStoredFileRequestListener(final UserProjectCache cache) {
         _cache = cache;
     }
-    @SuppressWarnings("unused")
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @JmsListener(id = "moveStoredFileRequest", destination = "moveStoredFileRequest")
     public void onRequest(final MoveStoredFileRequest request) {
+        log.info("Now handling request: {}", request);
         boolean success = true;
         final List<String> duplicates = new ArrayList<>();
 
@@ -106,5 +114,5 @@ public class MoveStoredFileRequestListener {
         }
     }
 
-    private UserProjectCache _cache;
+    private final UserProjectCache _cache;
 }

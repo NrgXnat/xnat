@@ -10,11 +10,29 @@
 package org.nrg.xnat.services.messaging.archive;
 
 import com.google.common.collect.ImmutableSet;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
+import org.nrg.framework.messaging.JmsRequestListener;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Users;
@@ -36,16 +54,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
-
-@Slf4j
 @Component
-public final class DicomInboxImportRequestListener {
+@Slf4j
+public final class DicomInboxImportRequestListener implements JmsRequestListener<DicomInboxImportRequest> {
     @Autowired
     public DicomInboxImportRequestListener(final DicomInboxImportRequestService service,
                                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> identifiers,
@@ -56,12 +67,12 @@ public final class DicomInboxImportRequestListener {
     }
 
     /**
-     * On request.
-     *
-     * @param request the request
+     * {@inheritDoc}
      */
-    @JmsListener(destination = "dicom-inbox-import-requests")
+    @Override
+    @JmsListener(id = "dicomInboxImportRequest", destination = "dicomInboxImportRequest")
     public void onRequest(final DicomInboxImportRequest request) {
+        log.info("Now handling request: {}", request);
         final String username    = request.getUsername();
         final String sessionPath = request.getSessionPath();
 
@@ -264,8 +275,8 @@ public final class DicomInboxImportRequestListener {
         private final File                           _sessionPath;
     }
 
-    private DicomInboxImportRequestService                      _service;
-    private Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
-    private Map<String, DicomFileNamer>                         _namers;
-    private int                                                 _dicomFiles;
+    private final DicomInboxImportRequestService                      _service;
+    private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
+    private final Map<String, DicomFileNamer>                         _namers;
+    private       int                                                 _dicomFiles;
 }

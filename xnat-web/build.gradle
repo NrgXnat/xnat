@@ -18,10 +18,10 @@ buildscript {
         maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.7.0"
+        classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
         classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
-        classpath "io.franzbecker:gradle-lombok:3.2.0"
+        classpath "io.franzbecker:gradle-lombok:3.3.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }
@@ -44,7 +44,7 @@ apply plugin: "io.spring.dependency-management"
 
 repositories {
     mavenLocal()
-    maven { url "https://www.dcm4che.org/maven2/" }
+    maven { url "https://www.dcm4che.org/maven2" }
     jcenter()
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
@@ -54,11 +54,7 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-if (hasProperty("archiveName")) {
-    war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
-} else {
-    war.archiveBaseName.set "xnat-web"
-}
+war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
 
 configurations {
     javadocCoverage

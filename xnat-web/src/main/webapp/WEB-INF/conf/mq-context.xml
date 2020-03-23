@@ -71,54 +71,13 @@
     <amq:queue id="processingOperationRequest" physicalName="processingOperationRequest" />
     <!-- new request types go here -->
 
-    <!-- message consumers -->
-    <bean id="defaultRequestListener" class="org.nrg.xnat.services.messaging.DefaultRequestListener" />
-    <bean id="automatedScriptRequestListener" class="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequestListener" />
-    <bean id="moveStoredFileRequestListener" class="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener" />
-    <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" >
-        <constructor-arg ref="prearchiveOperationHandlerResolver"/>
-    </bean>
-    <bean id="processingOperationRequestListener" class="org.nrg.xnat.services.messaging.processing.ProcessingOperationRequestListener" >
-        <!--suppress SpringXmlModelInspection -->
-        <constructor-arg ref="processingOperationHandlerResolver"/>
-    </bean>
-    <bean id="initializeGroupRequestListener" class="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener" />
-
     <!-- listeners for new request types go here -->
-    <bean id="dlqMessageListener" class="org.nrg.framework.messaging.DlqListener">
-        <property name="messageListenerMapping">
-            <description>
-                This maps MQ request types with the listener class and handler method that should handle that request.
-                This lets the dead-letter functionality properly re-try MQ requests. In future versions, we should get
-                the per-queue dead-letter handling to work and make the general dead-letter function handle only unknown
-                or improperly formed MQ requests.
-            </description>
-            <map>
-                <entry key="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequest" value="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequestListener.onRequest"/>
-                <entry key="org.nrg.xnat.services.messaging.file.MoveStoredFileRequest" value="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener.onRequest"/>
-                <entry key="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest" value="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener.onRequest"/>
-                <entry key="org.nrg.xnat.services.cache.jms.InitializeGroupRequest" value="org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener.onRequest"/>
-                <entry key="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest" value="org.nrg.xnat.services.messaging.archive.DicomInboxImportRequestListener.onRequest"/>
-                <entry key="org.nrg.xnat.services.messaging.processing.ProcessingOperationRequestData" value="org.nrg.xnat.services.messaging.processing.ProcessingOperationRequestListener.onRequest"/>
-                <!-- update with new request types and their listener methods -->
-            </map>
-        </property>
-    </bean>
+    <bean id="dlqMessageListener" class="org.nrg.framework.messaging.DlqListener"/>
 
     <bean id="errorHandler" class="org.nrg.xnat.services.messaging.XnatMqErrorHandler"/>
 
     <!-- Spring JMS Listener Container -->
-    <jms:listener-container factory-id="listenerContainerFactory" connection-factory="springConnectionFactory" concurrency="10-40" acknowledge="transacted" error-handler="errorHandler">
-        <jms:listener destination="defaultRequest" ref="defaultRequestListener" method="onRequest" />
-        <jms:listener destination="automatedScriptRequest" ref="automatedScriptRequestListener" method="onRequest" />
-        <jms:listener destination="moveStoredFileRequest" ref="moveStoredFileRequestListener" method="onRequest" />
-        <jms:listener destination="prearchiveOperationRequest" ref="prearchiveOperationRequestListener" method="onRequest" />
-        <jms:listener destination="initializeGroupRequest" ref="initializeGroupRequestListener" method="onRequest" />
-        <jms:listener destination="dicomInboxImportRequest" ref="dicomInboxImportRequestListener" method="onRequest" />
-        <jms:listener destination="processingOperationRequest" ref="processingOperationRequestListener" method="onRequest" />
-        <!-- update with requests, their listeners, and methods  -->
-        <!-- I tried referencing my own DLQ in the redelivery policy but ActiveMQ ignores it and uses the default system DLQ -->
-        <!-- So we'll just listen on that queue instead -->
+    <jms:listener-container factory-id="jmsListenerContainerFactory" connection-factory="springConnectionFactory" concurrency="10-40" acknowledge="transacted" error-handler="errorHandler">
         <jms:listener destination="ActiveMQ.DLQ" ref="dlqMessageListener" method="onReceiveDeadLetter" />
     </jms:listener-container>
 

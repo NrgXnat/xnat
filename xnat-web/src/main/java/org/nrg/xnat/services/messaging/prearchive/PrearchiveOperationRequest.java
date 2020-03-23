@@ -74,6 +74,11 @@ public class PrearchiveOperationRequest implements Serializable {
         _parameters = parameters == null ? new HashMap<String, Object>() : new HashMap<>(parameters);
     }
 
+    @Override
+    public String toString() {
+        return "Prearchive operation " + _operation + " requested by " + _username + " on session " + _sessionData + ": " + _parameters;
+    }
+
     @NonNull
     private final String              _username;
     @NonNull

@@ -73,7 +73,6 @@ import java.util.*;
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer",
                 "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.listeners", "org.nrg.xnat.eventservice.events", "org.nrg.xnat.eventservice.actions"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
-@ImportResource("WEB-INF/conf/mq-context.xml")
 @EnableCaching
 @Getter
 @Accessors(prefix = "_")

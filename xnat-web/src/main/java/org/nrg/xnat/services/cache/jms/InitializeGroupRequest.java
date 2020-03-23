@@ -15,5 +15,10 @@ public class InitializeGroupRequest implements Serializable {
         _groupId = groupId;
     }
 
+    @Override
+    public String toString() {
+        return "Initialize group request " + _groupId;
+    }
+
     private final String _groupId;
 }

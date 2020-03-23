@@ -9,119 +9,159 @@
 
 package org.nrg.framework.messaging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
 
+// TODO: This is to keep the code compatible with Java 7. Remove and convert when migrating to post-Java 7.
+@SuppressWarnings({"Convert2Lambda", "Guava", "StaticPseudoFunctionalStyleMethod"})
+@Component
+@Slf4j
 public class DlqListener {
-
-    public void onReceiveDeadLetter(final Object object) throws Exception {
-        if (object == null) {
-            final String error = "Received null dead letter. That's not OK.";
-            log.error(error);
-            throw new RuntimeException(error);
-        }
-        if (_mapping.size() == 0) {
-            final String error = "Received dead letter of type: " + object.getClass() + ", however no listeners are currently configured.";
-            log.error(error);
-            throw new RuntimeException(error);
-        }
-
-        boolean found = false;
-        for (Map.Entry<Class<?>, ListenerMethod> mapping : _mapping.entrySet()) {
-            // Check to see if the dead-letter request is of the same class or a subclass of the request type.
-            if (!mapping.getKey().isAssignableFrom(object.getClass())) {
-                continue;
-            }
-            ListenerMethod method = mapping.getValue();
-            method.callListenerMethod(object);
-            found = true;
-            break;
-        }
-        if (!found) {
-            final String error = "Received dead letter of unknown type: " + object.getClass();
-            log.error(error);
-            throw new RuntimeException(error);
-        }
-    }
-
-    public void setMessageListenerMapping(Map<String, String> mapping) {
-        _mapping.clear();
-        String requestTypeName = null;
-        String listenerTypeName = null;
-        try {
-            for (Map.Entry<String, String> entry : mapping.entrySet()) {
-                requestTypeName = null;
-                listenerTypeName = null;
-                Class requestType = Class.forName(requestTypeName = entry.getKey());
-                ListenerMethod method = new ListenerMethod(entry.getValue());
-                _mapping.put(requestType, method);
-            }
-        } catch (ClassNotFoundException e) {
-            String error;
-            if (requestTypeName == null) {
-                error = "Something weird happened and nothing is initialized.";
-            } else if (listenerTypeName == null) {
-                error = "The request type " + requestTypeName + " is not a valid class.";
+    @Autowired
+    public DlqListener(final List<? extends JmsRequestListener<?>> listeners) {
+        for (final JmsRequestListener<?> listener : listeners) {
+            final Class<?> listenerClass = listener.getClass();
+            final List<Method> methods = Lists.newArrayList(Iterables.filter(Arrays.asList(listenerClass.getDeclaredMethods()), new Predicate<Method>() {
+                @Override
+                public boolean apply(final Method method) {
+                    return method.getAnnotation(JmsListener.class) != null;
+                }
+            }));
+            final String listenerClassName = listenerClass.getName();
+            if (methods.isEmpty()) {
+                log.warn("Found the class {} annotated with @JmsRequestListener but it doesn't have a method annotated with @JmsListener. Ignoring.", listenerClassName);
             } else {
-                error = "The listener type " + listenerTypeName + " for request type " + requestTypeName + " is not a valid class.";
-            }
-            log.error(error);
-            throw new RuntimeException(error);
-        }
-    }
-
-    private class ListenerMethod {
-        public ListenerMethod(String classAndMethod) throws ClassNotFoundException {
-            int methodLocation = (_classAndMethod = classAndMethod).lastIndexOf(".");
-            if (methodLocation < 0) {
-                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ". Must be of the form package.of.ListenerClass.ListenerMethod.");
-            }
-            final String className = _classAndMethod.substring(0, methodLocation);
-            final String methodName = _classAndMethod.substring(methodLocation + 1);
-            _listenerClass = Class.forName(className);
-            Method method = null;
-            Class<?>[] parameterTypes = null;
-            for (Method candidate : _listenerClass.getMethods()) {
-                if (candidate.getName().equals(methodName)) {
-                    method = candidate;
-                    parameterTypes = method.getParameterTypes();
-                    break;
+                for (final Method method : methods) {
+                    addMessageListenerMapping(method);
                 }
             }
-            if (method == null) {
-                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ". Must be of the form package.of.ListenerClass.ListenerMethod.");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void setMessageListenerMapping(final Map<String, String> mapping) {
+        for (final String requestTypeName : mapping.keySet()) {
+            try {
+                final Class<?> requestType = Class.forName(requestTypeName);
+                if (_mapping.containsKey(requestType)) {
+                    log.info("Found duplicate entry for JMS request class {}, ignoring explicit setting.", requestType.getName());
+                } else {
+                    _mapping.put(requestType, new ListenerMethod(mapping.get(requestTypeName), requestType));
+                }
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Poorly formed DLQ mapping " + requestTypeName + " -> " + mapping.get(requestTypeName) + ": could not find the specified request class " + requestTypeName + ".");
             }
-            _listenerMethod = methodName;
-            _listenerMethodParameterTypes = parameterTypes;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void onReceiveDeadLetter(final Object object) {
+        if (object == null) {
+            throw new RuntimeException("Received null dead letter. That's not OK.");
         }
 
-        public void callListenerMethod(Object... objects) {
+        final Class<?> objectClass = object.getClass();
+        if (_mapping.isEmpty()) {
+            log.error("Received dead letter of type: {}, however no listeners are currently configured.", objectClass);
+            return;
+        }
+
+        final Map<Class<?>, ListenerMethod> matches = Maps.filterKeys(_mapping, new Predicate<Class<?>>() {
+            @Override
+            public boolean apply(final Class<?> key) {
+                // Check to see if the dead-letter request is of the same class or a subclass of the request type.
+                return key.isAssignableFrom(objectClass);
+            }
+        });
+        if (matches.isEmpty()) {
+            log.error("Received dead letter of unknown type, ignoring: {}", objectClass);
+            return;
+        }
+
+        for (final Class<?> key : matches.keySet()) {
+            matches.get(key).callListenerMethod(object);
+        }
+    }
+
+    public void addMessageListenerMapping(final Method method) {
+        if (method.getAnnotation(JmsListener.class) == null) {
+            log.warn("The method {}.{}() is not annotated with @JmsListener. A listener method must have the @JmsListener annotation to be activated.", method.getDeclaringClass().getName(), method.getName());
+            return;
+        }
+        final Class<?>[] parameterTypes = method.getParameterTypes();
+        if (parameterTypes.length == 0) {
+            log.warn("The method {}.{}() is annotated with @JmsListener but has no parameters. A listener method must have one and only parameter, which should be the request object.", method.getDeclaringClass().getName(), method.getName());
+            return;
+        }
+        if (parameterTypes.length > 1) {
+            log.warn("The method {}.{}() is annotated with @JmsListener but has {} parameters. A listener method must have one and only parameter, which should be the request object.", method.getDeclaringClass().getName(), method.getName(), parameterTypes.length);
+            return;
+        }
+
+        _mapping.put(parameterTypes[0], new ListenerMethod(method));
+    }
+
+    private static class ListenerMethod {
+        public ListenerMethod(final String classAndMethod, final Class<?> requestType) {
+            if (!classAndMethod.contains(".")) {
+                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ": must be of the form package.of.ListenerClass.ListenerMethod.");
+            }
+            final String className = StringUtils.substringBeforeLast(classAndMethod, ".");
             try {
-                Object object = _listenerClass.newInstance();
-                Method method = _listenerClass.getMethod(_listenerMethod, _listenerMethodParameterTypes);
-                method.invoke(object, objects);
-            } catch (NoSuchMethodException exception) {
-                throw new RuntimeException("Error retrieving verified method: " + _classAndMethod, exception);
+                _listenerClass = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ": could not find the specified class " + className + ".");
+            }
+            final String methodName = StringUtils.substringAfterLast(classAndMethod, ".");
+            final Optional<Method> listenerMethod = Iterables.tryFind(Arrays.asList(_listenerClass.getDeclaredMethods()), new Predicate<Method>() {
+                @Override
+                public boolean apply(final Method method) {
+                    return StringUtils.equals(methodName, method.getName()) && method.getParameterCount() == 1 && method.getAnnotation(JmsListener.class) != null;
+                }
+            });
+            if (!listenerMethod.isPresent()) {
+                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ": could not find a method named " + methodName + "() with one parameter and the @JmsListener annotation on the specified class " + className + ".");
+            }
+            _listenerMethod = listenerMethod.get();
+            if (!_listenerMethod.getParameters()[0].getClass().equals(requestType)) {
+                throw new RuntimeException("Poorly formed listener specifier " + classAndMethod + ": the parameter for the method " + methodName + "() on the specified class " + className + " is not of the specified request type " + requestType.getName() + ".");
+            }
+        }
+
+        public ListenerMethod(final Method listenerMethod) {
+            _listenerClass = listenerMethod.getDeclaringClass();
+            _listenerMethod = listenerMethod;
+        }
+
+        public void callListenerMethod(final Object... objects) {
+            try {
+                _listenerMethod.invoke(_listenerClass.newInstance(), objects);
             } catch (InstantiationException exception) {
                 throw new RuntimeException("Error creating verified class: " + _listenerClass.getName(), exception);
             } catch (IllegalAccessException exception) {
-                throw new RuntimeException("Illegal access to verified method: " + _classAndMethod, exception);
+                throw new RuntimeException("Illegal access to verified method: " + _listenerClass.getName() + "." + _listenerMethod.getName(), exception);
             } catch (InvocationTargetException exception) {
-                throw new RuntimeException("Error invoking verified method: " + _classAndMethod, exception);
+                throw new RuntimeException("Error invoking verified method: " + _listenerClass.getName() + "." + _listenerMethod.getName(), exception);
             }
         }
 
-        private final String _classAndMethod;
         private final Class<?> _listenerClass;
-        private final String _listenerMethod;
-        private final Class<?>[] _listenerMethodParameterTypes;
+        private final Method   _listenerMethod;
     }
 
-    private final static Logger log = LoggerFactory.getLogger(DlqListener.class);
-    private final Map<Class<?>, ListenerMethod> _mapping = new HashMap<Class<?>, ListenerMethod>();
+    private final Map<Class<?>, ListenerMethod> _mapping = new HashMap<>();
 }

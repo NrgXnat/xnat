@@ -199,7 +199,9 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
                 formDataArchive.append("prearchive_code", "0");
 
                 for (var key of Object.keys(config)) {
-                    formDataArchive.append(key, config[key]);
+                    if (config[key]) {
+                        formDataArchive.append(key, config[key]);
+                    }
                 }
 
                 $.ajax({

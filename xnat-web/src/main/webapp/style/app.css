@@ -869,7 +869,22 @@ div.note.md,
 div.success.md,
 div.warning.md {
     font-size: 13px;
-    padding: 15px;
+    padding: 15px 15px 15px 40px;
+    line-height: 15px;
+    vertical-align: middle;
+}
+
+div.alert.md:before,
+div.error.md:before,
+div.justification.md:before,
+div.message.md:before,
+div.info.md:before,
+div.note.md:before,
+div.success.md:before,
+div.warning.md:before {
+    left: 12px;
+    top: 15px;
+    font-size: 15px;
 }
 
 /* smaller messages */

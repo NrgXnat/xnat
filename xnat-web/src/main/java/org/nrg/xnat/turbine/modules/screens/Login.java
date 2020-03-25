@@ -8,7 +8,7 @@
  */
 
 package org.nrg.xnat.turbine.modules.screens;
-
+import org.nrg.xdat.security.helpers.Features;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
@@ -44,6 +44,8 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         if(null != u && !u.getUsername().equalsIgnoreCase("guest")){
             data.setScreenTemplate("Index.vm");
         }
+        
+        context.put("featureService", Features.getFeatureService());
     }
 
     private XnatProviderManager getProviderManager() {

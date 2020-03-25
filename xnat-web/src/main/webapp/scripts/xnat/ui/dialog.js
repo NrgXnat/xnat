@@ -502,12 +502,12 @@ window.xmodal = getObject(window.xmodal);
                     style: { height: this.footerHeightPx }
                 }).append(this.footerInner$);
 
-                this.footer0 = this.footer$[0];
-
             }
             else {
                 this.footer$ = frag();
             }
+
+            this.footer0 = this.footer$[0];
 
             // add the elements to the dialog <div>
             this.dialog$.append([

@@ -214,7 +214,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                     }
 
                     final CatCatalogI catalog     = catalogData.catBean;
-                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogData.catPath, null), new Function<File, Mapping<String, Resource>>() {
+                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogData.catPath, catalogData.project), new Function<File, Mapping<String, Resource>>() {
                         @Nullable
                         @Override
                         public Mapping<String, Resource> apply(@Nullable final File file) {

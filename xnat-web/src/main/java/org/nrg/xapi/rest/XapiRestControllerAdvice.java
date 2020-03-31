@@ -30,6 +30,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageConversionException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -57,8 +60,8 @@ public class XapiRestControllerAdvice {
         return getExceptionResponseEntity(request, BAD_REQUEST, exception, null);
     }
 
-    @ExceptionHandler(DataFormatException.class)
-    public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final DataFormatException exception) {
+    @ExceptionHandler({DataFormatException.class, HttpMessageNotReadableException.class, HttpMessageConversionException.class, HttpMessageNotWritableException.class})
+    public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final Exception exception) {
         return getExceptionResponseEntity(request, BAD_REQUEST, exception, null);
     }
 

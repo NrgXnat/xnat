@@ -211,6 +211,7 @@
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <org.postgresql.version>9.4.1212.jre7</org.postgresql.version>
+        <datasource-proxy.version>1.6</datasource-proxy.version>
         <log4jdbc.version>0.2.0</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.11</reflections.version>
@@ -1764,6 +1765,11 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${org.postgresql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.ttddyy</groupId>
+                <artifactId>datasource-proxy</artifactId>
+                <version>${datasource-proxy.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.marcosemiao.log4jdbc</groupId>

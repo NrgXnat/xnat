@@ -135,7 +135,7 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
 
         abu._fileUploader.buildUploaderDiv();
         abu._fileUploader._currentAction = uploaderUrl;
-    }
+    };
 
     function errorHandler(e, base){
         var info = e.responseText ? base + ': ' + e.responseText : base;

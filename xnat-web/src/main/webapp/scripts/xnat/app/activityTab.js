@@ -39,65 +39,57 @@ var XNAT = getObject(XNAT);
 
     activityTab.init = function() {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-        $.each(activities, function(idx, item) {
-            activityTab.startPoll(item, idx);
+        $.each(activities, function(key, item) {
+            activityTab.startPoll(item, key);
         });
     };
 
     activityTab.start = function(title, statusListenerId) {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}"),
-            idx = (new Date()).toISOString().replace(/[^\w]/gi, '');
+            key = (new Date()).toISOString().replace(/[^\w]/gi, '');
         var item = {
             title: title,
             statusListenerId: statusListenerId,
-            divId: 'idx' + idx,
-            detailsTag: 'div#activity-details-' + idx
+            divId: 'key' + key,
+            detailsTag: 'div#activity-details-' + key
         };
-        activities[idx] = item;
+        activities[key] = item;
         XNAT.cookie.set(cookieTag, activities, {});
-        activityTab.startPoll(item, idx);
+        activityTab.startPoll(item, key);
     };
 
-    activityTab.startPoll = function(item, idx) {
+    activityTab.startPoll = function(item, key) {
         var $tab = $('#activity-tab');
-        createEntry(item, idx, $tab);
+        createEntry(item, key, $tab);
         var $info = $tab.find(item.divId);
-        activityTab.intervals[idx] = window.setInterval(function(){
-            checkImageArchivalProgress(item.statusListenerId, $info, idx, item.detailsTag);
+        activityTab.intervals[key] = window.setInterval(function(){
+            checkImageArchivalProgress(item.statusListenerId, $info, key, item.detailsTag);
         }, 3000);
         $tab.css('visibility', 'visible');
     };
 
-    activityTab.stopPoll = function(idx, succeeded) {
-        window.clearInterval(activityTab.intervals[idx]);
-        delete activityTab.intervals[idx];
-        activityTab.stop(idx);
+    activityTab.stopPoll = function(key, succeeded) {
+        window.clearInterval(activityTab.intervals[key]);
+        delete activityTab.intervals[key];
 
-        var $info = $('#activity-tab #idx' + idx);
+        var $info = $('#activity-tab #key' + key);
         if (succeeded) {
             $info.addClass('text-success').prepend('<i class="fa fa-check" style="margin-right:3px"></i>');
         } else {
             $info.addClass('text-error').prepend('<i class="fa fa-minus-circle" style="margin-right:3px"></i>');
         }
-        $info.find('#close' + idx).show();
-        $info.find('#details' + idx).html('<i class="fa fa-expand"></i>');
+        $info.find('#close' + key).show();
+        $info.find('#details' + key).html('<i class="fa fa-expand"></i>');
     };
 
-    activityTab.stop = function(idx) {
-        if (noOtherActivities()) {
+    activityTab.cancel = function(key) {
+        if (!key || noOtherActivities()) {
             XNAT.cookie.remove(cookieTag);
-        } else {
-            var activities =  JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-            delete activities[idx];
-            XNAT.cookie.set(cookieTag, activities, {});
-        }
-    };
-
-    activityTab.close = function(idx) {
-        activityTab.stop();
-        $('#activity-tab #idx' + idx).remove();
-        if (noOtherActivities()) {
             $('#activity-tab').css('visibility', 'hidden');
+        } else {
+            var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
+            delete activities[key];
+            XNAT.cookie.set(cookieTag, activities, {});
         }
     };
 
@@ -105,11 +97,11 @@ var XNAT = getObject(XNAT);
         return Object.keys(activityTab.intervals).length === 0;
     }
 
-    function createEntry(item, idx, parent) {
+    function createEntry(item, key, parent) {
         parent.find('.panel-body').append('<div id="' + item.divId + '" class="item">' + item.title +
             '<div class="actions">' +
-            '<a id="details' + idx + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
-            '<a id="close' + idx + '" class="icn close"><i class="fa fa-close"></i></a>' +
+            '<a id="details' + key + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
+            '<a id="close' + key + '" class="icn close"><i class="fa fa-close"></i></a>' +
             '</div></div>');
 
         var details = XNAT.ui.dialog.init({
@@ -126,15 +118,16 @@ var XNAT = getObject(XNAT);
             ]
         });
 
-        $(document).on('click', 'a#details' + idx, function() {
+        $(document).on('click', 'a#details' + key, function() {
             details.show();
         });
-        $(document).on('click', 'a#close' + idx, function() {
-            activityTab.close(idx);
+        $(document).on('click', 'a#close' + key, function() {
+            activityTab.cancel(key);
+            $(this).parents('div.item').hide();
         });
     }
 
-    function checkImageArchivalProgress(statusListenerId, div, idx, detailsTag) {
+    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag) {
         $.ajax({
             method: 'GET',
             url: XNAT.url.restUrl('/REST/status/' + statusListenerId,
@@ -150,7 +143,7 @@ var XNAT = getObject(XNAT);
                 }
                 var succeeded = populateDetails(div, detailsTag, message, respDat);
                 if (succeeded !== null) {
-                    activityTab.stopPoll(idx, succeeded);
+                    activityTab.stopPoll(key, succeeded);
                 }
             },
             error: function(xhr) {
@@ -248,7 +241,11 @@ var XNAT = getObject(XNAT);
             $('#activity-tab .panel-header a.activity-min').show();
         });
         $(document).on('click', '#activity-tab a.activity-close', function() {
-            $('#activity-tab').css('visibility', 'hidden');
+            $.each(activityTab.intervals, function(key, int) {
+                window.clearInterval(int);
+            });
+            activityTab.intervals = {};
+            activityTab.cancel();
         });
     });
 

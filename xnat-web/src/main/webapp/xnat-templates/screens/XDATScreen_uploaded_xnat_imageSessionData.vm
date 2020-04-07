@@ -73,7 +73,14 @@ dd.valMessage 	{	width:630px;	}
     		return false;
     	}else{
 			concealContent();
-    		return true;
+			var uploadId = (new Date()).toISOString().replace(/[^\w]/gi, '');
+			jq("form#form1").append(
+					jq("<input/>").attr("type", "hidden")
+							.attr("name", "http-session-listener")
+							.attr("value", uploadId)
+			);
+			XNAT.app.activityTab.start('Archival progress', uploadId);
+			return true;
     	}
     }};
     
@@ -168,7 +175,6 @@ dd.valMessage 	{	width:630px;	}
 <script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_headerDialog.js")"></script>
 <script>
-
     jq(document.body).on('click','a.nolink',function(e){
         e.preventDefault();
     });
@@ -176,26 +182,26 @@ dd.valMessage 	{	width:630px;	}
     XNAT.app.prearchiveActions.downloadAllFiles = function( url ){
         window.location = serverRoot + '/REST' + url + '?format=zip';
         return false;
-    }
+    };
 
     XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
         window.location = serverRoot + '/REST' + url + '/scans/' + scan_id + '?format=zip';
         return false;
-    }
+    };
 
     XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
         var RESTurl = serverRoot +
             '/data' + url + '/scans/' + scan_id + '/resources/' + label +
             '/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
         XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
-    }
+    };
 
     XNAT.app.prearchiveActions.reviewDicomTags = function( url, scan_id ){
         var RESTurl = serverRoot +
             '/data/services/dicomdump?src=' + url + '/scans/' + scan_id +
             '&format=html&requested_screen=DicomScanTable.vm&popup=true';
         XNAT.app.headerDialog.load(RESTurl, 'Scan ' + scan_id + ' DICOM');
-    }
+    };
 
     XNAT.app.fileDialog.url='$url';
     XNAT.app.headerDialog.url='$url';

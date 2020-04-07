@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 
 import java.util.Hashtable;
@@ -29,7 +30,7 @@ public class XDATScreen_prearchives extends SecureScreen {
             context.put("investigators", hash);
 
             if (data.getParameters().containsKey("project")) {
-                context.put("project", org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project", data));
+                context.put("project", TurbineUtils.GetPassedParameter("project", data));
             }
             if (Roles.isSiteAdmin(XDAT.getUserDetails())) {
                 context.put("role", "admin");

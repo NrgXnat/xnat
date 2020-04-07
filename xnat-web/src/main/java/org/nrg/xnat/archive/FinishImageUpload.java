@@ -14,26 +14,21 @@ import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.status.StatusProducerI;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
-import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.xml.sax.SAXException;
+import org.restlet.data.Status;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -68,7 +63,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                     //This is being done as part of a parent transaction and should not manage prearc cache state.
                     log.debug("Completing inline archive operation to auto-archive session {} to {}", session, destination);
                     final Map<String, Object> sessionValues = removePrearcVariables(session.getAdditionalValues());
-                    return ListenerUtils.addListeners(this, new PrearcSessionArchiver(session,
+                    StatusMessage result = ListenerUtils.addListeners(this, new PrearcSessionArchiver(session,
                                                                                       user,
                                                                                       sessionValues,
                                                                                       overrideExceptions,
@@ -76,6 +71,12 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                                                                                       false,
                                                                                       isOverwriteFiles(session)))
                                         .call();
+                    StatusMessage.Status status = result.getStatus();
+                    if (status == StatusMessage.Status.COMPLETED) {
+                        return result.getMessage();
+                    } else {
+                        throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + result.getMessage());
+                    }
                 } else {
                     log.debug("Completing archive operation to auto-archive session {} to {}", session, destination);
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {

@@ -42,9 +42,15 @@ public class PrearchiveArchiveHandler extends AbstractPrearchiveOperationHandler
 
     @Override
     public void execute() throws Exception {
-        final String result = commitSessionToArchive();
-        log.info("Completed uploading the session at {}/{}/{} with result {}", _session.getProject(), _session.getTimestamp(), _session.getFolderName(), result);
-        completed(result);
+        try {
+            progress(0, "Starting archival");
+            final String result = commitSessionToArchive();
+            log.info("Completed uploading the session at {}/{}/{} with result {}", _session.getProject(), _session.getTimestamp(), _session.getFolderName(), result);
+            completed(result);
+        } catch (Exception e) {
+            failed("Unable to archive " + getSession().getFolderName() + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     private String commitSessionToArchive() throws Exception {

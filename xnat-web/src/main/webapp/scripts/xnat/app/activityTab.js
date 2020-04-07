@@ -82,20 +82,20 @@ var XNAT = getObject(XNAT);
         $info.find('#details' + key).html('<i class="fa fa-expand"></i>');
     };
 
-    activityTab.cancel = function(key) {
-        if (!key || noOtherActivities()) {
+    activityTab.cancel = function(key, $row) {
+        var activities = {};
+        if (key) {
+            activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
+            delete activities[key];
+        }
+        if ($.isEmptyObject(activities)) {
             XNAT.cookie.remove(cookieTag);
             $('#activity-tab').css('visibility', 'hidden');
         } else {
-            var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-            delete activities[key];
             XNAT.cookie.set(cookieTag, activities, {});
+            $row.parents('div.item').hide();
         }
     };
-
-    function noOtherActivities() {
-        return Object.keys(activityTab.intervals).length === 0;
-    }
 
     function createEntry(item, key, parent) {
         parent.find('.panel-body').append('<div id="' + item.divId + '" class="item">' + item.title +
@@ -122,8 +122,7 @@ var XNAT = getObject(XNAT);
             details.show();
         });
         $(document).on('click', 'a#close' + key, function() {
-            activityTab.cancel(key);
-            $(this).parents('div.item').hide();
+            activityTab.cancel(key. $(this));
         });
     }
 
@@ -161,7 +160,7 @@ var XNAT = getObject(XNAT);
             var respPos = jsonobj.msgs[0].length - 1;
             for (var i = 0; i <= respPos; i++) {
                 var level = jsonobj.msgs[0][i].status;
-                var message = jsonobj.msgs[0][i].msg;
+                var message = jsonobj.msgs[0][i].msg || level;
                 message = message.charAt(0).toUpperCase() + message.substr(1);
                 if (level === "COMPLETED") {
                     // Hack to indicate processing done
@@ -170,7 +169,7 @@ var XNAT = getObject(XNAT);
                         succeeded = true;
 
                         var dest = message.replace(/^XXX/, '').replace(/:.*/,'');
-                        var urls = message.replace(/^XXX.*:/, '').split(';');
+                        var urls = message.replace(/^XXX.*\/archive/, '/archive').split(';');
                         var urlsHtml;
                         if (dest.toLowerCase().includes('prearchive')) {
                             urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';

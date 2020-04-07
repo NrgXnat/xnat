@@ -18,6 +18,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.status.StatusProducerI;
 import org.nrg.framework.utilities.Reflection;
@@ -72,7 +73,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 // Migration: I'm not sure why StatusProducer is deprecated
 @Slf4j
-public class PrearcSessionArchiver extends StatusProducer implements Callable<String>, StatusProducerI {
+public class PrearcSessionArchiver extends StatusProducer implements Callable<StatusMessage>, StatusProducerI {
 
     public static final String MERGED = "Merged";
     
@@ -416,7 +417,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     /* (non-Javadoc)
      * @see java.util.concurrent.Callable#call()
      */
-    public String call() throws ClientException, ServerException {
+    public StatusMessage call() throws ClientException, ServerException {
         try {
             this.lock(this.prearcSession.getUrl());
         } catch (LockedItemException e3) {
@@ -640,7 +641,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         final String url = buildURI(project, src);
 
         completed("archiving operation complete");
-        return url;
+        return new StatusMessage(this, StatusMessage.Status.COMPLETED, url);
     }
 
     /**

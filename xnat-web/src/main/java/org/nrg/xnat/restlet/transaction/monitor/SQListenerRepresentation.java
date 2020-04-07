@@ -135,10 +135,6 @@ public class SQListenerRepresentation extends SecureResource {
         return json;
     }
 
-    private PersistentStatusQueueManagerI retrieveSQManager() {
-        return new HTTPSessionStatusManagerQueue(this.getHttpSession());
-    }
-
     class HTMLStatusListRepresentation extends OutputRepresentation {
         HTMLStatusListRepresentation(final MediaType mediaType, final StatusList statusList) {
             super(mediaType);

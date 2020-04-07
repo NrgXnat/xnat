@@ -74,6 +74,8 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.FileWriterWrapper;
+import org.nrg.xnat.helpers.transactions.HTTPSessionStatusManagerQueue;
+import org.nrg.xnat.helpers.transactions.PersistentStatusQueueManagerI;
 import org.nrg.xnat.itemBuilders.WorkflowBasedHistoryBuilder;
 import org.nrg.xnat.restlet.XnatItemRepresentation;
 import org.nrg.xnat.restlet.XnatTableRepresentation;
@@ -81,6 +83,7 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.restlet.util.SecureResourceParameterMapper;
+import org.nrg.xnat.status.StatusList;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
@@ -151,6 +154,8 @@ public abstract class SecureResource extends Resource {
             "application/x-mirc-dicom", "MIRC DICOM");
 
     public static final MediaType TEXT_CSV = MediaType.register("text/csv", "CSV");
+
+    public static final String HTTP_SESSION_LISTENER = "http-session-listener";
 
     protected    List<String> actions = null;
     public final String       userName;
@@ -1946,6 +1951,14 @@ public abstract class SecureResource extends Resource {
             WorkflowUtils.fail(workflow, meta);
             throw e;
         }
+    }
+
+    protected void storeStatusList(final String transaction_id, final StatusList sl) throws IllegalArgumentException {
+        this.retrieveSQManager().storeStatusQueue(transaction_id, sl);
+    }
+
+    protected PersistentStatusQueueManagerI retrieveSQManager() {
+        return new HTTPSessionStatusManagerQueue(this.getHttpSession());
     }
 
     private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};

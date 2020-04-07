@@ -53,7 +53,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class Importer extends SecureResource {
     private static final String CRLF = "\r\n";
-    private static final String HTTP_SESSION_LISTENER = "http-session-listener";
     private final Logger logger = LoggerFactory.getLogger(Importer.class);
 
     public Importer(Context context, Request request, Response response) {
@@ -486,14 +485,4 @@ public class Importer extends SecureResource {
 
         return sb.toString();
     }
-
-    private void storeStatusList(final String transaction_id, final StatusList sl) throws IllegalArgumentException {
-        this.retrieveSQManager().storeStatusQueue(transaction_id, sl);
-    }
-
-    private PersistentStatusQueueManagerI retrieveSQManager() {
-        return new HTTPSessionStatusManagerQueue(this.getHttpSession());
-    }
-
-
 }

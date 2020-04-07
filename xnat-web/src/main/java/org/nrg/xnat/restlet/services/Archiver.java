@@ -14,6 +14,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.QueueBasedImageCommit;
@@ -23,6 +24,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.services.prearchive.BatchPrearchiveActionsA;
+import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
@@ -86,6 +88,9 @@ public class Archiver extends BatchPrearchiveActionsA {
             case SRC:
                 super.handleParam(key, value);
                 break;
+            case HTTP_SESSION_LISTENER:
+                _listenerControl = (String) value;
+                break;
             default:
                 getAdditionalValues().put(key, value);
                 break;
@@ -115,20 +120,29 @@ public class Archiver extends BatchPrearchiveActionsA {
             return;
         }
         session.setArchiveReason(false);
-        try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), _overwrite, true)) {
-            final String uri = uploader.submitSync();
-            if (StringUtils.isBlank(uri)) {
-                getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not return a valid data URI.");
-                return;
+        final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session,
+                UriParserUtils.parseURI(getDestination()), _overwrite, true);
+        if (_listenerControl != null) {
+            final StatusList sq = new StatusList();
+            uploader.addStatusListener(sq);
+            storeStatusList(_listenerControl, sq);
+            uploader.submit();
+            getResponse().redirectSeeOther(getContextPath() + "/app/template/XDATScreen_prearchives.vm");
+        } else {
+            try {
+                final String uri = uploader.submitSync();
+                if (_redirect || session.isAutoArchive()) {
+                    getResponse().redirectSeeOther(XDAT.getSiteUrl() + uri);
+                } else {
+                    getResponse().setEntity(uri + CRLF, TEXT_URI_LIST);
+                    getResponse().setStatus(SUCCESS_OK);
+                }
+            } catch (ServerException e) {
+                getResponse().setStatus(e.getStatus(), e.getMessage());
+            } catch (TimeoutException e) {
+                getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() +
+                        " did not complete within the configured timeout interval.");
             }
-            if (_redirect || session.isAutoArchive()) {
-                getResponse().redirectSeeOther(XDAT.getSiteUrl() + uri);
-            } else {
-                getResponse().setEntity(uri + CRLF, TEXT_URI_LIST);
-                getResponse().setStatus(SUCCESS_OK);
-            }
-        } catch (TimeoutException e) {
-            getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + session.toString() + " did not complete within the configured timeout interval.");
         }
     }
 
@@ -165,4 +179,5 @@ public class Archiver extends BatchPrearchiveActionsA {
     private boolean _allowDataDeletion;
     private boolean _overwrite;
     private boolean _redirect;
+    private String  _listenerControl = null;
 }

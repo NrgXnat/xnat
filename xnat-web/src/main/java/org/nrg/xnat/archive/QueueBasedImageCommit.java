@@ -116,7 +116,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
 
             log.debug("Found a message with status {}: {}", _message.getStatus(), _message.getMessage());
             // hack to indicate completion
-            notify(new StatusMessage(this, _message.getStatus(), "XXX" + _message.getMessage()));
+            notifyListeners(new StatusMessage(this, _message.getStatus(), "XXX" + _message.getMessage()));
             return _message;
         } finally {
             log.debug("Removing the QueueBasedImageCommit instance {} from the archive event listener: {}", getArchiveOperationId(), this);
@@ -127,6 +127,12 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     @Override
     public void notify(final StatusMessage message) {
         _message = message;
+        for (final StatusListenerI listener : getListeners()) {
+            listener.notify(message);
+        }
+    }
+
+    private void notifyListeners(final StatusMessage message) {
         for (final StatusListenerI listener : getListeners()) {
             listener.notify(message);
         }

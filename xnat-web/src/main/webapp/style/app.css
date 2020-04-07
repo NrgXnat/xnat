@@ -4315,6 +4315,10 @@ textarea.xml-formatted {
     font-size: inherit;
 }
 
+.prog {
+    overflow-wrap: break-word;
+}
+
 /* accommodate smaller viewports */
 /***********************************************/
 @media screen and (max-width: 1200px) {

@@ -28,12 +28,14 @@ var XNAT = getObject(XNAT);
     //TODO right now, this only monitors compressed uploader, but it should work for any async process, we just need
     // a unified way to poll progress
 
-    var activityTab, cookieTag = 'activities';
+    var activityTab, cookieTag;
 
     XNAT.app = getObject(XNAT.app || {});
 
     XNAT.app.activityTab = activityTab =
         getObject(XNAT.app.activityTab || {});
+
+    XNAT.app.activityTab.cookieTag = cookieTag = 'activities';
 
     activityTab.intervals = {};
 
@@ -246,6 +248,10 @@ var XNAT = getObject(XNAT);
             activityTab.intervals = {};
             activityTab.cancel();
         });
+        $(document).on('click', 'a#logout_user', function() {
+            XNAT.cookie.remove(cookieTag);
+            return true;
+        })
     });
 
     return XNAT.app.activityTab = activityTab;

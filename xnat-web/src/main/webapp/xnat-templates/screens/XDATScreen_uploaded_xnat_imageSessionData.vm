@@ -1,4 +1,5 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #set($target=$content.getURI("/REST/services/archive"))
 #set($allowDataDeletion="false")
 #set($isUpload="true")
@@ -56,9 +57,9 @@ dd.valMessage 	{	width:630px;	}
 	</div>
 </div>
 <script type="text/javascript" src="$content.getURI("scripts/imageSessionData/archive.js")"></script>
-<script>	
+#parse($turbineUtils.getTemplateName("archiveValidator.vm",$om.getXSIType(),$project,"upload"))
+<script>
 	//validation CODES that are not allowed to be overidden
-	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.formattedFailMergeOn;
 	XNAT.app.archiveValidator.xsiType="$om.getXSIType()";
 	#if($src)
 		XNAT.app.archiveValidator.url="$!src";
@@ -79,7 +80,7 @@ dd.valMessage 	{	width:630px;	}
 							.attr("name", "http-session-listener")
 							.attr("value", uploadId)
 			);
-			XNAT.app.activityTab.start('Archival progress', uploadId);
+			XNAT.app.activityTab.start('Upload extraction/review for archival', uploadId);
 			return true;
     	}
     }};

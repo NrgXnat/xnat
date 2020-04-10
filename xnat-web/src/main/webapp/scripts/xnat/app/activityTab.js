@@ -37,7 +37,7 @@ var XNAT = getObject(XNAT);
 
     XNAT.app.activityTab.cookieTag = cookieTag = 'activities';
 
-    activityTab.intervals = {};
+    activityTab.pollers = [];
 
     activityTab.init = function() {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
@@ -64,15 +64,13 @@ var XNAT = getObject(XNAT);
         var $tab = $('#activity-tab');
         createEntry(item, key, $tab);
         var $info = $tab.find(item.divId);
-        activityTab.intervals[key] = window.setInterval(function(){
-            checkImageArchivalProgress(item.statusListenerId, $info, key, item.detailsTag);
-        }, 3000);
+        activityTab.pollers[key] = true;
+        checkImageArchivalProgress(item.statusListenerId, $info, key, item.detailsTag, 0);
         $tab.css('visibility', 'visible');
     };
 
     activityTab.stopPoll = function(key, succeeded) {
-        window.clearInterval(activityTab.intervals[key]);
-        delete activityTab.intervals[key];
+        delete activityTab.pollers[key];
 
         var $info = $('#activity-tab #key' + key);
         if (succeeded) {
@@ -124,11 +122,14 @@ var XNAT = getObject(XNAT);
             details.show();
         });
         $(document).on('click', 'a#close' + key, function() {
-            activityTab.cancel(key. $(this));
+            activityTab.cancel(key, $(this));
         });
     }
 
-    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag) {
+    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag, errCnt) {
+        if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
+            return;
+        }
         $.ajax({
             method: 'GET',
             url: XNAT.url.restUrl('/REST/status/' + statusListenerId,
@@ -145,10 +146,19 @@ var XNAT = getObject(XNAT);
                 var succeeded = populateDetails(div, detailsTag, message, respDat);
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
+                } else {
+                    checkImageArchivalProgress(statusListenerId, div, key, detailsTag, 0);
                 }
             },
             error: function(xhr) {
-                errorHandler(xhr, 'Issue polling archival progress');
+                setTimeout(function() {
+                    if (errCnt < 3) {
+                        checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt);
+                    } else {
+                        activityTab.stopPoll(key, false);
+                        errorHandler(xhr, 'Issue polling archival progress');
+                    }
+                }, 2000);
             }
         });
     }
@@ -242,10 +252,7 @@ var XNAT = getObject(XNAT);
             $('#activity-tab .panel-header a.activity-min').show();
         });
         $(document).on('click', '#activity-tab a.activity-close', function() {
-            $.each(activityTab.intervals, function(key, int) {
-                window.clearInterval(int);
-            });
-            activityTab.intervals = {};
+            activityTab.pollers = {};
             activityTab.cancel();
         });
         $(document).on('click', 'a#logout_user', function() {

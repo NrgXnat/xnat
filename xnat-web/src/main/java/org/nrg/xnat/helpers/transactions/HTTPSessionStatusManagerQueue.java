@@ -19,18 +19,18 @@ public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManag
     }
 
     @Override
-    public StatusList storeStatusQueue(final String id, final StatusList statusList) throws IllegalArgumentException {
+    public synchronized StatusList storeStatusQueue(final String id, final StatusList statusList) throws IllegalArgumentException {
         _session.setAttribute(TransactionUtils.buildTransactionID(id), statusList);
         return statusList;
     }
 
     @Override
-    public StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
+    public synchronized StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
         return (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
     }
 
     @Override
-    public StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
+    public synchronized StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
         final StatusList statusList = retrieveStatusQueue(TransactionUtils.buildTransactionID(id));
         _session.removeAttribute(id);
         return statusList;

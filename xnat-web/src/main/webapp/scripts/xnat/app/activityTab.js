@@ -155,8 +155,11 @@ var XNAT = getObject(XNAT);
                     if (errCnt < 3) {
                         checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt);
                     } else {
+                        var details = xhr.responseText ? ': ' + xhr.responseText : '';
+                        var msg = 'Issue polling archival progress' + details + '. Refresh the page to try again or ' +
+                            'visit the prearchive to check for your session.';
+                        $(detailsTag).append('<div class="prog error">' + msg + '</div>');
                         activityTab.stopPoll(key, false);
-                        errorHandler(xhr, 'Issue polling archival progress');
                     }
                 }, 2000);
             }

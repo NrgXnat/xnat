@@ -9,9 +9,12 @@
 
 package org.nrg.xnat.helpers.transactions;
 
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.xnat.status.StatusList;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManagerI {
     public HTTPSessionStatusManagerQueue(final HttpSession session) {
@@ -27,6 +30,16 @@ public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManag
     @Override
     public synchronized StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
         return (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
+    }
+
+    @Override
+    public synchronized List<StatusMessage> retrieveCopyOfStatusQueueMessages(String id) throws IllegalArgumentException {
+        StatusList sl = (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
+        if (sl != null) {
+            return new ArrayList<>(sl.getMessages());
+        } else {
+            return null;
+        }
     }
 
     @Override

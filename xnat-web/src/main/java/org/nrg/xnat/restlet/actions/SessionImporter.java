@@ -234,24 +234,21 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
             final List<PrearcSession> sessions = importToPrearc(this, (String) params.remove(PrearcImporterA.PREARC_IMPORTER_ATTR), listenerControl, user, fw, prearcParameters, allowSessionMerge, overrideExceptions);
 
             if (sessions.size() == 0) {
-                failed("Upload did not include parsable files for session generation.");
                 throw new ClientException("Upload did not include parsable files for session generation.");
             }
 
             //if prearc=destination, then return
             if (destination instanceof URIManager.PrearchiveURI) {
-                this.completed("Successfully uploaded " + sessions.size() + " sessions to the prearchive.");
+                this.completed("Successfully uploaded " + sessions.size() + " sessions to the prearchive.", false);
                 resetStatus(sessions);
                 List<String> urls = returnURLs(sessions);
-                //Hack to indicate completion
-                this.completed("XXXPrearchive:" + Joiner.on(";").join(urls));
+                this.completed("Prearchive:" + Joiner.on(";").join(urls), true);
                 return urls;
             }
 
             //if unknown destination, only one session supported
             if (sessions.size() > 1) {
                 resetStatus(sessions);
-                failed("Upload included files for multiple imaging sessions.");
                 throw new ClientException("Upload included files for multiple imaging sessions.");
             }
 
@@ -275,14 +272,13 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Delete, sessionData, sessionDir));
                     }
                     //Hack to indicate completion
-                    this.completed("XXXArchive:" + Joiner.on(";").join(urls));
+                    this.completed("Archive:" + Joiner.on(";").join(urls), true);
                     return urls;
                 } else {
-                    completed("Successfully uploaded " + sessions.size() + " sessions to the prearchive.");
+                    completed("Successfully uploaded " + sessions.size() + " sessions to the prearchive.", false);
                     resetStatus(sessions);
                     List<String> urls = returnURLs(sessions);
-                    //Hack to indicate completion
-                    this.completed("XXXPrearchive:" + Joiner.on(";").join(urls));
+                    this.completed("Prearchive:" + Joiner.on(";").join(urls), true);
                     return urls;
                 }
             } catch (Exception e) {
@@ -297,23 +293,19 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
             }
 
         } catch (ClientException | ServerException e) {
-            //Hack to indicate completion
-            this.failed("XXX" + e.getMessage());
+            this.failed(e.getMessage(), true);
             throw e;
         } catch (IOException e) {
             log.error("", e);
-            //Hack to indicate completion
-            this.failed("XXX" + e.getMessage());
+            this.failed(e.getMessage(), true);
             throw new ServerException(e.getMessage(), e);
         } catch (SAXException e) {
             log.error("", e);
-            //Hack to indicate completion
-            this.failed("XXX" + e.getMessage());
+            this.failed(e.getMessage(), true);
             throw new ClientException(e.getMessage(), e);
         } catch (Throwable e) {
             log.error("", e);
-            //Hack to indicate completion
-            this.failed("XXX" + e.getMessage());
+            this.failed(e.getMessage(), true);
             throw new ServerException(e.getMessage(), new Exception());
         }
     }

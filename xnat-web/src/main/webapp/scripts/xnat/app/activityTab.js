@@ -174,17 +174,17 @@ var XNAT = getObject(XNAT);
         try {
             var respPos = jsonobj.msgs[0].length - 1;
             for (var i = 0; i <= respPos; i++) {
-                var level = jsonobj.msgs[0][i].status;
-                var message = jsonobj.msgs[0][i].msg || level;
+                var level = jsonobj.msgs[0][i]['status']
+                var message = jsonobj.msgs[0][i]['msg'] || level;
+                var terminal = jsonobj.msgs[0][i]['terminal'];
                 message = message.charAt(0).toUpperCase() + message.substr(1);
                 if (level === "COMPLETED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
+                    if (terminal) {
                         // stop polling
                         succeeded = true;
 
-                        var dest = message.replace(/^XXX/, '').replace(/:.*/,'');
-                        var urls = message.replace(/^XXX.*\/archive/, '/archive').split(';');
+                        var dest = message.replace(/:.*/,'');
+                        var urls = message.split(';');
                         var urlsHtml;
                         if (dest.toLowerCase().includes('prearchive')) {
                             urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
@@ -204,12 +204,9 @@ var XNAT = getObject(XNAT);
                 } else if (level === "WARNING") {
                     message = '<div class="prog warning">' + message + '</div>';
                 } else if (level === "FAILED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
+                    if (terminal) {
                         // stop polling
                         succeeded = false;
-
-                        message = message.replace(/^XXX/,'');
                         message = '<div class="prog error">Extraction/Review failed: ' + message + '</div>';
                         message += '<div class="warning">Check the ' + prearchiveUrl +
                             ', your data may be available there for manual review.</div>';

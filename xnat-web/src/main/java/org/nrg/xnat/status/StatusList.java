@@ -34,7 +34,7 @@ public class StatusList implements StatusListenerI {
         final StringBuilder sb = new StringBuilder("StatusLog");
         if (!messages.isEmpty()) {
             for (final StatusMessage m : messages) {
-                sb.append(m.getSource()).append(" ").append(m.getStatus()).append(": ").append(m.getMessage());
+                sb.append(m.toString());
                 sb.append(LINE_SEPARATOR);
             }
         }

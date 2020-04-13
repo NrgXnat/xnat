@@ -141,6 +141,7 @@ public class SQListenerRepresentation extends SecureResource {
             final JSONObject element = new JSONObject();
             element.put("status", message.getStatus());
             element.put("msg", message.getMessage());
+            element.put("terminal", message.isTerminal());
             messages.put(element);
         }
 
@@ -151,7 +152,7 @@ public class SQListenerRepresentation extends SecureResource {
         final StringBuilder sb = new StringBuilder("StatusLog");
         if (statusList != null) {
             for (final StatusMessage m : statusList) {
-                sb.append(m.getSource()).append(" ").append(m.getStatus()).append(": ").append(m.getMessage());
+                sb.append(m.toString());
                 sb.append(LINE_SEPARATOR);
             }
         }

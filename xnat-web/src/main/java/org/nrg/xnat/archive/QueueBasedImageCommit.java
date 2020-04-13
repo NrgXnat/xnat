@@ -108,7 +108,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
                 if (stopWatch.getTime(TimeUnit.SECONDS) > timeout) {
                     String msg = "The session " + getPrearcSession().toString() +
                             " did not return a valid data URI within the timeout interval of " + timeout + " seconds.";
-                    return new StatusMessage(this, FAILED, msg);
+                    return new StatusMessage(this, FAILED, msg, true);
                 }
                 log.debug("Checked for message with final status but didn't find it, sleeping for a bit...");
                 Thread.sleep(500);
@@ -116,7 +116,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
 
             log.debug("Found a message with status {}: {}", _message.getStatus(), _message.getMessage());
             // hack to indicate completion
-            notifyListeners(new StatusMessage(this, _message.getStatus(), "XXX" + _message.getMessage()));
+            notifyListeners(new StatusMessage(this, _message.getStatus(), _message.getMessage(), true));
             return _message;
         } finally {
             log.debug("Removing the QueueBasedImageCommit instance {} from the archive event listener: {}", getArchiveOperationId(), this);

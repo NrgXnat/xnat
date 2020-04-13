@@ -3,6 +3,7 @@ package org.nrg.framework.configuration;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import java.util.ArrayList;
@@ -127,6 +128,11 @@ public class SerializerConfig {
     @Bean
     public SerializerService serializerService() throws SAXNotSupportedException, SAXNotRecognizedException, ParserConfigurationException, NrgServiceException {
         return new SerializerService(objectMapperBuilder(), documentBuilderFactory(), saxParserFactory(), transformerFactory(), saxTransformerFactory());
+    }
+
+    @Bean
+    public ObjectMapper objectMapper(final SerializerService serializer) {
+        return serializer.getObjectMapper();
     }
 
     private void setAttributes(final TransformerFactory factory, final String... attributes) {

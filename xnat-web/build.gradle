@@ -617,3 +617,11 @@ publishing {
 def propertyWithDefault(String name, Object value) {
     hasProperty(name) ? property(name) : value
 }
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDir
+        testOutputDir = compileTestJava.destinationDir
+    }
+}

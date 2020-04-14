@@ -271,7 +271,6 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                         final File        sessionDir  = session.getSessionDir();
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Delete, sessionData, sessionDir));
                     }
-                    //Hack to indicate completion
                     this.completed("Archive:" + Joiner.on(";").join(urls), true);
                     return urls;
                 } else {

@@ -12,16 +12,17 @@ package org.nrg.xnat.status;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 
-import java.util.LinkedList;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class StatusList implements StatusListenerI {
+public class StatusList implements StatusListenerI, Serializable {
     @Override
-    public void notify(StatusMessage message) {
+    public synchronized void notify(StatusMessage message) {
         messages.add(message);
     }
 
-    public List<StatusMessage> getMessages() {
+    public synchronized List<StatusMessage> getMessages() {
         return messages;
     }
 
@@ -30,7 +31,7 @@ public class StatusList implements StatusListenerI {
      * @see java.lang.Object#toString()
      */
     @Override
-    public String toString() {
+    public synchronized String toString() {
         final StringBuilder sb = new StringBuilder("StatusLog");
         if (!messages.isEmpty()) {
             for (final StatusMessage m : messages) {
@@ -41,7 +42,7 @@ public class StatusList implements StatusListenerI {
         return sb.toString();
     }
 
+    private List<StatusMessage> messages = new ArrayList<>();
     private final static String LINE_SEPARATOR = System.getProperty("line.separator");
-
-    private List<StatusMessage> messages = new LinkedList<>();
+    private static final long serialVersionUID = 7022501869703068172L;
 }

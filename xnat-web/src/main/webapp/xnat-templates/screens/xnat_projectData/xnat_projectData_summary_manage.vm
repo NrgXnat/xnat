@@ -271,12 +271,14 @@
                                 </TD>
                                 <TD>All image data will be placed into the archive automatically, but anything matching existing files will be rejected. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
                             </TR>
-                            <TR>
-                                <TD NOWRAP>
-                                    <input id="5_prearchive" type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end/>
-                                </TD>
-                                <TD>All image data will be placed into the archive automatically and will overwrite existing files. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
-                            </TR>
+                            #if(!$siteConfig.getBooleanValue("uiProjectHideAutoArchiveOverwrite"))
+                                <TR>
+                                    <TD NOWRAP>
+                                        <input id="5_prearchive" type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end/>
+                                    </TD>
+                                    <TD>All image data will be placed into the archive automatically and will overwrite existing files. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
+                                </TR>
+                            #end
                             <TR>
                                 <TD COLSPAN="2">
                                     <input type="button" id="project_prearchive_save" value="Save" disabled="disabled"/>

@@ -253,7 +253,8 @@ public class EventServiceItemSaveAspect {
                         log.debug("Image Assessor Data Save" + " : xsiType:" + item.getXSIType());
                         triggerImageAssessorCreate(assessor, user);
                     } else {
-                        log.debug("Image Assessor Data Update - no-op");
+                        log.debug("Image Assessor Data Update" + " : xsiType:" + item.getXSIType());
+                        triggerImageAssessorUpdate(assessor, user);
                     }
                 }
                 if(log.isDebugEnabled() && sw.isRunning()) {
@@ -406,7 +407,10 @@ public class EventServiceItemSaveAspect {
     //** Image Assessor Triggers **//
     private void triggerImageAssessorCreate(XnatImageassessordataI imageAssessor, UserI user){
         eventService.triggerEvent(new ImageAssessorEvent(imageAssessor, user.getLogin(), ImageAssessorEvent.Status.CREATED, imageAssessor.getProject()));
+    }
 
+    private void triggerImageAssessorUpdate(XnatImageassessordataI imageAssessor, UserI user){
+        eventService.triggerEvent(new ImageAssessorEvent(imageAssessor, user.getLogin(), ImageAssessorEvent.Status.UPDATED, imageAssessor.getProject()));
     }
 
     //** Resource Triggers **//

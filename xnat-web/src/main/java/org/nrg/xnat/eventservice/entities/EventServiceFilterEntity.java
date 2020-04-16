@@ -17,6 +17,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.Map;
 
 @Slf4j
 @Entity
-public class EventServiceFilterEntity {
+public class EventServiceFilterEntity implements Serializable {
 
     public EventServiceFilterEntity() {}
 

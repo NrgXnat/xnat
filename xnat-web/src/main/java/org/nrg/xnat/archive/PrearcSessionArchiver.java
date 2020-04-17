@@ -50,6 +50,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
+import org.nrg.xnat.services.archive.SubjectAssessorLabelingService;
+import org.nrg.xnat.services.archive.SubjectAssessorValidationService;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
@@ -59,8 +61,7 @@ import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
 
-
-
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -192,6 +193,10 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             label = (String) params.get(LABEL2);
         }
 
+        if (StringUtils.isEmpty(label)) {
+            label = applyPluginLabeling();
+        }
+
         //the previous code allows the value in the session xml to be overridden by passed parameters.
         //if they aren't there, then it should default to the xml label
         if (StringUtils.isEmpty(label) && !StringUtils.isEmpty(src.getLabel())) {
@@ -213,6 +218,61 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         if (!XNATUtils.hasValue(src.getLabel())) {
             failed("unable to deduce session label");
             throw new ClientException("unable to deduce session label");
+        }
+    }
+
+    @Nullable
+    private String applyPluginLabeling() {
+        List<SubjectAssessorLabelingService> services = null;
+        try {
+            Map<String, SubjectAssessorLabelingService> serviceMap =  XDAT.getContextService()
+                    .getBeansOfType(SubjectAssessorLabelingService.class);
+            if (serviceMap != null) {
+                services = new ArrayList<>(serviceMap.values());
+            }
+        } catch (Exception e) {
+            log.error("Unable to retrieve injected SessionLabelingService beans", e);
+            return null;
+        }
+
+        if (services == null || services.isEmpty()) {
+            log.trace("No SessionLabelingService beans");
+            return null;
+        }
+
+        if (services.size() != 1) {
+            log.warn("Multiple plugins with SessionLabelingService beans: {}. First wins, no order enforced", services);
+        }
+
+        for (SubjectAssessorLabelingService s : services) {
+            String label = s.determineLabel(src, params, user);
+            if (label != null) {
+                return label;
+            }
+        }
+        return null;
+    }
+
+    protected void validateWithPlugins() throws ServerException, ClientException {
+        List<SubjectAssessorValidationService> services = null;
+        try {
+            Map<String, SubjectAssessorValidationService> serviceMap =  XDAT.getContextService()
+                    .getBeansOfType(SubjectAssessorValidationService.class);
+            if (serviceMap != null) {
+                services = new ArrayList<>(serviceMap.values());
+            }
+        } catch (Exception e) {
+            log.error("Unable to retrieve injected ExperimentValidationService beans", e);
+            return;
+        }
+
+        if (services == null || services.isEmpty()) {
+            log.trace("No ExperimentValidationService beans");
+            return;
+        }
+
+        for (SubjectAssessorValidationService s : services) {
+            s.validate(src, params, user);
         }
     }
 
@@ -520,6 +580,15 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 
                 if (XDAT.getBoolSiteConfigurationProperty("verifyComplianceInPrearcSessionReview", false)) {
                     verifyCompliance();
+                }
+
+                try {
+                    validateWithPlugins();
+                } catch (ClientException e) {
+                    // ServerException exceptions ought to be thrown always, ClientException only if overrideExceptions=false
+                    if (!overrideExceptions) {
+                        throw e;
+                    }
                 }
 
                 if (arcSessionDir.exists()) {

@@ -87,13 +87,15 @@ var XNAT = getObject(XNAT);
         if (key) {
             activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
             delete activities[key];
+            if ($row) {
+                $row.parents('div.item').hide();
+            }
         }
         if ($.isEmptyObject(activities)) {
             XNAT.cookie.remove(cookieTag);
             $('#activity-tab').css('visibility', 'hidden');
         } else {
             XNAT.cookie.set(cookieTag, activities, {});
-            $row.parents('div.item').hide();
         }
     };
 

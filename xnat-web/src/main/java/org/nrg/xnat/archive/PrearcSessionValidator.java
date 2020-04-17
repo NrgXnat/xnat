@@ -216,6 +216,14 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		//verify compliance with DICOM whitelist/blacklist
 		verifyCompliance();
 
+		try {
+			validateWithPlugins();
+		} catch (ClientException e) {
+			warn(16, e.getMessage());
+		} catch (ServerException e) {
+			fail(17, e.getMessage());
+		}
+
 		return notices;
 	}
 

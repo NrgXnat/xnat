@@ -1,12 +1,48 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="dataType" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="exptCounts" type="java.util.Hashtable" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="popup" type="java.lang.Boolean" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+
+#set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+#set($projectUploadImagesFromActionsBox = "projectUploadImagesFromActionsBox")
+
 #if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
     #if(!$siteConfig.getBooleanValue("projectUploadZipFromActionsBox"))
         <li class="yuimenuitem">
             <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
         </li>
     #else
+       #set($importHandlerTypesWithUploadEnabled = $siteConfig.projectUploadImagesFromActionsBox)
+       #if($importHandlerTypesWithUploadEnabled)
+	#set($importHandlerTypesWithUploadEnabledLengthMinusOne = $importHandlerTypesWithUploadEnabled.length() - 1)
+	#set($importHandlerTypesWithUploadEnabledDropDown = $importHandlerTypesWithUploadEnabled.substring(1, $importHandlerTypesWithUploadEnabledLengthMinusOne).split(","))
+
         <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="#insertbox">Upload Images</a>
+                <div id="insertbox" class="yuimenu">
+	            <div class="bd">
+			<ul class="first-of-type" style="width: 170px;">
+			     #foreach ($key in $importHandlerTypesWithUploadEnabledDropDown)
+				#set($keyLengthMinusOne = $key.length() - 1)
+				#set($importHandlerType = $key.substring(1,$keyLengthMinusOne).trim())
+	                            <li class="yuimenuitem">
+		                          <a id="uploadImages" data-project="$project.getId()" data-importhandler="$importHandlerType">$importHandlerType</a>
+		                     </li>
+			     #end	
+			</ul>
+		    </div>
+		</div>    
+        </li>
+       #else
+	<li class="yuimenuitem">
             <a id="uploadImages" data-project="$project.getId()">Upload Images</a>
         </li>
+       #end
         <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>

@@ -37,13 +37,17 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
         } else {
             loc = 'project: ' + config.project;
         }
+        var importHandler = 'DICOM or ECAT';
+        if (config.importhandler) {
+		  importHandler = config.importhandler;
+		}
 
         xmodal.open({
             id: id,
             kind: 'dialog',
             title: 'Upload images to ' + loc,
             content: spawn('div', [
-                spawn('p', ['Upload zipped (.zip or .tar.gz) DICOM or ECAT image files to your ' +
+                spawn('p', ['Upload zipped (.zip or .tar.gz) ' + importHandler + ' image files to your ' +
                     loc.replace(/:.*/,'')]),
                 spawn('p', ['Review ', spawn('a|href="' + XNAT.url.fullUrl('/app/template/UploadOptions.vm')
                     + '"', {}, 'alternative upload options'), '.']),

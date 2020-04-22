@@ -171,6 +171,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 visit = null;
             }
 
+            final String subtype;
+            if (_parameters.containsKey(URIManager.SUBTYPE_LABEL)) {
+                subtype = (String) _parameters.get(URIManager.SUBTYPE_LABEL);
+                logger.trace("using provided subtype label {}", _parameters.get(URIManager.SUBTYPE_LABEL));
+            } else {
+                subtype = null;
+            }
+
             final String subject;
             if (_parameters.containsKey(URIManager.SUBJECT_ID)) {
                 subject = (String) _parameters.get(URIManager.SUBJECT_ID);
@@ -199,6 +207,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setName(sessionLabel);
                 initialize.setProject(project == null ? null : project.getId());
                 initialize.setVisit(visit);
+                initialize.setProtocol(subtype);
                 Date studyDate=dicom.getDate(Tag.StudyDate);
                 try {
         			Date d2=dicom.getDate(Tag.StudyTime);

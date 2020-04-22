@@ -115,7 +115,6 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
             }
 
             log.debug("Found a message with status {}: {}", _message.getStatus(), _message.getMessage());
-            // hack to indicate completion
             notifyListeners(new StatusMessage(this, _message.getStatus(), _message.getMessage(), true));
             return _message;
         } finally {

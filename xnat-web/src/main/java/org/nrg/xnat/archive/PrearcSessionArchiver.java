@@ -47,6 +47,7 @@ import org.nrg.xnat.helpers.merge.MergePrearcToArchiveSession;
 import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
+import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
@@ -193,7 +194,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             label = (String) params.get(LABEL2);
         }
 
-        if (StringUtils.isEmpty(label)) {
+        if (StringUtils.isEmpty(label) && !SessionData.UPLOADER.equals(params.get(URIManager.SOURCE))) {
             label = applyPluginLabeling();
         }
 

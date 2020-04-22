@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="ResourceEvent")
 public class ResourceEvent extends CombinedEventServiceEvent<ResourceEvent, XnatResourcecatalogI>  {
 
-    public enum Status {CREATED};
+    public enum Status {CREATED, UPDATED};
 
     public ResourceEvent(){};
 

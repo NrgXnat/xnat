@@ -24,6 +24,7 @@ import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
@@ -231,18 +232,30 @@ public class EventServiceItemSaveAspect {
                         project = (String) (item.getParent()).getProperty("id");
                     }
                 }
-                log.debug("SessionEvent.Status.UPDATED detected - no-op");
-                triggerResourceCreate(resource, user, project);
+                log.debug("Resource.Status.UPDATED detected");
+                triggerResourceUpdate(resource, user, project);
 
             } else if (isItemA(item, XnatType.SCAN)) {
                 XnatImagescandataI sc = (XnatImagescandata)item;
-                String project = null;
                 XnatImagesessiondata session = ((XnatImagescandata) sc).getImageSessionData();
-                project = session == null ? null : session.getProject();
+                final String project = session == null ? null : session.getProject();
                 List<String> scanIds = xnatObjectIntrospectionService.getStoredScanIds(session);
                 if(scanIds.contains(sc.getId())) {
-                    log.debug("Image Scan Datat - Updated");
+                    log.debug("Image Scan Data - Updated");
                     triggerScanUpdate(sc, project, user);
+
+                    // Check for existing resource changes
+                    List<String> preResourceLabels = xnatObjectIntrospectionService.getStoredScanResourceLabels(sc);
+                    // ** Proceed with save operation ** //
+                    proceedingReturn = proceedAndCaptureException(joinPoint);
+                    if(proceedingReturn != null && proceedingReturn.throwable == null) {
+                        // Trigger resource create on any new resources
+                        sc.getFile().stream()
+                          .filter(rs -> rs instanceof XnatResourcecatalog)
+                          .filter(rs -> !preResourceLabels.contains(rs.getLabel()))
+                          .forEach(rs -> triggerResourceCreate(rs, user, project));
+                    }
+
                 } else {
                     log.debug("Image Scan Data Save : xsiType:" + item.getXSIType());
                     triggerScanCreate(sc, project, user);
@@ -425,9 +438,14 @@ public class EventServiceItemSaveAspect {
 
     //** Resource Triggers **//
     private void triggerResourceCreate(XnatAbstractresourceI resource, UserI user, String project){
+        log.debug("Resource.Status.CREATED detected");
         eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI)resource, user.getLogin(), ResourceEvent.Status.CREATED, project));
     }
 
+    private void triggerResourceUpdate(XnatAbstractresourceI resource, UserI user, String project){
+        log.debug("Resource.Status.UPDATED detected");
+        eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI)resource, user.getLogin(), ResourceEvent.Status.UPDATED, project));
+    }
 
     private enum XnatType {
         USER,

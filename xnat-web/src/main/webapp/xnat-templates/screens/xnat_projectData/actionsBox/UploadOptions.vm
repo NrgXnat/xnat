@@ -18,7 +18,7 @@
         </li>
     #else
        #set($importHandlerTypesWithUploadEnabled = $siteConfig.projectUploadImagesFromActionsBox)
-       #if($importHandlerTypesWithUploadEnabled)
+       #if($importHandlerTypesWithUploadEnabled && "$!importHandlerTypesWithUploadEnabled"!="" && "$!importHandlerTypesWithUploadEnabled"!="{}")
 	#set($importHandlerTypesWithUploadEnabledLengthMinusOne = $importHandlerTypesWithUploadEnabled.length() - 1)
 	#set($importHandlerTypesWithUploadEnabledDropDown = $importHandlerTypesWithUploadEnabled.substring(1, $importHandlerTypesWithUploadEnabledLengthMinusOne).split(","))
 

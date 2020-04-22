@@ -102,8 +102,8 @@ var XNAT = getObject(XNAT);
     function createEntry(item, key, parent) {
         parent.find('.panel-body').append('<div id="' + item.divId + '" class="item">' + item.title +
             '<div class="actions">' +
-            '<a id="details' + key + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
             '<a id="close' + key + '" class="icn close"><i class="fa fa-close"></i></a>' +
+            '<a id="details' + key + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
             '</div></div>');
 
         var details = XNAT.ui.dialog.init({
@@ -143,7 +143,8 @@ var XNAT = getObject(XNAT);
                 } catch (e) {
                     console.log(e);
                     processError(statusListenerId, div, key, detailsTag, errCnt,
-                        e.name + ' (js): ' + e.message)
+                        e.name + ' (js): ' + e.message);
+                    return;
                 }
 
                 if (succeeded !== null) {
@@ -154,13 +155,13 @@ var XNAT = getObject(XNAT);
             },
             error: function(xhr) {
                 processError(statusListenerId, div, key, detailsTag, errCnt,
-                    xhr.responseText ? ': ' + xhr.responseText : '')
+                    xhr.responseText ? ': ' + xhr.responseText : '');
             }
         });
     }
 
     function processError(statusListenerId, div, key, detailsTag, errCnt, errDetails) {
-        if (errCnt < 3) {
+        if (errCnt < 2) {
             setTimeout(function() {
                 checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt);
             }, 2000);
@@ -223,7 +224,10 @@ var XNAT = getObject(XNAT);
             }
             messages += message;
         }
-        $(detailsTag).html(messages);
+        if (messages) {
+            // if we didn't receive any messages, leave what's there
+            $(detailsTag).html(messages);
+        }
         return succeeded;
     }
 

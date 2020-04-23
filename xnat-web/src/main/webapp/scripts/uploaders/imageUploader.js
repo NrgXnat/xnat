@@ -39,8 +39,8 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
         }
         var importHandler = 'DICOM or ECAT';
         if (config.importhandler) {
-		  importHandler = config.importhandler;
-		}
+            importHandler = config.importhandler;
+        }
 
         xmodal.open({
             id: id,
@@ -241,7 +241,38 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
         return (new Date()).toISOString().replace(/[^\w]/gi,'');
     }
 
+    XNAT.app.imageUploader.openUploadViaDesktopClient = function(config) {
+        XNAT.xhr.get({
+            url: XNAT.url.rootUrl('/data/services/tokens/issue'),
+            fail: function(e){
+                console.log(e);
+                XNAT.ui.dialog.message({
+                    title: 'Unexpected error',
+                    content: 'Could not issue user token for XNAT Desktop Client.'
+                });
+            },
+            success: function(data){
+                var token = JSON.parse(data);
+                const prms = new URLSearchParams();
+                prms.append('a', token.alias);
+                prms.append('s', token.secret);
+                for (var key of Object.keys(config)) {
+                    if (config[key]) {
+                        prms.append(key, config[key]);
+                    }
+                }
+                var url = XNAT.url.xnatUrl('/upload?' + prms.toString());
+                window.location.assign(url);
+                XNAT.ui.dialog.closeAll();
+            }
+        })
+    };
+
     $(document).on('click', 'a#uploadImages, a.uploadImages', function() {
-        XNAT.app.imageUploader.openUploadModal($(this).data());
+        if ($(this).data('modal') === 'true') {
+            XNAT.app.imageUploader.openUploadModal($(this).data());
+        } else {
+            XNAT.app.imageUploader.openUploadViaDesktopClient($(this).data());
+        }
     });
 }));

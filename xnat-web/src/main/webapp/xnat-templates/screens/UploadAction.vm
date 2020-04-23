@@ -1,0 +1,55 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="dataType" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="exptCounts" type="java.util.Hashtable" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="popup" type="java.lang.Boolean" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+
+#macro( uploadDicom $name )
+    <a class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"
+       data-modal="$!siteConfig.getBooleanValue("uploadDicomViaModal")">
+        $name
+    </a>
+#end
+
+#set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>
+    <link type="text/css" rel="stylesheet" href="$content.getURI("style/uploaders/fileuploader.css")">
+    #if($importHandlerTypesWithUploadEnabled && "$!importHandlerTypesWithUploadEnabled"!="" &&
+        "$!importHandlerTypesWithUploadEnabled"!="{}")
+        #set($importHandlerTypesWithUploadEnabledLengthMinusOne = $importHandlerTypesWithUploadEnabled.length() - 1)
+        #set($importHandlerTypesWithUploadEnabledDropDown = $importHandlerTypesWithUploadEnabled.substring(1, $importHandlerTypesWithUploadEnabledLengthMinusOne).split(
+            ","))
+
+        <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="#insertbox">Upload Images</a>
+            <div id="insertbox" class="yuimenu">
+                <div class="bd">
+                    <ul class="first-of-type" style="width: 170px;">
+                        #foreach ($key in $importHandlerTypesWithUploadEnabledDropDown)
+                            #set($keyLengthMinusOne = $key.length() - 1)
+                            #set($importHandlerType = $key.substring(1,$keyLengthMinusOne).trim())
+                            <li class="yuimenuitem">
+                                <a class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"
+                                   data-importhandler="$!importHandlerType">$importHandlerType</a>
+                            </li>
+                        #end
+                        <li class="yuimenuitem">
+                            #uploadDicom("DICOM or ECAT")
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </li>
+    #else
+        <li class="yuimenuitem">
+            #uploadDicom("Upload Images")
+        </li>
+    #end
+#end

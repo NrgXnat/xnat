@@ -1,6 +1,7 @@
 var XNAT = getObject(XNAT);
 XNAT.app = getObject(XNAT.app || {});
 XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
+XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -263,16 +264,35 @@ XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
                 }
                 var url = XNAT.url.xnatUrl('/upload?' + prms.toString());
                 window.location.assign(url);
-                XNAT.ui.dialog.closeAll();
+                var warning = XNAT.ui.dialog.message({
+                    title: 'XNAT Desktop Client',
+                    content: 'If nothing prompts from browser, ' +
+                        '<a href="https://download.xnat.org/desktop-client" target="_blank">' +
+                        'download and install XNAT Desktop Client' +
+                        '</a> and try again.'
+                });
+                setTimeout(function(){
+                    XNAT.ui.dialog.close(warning, true);
+                }, 5000);
             }
-        })
+        });
+    };
+
+    XNAT.app.imageUploader.uploadImages = function(config) {
+        const datatype = config.datatype;
+        // If import handler is not specified, let's see if we have a mapping for the data type
+        if (!config.importhandler && datatype && XNAT.app.uploadDatatypeHandlerMap.hasOwnProperty(datatype)) {
+            config.importhandler = XNAT.app.uploadDatatypeHandlerMap[datatype];
+        }
+        // If no import handler and config.modal undefined or false, open Desktop Client
+        if (!config.importhandler && !config.modal) {
+            XNAT.app.imageUploader.openUploadViaDesktopClient(config);
+        } else {
+            XNAT.app.imageUploader.openUploadModal(config);
+        }
     };
 
     $(document).on('click', 'a#uploadImages, a.uploadImages', function() {
-        if ($(this).data('modal') === 'true') {
-            XNAT.app.imageUploader.openUploadModal($(this).data());
-        } else {
-            XNAT.app.imageUploader.openUploadViaDesktopClient($(this).data());
-        }
+        XNAT.app.imageUploader.uploadImages($(this).data());
     });
 }));

@@ -189,6 +189,9 @@ function confirmValues(_focus){
 
 function getValueById(id){
 	var box=document.getElementById(id);
+	if(box == undefined || box == null){
+		return {"value":""};
+	}
 	if(box.value==undefined){
 		if(box.selectedIndex!=undefined){
 			return {"value":box.options[box.selectedIndex].value,obj:box};

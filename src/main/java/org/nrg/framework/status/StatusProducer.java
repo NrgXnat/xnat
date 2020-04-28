@@ -48,7 +48,11 @@ public class StatusProducer extends BasicStatusPublisher {
     }
 
     protected final void report(final Status status, final String message) {
-        publish(new StatusMessage(_control, status, message));
+        report(status, message, false);
+    }
+
+    protected final void report(final Status status, final String message, final boolean terminal) {
+        publish(new StatusMessage(_control, status, message, terminal));
     }
 
     protected final void processing(final String message) {
@@ -60,11 +64,19 @@ public class StatusProducer extends BasicStatusPublisher {
     }
 
     protected final void failed(final String message) {
-        report(FAILED, message);
+        failed(message, false);
+    }
+
+    protected final void failed(final String message, boolean terminal) {
+        report(FAILED, message, terminal);
     }
 
     protected final void completed(final String message) {
-        report(COMPLETED, message);
+        completed(message, false);
+    }
+
+    protected final void completed(final String message, boolean terminal) {
+        report(COMPLETED, message, terminal);
     }
 
     private final Object _control;

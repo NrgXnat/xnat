@@ -285,7 +285,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             config.importhandler = XNAT.app.uploadDatatypeHandlerMap[datatype];
         }
         // If no import handler and config.modal undefined or false, open Desktop Client
-        if (!config.importhandler && !config.modal) {
+        if (!config.importhandler && (!config.modal || config.modal === "false")) {
             XNAT.app.imageUploader.openUploadViaDesktopClient(config);
         } else {
             XNAT.app.imageUploader.openUploadModal(config);

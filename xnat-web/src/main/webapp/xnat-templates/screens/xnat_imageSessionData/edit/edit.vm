@@ -197,6 +197,8 @@ $page.setVlinkColor($ui.vlink)
     <br><br>
     <hr>
 
+    #addCustomScreens($om.getXSIType() "edit/postNotes")
+
     #xdatEditProps($item $edit_screen)
 
     #if($isUpload)

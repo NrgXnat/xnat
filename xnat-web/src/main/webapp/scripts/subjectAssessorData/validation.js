@@ -77,9 +77,7 @@ function confirmValues(_focus){
 
 function getValueById(id){
 	var box=document.getElementById(id);
-	if(box == undefined || box == null){
-		return {"value":""};
-	}
+	if(box==null){ return null; }
 	
 	if(box.value==undefined){
 		if(box.selectedIndex!=undefined){

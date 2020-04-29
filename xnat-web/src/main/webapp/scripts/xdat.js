@@ -931,7 +931,7 @@ function toggle_ul(n){
 
 function getValueById(id){
 	var box=document.getElementById(id);
-	if(box == undefined || box == null){
+	if(box==undefined){
 		return {"value":""};
 	}
 	if(box.value==undefined){

@@ -9,9 +9,12 @@
 
 package org.nrg.xnat.helpers.transactions;
 
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.xnat.status.StatusList;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManagerI {
     public HTTPSessionStatusManagerQueue(final HttpSession session) {
@@ -19,18 +22,28 @@ public class HTTPSessionStatusManagerQueue implements PersistentStatusQueueManag
     }
 
     @Override
-    public StatusList storeStatusQueue(final String id, final StatusList statusList) throws IllegalArgumentException {
+    public synchronized StatusList storeStatusQueue(final String id, final StatusList statusList) throws IllegalArgumentException {
         _session.setAttribute(TransactionUtils.buildTransactionID(id), statusList);
         return statusList;
     }
 
     @Override
-    public StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
+    public synchronized StatusList retrieveStatusQueue(final String id) throws IllegalArgumentException {
         return (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
     }
 
     @Override
-    public StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
+    public synchronized List<StatusMessage> retrieveCopyOfStatusQueueMessages(String id) throws IllegalArgumentException {
+        StatusList sl = (StatusList) _session.getAttribute(TransactionUtils.buildTransactionID(id));
+        if (sl != null) {
+            return new ArrayList<>(sl.getMessages());
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public synchronized StatusList deleteStatusQueue(final String id) throws IllegalArgumentException {
         final StatusList statusList = retrieveStatusQueue(TransactionUtils.buildTransactionID(id));
         _session.removeAttribute(id);
         return statusList;

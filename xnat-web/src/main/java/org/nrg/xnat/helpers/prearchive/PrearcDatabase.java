@@ -16,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.dicomtools.filters.DicomFilterService;
@@ -24,6 +25,7 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.status.StatusListenerI;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
@@ -37,7 +39,6 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
 import org.nrg.xnat.archive.XNATSessionBuilder;
@@ -979,7 +980,13 @@ public final class PrearcDatabase {
         LockAndSync<String> l = new LockAndSync<String>(prearcDIR, timestamp, project, sd.getStatus()) {
             String extSync() throws SyncFailedException {
                 try {
-                    return archiver.call();
+                    StatusMessage result = archiver.call();
+                    StatusMessage.Status status = result.getStatus();
+                    if (status == StatusMessage.Status.COMPLETED) {
+                        return result.getMessage();
+                    } else {
+                        throw new SyncFailedException(status + ": " + result.getMessage());
+                    }
                 } catch (Exception e) {
                     throw new SyncFailedException(e.getMessage(), e);
                 }

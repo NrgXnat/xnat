@@ -28,88 +28,82 @@ var XNAT = getObject(XNAT);
     //TODO right now, this only monitors compressed uploader, but it should work for any async process, we just need
     // a unified way to poll progress
 
-    var activityTab, cookieTag = 'activities';
+    var activityTab, cookieTag;
 
     XNAT.app = getObject(XNAT.app || {});
 
     XNAT.app.activityTab = activityTab =
         getObject(XNAT.app.activityTab || {});
 
-    activityTab.intervals = {};
+    XNAT.app.activityTab.cookieTag = cookieTag = 'activities';
+
+    activityTab.pollers = [];
 
     activityTab.init = function() {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-        $.each(activities, function(idx, item) {
-            activityTab.startPoll(item, idx);
+        $.each(activities, function(key, item) {
+            activityTab.startPoll(item, key);
         });
     };
 
     activityTab.start = function(title, statusListenerId) {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}"),
-            idx = (new Date()).toISOString().replace(/[^\w]/gi, '');
+            key = (new Date()).toISOString().replace(/[^\w]/gi, '');
         var item = {
             title: title,
             statusListenerId: statusListenerId,
-            divId: 'idx' + idx,
-            detailsTag: 'div#activity-details-' + idx
+            divId: 'key' + key,
+            detailsTag: 'div#activity-details-' + key
         };
-        activities[idx] = item;
+        activities[key] = item;
         XNAT.cookie.set(cookieTag, activities, {});
-        activityTab.startPoll(item, idx);
+        activityTab.startPoll(item, key);
     };
 
-    activityTab.startPoll = function(item, idx) {
+    activityTab.startPoll = function(item, key) {
         var $tab = $('#activity-tab');
-        createEntry(item, idx, $tab);
+        createEntry(item, key, $tab);
         var $info = $tab.find(item.divId);
-        activityTab.intervals[idx] = window.setInterval(function(){
-            checkImageArchivalProgress(item.statusListenerId, $info, idx, item.detailsTag);
-        }, 3000);
+        activityTab.pollers[key] = true;
+        checkImageArchivalProgress(item.statusListenerId, $info, key, item.detailsTag, 0);
         $tab.css('visibility', 'visible');
     };
 
-    activityTab.stopPoll = function(idx, succeeded) {
-        window.clearInterval(activityTab.intervals[idx]);
-        delete activityTab.intervals[idx];
-        activityTab.stop(idx);
+    activityTab.stopPoll = function(key, succeeded) {
+        delete activityTab.pollers[key];
 
-        var $info = $('#activity-tab #idx' + idx);
+        var $info = $('#activity-tab #key' + key);
         if (succeeded) {
             $info.addClass('text-success').prepend('<i class="fa fa-check" style="margin-right:3px"></i>');
         } else {
             $info.addClass('text-error').prepend('<i class="fa fa-minus-circle" style="margin-right:3px"></i>');
         }
-        $info.find('#close' + idx).show();
-        $info.find('#details' + idx).html('<i class="fa fa-expand"></i>');
+        $info.find('#close' + key).show();
+        $info.find('#details' + key).html('<i class="fa fa-expand"></i>');
     };
 
-    activityTab.stop = function(idx) {
-        if (noOtherActivities()) {
+    activityTab.cancel = function(key, $row) {
+        var activities = {};
+        if (key) {
+            activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
+            delete activities[key];
+            if ($row) {
+                $row.parents('div.item').hide();
+            }
+        }
+        if ($.isEmptyObject(activities)) {
             XNAT.cookie.remove(cookieTag);
+            $('#activity-tab').css('visibility', 'hidden');
         } else {
-            var activities =  JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-            delete activities[idx];
             XNAT.cookie.set(cookieTag, activities, {});
         }
     };
 
-    activityTab.close = function(idx) {
-        activityTab.stop();
-        $('#activity-tab #idx' + idx).remove();
-        if (noOtherActivities()) {
-            $('#activity-tab').css('visibility', 'hidden');
-        }
-    };
-
-    function noOtherActivities() {
-        return Object.keys(activityTab.intervals).length === 0;
-    }
-
-    function createEntry(item, idx, parent) {
+    function createEntry(item, key, parent) {
         parent.find('.panel-body').append('<div id="' + item.divId + '" class="item">' + item.title +
             '<div class="actions">' +
-            '<a id="details' + idx + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
-            '<a id="close' + idx + '" class="icn close"><i class="fa fa-close"></i></a>' +
+            '<a id="close' + key + '" class="icn close"><i class="fa fa-close"></i></a>' +
+            '<a id="details' + key + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
             '</div></div>');
 
         var details = XNAT.ui.dialog.init({
@@ -126,98 +120,114 @@ var XNAT = getObject(XNAT);
             ]
         });
 
-        $(document).on('click', 'a#details' + idx, function() {
+        $(document).on('click', 'a#details' + key, function() {
             details.show();
         });
-        $(document).on('click', 'a#close' + idx, function() {
-            activityTab.close(idx);
+        $(document).on('click', 'a#close' + key, function() {
+            activityTab.cancel(key, $(this));
         });
     }
 
-    function checkImageArchivalProgress(statusListenerId, div, idx, detailsTag) {
+    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag, errCnt) {
+        if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
+            return;
+        }
         $.ajax({
             method: 'GET',
             url: XNAT.url.restUrl('/REST/status/' + statusListenerId,
                 {format: 'json', stamp: (new Date()).getTime()}),
             success: function(respDat) {
-                var message;
-                // handle response
-                var respPos = respDat.msgs[0].length - 1;
-                if (respDat.msgs[0].length > 0) {
-                    if (respDat.msgs[0].length > 0) {
-                        message = respDat.msgs[0][respPos].msg;
-                    }
+                var succeeded = null;
+                try {
+                    succeeded = populateDetails(div, detailsTag, respDat);
+                } catch (e) {
+                    console.log(e);
+                    processError(statusListenerId, div, key, detailsTag, errCnt,
+                        e.name + ' (js): ' + e.message);
+                    return;
                 }
-                var succeeded = populateDetails(div, detailsTag, message, respDat);
+
                 if (succeeded !== null) {
-                    activityTab.stopPoll(idx, succeeded);
+                    activityTab.stopPoll(key, succeeded);
+                } else {
+                    checkImageArchivalProgress(statusListenerId, div, key, detailsTag, 0);
                 }
             },
             error: function(xhr) {
-                errorHandler(xhr, 'Issue polling archival progress');
+                processError(statusListenerId, div, key, detailsTag, errCnt,
+                    xhr.responseText ? ': ' + xhr.responseText : '');
             }
         });
     }
 
-    function populateDetails(div, detailsTag, msg, jsonobj) {
+    function processError(statusListenerId, div, key, detailsTag, errCnt, errDetails) {
+        if (errCnt < 2) {
+            setTimeout(function() {
+                checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt);
+            }, 2000);
+        } else {
+            var msg = 'Issue polling archival progress' + errDetails + '. Refresh the page to try again or ' +
+                'visit the prearchive to check for your session.';
+            $(detailsTag).append('<div class="prog error">' + msg + '</div>');
+            activityTab.stopPoll(key, false);
+        }
+    }
+
+    function populateDetails(div, detailsTag, jsonobj) {
         var messages = "", succeeded = null,
             prearchiveUrl = '<a target="_blank" href="' +
                 XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
                 '">prearchive</a>';
-        try {
-            var respPos = jsonobj.msgs[0].length - 1;
-            for (var i = 0; i <= respPos; i++) {
-                var level = jsonobj.msgs[0][i].status;
-                var message = jsonobj.msgs[0][i].msg;
-                message = message.charAt(0).toUpperCase() + message.substr(1);
-                if (level === "COMPLETED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
-                        // stop polling
-                        succeeded = true;
+        var respPos = jsonobj.msgs[0].length - 1;
+        for (var i = 0; i <= respPos; i++) {
+            var level = jsonobj.msgs[0][i]['status'];
+            var message = jsonobj.msgs[0][i]['msg'] || level;
+            var terminal = jsonobj.msgs[0][i]['terminal'];
+            message = message.charAt(0).toUpperCase() + message.substr(1);
+            if (level === "COMPLETED") {
+                if (terminal) {
+                    // stop polling
+                    succeeded = true;
 
-                        var dest = message.replace(/^XXX/, '').replace(/:.*/,'');
-                        var urls = message.replace(/^XXX.*:/, '').split(';');
-                        var urlsHtml;
-                        if (dest.toLowerCase().includes('prearchive')) {
-                            urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
-                        } else {
-                            urlsHtml = $.map(urls, function(url) {
-                                var id = url.replace(/.*\//, '');
-                                return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
-                            }).join(', ');
-                        }
-
-                        msg = urls.length + ' session(s) successfully uploaded to ' + dest;
-                        message = msg + ': ' + urlsHtml;
-                    }
-                    message = '<div class="prog success">' + message + '</div>';
-                } else if (level === "PROCESSING") {
-                    message = '<div class="prog info">' + message + '</div>';
-                } else if (level === "WARNING") {
-                    message = '<div class="prog warning">' + message + '</div>';
-                } else if (level === "FAILED") {
-                    // Hack to indicate processing done
-                    if (message.startsWith("XXX")) {
-                        // stop polling
-                        succeeded = false;
-
-                        message = message.replace(/^XXX/,'');
-                        message = '<div class="prog error">Extraction/Review failed: ' + message + '</div>';
-                        message += '<div class="warning">Check the ' + prearchiveUrl +
-                            ', your data may be available there for manual review.</div>';
+                    var dest = message.replace(/:.*/, '');
+                    var urls = message.replace(/^.*:/, '').split(';');
+                    var urlsHtml;
+                    if (dest.toLowerCase().includes('prearchive')) {
+                        urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
                     } else {
-                        message = '<div class="prog error">' + message + '</div>';
+                        urlsHtml = $.map(urls, function (url) {
+                            var id = url.replace(/.*\//, '');
+                            return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
+                        }).join(', ');
                     }
-                } else {
-                    message = '<div class="prog info">' + message + '</div>';
+
+                    msg = urls.length + ' session(s) successfully uploaded to ' + dest;
+                    message = msg + ': ' + urlsHtml;
                 }
-                messages += message;
+                message = '<div class="prog success">' + message + '</div>';
+            } else if (level === "PROCESSING") {
+                message = '<div class="prog info">' + message + '</div>';
+            } else if (level === "WARNING") {
+                message = '<div class="prog warning">' + message + '</div>';
+            } else if (level === "FAILED") {
+                if (terminal) {
+                    // stop polling
+                    succeeded = false;
+                    message = '<div class="prog error">Extraction/Review failed: ' + message + '</div>';
+                    message += '<div class="warning">Check the ' + prearchiveUrl +
+                        ', your data may be available there for manual review.</div>';
+                } else {
+                    message = '<div class="prog error">' + message + '</div>';
+                }
+            } else {
+                message = '<div class="prog info">' + message + '</div>';
             }
-        } catch (e) {
-            console.log(e);
+            messages += message;
         }
-        $(detailsTag).html(messages);
+        if (messages) {
+            // if we didn't receive any messages, leave what's there
+            $(detailsTag).html(messages);
+        }
         return succeeded;
     }
 
@@ -248,8 +258,13 @@ var XNAT = getObject(XNAT);
             $('#activity-tab .panel-header a.activity-min').show();
         });
         $(document).on('click', '#activity-tab a.activity-close', function() {
-            $('#activity-tab').css('visibility', 'hidden');
+            activityTab.pollers = {};
+            activityTab.cancel();
         });
+        $(document).on('click', 'a#logout_user', function() {
+            XNAT.cookie.remove(cookieTag);
+            return true;
+        })
     });
 
     return XNAT.app.activityTab = activityTab;

@@ -79,6 +79,7 @@ public class XMLPathShortcuts implements XMLPathShortcutsI {
         addShortCut(EXPERIMENT_DATA, "ID", "xnat:experimentdata/id");
         addShortCut(EXPERIMENT_DATA, "visit_id", "xnat:experimentdata/visit_id");
         addShortCut(EXPERIMENT_DATA, "visit", "xnat:experimentdata/visit");
+        addShortCut(EXPERIMENT_DATA, "protocol", "xnat:experimentdata/protocol"); //subtype
         addShortCut(EXPERIMENT_DATA, "date", "xnat:experimentdata/date");
         addShortCut(EXPERIMENT_DATA, "time", "xnat:experimentdata/time");
         addShortCut(EXPERIMENT_DATA, "note", "xnat:experimentdata/note");

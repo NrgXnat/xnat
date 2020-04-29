@@ -52,11 +52,23 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
+        final Boolean forgot  = (data.getSession().getAttribute("forgot")!=null && (Boolean)data.getSession().getAttribute("forgot")); 
+        final Boolean expired = (data.getSession().getAttribute("expired")!=null && (Boolean)data.getSession().getAttribute("expired"));
+        
         UserI user = XDAT.getUserDetails();
         if(user == null || user.getUsername().equalsIgnoreCase("guest")) {
            // If the user isn't authenticated, we need to setup the page with
            // Noninteractive.vm and hide the "Manage user Login and Profile" section. 
            context.put("unathenticated", true); 
+        }
+        
+        if(forgot) {
+            // Edge case: The user clicks the forgot password link and either clicks the link twice or refreshes the page
+            context.put("user", user);
+            context.put("item", user);
+            context.put("forgot", true);
+            context.put("unathenticated", true); 
+            return;
         }
         
         try {
@@ -120,15 +132,14 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                 }
             }
             if (user != null && !user.getUsername().equalsIgnoreCase("guest")) {
-                if (!StringUtils.isBlank(user.getUsername()) &&
-                        !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
-                    if(data.getSession().getAttribute("expired")!=null && (Boolean)data.getSession().getAttribute("expired")) {
+                if (!StringUtils.isBlank(user.getUsername()) && !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
+                    if(expired) {
                         context.put("topMessage", "Your password has expired. Please choose a new one.");
                         context.put("expired", true);
                     }
-                    context.put("login", user.getUsername());
-                    context.put("item", user);
                 }
+                context.put("login", user.getUsername());
+                context.put("item", user);
 
                 final boolean noCurrentPassword = StringUtils.isBlank(user.getPassword());
                 context.put("noCurrentPassword", noCurrentPassword);
@@ -149,20 +160,19 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 
                     if(alias != null && secret != null) {
-                        String userID="";
+                        String userID = null;
                         try
                         {
-                            context.put("forgot", true);
-                            data.getSession().setAttribute("forgot", true);
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
                             if(userID!=null){
                                 user = Users.getUser(userID);
                                 XDAT.loginUser(data, user, true);
                                 context.put("user", user);
+                                context.put("forgot", true);
+                                data.getSession().setAttribute("forgot", true);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
-                                context.put("hideChangePasswordForm", true);
                             }
                         }
                         catch (Exception e)

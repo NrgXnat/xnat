@@ -390,7 +390,10 @@ public final class PrearcSessionResource extends SecureResource {
                 if (null == sessionData.getAutoArchive() && !Strings.isNullOrEmpty(project)) {
                     PrearcDatabase.setAutoArchive(session, timestamp, project, PrearchiveCode.code(XnatProjectdata.getProjectByIDorAlias(project, user, false).getArcSpecification().getPrearchiveCode()));
                 }
-                PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
+                String visit = StringUtils.defaultIfBlank((String) params.get(VISIT), sessionData.getVisit());
+                String protocol = StringUtils.defaultIfBlank((String) params.get(PROTOCOL), sessionData.getProtocol());
+                PrearcDatabase.buildSession(sessionDir, session, timestamp, project, visit, protocol,
+                        (String) params.get(TIMEZONE), (String) params.get(SOURCE));
                 PrearcUtils.resetStatus(user, project, timestamp, session, true);
 
                 final PrearcSession prearcSession = new PrearcSession(project, timestamp, session, params, user);

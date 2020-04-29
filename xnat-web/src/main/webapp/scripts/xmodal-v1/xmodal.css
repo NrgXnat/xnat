@@ -57,6 +57,7 @@ div.xmodal .title .inner {
 div.xmodal .title .inner > i { color: #505050; font-weight: normal; font-style: normal; }
 div.xmodal .title .close,
 div.xmodal .title .maximize {
+    font-size: 12px;
     width: 24px; height: 18px; margin: 0; padding: 0;
     position: absolute ; top: 8px ; right: 8px ;
     font-weight: normal ; text-align: center; line-height: 19px;
@@ -111,6 +112,12 @@ div.xmodal .footer .button.hidden,
 div.xmodal .footer .button.disabled { opacity: 0.6; }
 div.xmodal .footer .button.hidden:hover,
 div.xmodal .footer .button.disabled:hover { cursor: not-allowed !important ; }
+
+/* Override bootstrap */
+div.xmodal button.close {
+    opacity: 1;
+    text-shadow: none;
+}
 
 div.xmodal.loading .title .close { display: none ; }
 div.xmodal.loading .body .inner { text-align: center ; }

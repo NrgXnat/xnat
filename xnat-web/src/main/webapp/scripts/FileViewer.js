@@ -1477,8 +1477,8 @@ function UploadFileForm(_obj){
 			file_dest +="/"+ file_name;
 		}
 		
-		if((file_name != "" ? file_name : $("#local_file").val()).match(/[%#{}]/g)){
-			xmodal.message('File Viewer', "The filename contains invalid characters ('%' and '#' and '{}' are not allowed). Please rename file and try again.");
+		if((file_name != "" ? file_name : $("#local_file").val()).match(/[\[\]%#{}]/g)){
+			xmodal.message('File Viewer', "Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.");
 			return;
 		}
 

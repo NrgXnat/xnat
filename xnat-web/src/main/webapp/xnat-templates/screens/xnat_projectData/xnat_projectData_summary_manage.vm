@@ -271,7 +271,7 @@
                                 </TD>
                                 <TD>All image data will be placed into the archive automatically, but anything matching existing files will be rejected. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
                             </TR>
-                            <TR>
+                            <TR #if($!siteConfig.getBooleanValue("uiProjectHideAutoArchiveOverwrite")) style="display: none;" #end>
                                 <TD NOWRAP>
                                     <input id="5_prearchive" type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end/>
                                 </TD>

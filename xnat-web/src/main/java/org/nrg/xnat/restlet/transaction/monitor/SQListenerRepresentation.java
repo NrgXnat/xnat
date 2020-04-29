@@ -28,11 +28,13 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.*;
 
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.restlet.data.MediaType.*;
 
@@ -61,14 +63,14 @@ public class SQListenerRepresentation extends SecureResource {
         final MediaType mediaType = overrideVariant(variant);
 
         try {
-            final StatusList statusList = retrieveStatusQueue();
+            final List<StatusMessage> statusList = retrieveStatusQueueMessages();
             log.trace("Status: {}", statusList);
 
             if (mediaType.equals(APPLICATION_JSON)) {
                 return new JSONObjectRepresentation(APPLICATION_JSON, buildJSONObject(statusList));
             }
             if (mediaType.equals(TEXT_PLAIN)) {
-                return new StringRepresentation(statusList.toString(), TEXT_PLAIN);
+                return new StringRepresentation(buildStringObject(statusList), TEXT_PLAIN);
             }
             return new HTMLStatusListRepresentation(TEXT_XML, statusList);
         } catch (JSONException e) {
@@ -98,6 +100,12 @@ public class SQListenerRepresentation extends SecureResource {
         }
     }
 
+    @Nullable
+    private List<StatusMessage> retrieveStatusQueueMessages() {
+        final PersistentStatusQueueManagerI manager = retrieveSQManager();
+        return manager.retrieveCopyOfStatusQueueMessages(_transactionId);
+    }
+
     private StatusList retrieveStatusQueue() {
         final PersistentStatusQueueManagerI manager    = retrieveSQManager();
         final StatusList                    statusList = manager.retrieveStatusQueue(_transactionId);
@@ -119,28 +127,40 @@ public class SQListenerRepresentation extends SecureResource {
         return new StatusMessage(_transactionId, status, message);
     }
 
-    private JSONObject buildJSONObject(final StatusList statusList) throws JSONException {
+    private JSONObject buildJSONObject(final List<StatusMessage> statusList) throws JSONException {
         final JSONObject json = new JSONObject();
 
         final JSONArray messages = new JSONArray();
         json.append("msgs", messages);
 
-        for (final StatusMessage message : statusList.getMessages()) {
+        if (statusList == null) {
+            return json;
+        }
+
+        for (final StatusMessage message : statusList) {
             final JSONObject element = new JSONObject();
             element.put("status", message.getStatus());
             element.put("msg", message.getMessage());
+            element.put("terminal", message.isTerminal());
             messages.put(element);
         }
 
         return json;
     }
 
-    private PersistentStatusQueueManagerI retrieveSQManager() {
-        return new HTTPSessionStatusManagerQueue(this.getHttpSession());
+    private String buildStringObject(final List<StatusMessage> statusList) {
+        final StringBuilder sb = new StringBuilder("StatusLog");
+        if (statusList != null) {
+            for (final StatusMessage m : statusList) {
+                sb.append(m.toString());
+                sb.append(LINE_SEPARATOR);
+            }
+        }
+        return sb.toString();
     }
 
     class HTMLStatusListRepresentation extends OutputRepresentation {
-        HTMLStatusListRepresentation(final MediaType mediaType, final StatusList statusList) {
+        HTMLStatusListRepresentation(final MediaType mediaType, final List<StatusMessage> statusList) {
             super(mediaType);
             _statusList = statusList;
         }
@@ -150,21 +170,24 @@ public class SQListenerRepresentation extends SecureResource {
             try (final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                 writer.write("<html><body><table>");
 
-                for (final StatusMessage message : _statusList.getMessages()) {
-                    writer.write("<tr><td class='s" + message.getStatus().toString() + "'>");
-                    writer.write(message.getStatus().toString());
-                    writer.write("</td><td>");
-                    writer.write(message.getMessage());
-                    writer.write("</td></tr>");
-                    writer.newLine();
+                if (_statusList != null) {
+                    for (final StatusMessage message : _statusList) {
+                        writer.write("<tr><td class='s" + message.getStatus().toString() + "'>");
+                        writer.write(message.getStatus().toString());
+                        writer.write("</td><td>");
+                        writer.write(message.getMessage());
+                        writer.write("</td></tr>");
+                        writer.newLine();
+                    }
                 }
 
                 writer.write("</table></body></html>");
             }
         }
 
-        private final StatusList _statusList;
+        private final List<StatusMessage> _statusList;
     }
 
     private final String _transactionId;
+    private final static String LINE_SEPARATOR = System.getProperty("line.separator");
 }

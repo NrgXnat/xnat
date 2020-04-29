@@ -172,6 +172,13 @@ dependencyManagement {
     }
 }
 
+def vMockito = '1.10.19'
+def vPowerMock = '1.7.0'
+
+configurations.all {
+    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
+}
+
 dependencies {
     annotationProcessor "org.nrg:framework"
 
@@ -591,4 +598,12 @@ publishing {
 
 def propertyWithDefault(String name, Object value) {
     hasProperty(name) ? property(name) : value
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDir
+        testOutputDir = compileTestJava.destinationDir
+    }
 }

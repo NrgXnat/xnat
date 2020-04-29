@@ -2354,8 +2354,12 @@ public class CatalogUtils {
 
         boolean mod = false;
 
-        if (StringUtils.isNotBlank(uri) && !uri.equals(entry.getUri())) {
+        String origUri = entry.getUri();
+        if (StringUtils.isNotBlank(uri) && !uri.equals(origUri)) {
             entry.setUri(uri);
+            if (FileUtils.IsUrl(origUri) && getMetaFieldByName(entry, ORIG_URI) == null) {
+                setMetaFieldByName(entry, ORIG_URI, origUri);
+            }
             mod = true;
         }
 
@@ -2692,9 +2696,10 @@ public class CatalogUtils {
         return _jdbcTemplate.get();
     }
 
-    private static final String RELATIVE_PATH = "RELATIVE_PATH";
-    private static final String SIZE          = "SIZE";
-    private static final String PROJECT       = "PROJECT";
+    public static final String RELATIVE_PATH = "RELATIVE_PATH";
+    public static final String SIZE          = "SIZE";
+    public static final String PROJECT       = "PROJECT";
+    public static final String ORIG_URI      = "ORIG_URI";
     private static AtomicBoolean _maintainFileHistory = null;
     private static AtomicBoolean _checksumConfig      = null;
     private static AtomicReference<NamedParameterJdbcTemplate> _jdbcTemplate = new AtomicReference<>(null);

@@ -40,6 +40,7 @@ public class URIManager {
     public static final String EXPT_ID             = "EXPT_ID";
     public static final String EXPT_LABEL          = "EXPT_LABEL";
     public static final String VISIT_LABEL         = "VISIT";
+    public static final String SUBTYPE_LABEL       = "SUBTYPE";
     public static final String PROJECT_ID          = "PROJECT_ID";
     public static final String TYPE                = "TYPE";
     public static final String SOURCE              = "SOURCE";

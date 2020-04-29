@@ -211,9 +211,7 @@ $page.setTitle("$siteId - Please Login")
             <span id="register_forgot" style="float:left">
                 <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
                 <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                #if($turbineUtils.getTemplates("loginBoxMoreOptions").size() > 0)
-                    <a href="#" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
-                #end
+                <a href="#" id="loginBoxMoreOptionsBtn" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
             </span>
             <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
         </p>
@@ -221,10 +219,12 @@ $page.setTitle("$siteId - Please Login")
     </form>
     </div>
     <div id="loginBoxMoreOptions">
+        <ul>
         #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
             #set($templateFileName=$screenProps.getProperty("path"))
             #parse("/screens/$templateFileName")
         #end
+        </ul>
     </div>
     </div>
     <div class="clear"></div>
@@ -281,7 +281,10 @@ $page.setTitle("$siteId - Please Login")
             return errorCount === 0;
 
         });
-
+        
+        if($("#loginBoxMoreOptions > ul > li").size() > 0){
+            $("#loginBoxMoreOptionsBtn").show()
+        }
     });
 
 </script>

@@ -1,15 +1,3 @@
-#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
-    #if(!$siteConfig.getBooleanValue("projectUploadZipFromActionsBox"))
-        <li class="yuimenuitem">
-            <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
-        </li>
-    #else
-        <li class="yuimenuitem">
-            <a id="uploadImages" data-project="$project.getId()">Upload Images</a>
-        </li>
-        <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
-        <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
-        <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>
-        <link type="text/css" rel="stylesheet" href="$content.getURI("style/uploaders/fileuploader.css")">
-    #end
-#end
+#set($importHandlerTypesWithUploadEnabled = $siteConfig.projectUploadImagesFromActionsBox)
+#set($projectId = $project.getId())
+#parse("/screens/UploadAction.vm")

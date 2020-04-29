@@ -56,6 +56,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
         }
         try {
             this.renderProjects();
+            document.getElementById(this.projectSelect).dispatchEvent(new Event('projectInitComplete'));
         } catch (e) {
             this.displayError("ERROR : Failed to render " + XNAT.app.displayNames.singular.project.toLowerCase() + " list: " + e.toString());
         }

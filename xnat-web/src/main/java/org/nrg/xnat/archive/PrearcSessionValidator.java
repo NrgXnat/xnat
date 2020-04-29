@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -107,7 +108,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		}
 	}
 
-	public String call(){
+	public StatusMessage call(){
 		return null;
 	}
 
@@ -214,6 +215,14 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 
 		//verify compliance with DICOM whitelist/blacklist
 		verifyCompliance();
+
+		try {
+			validateWithPlugins();
+		} catch (ClientException e) {
+			warn(16, e.getMessage());
+		} catch (ServerException e) {
+			fail(17, e.getMessage());
+		}
 
 		return notices;
 	}

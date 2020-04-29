@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducer;
@@ -28,6 +29,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.utils.XnatHttpUtils;
+import org.restlet.data.Status;
 
 import java.io.File;
 import java.util.Collections;
@@ -38,7 +40,7 @@ import java.util.concurrent.*;
 
 import static lombok.AccessLevel.PRIVATE;
 import static lombok.AccessLevel.PUBLIC;
-import static org.nrg.framework.status.StatusMessage.Status.PROCESSING;
+import static org.nrg.framework.status.StatusMessage.Status.*;
 import static org.nrg.xnat.archive.Operation.Archive;
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest.*;
@@ -49,7 +51,7 @@ import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequ
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
-public class QueueBasedImageCommit extends StatusProducer implements Callable<String>, ArchiveOperationListener {
+public class QueueBasedImageCommit extends StatusProducer implements Callable<StatusMessage>, ArchiveOperationListener {
     public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge) throws Exception {
         this(control, user, session, destination, overrideExceptions, allowSessionMerge, false);
     }
@@ -81,7 +83,7 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     }
 
     @Override
-    public String call() throws Exception {
+    public StatusMessage call() throws Exception {
         if (isInline()) {
             //This is being done as part of a parent transaction and should not manage prearc cache state.
             log.debug("Completing inline archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
@@ -104,15 +106,17 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
             final StopWatch stopWatch = StopWatch.createStarted();
             while (_message == null || _message.getStatus() == PROCESSING) {
                 if (stopWatch.getTime(TimeUnit.SECONDS) > timeout) {
-                    log.warn("Checked for message with final status but didn't find it, however this operation has exceeded the configured timeout of {} seconds for image commit operations, bailing on it.", timeout);
-                    return null;
+                    String msg = "The session " + getPrearcSession().toString() +
+                            " did not return a valid data URI within the timeout interval of " + timeout + " seconds.";
+                    return new StatusMessage(this, FAILED, msg, true);
                 }
                 log.debug("Checked for message with final status but didn't find it, sleeping for a bit...");
                 Thread.sleep(500);
             }
 
             log.debug("Found a message with status {}: {}", _message.getStatus(), _message.getMessage());
-            return StringUtils.defaultIfBlank(_message.getMessage(), _message.getStatus().toString());
+            notifyListeners(new StatusMessage(this, _message.getStatus(), _message.getMessage(), true));
+            return _message;
         } finally {
             log.debug("Removing the QueueBasedImageCommit instance {} from the archive event listener: {}", getArchiveOperationId(), this);
             _archiveEventListener.removeStatusListener(this);
@@ -122,6 +126,12 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     @Override
     public void notify(final StatusMessage message) {
         _message = message;
+        for (final StatusListenerI listener : getListeners()) {
+            listener.notify(message);
+        }
+    }
+
+    private void notifyListeners(final StatusMessage message) {
         for (final StatusListenerI listener : getListeners()) {
             listener.notify(message);
         }
@@ -137,21 +147,27 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
         return getArchiveOperationId() + ":" + (_message != null ? _message.getStatus() + ":" + _message.getMessage() : "<null>");
     }
 
-    public Future<String> submit() {
+    public Future<StatusMessage> submit() {
         return getExecutor().submit(this);
     }
 
-    public String submitSync() throws TimeoutException {
+    public String submitSync() throws TimeoutException, ServerException {
         // try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), false, true)) {
-        final Future<String> future  = submit();
+        final Future<StatusMessage> future  = submit();
         final int            timeout = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
         try {
-            final String result = future.get(timeout, TimeUnit.SECONDS);
-            final String uri    = wrapPartialDataURI(result);
-            if (StringUtils.isBlank(uri)) {
-                throw new TimeoutException("The session " + getPrearcSession().toString() + " did not return a valid data URI within the timeout interval of " + timeout + " seconds.");
+            final StatusMessage result = future.get(timeout, TimeUnit.SECONDS);
+            StatusMessage.Status status = result.getStatus();
+            if (status == COMPLETED) {
+                final String uri    = wrapPartialDataURI(result.getMessage());
+                if (StringUtils.isBlank(uri)) {
+                    throw new TimeoutException("The session " + getPrearcSession().toString() +
+                            " did not return a valid data URI within the timeout interval of " + timeout + " seconds.");
+                }
+                return uri;
+            }  else {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + result.getMessage());
             }
-            return uri;
         } catch (InterruptedException | ExecutionException e) {
             log.error("An error occurred while trying to archive the session {}", getPrearcSession().toString(), e);
             return null;

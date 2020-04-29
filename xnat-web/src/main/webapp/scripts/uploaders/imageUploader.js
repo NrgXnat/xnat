@@ -1,4 +1,7 @@
 var XNAT = getObject(XNAT);
+XNAT.app = getObject(XNAT.app || {});
+XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
+XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -22,19 +25,30 @@ var XNAT = getObject(XNAT);
         abuId = 'projuploader-modal-abu',
         interval;
 
-    function openUploadModal(project, session, overwrite) {
+    XNAT.app.imageUploader.openUploadModal = function(config) {
         uploadName = 'upload' + getDateBasedId();
         usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
         uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
 
-        var loc = session ? 'session: ' + session : 'project: ' + project;
+        var loc;
+        if (config.session) {
+            loc = 'session: ' + config.session;
+        } else if (config.subject) {
+            loc = 'subject: ' + config.subject;
+        } else {
+            loc = 'project: ' + config.project;
+        }
+        var importHandler = 'DICOM or ECAT';
+        if (config.importhandler) {
+            importHandler = config.importhandler;
+        }
 
         xmodal.open({
             id: id,
             kind: 'dialog',
             title: 'Upload images to ' + loc,
             content: spawn('div', [
-                spawn('p', ['Upload zipped (.zip or .tar.gz) DICOM or ECAT image files to your ' +
+                spawn('p', ['Upload zipped (.zip or .tar.gz) ' + importHandler + ' image files to your ' +
                     loc.replace(/:.*/,'')]),
                 spawn('p', ['Review ', spawn('a|href="' + XNAT.url.fullUrl('/app/template/UploadOptions.vm')
                     + '"', {}, 'alternative upload options'), '.']),
@@ -50,7 +64,7 @@ var XNAT = getObject(XNAT);
                     isDefault: true,
                     close: false,
                     action: function() {
-                        submitForArchival(project, session, overwrite);
+                        submitForArchival(config);
                     }
                 },
                 done: {
@@ -126,7 +140,7 @@ var XNAT = getObject(XNAT);
 
         abu._fileUploader.buildUploaderDiv();
         abu._fileUploader._currentAction = uploaderUrl;
-    }
+    };
 
     function errorHandler(e, base){
         var info = e.responseText ? base + ': ' + e.responseText : base;
@@ -141,7 +155,7 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function submitForArchival(project, session, overwrite) {
+    function submitForArchival(config) {
         $('#file-upload-input').prop('disabled', true).addClass('disabled');
         $('#' + id + '-process-button').prop('disabled', true);
         var $statusDiv = $('#' + abuId + ' .abu-status');
@@ -159,7 +173,7 @@ var XNAT = getObject(XNAT);
             if (!interval) {
                 XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
                 interval = window.setInterval(function() {
-                    submitForArchival(project, session, overwrite);
+                    submitForArchival(config);
                 }, 2000);
             }
             return;
@@ -187,13 +201,12 @@ var XNAT = getObject(XNAT);
                 var formDataArchive = new FormData();
                 formDataArchive.append("src", usrResPath.replace(fNameReplace, fname));
                 formDataArchive.append("http-session-listener", uploadId);
-                formDataArchive.append("project", project);
                 formDataArchive.append("prearchive_code", "0");
-                if (session) {
-                    formDataArchive.append("session", session);
-                }
-                if (overwrite) {
-                    formDataArchive.append("overwrite", overwrite);
+
+                for (var key of Object.keys(config)) {
+                    if (config[key]) {
+                        formDataArchive.append(key, config[key]);
+                    }
                 }
 
                 $.ajax({
@@ -229,7 +242,57 @@ var XNAT = getObject(XNAT);
         return (new Date()).toISOString().replace(/[^\w]/gi,'');
     }
 
-    $(document).on('click', 'a#uploadImages', function() {
-        openUploadModal($(this).data('project'), $(this).data('session'), $(this).data('overwrite'));
+    XNAT.app.imageUploader.openUploadViaDesktopClient = function(config) {
+        XNAT.xhr.get({
+            url: XNAT.url.rootUrl('/data/services/tokens/issue'),
+            fail: function(e){
+                console.log(e);
+                XNAT.ui.dialog.message({
+                    title: 'Unexpected error',
+                    content: 'Could not issue user token for XNAT Desktop Client.'
+                });
+            },
+            success: function(data){
+                var token = JSON.parse(data);
+                const prms = new URLSearchParams();
+                prms.append('a', token.alias);
+                prms.append('s', token.secret);
+                for (var key of Object.keys(config)) {
+                    if (config[key]) {
+                        prms.append(key, config[key]);
+                    }
+                }
+                var url = XNAT.url.xnatUrl('/upload?' + prms.toString());
+                window.location.assign(url);
+                var warning = XNAT.ui.dialog.message({
+                    title: 'XNAT Desktop Client',
+                    content: 'If nothing prompts from browser, ' +
+                        '<a href="https://download.xnat.org/desktop-client" target="_blank">' +
+                        'download and install XNAT Desktop Client' +
+                        '</a> and try again.'
+                });
+                setTimeout(function(){
+                    XNAT.ui.dialog.close(warning, true);
+                }, 5000);
+            }
+        });
+    };
+
+    XNAT.app.imageUploader.uploadImages = function(config) {
+        const datatype = config.datatype;
+        // If import handler is not specified, let's see if we have a mapping for the data type
+        if (!config.importhandler && datatype && XNAT.app.uploadDatatypeHandlerMap.hasOwnProperty(datatype)) {
+            config.importhandler = XNAT.app.uploadDatatypeHandlerMap[datatype];
+        }
+        // If no import handler and config.modal undefined or false, open Desktop Client
+        if (!config.importhandler && (!config.modal || config.modal === "false")) {
+            XNAT.app.imageUploader.openUploadViaDesktopClient(config);
+        } else {
+            XNAT.app.imageUploader.openUploadModal(config);
+        }
+    };
+
+    $(document).on('click', 'a#uploadImages, a.uploadImages', function() {
+        XNAT.app.imageUploader.uploadImages($(this).data());
     });
 }));

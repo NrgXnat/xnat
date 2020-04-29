@@ -202,6 +202,14 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             visit = null;
         }
 
+        final String subtype;
+        if (getParameters().containsKey(URIManager.SUBTYPE_LABEL)) {
+            subtype = (String) getParameters().get(URIManager.SUBTYPE_LABEL);
+            log.trace("using provided subtype label {}", getParameters().get(URIManager.SUBTYPE_LABEL));
+        } else {
+            subtype = null;
+        }
+
         final String subject;
         if (getParameters().containsKey(URIManager.SUBJECT_ID)) {
             subject = (String) getParameters().get(URIManager.SUBJECT_ID);
@@ -230,6 +238,7 @@ public class ProcessorGradualDicomImportOperation extends AbstractDicomImportOpe
             initialize.setName(sessionLabel);
             initialize.setProject(project == null ? null : project.getId());
             initialize.setVisit(visit);
+            initialize.setProtocol(subtype);
             initialize.setScan_date(dicom.getDate(Tag.StudyDate));
             initialize.setTag(studyInstanceUID);
             initialize.setTimestamp(timestamp.getName());

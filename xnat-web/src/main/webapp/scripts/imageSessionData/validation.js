@@ -83,8 +83,8 @@ function validateDate(){
 	var month = getValueById(elementName+'.date.month');
 	var day = getValueById(elementName+'.date.date');
 	var year = getValueById(elementName+'.date.year');
-	// If any value has been entered for month, date, or year
-	if(month.value != "" && day.value != "" && year.value != ""){
+	if(null != month && null != day && null != year){
+		// If any value has been entered for month, date, or year
 		if(month.value != "bad" || day.value != "bad" || year.value != "bad"){
 			// To be valid, either all values must be present or all values must be absent.
 			if((month.value === "bad" && day.value === "bad" && year.value === "bad") || (month.value != "bad" && day.value != "bad" && year.value != "bad")) {
@@ -98,7 +98,6 @@ function validateDate(){
 			}
 		}
 	}
-	
 	var dateMsg = document.getElementById('dateMsg');
 	if(dateMsg != null){ 
 		dateMsg.innerHTML = ""; 

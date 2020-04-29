@@ -28,6 +28,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.representations.StandardTurbineScreen;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
+import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -77,10 +78,16 @@ public final class PrearcSessionResource extends SecureResource {
     @SuppressWarnings("RedundantThrows")
     @Override
     public void handleParam(final String key, final Object value) throws ClientException {
-        if ("action".equals(key)) {
-            action = (String) value;
-        } else {
-            params.put(key, value);
+        switch (key) {
+            case "action":
+                action = (String) value;
+                break;
+            case HTTP_SESSION_LISTENER:
+                listenerControl = (String) value;
+                break;
+            default:
+                params.put(key, value);
+                break;
         }
     }
 
@@ -398,7 +405,15 @@ public final class PrearcSessionResource extends SecureResource {
 
                 final PrearcSession prearcSession = new PrearcSession(project, timestamp, session, params, user);
                 if (prearcSession.isAutoArchive()) {
-                    try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession, null, false, true)) {
+                    final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession,
+                            null, false, true);
+                    if (listenerControl != null) {
+                        final StatusList sq = new StatusList();
+                        uploader.addStatusListener(sq);
+                        storeStatusList(listenerControl, sq);
+                        uploader.submit();
+                        getResponse().setStatus(SUCCESS_OK, "Archival initiated");
+                    } else {
                         final String result = uploader.submitSync();
                         final String uri    = wrapPartialDataURI(result);
                         if (StringUtils.isBlank(uri)) {
@@ -485,4 +500,5 @@ public final class PrearcSessionResource extends SecureResource {
     private final Map<String, Object> params= new HashMap<>();
 
     private String action = "uninitialized";
+    private String listenerControl = null;
 }

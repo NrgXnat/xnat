@@ -152,7 +152,6 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     }
 
     public String submitSync() throws TimeoutException, ServerException {
-        // try (final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session, UriParserUtils.parseURI(getDestination()), false, true)) {
         final Future<StatusMessage> future  = submit();
         final int            timeout = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
         try {

@@ -32,7 +32,7 @@
 </script>
 
 #macro( uploadDicom $name )
-    #if ($!siteConfig.getBooleanValue("uiHideXnatDesktopClientDownload"))
+    #if ($!siteConfig.getBooleanValue("uiHideXnatDesktopClientDownload") && !$!siteConfig.getBooleanValue("uploadDicomViaModal"))
         <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">$name</a>
     #else
         <a class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"

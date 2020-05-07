@@ -103,7 +103,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
 
         if (collection.numClauses() == 0) {
-            return null;
+            throw new IllegalAccessException("Invalid read privileges for " + root.getFullXMLName());
         }
 
         return collection;
@@ -123,7 +123,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
 
         if (collection.numClauses() == 0) {
-            return null;
+            throw new IllegalAccessException("Invalid read privileges for " + root.getFullXMLName());
         }
 
         return collection;

@@ -195,6 +195,18 @@ public interface PersistentWorkflowI {
 	public abstract String getPercentagecomplete();
 
 	/**
+	 * set the src
+	 * @param src the src string
+	 */
+	public abstract void setSrc(String src);
+
+	/**
+	 *
+	 * @return the src
+	 */
+	public abstract String getSrc();
+
+	/**
 	 * Sets the value for percentageComplete.
 	 * @param v Value to Set.
 	 */

@@ -443,6 +443,44 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         }
     }
 
+    /**
+     * Provides convenience method to return untyped list as list parameterized with same type as the DAO.
+     *
+     * @param list The list to be converted to a checked parameterized list.
+     *
+     * @return The parameterized list.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected List<E> checked(final List list) {
+        return (List<E>) list;
+    }
+
+    /**
+     * Provides convenience method to return list if it contains any items or null if not.
+     *
+     * @param list The list to be checked and returned if not empty.
+     *
+     * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
+     */
+    protected List<E> emptyToNull(final List<E> list) {
+        return isEmpty(list) ? null : list;
+    }
+
+    /**
+     * Provides convenience method to return list if it contains any items or null if not.
+     *
+     * @param list The list to be checked and returned if not empty.
+     *
+     * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
+     */
+    protected E instance(final List<E> list) {
+        return isEmpty(list) ? null : list.get(0);
+    }
+
+    protected static boolean isEmpty(final List<?> list) {
+        return list == null || list.isEmpty();
+    }
+
     protected String getCacheRegion() {
         return _cacheRegion;
     }

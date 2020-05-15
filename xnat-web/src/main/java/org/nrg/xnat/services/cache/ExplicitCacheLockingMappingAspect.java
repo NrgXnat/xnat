@@ -50,7 +50,7 @@ public class ExplicitCacheLockingMappingAspect {
         } finally {
             if (cacheId != null) {
                 if (isWriteLock) {
-                    cache.releaseReadLockOnKey(cacheId);
+                    cache.releaseWriteLockOnKey(cacheId);
                 } else {
                     cache.releaseReadLockOnKey(cacheId);
                 }

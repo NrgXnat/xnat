@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.util.EventObject;
 
 public class StatusMessage extends EventObject implements Serializable {
+    public static final String DO_NOT_TRACK = "DO_NOT_TRACK";
     public enum Status {PROCESSING, WARNING, FAILED, COMPLETED};
 
     public StatusMessage(final Object source, final Status status, final CharSequence message) {
@@ -21,7 +22,7 @@ public class StatusMessage extends EventObject implements Serializable {
     }
 
     public StatusMessage(final Object source, final Status status, final CharSequence message, final boolean terminal) {
-        super(source);
+        super(source == null ? DO_NOT_TRACK : source);
         _status = status;
         _message = message;
         _terminal = terminal;
@@ -41,7 +42,7 @@ public class StatusMessage extends EventObject implements Serializable {
 
     @Override
     public String toString() {
-        String terminalStr = _terminal ? "(terminal)" : "";
+        String terminalStr = _terminal ? " (terminal)" : "";
         return getSource() + " " + _status + ": " + _message + terminalStr;
     }
 

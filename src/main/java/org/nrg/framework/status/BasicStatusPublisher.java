@@ -39,7 +39,7 @@ public class BasicStatusPublisher implements StatusProducerI, Closeable {
         _listeners.remove(listener);
     }
 
-    public final void publish(final StatusMessage m) {
+    public void publish(final StatusMessage m) {
         for (final StatusListenerI l : _listeners) {
             l.notify(m);
         }

@@ -12,6 +12,7 @@ package org.nrg.framework.status;
 
 import org.nrg.framework.status.StatusMessage.Status;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static org.nrg.framework.status.StatusMessage.Status.*;
@@ -47,6 +48,11 @@ public class StatusProducer extends BasicStatusPublisher {
         _control = control;
     }
 
+    @Nullable
+    public String getControlString() {
+        return _control == null ? null : _control.toString();
+    }
+
     protected final void report(final Status status, final String message) {
         report(status, message, false);
     }
@@ -79,5 +85,5 @@ public class StatusProducer extends BasicStatusPublisher {
         report(COMPLETED, message, terminal);
     }
 
-    private final Object _control;
+    protected final Object _control;
 }

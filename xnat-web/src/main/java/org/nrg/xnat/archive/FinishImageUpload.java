@@ -14,11 +14,10 @@ import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
-import org.nrg.framework.status.StatusMessage;
-import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.status.StatusProducerI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -27,7 +26,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.restlet.data.Status;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -38,7 +36,7 @@ import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariabl
  * @author Timothy R Olsen
  */
 @Slf4j
-public class FinishImageUpload extends StatusProducer implements Callable<String>, StatusProducerI {
+public class FinishImageUpload extends ArchiveStatusProducer implements Callable<String>, StatusProducerI {
     private final PrearcSession       session;
     private final URIManager.DataURIA destination;
     private final boolean             overrideExceptions, allowSessionMerge, inline;
@@ -63,7 +61,8 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                     //This is being done as part of a parent transaction and should not manage prearc cache state.
                     log.debug("Completing inline archive operation to auto-archive session {} to {}", session, destination);
                     final Map<String, Object> sessionValues = removePrearcVariables(session.getAdditionalValues());
-                    StatusMessage result = ListenerUtils.addListeners(this, new PrearcSessionArchiver(session,
+                    return ListenerUtils.addListeners(this, new PrearcSessionArchiver(_control,
+                                                                                      session,
                                                                                       user,
                                                                                       sessionValues,
                                                                                       overrideExceptions,
@@ -71,12 +70,6 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                                                                                       false,
                                                                                       isOverwriteFiles(session)))
                                         .call();
-                    StatusMessage.Status status = result.getStatus();
-                    if (status == StatusMessage.Status.COMPLETED) {
-                        return result.getMessage();
-                    } else {
-                        throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + result.getMessage());
-                    }
                 } else {
                     log.debug("Completing archive operation to auto-archive session {} to {}", session, destination);
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {
@@ -99,7 +92,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
                                 }
                             }
                         }
-                        return PrearcDatabase.archive(session, override, append, isOverwriteFiles(session), user, getListeners());
+                        return PrearcDatabase.archive(_control, session, override, append, isOverwriteFiles(session), user, getListeners());
                     } else {
                         throw new ServerException("Unable to lock session for archiving.");
                     }

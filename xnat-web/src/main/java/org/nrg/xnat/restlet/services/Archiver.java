@@ -121,16 +121,13 @@ public class Archiver extends BatchPrearchiveActionsA {
         }
         session.setArchiveReason(false);
         final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session,
-                UriParserUtils.parseURI(getDestination()), _overwrite, true);
+                UriParserUtils.parseURI(getDestination()), _overwrite, true, _listenerControl);
         if (_listenerControl != null) {
-            final StatusList sq = new StatusList();
-            uploader.addStatusListener(sq);
-            storeStatusList(_listenerControl, sq);
-            uploader.submit();
+            uploader.submitAsync();
             getResponse().redirectSeeOther(getContextPath() + "/app/template/XDATScreen_prearchives.vm");
         } else {
             try {
-                final String uri = uploader.submitSync();
+                final String uri = uploader.call();
                 if (_redirect || session.isAutoArchive()) {
                     getResponse().redirectSeeOther(XDAT.getSiteUrl() + uri);
                 } else {
@@ -162,7 +159,7 @@ public class Archiver extends BatchPrearchiveActionsA {
             }
         }
 
-        final Map<SessionDataTriple, Boolean> archivedSessions = PrearcDatabase.archive(prearcSessions, _allowDataDeletion, _overwrite, _overwriteFiles, getUser(), Collections.<StatusListenerI>emptySet());
+        final Map<SessionDataTriple, Boolean> archivedSessions = PrearcDatabase.archive(_listenerControl, prearcSessions, _allowDataDeletion, _overwrite, _overwriteFiles, getUser(), Collections.<StatusListenerI>emptySet());
         getResponse().setEntity(updatedStatusRepresentation(archivedSessions.keySet(), overrideVariant(getPreferredVariant())));
     }
 

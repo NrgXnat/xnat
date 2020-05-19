@@ -38,12 +38,12 @@ import java.util.Map;
 public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 	@SuppressWarnings("unused")
 	protected PrearcSessionValidator(final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String,Object> params) {
-		super(src,prearcSession,user,project,params,false,true,false,false);
+		super(null, src,prearcSession,user,project,params,false,true,false,false);
 	}
 
 	@SuppressWarnings("unused")
 	public PrearcSessionValidator(final PrearcSession session, final UserI user, final Map<String,Object> params) throws IOException, SAXException {
-		super(session,user,params,false,true,false,false);
+		super(null, session,user,params,false,true,false,false);
 	}
 
 	/**
@@ -108,7 +108,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		}
 	}
 
-	public StatusMessage call(){
+	public String call(){
 		return null;
 	}
 

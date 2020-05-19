@@ -27,8 +27,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.transactions.HTTPSessionStatusManagerQueue;
-import org.nrg.xnat.helpers.transactions.PersistentStatusQueueManagerI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils.UriParser;
@@ -155,8 +153,6 @@ public class Importer extends SecureResource {
             //maintain parameters
             loadQueryVariables();
 
-            ImporterHandlerA importer;
-
             // Set the overwrite flag if we are uploading directly to the archive (prearchive_code = 1)
             String prearchive_code = (String) params.get("prearchive_code");
             if ("1".equals(prearchive_code)) { // User has selected archive option
@@ -217,6 +213,7 @@ public class Importer extends SecureResource {
                 }
             }
 
+            ImporterHandlerA importer;
             if (fw.size() == 0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
 
                 this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");

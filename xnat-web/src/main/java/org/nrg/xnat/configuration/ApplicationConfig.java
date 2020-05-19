@@ -67,7 +67,7 @@ import java.util.*;
                 "org.nrg.framework.services.impl", "org.nrg.notify.daos", "org.nrg.prefs.repositories",
                 "org.nrg.xdat.daos", "org.nrg.xdat.security.validators", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xdat.services.cache.impl",
                 "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",
-                "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners",
+                "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.tracking", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services",
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
                 "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.preferences", "org.nrg.xnat.processors",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer"})

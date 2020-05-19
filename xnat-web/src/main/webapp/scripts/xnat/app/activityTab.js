@@ -28,7 +28,10 @@ var XNAT = getObject(XNAT);
     //TODO right now, this only monitors compressed uploader, but it should work for any async process, we just need
     // a unified way to poll progress
 
-    var activityTab, cookieTag;
+    let activityTab, cookieTag;
+    const prearchiveUrl = '<a target="_blank" href="' +
+        XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
+        '">prearchive</a>';
 
     XNAT.app = getObject(XNAT.app || {});
 
@@ -88,12 +91,14 @@ var XNAT = getObject(XNAT);
             activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
             delete activities[key];
             if ($row) {
-                $row.parents('div.item').hide();
+                $row.parents('div.item').remove();
             }
         }
         if ($.isEmptyObject(activities)) {
             XNAT.cookie.remove(cookieTag);
-            $('#activity-tab').css('visibility', 'hidden');
+            const tab = $('#activity-tab');
+            tab.css('visibility', 'hidden');
+            tab.find('div.item').remove();
         } else {
             XNAT.cookie.set(cookieTag, activities, {});
         }
@@ -128,42 +133,40 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag, errCnt) {
+    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag, errCnt, lastProgressIdx = -1) {
         if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
             return;
         }
-        $.ajax({
-            method: 'GET',
-            url: XNAT.url.restUrl('/REST/status/' + statusListenerId,
-                {format: 'json', stamp: (new Date()).getTime()}),
+        XNAT.xhr.getJSON({
+            url: XNAT.url.restUrl('/xapi/event_tracking/' + statusListenerId),
             success: function(respDat) {
                 var succeeded = null;
                 try {
-                    succeeded = populateDetails(div, detailsTag, respDat);
+                    [succeeded, lastProgressIdx] = populateDetails(div, detailsTag, respDat, lastProgressIdx);
                 } catch (e) {
                     console.log(e);
                     processError(statusListenerId, div, key, detailsTag, errCnt,
-                        e.name + ' (js): ' + e.message);
+                        e.name + ' (js): ' + e.message, lastProgressIdx);
                     return;
                 }
 
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
                 } else {
-                    checkImageArchivalProgress(statusListenerId, div, key, detailsTag, 0);
+                    checkImageArchivalProgress(statusListenerId, div, key, detailsTag, 0, lastProgressIdx);
                 }
             },
             error: function(xhr) {
                 processError(statusListenerId, div, key, detailsTag, errCnt,
-                    xhr.responseText ? ': ' + xhr.responseText : '');
+                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx);
             }
         });
     }
 
-    function processError(statusListenerId, div, key, detailsTag, errCnt, errDetails) {
+    function processError(statusListenerId, div, key, detailsTag, errCnt, errDetails, lastProgressIdx) {
         if (errCnt < 2) {
             setTimeout(function() {
-                checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt);
+                checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt, lastProgressIdx);
             }, 2000);
         } else {
             var msg = 'Issue polling archival progress' + errDetails + '. Refresh the page to try again or ' +
@@ -173,62 +176,68 @@ var XNAT = getObject(XNAT);
         }
     }
 
-    function populateDetails(div, detailsTag, jsonobj) {
-        var messages = "", succeeded = null,
-            prearchiveUrl = '<a target="_blank" href="' +
-                XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
-                '">prearchive</a>';
-        var respPos = jsonobj.msgs[0].length - 1;
-        for (var i = 0; i <= respPos; i++) {
-            var level = jsonobj.msgs[0][i]['status'];
-            var message = jsonobj.msgs[0][i]['msg'] || level;
-            var terminal = jsonobj.msgs[0][i]['terminal'];
-            message = message.charAt(0).toUpperCase() + message.substr(1);
-            if (level === "COMPLETED") {
-                if (terminal) {
-                    // stop polling
-                    succeeded = true;
-
-                    var dest = message.replace(/:.*/, '');
-                    var urls = message.replace(/^.*:/, '').split(';');
-                    var urlsHtml;
-                    if (dest.toLowerCase().includes('prearchive')) {
-                        urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
-                    } else {
-                        urlsHtml = $.map(urls, function (url) {
-                            var id = url.replace(/.*\//, '');
-                            return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
-                        }).join(', ');
-                    }
-
-                    msg = urls.length + ' session(s) successfully uploaded to ' + dest;
-                    message = msg + ': ' + urlsHtml;
-                }
-                message = '<div class="prog success">' + message + '</div>';
-            } else if (level === "PROCESSING") {
-                message = '<div class="prog info">' + message + '</div>';
-            } else if (level === "WARNING") {
-                message = '<div class="prog warning">' + message + '</div>';
-            } else if (level === "FAILED") {
-                if (terminal) {
-                    // stop polling
-                    succeeded = false;
-                    message = '<div class="prog error">Extraction/Review failed: ' + message + '</div>';
-                    message += '<div class="warning">Check the ' + prearchiveUrl +
-                        ', your data may be available there for manual review.</div>';
-                } else {
-                    message = '<div class="prog error">' + message + '</div>';
-                }
-            } else {
-                message = '<div class="prog info">' + message + '</div>';
+    function populateDetails(div, detailsTag, jsonobj, lastProgressIdx) {
+        let messages = "";
+        const succeeded = jsonobj['succeeded'];
+        const payload = JSON.parse(jsonobj['payload']);
+        let entryList = payload['entryList'] || [];
+        if (entryList.length === 0 && succeeded == null) {
+            return [null, lastProgressIdx];
+        }
+        entryList.forEach(function(e, i) {
+            if (i <= lastProgressIdx) {
+                return;
             }
-            messages += message;
+            let level = e.status;
+            let message = e.message.charAt(0).toUpperCase() + e.message.substr(1);
+            let clazz;
+            switch (level) {
+                case 'Waiting':
+                case 'InProgress':
+                    clazz = 'info';
+                    break;
+                case 'Warning':
+                    clazz = 'warning';
+                    break;
+                case 'Failed':
+                    clazz = 'error';
+                    break;
+                case 'Completed':
+                    clazz = 'success';
+                    break;
+            }
+            messages += '<div class="prog ' + clazz + '">' + message + '</div>';
+            lastProgressIdx = i;
+        });
+        if (succeeded != null) {
+            messages += parseFinalMessage(jsonobj['finalMessage'], succeeded)
         }
         if (messages) {
-            // if we didn't receive any messages, leave what's there
-            $(detailsTag).html(messages);
+            $(detailsTag).append(messages);
         }
-        return succeeded;
+        return [succeeded, lastProgressIdx];
+    }
+
+    function parseFinalMessage(message, succeeded) {
+        if (succeeded) {
+            const dest = message.replace(/:.*/, '');
+            const urls = message.replace(/^.*:/, '').split(';');
+            let urlsHtml;
+            if (dest.toLowerCase().includes('prearchive')) {
+                urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
+            } else {
+                urlsHtml = $.map(urls, function (url) {
+                    var id = url.replace(/.*\//, '');
+                    return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
+                }).join(', ');
+            }
+            return '<div class="prog success">' + urls.length +
+                ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
+        } else {
+            return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
+                '<div class="warning">Check the ' + prearchiveUrl +
+                ', your data may be available there for manual review.</div>';
+        }
     }
 
     function errorHandler(e, base) {
@@ -261,10 +270,6 @@ var XNAT = getObject(XNAT);
             activityTab.pollers = {};
             activityTab.cancel();
         });
-        $(document).on('click', 'a#logout_user', function() {
-            XNAT.cookie.remove(cookieTag);
-            return true;
-        })
     });
 
     return XNAT.app.activityTab = activityTab;

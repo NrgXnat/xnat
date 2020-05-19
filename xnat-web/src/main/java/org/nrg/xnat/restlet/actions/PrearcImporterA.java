@@ -25,13 +25,14 @@ import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 @SuppressWarnings("unchecked")
 @Slf4j
-public abstract class PrearcImporterA extends StatusProducer implements Callable<Iterable<PrearcSession>>{
+public abstract class PrearcImporterA extends ArchiveStatusProducer implements Callable<Iterable<PrearcSession>>{
 	@SuppressWarnings("serial")
 	public static class UnknownPrearcImporterException extends Exception {
 		public UnknownPrearcImporterException(String string,

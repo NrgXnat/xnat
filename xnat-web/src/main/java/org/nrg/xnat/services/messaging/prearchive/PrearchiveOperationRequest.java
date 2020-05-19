@@ -19,6 +19,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.prearchive.*;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
@@ -50,6 +51,10 @@ public class PrearchiveOperationRequest implements Serializable {
         this(user.getUsername(), operation, sessionData, sessionDir, parameters);
     }
 
+    public PrearchiveOperationRequest(final UserI user, final Operation operation, final SessionData sessionData, final File sessionDir, final Map<String, Object> parameters, final String listenerId) {
+        this(user.getUsername(), operation, sessionData, sessionDir, parameters, listenerId);
+    }
+
     public PrearchiveOperationRequest(final String username, final Operation operation, final PrearcSession session) throws Exception {
         this(username, operation, session.getSessionData(), session.getSessionDir(), session.getAdditionalValues());
     }
@@ -67,11 +72,16 @@ public class PrearchiveOperationRequest implements Serializable {
     }
 
     public PrearchiveOperationRequest(final String username, final Operation operation, final SessionData sessionData, final File sessionDir, final Map<String, Object> parameters) {
+        this(username, operation, sessionData, sessionDir, parameters, null);
+    }
+
+    public PrearchiveOperationRequest(final String username, final Operation operation, final SessionData sessionData, final File sessionDir, final Map<String, Object> parameters, @Nullable String listenerId) {
         _username = username;
         _operation = operation;
         _sessionData = sessionData;
         _sessionDir = sessionDir;
         _parameters = parameters == null ? new HashMap<String, Object>() : new HashMap<>(parameters);
+        _listenerId = listenerId;
     }
 
     @Override
@@ -89,4 +99,6 @@ public class PrearchiveOperationRequest implements Serializable {
     private final File                _sessionDir;
     @NonNull
     private final Map<String, Object> _parameters;
+    @Nullable
+    private final String              _listenerId;
 }

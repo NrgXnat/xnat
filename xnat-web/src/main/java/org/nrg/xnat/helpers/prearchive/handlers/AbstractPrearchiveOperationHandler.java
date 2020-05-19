@@ -59,6 +59,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
         _parameters = new HashMap<>(ObjectUtils.defaultIfNull(request.getParameters(), Collections.<String, Object>emptyMap()));
         _operation = getConfiguredOperation();
         _requestId = (request.getParameters() != null && request.getParameters().containsKey(DicomInboxImportRequest.IMPORT_REQUEST_ID)) ? (Long) request.getParameters().get(DicomInboxImportRequest.IMPORT_REQUEST_ID) : -1;
+        _listenerId = request.getListenerId();
     }
 
     /**
@@ -83,7 +84,11 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     }
 
     protected void progress(final int progress) {
-        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData));
+        progress(progress, null);
+    }
+
+    protected void progress(final int progress, final String message) {
+        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {
@@ -92,23 +97,12 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
         }
     }
 
-    protected void progress(final int progress, final String message) {
-        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData, message));
-        progress(progress);
-    }
-
     protected void completed() {
-        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData));
-        if (_requestId > 0) {
-            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
-            if (request != null) {
-                _importRequestService.complete(request);
-            }
-        }
+        completed(null);
     }
 
     protected void completed(final String message) {
-        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData, message));
+        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {
@@ -118,17 +112,11 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     }
 
     protected void failed() {
-        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData));
-        if (_requestId > 0) {
-            final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
-            if (request != null) {
-                _importRequestService.fail(request, "Unknown");
-            }
-        }
+        failed(null);
     }
 
     protected void failed(final String message) {
-        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData, message));
+        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {
@@ -184,6 +172,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     private final Operation                      _operation;
     private final DicomInboxImportRequestService _importRequestService;
     private final long                           _requestId;
+    private final String                         _listenerId;
 
     private UserI _user;
 }

@@ -521,8 +521,7 @@ public class FileList extends XNATCatalogTemplate {
                 final XnatResourcecatalog catResource = (XnatResourcecatalog) temp;
                 final CatalogData         catalogData;
                 try {
-                    catalogData = CatalogData.getOrCreateAndClean(rootArchivePath, catResource, includeRoot, projectId
-                    );
+                    catalogData = CatalogData.getOrCreateAndClean(rootArchivePath, catResource, includeRoot, projectId);
                 } catch (ServerException e) {
                     throw new ElementNotFoundException("xnat:resourceCatalog " + catResource.getUri());
                 }

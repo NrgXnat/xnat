@@ -927,7 +927,7 @@ public final class PrearcDatabase {
      * @throws SyncFailedException
      * @throws IllegalStateException
      */
-    public static Map<SessionDataTriple, Boolean> archive(final List<PrearcSession> sessions, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, final UserI user, final Set<StatusListenerI> listeners) throws Exception {
+    public static Map<SessionDataTriple, Boolean> archive(final Object control, final List<PrearcSession> sessions, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, final UserI user, final Set<StatusListenerI> listeners) throws Exception {
         List<SessionDataTriple> ss = new ArrayList<>();
 
         for (PrearcSession map : sessions) {
@@ -939,7 +939,7 @@ public final class PrearcDatabase {
             public void run() {
                 for (final PrearcSession session : sessions) {
                     try {
-                        PrearcDatabase._archive(session, overrideExceptions, allowSessionMerge, overwriteFiles, user, listeners, true);
+                        PrearcDatabase._archive(control, session, overrideExceptions, allowSessionMerge, overwriteFiles, user, listeners, true);
                     } catch (SyncFailedException e) {
                         log.error("", e);
                     }
@@ -949,11 +949,11 @@ public final class PrearcDatabase {
         return ret;
     }
 
-    public static String archive(PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners) throws SyncFailedException {
-        return PrearcDatabase._archive(session, overrideExceptions, allowSessionMerge, overwriteFiles, user, listeners, false);
+    public static String archive(Object control, PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners) throws SyncFailedException {
+        return PrearcDatabase._archive(control, session, overrideExceptions, allowSessionMerge, overwriteFiles, user, listeners, false);
     }
 
-    private static String _archive(PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners, boolean waitFor) throws SyncFailedException {
+    private static String _archive(Object control, PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners, boolean waitFor) throws SyncFailedException {
         log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         final String prearcDIR = session.getFolderName();
         final String timestamp = session.getTimestamp();
@@ -961,7 +961,7 @@ public final class PrearcDatabase {
 
         final PrearcSessionArchiver archiver;
         try {
-            archiver = new PrearcSessionArchiver(session, user, session.getAdditionalValues(), overrideExceptions, allowSessionMerge, waitFor, overwriteFiles);
+            archiver = new PrearcSessionArchiver(control, session, user, session.getAdditionalValues(), overrideExceptions, allowSessionMerge, waitFor, overwriteFiles);
         } catch (Exception e1) {
             PrearcUtils.log(project, timestamp, prearcDIR, e1);
             throw new IllegalStateException(e1);
@@ -980,13 +980,7 @@ public final class PrearcDatabase {
         LockAndSync<String> l = new LockAndSync<String>(prearcDIR, timestamp, project, sd.getStatus()) {
             String extSync() throws SyncFailedException {
                 try {
-                    StatusMessage result = archiver.call();
-                    StatusMessage.Status status = result.getStatus();
-                    if (status == StatusMessage.Status.COMPLETED) {
-                        return result.getMessage();
-                    } else {
-                        throw new SyncFailedException(status + ": " + result.getMessage());
-                    }
+                    return archiver.call();
                 } catch (Exception e) {
                     throw new SyncFailedException(e.getMessage(), e);
                 }

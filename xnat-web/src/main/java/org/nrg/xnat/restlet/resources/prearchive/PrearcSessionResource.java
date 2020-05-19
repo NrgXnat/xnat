@@ -406,15 +406,12 @@ public final class PrearcSessionResource extends SecureResource {
                 final PrearcSession prearcSession = new PrearcSession(project, timestamp, session, params, user);
                 if (prearcSession.isAutoArchive()) {
                     final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession,
-                            null, false, true);
+                            null, false, true, listenerControl);
                     if (listenerControl != null) {
-                        final StatusList sq = new StatusList();
-                        uploader.addStatusListener(sq);
-                        storeStatusList(listenerControl, sq);
-                        uploader.submit();
+                        uploader.submitAsync();
                         getResponse().setStatus(SUCCESS_OK, "Archival initiated");
                     } else {
-                        final String result = uploader.submitSync();
+                        final String result = uploader.call();
                         final String uri    = wrapPartialDataURI(result);
                         if (StringUtils.isBlank(uri)) {
                             getResponse().setStatus(SERVER_ERROR_INTERNAL, "The session " + prearcSession.toString() + " did not return a valid data URI.");

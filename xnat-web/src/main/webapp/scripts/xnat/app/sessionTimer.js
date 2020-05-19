@@ -477,9 +477,6 @@ var XNAT = getObject(XNAT);
             // var LOC = LOC_HREF;
             // var lastPageEnc = encodePageInfo(USR, LOC).encoded;
             window.clearInterval(timeout.intervalCheck);
-            if (XNAT.app.activityTab.cookieTag) {
-                XNAT.cookie.remove(XNAT.app.activityTab.cookieTag);
-            }
             timeout.redirecting = true;
             timeout.warningDialog.hide();
             if (!shade.isOpen) {

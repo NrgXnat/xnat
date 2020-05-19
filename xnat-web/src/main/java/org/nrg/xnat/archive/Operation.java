@@ -5,5 +5,6 @@ public enum Operation {
     Delete,
     Move,
     Rebuild,
-    Separate
+    Separate,
+    Import
 }

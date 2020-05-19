@@ -14,12 +14,12 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.nrg.PrearcImporter;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
-import org.nrg.framework.status.StatusProducer;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 @Slf4j
-public class ImageUploadHelper extends StatusProducer implements Callable<List<File>> {
+public class ImageUploadHelper extends ArchiveStatusProducer implements Callable<List<File>> {
 	private final String           project;
 
 	private final File src;
@@ -203,6 +203,7 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 		private Collection<StatusMessage> cache= new ArrayList<>();
 		public void notify(StatusMessage message) {
 			cache.add(message);
+			publish(message);
 		}
 
 		public Collection<StatusMessage> getCachedMessages(){

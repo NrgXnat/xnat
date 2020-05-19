@@ -25,6 +25,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
@@ -40,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Slf4j
-public abstract class AbstractDicomImportOperation extends StatusProducer implements DicomImportOperation {
+public abstract class AbstractDicomImportOperation extends ArchiveStatusProducer implements DicomImportOperation {
     public AbstractDicomImportOperation(final Object control, final UserI user, final Map<String, Object> parameters, final FileWriterWrapperI fileWriter, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer, final MizerService mizer, final DicomFilterService filterService, final List<ArchiveProcessor> processors, final ArchiveProcessorInstanceService processorInstanceService) {
         super(control);
         _user = user;

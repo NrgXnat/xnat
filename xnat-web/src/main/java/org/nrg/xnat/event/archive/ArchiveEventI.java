@@ -8,6 +8,7 @@ public interface ArchiveEventI extends EventI {
     enum Status {
         Waiting,
         InProgress,
+        Warning,
         Completed,
         Failed;
 
@@ -86,4 +87,10 @@ public interface ArchiveEventI extends EventI {
      * @return A description of the archive operation.
      */
     String getMessage();
+
+    /**
+     * Get the time of the event in MS
+     * @return event time
+     */
+    long getEventTime();
 }

@@ -15,41 +15,34 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducerI;
+import org.nrg.xnat.event.EventListener;
 import org.nrg.xnat.event.archive.ArchiveEventI;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.nrg.xnat.tracking.TrackEvent;
 import reactor.bus.Event;
-import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
 import java.util.Collection;
 import java.util.Map;
 
-import static reactor.bus.selector.Selectors.type;
-
 /**
  * Handles events fired as archive operations occur.
  */
-@Service
+@EventListener
 @Slf4j
 public class ArchiveEventListener implements Consumer<Event<ArchiveEventI>>, StatusProducerI {
-    @Autowired
-    public ArchiveEventListener(final EventBus eventBus) {
-        super();
-        eventBus.on(type(ArchiveEventI.class), this);
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
+    @TrackEvent
     public void accept(final Event<ArchiveEventI> busEvent) {
         log.debug("Received event {} for session archive event {}", busEvent.getId(), busEvent.getData());
         final ArchiveEventI event          = busEvent.getData();
         final String        archiveEventId = event.getArchiveEventId();
+        final StatusMessage sm = new StatusMessage(busEvent.getId(), event.getStatus().status(), event.getMessage());
         for (final ArchiveOperationListener listener : _listeners.get(archiveEventId)) {
             log.debug("Notifying listener {} of event {}: {}) {}", listener.getArchiveOperationId(), busEvent.getId(), event.getStatus().status(), event.getMessage());
-            listener.notify(new StatusMessage(busEvent.getId(), event.getStatus().status(), event.getMessage()));
+            listener.notify(sm);
         }
     }
 

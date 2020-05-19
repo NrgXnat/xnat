@@ -18,9 +18,9 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
-import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.event.listeners.ArchiveEventListener;
 import org.nrg.xnat.event.listeners.ArchiveOperationListener;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -28,6 +28,8 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.ListenerUtils;
+import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
+import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.restlet.data.Status;
 
@@ -51,12 +53,12 @@ import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequ
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
-public class QueueBasedImageCommit extends StatusProducer implements Callable<StatusMessage>, ArchiveOperationListener {
-    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge) throws Exception {
-        this(control, user, session, destination, overrideExceptions, allowSessionMerge, false);
+public class QueueBasedImageCommit extends ArchiveStatusProducer implements Callable<String>, ArchiveOperationListener {
+    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId) throws Exception {
+        this(control, user, session, destination, overrideExceptions, allowSessionMerge, listenerId, false);
     }
 
-    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final boolean inline) throws Exception {
+    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId, final boolean inline) throws Exception {
         super(control);
 
         _user = user;
@@ -76,6 +78,8 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
         if (destination != null) {
             _parameters.put(PARAM_DESTINATION, destination);
         }
+        _archiveOperationId = StringUtils.defaultIfBlank(listenerId,
+                XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session));
         _archiveEventListener = XDAT.getContextService().getBean(ArchiveEventListener.class);
         _archiveEventListener.addStatusListener(this);
 
@@ -83,11 +87,11 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     }
 
     @Override
-    public StatusMessage call() throws Exception {
+    public String call() throws Exception {
         if (isInline()) {
             //This is being done as part of a parent transaction and should not manage prearc cache state.
             log.debug("Completing inline archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
-            return ListenerUtils.addListeners(this, new PrearcSessionArchiver(getPrearcSession(),
+            return ListenerUtils.addListeners(this, new PrearcSessionArchiver(_control, getPrearcSession(),
                                                                               getUser(),
                                                                               removePrearcVariables(_prearcSession.getAdditionalValues()),
                                                                               isOverrideExceptions(),
@@ -97,26 +101,44 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
         }
 
         try {
+            final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
+                    .getBean(EventTrackingDataService.class);
+            eventTrackingDataService.createWithKey(_archiveOperationId);
+
             log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
-            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, getSessionData(), getSessionDir(), getParameters());
+            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,
+                    getSessionData(), getSessionDir(), getParameters(), _archiveOperationId);
             XDAT.sendJmsRequest(request);
             log.trace("{}: Dispatched JMS request: {}", getArchiveOperationId(), request);
 
             final int       timeout   = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
             final StopWatch stopWatch = StopWatch.createStarted();
-            while (_message == null || _message.getStatus() == PROCESSING) {
+            EventTrackingDataPojo eventTrackingData = null;
+            while (eventTrackingData == null || eventTrackingData.getSucceeded() == null) {
                 if (stopWatch.getTime(TimeUnit.SECONDS) > timeout) {
                     String msg = "The session " + getPrearcSession().toString() +
                             " did not return a valid data URI within the timeout interval of " + timeout + " seconds.";
-                    return new StatusMessage(this, FAILED, msg, true);
+                    throw new TimeoutException(msg);
                 }
                 log.debug("Checked for message with final status but didn't find it, sleeping for a bit...");
                 Thread.sleep(500);
+                eventTrackingData = eventTrackingDataService.getPojoByKey(_archiveOperationId);
             }
 
-            log.debug("Found a message with status {}: {}", _message.getStatus(), _message.getMessage());
-            notifyListeners(new StatusMessage(this, _message.getStatus(), _message.getMessage(), true));
-            return _message;
+            String uriOrMessage = eventTrackingData.getFinalMessage();
+            StatusMessage.Status status = eventTrackingData.getSucceeded() ? COMPLETED : FAILED;
+            log.debug("Found a workflow with status {}: {}", status, uriOrMessage);
+            notify(new StatusMessage(this, status, uriOrMessage, true));
+            if (status == COMPLETED) {
+                if (StringUtils.isBlank(uriOrMessage))  {
+                    throw new ServerException(Status.SERVER_ERROR_INTERNAL,
+                            "No URI returned when trying to archive " + _session);
+                } else {
+                    return wrapPartialDataURI(uriOrMessage);
+                }
+            }  else {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + uriOrMessage);
+            }
         } finally {
             log.debug("Removing the QueueBasedImageCommit instance {} from the archive event listener: {}", getArchiveOperationId(), this);
             _archiveEventListener.removeStatusListener(this);
@@ -126,12 +148,6 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     @Override
     public void notify(final StatusMessage message) {
         _message = message;
-        for (final StatusListenerI listener : getListeners()) {
-            listener.notify(message);
-        }
-    }
-
-    private void notifyListeners(final StatusMessage message) {
         for (final StatusListenerI listener : getListeners()) {
             listener.notify(message);
         }
@@ -147,30 +163,8 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
         return getArchiveOperationId() + ":" + (_message != null ? _message.getStatus() + ":" + _message.getMessage() : "<null>");
     }
 
-    public Future<StatusMessage> submit() {
-        return getExecutor().submit(this);
-    }
-
-    public String submitSync() throws TimeoutException, ServerException {
-        final Future<StatusMessage> future  = submit();
-        final int            timeout = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
-        try {
-            final StatusMessage result = future.get(timeout, TimeUnit.SECONDS);
-            StatusMessage.Status status = result.getStatus();
-            if (status == COMPLETED) {
-                final String uri    = wrapPartialDataURI(result.getMessage());
-                if (StringUtils.isBlank(uri)) {
-                    throw new TimeoutException("The session " + getPrearcSession().toString() +
-                            " did not return a valid data URI within the timeout interval of " + timeout + " seconds.");
-                }
-                return uri;
-            }  else {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + result.getMessage());
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("An error occurred while trying to archive the session {}", getPrearcSession().toString(), e);
-            return null;
-        }
+    public void submitAsync() {
+        getExecutor().submit(this);
     }
 
     private String wrapPartialDataURI(final String uri) {
@@ -192,8 +186,8 @@ public class QueueBasedImageCommit extends StatusProducer implements Callable<St
     private final String _timestamp;
     @Getter(PUBLIC)
     private final String _session;
-    @Getter(value = PUBLIC, lazy = true)
-    private final @NonNull String _archiveOperationId = XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session);
+    @Getter(PUBLIC)
+    private final @NonNull String _archiveOperationId;
 
     private final UserI                _user;
     private final PrearcSession        _prearcSession;

@@ -18,9 +18,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
-import org.nrg.framework.status.StatusMessage;
-import org.nrg.framework.status.StatusProducer;
-import org.nrg.framework.status.StatusProducerI;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -41,6 +38,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.helpers.merge.MergePrearcToArchiveSession;
@@ -73,9 +71,8 @@ import java.util.concurrent.Callable;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
-// Migration: I'm not sure why StatusProducer is deprecated
 @Slf4j
-public class PrearcSessionArchiver extends StatusProducer implements Callable<StatusMessage>, StatusProducerI {
+public class PrearcSessionArchiver extends ArchiveStatusProducer implements Callable<String> {
 
     public static final String MERGED = "Merged";
     
@@ -115,8 +112,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     private boolean needsScanIdCorrection = false;
     private DicomFilterService _filterService;
 
-    protected PrearcSessionArchiver(final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String, Object> params, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean waitFor, final Boolean overwriteFiles) {
-        super(src.getPrearchivePath());
+    protected PrearcSessionArchiver(final Object control, final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String, Object> params, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean waitFor, final Boolean overwriteFiles) {
+        super(control);
         this.src = src;
         this.user = user;
         this.project = project;
@@ -128,7 +125,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         this.waitFor = waitFor;
     }
 
-    public PrearcSessionArchiver(final PrearcSession session,
+    public PrearcSessionArchiver(final Object control,
+                                 final PrearcSession session,
                                  final UserI user,
                                  final Map<String, Object> params,
                                  boolean overrideExceptions,
@@ -136,7 +134,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                                  final boolean waitFor,
                                  final Boolean overwriteFiles)
             throws IOException, SAXException {
-        this((new XNATSessionPopulater(user,
+        this(control,
+                (new XNATSessionPopulater(user,
                         session.getSessionDir(),
                         session.getProject(),
                         false)).populate(),
@@ -478,7 +477,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
     /* (non-Javadoc)
      * @see java.util.concurrent.Callable#call()
      */
-    public StatusMessage call() throws ClientException, ServerException {
+    public String call() throws ClientException, ServerException {
         try {
             this.lock(this.prearcSession.getUrl());
         } catch (LockedItemException e3) {
@@ -519,23 +518,22 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
             final EventMetaI c;
 
             PersistentWorkflowI workflow2 = null;
-			final EventMetaI c2;
-
             try {
                 String justification = (String) params.get(EventUtils.EVENT_REASON);
                 if (justification == null) {
                     justification = "standard upload";
                 }
-                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing==null)?src.getItem():existing.getItem()),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), (existing==null)?EventUtils.TRANSFER:MERGED, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
-                assert workflow != null;
+                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing==null)?src.getItem():existing.getItem()),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), (existing==null)?EventUtils.TRANSFER:MERGED, justification, (String)params.get(EventUtils.EVENT_COMMENT)));
+                if (workflow == null) {
+                    throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to create workflow");
+                }
 			    workflow.setStepDescription("Validating");
                 c = workflow.buildEvent();
                 
 				if(existing!=null){
 					if(!StringUtils.equals(existing.getUid(),src.getUid())){
-						workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), MERGED_UID, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
+						workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), MERGED_UID, justification, (String)params.get(EventUtils.EVENT_COMMENT)));
 						workflow2.setStepDescription("Validating");
-						c2=workflow2.buildEvent();
 					}
 				}
             } catch (JustificationAbsent e2) {
@@ -711,7 +709,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         final String url = buildURI(project, src);
 
         completed("archiving operation complete");
-        return new StatusMessage(this, StatusMessage.Status.COMPLETED, url);
+        return url;
     }
 
     /**

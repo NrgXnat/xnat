@@ -17,13 +17,14 @@ import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.xnat.SOPHashDicomFileNamer;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.status.StatusProducer;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
+import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 import java.lang.reflect.Constructor;
@@ -34,9 +35,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public abstract class ImporterHandlerA extends StatusProducer implements Callable<List<String>> {
+public abstract class ImporterHandlerA extends ArchiveStatusProducer implements Callable<List<String>> {
     public ImporterHandlerA(final Object listenerControl, final UserI u) {
         super((listenerControl == null) ? u : listenerControl);
+        publish(new StatusMessage(this, StatusMessage.Status.PROCESSING, "Start"));
     }
 
     public abstract List<String> call() throws ClientException, ServerException;

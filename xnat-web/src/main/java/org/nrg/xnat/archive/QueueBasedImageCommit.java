@@ -127,7 +127,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
 
             String uriOrMessage = eventTrackingData.getFinalMessage();
             StatusMessage.Status status = eventTrackingData.getSucceeded() ? COMPLETED : FAILED;
-            log.debug("Found a workflow with status {}: {}", status, uriOrMessage);
+            log.debug("Found event tracking data with status {}: {}", status, uriOrMessage);
             notify(new StatusMessage(this, status, uriOrMessage, true));
             if (status == COMPLETED) {
                 if (StringUtils.isBlank(uriOrMessage))  {

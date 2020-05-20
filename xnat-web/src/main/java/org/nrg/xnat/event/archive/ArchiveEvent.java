@@ -13,9 +13,14 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.tracking.model.ArchiveEventTrackingLog;
 import org.nrg.xnat.utils.XnatHttpUtils;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
 
 /**
  * The Class XftItemEvent.
@@ -139,5 +144,35 @@ public class ArchiveEvent implements ArchiveEventI {
 
     public String getArchiveEventId() {
         return StringUtils.defaultIfBlank(_archiveEventId, XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session));
+    }
+
+    @Override
+    public String getTrackingId() {
+        return getArchiveEventId();
+    }
+
+    @Override
+    public boolean isSuccess() {
+        return _status != Status.Failed;
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return _progress == 100;
+    }
+
+    @Override
+    public String updateTrackingPayload(@Nullable String currentPayload)
+            throws IOException {
+        ArchiveEventTrackingLog statusLog;
+        if (currentPayload != null) {
+            statusLog = XDAT.getSerializerService().getObjectMapper()
+                    .readValue(currentPayload, ArchiveEventTrackingLog.class);
+        } else {
+            statusLog = new ArchiveEventTrackingLog();
+        }
+        statusLog.addToEntryList(new ArchiveEventTrackingLog.MessageEntry(_status, _eventTime, _message));
+        statusLog.sortEntryList();
+        return XDAT.getSerializerService().getObjectMapper().writeValueAsString(statusLog);
     }
 }

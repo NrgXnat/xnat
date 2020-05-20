@@ -3,11 +3,9 @@ package org.nrg.xnat.tracking.aspects;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
-import org.nrg.xnat.event.archive.ArchiveEventI;
+import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
-import org.nrg.xnat.tracking.entities.EventTrackingLog;
 import org.nrg.xnat.tracking.services.EventTrackingDataService;
-import org.nrg.xnat.tracking.services.EventTrackingLogPayloadParser;
 import org.nrg.xnat.tracking.TrackEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,41 +19,32 @@ import java.io.IOException;
 @Component
 public class EventTrackingAspect {
     @Autowired
-    public EventTrackingAspect(final EventTrackingDataService eventTrackingDataService,
-                               final EventTrackingLogPayloadParser eventTrackingLogPayloadParser) {
+    public EventTrackingAspect(final EventTrackingDataService eventTrackingDataService) {
         this.eventTrackingDataService = eventTrackingDataService;
-        this.eventTrackingLogPayloadParser = eventTrackingLogPayloadParser;
     }
 
     @Pointcut("@annotation(trackEvent)")
     public void trackingPointcut(final TrackEvent trackEvent) {
     }
 
-    @Before(value = "trackingPointcut(trackEvent) && args(archiveEvent)", argNames = "trackEvent, archiveEvent")
-    public void updateArchiveEventTracker(final TrackEvent trackEvent,
-                                          final Event<ArchiveEventI> archiveEvent) {
-        final ArchiveEventI event = archiveEvent.getData();
-        String key = event.getArchiveEventId();
+    @Before(value = "trackingPointcut(trackEvent) && args(event)", argNames = "trackEvent, event")
+    public <T extends TrackableEvent> void updateEventTracker(final TrackEvent trackEvent, final Event<T> event) {
+        final T eventData = event.getData();
+        String key = eventData.getTrackingId();
         if (key == null) {
             return;
         }
 
         synchronized (this) {
             EventTrackingData eventTrackingData = eventTrackingDataService.findOrCreateByKey(key);
-            if (event.getProgress() == 100) {
-                eventTrackingData.setSucceeded(event.getStatus() != ArchiveEventI.Status.Failed);
-                eventTrackingData.setFinalMessage(event.getMessage());
+            if (eventData.isCompleted()) {
+                eventTrackingData.setSucceeded(eventData.isSuccess());
+                eventTrackingData.setFinalMessage(eventData.getMessage());
             } else {
                 try {
-                    EventTrackingLog statusLog = eventTrackingLogPayloadParser.getParsedPayload(eventTrackingData);
-                    if (statusLog == null) {
-                        statusLog = new EventTrackingLog();
-                    }
-                    statusLog.addToEntryList(new EventTrackingLog.MessageEntry(event.getStatus(),
-                            event.getEventTime(), event.getMessage()));
-                    eventTrackingData.setPayload(eventTrackingLogPayloadParser.stringifyPayload(statusLog));
+                    eventTrackingData.setPayload(eventData.updateTrackingPayload(eventTrackingData.getPayload()));
                 } catch (IOException e) {
-                    log.error("Unable to parse payload, not updating event listener data for {}", key, e);
+                    log.error("Unable to parse payload, not updating event tracking data for {}", key, e);
                 }
             }
             eventTrackingDataService.update(eventTrackingData);
@@ -63,5 +52,4 @@ public class EventTrackingAspect {
     }
 
     private final EventTrackingDataService eventTrackingDataService;
-    private final EventTrackingLogPayloadParser eventTrackingLogPayloadParser;
 }

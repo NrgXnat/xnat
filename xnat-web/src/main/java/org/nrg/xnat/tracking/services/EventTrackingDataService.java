@@ -17,7 +17,7 @@ import org.nrg.xnat.tracking.entities.EventTrackingData;
 /**
  * Provides information about the current host.
  */
-public interface EventTrackingDataService extends BaseHibernateService<org.nrg.xnat.tracking.entities.EventTrackingData> {
+public interface EventTrackingDataService extends BaseHibernateService<EventTrackingData> {
     /**
      * Get EventListenerData payload by key
      * @param key the key
@@ -32,7 +32,7 @@ public interface EventTrackingDataService extends BaseHibernateService<org.nrg.x
      * @return the entity
      * @throws NotFoundException if no event listener data exists for this key
      */
-    org.nrg.xnat.tracking.entities.EventTrackingData findByKey(final String key) throws NotFoundException;
+    EventTrackingData findByKey(final String key) throws NotFoundException;
 
     /**
      * Get EventListenerData entity by key

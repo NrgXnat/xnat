@@ -1,4 +1,4 @@
-package org.nrg.xnat.tracking.entities;
+package org.nrg.xnat.tracking.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
@@ -10,12 +10,12 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonInclude
-public class EventTrackingLog {
+public class ArchiveEventTrackingLog {
     private List<MessageEntry> entryList = new ArrayList<>();
 
-    public EventTrackingLog() {}
+    public ArchiveEventTrackingLog() {}
 
-    public EventTrackingLog(List<MessageEntry> entryList) {
+    public ArchiveEventTrackingLog(List<MessageEntry> entryList) {
         this.entryList = entryList;
     }
 
@@ -75,7 +75,7 @@ public class EventTrackingLog {
         }
 
         @Override
-        public int compareTo(@NotNull EventTrackingLog.MessageEntry o) {
+        public int compareTo(@NotNull ArchiveEventTrackingLog.MessageEntry o) {
             return Long.compare(this.eventTime, o.eventTime);
         }
     }

@@ -1,10 +1,10 @@
 package org.nrg.xnat.event.archive;
 
-import org.nrg.framework.event.EventI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.xnat.archive.Operation;
+import org.nrg.xnat.tracking.model.TrackableEvent;
 
-public interface ArchiveEventI extends EventI {
+public interface ArchiveEventI extends TrackableEvent {
     enum Status {
         Waiting,
         InProgress,

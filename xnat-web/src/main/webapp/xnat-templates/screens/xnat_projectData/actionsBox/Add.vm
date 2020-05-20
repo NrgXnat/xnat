@@ -26,11 +26,13 @@
                 #if(!$siteConfig.getBooleanValue("uiHideProjectActionsAddBrowseableElements"))
                     #foreach($dataType in $exptCounts.keySet())
                         #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
+                        #if ($ed)
                             <li class="yuimenuitem">
                                 <a class="yuimenuitemlabel"
                                     href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
                                     'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
                             </li>
+                        #end
                     #end
                     #set($key="xnat:mrSessionData")
                     #if(!$exptCounts.containsKey($key))

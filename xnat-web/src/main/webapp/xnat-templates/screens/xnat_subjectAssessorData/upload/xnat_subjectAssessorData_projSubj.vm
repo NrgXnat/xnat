@@ -43,12 +43,10 @@
 </tr>
 
 
-#addGlobalCustomScreens("projectSubjectForm")
-
-
 <script type="text/javascript" src="$content.getURI('scripts/subjectAssessorData/proj_subj_selector.js')"></script>
 <script type="text/javascript" src="$content.getURI('scripts/popupCentered.js')"></script>
 
+#addGlobalCustomScreens("projectSubjectForm")
 
 #parse($turbineUtils.getTemplateName("_session.vm",$om.getXSIType(),$project,"upload"))
 

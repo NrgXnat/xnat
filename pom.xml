@@ -184,6 +184,7 @@
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.23.1-GA</javassist.version>
         <javax-activation.version>1.1.1</javax-activation.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-interceptor.version>1.2.2</javax-interceptor.version>
         <javax-j2ee-api.version>1.1.1</javax-j2ee-api.version>
@@ -1029,16 +1030,6 @@
                 <version>${dcm4che.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.jms</groupId>
-                <artifactId>javax.jms-api</artifactId>
-                <version>${javax-jms-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.management.j2ee</groupId>
-                <artifactId>javax.management.j2ee-api</artifactId>
-                <version>${javax-j2ee-api.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-core</artifactId>
                 <version>${activemq.version}</version>
@@ -1245,11 +1236,6 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>javax.xml</groupId>
-                <artifactId>jaxrpc-api</artifactId>
-                <version>1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -1308,46 +1294,6 @@
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${servlet-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>jstl</artifactId>
-                <version>${jstl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${javax-activation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${javax-inject.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.interceptor</groupId>
-                <artifactId>javax.interceptor-api</artifactId>
-                <version>${javax-interceptor.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax-validation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>javax.mail-api</artifactId>
-                <version>${javax-mail.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.mail</groupId>
-                <artifactId>javax.mail</artifactId>
-                <version>${javax-mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
@@ -1673,17 +1619,6 @@
                 <version>${imagej.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.media</groupId>
-                <artifactId>jai_imageio</artifactId>
-                <version>${jai_imageio.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.media</groupId>
-                        <artifactId>jai_core</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.jcraft</groupId>
                 <artifactId>jzlib</artifactId>
                 <version>${jzlib.version}</version>
@@ -1707,6 +1642,79 @@
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-core-api-module</artifactId>
                 <version>${cargo.version}</version>
+            </dependency>
+
+            <!-- Java extension and Sun internal libraries -->
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${javax-activation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax-annotation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>${javax-inject.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.interceptor</groupId>
+                <artifactId>javax.interceptor-api</artifactId>
+                <version>${javax-interceptor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.jms</groupId>
+                <artifactId>javax.jms-api</artifactId>
+                <version>${javax-jms-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.mail</groupId>
+                <artifactId>javax.mail-api</artifactId>
+                <version>${javax-mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.management.j2ee</groupId>
+                <artifactId>javax.management.j2ee-api</artifactId>
+                <version>${javax-j2ee-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${servlet-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>jstl</artifactId>
+                <version>${jstl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax-validation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml</groupId>
+                <artifactId>jaxrpc-api</artifactId>
+                <version>1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.media</groupId>
+                <artifactId>jai_imageio</artifactId>
+                <version>${jai_imageio.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.media</groupId>
+                        <artifactId>jai_core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>${javax-mail.version}</version>
             </dependency>
 
             <!-- Optional dependencies. These are usually for IDE tools or annotation processors -->

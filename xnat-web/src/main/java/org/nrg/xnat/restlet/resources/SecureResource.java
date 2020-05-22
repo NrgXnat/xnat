@@ -285,6 +285,10 @@ public abstract class SecureResource extends Resource {
         return convertFormToMap(getQueryVariableForm());
     }
 
+    public Map<String, String> getDecodedQueryVariableMap() {
+        return convertFormToMapAndDecode(getQueryVariableForm());
+    }
+
     protected SerializerService getSerializer() {
         return _serializer;
     }
@@ -326,6 +330,21 @@ public abstract class SecureResource extends Resource {
         if (q != null) {
             for (String s : q.getValuesMap().keySet()) {
                 map.put(s, TurbineUtils.escapeParam(q.getFirstValue(s)));
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, String> convertFormToMapAndDecode(Form q) {
+        Map<String, String> map = Maps.newLinkedHashMap();
+        if (q != null) {
+            for (String s : q.getValuesMap().keySet()) {
+                try {
+                    String value = q.getFirstValue(s);
+                    map.put(s, value == null ? null : URLDecoder.decode(value, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         return map;

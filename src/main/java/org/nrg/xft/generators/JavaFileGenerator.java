@@ -2264,7 +2264,7 @@ public class JavaFileGenerator {
         sb.append("\n$page.setTitle(\"XDAT\")");
         sb.append("\n$page.setLinkColor($ui.alink)");
         sb.append("\n$page.setVlinkColor($ui.vlink)");
-        sb.append("/*\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
+        sb.append("\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
         sb.append("\n#set($months = [\"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"])");
         sb.append("\n#set($days = [ 1..31 ])");
         sb.append("\n#set($years = [ $!turbineUtils.getYear()..1900])");
@@ -2332,7 +2332,7 @@ public class JavaFileGenerator {
         sb.append("\n$page.setVlinkColor($ui.vlink)");
         
 
-        sb.append("/*\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
+        sb.append("\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
         sb.append("\n#if ($turbineUtils.GetPassedParameter(\"popup\", $data))");
         sb.append("\n\t#set ($popup = $turbineUtils.GetPassedParameter(\"popup\", data) )");
         sb.append("\n\t#set ($popup = \"false\")");

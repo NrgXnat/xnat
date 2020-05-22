@@ -136,8 +136,6 @@ dependencyManagement {
     }
 }
 
-def vStratum = dependencyManagement.importedProperties["stratum.version"]
-
 dependencies {
     annotationProcessor "org.nrg:framework"
     annotationProcessor "com.google.auto.value:auto-value"
@@ -292,9 +290,6 @@ dependencies {
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
     implementation "com.google.auto.value:auto-value-annotations"
-    implementation("stratum:stratum:1.0") {
-        transitive = false
-    }
 
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "javax.servlet:javax.servlet-api"
@@ -314,10 +309,6 @@ dependencies {
     runtimeOnly "org.javassist:javassist"
     runtimeOnly "org.python:jython-standalone"
 
-    runtimeOnly("stratum:stratum:${vStratum}") {
-        transitive = false
-    }
-
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
             "org.apache.tomcat.embed:tomcat-embed-logging-juli",
             "org.apache.tomcat.embed:tomcat-embed-jasper"
@@ -335,7 +326,7 @@ dependencies {
     testImplementation "org.assertj:assertj-core"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"
-    testImplementation "org.hamcrest:hamcrest-core"
+    testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.powermock:powermock-api-mockito2"
     testImplementation "org.powermock:powermock-module-junit4"

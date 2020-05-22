@@ -29,26 +29,7 @@ public class EventTrackingAspect {
 
     @Before(value = "trackingPointcut(trackEvent) && args(event)", argNames = "trackEvent, event")
     public <T extends TrackableEvent> void updateEventTracker(final TrackEvent trackEvent, final Event<T> event) {
-        final T eventData = event.getData();
-        String key = eventData.getTrackingId();
-        if (key == null) {
-            return;
-        }
-
-        synchronized (this) {
-            EventTrackingData eventTrackingData = eventTrackingDataService.findOrCreateByKey(key);
-            if (eventData.isCompleted()) {
-                eventTrackingData.setSucceeded(eventData.isSuccess());
-                eventTrackingData.setFinalMessage(eventData.getMessage());
-            } else {
-                try {
-                    eventTrackingData.setPayload(eventData.updateTrackingPayload(eventTrackingData.getPayload()));
-                } catch (IOException e) {
-                    log.error("Unable to parse payload, not updating event tracking data for {}", key, e);
-                }
-            }
-            eventTrackingDataService.update(eventTrackingData);
-        }
+        eventTrackingDataService.createOrUpdate(event.getData());
     }
 
     private final EventTrackingDataService eventTrackingDataService;

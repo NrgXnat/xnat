@@ -19,6 +19,7 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.tracking.model.ArchiveEventTrackingLog;
 import org.nrg.xnat.utils.XnatHttpUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -67,7 +68,7 @@ public class ArchiveEvent implements ArchiveEventI {
         return failed(operation, session.getProject(), session.getTimestamp(), session.getName(), listenerId, null);
     }
 
-    public static ArchiveEvent failed(final Operation operation, final SessionData session, final String message, final String listenerId) {
+    public static ArchiveEvent failed(final Operation operation, final SessionData session, final String listenerId, final String message) {
         return failed(operation, session.getProject(), session.getTimestamp(), session.getName(), listenerId, message);
     }
 
@@ -91,7 +92,7 @@ public class ArchiveEvent implements ArchiveEventI {
         return warn(operation, session.getProject(), session.getTimestamp(), session.getName(), listenerId, null);
     }
 
-    public static ArchiveEvent warn(final Operation operation, final SessionData session, final String message, final String listenerId) {
+    public static ArchiveEvent warn(final Operation operation, final SessionData session, final String listenerId, final String message) {
         return warn(operation, session.getProject(), session.getTimestamp(), session.getName(), listenerId, message);
     }
 
@@ -147,6 +148,7 @@ public class ArchiveEvent implements ArchiveEventI {
     }
 
     @Override
+    @Nonnull
     public String getTrackingId() {
         return getArchiveEventId();
     }
@@ -162,8 +164,7 @@ public class ArchiveEvent implements ArchiveEventI {
     }
 
     @Override
-    public String updateTrackingPayload(@Nullable String currentPayload)
-            throws IOException {
+    public String updateTrackingPayload(@Nullable String currentPayload) throws IOException {
         ArchiveEventTrackingLog statusLog;
         if (currentPayload != null) {
             statusLog = XDAT.getSerializerService().getObjectMapper()

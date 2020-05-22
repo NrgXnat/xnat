@@ -1,7 +1,7 @@
 /*
- * web: org.nrg.xnat.services.system.HostInfoService
+ * web: org.nrg.xnat.tracking.services.EventTrackingDataService
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -13,6 +13,7 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
+import org.nrg.xnat.tracking.model.TrackableEvent;
 
 /**
  * Provides information about the current host.
@@ -54,4 +55,10 @@ public interface EventTrackingDataService extends BaseHibernateService<EventTrac
      * @param key the key
      */
     void createWithKey(String key);
+
+    /**
+     * Create or update eventTrackingData with TrackableEvent
+     * @param eventData the trackable event
+     */
+    void createOrUpdate(TrackableEvent eventData);
 }

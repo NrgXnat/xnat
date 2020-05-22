@@ -2,6 +2,7 @@ package org.nrg.xnat.tracking.model;
 
 import org.nrg.framework.event.EventI;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -10,6 +11,7 @@ public interface TrackableEvent extends EventI {
      * Return a unique identifier for tracking the event
      * @return the unique ID
      */
+    @Nonnull
     String getTrackingId();
 
     /**

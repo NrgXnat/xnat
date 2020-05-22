@@ -1,29 +1,28 @@
 /*
- * web: org.nrg.xnat.services.system.impl.hibernate.HibernateHostInfoService
+ * web: org.nrg.xnat.tracking.services.impl.EventTrackingDataServiceImpl
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-/*
- * 
- */
 package org.nrg.xnat.tracking.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.tracking.daos.EventTrackingDataDao;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
+import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * {@inheritDoc}
- */
+import java.io.IOException;
+
+@Slf4j
 @Service
 public class EventTrackingDataServiceImpl
         extends AbstractHibernateEntityService<EventTrackingData, EventTrackingDataDao>
@@ -80,5 +79,26 @@ public class EventTrackingDataServiceImpl
     @Override
     public void createWithKey(String key) {
         create(new EventTrackingData(key));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Transactional
+    @Override
+    public synchronized void createOrUpdate(TrackableEvent eventData) {
+        String key = eventData.getTrackingId();
+        EventTrackingData eventTrackingData = findOrCreateByKey(key);
+        if (eventData.isCompleted()) {
+            eventTrackingData.setSucceeded(eventData.isSuccess());
+            eventTrackingData.setFinalMessage(eventData.getMessage());
+        } else {
+            try {
+                eventTrackingData.setPayload(eventData.updateTrackingPayload(eventTrackingData.getPayload()));
+            } catch (IOException e) {
+                log.error("Unable to parse payload, not updating event tracking data payload for {}", key, e);
+            }
+        }
+        update(eventTrackingData);
     }
 }

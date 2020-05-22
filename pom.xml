@@ -73,6 +73,14 @@
         <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev-ml.version}</xdat.version>
 
+        <!-- Plugin versions -->
+        <ohif-viewer.version>2.2.0-SNAPSHOT</ohif-viewer.version>
+        <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
+        <dqr.version>1.0.0-SNAPSHOT</dqr.version>
+        <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
+        <clara.version>1.7.7-ML-SNAPSHOT</clara.version>
+        <datasets.version>1.0.0-SNAPSHOT</datasets.version>
+
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.framework.version>${xnatdev-ml.version}</nrg.framework.version>
@@ -564,6 +572,41 @@
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnatfs</artifactId>
                 <version>1.5.1</version>
+            </dependency>
+
+            <!-- Plugin definitions -->
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>batch_launch_plugin</artifactId>
+                <version>${batch-launch.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>container-service</artifactId>
+                <version>${container-service.version}</version>
+                <classifier>fat</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>dicom-query-retrieve</artifactId>
+                <version>${dqr.version}</version>
+                <classifier>xpl</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>xnatx-clara</artifactId>
+                <version>${clara.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>xnatx-collection</artifactId>
+                <version>${datasets.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx</groupId>
+                <artifactId>ohif-viewer</artifactId>
+                <version>${ohif-viewer.version}</version>
+                <classifier>fat</classifier>
             </dependency>
 
             <!-- External definitions -->

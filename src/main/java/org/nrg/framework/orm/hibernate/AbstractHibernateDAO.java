@@ -450,9 +450,23 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      *
      * @return The parameterized list.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtypes", "unused"})
     protected List<E> checked(final List list) {
         return (List<E>) list;
+    }
+
+    /**
+     * Provides convenience method to return untyped list as list parameterized with different type from the DAO. This
+     * is useful when casting lists returned by, e.g., HQL queries.
+     *
+     * @param list       The list to be converted to a checked parameterized list.
+     * @param returnType The return type for the list.
+     *
+     * @return The parameterized list.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes", "unused"})
+    protected <T> List<T> checked(final List list, final Class<T> returnType) {
+        return (List<T>) list;
     }
 
     /**

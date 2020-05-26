@@ -20,6 +20,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.nrg.xdat.entities.XdatUserAuth;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -96,6 +97,20 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
 
     @Override
     public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventDetails event) {
+        if (user.getID() == 0) {
+            create((MockUser)  user);
+        } else {
+            update((MockUser) user);
+        }
+    }
+
+    @Override
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event, XdatUserAuth auth) {
+        save(user, null, overrideSecurity, (EventDetails) null,auth);
+    }
+
+    @Override
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventDetails event, XdatUserAuth auth) {
         if (user.getID() == 0) {
             create((MockUser)  user);
         } else {

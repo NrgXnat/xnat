@@ -37,7 +37,7 @@ import java.util.concurrent.Callable;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class ImporterHandlerA extends ArchiveStatusProducer implements Callable<List<String>> {
     public ImporterHandlerA(final Object listenerControl, final UserI u) {
-        super((listenerControl == null) ? u : listenerControl);
+        super(listenerControl, u);
         publish(new StatusMessage(this, StatusMessage.Status.PROCESSING, "Start"));
     }
 

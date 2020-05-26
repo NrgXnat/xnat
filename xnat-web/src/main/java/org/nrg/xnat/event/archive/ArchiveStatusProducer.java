@@ -1,8 +1,10 @@
 package org.nrg.xnat.event.archive;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.status.StatusProducer;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.Operation;
 
 import static org.nrg.xdat.XDAT.getEventService;
@@ -10,6 +12,10 @@ import static org.nrg.xdat.XDAT.getEventService;
 public class ArchiveStatusProducer extends StatusProducer {
     public ArchiveStatusProducer(Object control) {
         super(control);
+    }
+
+    public ArchiveStatusProducer(Object control, UserI user) {
+        super(ObjectUtils.defaultIfNull(control, makeControl(user)));
     }
 
     public ArchiveStatusProducer(Object control, StatusListenerI... listeners) {
@@ -54,5 +60,9 @@ public class ArchiveStatusProducer extends StatusProducer {
                     break;
             }
         }
+    }
+
+    private static String makeControl(UserI user) {
+        return user.getUsername() + System.currentTimeMillis();
     }
 }

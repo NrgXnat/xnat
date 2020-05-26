@@ -38,7 +38,7 @@ public class ImageUploadHelper extends ArchiveStatusProducer implements Callable
 	private Map<String,Object> additionalValues;
 
 	public ImageUploadHelper(final Object uID,final UserI user,final String project,final File src, final File dest,final Map<String,Object> additionalVariables) {
-		super(ObjectUtils.defaultIfNull(uID, user));
+		super(uID, user);
 		this.project = project;
 		this.src=src;
 		this.dest=dest;

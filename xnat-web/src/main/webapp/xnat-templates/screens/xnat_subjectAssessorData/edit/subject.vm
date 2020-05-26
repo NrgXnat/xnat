@@ -34,6 +34,7 @@
       window.subjectEditor.onModification.subscribe(function (obj){
          document.getElementById("subject_placeholder").innerHTML=this.new_subject_name;
          document.getElementById("$om.getXSIType()/subject_id").value=this.new_subject;
+         $(document.getElementById("$om.getXSIType()/subject_id")).change();
          config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/" + window.currentID;
          confirmValues();
       });

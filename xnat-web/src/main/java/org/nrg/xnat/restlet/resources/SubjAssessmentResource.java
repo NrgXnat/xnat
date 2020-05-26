@@ -315,9 +315,11 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                     //MATCH SUBJECT
                     if (this.subject != null) {
                         expt.setSubjectId(this.subject.getId());
+                        unsetOldVisitAndSubtype();
                     } else {
                         if (StringUtils.isBlank(expt.getSubjectId()) && StringUtils.isNotEmpty(subID)) {
                             expt.setSubjectId(subID);
+                            unsetOldVisitAndSubtype();
                         }
 
                         if (expt.getSubjectId() != null && !expt.getSubjectId().equals("")) {
@@ -390,6 +392,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                                         // only accept subjects that are associated with this project
                                         if (s.hasProject(specifiedProjectId)) {
                                             expt.setSubjectId(s.getId());
+                                            unsetOldVisitAndSubtype();
                                         }
                                     }
                                 } else {
@@ -536,6 +539,25 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
         }
     }
 
+    private void unsetOldVisitAndSubtype() {
+        // Don't do anything if this is a new expt
+        if (existing == null) {
+            return;
+        }
+
+        // Are we doing an intentional modification of visit & subtype?
+        if (existing.getVisit() == null && expt.getVisit() != null ||
+                existing.getProtocol() == null && expt.getProtocol() != null ||
+                existing.getVisit() != null && "NULL".equals(expt.getVisit()) ||
+                existing.getProtocol() != null && "NULL".equals(expt.getProtocol())) {
+            return;
+        }
+
+        // Remove prior visit & subtype
+        expt.setVisit("NULL");
+        expt.setProtocol("NULL");
+    }
+
     @Override
     public boolean allowDelete() {
         return true;
@@ -633,6 +655,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
         this.subject.setId(XnatSubjectdata.CreateNewID());
         BaseXnatSubjectdata.save(this.subject, false, true, user, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.AUTO_CREATE_SUBJECT));
         expt.setSubjectId(this.subject.getId());
+        unsetOldVisitAndSubtype();
     }
 
 }

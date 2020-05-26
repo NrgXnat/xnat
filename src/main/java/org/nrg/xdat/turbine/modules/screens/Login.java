@@ -95,6 +95,8 @@ public class Login extends VelocitySecureScreen {
         SecureScreen.loadAdditionalVariables(data, context);
 
         doBuildTemplate(data, context);
+
+        SecureScreen.dynamicVariableLoad("org.nrg.xnat.extensions.screens.Login",data,context);
 	}
 
     @Override

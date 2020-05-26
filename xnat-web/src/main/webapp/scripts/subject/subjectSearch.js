@@ -106,7 +106,7 @@ this.getValue=function(){
 	 }else if(comparison=="Starts With"){
 	 	value=value + "%";
 	 }else if(comparison=="Ends With"){
-	 	value=value + "%";
+	 	value="%" + value;
 	 }else if(comparison=="Like"){
 	 	value="%"+ value + "%";
 	 }else{
@@ -260,7 +260,7 @@ this.submitSearch=function(_id,_autoSelect){
 }
 
 this.setMessage=function(msg){
-	this.callback.message(msg);
+    this.callback.message(msg);
 }
 
 this.renderSubjects=function(subjects){

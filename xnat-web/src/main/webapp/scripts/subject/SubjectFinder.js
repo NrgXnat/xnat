@@ -188,14 +188,21 @@ this.select=function(subject){
 }
 
 this.message=function(str){
- this.messageBox.innerHTML=str;
-this.messageBox.className="message";
+    this.updateMessageBox("message",str);
 }
 
 this.warning=function(str){
- this.messageBox.innerHTML=str;
- this.messageBox.className="warning";
+    this.updateMessageBox("warning",str);
 }
+
+this.updateMessageBox=function(classname, str){
+    if(str === ""){
+        this.messageBox.innerHTML="";
+        this.messageBox.className="";
+    }else{
+        this.messageBox.innerHTML=str;
+        this.messageBox.className=classname;
+    }}
 
 this.showMatchedSubjects=function(subjects){
   this.getSearchManager().renderSubjects(subjects);

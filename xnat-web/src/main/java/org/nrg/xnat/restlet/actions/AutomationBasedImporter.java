@@ -155,18 +155,15 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	public List<String> call() throws ClientException, ServerException {
 		try {
 			processUpload();
-			this.completed("Success");
+			this.completed("Success", true);
 			return returnList;
-		} catch (ClientException e) {
+		} catch (ClientException | ServerException e) {
 			logger.error("", e);
-			this.failed(e.getMessage());
-			throw e;
-		} catch (ServerException e) {
-			logger.error("", e);
-			this.failed(e.getMessage());
+			this.failed(e.getMessage(), true);
 			throw e;
 		} catch (Throwable e) {
 			logger.error("", e);
+			this.failed(e.getMessage(), true);
 			throw new ServerException(e.getMessage(), new Exception());
 		}
 	}

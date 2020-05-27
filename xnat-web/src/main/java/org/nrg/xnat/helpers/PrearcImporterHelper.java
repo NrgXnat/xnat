@@ -69,7 +69,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 	 * @param overwriteFiles    Indicates whether existing files should be overwritten
 	 */
 	public PrearcImporterHelper(final Object objectId, final UserI user, final FileWriterWrapperI fileWriter, Map<String,Object> params,boolean allowSessionMerge,boolean overwriteFiles){
-    	super((objectId==null)?user:objectId,user,fileWriter,params,allowSessionMerge,overwriteFiles);
+    	super(objectId,user,fileWriter,params,allowSessionMerge,overwriteFiles);
     	this.user=user;
     	this.uID=(objectId==null)?user:objectId;
 		this.fi=fileWriter;

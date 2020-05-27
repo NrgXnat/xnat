@@ -10,7 +10,6 @@
 package org.nrg.xnat.turbine.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.nrg.PrearcImporter;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
@@ -107,11 +106,18 @@ public class ImageUploadHelper extends ArchiveStatusProducer implements Callable
 								try {
 									item.setProperty(key, value);
 								} catch (FieldNotFoundException e) {
-									log.warn("Couldn't set field {} on item of type '{}' to value '{}' (field not found): {}", e.FIELD, item.getXSIType(), value, e.MESSAGE);
+									String message = "Couldn't set field " + e.FIELD + " on item of type '" +
+											item.getXSIType() + "' to value '" + value + "' (field not found): " + e.MESSAGE;
+									log.warn(message);
+									warning(message);
 								} catch (InvalidValueException e) {
-									log.warn("Couldn't set field {} on item of type '{}' to value '{}' (invalid value): {}", key, item.getXSIType(), value, e.getMessage());
+									String message = "Couldn't set field " + key + " on item of type '" +
+											item.getXSIType() + "' to value '" + value + "' (invalid value): " + e.getMessage();
+									log.warn(message);
+									warning(message);
 								} catch (Throwable e) {
-									final String message = "Failed to set appropriate field for '" + f.getName() + "'. Data may be publicly accessible until archived.";
+									final String message = "Failed to set appropriate field for '" + f.getName() +
+											"'. Data may be publicly accessible until archived.";
 									log.error(message, e);
 									failed(message);
 								}

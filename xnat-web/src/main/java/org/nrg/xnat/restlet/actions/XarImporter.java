@@ -77,16 +77,14 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
 		try {
 			final List<String> returnList = processXarFile();
-			this.completed("Successfully imported session from XAR");
+			this.completed("Successfully imported session from XAR", true);
 			return returnList;
-		} catch (ClientException e) {
-			this.failed(e.getMessage());
-			throw e;
-		} catch (ServerException e) {
-			this.failed(e.getMessage());
+		} catch (ClientException | ServerException e) {
+			this.failed(e.getMessage(), true);
 			throw e;
 		} catch (Throwable e) {
 			logger.error("",e);
+            this.failed(e.getMessage(), true);
 			throw new ServerException(e.getMessage(),new Exception());
 		}
 

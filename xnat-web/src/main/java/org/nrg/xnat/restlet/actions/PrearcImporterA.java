@@ -91,7 +91,7 @@ public abstract class PrearcImporterA extends ArchiveStatusProducer implements C
 	}
 	
 	public PrearcImporterA(Object control, final UserI u, final FileWriterWrapperI fi, Map<String,Object> params, boolean overwrite, boolean allowDataDeletion) {
-		super(control);
+		super(control, u);
 	}
 	
 	public abstract List<PrearcSession> call() throws ActionException;

@@ -71,7 +71,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 	public PrearcImporterHelper(final Object objectId, final UserI user, final FileWriterWrapperI fileWriter, Map<String,Object> params,boolean allowSessionMerge,boolean overwriteFiles){
     	super(objectId,user,fileWriter,params,allowSessionMerge,overwriteFiles);
     	this.user=user;
-    	this.uID=(objectId==null)?user:objectId;
+    	this.uID=getControlString();
 		this.fi=fileWriter;
 		this.allowSessionMerge=allowSessionMerge;
 		this.overwriteFiles=overwriteFiles;

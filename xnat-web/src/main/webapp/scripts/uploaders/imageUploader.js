@@ -293,6 +293,13 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
     };
 
     $(document).on('click', 'a#uploadImages, a.uploadImages', function() {
-        XNAT.app.imageUploader.uploadImages($(this).data());
+        // DEVELOPER TAKE NOTE: this will pass data-my-key=value to /data/services/import as my-key=value
+        let config = {};
+        $.each($(this).data(), function(k,v) {
+            // Convert from camel case (myKey) back to dash case (my-key)
+            let newKey = k.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase();
+            config[newKey] = v;
+        });
+        XNAT.app.imageUploader.uploadImages(config);
     });
 }));

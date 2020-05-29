@@ -58,7 +58,7 @@
                         #foreach ($importHandlerType in $importHandlers)
                             <li class="yuimenuitem">
                                 <a class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"
-                                   data-importhandler="$!importHandlerType" data-modal="true">$importHandlerType</a>
+                                   data-import-handler="$!importHandlerType" data-modal="true">$importHandlerType</a>
                             </li>
                         #end
                         <li class="yuimenuitem">

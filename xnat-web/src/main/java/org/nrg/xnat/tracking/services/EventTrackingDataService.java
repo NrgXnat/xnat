@@ -30,10 +30,10 @@ public interface EventTrackingDataService extends BaseHibernateService<EventTrac
     /**
      * Get EventListenerData entity by key
      * @param key the key
-     * @return the entity
+     * @return the pojo
      * @throws NotFoundException if no event listener data exists for this key
      */
-    EventTrackingData findByKey(final String key) throws NotFoundException;
+    EventTrackingDataPojo getPojoByKey(final String key) throws NotFoundException;
 
     /**
      * Get EventListenerData entity by key
@@ -43,21 +43,18 @@ public interface EventTrackingDataService extends BaseHibernateService<EventTrac
     EventTrackingData findOrCreateByKey(final String key);
 
     /**
-     * Get EventListenerData entity by key
-     * @param key the key
-     * @return the pojo
-     * @throws NotFoundException if no event listener data exists for this key
-     */
-    EventTrackingDataPojo getPojoByKey(final String key) throws NotFoundException;
-
-    /**
      * Create new EventListenerData entity with key
      * @param key the key
+     * @return the entity
      */
-    void createWithKey(String key);
+    EventTrackingData createWithKey(String key);
 
     /**
-     * Create or update eventTrackingData with TrackableEvent
+     * Create or update eventTrackingData with TrackableEvent.
+     *
+     * <strong>This should not be used across JVMs (e.g., EventTrackingData created on one,
+     * and createOrUpdated on another) as there is no inter-JVM locking</strong>
+     *
      * @param eventData the trackable event
      */
     void createOrUpdate(TrackableEvent eventData);

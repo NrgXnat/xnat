@@ -29,7 +29,7 @@ var XNAT = getObject(XNAT);
     // a unified way to poll progress
 
     let activityTab, cookieTag;
-    const prearchiveUrl = '<a target="_blank" href="' +
+    const prearchiveLink = '<a target="_blank" href="' +
         XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
         '">prearchive</a>';
 
@@ -169,8 +169,8 @@ var XNAT = getObject(XNAT);
                 checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt, lastProgressIdx);
             }, 2000);
         } else {
-            var msg = 'Issue polling archival progress' + errDetails + '. Refresh the page to try again or ' +
-                'visit the prearchive to check for your session.';
+            var msg = 'Issue polling archival progress: ' + errDetails + '. Refresh the page to try again or ' +
+                'visit the ' + prearchiveLink + ' to check for your session.';
             $(detailsTag).append('<div class="prog error">' + msg + '</div>');
             activityTab.stopPoll(key, false);
         }
@@ -224,7 +224,7 @@ var XNAT = getObject(XNAT);
             const urls = message.replace(/^.*:/, '').split(';');
             let urlsHtml;
             if (dest.toLowerCase().includes('prearchive')) {
-                urlsHtml = 'Visit the ' + prearchiveUrl + ' to review.';
+                urlsHtml = 'Visit the ' + prearchiveLink + ' to review.';
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
@@ -235,7 +235,7 @@ var XNAT = getObject(XNAT);
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
             return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
-                '<div class="warning">Check the ' + prearchiveUrl +
+                '<div class="warning">Check the ' + prearchiveLink +
                 ', your data may be available there for manual review.</div>';
         }
     }

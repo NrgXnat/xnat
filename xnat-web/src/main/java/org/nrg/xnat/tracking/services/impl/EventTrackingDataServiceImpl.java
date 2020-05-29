@@ -42,32 +42,6 @@ public class EventTrackingDataServiceImpl
      */
     @Transactional
     @Override
-    public EventTrackingData findByKey(String key) throws NotFoundException {
-        EventTrackingData eventTrackingData = getDao().findByUniqueProperty("key", key);
-        if (eventTrackingData == null) {
-            throw new NotFoundException("No event listener data with key " + key);
-        }
-        return eventTrackingData;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Transactional
-    @Override
-    public EventTrackingData findOrCreateByKey(String key) {
-        try {
-            return findByKey(key);
-        } catch (NotFoundException e) {
-            return create(new EventTrackingData(key));
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Transactional
-    @Override
     public EventTrackingDataPojo getPojoByKey(String key) throws NotFoundException {
         return findByKey(key).toPojo();
     }
@@ -77,8 +51,21 @@ public class EventTrackingDataServiceImpl
      */
     @Transactional
     @Override
-    public void createWithKey(String key) {
-        create(new EventTrackingData(key));
+    public synchronized EventTrackingData findOrCreateByKey(String key) {
+        try {
+            return findByKey(key);
+        } catch (NotFoundException e) {
+            return createWithKey(key);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Transactional
+    @Override
+    public synchronized EventTrackingData createWithKey(String key) {
+        return create(new EventTrackingData(key));
     }
 
     /**
@@ -100,5 +87,13 @@ public class EventTrackingDataServiceImpl
             }
         }
         update(eventTrackingData);
+    }
+
+    private EventTrackingData findByKey(String key) throws NotFoundException {
+        EventTrackingData eventTrackingData = getDao().findByUniqueProperty("key", key);
+        if (eventTrackingData == null) {
+            throw new NotFoundException("No event listener data with key " + key);
+        }
+        return eventTrackingData;
     }
 }

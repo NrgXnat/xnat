@@ -38,7 +38,7 @@ public class EventTrackingDataApi extends AbstractXapiRestController {
         try {
             return new ResponseEntity<>(eventTrackingDataService.getPayloadByKey(key), HttpStatus.OK);
         } catch (NotFoundException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Throwable t) {
             log.error("Issue getting payload for key {}", key, t);
             return new ResponseEntity<>(t.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -50,7 +50,7 @@ public class EventTrackingDataApi extends AbstractXapiRestController {
         try {
             return new ResponseEntity<>(eventTrackingDataService.getPojoByKey(key), HttpStatus.OK);
         } catch (NotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Throwable t) {
             log.error("Issue getting POJO for key {}", key, t);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

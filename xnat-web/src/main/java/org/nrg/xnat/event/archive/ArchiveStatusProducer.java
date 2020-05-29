@@ -7,6 +7,8 @@ import org.nrg.framework.status.StatusProducer;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.Operation;
 
+import java.util.Random;
+
 import static org.nrg.xdat.XDAT.getEventService;
 
 public class ArchiveStatusProducer extends StatusProducer {
@@ -63,6 +65,6 @@ public class ArchiveStatusProducer extends StatusProducer {
     }
 
     private static String makeControl(UserI user) {
-        return user.getUsername() + System.currentTimeMillis();
+        return user.getUsername() + new Random().nextInt(1000) + System.currentTimeMillis();
     }
 }

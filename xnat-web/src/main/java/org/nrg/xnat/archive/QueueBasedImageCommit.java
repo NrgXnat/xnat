@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.nrg.action.ServerException;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.xdat.XDAT;
@@ -103,7 +104,6 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         try {
             final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
                     .getBean(EventTrackingDataService.class);
-            eventTrackingDataService.createWithKey(_archiveOperationId);
 
             log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,
@@ -122,7 +122,11 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
                 }
                 log.debug("Checked for message with final status but didn't find it, sleeping for a bit...");
                 Thread.sleep(500);
-                eventTrackingData = eventTrackingDataService.getPojoByKey(_archiveOperationId);
+                try {
+                    eventTrackingData = eventTrackingDataService.getPojoByKey(_archiveOperationId);
+                } catch (NotFoundException e) {
+                    // Ignore, eventTrackingData will be null until timeout exception or JMS starts working
+                }
             }
 
             String uriOrMessage = eventTrackingData.getFinalMessage();

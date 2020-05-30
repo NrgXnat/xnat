@@ -55,21 +55,32 @@ import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequ
 @Accessors(prefix = "_")
 @Slf4j
 public class QueueBasedImageCommit extends ArchiveStatusProducer implements Callable<String>, ArchiveOperationListener {
-    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId) throws Exception {
-        this(control, user, session, destination, overrideExceptions, allowSessionMerge, listenerId, false);
+    public QueueBasedImageCommit(final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId) throws Exception {
+        this(user, session, destination, overrideExceptions, allowSessionMerge, listenerId, false);
     }
 
-    public QueueBasedImageCommit(final Object control, final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId, final boolean inline) throws Exception {
-        super(control);
+    public QueueBasedImageCommit(final UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final String listenerId, final boolean inline) throws Exception {
+        this(user, session, destination,
+                session.getSessionData().getProject(), session.getSessionData().getTimestamp(),
+                session.getSessionData().getName(), overrideExceptions, allowSessionMerge, listenerId, inline);
+    }
+
+    public QueueBasedImageCommit(final UserI user, final PrearcSession session,
+                                 final URIManager.DataURIA destination, final String project,
+                                 final String timestamp, final String sessionLabel, final boolean overrideExceptions,
+                                 final boolean allowSessionMerge, final String listenerId, final boolean inline) throws Exception {
+
+        super(StringUtils.defaultIfBlank(listenerId,
+                XnatHttpUtils.buildArchiveEventId(project, timestamp, sessionLabel)));
 
         _user = user;
         _prearcSession = session;
         _sessionDir = session.getSessionDir();
         _destination = destination;
         _sessionData = session.getSessionData();
-        _project = session.getSessionData().getProject();
-        _timestamp = session.getSessionData().getTimestamp();
-        _session = session.getSessionData().getName();
+        _project = project;
+        _timestamp = timestamp;
+        _session = sessionLabel;
         _inline = inline;
         _overrideExceptions = overrideExceptions;
         _allowSessionMerge = allowSessionMerge;
@@ -79,12 +90,9 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         if (destination != null) {
             _parameters.put(PARAM_DESTINATION, destination);
         }
-        _archiveOperationId = StringUtils.defaultIfBlank(listenerId,
-                XnatHttpUtils.buildArchiveEventId(_project, _timestamp, _session));
+        _archiveOperationId = getControlString();
         _archiveEventListener = XDAT.getContextService().getBean(ArchiveEventListener.class);
         _archiveEventListener.addStatusListener(this);
-
-        log.debug("Created QueueBasedImageCommit object to complete archiving session {} to {}, status producer is: {}", session, destination, control);
     }
 
     @Override
@@ -104,6 +112,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         try {
             final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
                     .getBean(EventTrackingDataService.class);
+            eventTrackingDataService.createWithKey(_archiveOperationId);
 
             log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,

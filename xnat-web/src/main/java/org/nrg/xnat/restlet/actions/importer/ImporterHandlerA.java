@@ -38,7 +38,6 @@ import java.util.concurrent.Callable;
 public abstract class ImporterHandlerA extends ArchiveStatusProducer implements Callable<List<String>> {
     public ImporterHandlerA(final Object listenerControl, final UserI u) {
         super(listenerControl, u);
-        publish(new StatusMessage(this, StatusMessage.Status.PROCESSING, "Start"));
     }
 
     public abstract List<String> call() throws ClientException, ServerException;

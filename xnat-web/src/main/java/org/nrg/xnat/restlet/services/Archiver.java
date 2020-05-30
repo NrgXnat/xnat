@@ -120,7 +120,7 @@ public class Archiver extends BatchPrearchiveActionsA {
             return;
         }
         session.setArchiveReason(false);
-        final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, getUser(), session,
+        final QueueBasedImageCommit uploader = new QueueBasedImageCommit(getUser(), session,
                 UriParserUtils.parseURI(getDestination()), _overwrite, true, _listenerControl);
         if (_listenerControl != null) {
             uploader.submitAsync();

@@ -317,6 +317,9 @@
     <logger name="org.nrg.xnat.event" additivity="false" level="WARN">
         <appender-ref ref="events"/>
     </logger>
+    <logger name="org.nrg.xnat.tracking" additivity="false" level="WARN">
+        <appender-ref ref="events"/>
+    </logger>
     <logger name="org.nrg.xnat.restlet" additivity="false" level="WARN">
         <appender-ref ref="restlet"/>
     </logger>

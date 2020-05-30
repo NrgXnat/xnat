@@ -18,7 +18,7 @@ import org.nrg.xnat.tracking.model.TrackableEvent;
 /**
  * Provides information about the current host.
  */
-public interface EventTrackingDataService extends BaseHibernateService<EventTrackingData> {
+public interface EventTrackingDataService {
     /**
      * Get EventListenerData payload by key
      * @param key the key
@@ -36,24 +36,14 @@ public interface EventTrackingDataService extends BaseHibernateService<EventTrac
     EventTrackingDataPojo getPojoByKey(final String key) throws NotFoundException;
 
     /**
-     * Get EventListenerData entity by key
-     * @param key the key
-     * @return the entity
-     */
-    EventTrackingData findOrCreateByKey(final String key);
-
-    /**
      * Create new EventListenerData entity with key
      * @param key the key
-     * @return the entity
      */
-    EventTrackingData createWithKey(String key);
+    void createWithKey(String key);
 
     /**
      * Create or update eventTrackingData with TrackableEvent.
-     *
-     * <strong>This should not be used across JVMs (e.g., EventTrackingData created on one,
-     * and createOrUpdated on another) as there is no inter-JVM locking</strong>
+     * <strong>Not safe across JVMs</strong>
      *
      * @param eventData the trackable event
      */

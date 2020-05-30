@@ -70,7 +70,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
      */
     public SessionImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String, Object> params) {
         super(listenerControl, user);
-        this.listenerControl = listenerControl;
+        this.listenerControl = getControlString();
         this.user = user;
         this.fw = fileWriter;
         this.params = params;

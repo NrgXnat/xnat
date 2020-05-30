@@ -405,7 +405,7 @@ public final class PrearcSessionResource extends SecureResource {
 
                 final PrearcSession prearcSession = new PrearcSession(project, timestamp, session, params, user);
                 if (prearcSession.isAutoArchive()) {
-                    final QueueBasedImageCommit uploader = new QueueBasedImageCommit(null, user, prearcSession,
+                    final QueueBasedImageCommit uploader = new QueueBasedImageCommit(user, prearcSession,
                             null, false, true, listenerControl);
                     if (listenerControl != null) {
                         uploader.submitAsync();

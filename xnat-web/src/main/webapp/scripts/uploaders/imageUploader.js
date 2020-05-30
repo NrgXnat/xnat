@@ -39,8 +39,8 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             loc = 'project: ' + config.project;
         }
         var importHandler = 'DICOM or ECAT';
-        if (config.importhandler) {
-            importHandler = config.importhandler;
+        if (config['import-handler']) {
+            importHandler = config['import-handler'];
         }
 
         xmodal.open({
@@ -281,11 +281,11 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
     XNAT.app.imageUploader.uploadImages = function(config) {
         const datatype = config.datatype;
         // If import handler is not specified, let's see if we have a mapping for the data type
-        if (!config.importhandler && datatype && XNAT.app.uploadDatatypeHandlerMap.hasOwnProperty(datatype)) {
-            config.importhandler = XNAT.app.uploadDatatypeHandlerMap[datatype];
+        if (!config['import-handler'] && datatype && XNAT.app.uploadDatatypeHandlerMap.hasOwnProperty(datatype)) {
+            config['import-handler'] = XNAT.app.uploadDatatypeHandlerMap[datatype];
         }
         // If no import handler and config.modal undefined or false, open Desktop Client
-        if (!config.importhandler && (!config.modal || config.modal === "false")) {
+        if (!config['import-handler'] && (!config.modal || config.modal === "false")) {
             XNAT.app.imageUploader.openUploadViaDesktopClient(config);
         } else {
             XNAT.app.imageUploader.openUploadModal(config);

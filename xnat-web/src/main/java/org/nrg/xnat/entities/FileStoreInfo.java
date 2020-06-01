@@ -4,8 +4,10 @@ import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreSer
 import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreService.splitCoordinates;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.Entity;
@@ -21,6 +23,7 @@ import java.util.List;
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"coordinates"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Audited
 @Slf4j
 public class FileStoreInfo extends AbstractHibernateEntity {
     public FileStoreInfo() {
@@ -40,6 +43,11 @@ public class FileStoreInfo extends AbstractHibernateEntity {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Transient
+    public String getLabel() {
+        return FilenameUtils.getName(getCoordinates());
     }
 
     public String getCoordinates() {

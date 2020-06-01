@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.text.IsEmptyString;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -26,6 +27,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
+@Ignore("Event unit tests ")
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional

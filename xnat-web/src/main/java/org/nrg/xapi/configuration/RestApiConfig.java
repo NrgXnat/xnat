@@ -26,7 +26,6 @@ import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
-import springfox.documentation.service.VendorExtension;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
@@ -67,7 +66,7 @@ public class RestApiConfig {
                                        getMessage(messageSource, "apiInfo.contactEmail")),
                            getMessage(messageSource, "apiInfo.license"),
                            getMessage(messageSource, "apiInfo.licenseUrl"),
-                           Collections.<VendorExtension>emptyList());
+                           Collections.emptyList());
     }
 
     private String getMessage(final MessageSource messageSource, final String messageId) {

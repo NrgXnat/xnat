@@ -10,65 +10,49 @@
 package org.nrg.xnat.processor.services.impl;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xnat.processor.dao.ArchiveProcessorInstanceDAO;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
+import org.nrg.xnat.processor.dao.ArchiveProcessorInstanceDAO;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
 import java.util.List;
 
 @Service
+@Transactional
 public class HibernateArchiveProcessorInstanceService extends AbstractHibernateEntityService<ArchiveProcessorInstance, ArchiveProcessorInstanceDAO> implements ArchiveProcessorInstanceService {
-
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllSiteProcessors(){
-        return _dao.getSiteArchiveProcessors();
+    public List<ArchiveProcessorInstance> getAllSiteProcessors() {
+        return getDao().getSiteArchiveProcessors();
     }
 
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllSiteProcessorsForClass(final String processorClass){
-        return _dao.getSiteArchiveProcessorsForClass(processorClass);
+    public List<ArchiveProcessorInstance> getAllSiteProcessorsForClass(final String processorClass) {
+        return getDao().getSiteArchiveProcessorsForClass(processorClass);
     }
 
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessors(){
-        return _dao.getEnabledSiteArchiveProcessors();
+    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessors() {
+        return getDao().getEnabledSiteArchiveProcessors();
     }
 
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsForAe(String aeAndPort){
-        return _dao.getEnabledSiteArchiveProcessorsForAe(aeAndPort);
+    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsForAe(String aeAndPort) {
+        return getDao().getEnabledSiteArchiveProcessorsForAe(aeAndPort);
     }
 
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrder(){
-        return _dao.getEnabledSiteArchiveProcessorsInOrder();
+    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrder() {
+        return getDao().getEnabledSiteArchiveProcessorsInOrder();
     }
 
     @Override
-    @Transactional
-    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final String location){
-        return _dao.getEnabledSiteArchiveProcessorsInOrderForLocation(location);
+    public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final String location) {
+        return getDao().getEnabledSiteArchiveProcessorsInOrderForLocation(location);
     }
 
     @Override
-    @Transactional
-    public ArchiveProcessorInstance findSiteProcessorById(final long processorId){
-        return _dao.getSiteArchiveProcessorInstanceByProcessorId(processorId);
+    public ArchiveProcessorInstance findSiteProcessorById(final long processorId) {
+        return getDao().getSiteArchiveProcessorInstanceByProcessorId(processorId);
     }
-    @Inject
-    private ArchiveProcessorInstanceDAO _dao;
-
-    /** The Constant _log. */
-    private static final Logger _log = LoggerFactory.getLogger(HibernateArchiveProcessorInstanceService.class);
-
 }

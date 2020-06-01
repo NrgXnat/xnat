@@ -296,7 +296,8 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
         });
 
         getExptTypes.fail(function(jqXHR, textStatus, errorThrown){
-            xmodal.message('Error', "ERROR " + textStatus + ": Failed to load experiment list.");
+            let responseText = jqXHR.responseText ? " (" + jqXHR.responseText + ")" : ".";
+            xmodal.message('Error', "ERROR " + jqXHR.status + ": Failed to load experiment type list" + responseText);
         });
 
     };

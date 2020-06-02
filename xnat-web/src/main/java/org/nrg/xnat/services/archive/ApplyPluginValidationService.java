@@ -7,9 +7,9 @@ import org.nrg.xft.security.UserI;
 
 import java.util.Map;
 
-public interface SubjectAssessorValidationService {
+public interface ApplyPluginValidationService {
     /**
-     * Validate session data within a plugin
+     * Validate session data from plugins via SubjectAssessorValidationService
      *
      * @param sad the subject assessor
      * @param parameters the parameters
@@ -18,5 +18,5 @@ public interface SubjectAssessorValidationService {
      * @throws ServerException for failure
      */
     void validate(XnatSubjectassessordata sad, Map<String, Object> parameters, UserI user)
-            throws ClientException, ServerException;
+            throws ServerException, ClientException;
 }

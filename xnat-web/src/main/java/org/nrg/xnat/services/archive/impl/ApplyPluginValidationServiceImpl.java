@@ -16,10 +16,10 @@ import java.util.Map;
 @Slf4j
 @Service
 public class ApplyPluginValidationServiceImpl implements ApplyPluginValidationService {
-    private final List<SubjectAssessorValidationService> services;
+    private List<SubjectAssessorValidationService> services = null;
 
     @Autowired(required = false)
-    public ApplyPluginValidationServiceImpl(List<SubjectAssessorValidationService> services) {
+    public void setServices(List<SubjectAssessorValidationService> services) {
         this.services = services;
     }
 

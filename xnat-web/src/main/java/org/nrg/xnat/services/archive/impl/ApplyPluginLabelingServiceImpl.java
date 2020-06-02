@@ -15,10 +15,10 @@ import java.util.Map;
 @Slf4j
 @Service
 public class ApplyPluginLabelingServiceImpl implements ApplyPluginLabelingService {
-    private final List<SubjectAssessorLabelingService> services;
+    private List<SubjectAssessorLabelingService> services = null;
 
     @Autowired(required = false)
-    public ApplyPluginLabelingServiceImpl(List<SubjectAssessorLabelingService> services) {
+    public void setServices(List<SubjectAssessorLabelingService> services) {
         this.services = services;
     }
 

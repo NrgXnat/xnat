@@ -15,6 +15,7 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -36,4 +37,8 @@ public abstract class ProcessingOperationRequestData implements Serializable {
     @ApiModelProperty("Provides the parameters for the training session. The keys in the map are JSON paths indicating particular items in the training configuration template, while the values in the map indicate the value to be set for the corresponding item.")
     @NonNull
     private Map<String, String> _parameters;
+
+    @ApiModelProperty("Indicates the workflow ID associated with this processing request.")
+    @Nullable
+    private String _workflowId;
 }

@@ -1493,8 +1493,8 @@ public class DefaultCatalogService implements CatalogService {
                         false);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 try {
-                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath, (XnatResourcecatalog) resource, projectId
-                    );
+                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
+                            (XnatResourcecatalog) resource, projectId);
                     Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
                             addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
                     boolean modified = (boolean) refreshInfo[0];

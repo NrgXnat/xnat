@@ -13,7 +13,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.7-ML-SNAPSHOT</version>
+    <version>ML-BETA</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,7 +64,7 @@
 
         <xnat.version>1.7.6</xnat.version>
         <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
-        <xnatdev-ml.version>1.7.7-ML-SNAPSHOT</xnatdev-ml.version>
+        <xnatdev-ml.version>ML-BETA</xnatdev-ml.version>
         <xnat-web.version>${xnatdev-ml.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnatdev-ml.version}</xnat-data-builder.version>
@@ -78,7 +78,7 @@
         <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
         <dqr.version>1.0.0-SNAPSHOT</dqr.version>
         <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
-        <clara.version>1.7.7-ML-SNAPSHOT</clara.version>
+        <clara.version>${xnatdev-ml.version}</clara.version>
         <datasets.version>1.0.0-SNAPSHOT</datasets.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>

@@ -8,7 +8,7 @@
  */
 buildscript {
     ext {
-        vXnat = "1.7.7-ML-SNAPSHOT"
+        vXnat = "ML-BETA"
     }
     repositories {
         mavenLocal()
@@ -21,7 +21,8 @@ buildscript {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
         classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
-        classpath "io.franzbecker:gradle-lombok:3.3.0"
+        classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.5"
+        classpath "io.franzbecker:gradle-lombok:4.0.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }
@@ -38,6 +39,7 @@ apply plugin: "maven-publish"
 apply plugin: "war"
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.dorongold.task-tree"
 apply plugin: "com.palantir.git-version"
 apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "io.spring.dependency-management"

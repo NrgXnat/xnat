@@ -105,6 +105,7 @@ public class MoverMaker {
 		String uri= null;
 		if(r instanceof XnatResource){
 			uri=((XnatResource)r).getUri();
+			((XnatResource)r).getParent();
 		}else{
 			uri=((XnatResourceseries)r).getPath();
 		}

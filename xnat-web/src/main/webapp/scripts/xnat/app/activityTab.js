@@ -24,14 +24,7 @@ var XNAT = getObject(XNAT);
         return factory();
     }
 }(function(){
-
-    //TODO right now, this only monitors compressed uploader, but it should work for any async process, we just need
-    // a unified way to poll progress
-
     let activityTab, cookieTag;
-    const prearchiveLink = '<a target="_blank" href="' +
-        XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
-        '">prearchive</a>';
 
     XNAT.app = getObject(XNAT.app || {});
 
@@ -49,14 +42,16 @@ var XNAT = getObject(XNAT);
         });
     };
 
-    activityTab.start = function(title, statusListenerId) {
+    activityTab.start = function(title, statusListenerId, callbackPath = 'XNAT.app.activityTab.populateArchivalDetails', timeout = 1) {
         var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}"),
             key = (new Date()).toISOString().replace(/[^\w]/gi, '');
         var item = {
             title: title,
             statusListenerId: statusListenerId,
             divId: 'key' + key,
-            detailsTag: 'div#activity-details-' + key
+            detailsTag: 'div#activity-details-' + key,
+            callbackPath: callbackPath,
+            timeout: timeout
         };
         activities[key] = item;
         XNAT.cookie.set(cookieTag, activities, {});
@@ -66,9 +61,8 @@ var XNAT = getObject(XNAT);
     activityTab.startPoll = function(item, key) {
         var $tab = $('#activity-tab');
         createEntry(item, key, $tab);
-        var $info = $tab.find(item.divId);
         activityTab.pollers[key] = true;
-        checkImageArchivalProgress(item.statusListenerId, $info, key, item.detailsTag, 0);
+        checkProgress(item, key, 0);
         $tab.css('visibility', 'visible');
     };
 
@@ -133,53 +127,57 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function checkImageArchivalProgress(statusListenerId, div, key, detailsTag, errCnt, lastProgressIdx = -1) {
+    function checkProgress(item, key, errCnt, lastProgressIdx = -1) {
         if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
             return;
         }
+        const statusListenerId = item.statusListenerId,
+            detailsTag = item.detailsTag,
+            itemDivId = '#' + item.divId;
         XNAT.xhr.getJSON({
             url: XNAT.url.restUrl('/xapi/event_tracking/' + statusListenerId),
             success: function(respDat) {
                 var succeeded = null;
                 try {
-                    [succeeded, lastProgressIdx] = populateDetails(div, detailsTag, respDat, lastProgressIdx);
+                    const callback = getCallbackForItem(item);
+                    [succeeded, lastProgressIdx] = callback(itemDivId, detailsTag, respDat, lastProgressIdx);
                 } catch (e) {
                     console.log(e);
-                    processError(statusListenerId, div, key, detailsTag, errCnt,
-                        e.name + ' (js): ' + e.message, lastProgressIdx);
+                    processError(item, key, errCnt, e.name + ' (js): ' + e.message, lastProgressIdx);
                     return;
                 }
 
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
                 } else {
-                    checkImageArchivalProgress(statusListenerId, div, key, detailsTag, 0, lastProgressIdx);
+                    window.setTimeout(function() {
+                        checkProgress(item, key, 0, lastProgressIdx);
+                    }, item.timeout);
                 }
             },
             error: function(xhr) {
-                processError(statusListenerId, div, key, detailsTag, errCnt,
+                processError(item, key, errCnt,
                     xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx);
             }
         });
     }
 
-    function processError(statusListenerId, div, key, detailsTag, errCnt, errDetails, lastProgressIdx) {
+    function processError(item, key, errCnt, errDetails, lastProgressIdx) {
         if (errCnt < 2) {
             setTimeout(function() {
-                checkImageArchivalProgress(statusListenerId, div, key, detailsTag, ++errCnt, lastProgressIdx);
+                checkProgress(item, key, ++errCnt, lastProgressIdx);
             }, 2000);
         } else {
-            var msg = 'Issue polling archival progress: ' + errDetails + '. Refresh the page to try again or ' +
-                'visit the ' + prearchiveLink + ' to check for your session.';
-            $(detailsTag).append('<div class="prog error">' + msg + '</div>');
+            var msg = 'Issue polling event progress: ' + errDetails + '. Refresh the page to try again.';
+            $(item.detailsTag).append('<div class="prog error">' + msg + '</div>');
             activityTab.stopPoll(key, false);
         }
     }
 
-    function populateDetails(div, detailsTag, jsonobj, lastProgressIdx) {
-        let messages = "";
+    activityTab.populateArchivalDetails = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {
         const succeeded = jsonobj['succeeded'];
         const payload = JSON.parse(jsonobj['payload']);
+        let messages = "";
         let entryList = payload['entryList'] || [];
         if (entryList.length === 0 && succeeded == null) {
             return [null, lastProgressIdx];
@@ -216,9 +214,13 @@ var XNAT = getObject(XNAT);
             $(detailsTag).append(messages);
         }
         return [succeeded, lastProgressIdx];
-    }
+    };
 
     function parseFinalMessage(message, succeeded) {
+        const prearchiveLink = '<a target="_blank" href="' +
+            XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
+            '">prearchive</a>';
+
         if (succeeded) {
             const dest = message.replace(/:.*/, '');
             const urls = message.replace(/^.*:/, '').split(';');
@@ -240,17 +242,13 @@ var XNAT = getObject(XNAT);
         }
     }
 
-    function errorHandler(e, base) {
-        var info = e.responseText ? base + ': ' + e.responseText : base;
-        var details = spawn('p',[info]);
-        console.log(e);
-        xmodal.alert({
-            title: 'Error',
-            content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p>' + details.html,
-            okAction: function () {
-                xmodal.closeAll();
-            }
+    function getCallbackForItem(item) {
+        const parts = item.callbackPath.split('.');
+        let callback = parts.shift() === 'XNAT' ? XNAT : window;
+        parts.forEach(function(p) {
+           callback = callback[p];
         });
+        return callback;
     }
 
     // don't init until the page is finished loading

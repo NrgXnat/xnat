@@ -1644,7 +1644,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
     
-    @NrgPreference(defaultValue = "4")
+    @NrgPreference(defaultValue = "4", aliases = "defaultPrearchiveCode")
     public int getDefaultProjectAutoArchiveSetting() {
         return getIntegerValue("defaultProjectAutoArchiveSetting");
     }

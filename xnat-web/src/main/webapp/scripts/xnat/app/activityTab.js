@@ -25,6 +25,8 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
     let activityTab, cookieTag;
+    const minimized = 'minimized', 
+        processes = 'processes';
 
     XNAT.app = getObject(XNAT.app || {});
 
@@ -35,17 +37,22 @@ var XNAT = getObject(XNAT);
 
     activityTab.pollers = [];
 
+    function getActivities() {
+        return JSON.parse(XNAT.cookie.get(cookieTag) || '{"' + minimized + '": false, "' + processes + '": {}}');
+    }
+
     activityTab.init = function() {
-        var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-        $.each(activities, function(key, item) {
+        let activities = getActivities();
+        $.each(activities[processes], function(key, item) {
             activityTab.startPoll(item, key);
         });
+        setMinimized(activities[minimized]);
     };
 
     activityTab.start = function(title, statusListenerId, callbackPath = 'XNAT.app.activityTab.populateArchivalDetails', timeout = 1) {
-        var activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}"),
+        let activities = getActivities(),
             key = (new Date()).toISOString().replace(/[^\w]/gi, '');
-        var item = {
+        const item = {
             title: title,
             statusListenerId: statusListenerId,
             divId: 'key' + key,
@@ -53,13 +60,13 @@ var XNAT = getObject(XNAT);
             callbackPath: callbackPath,
             timeout: timeout
         };
-        activities[key] = item;
+        activities[processes][key] = item;
         XNAT.cookie.set(cookieTag, activities, {});
         activityTab.startPoll(item, key);
     };
 
     activityTab.startPoll = function(item, key) {
-        var $tab = $('#activity-tab');
+        let $tab = $('#activity-tab');
         createEntry(item, key, $tab);
         activityTab.pollers[key] = true;
         checkProgress(item, key, 0);
@@ -69,7 +76,7 @@ var XNAT = getObject(XNAT);
     activityTab.stopPoll = function(key, succeeded) {
         delete activityTab.pollers[key];
 
-        var $info = $('#activity-tab #key' + key);
+        let $info = $('#activity-tab #key' + key);
         if (succeeded) {
             $info.addClass('text-success').prepend('<i class="fa fa-check" style="margin-right:3px"></i>');
         } else {
@@ -80,15 +87,15 @@ var XNAT = getObject(XNAT);
     };
 
     activityTab.cancel = function(key, $row) {
-        var activities = {};
+        let activities = {};
         if (key) {
-            activities = JSON.parse(XNAT.cookie.get(cookieTag) || "{}");
-            delete activities[key];
+            activities = getActivities();
+            delete activities[processes][key];
             if ($row) {
                 $row.parents('div.item').remove();
             }
         }
-        if ($.isEmptyObject(activities)) {
+        if ($.isEmptyObject(activities[processes])) {
             XNAT.cookie.remove(cookieTag);
             const tab = $('#activity-tab');
             tab.css('visibility', 'hidden');
@@ -105,7 +112,7 @@ var XNAT = getObject(XNAT);
             '<a id="details' + key + '" class="icn details"><i class="fa fa-cog fa-spin"></i></a>' +
             '</div></div>');
 
-        var details = XNAT.ui.dialog.init({
+        const details = XNAT.ui.dialog.init({
             title: item.title,
             content: spawn(item.detailsTag),
             destroyOnClose: false,
@@ -251,18 +258,33 @@ var XNAT = getObject(XNAT);
         return callback;
     }
 
+    function setMinimized(isMinimized, updateCookie = false) {
+        let activities = getActivities();
+        if (updateCookie) {
+            activities[minimized] = isMinimized;
+            XNAT.cookie.set(cookieTag, activities, {});
+        }
+        if (isMinimized) {
+            $('#activity-tab .panel-header span.count').text('(' + Object.keys(activities[processes]).length + ')');
+            $('#activity-tab .panel-body').hide();
+            $('#activity-tab .panel-header a.activity-min').hide();
+            $('#activity-tab .panel-header a.activity-max').show();
+        } else {
+            $('#activity-tab .panel-header span.count').text('');
+            $('#activity-tab .panel-body').show();
+            $('#activity-tab .panel-header a.activity-max').hide();
+            $('#activity-tab .panel-header a.activity-min').show();
+        }
+    }
+
     // don't init until the page is finished loading
     $(window).on('load', function(){
         activityTab.init();
         $(document).on('click', '#activity-tab a.activity-min', function() {
-            $('#activity-tab .panel-body').hide();
-            $('#activity-tab .panel-header a.activity-min').hide();
-            $('#activity-tab .panel-header a.activity-max').show();
+            setMinimized(true, true);
         });
         $(document).on('click', '#activity-tab a.activity-max', function() {
-            $('#activity-tab .panel-body').show();
-            $('#activity-tab .panel-header a.activity-max').hide();
-            $('#activity-tab .panel-header a.activity-min').show();
+            setMinimized(false, true);
         });
         $(document).on('click', '#activity-tab a.activity-close', function() {
             activityTab.pollers = {};

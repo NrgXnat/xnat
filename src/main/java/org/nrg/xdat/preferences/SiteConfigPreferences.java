@@ -635,6 +635,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
         }
     }
+    @NrgPreference(defaultValue = "true")
+    public boolean getPreventCrossModalityMerge() {
+        return getBooleanValue("preventCrossModalityMerge");
+    }
+
+    public void setPreventCrossModalityMerge(final boolean preventCrossModalityMerge) {
+        try {
+            setBooleanValue(preventCrossModalityMerge, "preventCrossModalityMerge");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
+        }
+    }
 
     @NrgPreference(defaultValue = "true")
     public boolean isEnableDicomReceiver() {

@@ -992,6 +992,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiDisplaySeriesClass() {
+        return getBooleanValue("uiDisplaySeriesClass");
+    }
+
+    public void setUiDisplaySeriesClass(final boolean uiDisplaySeriesClass) {
+        try {
+            setBooleanValue(uiDisplaySeriesClass, "uiDisplaySeriesClass");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDisplaySeriesClass': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.allow-advanced-search")
     public boolean getUiAllowAdvancedSearch() {
         return getBooleanValue("uiAllowAdvancedSearch");

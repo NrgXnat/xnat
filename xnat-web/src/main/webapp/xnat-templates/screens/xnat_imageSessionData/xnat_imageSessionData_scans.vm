@@ -50,7 +50,9 @@
                 </th>
                 <th class="left">Scan</th>
                 <th class="left">Type</th>
-                <th class="left">Series Class</th>
+                #if($siteConfig.uiDisplaySeriesClass)
+                    <th class="left">Series Class</th>
+                #end
                 #if($siteConfig.uiDisplaySeriesDescription)
                     <th class="left">Series Desc</th>
                     #set($fileIndex="4")
@@ -129,11 +131,14 @@
                                 #escapeHTML($!scan.getProperty("type"))
                             #end
                         </td>
-                        <td class="scan-${scanID}-series_class" style="width: 200px;">
-                            #if($!scan.getProperty("series_class"))
-                                #escapeHTML($!scan.getProperty("series_class"))
-                            #end
-                        </td>
+                        #if($siteConfig.uiDisplaySeriesClass)
+                            <td class="scan-${scanID}-series_class" style="width: 200px;">
+                                #if($!scan.getProperty("series_class"))
+                                    #escapeHTML($!scan.getProperty("series_class"))
+                                #end
+                            </td>
+                        #end
+
                         #if($siteConfig.uiDisplaySeriesDescription)
                             <td class="scan-${scanID}-description" style="width: 200px;">
                                 #if($!scan.getProperty("series_description"))

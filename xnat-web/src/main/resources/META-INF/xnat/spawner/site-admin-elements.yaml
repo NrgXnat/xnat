@@ -1490,6 +1490,26 @@ setScanTypeMapping:
             label: Scan Type Mapping?
             onText: Enabled
             offText: Disabled
+
+scanTableSettings:
+    kind: panel.form
+    label: Scan Table Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiDisplaySeriesDescription:
+            kind: panel.input.switchbox
+            label: Display Series Description?
+            description: Display the series description in the image session scan table
+            onText: Enabled
+            offText: Disabled
+        uiDisplaySeriesClass:
+            kind: panel.input.switchbox
+            label: Display Series Class?
+            description: Display the series class in the image session scan table
+            onText: Enabled
+            offText: Disabled
             
 manualQC:
     kind: panel.form
@@ -1691,6 +1711,7 @@ root:
             label: Miscellaneous
             contents:
                 ${setScanTypeMapping}
+                ${scanTableSettings}
                 ${manualQC}
                 ${developmentUtilities}
 

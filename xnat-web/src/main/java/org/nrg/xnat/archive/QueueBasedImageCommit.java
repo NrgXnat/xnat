@@ -71,7 +71,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
                                  final boolean allowSessionMerge, final String listenerId, final boolean inline) throws Exception {
 
         super(StringUtils.defaultIfBlank(listenerId,
-                XnatHttpUtils.buildArchiveEventId(project, timestamp, sessionLabel)));
+                XnatHttpUtils.buildArchiveEventId(project, timestamp, sessionLabel)), user);
 
         _user = user;
         _prearcSession = session;
@@ -112,7 +112,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         try {
             final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
                     .getBean(EventTrackingDataService.class);
-            eventTrackingDataService.createWithKey(_archiveOperationId);
+            eventTrackingDataService.createWithKey(_archiveOperationId, _user);
 
             log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,
@@ -132,7 +132,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
                 log.debug("Checked for message with final status but didn't find it, sleeping for a bit...");
                 Thread.sleep(500);
                 try {
-                    eventTrackingData = eventTrackingDataService.getPojoByKey(_archiveOperationId);
+                    eventTrackingData = eventTrackingDataService.getPojoByKey(_archiveOperationId, _user);
                 } catch (NotFoundException e) {
                     // Ignore, eventTrackingData will be null until timeout exception or JMS starts working
                 }

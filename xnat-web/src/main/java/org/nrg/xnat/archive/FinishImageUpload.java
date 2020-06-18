@@ -43,7 +43,7 @@ public class FinishImageUpload extends ArchiveStatusProducer implements Callable
     private final UserI user;
 
     public FinishImageUpload(Object control, UserI user, final PrearcSession session, final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final boolean inline) {
-        super(control);
+        super(control, user);
         this.session = session;
         this.destination = destination;
         this.overrideExceptions = overrideExceptions;

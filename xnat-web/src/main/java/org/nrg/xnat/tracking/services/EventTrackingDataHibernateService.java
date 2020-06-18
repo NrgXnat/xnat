@@ -9,21 +9,25 @@ public interface EventTrackingDataHibernateService extends BaseHibernateService<
     /**
      * Create new EventListenerData entity with key
      * @param key the key
+     * @param userId the user
      * @return the entity
      */
-    EventTrackingData createWithKey(String key);
+    EventTrackingData createWithKey(String key, Integer userId);
 
     /**
      * Create or update eventTrackingData with TrackableEvent.
      *
      * @param eventData the trackable event
+     * @throws IllegalAccessException if user cannot read this event tracking data
      */
-    void createOrUpdate(TrackableEvent eventData);
+    void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException;
 
     /**
      * Find event tracking data by key
      * @param key the key
+     * @param userId the user
      * @return the event tracking data
+     * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
-    EventTrackingData findByKey(String key) throws NotFoundException;
+    EventTrackingData findByKey(String key, Integer userId) throws NotFoundException;
 }

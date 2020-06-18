@@ -12,12 +12,9 @@ import java.util.Random;
 import static org.nrg.xdat.XDAT.getEventService;
 
 public class ArchiveStatusProducer extends StatusProducer {
-    public ArchiveStatusProducer(Object control) {
-        super(control);
-    }
-
     public ArchiveStatusProducer(Object control, UserI user) {
         super(ObjectUtils.defaultIfNull(control, makeControl(user)));
+        this.user = user;
     }
 
     public ArchiveStatusProducer(Object control, StatusListenerI... listeners) {
@@ -38,12 +35,12 @@ public class ArchiveStatusProducer extends StatusProducer {
         if (m.isTerminal()) {
             switch (m.getStatus()) {
                 case COMPLETED:
-                    getEventService().triggerEvent(ArchiveEvent.completed(Operation.Import, "Unk",
+                    getEventService().triggerEvent(ArchiveEvent.completed(user.getID(), Operation.Import, "Unk",
                             key, m.getMessage()));
                     break;
                 case FAILED:
                 default:
-                    getEventService().triggerEvent(ArchiveEvent.failed(Operation.Import, "Unk",
+                    getEventService().triggerEvent(ArchiveEvent.failed(user.getID(), Operation.Import, "Unk",
                             key, m.getMessage()));
                     break;
             }
@@ -51,13 +48,13 @@ public class ArchiveStatusProducer extends StatusProducer {
             switch (m.getStatus()) {
                 case COMPLETED:
                 case PROCESSING:
-                    getEventService().triggerEvent(ArchiveEvent.progress(Operation.Import, 0, "Unk",
+                    getEventService().triggerEvent(ArchiveEvent.progress(user.getID(), Operation.Import, 0, "Unk",
                             key, m.getMessage()));
                     break;
                 case FAILED:
                 case WARNING:
                 default:
-                    getEventService().triggerEvent(ArchiveEvent.warn(Operation.Import, "Unk",
+                    getEventService().triggerEvent(ArchiveEvent.warn(user.getID(), Operation.Import, "Unk",
                             key, m.getMessage()));
                     break;
             }
@@ -67,4 +64,6 @@ public class ArchiveStatusProducer extends StatusProducer {
     private static String makeControl(UserI user) {
         return user.getUsername() + new Random().nextInt(1000) + System.currentTimeMillis();
     }
+
+    private UserI user;
 }

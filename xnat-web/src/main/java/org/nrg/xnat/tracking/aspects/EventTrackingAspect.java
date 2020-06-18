@@ -29,7 +29,11 @@ public class EventTrackingAspect {
 
     @Before(value = "trackingPointcut(trackEvent) && args(event)", argNames = "trackEvent, event")
     public <T extends TrackableEvent> void updateEventTracker(final TrackEvent trackEvent, final Event<T> event) {
-        eventTrackingDataService.createOrUpdate(event.getData());
+        try {
+            eventTrackingDataService.createOrUpdate(event.getData());
+        } catch (IllegalAccessException e) {
+            log.error("Unable to track event", e);
+        }
     }
 
     private final EventTrackingDataService eventTrackingDataService;

@@ -11,6 +11,7 @@ package org.nrg.xnat.tracking.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
@@ -32,31 +33,31 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
      * {@inheritDoc}
      */
     @Override
-    public String getPayloadByKey(final String key) throws NotFoundException {
-        return getPojoByKey(key).getPayload();
+    public String getPayloadByKey(final String key, UserI user) throws NotFoundException {
+        return getPojoByKey(key, user).getPayload();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public EventTrackingDataPojo getPojoByKey(String key) throws NotFoundException {
-        return eventTrackingDataHibernateService.findByKey(key).toPojo();
+    public EventTrackingDataPojo getPojoByKey(String key, UserI user) throws NotFoundException {
+        return eventTrackingDataHibernateService.findByKey(key, user.getID()).toPojo();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void createWithKey(String key) {
-        eventTrackingDataHibernateService.createWithKey(key);
+    public void createWithKey(String key, UserI user) {
+        eventTrackingDataHibernateService.createWithKey(key, user.getID());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public synchronized void createOrUpdate(TrackableEvent eventData) {
+    public synchronized void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException {
         eventTrackingDataHibernateService.createOrUpdate(eventData);
     }
 }

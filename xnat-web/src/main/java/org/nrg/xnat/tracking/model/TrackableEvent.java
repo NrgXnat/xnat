@@ -15,6 +15,13 @@ public interface TrackableEvent extends EventI {
     String getTrackingId();
 
     /**
+     * Return the user tracking the event
+     * @return the user ID
+     */
+    @Nonnull
+    Integer getUserId();
+
+    /**
      * Has the event succeeded?
      * @return T/F
      */

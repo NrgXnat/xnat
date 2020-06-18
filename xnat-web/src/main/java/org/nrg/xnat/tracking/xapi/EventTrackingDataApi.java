@@ -36,7 +36,7 @@ public class EventTrackingDataApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"{key}/payload"}, produces = {MediaType.TEXT_PLAIN_VALUE}, method = RequestMethod.GET)
     public ResponseEntity<String> getPayload(@PathVariable final String key) {
         try {
-            return new ResponseEntity<>(eventTrackingDataService.getPayloadByKey(key), HttpStatus.OK);
+            return new ResponseEntity<>(eventTrackingDataService.getPayloadByKey(key, getSessionUser()), HttpStatus.OK);
         } catch (NotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Throwable t) {
@@ -48,7 +48,7 @@ public class EventTrackingDataApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"{key}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     public ResponseEntity<EventTrackingDataPojo> getData(@PathVariable final String key) {
         try {
-            return new ResponseEntity<>(eventTrackingDataService.getPojoByKey(key), HttpStatus.OK);
+            return new ResponseEntity<>(eventTrackingDataService.getPojoByKey(key, getSessionUser()), HttpStatus.OK);
         } catch (NotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Throwable t) {

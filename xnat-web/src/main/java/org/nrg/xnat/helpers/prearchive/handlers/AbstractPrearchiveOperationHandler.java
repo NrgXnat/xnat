@@ -88,7 +88,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     }
 
     protected void progress(final int progress, final String message) {
-        getEventService().triggerEvent(ArchiveEvent.progress(_operation, progress, _sessionData, _listenerId, message));
+        getEventService().triggerEvent(ArchiveEvent.progress(_user.getID(), _operation, progress, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {
@@ -102,7 +102,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     }
 
     protected void completed(final String message) {
-        getEventService().triggerEvent(ArchiveEvent.completed(_operation, _sessionData, _listenerId, message));
+        getEventService().triggerEvent(ArchiveEvent.completed(_user.getID(), _operation, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {
@@ -116,7 +116,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
     }
 
     protected void failed(final String message) {
-        getEventService().triggerEvent(ArchiveEvent.failed(_operation, _sessionData, _listenerId, message));
+        getEventService().triggerEvent(ArchiveEvent.failed(_user.getID(), _operation, _sessionData, _listenerId, message));
         if (_requestId > 0) {
             final DicomInboxImportRequest request = _importRequestService.getDicomInboxImportRequest(_requestId);
             if (request != null) {

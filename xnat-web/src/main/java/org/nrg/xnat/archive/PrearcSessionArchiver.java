@@ -115,7 +115,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     private DicomFilterService _filterService;
 
     protected PrearcSessionArchiver(final Object control, final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String, Object> params, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean waitFor, final Boolean overwriteFiles) {
-        super(control);
+        super(control, user);
         this.src = src;
         this.user = user;
         this.project = project;

@@ -10,9 +10,8 @@
 package org.nrg.xnat.tracking.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
-import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 
 /**
@@ -22,30 +21,34 @@ public interface EventTrackingDataService {
     /**
      * Get EventListenerData payload by key
      * @param key the key
+     * @param user the user
      * @return the payload
-     * @throws NotFoundException if no event listener data exists for this key
+     * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
-    String getPayloadByKey(final String key) throws NotFoundException;
+    String getPayloadByKey(final String key, UserI user) throws NotFoundException;
 
     /**
      * Get EventListenerData entity by key
      * @param key the key
+     * @param user the user
      * @return the pojo
-     * @throws NotFoundException if no event listener data exists for this key
+     * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
-    EventTrackingDataPojo getPojoByKey(final String key) throws NotFoundException;
+    EventTrackingDataPojo getPojoByKey(final String key, UserI user) throws NotFoundException;
 
     /**
      * Create new EventListenerData entity with key
      * @param key the key
+     * @param user the user
      */
-    void createWithKey(String key);
+    void createWithKey(String key, UserI user);
 
     /**
      * Create or update eventTrackingData with TrackableEvent.
      * <strong>Not safe across JVMs</strong>
      *
      * @param eventData the trackable event
+     * @throws IllegalAccessException if user cannot read this event tracking data
      */
-    void createOrUpdate(TrackableEvent eventData);
+    void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException;
 }

@@ -33,7 +33,7 @@ var XNAT = getObject(XNAT);
     XNAT.app.activityTab = activityTab =
         getObject(XNAT.app.activityTab || {});
 
-    XNAT.app.activityTab.cookieTag = cookieTag = 'activities';
+    XNAT.app.activityTab.cookieTag = cookieTag = 'activities' + XNAT.sub64.dlxEnc(window.username).encoded;
 
     activityTab.pollers = [];
 

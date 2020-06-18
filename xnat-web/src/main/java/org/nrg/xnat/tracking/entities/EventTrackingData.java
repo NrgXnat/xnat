@@ -13,11 +13,13 @@ public class EventTrackingData extends AbstractHibernateEntity {
     @Nullable private String payload;
     @Nullable private Boolean succeeded;
     @Nullable private String finalMessage;
+    private Integer userId;
 
     public EventTrackingData() {}
 
-    public EventTrackingData(String key) {
+    public EventTrackingData(String key, Integer userId) {
         this.key = key;
+        this.userId = userId;
     }
 
     @Column(unique = true, columnDefinition = "TEXT")
@@ -56,6 +58,14 @@ public class EventTrackingData extends AbstractHibernateEntity {
 
     public void setFinalMessage(@Nullable String finalMessage) {
         this.finalMessage = finalMessage;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
     public EventTrackingDataPojo toPojo() {

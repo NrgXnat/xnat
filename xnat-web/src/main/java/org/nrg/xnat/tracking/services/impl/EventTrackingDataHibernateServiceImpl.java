@@ -7,10 +7,14 @@ import org.nrg.xnat.tracking.daos.EventTrackingDataDao;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -23,8 +27,8 @@ public class EventTrackingDataHibernateServiceImpl
      */
     @Override
     @Transactional
-    public EventTrackingData createWithKey(String key) {
-        return create(new EventTrackingData(key));
+    public EventTrackingData createWithKey(String key, Integer userId) {
+        return create(new EventTrackingData(key, userId));
     }
 
     /**
@@ -32,9 +36,10 @@ public class EventTrackingDataHibernateServiceImpl
      */
     @Override
     @Transactional
-    public void createOrUpdate(TrackableEvent eventData) {
+    public void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException {
         String key = eventData.getTrackingId();
-        EventTrackingData eventTrackingData = findOrCreateByKey(key);
+        Integer userId = eventData.getUserId();
+        EventTrackingData eventTrackingData = findOrCreateByKey(key, userId);
         if (eventData.isCompleted()) {
             eventTrackingData.setSucceeded(eventData.isSuccess());
             eventTrackingData.setFinalMessage(eventData.getMessage());
@@ -53,24 +58,38 @@ public class EventTrackingDataHibernateServiceImpl
      */
     @Override
     @Transactional
-    public EventTrackingData findByKey(String key) throws NotFoundException {
-        EventTrackingData eventTrackingData = getDao().findByUniqueProperty("key", key);
-        if (eventTrackingData == null) {
-            throw new NotFoundException("No event listener data with key " + key);
+    public EventTrackingData findByKey(String key, Integer userId) throws NotFoundException {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("key", key);
+        properties.put("userId", userId);
+        List<EventTrackingData> eventTrackingDataList = getDao().findByProperties(properties);
+        if (eventTrackingDataList == null || eventTrackingDataList.isEmpty()) {
+            throw new NotFoundException("No event listener data with key " + key + " accessible to user");
         }
-        return eventTrackingData;
+        if (eventTrackingDataList.size() > 1) {
+            throw new RuntimeException("The specified key is not a unique constraint!");
+        }
+        return eventTrackingDataList.get(0);
     }
 
     /**
      * Get EventListenerData entity by key
      * @param key the key
+     * @param userId the user
      * @return the entity
+     * @throws IllegalAccessException if user cannot read this event tracking data
      */
-    private EventTrackingData findOrCreateByKey(String key) {
+    private EventTrackingData findOrCreateByKey(String key, Integer userId) throws IllegalAccessException {
         try {
-            return findByKey(key);
+            return findByKey(key, userId);
         } catch (NotFoundException e) {
-            return createWithKey(key);
+            try {
+                return createWithKey(key, userId);
+            } catch (DuplicateKeyException de) {
+                // If we're trying to create with a key that's already in use, we're actually trying to update without
+                // proper permission
+                throw new IllegalAccessException("User cannot read event tracking for " + key);
+            }
         }
     }
 }

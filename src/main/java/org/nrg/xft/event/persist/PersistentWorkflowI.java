@@ -225,6 +225,8 @@ public interface PersistentWorkflowI {
 	public abstract void setPercentagecomplete(String v);
 
 	public abstract String getUsername();
+
+	public abstract Integer getUserId();
 	
 	public abstract Integer getWorkflowId();
 	

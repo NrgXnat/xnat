@@ -31,19 +31,11 @@ public class WorkflowStatusEventListener implements Consumer<Event<WorkflowStatu
 
     @Override
     public void accept(Event<WorkflowStatusEvent> busEvent) {
-        final PersistentWorkflowI workflow = busEvent.getData().getWorkflow();
+        final WorkflowStatusEvent workflowStatusEvent = busEvent.getData();
+        final PersistentWorkflowI workflow = workflowStatusEvent.getWorkflow();
         final String bulkLaunchId = workflow.getJobid();
-        if (StringUtils.isBlank(bulkLaunchId)) {
-            return;
-        }
-        Integer userId;
-        try {
-            userId = Users.getUser(workflow.getUsername()).getID();
-        } catch (UserInitException | UserNotFoundException | NullPointerException e) {
-            userId = null;
-        }
-        if (userId == null) {
-            // No user info, can't track this event
+        final Integer userId = workflowStatusEvent.getUserId();
+        if (StringUtils.isBlank(bulkLaunchId) || userId == null) {
             return;
         }
         eventService.triggerEvent(new BulkLaunchEvent(bulkLaunchId, userId, workflow.getWorkflowId(),

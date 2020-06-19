@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -82,9 +83,11 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 				}
 			}
 
-			//check if the XSI types match
-			if(!StringUtils.equals(existing.getXSIType(), src.getXSIType())){
-				fail(19,MODALITY_MOD);
+			if(XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge",true)) {
+				//check if the XSI types match
+				if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
+					fail(19, MODALITY_MOD);
+				}
 			}
 
 			for(final XnatImagescandataI newScan : src.getScans_scan()){

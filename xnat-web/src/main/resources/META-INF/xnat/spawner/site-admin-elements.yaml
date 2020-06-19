@@ -1510,7 +1510,21 @@ scanTableSettings:
             description: Display the series class in the image session scan table
             onText: Enabled
             offText: Disabled
-            
+
+setPreventCrossModalityMerge:
+    kind: panel.form
+    label: Prevent Cross-modality Session Merger
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        preventCrossModalityMerge:
+            kind: panel.input.switchbox
+            label: Prevent cross-modality post-archive session merger?
+            description: Should scans received after session archive (with a matching Study Instance UID) be merged into the pre-existing session, even if the modality of the received session mismatches with the existing session.  I.e. can CT scans be merged into an existing PET session if the Study Instance UID matches?
+            onText: Enabled
+            offText: Disabled
+
 manualQC:
     kind: panel.form
     label: Manual QC
@@ -1712,6 +1726,7 @@ root:
             contents:
                 ${setScanTypeMapping}
                 ${scanTableSettings}
+                ${setPreventCrossModalityMerge}
                 ${manualQC}
                 ${developmentUtilities}
 

@@ -372,6 +372,15 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PROJ_MOD, new Exception());
             }
 
+
+            if(XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge",true)) {
+                //check if the XSI types match
+                if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
+                    failed(MODALITY_MOD);
+                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, MODALITY_MOD, new Exception());
+                }
+            }
+
             if (!StringUtils.equals(existing.getSubjectId(), src.getSubjectId())) {
                 String subjectId = existing.getLabel();
                 String newError = SUBJECT_MOD + ": " + subjectId + " Already Exists for another Subject";
@@ -605,9 +614,14 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 						 allowSessionMerge, 
 						 (overrideExceptions)?overrideExceptions:overwriteFiles,
 						 saveImpl,user,workflow.buildEvent());
-				
+
 				ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
-				XnatImagesessiondata merged=mergePrearcToArchiveSession.getMerged();
+				XnatImagesessiondata merged;
+				if(XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge",true)){
+                    merged = src;
+                }else{
+                    merged =mergePrearcToArchiveSession.getMerged();
+                }
 
                 FileUtils.DeleteFile(new File(this.prearcSession.getSessionDir().getAbsolutePath() + ".xml"));
                 FileUtils.DeleteFile(this.prearcSession.getSessionDir());

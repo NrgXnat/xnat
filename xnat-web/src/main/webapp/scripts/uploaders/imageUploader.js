@@ -201,7 +201,6 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                 var formDataArchive = new FormData();
                 formDataArchive.append("src", usrResPath.replace(fNameReplace, fname));
                 formDataArchive.append("http-session-listener", uploadId);
-                formDataArchive.append("prearchive_code", "0");
 
                 for (var key of Object.keys(config)) {
                     if (config[key]) {

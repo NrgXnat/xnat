@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -244,7 +245,7 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 					inner.addClause("wrk:workflowData/category", "!=","DATA");
 					
 					CriteriaCollection inner2= new CriteriaCollection("AND");
-					inner2.addClause("wrk:workflowData/ID", ((XnatProjectdata)i).getArcSpecification().getArcProjectId());
+					inner2.addClause("wrk:workflowData/ID", ((XnatProjectdata) BaseElement.GetGeneratedItem(i)).getArcSpecification().getArcProjectId());
 					inner2.addClause("wrk:workflowData/data_type", "arc:project");
 					
 					cc.add(inner);

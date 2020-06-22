@@ -1,0 +1,3 @@
+<div id="quarantine_div" class="error report-section">
+    This $displayManager.getSingularDisplayNameForImageSession().toLowerCase() is in quarantine.&nbsp;<a onclick="toggleQuarantine();">Activate</a>
+</div>

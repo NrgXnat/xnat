@@ -9,14 +9,14 @@
 	#set($project=$om.getProject())
 #end
 <script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
 <script type="text/javascript">
     document.title = "$om.getSchemaElement().getSingularDescription(): $!item.getProperty('label')";
 </script>
 #set($subject = $om.getSubjectData())
 #if($item.needsActivation())
-<div id="quarantine_div" class="error report-section">
-    This $displayManager.getSingularDisplayNameForImageSession().toLowerCase() is in quarantine.&nbsp;&nbsp;&nbsp;&nbsp;<a onclick="toggleQuarantine();">Activate</a>
-</div><br>
+    #parse($turbineUtils.getTemplateName("_quarantine",$om.getXSIType(),$project))
 #end
 #addCustomScreens($om.getXSIType() "report/errors")
 #parse($turbineUtils.getTemplateName("_title",$om.getXSIType(),$project))

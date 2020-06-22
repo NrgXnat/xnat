@@ -19,9 +19,14 @@ import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
@@ -29,6 +34,7 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.Method;
 import org.restlet.data.Request;
@@ -360,7 +366,30 @@ public class XNATTemplate extends SecureResource {
         }
     }
 
-    public boolean insertCatalog(XnatResourcecatalog catResource) throws Exception {
+    public void insertCatalogWrap(XnatResourcecatalog catResource, PersistentWorkflowI wrk, UserI user) throws Exception {
+        final boolean isNew;
+        final Integer wrkId;
+        if (wrk == null) {
+            isNew = true;
+            wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : EventUtils.CREATE_RESOURCE));
+
+            wrk.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
+            PersistentWorkflowUtils.save(wrk, wrk.buildEvent());
+            wrkId=wrk.getWorkflowId();
+        } else {
+            wrkId=null;
+            isNew = false;
+        }
+
+        assert wrk != null;
+        insertCatalog(catResource, wrkId);
+
+        if (isNew) {
+            WorkflowUtils.complete(wrk, wrk.buildEvent());
+        }
+    }
+
+    public boolean insertCatalog(XnatResourcecatalog catResource, Integer eventId) throws Exception {
         final XnatExperimentdata assessed = assesseds.size() == 1 ? assesseds.get(0) : null;
 
         final UserI user = getUser();
@@ -371,21 +400,21 @@ public class XNATTemplate extends SecureResource {
             }
 
             final XnatReconstructedimagedata reconstruction = recons.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, reconstruction), catResource) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, reconstruction), catResource,eventId) != null;
         } else if (scans.size() > 0) {
             if (assessed == null) {
                 getResponse().setStatus(Status.CLIENT_ERROR_GONE, "Invalid session id.");
                 return false;
             }
             final XnatImagescandata scan = scans.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, scan), catResource) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, scan), catResource, eventId) != null;
         } else if (expts.size() > 0) {
             final XnatExperimentdata experiment = expts.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(experiment), catResource) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(experiment), catResource, eventId) != null;
         } else if (sub != null) {
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(sub), catResource) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(sub), catResource, eventId) != null;
         } else if (proj != null) {
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(proj), catResource) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(proj), catResource, eventId) != null;
         }
         return true;
     }

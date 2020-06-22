@@ -188,20 +188,7 @@ public class CatalogResource extends XNATCatalogTemplate {
                             }
                         }
 
-                        final boolean isNew;
-                        if (wrk == null) {
-                            isNew = true;
-                            wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : EventUtils.CREATE_RESOURCE));
-                        } else {
-                            isNew = false;
-                        }
-
-                        assert wrk != null;
-                        insertCatalog(catResource);
-
-                        if (isNew) {
-                            WorkflowUtils.complete(wrk, wrk.buildEvent());
-                        }
+                        insertCatalogWrap(catResource,wrk,user);
                     } else {
                         getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only ResourceCatalog documents can be PUT to this address.");
                     }

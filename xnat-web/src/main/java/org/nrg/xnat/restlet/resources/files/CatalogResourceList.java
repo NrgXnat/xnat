@@ -115,20 +115,7 @@ public class    CatalogResourceList extends XNATTemplate {
                 }
 
 
-                boolean isNew=false;
-                if(wrk==null){
-                    isNew=true;
-                    wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():EventUtils.CREATE_RESOURCE));
-                }
-
-                assert wrk != null;
-                EventMetaI ci=wrk.buildEvent();
-
-                insertCatalog(catResource);
-
-                if(isNew){
-                    WorkflowUtils.complete(wrk, ci);
-                }
+                insertCatalogWrap(catResource,wrk,user);
 
                 returnSuccessfulCreateFromList(catResource.getXnatAbstractresourceId() + "");
             }else{

@@ -372,6 +372,9 @@ public class XNATTemplate extends SecureResource {
         if (wrk == null) {
             isNew = true;
             wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : EventUtils.CREATE_RESOURCE));
+            if (wrk == null) {
+                throw new Exception("Unable to build open workflow for inserting catalog " + catResource.getUri());
+            }
 
             wrk.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
             PersistentWorkflowUtils.save(wrk, wrk.buildEvent());
@@ -381,7 +384,6 @@ public class XNATTemplate extends SecureResource {
             isNew = false;
         }
 
-        assert wrk != null;
         insertCatalog(catResource, wrkId);
 
         if (isNew) {

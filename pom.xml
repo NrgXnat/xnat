@@ -230,7 +230,7 @@
         <slf4j.version>1.7.26</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <logstash.version>5.3</logstash.version>
-        <javamelody.version>1.81.0</javamelody.version>
+        <javamelody.version>1.83.0</javamelody.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <metainf-services.version>1.8</metainf-services.version>
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>

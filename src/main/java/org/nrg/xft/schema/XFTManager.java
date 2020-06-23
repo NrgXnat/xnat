@@ -54,7 +54,6 @@ public class XFTManager {
     private static final Logger     logger  = LoggerFactory.getLogger(XFTManager.class);
     private static       XFTManager MANAGER = null;
     private static       boolean    complete = false;
-    private static       boolean    error = false;
 
     private static XFTElement                      ELEMENT_TABLE = null;
     private static final Map<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
@@ -71,7 +70,7 @@ public class XFTManager {
      * @return Returns true if the manager is initialized and ready for use, false otherwise.
      */
     public static boolean isInitialized() {
-        return isComplete();
+        return MANAGER != null;
     }
 
     /**
@@ -90,7 +89,7 @@ public class XFTManager {
      * @throws XFTInitException When an error occurs in XFT.
      */
     public static XFTManager GetInstance() throws XFTInitException {
-        if (MANAGER == null || !isComplete() || error) {
+        if (MANAGER == null) {
             throw new XFTInitException();
         }
         return MANAGER;
@@ -106,7 +105,6 @@ public class XFTManager {
      * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public static XFTManager init(String schemaLocation) throws ElementNotFoundException {
-        complete=false;
         final LapStopWatch stopWatch = LapStopWatch.createStarted(logger, Level.INFO);
         MANAGER = new XFTManager(schemaLocation);
         stopWatch.lap("Created XFTManager instance");
@@ -115,12 +113,9 @@ public class XFTManager {
             MANAGER.manageAddins();
         } catch (Exception e) {
             logger.error("An error occurred initializing XFT", e);
-            error=true;
-            return null;
         }
         stopWatch.stop("Completed loading XFTManager add-ins");
         logger.info(stopWatch.toTable());
-        complete=true;
         return MANAGER;
     }
 
@@ -614,6 +609,7 @@ public class XFTManager {
                 }
             }
         }
+        complete = true;
     }
 
     private ArrayList getAddInElements() {

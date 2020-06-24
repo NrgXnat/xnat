@@ -171,7 +171,7 @@ public abstract class ResourceModifierA implements Serializable {
     protected abstract XnatAbstractresourceI getResourceByLabel(final String lbl, final String type);
 
     private boolean createCatalog(XnatResourcecatalog resource, XnatResourceInfo info) throws Exception {
-        CatalogUtils.configureEntry(resource, info, user);
+        CatalogUtils.configureResource(resource, info, user);
 
         final String destPath = this.buildDestinationPath();
 

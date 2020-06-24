@@ -826,7 +826,7 @@ public class CatalogUtils {
                         CatalogMapEntry mapEntry = catalogMap.get(relative);
                         mapEntry.entryExists = true; //mark that file exists
                         mod = updateExistingCatEntry(mapEntry.entry, null, relative, f.getName(), attrs.size(),
-                                checksums ? getHash(f) : null, eventMeta);
+                                checksums ? getHash(f) : null, info, eventMeta);
                         if (mod) modded.getAndIncrement();
                     } else {
                         if (addUnreferencedFiles) {
@@ -1463,71 +1463,68 @@ public class CatalogUtils {
         return success & remoteFilesService.deleteFile(url, project);
     }
 
-    public static void configureEntry(final CatEntryBean newEntry, final XnatResourceInfo info, boolean modified) {
+    public static boolean configureEntry(final CatEntryBean entry, @Nonnull final XnatResourceInfo info, boolean isNew) {
+        boolean modified = false;
         if (info.getDescription() != null) {
-            newEntry.setDescription(info.getDescription());
+            entry.setDescription(info.getDescription());
+            modified = true;
         }
         if (info.getFormat() != null) {
-            newEntry.setFormat(info.getFormat());
+            entry.setFormat(info.getFormat());
+            modified = true;
         }
         if (info.getContent() != null) {
-            newEntry.setContent(info.getContent());
+            entry.setContent(info.getContent());
+            modified = true;
         }
         if (info.getTags().size() > 0) {
-            for (final String entry : info.getTags()) {
+            for (final String tag : info.getTags()) {
                 final CatEntryTagBean t = new CatEntryTagBean();
-                t.setTag(entry);
-                newEntry.addTags_tag(t);
+                t.setTag(tag);
+                entry.addTags_tag(t);
             }
+            modified = true;
         }
         if (info.getMeta().size() > 0) {
-            for (final Map.Entry<String, String> entry : info.getMeta().entrySet()) {
+            for (final Map.Entry<String, String> e : info.getMeta().entrySet()) {
                 final CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                meta.setName(entry.getKey());
-                meta.setMetafield(entry.getValue());
-                newEntry.addMetafields_metafield(meta);
+                meta.setName(e.getKey());
+                meta.setMetafield(e.getValue());
+                entry.addMetafields_metafield(meta);
+            }
+            modified = true;
+        }
+
+        if (isNew) {
+            if (info.getUser() != null && entry.getCreatedby() == null) {
+                entry.setCreatedby(info.getUser().getUsername());
+            }
+            if (info.getCreated() != null && entry.getCreatedtime() == null) {
+                entry.setCreatedtime(info.getCreated());
+            }
+            if (info.getEvent_id() != null && entry.getCreatedeventid() == null) {
+                entry.setCreatedeventid(info.getEvent_id().toString());
             }
         }
 
-        if (modified) {
-            if (info.getUser() != null && newEntry.getModifiedby() == null) {
-                newEntry.setModifiedby(info.getUser().getUsername());
-            }
-            if (info.getLastModified() != null) {
-                newEntry.setModifiedtime(info.getLastModified());
-            }
-            if (info.getEvent_id() != null && newEntry.getModifiedeventid() == null) {
-                newEntry.setModifiedeventid(info.getEvent_id().toString());
-            }
-        } else {
-            if (info.getUser() != null && newEntry.getCreatedby() == null) {
-                newEntry.setCreatedby(info.getUser().getUsername());
-            }
-            if (info.getCreated() != null && newEntry.getCreatedtime() == null) {
-                newEntry.setCreatedtime(info.getCreated());
-            }
-            if (info.getEvent_id() != null && newEntry.getCreatedeventid() == null) {
-                newEntry.setCreatedeventid(info.getEvent_id().toString());
-            }
-        }
-
+        return modified;
     }
 
-    public static void configureEntry(final XnatResource newEntry, final XnatResourceInfo info, final UserI user) throws Exception {
+    public static void configureResource(final XnatResource resource, final XnatResourceInfo info, final UserI user) throws Exception {
         if (info.getDescription() != null) {
-            newEntry.setDescription(info.getDescription());
+            resource.setDescription(info.getDescription());
         }
         if (info.getFormat() != null) {
-            newEntry.setFormat(info.getFormat());
+            resource.setFormat(info.getFormat());
         }
         if (info.getContent() != null) {
-            newEntry.setContent(info.getContent());
+            resource.setContent(info.getContent());
         }
         if (info.getTags().size() > 0) {
             for (final String entry : info.getTags()) {
                 final XnatAbstractresourceTag t = new XnatAbstractresourceTag(user);
                 t.setTag(entry);
-                newEntry.setTags_tag(t);
+                resource.setTags_tag(t);
             }
         }
         if (info.getMeta().size() > 0) {
@@ -1535,7 +1532,7 @@ public class CatalogUtils {
                 final XnatAbstractresourceTag t = new XnatAbstractresourceTag(user);
                 t.setTag(entry.getValue());
                 t.setName(entry.getKey());
-                newEntry.setTags_tag(t);
+                resource.setTags_tag(t);
             }
         }
     }
@@ -2298,7 +2295,7 @@ public class CatalogUtils {
             newEntry.setDigest(digest);
         }
         setMetaFieldByName(newEntry, SIZE, Long.toString(size));
-        configureEntry(newEntry, info, false);
+        configureEntry(newEntry, info, true);
         cat.addEntries_entry(newEntry);
         return newEntry;
     }
@@ -2323,7 +2320,7 @@ public class CatalogUtils {
             } catch (ConfigServiceException e) {
                 // Ignore
             }
-            updateExistingCatEntry(entry, uri, relativePath, f.getName(), f.length(), digest, ci);
+            updateExistingCatEntry(entry, uri, relativePath, f.getName(), f.length(), digest, info, ci);
         }
     }
 
@@ -2332,7 +2329,7 @@ public class CatalogUtils {
                                                  final CatalogEntryAttributes attr,
                                                  final EventMetaI eventMeta) {
         return updateExistingCatEntry(entry, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, attr.md5, eventMeta);
+                attr.relativePath, attr.name, attr.size, attr.md5, null, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,
@@ -2346,11 +2343,12 @@ public class CatalogUtils {
             //Ignore
         }
         return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest,
-                eventMeta);
+                null, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, @Nullable String uri, String relativePath, String name,
-                                                 long fsize, @Nullable String digest, final EventMetaI eventMeta) {
+                                                 long fsize, @Nullable String digest, @Nullable XnatResourceInfo info,
+                                                 final EventMetaI eventMeta) {
 
         boolean mod = false;
 
@@ -2415,6 +2413,10 @@ public class CatalogUtils {
         if (StringUtils.isNotBlank(digest) && !digest.equals(entry.getDigest())) {
             entry.setDigest(digest);
             mod = true;
+        }
+
+        if (info != null && entry instanceof CatEntryBean) {
+            mod |= configureEntry((CatEntryBean) entry, info, false);
         }
 
         if (mod) {

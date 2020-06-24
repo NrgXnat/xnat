@@ -297,7 +297,6 @@ triagePath:
     kind: panel.input.text
     name: triagePath
     label: Quarantine Location
-    validation: required onblur
     description: "Location of XNAT Quarantine."
     
 #checksumsPropertyChangedListener:

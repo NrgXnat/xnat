@@ -18,16 +18,23 @@ XNAT.app.TriageResourceDeleter={
 		this.fsource=fsource;
 		this.user=user;
 		this.date=date;
+
+		let confirmHtml = "Are you sure you want to delete "+this.fsource+" uploaded by "+this.user+" on "+this.date+"?<br><br>"
+		if (showReason) {
+			confirmHtml += "<form id=\"cru_delete_frm\"><div style=\"margin-bottom:16px;\">Justification:<br><textarea id=\"cru_event_reason\" name=\"event_reason\" cols=\"50\" rows=\"3\"></textarea></div></form>"
+		}
 		xModalConfirm({
-	          
-	          content: "Are you sure you want to delete "+this.fsource+" uploaded by "+this.user+" on "+this.date+"?<br><br>"+"<form id=\"cru_delete_frm\"><div style=\"margin-bottom:16px;\">Justification:<br><textarea id=\"cru_event_reason\" name=\"event_reason\" cols=\"50\" rows=\"3\"></textarea></div></form>",
+	          content: confirmHtml,
 	          scroll: false,
 	          height: 280,
 	          okAction: function(){
-	        	 if(document.getElementById("cru_delete_frm").event_reason.value==""){
+	        	 if(showReason && document.getElementById("cru_delete_frm").event_reason.value==""){
 	      			showMessage("page_body","Include justification.","Please include a justification for this deletion.");
 	      		 }else{
-	              XNAT.app.TriageResourceDeleter.doDelete(document.getElementById("cru_delete_frm").event_reason.value);
+	        	 	const reason = document.getElementById("cru_delete_frm") ?
+						 document.getElementById("cru_delete_frm").event_reason.value :
+						 "";
+	        	 	XNAT.app.TriageResourceDeleter.doDelete(reason);
 	      		 }
 	          },
 	          cancelAction: function(){
@@ -45,7 +52,7 @@ XNAT.app.TriageResourceDeleter={
 		if(this.source!=undefined && this.source!=null){
 			openModalPanel("delete_resource","Deleting resource " + this.fsource);
 			this.tempURL=this.source;
-			var params="&event_reason="+this.event_reason;
+			var params= this.event_reason ? "&event_reason="+this.event_reason : "";
 	        YAHOO.util.Connect.asyncRequest('DELETE',this.tempURL+"?XNAT_CSRF=" + csrfToken+params,this.delCallback,null,this);
 		}
 	},

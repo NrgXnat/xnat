@@ -7,7 +7,11 @@
     #if($siteConfig.uiLoginFailureMessage)
         #set($denied=true)
     <TR BGCOLOR="FF9999">
-        <TD>$turbineUtils.formatDateTime($!assessor.getProperty("date"))</TD>
+        #if($!assessor.getProperty("date"))
+            <TD>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+        #else
+            <TD></TD>
+        #end
 
         #if($assessor.getItem().instanceOf("xnat:imageAssessorData"))
             <TD>&nbsp;&nbsp;$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</TD>
@@ -29,7 +33,11 @@
         <TR>
         #end
     #end
-    <TD>$turbineUtils.formatDateTime($!assessor.getProperty("date"))</TD>
+    #if($!assessor.getProperty("date"))
+        <TD>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+    #else
+        <TD></TD>
+    #end
     <TD>
         #set ( $assessorID = $!assessor.getProperty("ID"))
         #set ( $assessorField = "${assessor.getXSIType()}.ID")

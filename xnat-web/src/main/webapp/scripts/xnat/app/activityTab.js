@@ -49,7 +49,14 @@ var XNAT = getObject(XNAT);
         setMinimized(activities[minimized]);
     };
 
-    activityTab.start = function(title, statusListenerId, callbackPath = 'XNAT.app.activityTab.populateArchivalDetails', timeout = 1) {
+    activityTab.start = function (title, statusListenerId, callbackPath, timeout) {
+        if (!callbackPath) {
+            callbackPath = 'XNAT.app.activityTab.populateArchivalDetails';
+        }
+        if (!timeout) {
+            timeout = 1;
+        }
+
         let activities = getActivities(),
             key = (new Date()).toISOString().replace(/[^\w]/gi, '');
         const item = {
@@ -137,7 +144,10 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function checkProgress(item, key, errCnt, lastProgressIdx = -1) {
+    function checkProgress(item, key, errCnt, lastProgressIdx) {
+        if (!lastProgressIdx) {
+            lastProgressIdx = -1;
+        }
         if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
             return;
         }
@@ -150,7 +160,9 @@ var XNAT = getObject(XNAT);
                 var succeeded = null;
                 try {
                     const callback = getCallbackForItem(item);
-                    [succeeded, lastProgressIdx] = callback(itemDivId, detailsTag, respDat, lastProgressIdx);
+                    const rtn = callback(itemDivId, detailsTag, respDat, lastProgressIdx);
+                    succeeded = rtn.succeeded;
+                    lastProgressIdx = rtn.lastProgressIdx;
                 } catch (e) {
                     console.log(e);
                     processError(item, key, errCnt, e.name + ' (js): ' + e.message, lastProgressIdx);
@@ -223,7 +235,7 @@ var XNAT = getObject(XNAT);
         if (messages) {
             $(detailsTag).append(messages);
         }
-        return [succeeded, lastProgressIdx];
+        return {succeeded: succeeded, lastProgressIdx: lastProgressIdx};
     };
 
     function parseFinalMessage(message, succeeded) {
@@ -261,7 +273,7 @@ var XNAT = getObject(XNAT);
         return callback;
     }
 
-    function setMinimized(isMinimized, updateCookie = false) {
+    function setMinimized(isMinimized, updateCookie) {
         let activities = getActivities();
         if (updateCookie) {
             activities[minimized] = isMinimized;

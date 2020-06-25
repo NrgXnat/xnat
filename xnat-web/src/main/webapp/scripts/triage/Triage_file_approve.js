@@ -83,6 +83,7 @@ XNAT.app.TriageFileApprover={
 	},
 	handleFailure:function(o){
 		closeModalPanel("move_scan");
-	    showMessage("page_body", "Error", "Failed to move file.");
+		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
+		showMessage("page_body", "Error", "Failed to move file" + details);
 	}
 };

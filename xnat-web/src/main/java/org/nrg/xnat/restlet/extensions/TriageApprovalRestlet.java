@@ -25,6 +25,7 @@ import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.triage.TriageService;
+import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.restlet.Context;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
@@ -249,14 +250,12 @@ public class TriageApprovalRestlet extends SecureResource {
 	
 	
 	private boolean canEditDestination(final ResourceURII arcURI) throws InvalidItemException, Exception{
-		boolean authorized=false;
-		if(arcURI.getSecurityItem().canEdit(this.getUser())){
-			authorized=true;
-			//throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, new Exception("Unauthorized"));
-		}else{
-			authorized=false;
+		ArchivableItem item = arcURI.getSecurityItem();
+		if (item == null) {
+			throw new Exception("URI " + arcURI.getUri() + " is not, or does not belong to, an existing XNAT item " +
+					"(said item may have been deleted)");
 		}
-		return authorized;
+		return item.canEdit(this.getUser());
 	}
 	
 	

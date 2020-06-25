@@ -88,6 +88,7 @@ XNAT.app.TriageResourceApprover={
 	},
 	handleFailure:function(o){
 		closeModalPanel("move_resource");
-	    showMessage("page_body", "Error", "Failed to move file into archive.");
+		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
+	    showMessage("page_body", "Error", "Failed to move file into archive" + details);
 	}
 };

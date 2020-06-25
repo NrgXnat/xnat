@@ -63,6 +63,7 @@ XNAT.app.TriageResourceDeleter={
 	},
 	handleFailure:function(o){
 		closeModalPanel("delete_resource");
-	    showMessage("page_body", "Error", "Failed to delete file.");
+		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
+	    showMessage("page_body", "Error", "Failed to delete file" + details);
 	}
 };

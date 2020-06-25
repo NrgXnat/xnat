@@ -58,6 +58,7 @@ XNAT.app.TriageFileDeleter={
 	},
 	handleFailure:function(o){
 		closeModalPanel("delete_scan");
-	    showMessage("page_body", "Error", "Failed to delete file.");
+		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
+	    showMessage("page_body", "Error", "Failed to delete file" + details);
 	}
 };

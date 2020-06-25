@@ -9,6 +9,11 @@
 
 package org.nrg.xdat.security;
 
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.SecurityManager.*;
+import static org.nrg.xft.event.XftItemEvent.builder;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
+
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
@@ -52,11 +57,6 @@ import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-
-import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xdat.security.SecurityManager.*;
-import static org.nrg.xft.event.XftItemEvent.builder;
-import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
 @Service
@@ -1016,7 +1016,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     private static final String QUERY_CAN_USER_ACTIVE_ID            = "SELECT data_type_fns_can(:username, 'active', :entityId) AS can_active";
     private static final String QUERY_CAN_USER_READ_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'read', :entityId, :projectId) AS can_read";
     private static final String QUERY_CAN_USER_EDIT_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'edit', :entityId, :projectId) AS can_edit";
-    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'create', :entityId, :projectId) AS can_create";
+    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT can_create FROM data_type_fns_get_secured_property_permissions(:username, :projectId, :entityId)";
     private static final String QUERY_CAN_USER_DELETE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'delete', :entityId, :projectId) AS can_delete";
     private static final String QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'active', :entityId, :projectId) AS can_active";
 

@@ -240,7 +240,7 @@ var XNAT = getObject(XNAT);
 
     function parseFinalMessage(message, succeeded) {
         const prearchiveLink = '<a target="_blank" href="' +
-            XNAT.url.fullUrl('/app/template/XDATScreen_prearchives.vm') +
+            XNAT.url.rootUrl('/app/template/XDATScreen_prearchives.vm') +
             '">prearchive</a>';
 
         if (succeeded) {
@@ -252,7 +252,7 @@ var XNAT = getObject(XNAT);
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
-                    return '<a target="_blank" href="/data' + url + '">' + id + '</a>'
+                    return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + id + '</a>'
                 }).join(', ');
             }
             return '<div class="prog success">' + urls.length +

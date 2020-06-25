@@ -30,8 +30,11 @@
     <link type="text/css" rel="stylesheet" href="${rootUrl}/style/app.css">
 
     <%--<script src="<c:url value="/scripts/polyfills.js"/>"></script>--%>
+    <%--<script src="<c:url value="/scripts/polyfills/FormData/formdata.min.js"/>"></script>--%>
     <%--<script src="<c:url value="/scripts/globals.js"/>"></script>--%>
+
     <script src="${rootUrl}/scripts/polyfills.js"></script>
+    <script src="${rootUrl}/scripts/polyfills/FormData/formdata.min.js"></script>
     <script src="${rootUrl}/scripts/globals.js"></script>
 
     <script type="text/javascript">

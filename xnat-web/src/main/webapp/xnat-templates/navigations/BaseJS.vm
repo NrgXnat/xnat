@@ -33,6 +33,7 @@
 
     <!-- load polyfills before ANY other JavaScript -->
     <script src="${SITE_ROOT}/scripts/polyfills.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/polyfills/FormData/formdata.min.${js}"></script>
 
     <!-- XNAT global functions (no dependencies) -->
     <script src="${SITE_ROOT}/scripts/globals.${js}"></script>

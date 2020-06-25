@@ -79,9 +79,9 @@
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.framework.version>${active-dev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.notify.version>${active-dev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
-        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.test.version>${active-dev.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.0.6</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
@@ -93,7 +93,7 @@
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.5</nrg.ecat.version>
         <nrg.extattr.version>4.2.5</nrg.extattr.version>
-        <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
+        <nrg.prearcimporter.version>${active-dev.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>

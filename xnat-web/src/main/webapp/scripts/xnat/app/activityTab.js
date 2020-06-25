@@ -68,9 +68,12 @@ var XNAT = getObject(XNAT);
     activityTab.startPoll = function(item, key) {
         let $tab = $('#activity-tab');
         createEntry(item, key, $tab);
-        activityTab.pollers[key] = true;
-        checkProgress(item, key, 0);
-        $tab.css('visibility', 'visible');
+        // details div is not in the DOM yet, see XNAT-6387
+        waitForElement(200, item.detailsTag, function(){
+            activityTab.pollers[key] = true;
+            checkProgress(item, key, 0);
+            $tab.css('visibility', 'visible');
+        });
     };
 
     activityTab.stopPoll = function(key, succeeded) {
@@ -277,19 +280,19 @@ var XNAT = getObject(XNAT);
         }
     }
 
-    // don't init until the page is finished loading
-    $(window).on('load', function(){
+    $(document).on('click', '#activity-tab a.activity-min', function() {
+        setMinimized(true, true);
+    });
+    $(document).on('click', '#activity-tab a.activity-max', function() {
+        setMinimized(false, true);
+    });
+    $(document).on('click', '#activity-tab a.activity-close', function() {
+        activityTab.pollers = {};
+        activityTab.cancel();
+    });
+
+    $(document).ready(function(){
         activityTab.init();
-        $(document).on('click', '#activity-tab a.activity-min', function() {
-            setMinimized(true, true);
-        });
-        $(document).on('click', '#activity-tab a.activity-max', function() {
-            setMinimized(false, true);
-        });
-        $(document).on('click', '#activity-tab a.activity-close', function() {
-            activityTab.pollers = {};
-            activityTab.cancel();
-        });
     });
 
     return XNAT.app.activityTab = activityTab;

@@ -1,22 +1,11 @@
 package org.nrg.xnat.services.archive;
 
-import com.google.common.io.BaseEncoding;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnat.entities.FileStoreInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Provides functions to manage files outside of the standard XNAT project structure.

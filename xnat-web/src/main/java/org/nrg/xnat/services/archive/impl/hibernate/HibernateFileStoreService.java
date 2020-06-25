@@ -4,7 +4,6 @@ import com.google.common.io.BaseEncoding;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.ObjectNotFoundException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;

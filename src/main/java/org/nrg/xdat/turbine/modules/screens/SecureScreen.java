@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.nrg.framework.utilities.Reflection;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -43,6 +44,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+
+import com.google.common.collect.Maps;
 
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
@@ -207,6 +210,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
             }
 
+            dynamicVariableLoad("org.nrg.xnat.extensions.screens."+ getClass().getName(),data,context);
         } catch (ConfigServiceException e) {
             logger.error("An error occurred accessing the configuration service", e);
             data.setScreenTemplate("Error.vm");
@@ -214,6 +218,35 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             logger.error("", e);
             data.setScreenTemplate("Error.vm");
         }
+    }
+
+    public static void dynamicVariableLoad(final String packageName, final RunData data, final Context context) throws Exception{
+        if(Reflection.getClassesForPackage(packageName).size()>0){
+            Map<String,Object> params= Maps.newHashMap();
+            params.put("context",context);
+            params.put("data",data);
+
+            Reflection.injectDynamicImplementations(packageName, false, params);
+        }
+    }
+
+    /*******************************
+     * Place custom extensions of the ScreenAdditionalVariables class in your
+     * plugin in the org.nrg.extensions.screens.<ScreenJavaClassName>
+     */
+    public abstract class ScreenAdditionalVariables implements Reflection.InjectableI {
+        public void execute(Map<String, Object> params)
+        {
+            try{
+                RunData data= (RunData) params.get("data");
+                Context context= (Context) params.get("context");
+                this.loadAdditionalVariables(data, context);
+            }catch (Exception e){
+                throw new RuntimeException(e);
+            }
+        }
+
+        public abstract void loadAdditionalVariables(final RunData data, final Context context) throws Exception;
     }
 
     private boolean isExcludedIp(final String newIP) throws ConfigServiceException {

@@ -635,6 +635,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
         }
     }
+    @NrgPreference(defaultValue = "true")
+    public boolean getPreventCrossModalityMerge() {
+        return getBooleanValue("preventCrossModalityMerge");
+    }
+
+    public void setPreventCrossModalityMerge(final boolean preventCrossModalityMerge) {
+        try {
+            setBooleanValue(preventCrossModalityMerge, "preventCrossModalityMerge");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
+        }
+    }
 
     @NrgPreference(defaultValue = "true")
     public boolean isEnableDicomReceiver() {
@@ -989,6 +1001,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(uiDisplaySeriesDescription, "uiDisplaySeriesDescription");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'uiDisplaySeriesDescription': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiDisplaySeriesClass() {
+        return getBooleanValue("uiDisplaySeriesClass");
+    }
+
+    public void setUiDisplaySeriesClass(final boolean uiDisplaySeriesClass) {
+        try {
+            setBooleanValue(uiDisplaySeriesClass, "uiDisplaySeriesClass");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDisplaySeriesClass': something is very wrong here.", e);
         }
     }
 
@@ -1644,7 +1669,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
     
-    @NrgPreference(defaultValue = "4")
+    @NrgPreference(defaultValue = "4", aliases = "defaultPrearchiveCode")
     public int getDefaultProjectAutoArchiveSetting() {
         return getIntegerValue("defaultProjectAutoArchiveSetting");
     }

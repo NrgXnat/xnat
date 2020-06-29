@@ -430,20 +430,6 @@ public class QueryOrganizer implements QueryOrganizerI{
     {
         StringBuilder sb = new StringBuilder();
 
-       // SQLClause securityClause = null;
-		if (user != null)
-		{
-		    log.debug("Get user {}'s XFT read criteria for element {}", user.getUsername(), rootElement.getFormattedName());
-		    SQLClause coll = Permissions.getCriteriaForXFTRead(user,rootElement);
-			if (coll != null)
-			{
-			    if (coll.numClauses() == 0) {
-			        throw new IllegalAccessException("No defined read privileges for " + rootElement.getFullXMLName());
-			    }
-			}
-		}
-
-
         String join = buildJoin();
         fieldAliases = new Hashtable<>();
         sb.append("SELECT ");

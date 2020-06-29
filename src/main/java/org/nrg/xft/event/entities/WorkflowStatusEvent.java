@@ -67,14 +67,7 @@ public class WorkflowStatusEvent extends AutomationEvent {
 		eventSpecificMap.put("status", status);
 		eventSpecificMap.put("justification", justification);
 		this.setEventSpecificFieldsAsMap(eventSpecificMap);
-		UserI user;
-		try {
-			user = Users.getUser(workflow.getUsername());
-			this.setUserId(user.getID());
-		} catch (UserNotFoundException | UserInitException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.setUserId(workflow.getUserId());
 	}
 	
 	/**

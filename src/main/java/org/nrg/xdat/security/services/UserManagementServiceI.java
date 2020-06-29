@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security.services;
 
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -120,6 +121,18 @@ public interface UserManagementServiceI {
 	 * @throws Exception When something goes wrong.
 	 */
     void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventMetaI event) throws Exception;
+
+	/**
+	 * Save the user object.
+	 *
+	 * @param user                 The user to save.
+	 * @param authenticatedUser    The user actually performing the save operation.
+	 * @param overrideSecurity     Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+	 * @param event                The event metadata for the save operation.
+	 * @param newUserAuth          UserAuth object associated with this user (null defaults to localdb)
+	 * @throws Exception When something goes wrong.
+	 */
+	void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventMetaI event, XdatUserAuth newUserAuth) throws Exception;
 	
 	/**
 	 * Save the user object.
@@ -131,6 +144,19 @@ public interface UserManagementServiceI {
 	 * @throws Exception When something goes wrong.
 	 */
     void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception;
+
+	/**
+	 * Save the user object.
+	 *
+	 * @param user                 The user to save.
+	 * @param authenticatedUser    The user actually performing the save operation.
+	 * @param overrideSecurity     Whether to check if this user can modify this user object (should be false if authenticatedUser is null).
+	 * @param event                The event data for the save operation.
+	 * @param newUserAuth          UserAuth object associated with this user (null defaults to localdb)
+	 * @throws Exception When something goes wrong.
+	 */
+	void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event, XdatUserAuth newUserAuth) throws Exception;
+
 	
 	/**
 	 * Validate the user object and see if it meets whatever requirements have been met by the system.

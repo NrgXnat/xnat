@@ -15,10 +15,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.sequence.SequentialObject;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Tim
@@ -215,10 +212,11 @@ public class DisplayFieldWrapper implements Identifier, SequentialObject, Displa
     }
 
     public String getRowID() {
-        String alias = this.getDisplayField().getId();
-        if (this.getValue() != null)
-            alias = df.getId() + "_" + DisplaySearch.cleanColumnName(this.getValue().toString());
-        return alias;
+        String key = this.getDisplayField().getId();
+        if (this.getValue() != null){
+            key = df.getId() + "_" + DisplaySearch.cleanColumnName(this.getValue().toString());
+        }
+        return DisplayFieldAliasCache.getAlias(key);
     }
 
     public String getElementSQLName() throws XFTInitException, ElementNotFoundException {

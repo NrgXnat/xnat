@@ -456,7 +456,7 @@ public class DisplaySearch implements TableSearchI {
                         if (dfr.getValue().equals("{XDAT_USER_ID}")) {
                             dfr.setValue(user.getID());
                         }
-                        alias = df.getId() + "_" + cleanColumnName((dfr).getValue().toString());
+                        alias = dfr.getRowID().toLowerCase();
                     }
                 }
 

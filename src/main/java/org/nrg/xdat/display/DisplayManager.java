@@ -24,8 +24,11 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.XFTDataModel;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.XftStringUtils;
@@ -130,8 +133,18 @@ public class DisplayManager {
      *
      * @param doc The document to be parsed and processed.
      */
+    public void assignDisplays(Document doc){
+        this.assignDisplays(doc,false);
+
+    }
+    /**
+     * Assigns displays based on the contents of the submitted document.
+     *
+     * @param doc The document to be parsed and processed.
+     * @param allowReplacement - Allow replacement of display fields that already exist
+     */
     @SuppressWarnings({"unchecked"})
-    public void assignDisplays(Document doc) {
+    public void assignDisplays(Document doc, boolean allowReplacement) {
         Element root = doc.getDocumentElement();
 
         String name = NodeUtils.GetAttributeValue(root, "schema-element", "");
@@ -141,6 +154,8 @@ public class DisplayManager {
             ed = new ElementDisplay();
             ed.setElementName(name);
         }
+
+        ed.setAllowReplacement(allowReplacement);
 
         String temp = NodeUtils.GetAttributeValue(root, "value_field", "");
         if (!temp.equalsIgnoreCase("")) {
@@ -441,8 +456,53 @@ public class DisplayManager {
         init(null);
     }
 
+    /**
+     * Loads display documents from the specified location.
+     * Plugins can call this method from an initialization task to ensure their version of a display document is loaded
+     * after xnats version
+     * @param pattern - location pattern
+     * @param allowReplacement - Allow replacement of display fields that already exist
+     */
+    public void loadDisplayDocumentsFromLocation(String pattern, boolean allowReplacement) {
+        this.loadDisplayDocumentsFromLocation(pattern, new HashMap<String,Exception>(), new ArrayList<String>(), allowReplacement);
+    }
+
+    /**
+     * Loads display documents from the specified location.
+     * @param pattern - location pattern
+     * @param errors - Errors are stored here
+     * @param loaded - Files that have already been loaded
+     * @param allowReplacement - Allow replacement of display fields that already exist
+     */
+    private void loadDisplayDocumentsFromLocation(String pattern, Map<String,Exception> errors, List<String> loaded, boolean allowReplacement){
+        final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
+        try {
+            final Resource[] resources = resolver.getResources(pattern);
+            logger.info("Discovered " + resources.length + " display documents on classpath.");
+            for (final Resource resource : resources) {
+                if(!loaded.contains(resource.getFilename())){
+                    logger.info("Importing display document: " + resource.getFilename());
+                    try {
+                        InputStream in=resource.getInputStream();
+                        if (in != null) {
+                            Document doc = XMLUtils.GetDOM(in);
+                            assignDisplays(doc, allowReplacement);
+                            loaded.add(resource.getFilename());
+                        }
+                    } catch (IOException | RuntimeException e) {
+                        logger.error("Failed to load display document: " + resource.getFilename(),e);
+                        errors.put(resource.getURI().toString(), e);
+                    }
+                }
+            }
+        } catch (IOException e1) {
+            logger.error("Unable to discover display.xml's from classpath.",e1);
+        }
+    }
+
     public void init(String location) {
-        List<String> loaded=Lists.newArrayList();
+            List<String> loaded                 = Lists.newArrayList();
+            final Map<String, Exception> errors = Maps.newHashMap();
 
 //        Enumeration enumer = XFTManager.GetDataModels().elements();
 //        List<String> processed = Lists.newArrayList();
@@ -467,33 +527,7 @@ public class DisplayManager {
 //            }
 //        }
 
-        final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
-        final Map<String, Exception> errors = Maps.newHashMap();
-        try {
-            final Resource[] resources = resolver.getResources("classpath*:schemas/*/display/*_display.xml");
-            logger.info("Discovered " + resources.length + " display documents on classpath.");
-            for (final Resource resource : resources) {
-                if(!loaded.contains(resource.getFilename())){
-                    logger.info("Importing display document: " + resource.getFilename());
-                    try {
-                        InputStream in=resource.getInputStream();
-                        if (in != null) {
-                            Document doc = XMLUtils.GetDOM(in);
-                            assignDisplays(doc);
-
-                            loaded.add(resource.getFilename());
-                        }
-                    } catch (IOException | RuntimeException e) {
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        errors.put(resource.getURI().toString(), e);
-                    }
-                }
-            }
-        } catch (IOException e1) {
-            logger.error("Unable to discover display.xml's from classpath.",e1);
-        }
-
-
+            loadDisplayDocumentsFromLocation("classpath*:schemas/*/display/*_display.xml", errors, loaded, false);
 
             if(!StringUtils.isEmpty(location)) {
                 try {

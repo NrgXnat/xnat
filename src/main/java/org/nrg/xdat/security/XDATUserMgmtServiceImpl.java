@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.Authenticator.Credentials;
@@ -153,7 +154,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
      * @see org.nrg.xdat.security.services.UserManagementServiceI#save(org.nrg.xft.security.UserI, org.nrg.xft.security.UserI, boolean, org.nrg.xft.event.EventDetails)
      */
     @Override
-    public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
+    public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event, XdatUserAuth newUserAuth) throws Exception {
         //this calls the other save method, but also takes care of creating the workflow entry for this change.
         if (user.getLogin() == null) {
             throw new NullPointerException();
@@ -164,7 +165,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(), id.toString(), PersistentWorkflowUtils.getExternalId(user), event);
 
         try {
-            save(user, authenticatedUser, overrideSecurity, wrk.buildEvent());
+            save(user, authenticatedUser, overrideSecurity, wrk.buildEvent(),newUserAuth);
 
             if (id.equals(user.getLogin())) {
                 //this was a new user or didn't include the user's id.
@@ -184,8 +185,16 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.nrg.xdat.security.services.UserManagementServiceI#save(org.nrg.xft.security.UserI, org.nrg.xft.security.UserI, boolean, org.nrg.xft.event.EventDetails)
+     */
     @Override
-    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) throws Exception {
+    public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
+        save(user,authenticatedUser,overrideSecurity,event,null);
+    }
+
+    @Override
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event, XdatUserAuth newUserAuth) throws Exception {
         if (user.getLogin() == null) {
             throw new NullPointerException();
         }
@@ -215,7 +224,9 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 }
 
                 SaveItemHelper.authorizedSave(((XDATUser) user), authenticatedUser, true, false, event);
-                XdatUserAuth newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
+                if(newUserAuth == null) {
+                    newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
+                }
                 userAuthService.create(newUserAuth);
             } else {
                 throw new InvalidPermissionException("Unauthorized user modification attempt");
@@ -275,6 +286,11 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 }
             }
         }
+    }
+
+    @Override
+    public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) throws Exception {
+        save(user,authenticatedUser,overrideSecurity,event,null);
     }
 
     @Override

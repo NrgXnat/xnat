@@ -5,12 +5,11 @@
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
+ *
  */
-
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -442,7 +441,7 @@ public class GenericWrapperUtils {
                     }
                 }
             }
-            sb.append(") WITH OIDS;");
+            sb.append(");");
 
         } catch (org.nrg.xft.exception.XFTInitException e) {
             logger.error("", e);
@@ -566,7 +565,7 @@ public class GenericWrapperUtils {
         sb.append("\n, history_id SERIAL");
 
         sb.append("\n, PRIMARY KEY (history_id)");
-        sb.append(") WITH OIDS;");
+        sb.append(");");
 
         return sb;
     }
@@ -1759,7 +1758,7 @@ public class GenericWrapperUtils {
             sb.append("\n      declare");
             sb.append("\n        current_cache RECORD;");
             sb.append("\n      BEGIN");
-            sb.append("\n        FOR current_cache IN SELECT oid FROM xs_item_cache WHERE elementname=''" + input.getFullXMLName() + "'' AND ids=");
+            sb.append("\n        FOR current_cache IN SELECT id FROM xs_item_cache WHERE elementname=''" + input.getFullXMLName() + "'' AND ids=");
                     
             for (int i = 0; i < keyArray.length; i++) {
                 if (i > 0)
@@ -1767,7 +1766,7 @@ public class GenericWrapperUtils {
                 sb.append("CAST(" + keyArray[i][2] + " AS text)");
             }
             sb.append("\n        LOOP");
-                sb.append("\n         DELETE FROM xs_item_cache WHERE oid=current_cache.oid;");
+                sb.append("\n         DELETE FROM xs_item_cache WHERE id=current_cache.id;");
             sb.append("\n        END LOOP;");
             sb.append("\n      END;");
         }
@@ -2849,7 +2848,7 @@ public class GenericWrapperUtils {
         buffer.append("        duration bigint,\n");
         buffer.append("        message text,\n");
         buffer.append("        PRIMARY KEY (id)\n");
-        buffer.append(") WITH (OIDS=FALSE)');");
+        buffer.append(")');");
 
         statements.add(buffer.toString());
         
@@ -2865,8 +2864,7 @@ public class GenericWrapperUtils {
 				"\n  last_access timestamp DEFAULT now(),"+
 				"\n  created timestamp DEFAULT now(),"+
 				"\n  owner varchar(255)"+
-				"\n) "+
-				"\nWITHOUT OIDS');");
+				"\n)');");
 
 		statements.add("GRANT ALL ON TABLE xdat_searches TO public;");
 
@@ -2877,8 +2875,7 @@ public class GenericWrapperUtils {
 				"\n  datatype character varying(255), "+
 				"\n  id character varying(255), "+
 				"\n  xdat_user_id integer "+
-				"\n) "+
-				"\nWITH OIDS;');");
+				"\n);');");
 
 		statements.add("GRANT ALL ON TABLE xdat_search.xs_fav_entries TO public;");
 		
@@ -2893,8 +2890,7 @@ public class GenericWrapperUtils {
 				"\ntag character varying(255),"+
 				"\nsearch_sql text,"+
 				"\nsearch_xml text"+
-				"\n) "+
-				"\nWITH OIDS;');");
+				"\n);');");
 
 		statements.add("GRANT ALL ON TABLE xdat_search.xs_materialized_views TO public;");
 		
@@ -2907,8 +2903,7 @@ public class GenericWrapperUtils {
 				"\naccessed timestamp without time zone DEFAULT now(),"+
 				"\nxdat_user_id character varying(255),"+
 				"\nmethod character varying(255)"+
-				"\n)"+
-				"\nWITH OIDS;');");
+				"\n);');");
         
         return statements;
     }

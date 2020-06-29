@@ -13,15 +13,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.sortable.Sortable;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
-import org.nrg.xft.utils.XftStringUtils;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Tim
@@ -194,10 +191,11 @@ public class DisplayFieldRef extends Sortable implements Identifier, DisplayFiel
      */
     public String getRowID() {
         try {
-            String alias = this.getDisplayField().getId();
-            if (this.getValue() != null)
-                alias = df.getId() + "_" + StringUtils.replace(StringUtils.replace(this.getValue().toString(), ",", "_com_"), ":", "_col_");
-            return alias;
+            String key = this.getDisplayField().getId();
+            if (this.getValue() != null){
+                key = df.getId() + "_" + StringUtils.replace(StringUtils.replace(this.getValue().toString(), ",", "_com_"), ":", "_col_");
+            }
+            return DisplayFieldAliasCache.getAlias(key);
         } catch (DisplayFieldNotFoundException e) {
             return id;
         }

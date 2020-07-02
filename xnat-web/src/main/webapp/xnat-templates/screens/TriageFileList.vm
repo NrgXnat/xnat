@@ -1,4 +1,4 @@
-##Copyright 2014 Radiologics, Inc
+
 ##Developer: James Dickson james@radiologics.com
 ##Code used to display a list of triage files from the triage location
 #if($popup=="true")

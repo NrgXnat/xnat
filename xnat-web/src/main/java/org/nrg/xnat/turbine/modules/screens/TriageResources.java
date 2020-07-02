@@ -1,4 +1,4 @@
-//Copyright 2015 Radiologics, Inc
+
 //Author: James Dickson <james@radiologics.com>
 package org.nrg.xnat.turbine.modules.screens;
 

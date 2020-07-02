@@ -1,4 +1,4 @@
-//Copyright 2012 Radiologics, Inc
+
 //Author: Tim Olsen <tim@radiologics.com>
 package org.nrg.xnat.turbine.modules.screens;
 

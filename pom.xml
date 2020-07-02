@@ -64,26 +64,27 @@
 
         <xnat.version>1.7.6</xnat.version>
         <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
-        <xnatdev-ml.version>ML-BETA</xnatdev-ml.version>
-        <xnat-web.version>${xnatdev-ml.version}</xnat-web.version>
+        <xnat-ml.version>ML-BETA</xnat-ml.version>
+        <xnatdev-ml.version>ML-0.2-SNAPSHOT</xnatdev-ml.version>
+        <xnat-web.version>${xnat-ml.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnatdev-ml.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${xnat-ml.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnatdev-ml.version}</xnat-data-models.version>
+        <xnat-data-models.version>${xnat-ml.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
-        <xdat.version>${xnatdev-ml.version}</xdat.version>
+        <xdat.version>${xnat-ml.version}</xdat.version>
 
         <!-- Plugin versions -->
         <ohif-viewer.version>2.2.0-SNAPSHOT</ohif-viewer.version>
         <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
         <dqr.version>1.0.0-SNAPSHOT</dqr.version>
         <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
-        <clara.version>${xnatdev-ml.version}</clara.version>
+        <clara.version>${xnat-ml.version}</clara.version>
         <datasets.version>1.0.0-SNAPSHOT</datasets.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev-ml.version}</nrg.framework.version>
+        <nrg.framework.version>${xnat-ml.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
@@ -322,7 +323,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnatdev-ml.version}</version>
+                <version>${xnat-ml.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>

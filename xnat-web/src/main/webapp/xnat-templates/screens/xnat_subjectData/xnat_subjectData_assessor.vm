@@ -4,11 +4,11 @@
 ##on other servers, they shouldn't see that it exists at all.
 ##By default, the user shouldn't see these.
 ##To allow, site administrators should configure the uiLoginFailureMessage peroprty in siteConfiguration.properties
-    #if($siteConfig.uiLoginFailureMessage)
+#if($siteConfig.uiLoginFailureMessage)
         #set($denied=true)
     <TR BGCOLOR="FF9999">
         #if($!assessor.getProperty("date"))
-            <TD>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+            <TD><span class="hidden">$!assessor.getProperty("date")</span>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
         #else
             <TD></TD>
         #end
@@ -34,7 +34,7 @@
         #end
     #end
     #if($!assessor.getProperty("date"))
-        <TD>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+        <TD><span class="hidden">$!assessor.getProperty("date")</span>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
     #else
         <TD></TD>
     #end

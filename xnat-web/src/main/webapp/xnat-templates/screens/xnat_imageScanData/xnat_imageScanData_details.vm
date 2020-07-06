@@ -2,9 +2,7 @@
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
-
-<!-- BEGIN /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
-
+<!-- BEGIN xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
 #macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
 <table class="xnat-table alt1 compact rows-only scan-details" style="border: none;">
         <tr>
@@ -81,6 +79,4 @@
 	#end
 	
 </table>
-
-<!-- END /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
-
+<!-- END xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->

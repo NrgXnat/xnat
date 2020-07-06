@@ -5,7 +5,7 @@
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 #* @vtlvariable name="resource" type="org.nrg.xdat.om.XnatAbstractresource" *#
-<!--BEGIN /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+<!-- BEGIN xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
 #macro(renderEmptyResourceCount)
     #if ($data.getSession().getAttribute("userHelper").canEdit($item))
     <a onclick="window.viewer.init(true);">Show Counts</a>
@@ -210,6 +210,7 @@
         </table>
     </div>
 
+    <script type="application/javascript">console.log("Loading /scripts/xnat/app/scanTable/scanTable.js from xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm")</script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/scanTable.js")"></script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/selectableTableBehavior.js")"></script>
 
@@ -244,4 +245,4 @@
 
 #set ($qcXsiType = "xnat:qcAssessmentData")
 #parse($turbineUtils.getTemplateName("report_summary",$qcXsiType,$project))
-<!--END /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+<!-- END xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->

@@ -18,20 +18,15 @@ var XNAT = getObject(XNAT);
     }
 }(function() {
 
-    var undef, scanTable;
+    XNAT.app = getObject(XNAT.app || {});
+    const scanTable = XNAT.app.scanTable = getObject(XNAT.app.scanTable || {});
 
-    XNAT.app =
-        getObject(XNAT.app || {});
+    let projectId = XNAT.data.context.project;
+    let subjectId = XNAT.data.context.subjectID;
+    let exptId    = XNAT.data.context.ID;
 
-    XNAT.app.scanTable = scanTable =
-        getObject(XNAT.app.scanTable || {});
-
-    var projectId = XNAT.data.context.project;
-    var subjectId = XNAT.data.context.subjectID;
-    var exptId    = XNAT.data.context.ID;
-
-    var htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
-    var zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
+    // const htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
+    // const zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
 
     scanTable.container$ = $('#selectable-table-scans');
     scanTable.dataTable$ = $('#scan-data-table');
@@ -460,5 +455,4 @@ var XNAT = getObject(XNAT);
     // this script has loaded
     scanTable.loaded = true;
     return XNAT.app.scanTable = scanTable;
-
 }));

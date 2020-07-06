@@ -49,8 +49,8 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
      * {@inheritDoc}
      */
     @Override
-    public void createWithKey(String key, UserI user) {
-        eventTrackingDataHibernateService.createWithKey(key, user.getID());
+    public void createOrRestartWithKey(String key, UserI user) throws IllegalAccessException {
+        eventTrackingDataHibernateService.createOrRestartWithKey(key, user.getID());
     }
 
     /**

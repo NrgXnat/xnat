@@ -7,12 +7,13 @@ import org.nrg.xnat.tracking.model.TrackableEvent;
 
 public interface EventTrackingDataHibernateService extends BaseHibernateService<EventTrackingData> {
     /**
-     * Create new EventListenerData entity with key
+     * Create new EventListenerData entity with key, if entity already exists with key, restart its tracking
      * @param key the key
      * @param userId the user
      * @return the entity
+     * @throws IllegalAccessException if user cannot read this event tracking data
      */
-    EventTrackingData createWithKey(String key, Integer userId);
+    EventTrackingData createOrRestartWithKey(String key, Integer userId) throws IllegalAccessException;
 
     /**
      * Create or update eventTrackingData with TrackableEvent.

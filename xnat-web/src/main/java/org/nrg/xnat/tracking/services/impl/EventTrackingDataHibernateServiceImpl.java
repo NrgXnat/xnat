@@ -27,8 +27,16 @@ public class EventTrackingDataHibernateServiceImpl
      */
     @Override
     @Transactional
-    public EventTrackingData createWithKey(String key, Integer userId) {
-        return create(new EventTrackingData(key, userId));
+    public EventTrackingData createOrRestartWithKey(String key, Integer userId) throws IllegalAccessException {
+        EventTrackingData eventTrackingData = findOrCreateByKey(key, userId);
+        if (eventTrackingData.getSucceeded() != null) {
+            // we already tracked an event with this key (this can happen if data fails to autoarchive and is left in
+            // prearchive, then another attempt to autoarchive is made), clear its completion
+            eventTrackingData.setSucceeded(null);
+            eventTrackingData.setFinalMessage(null);
+            update(eventTrackingData);
+        }
+        return eventTrackingData;
     }
 
     /**
@@ -84,7 +92,7 @@ public class EventTrackingDataHibernateServiceImpl
             return findByKey(key, userId);
         } catch (NotFoundException e) {
             try {
-                return createWithKey(key, userId);
+                return create(new EventTrackingData(key, userId));
             } catch (DuplicateKeyException de) {
                 // If we're trying to create with a key that's already in use, we're actually trying to update without
                 // proper permission

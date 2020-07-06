@@ -112,7 +112,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         try {
             final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
                     .getBean(EventTrackingDataService.class);
-            eventTrackingDataService.createWithKey(_archiveOperationId, _user);
+            eventTrackingDataService.createOrRestartWithKey(_archiveOperationId, _user);
 
             log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,

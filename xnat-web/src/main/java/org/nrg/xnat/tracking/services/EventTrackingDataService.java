@@ -37,11 +37,12 @@ public interface EventTrackingDataService {
     EventTrackingDataPojo getPojoByKey(final String key, UserI user) throws NotFoundException;
 
     /**
-     * Create new EventListenerData entity with key
+     * Create new EventListenerData entity with key, if entity already exists with key, restart its tracking
      * @param key the key
      * @param user the user
+     * @throws IllegalAccessException if user cannot read this event tracking data
      */
-    void createWithKey(String key, UserI user);
+    void createOrRestartWithKey(String key, UserI user) throws IllegalAccessException;
 
     /**
      * Create or update eventTrackingData with TrackableEvent.

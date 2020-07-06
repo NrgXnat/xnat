@@ -6,14 +6,15 @@
 <!-- BEGIN /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
 
 #macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
-
 <table class="xnat-table alt1 compact rows-only scan-details" style="border: none;">
-    <tr>
-        <th>Image</th>
-        <td>
-            #scanSnapshotImage($content $om $scan)
-        </td>
-    </tr>
+        <tr>
+            <th>Image</th>
+            <td align="left">
+                #scanSnapshotImage($content $om $scan)
+                <br>
+                #scanSnapshotImageGrid($grids $scan)
+	    </td>
+        </tr>
 	#if($scan.getProperty("quality"))
         <tr>
             <th>Quality</th>

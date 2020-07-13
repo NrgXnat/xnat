@@ -208,6 +208,7 @@ dependencies {
     implementation "dcm4che:dcm4che-imageio-rle"
     implementation "dcm4che:dcm4che-iod"
     implementation "dcm4che:dcm4che-net"
+    implementation "net.imagej:ij"
 
     implementation "org.springframework:spring-aop"
     implementation "org.springframework:spring-context-support"
@@ -309,7 +310,6 @@ dependencies {
     runtimeOnly "axis:axis-schema"
     runtimeOnly "cglib:cglib"
     runtimeOnly "org.hsqldb:hsqldb"
-    runtimeOnly "net.imagej:ij"
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"

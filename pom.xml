@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.7-SNAPSHOT</version>
+    <version>1.7.7-ACTIVE-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -66,21 +66,22 @@
 
         <xnat.version>1.7.6</xnat.version>
         <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
-        <xnat-web.version>${xnatdev.version}</xnat-web.version>
+        <active-dev.version>1.7.7-ACTIVE-SNAPSHOT</active-dev.version>
+        <xnat-web.version>${active-dev.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${active-dev.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <xnat-data-models.version>${active-dev.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${active-dev.version}</xdat-data-builder.version>
+        <xdat.version>${active-dev.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.framework.version>${active-dev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
+        <nrg.notify.version>${active-dev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
-        <nrg.test.version>${xnatdev.version}</nrg.test.version>
+        <nrg.test.version>${active-dev.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.2.0-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
@@ -88,11 +89,11 @@
         <nrg.dicom-edit4.version>1.0.4</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.2.0-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${active-dev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.5</nrg.ecat.version>
         <nrg.extattr.version>4.2.5</nrg.extattr.version>
-        <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
+        <nrg.prearcimporter.version>${active-dev.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>
@@ -163,7 +164,7 @@
         <hibernate.version>4.3.11.Final</hibernate.version>
         <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
         <httpcomponents-core.version>4.4.6</httpcomponents-core.version>
-        <imagej.version>1.50e</imagej.version>
+        <imagej.version>1.53c</imagej.version>
         <jai_imageio.version>1.1</jai_imageio.version>
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>

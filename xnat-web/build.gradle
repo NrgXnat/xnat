@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.7.7-SNAPSHOT"
+        vXnat = "1.7.7-ACTIVE-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -22,7 +22,7 @@ buildscript {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
         classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
-        classpath "io.franzbecker:gradle-lombok:3.3.0"
+        classpath "io.franzbecker:gradle-lombok:4.0.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }

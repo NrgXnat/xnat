@@ -88,6 +88,7 @@
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.4</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.2.0-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom.pixeleditor>1.2.0-SNAPSHOT</nrg.dicom.pixeleditor>
         <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${active-dev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
@@ -330,6 +331,11 @@
                 <groupId>org.nrg.dicom</groupId>
                 <artifactId>dicom-edit6</artifactId>
                 <version>${nrg.dicom-edit6.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.dicom</groupId>
+                <artifactId>pixelEditor</artifactId>
+                <version>${nrg.dicom.pixeleditor}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

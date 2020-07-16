@@ -7,12 +7,9 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -39,14 +36,12 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xnat.restlet.representations.JSONTableRepresentation;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
-import org.restlet.resource.StringRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +59,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author Mohana Ramaratnam
@@ -97,21 +94,50 @@ public class PipelineApi extends AbstractXapiRestController {
             }
             if (arcProject != null) {
                 final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
-                JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                jsonTableRep.write(stream);
-                String responseString = new String(stream.toByteArray());
-                stream.close();
-                //String responseString =  _serializerService.toJson(table);
-                return new ResponseEntity<>(responseString, HttpStatus.OK);
+                return getJsonAsStringResponse(table);
             } else {
-                return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>("Unable to generate generic arc project", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    @XapiRequestMapping(value = {"/project/{projectId}"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ApiOperation(value = "Get a list of project-enabled pipelines for a given datatype (optional)")
+	public ResponseEntity<String> getProjectPipelines(@PathVariable(value = "projectId") final String projectId,
+                                                      @RequestParam(value = "xsiType", required = false) final String xsiType) {
+		try {
+		    XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, getSessionUser(), false);
+		    if (project == null) {
+                return new ResponseEntity<>("No such project", HttpStatus.BAD_REQUEST);
+            }
+			ArcProject arcProject = project.getArcSpecification();
+		    if (arcProject == null) {
+                return new ResponseEntity<>("Invalid configuration for project " + projectId,
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
+		    if (xsiType != null) {
+		        // filter for only pipelines that apply to the datatype
+                ArrayList<String> cols = new ArrayList<>();
+                Collections.addAll(cols, table.getColumns());
+		        ArrayList<Object[]> rows = new ArrayList<>();
+		        while (table.hasMoreRows()) {
+                    Object[] row = table.nextRow();
+                    String pipelineDataType = (String) row[5];
+                    if (StringUtils.isNotBlank(pipelineDataType) &&
+                            (pipelineDataType.equals("All Datatypes") || pipelineDataType.equals(xsiType))) {
+                        rows.add(row);
+                    }
+                }
+		        table.initTable(cols, rows);
+            }
+            return getJsonAsStringResponse(table);
+        } catch (Exception e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
     @XapiRequestMapping(value = {"/parameters"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get the site-wide parameter details for the pipeline identified by its name; optionally pass the project id to get the project specific parameters")
@@ -214,7 +240,8 @@ public class PipelineApi extends AbstractXapiRestController {
     }
 
 
-    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit,
+            produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Resolve the parameters and terminate the pipeline")
     public ResponseEntity<PipelineLaunchReport> terminate(@PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
                                                           @PathVariable("projectId") @Project final String projectId,
@@ -477,6 +504,17 @@ public class PipelineApi extends AbstractXapiRestController {
             rtn.setCsvvalues(csvValue);
         }
         return rtn;
+    }
+
+    @Nonnull
+    private ResponseEntity<String> getJsonAsStringResponse(XFTTable table) throws IOException {
+        JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
+        String responseString;
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            jsonTableRep.write(stream);
+            responseString = new String(stream.toByteArray());
+        }
+        return new ResponseEntity<>(responseString, HttpStatus.OK);
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PipelineApi.class);

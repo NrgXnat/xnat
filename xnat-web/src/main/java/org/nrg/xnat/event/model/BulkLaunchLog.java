@@ -50,12 +50,18 @@ public class BulkLaunchLog {
 
     @JsonIgnore
     public void addOrUpdateWorkflow(Integer id, String itemId, String status, String details, String containerId) {
-        if (status.contains(PersistentWorkflowUtils.FAILED)) {
-            failureCount++;
-        } else if (status.equals(PersistentWorkflowUtils.COMPLETE)) {
-            successCount++;
+        WorkflowLog lastLog = workflows.get(id);
+        boolean statusRecorded = lastLog != null && lastLog.statusRecorded;
+        if (!statusRecorded) {
+            if (status.startsWith(PersistentWorkflowUtils.FAILED)) {
+                failureCount++;
+                statusRecorded = true;
+            } else if (status.equals(PersistentWorkflowUtils.COMPLETE)) {
+                successCount++;
+                statusRecorded = true;
+            }
         }
-        workflows.put(id, new WorkflowLog(id, itemId, status, details, containerId));
+        workflows.put(id, new WorkflowLog(id, itemId, status, details, containerId, statusRecorded));
     }
 
     @JsonIgnore
@@ -99,15 +105,17 @@ public class BulkLaunchLog {
         private String status;
         private String details;
         private String containerId;
+        private boolean statusRecorded;
 
         public WorkflowLog(){}
 
-        public WorkflowLog(Integer id, String itemId, String status, String details, String containerId) {
+        public WorkflowLog(Integer id, String itemId, String status, String details, String containerId, boolean statusRecorded) {
             this.id = id;
             this.itemId = itemId;
             this.status = status;
             this.details = details;
             this.containerId = containerId;
+            this.statusRecorded = statusRecorded;
         }
 
         public Integer getId() {
@@ -148,6 +156,14 @@ public class BulkLaunchLog {
 
         public void setContainerId(String containerId) {
             this.containerId = containerId;
+        }
+
+        public boolean isStatusRecorded() {
+            return statusRecorded;
+        }
+
+        public void setStatusRecorded(boolean statusRecorded) {
+            this.statusRecorded = statusRecorded;
         }
     }
 }

@@ -101,7 +101,7 @@ public class ArchiveEvent implements ArchiveEventI {
     }
 
     public static ArchiveEvent warn(final Integer userId, final Operation operation, final String project, final String timestamp, final String session, final String listenerId, final String message) {
-        return builder().operation(operation).status(Status.Warning).progress(100).project(project).timestamp(timestamp).session(session).archiveEventId(listenerId).message(message).eventTime(System.currentTimeMillis()).userId(userId).build();
+        return builder().operation(operation).status(Status.Warning).project(project).timestamp(timestamp).session(session).archiveEventId(listenerId).message(message).eventTime(System.currentTimeMillis()).userId(userId).build();
     }
 
     public static ArchiveEvent progress(final Integer userId, final Operation operation, final int progress, final String session, final String listenerId) {

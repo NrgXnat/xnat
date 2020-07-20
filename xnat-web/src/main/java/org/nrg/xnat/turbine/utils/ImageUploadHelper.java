@@ -132,11 +132,12 @@ public class ImageUploadHelper extends ArchiveStatusProducer implements Callable
 								}
 							}
 						} catch (Throwable e) {
-							log.error("", e);
-							failed("failed to set appropriate field(s) for '" + f.getName() + "'.  Data may be publicly accessible until archived.");
+							log.error("Failed to parse " + s, e);
+							failed("failed to set appropriate field(s) for '" + f.getName() + "': " + e.getMessage() +
+									". Data may be publicly accessible until archived.");
 						}
 					}
-				}else{
+				} else {
 					failed("failed to load generated xml file ('" + xml.getName() + "').  Data may be publicly accessible until archived.");
 				}
 			}

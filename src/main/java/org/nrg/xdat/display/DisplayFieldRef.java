@@ -13,12 +13,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.sortable.Sortable;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * @author Tim
@@ -195,7 +197,7 @@ public class DisplayFieldRef extends Sortable implements Identifier, DisplayFiel
             if (this.getValue() != null){
                 key = df.getId() + "_" + StringUtils.replace(StringUtils.replace(this.getValue().toString(), ",", "_com_"), ":", "_col_");
             }
-            return DisplayFieldAliasCache.getAlias(key);
+            return key;
         } catch (DisplayFieldNotFoundException e) {
             return id;
         }

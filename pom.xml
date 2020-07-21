@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.7-SNAPSHOT</version>
+        <version>1.7.7-INTERNAL</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>

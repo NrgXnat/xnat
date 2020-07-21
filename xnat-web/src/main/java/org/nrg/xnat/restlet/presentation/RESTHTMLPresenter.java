@@ -10,24 +10,12 @@
 
 package org.nrg.xnat.restlet.presentation;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.nrg.xdat.display.DisplayFieldReferenceI;
-import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.display.ElementDisplay;
-import org.nrg.xdat.display.HTMLLink;
-import org.nrg.xdat.display.HTMLLinkProperty;
-import org.nrg.xdat.display.SQLQueryField;
+import org.nrg.xdat.display.*;
 import org.nrg.xdat.presentation.PresentationA;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -38,6 +26,9 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.sql.Timestamp;
+import java.util.*;
 /**
  * @author Tim
  *
@@ -276,18 +267,11 @@ public class RESTHTMLPresenter extends PresentationA {
 				}
 				if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
 				{
-					field_row_id = dfr.getRowID().toLowerCase();
+					field_row_id = DisplayFieldAliasCache.getAlias(dfr.getRowID());
 				}else{
-					field_row_id = dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase();
+					field_row_id = DisplayFieldAliasCache.getAlias(dfr.getElementSQLName() + "_" + dfr.getRowID());
 				}
-				
-				Object v = null;
-				if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
-				{
-					v = row.get(dfr.getRowID().toLowerCase());
-				}else{
-					v = row.get(dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase());
-				}
+				Object v = row.get(field_row_id);
 
 				if (allowDiffs)
 				{

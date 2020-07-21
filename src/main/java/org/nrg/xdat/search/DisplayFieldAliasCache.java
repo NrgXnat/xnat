@@ -33,9 +33,10 @@ import java.util.Map;
 public class DisplayFieldAliasCache {
     static private final Map<String, String> aliases = new HashMap<>();
 
-    public static String getAlias(String key) {
+    public static String getAlias(String id) {
+        String key = id.toLowerCase();
         // Only cache the alias if it's greater than the postgresql column name character limit.
-        if (key.length() <= 63) {
+        if (id.length() <= 63) {
             return key;
         }
 

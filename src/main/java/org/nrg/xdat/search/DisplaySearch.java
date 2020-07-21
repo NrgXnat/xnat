@@ -443,80 +443,55 @@ public class DisplaySearch implements TableSearchI {
         join.append(" FROM (").append(query).append(") SEARCH");
 
         //build SELECT clause
-        ArrayList added = new ArrayList();
-        int counter = 0;
+        List<String> added = new ArrayList();
         iter = displayFields.iterator();
         while (iter.hasNext()) {
             DisplayFieldReferenceI dfr = (DisplayFieldReferenceI) iter.next();
             try {
                 DisplayField df = dfr.getDisplayField();
-                String alias = df.getId();
                 if (df instanceof SQLQueryField) {
                     if (dfr.getValue() != null) {
                         if (dfr.getValue().equals("{XDAT_USER_ID}")) {
                             dfr.setValue(user.getID());
                         }
-                        alias = dfr.getRowID().toLowerCase();
                     }
                 }
 
-                if (!added.contains(dfr.getElementName() + alias)) {
+                String dfrRowID = dfr.getRowID();
+                if (!added.contains(dfr.getElementName() + dfrRowID)) {
                     String content = this.getSQLContent(df, qo);
                     if (df instanceof SQLQueryField) {
                         String df_value = (dfr.getValue() == null) ? "NULL" : dfr.getValue().toString();
-
-                        content = qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() + "." + df_value);
-
+                        content = qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" +
+                                                          df.getId() + "." + df_value);
                     }
 
-                    if (counter == 0) {
-                        select.append("SELECT ");
-                        select.append(content);
-                        SchemaElementI se = df.getParentDisplay().getSchemaElement();
-                        if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
-                            select.append(" AS ").append(alias);
-                        } else {
-                            select.append(" AS ").append(se.getSQLName()).append("_").append(alias);
-                        }
-                        counter++;
-                    } else {
-                        select.append(", ");
-                        select.append(content);
-                        SchemaElementI se = df.getParentDisplay().getSchemaElement();
-                        if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
-                            select.append(" AS ").append(alias);
-                        } else {
-                            select.append(" AS ").append(se.getSQLName()).append("_").append(alias);
-                        }
-                        counter++;
+                    select.append((added.size() == 0) ? "SELECT " : ", ");
+                    select.append(content);
+                    select.append(" AS ");
+
+                    SchemaElementI se = df.getParentDisplay().getSchemaElement();
+                    if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
+                        select.append(DisplayFieldAliasCache.getAlias(dfrRowID));
+                    }else{
+                        select.append(DisplayFieldAliasCache.getAlias(dfr.getElementSQLName() + "_" + dfrRowID));
                     }
-                    added.add(dfr.getElementName() + df.getId());
+                    added.add(dfr.getElementName() + dfrRowID);
                 }
 
                 for (final String s : dfr.getSecondaryFields()) {
                     DisplayField df2 = DisplayField.getDisplayFieldForUnknownPath(s);
                     if (df2 != null && !added.contains(dfr.getElementName() + df2.getId())) {
                         String content = this.getSQLContent(df2, qo);
-                        SchemaElementI se = SchemaElement.GetElement(XftStringUtils.GetRootElementName(s));
 
-                        if (counter == 0) {
-                            select.append("SELECT ");
-                            select.append(content);
-                            if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
-                                select.append(" AS ").append(df2.getId());
-                            } else {
-                                select.append(" AS ").append(se.getSQLName()).append("_").append(df2.getId());
-                            }
-                            counter++;
+                        select.append((added.size() == 0) ? "SELECT " : ", ");
+                        select.append(content);
+
+                        SchemaElementI se = SchemaElement.GetElement(XftStringUtils.GetRootElementName(s));
+                        if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
+                            select.append(" AS ").append(df2.getId());
                         } else {
-                            select.append(", ");
-                            select.append(content);
-                            if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
-                                select.append(" AS ").append(df2.getId());
-                            } else {
-                                select.append(" AS ").append(se.getSQLName()).append("_").append(df2.getId());
-                            }
-                            counter++;
+                            select.append(" AS ").append(se.getSQLName()).append("_").append(df2.getId());
                         }
                         added.add(dfr.getElementName() + df2.getId());
                     }

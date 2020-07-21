@@ -216,7 +216,7 @@ public class DisplayFieldWrapper implements Identifier, SequentialObject, Displa
         if (this.getValue() != null){
             key = df.getId() + "_" + DisplaySearch.cleanColumnName(this.getValue().toString());
         }
-        return DisplayFieldAliasCache.getAlias(key);
+        return key;
     }
 
     public String getElementSQLName() throws XFTInitException, ElementNotFoundException {

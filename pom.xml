@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ parent: pom.xml
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2019, Washington University School of Medicine
+  ~ XNAT https://www.xnat.org
+  ~ Copyright (c) 2020, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -10,17 +10,17 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.6</version>
+    <version>1.7.7-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
     <description>Defines NRG-wide dependency, versioning, repository, and other build property values.</description>
-    <url>http://www.xnat.org</url>
+    <url>https://www.xnat.org</url>
 
     <scm>
         <url>https://bitbucket.org/xnatdev/parent</url>
@@ -36,13 +36,13 @@
     <licenses>
         <license>
             <name>Simplified BSD License</name>
-            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+            <url>https://www.opensource.org/licenses/BSD-2-Clause</url>
         </license>
     </licenses>
 
     <organization>
         <name>Neuroinformatics Research Group</name>
-        <url>http://nrg.wustl.edu</url>
+        <url>https://nrg.wustl.edu</url>
     </organization>
 
     <properties>
@@ -62,24 +62,25 @@
         <signing.alias>nrg</signing.alias>
         <signing.storepass>keypass</signing.storepass>
         <signing.keypass>keypass</signing.keypass>
-        <signing.tsa>http://timestamp.digicert.com</signing.tsa>
+        <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.7.6</xnat.version>
-        <xnat-web.version>${xnat.version}</xnat-web.version>
+        <xnatdev.version>1.7.7-SNAPSHOT</xnatdev.version>
+        <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
-        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.0.6</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
@@ -87,25 +88,25 @@
         <nrg.dicom-edit4.version>1.0.4</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0.6</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.5</nrg.ecat.version>
         <nrg.extattr.version>4.2.5</nrg.extattr.version>
-        <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
-        <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
-        <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
+        <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
+        <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
+        <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
         <data-client.version>${xnat.version}</data-client.version>
 
-        <spring-framework.version>4.3.24.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.13.RELEASE</spring-security.version>
+        <spring-framework.version>4.3.26.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.14.RELEASE</spring-security.version>
         <spring-ldap.version>2.3.2.RELEASE</spring-ldap.version>
         <spring-oauth2.version>2.3.6.RELEASE</spring-oauth2.version>
         <spring-jwt.version>1.0.10.RELEASE</spring-jwt.version>
 
         <swagger.version>2.7.0</swagger.version>
-        <native-json.version>0.5</native-json.version>
+        <vladmihalcea-hibernate-types.version>2.9.3</vladmihalcea-hibernate-types.version>
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.9.8</ant.version>
@@ -149,7 +150,7 @@
         <http-builder.version>0.7.1</http-builder.version>
         <guava.version>20.0</guava.version>
         <gson.version>2.8.1</gson.version>
-        <h2.version>1.4.197</h2.version>
+        <h2.version>1.4.200</h2.version>
         <eclipse-jgit.version>4.5.4.201711221230-r</eclipse-jgit.version>
 
         <!-- Eventually upgrade to these versions. Staying with more moderate version in xnat_builder_1_7dev -->
@@ -167,8 +168,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.8</lombok.version>
-        <lombok.checksum>0396952823579b316a0fe85cbd871bbb3508143c2bcbd985dd7800e806cb24fc</lombok.checksum>
+        <lombok.version>1.18.12</lombok.version>
+        <lombok.checksum>49381508ecb02b3c173368436ef71b24c0d4418ad260e6cc98becbcf4b345406</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -197,12 +198,14 @@
         <junit.version>4.12</junit.version>
         <junit-jupiter.version>5.2.0</junit-jupiter.version>
         <spring-test-junit5.version>1.2.0</spring-test-junit5.version>
-        <jacoco.version>0.8.4</jacoco.version>
+        <jacoco.version>0.8.5</jacoco.version>
         <jython.version>2.7.1</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
         <log4j2.version>2.12.0</log4j2.version>
-        <mockito.version>1.8.5</mockito.version>
+        <mockito-all.version>1.10.19</mockito-all.version>
+        <mockito.version>2.28.2</mockito.version>
+        <powermock.version>2.0.5</powermock.version>
         <easymock.version>1.2_Java1.3</easymock.version>
         <wiremock.version>2.21.0</wiremock.version>
         <nifti_io.version>1.0</nifti_io.version>
@@ -217,13 +220,12 @@
         <slf4j.version>1.7.26</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <logstash.version>5.3</logstash.version>
-        <javamelody.version>1.79.0</javamelody.version>
+        <javamelody.version>1.81.0</javamelody.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <metainf-services.version>1.8</metainf-services.version>
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>
 
         <springockito.version>1.0.5</springockito.version>
-        <stratum.version>1.0</stratum.version>
         <torque.version>3.3</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.20</user-agent-utils.version>
@@ -237,12 +239,12 @@
         <xstream.version>1.4.9</xstream.version>
 
         <!-- Gradle plugin versions -->
-        <gradle-git.version>0.12.0-rc2</gradle-git.version>
+        <gradle-git.version>0.12.2</gradle-git.version>
         <gradle-tomcat.version>2.5</gradle-tomcat.version>
-        <gradle-cargo.version>2.3</gradle-cargo.version>
-        <gradle-dependency-management.version>1.0.6.RELEASE</gradle-dependency-management.version>
-        <gradle-lombok.version>3.1.0</gradle-lombok.version>
-        <tomcat-embed.version>7.0.96</tomcat-embed.version>
+        <gradle-cargo.version>2.7</gradle-cargo.version>
+        <gradle-dependency-management.version>1.0.9.RELEASE</gradle-dependency-management.version>
+        <gradle-lombok.version>3.3.0</gradle-lombok.version>
+        <tomcat-embed.version>7.0.99</tomcat-embed.version>
 
         <!-- Maven plugin versions -->
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
@@ -403,6 +405,11 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
+                <version>${xnat-web.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.web</groupId>
+                <artifactId>xnat-web</artifactId>
                 <version>${xnat-web.version}</version>
             </dependency>
             <dependency>
@@ -736,9 +743,9 @@
                 <version>${hibernate.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.marvinformatics.hibernate</groupId>
-                <artifactId>hibernate-native-json</artifactId>
-                <version>${native-json.version}</version>
+                <groupId>com.vladmihalcea</groupId>
+                <artifactId>hibernate-types-43</artifactId>
+                <version>${vladmihalcea-hibernate-types.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -1176,6 +1183,7 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>javax.xml</groupId>
@@ -1498,45 +1506,6 @@
                 <version>${ecs.version}</version>
             </dependency>
             <dependency>
-                <groupId>stratum</groupId>
-                <artifactId>stratum</artifactId>
-                <version>${stratum.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-betwixt</groupId>
-                        <artifactId>commons-betwixt</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-messenger</groupId>
-                        <artifactId>commons-messenger</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.jms</groupId>
-                        <artifactId>jms</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>mockobjects</groupId>
-                        <artifactId>mockobjects</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ojb</groupId>
-                        <artifactId>ojb</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>quartz</groupId>
-                        <artifactId>quartz</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.lowagie</groupId>
                 <artifactId>itext</artifactId>
                 <version>${itext.version}</version>
@@ -1745,7 +1714,7 @@
                 <version>${gradle-tomcat-plugin.version}</version>
             </dependency>
             <dependency>
-                <groupId>gradle.plugin.com.palantir.gradle.gitversion</groupId>
+                <groupId>com.palantir.gradle.gitversion</groupId>
                 <artifactId>gradle-git-version</artifactId>
                 <version>${gradle-git-version}</version>
             </dependency>
@@ -1825,7 +1794,25 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
+                <version>${mockito-all.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-module-junit4</artifactId>
+                <version>${powermock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-mockito2</artifactId>
+                <version>${powermock.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -2173,7 +2160,7 @@
         <repository>
             <id>imagej</id>
             <name>imagej</name>
-            <url>http://maven.imagej.net/content/groups/public</url>
+            <url>https://maven.imagej.net/content/groups/public</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -2195,7 +2182,7 @@
         <repository>
             <id>jcenter</id>
             <name>JCenter</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -2235,12 +2222,12 @@
         <pluginRepository>
             <id>XNAT Plugin Snapshot Library</id>
             <name>XNAT Maven Plugin Snapshot Library</name>
-            <url>http://nrgxnat.jfrog.io/nrgxnat/plugins-snapshot</url>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/plugins-snapshot</url>
         </pluginRepository>
         <pluginRepository>
             <id>XNAT Plugin Library</id>
             <name>XNAT Maven Plugin Release Library</name>
-            <url>http://nrgxnat.jfrog.io/nrgxnat/plugins-release</url>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/plugins-release</url>
         </pluginRepository>
     </pluginRepositories>
 

@@ -14,7 +14,6 @@ import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -142,12 +141,6 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             final Results<A> update = mergeSessions((A) session, srcRootPath, dest, destRootPath, rootBackup);
 
             this.merged = update.getResult();
-
-            // set project on scans
-            String project = merged.getProject();
-            for (XnatImagescandataI scan : merged.getScans_scan()) {
-                scan.setProject(project);
-            }
 
             //If we wrote to the src directory's catalogs, would the overwrite persist them into the new space (overwriting the old ones).
             //What if the same catalog had two different catalog file names.  This would cause duplicate catalogs.

@@ -81,16 +81,16 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.6</nrg.mizer.version>
+        <nrg.mizer.version>1.0.6.1</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0.4</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.6</nrg.dicom-edit6.version>
-        <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
+        <nrg.dicom-edit4.version>1.0.4.1</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0.6.1</nrg.dicom-edit6.version>
+        <nrg.dicomdb.version>5.1.2.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.5</nrg.ecat.version>
-        <nrg.extattr.version>4.2.5</nrg.extattr.version>
+        <nrg.ecat.version>1.0.5.1</nrg.ecat.version>
+        <nrg.extattr.version>4.2.5.1</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>

@@ -348,11 +348,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             }
         }
         src = (XnatImagesessiondata) BaseElement.GetGeneratedItem(i);
-
-        // copy project into scan
-        for (XnatImagescandataI scan : src.getScans_scan()) {
-            scan.setProject(project);
-        }
     }
 
     public void checkForConflicts(final XnatImagesessiondata src, final File srcDIR, final XnatImagesessiondata existing, final File destDIR) throws ClientException {

@@ -51,10 +51,10 @@
         <application.name>${project.name}</application.name>
         <build.number>manual</build.number>
 
-        <java.source.version>1.7</java.source.version>
-        <java.target.version>1.7</java.target.version>
-        <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+        <java.source.version>1.8</java.source.version>
+        <java.target.version>1.8</java.target.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- These are default property values to be overridden for specific applications and signing requirements. -->
         <signing.skip>true</signing.skip>

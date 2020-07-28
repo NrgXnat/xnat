@@ -52,43 +52,8 @@ repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-def javaVersion = JavaVersion.current()
-if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.java10Compatible) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            options.addStringOption("Xdoclint:none", "-quiet")
-        }
-    }
-
-    if (hasProperty("rt.17.jar")) {
-        // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
-        // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
-        def rt17jar = property "rt.17.jar"
-        logger.info "Using ${rt17jar} as the bootstrap class path jar."
-        gradle.projectsEvaluated {
-            tasks.withType(JavaCompile) {
-                options.fork = true
-                options.compilerArgs << "-XDignore.symbol.file"
-                options.bootstrapClasspath = files(rt17jar as String)
-            }
-        }
-    } else {
-        logger.warn "No value was set for the rt.17.jar build property, but you are using a Java 8- or 9-compatible JDK. You should consider setting rt.17.jar to indicate a jar file containing the Java 1.7 run-time library:\n"
-        logger.warn "\n"
-        logger.warn "  ./gradlew -Prt.17.jar=rt-1.7.0_45.jar war\n"
-        logger.warn "\n"
-        logger.warn "You can also set this property in a gradle.properties file, either in the top level of your build folder or in the folder ~/.gradle/:\n"
-        logger.warn "\n"
-        logger.warn "  rt.17.jar=/home/developer/.gradle/rt.17.jar\n"
-        logger.warn "\n"
-        logger.warn "In some isolated instances, using a bootstrap library from a JDK version later than 1.7 can result in run-time errors.\n"
-    }
-} else if (!javaVersion.java7Compatible) {
-    throw new BuildCancelledException("You are using a JDK version (${javaVersion}) that is not compatible with Java 7. The XNAT build will fail. Please install a JDK version of Java 7 or later.")
-}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
 

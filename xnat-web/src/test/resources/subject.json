@@ -1,0 +1,10 @@
+{
+    "type": "Subject",
+    "id": "XNAT_S00003",
+    "label": "SubjectsID",
+    "xsiType": "xnat:subjectData",
+    "uri": "/archive/subjects/XNAT_S00003",
+    "sessions": [],
+    "resources": [],
+    "project-id": "SampleProjectID"
+}

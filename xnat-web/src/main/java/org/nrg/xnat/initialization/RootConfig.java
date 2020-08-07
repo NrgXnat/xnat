@@ -13,13 +13,16 @@ import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
@@ -37,6 +40,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.xml.sax.SAXException;
 
@@ -44,9 +48,14 @@ import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -128,6 +137,27 @@ public class RootConfig {
     @Bean
     public Module guavaModule() {
         return new GuavaModule();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
+        return objectMapperBuilder.build();
+    }
+
+    @Bean
+    public Map<Class<?>, Class<?>> mixIns() throws NrgServiceException {
+        return Beans.getMixIns();
+    }
+
+    @Bean
+    public SerializerService serializerService(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
+        final SerializerConfig config = new SerializerConfig();
+        try {
+            return config.serializerService();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Bean

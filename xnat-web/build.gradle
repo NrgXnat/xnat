@@ -6,7 +6,6 @@
  *  
  * Released under the Simplified BSD.
  */
-
 buildscript {
     ext {
         vXnat = "1.8.0-ACTIVE-SNAPSHOT"
@@ -137,15 +136,15 @@ dependencyManagement {
     }
 }
 
-def vMockito = '1.10.19'
-def vPowerMock = '1.7.0'
+// def vMockito = dependencyManagement.importedProperties["mockito.version"] as String
 
 configurations.all {
-    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
+    resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
 }
 
 dependencies {
     annotationProcessor "org.nrg:framework"
+    annotationProcessor "com.google.auto.value:auto-value"
 
     api platform("org.nrg:parent:${vXnat}")
     implementation platform("org.nrg:parent:${vXnat}")
@@ -165,6 +164,12 @@ dependencies {
     api "org.springframework:spring-core"
 
     implementation "org.nrg.xnat:spawner"
+
+    implementation("org.nrg.xnat:xnat-data-models") {
+        transitive = false
+    }
+    implementation "org.nrg.xdat:core"
+    implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"
@@ -242,6 +247,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "com.jayway.jsonpath:json-path"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
 
@@ -262,6 +268,7 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
+    implementation "org.codehaus.groovy.modules.http-builder:http-builder"
 
     implementation "eu.bitwalker:UserAgentUtils"
     implementation "com.twmacinta:fast-md5"
@@ -278,9 +285,7 @@ dependencies {
     implementation "javax.servlet:jstl"
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
-
     implementation "org.postgresql:postgresql"
-
     implementation "org.slf4j:slf4j-api"
     implementation "org.slf4j:jul-to-slf4j"
     implementation "org.slf4j:jcl-over-slf4j"
@@ -289,8 +294,8 @@ dependencies {
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
 
+    providedCompile "com.google.auto.value:auto-value-annotations"
     providedCompile "com.google.code.findbugs:jsr305"
-    providedCompile "junit:junit"
     providedCompile "javax.servlet:javax.servlet-api"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
@@ -302,7 +307,6 @@ dependencies {
     runtimeOnly "axis:axis-schema"
     runtimeOnly "cglib:cglib"
     runtimeOnly "org.hsqldb:hsqldb"
-    runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
     runtimeOnly "net.imagej:ij"
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
@@ -310,8 +314,8 @@ dependencies {
     runtimeOnly "org.python:jython-standalone"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+           "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
           "org.codehaus.cargo:cargo-ant",
@@ -324,8 +328,11 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
-    testImplementation "org.hamcrest:hamcrest-core:2.2"
+    testImplementation "org.springframework.security:spring-security-test"
+    testImplementation "org.springframework.security:spring-security-config"
     testImplementation "org.mockito:mockito-core"
+    testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "org.hamcrest:hamcrest-core:2.2"
     testImplementation "org.powermock:powermock-module-junit4"
     testImplementation "org.powermock:powermock-api-mockito2"
 

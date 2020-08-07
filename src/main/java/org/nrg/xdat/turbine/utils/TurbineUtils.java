@@ -1572,6 +1572,14 @@ public class TurbineUtils {
         return StringUtils.isBlank(string);
     }
 
+    public boolean equals(final String string1, final String string2) {
+        return StringUtils.equals(string1, string2);
+    }
+
+    public boolean equalsIgnoreCase(final String string1, final String string2) {
+        return StringUtils.equalsIgnoreCase(string1, string2);
+    }
+
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     private static final Comparator<Properties> PROPERTIES_COMPARATOR = new Comparator<Properties>() {

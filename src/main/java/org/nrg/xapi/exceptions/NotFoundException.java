@@ -14,7 +14,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class NotFoundException extends XapiException {
-    public NotFoundException(String msg) {
+    public NotFoundException(final String msg) {
         super(HttpStatus.NOT_FOUND, msg);
+    }
+
+    public NotFoundException(final String type, final String name) {
+        super(HttpStatus.NOT_FOUND, "No resource of type " + type + " with the ID or name " + name + " exists.");
+    }
+
+    public NotFoundException(final String type, final long id) {
+        super(HttpStatus.NOT_FOUND, "No resource of type " + type + " with the ID " + id + " exists.");
     }
 }

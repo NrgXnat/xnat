@@ -298,8 +298,17 @@
             <fileNamePattern>${xnat.home}/logs/avalon.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
-
-    <root level="ERROR">
+    <appender name="jdbc" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/jdbc.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %class.%method:%line - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/jdbc.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+        <root level="ERROR">
         <appender-ref ref="app"/>
     </root>
     <logger name="org.nrg.xft.search" additivity="false" level="ERROR">
@@ -517,5 +526,8 @@
     </logger>
     <logger name="org.nrg.xnat.turbine" additivity="false" level="ERROR">
         <appender-ref ref="turbine"/>
+    </logger>
+    <logger name="JdbcLogger" additivity="false" level="DEBUG">
+        <appender-ref ref="jdbc"/>
     </logger>
 </configuration>

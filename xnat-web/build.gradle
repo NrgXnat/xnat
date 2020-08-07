@@ -20,7 +20,8 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
-        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
+        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.3"
+        classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.5"
         classpath "io.franzbecker:gradle-lombok:4.0.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
@@ -38,6 +39,7 @@ apply plugin: "maven-publish"
 apply plugin: "war"
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.dorongold.task-tree"
 apply plugin: "com.palantir.git-version"
 apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "io.spring.dependency-management"
@@ -135,8 +137,6 @@ dependencyManagement {
         enabled = false
     }
 }
-
-// def vMockito = dependencyManagement.importedProperties["mockito.version"] as String
 
 configurations.all {
     resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
@@ -286,6 +286,8 @@ dependencies {
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
     implementation "org.postgresql:postgresql"
+    implementation "net.ttddyy:datasource-proxy"
+
     implementation "org.slf4j:slf4j-api"
     implementation "org.slf4j:jul-to-slf4j"
     implementation "org.slf4j:jcl-over-slf4j"
@@ -293,8 +295,8 @@ dependencies {
     implementation "ch.qos.logback:logback-classic"
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
+    implementation "com.google.auto.value:auto-value-annotations"
 
-    providedCompile "com.google.auto.value:auto-value-annotations"
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "javax.servlet:javax.servlet-api"
     providedCompile "org.jetbrains:annotations"
@@ -330,11 +332,10 @@ dependencies {
     testImplementation "org.assertj:assertj-core"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.hamcrest:hamcrest-library"
-    testImplementation "org.hamcrest:hamcrest-core:2.2"
-    testImplementation "org.powermock:powermock-module-junit4"
     testImplementation "org.powermock:powermock-api-mockito2"
+    testImplementation "org.powermock:powermock-module-junit4"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

@@ -13,6 +13,8 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatResourceI;
+import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XdatUsergroupI;
@@ -21,12 +23,15 @@ import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
 import org.nrg.xnat.eventservice.events.ProjectEvent;
+import org.nrg.xnat.eventservice.events.ResourceEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.events.SubjectAssessorEvent;
@@ -215,29 +220,42 @@ public class EventServiceItemSaveAspect {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
-//            } else if (item instanceof XnatResource || StringUtils.equals(item.getXSIType(), "xnat:resourceCatalog")) {
-//                log.debug("Resource Data Save" + " : xsiType:" + item.getXSIType());
-//                XnatResourceI resource = item instanceof XnatResourceI ? (XnatResourceI) item : new XnatResource(item);
-//                String project = (String) (item.getProperty("project"));
-//                if ((project == null || project.isEmpty()) && item.getParent() != null) {
-//                    project = (String) (item.getParent().getProperty("project"));
-//                    if (project == null && item.getParent() != null &&
-//                            !Strings.isNullOrEmpty(item.getParent().getXSIType()) && item.getParent().getXSIType().contentEquals("xnat:projectData") &&
-//                            item.getParent().getProperty("id") != null) {
-//                        project = (String) (item.getParent()).getProperty("id");
-//                    }
-//                }
-//                eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI) resource, userLogin, ResourceEvent.Status.CREATED, project));
-//
+            } else if (item instanceof XnatResource || StringUtils.equals(item.getXSIType(), "xnat:resourceCatalog")) {
+                log.debug("Resource Data Save" + " : xsiType:" + item.getXSIType());
+                XnatResourceI resource = item instanceof XnatResourceI ? (XnatResourceI) item : new XnatResource(item);
+                String project = (String) (item.getProperty("project"));
+                if ((project == null || project.isEmpty()) && item.getParent() != null) {
+                    project = (String) (item.getParent().getProperty("project"));
+                    if (project == null && item.getParent() != null &&
+                            !Strings.isNullOrEmpty(item.getParent().getXSIType()) && item.getParent().getXSIType().contentEquals("xnat:projectData") &&
+                            item.getParent().getProperty("id") != null) {
+                        project = (String) (item.getParent()).getProperty("id");
+                    }
+                }
+                log.debug("Resource.Status.UPDATED detected");
+                triggerResourceUpdate(resource, user, project);
+
             } else if (isItemA(item, XnatType.SCAN)) {
                 XnatImagescandataI sc = (XnatImagescandata)item;
-                String project = null;
                 XnatImagesessiondata session = ((XnatImagescandata) sc).getImageSessionData();
-                project = session == null ? null : session.getProject();
+                final String project = session == null ? null : session.getProject();
                 List<String> scanIds = xnatObjectIntrospectionService.getStoredScanIds(session);
                 if(scanIds.contains(sc.getId())) {
-                    log.debug("ScanEvent.Status.UPDATED - no-op");
-                    //eventService.triggerEvent(new ScanEvent(sc, userLogin, ScanEvent.Status.UPDATED, project));
+                    log.debug("Image Scan Data - Updated");
+                    triggerScanUpdate(sc, project, user);
+
+                    // Check for existing resource changes
+                    List<String> preResourceLabels = xnatObjectIntrospectionService.getStoredScanResourceLabels(sc);
+                    // ** Proceed with save operation ** //
+                    proceedingReturn = proceedAndCaptureException(joinPoint);
+                    if(proceedingReturn != null && proceedingReturn.throwable == null) {
+                        // Trigger resource create on any new resources
+                        sc.getFile().stream()
+                          .filter(rs -> rs instanceof XnatResourcecatalog)
+                          .filter(rs -> !preResourceLabels.contains(rs.getLabel()))
+                          .forEach(rs -> triggerResourceCreate(rs, user, project));
+                    }
+
                 } else {
                     log.debug("Image Scan Data Save : xsiType:" + item.getXSIType());
                     triggerScanCreate(sc, project, user);
@@ -253,7 +271,8 @@ public class EventServiceItemSaveAspect {
                         log.debug("Image Assessor Data Save" + " : xsiType:" + item.getXSIType());
                         triggerImageAssessorCreate(assessor, user);
                     } else {
-                        log.debug("Image Assessor Data Update - no-op");
+                        log.debug("Image Assessor Data Update" + " : xsiType:" + item.getXSIType());
+                        triggerImageAssessorUpdate(assessor, user);
                     }
                 }
                 if(log.isDebugEnabled() && sw.isRunning()) {
@@ -378,7 +397,7 @@ public class EventServiceItemSaveAspect {
         }
         List<XnatAbstractresourceI> resources = session.getResources_resource();
         if(resources != null && !resources.isEmpty()){
-            resources.forEach(r -> triggerResourceCreate(r, user));
+            resources.forEach(r -> triggerResourceCreate(r, user, session.getProject()));
         }
 
     }
@@ -403,18 +422,30 @@ public class EventServiceItemSaveAspect {
         eventService.triggerEvent(new ScanEvent(scan, user.getLogin(), ScanEvent.Status.CREATED, projectId));
     }
 
+    private void triggerScanUpdate(XnatImagescandataI scan, String projectId, UserI user){
+        log.debug("ScanEvent.Status.UPDATED detected - no-op");
+        //eventService.triggerEvent(new ScanEvent(scan, user.getLogin(), ScanEvent.Status.UPDATED, projectId));
+    }
+
     //** Image Assessor Triggers **//
     private void triggerImageAssessorCreate(XnatImageassessordataI imageAssessor, UserI user){
         eventService.triggerEvent(new ImageAssessorEvent(imageAssessor, user.getLogin(), ImageAssessorEvent.Status.CREATED, imageAssessor.getProject()));
+    }
 
+    private void triggerImageAssessorUpdate(XnatImageassessordataI imageAssessor, UserI user){
+        eventService.triggerEvent(new ImageAssessorEvent(imageAssessor, user.getLogin(), ImageAssessorEvent.Status.UPDATED, imageAssessor.getProject()));
     }
 
     //** Resource Triggers **//
-    private void triggerResourceCreate(XnatAbstractresourceI resource, UserI user){
-        log.debug("NO-OP");
-        //TODO
+    private void triggerResourceCreate(XnatAbstractresourceI resource, UserI user, String project){
+        log.debug("Resource.Status.CREATED detected");
+        eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI)resource, user.getLogin(), ResourceEvent.Status.CREATED, project));
     }
 
+    private void triggerResourceUpdate(XnatAbstractresourceI resource, UserI user, String project){
+        log.debug("Resource.Status.UPDATED detected");
+        eventService.triggerEvent(new ResourceEvent((XnatResourcecatalogI)resource, user.getLogin(), ResourceEvent.Status.UPDATED, project));
+    }
 
     private enum XnatType {
         USER,

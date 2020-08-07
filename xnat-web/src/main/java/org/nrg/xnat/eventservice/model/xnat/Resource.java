@@ -17,12 +17,12 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
-import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import javax.annotation.Nullable;
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +35,9 @@ public class Resource extends XnatModelObject {
     @JsonProperty("integer-id") private Integer integerId;
     private String directory;
     private List<XnatFile> files;
+    @JsonProperty("datatype-string")
+
+    private String datatypeString;
 
     public Resource() {}
 
@@ -55,8 +58,7 @@ public class Resource extends XnatModelObject {
         this.xnatResourcecatalog = xnatResourcecatalog;
 
         if (parentUri == null) {
-            this.uri = UriParserUtils.getArchiveUri(xnatResourcecatalog); // <-- Does not actually work
-            log.error("Cannot construct a resource URI. Parent URI is null.");
+            this.uri = xnatResourcecatalog.getUri();
         } else {
             this.uri = parentUri + "/resources/" + xnatResourcecatalog.getLabel();
         }
@@ -65,22 +67,41 @@ public class Resource extends XnatModelObject {
     }
 
     private void populateProperties(final String rootArchivePath) {
+        this.uri = this.uri == null ? xnatResourcecatalog.getUri() : this.uri;
         this.integerId = xnatResourcecatalog.getXnatAbstractresourceId();
         this.id = xnatResourcecatalog.getLabel();
         this.label = xnatResourcecatalog.getLabel();
-        this.xsiType = null;
-        try { this.xsiType = xnatResourcecatalog.getXSIType();} catch(NullPointerException e){log.error("Resource failed to detect xsiType");}
-
-//        final CatCatalogBean cat = xnatResourcecatalog.getCleanCatalog(rootArchivePath, true, null, null);
-        final CatCatalogBean cat = xnatResourcecatalog.getCatalog(rootArchivePath);
+        this.xsiType = xnatResourcecatalog.getXSIType();
         this.directory = xnatResourcecatalog.getCatalogFile(rootArchivePath).getParent();
-
-        final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, null, xnatResourcecatalog, true, null, null, "absolutePath");
         this.files = Lists.newArrayList();
-        for (final Object[] entry: entryDetails) {
-            // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
-            files.add(new XnatFile(this.uri, (String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
+
+        final CatCatalogBean cat = xnatResourcecatalog.getCatalog(rootArchivePath);
+        if (cat == null) {
+            throw new RuntimeException("Unable to load catalog for resource " + xnatResourcecatalog
+                    + ", have your admin check xdat.log for the cause");
         }
+        final Path parentUri = Paths.get(this.uri + "/files/");
+
+        final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, parentUri.toString(),
+                xnatResourcecatalog, false, null, null, "URI");
+
+        for (final Object[] entry : entryDetails) {
+            String uri      = (String) entry[2]; // This is the parentUri + relative path to file
+            String relPath  = parentUri.relativize(Paths.get(uri)).toString(); // get that relative path
+            String filePath = Paths.get(this.directory).resolve(relPath).toString(); // append rel path to parent dir
+            String tagsCsv  = (String) entry[4];
+            String format   = (String) entry[5];
+            String content  = (String) entry[5];
+            String sizeStr  = StringUtils.defaultIfBlank((String) entry[1], null);
+            Long size       = sizeStr == null ? null : Long.parseLong(sizeStr);
+            String checksum = (String) entry[8];
+            files.add(new XnatFile(this.uri, relPath, filePath, tagsCsv, format, content, size, checksum));
+        }
+
+        datatypeString = null;
+        try {
+            datatypeString = xnatResourcecatalog.toString();
+        } catch (Throwable e){ }
     }
 
     public static Resource populateSample(){
@@ -168,6 +189,10 @@ public class Resource extends XnatModelObject {
 
     public void setFiles(final List<XnatFile> files) {
         this.files = files;
+    }
+
+    public String getDatatypeString() {
+        return datatypeString;
     }
 
     @Override

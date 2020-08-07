@@ -4,58 +4,67 @@ package org.nrg.xnat.eventservice.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.services.ContextService;
+import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.resolvers.SimplePrefsEntityResolver;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.prefs.services.PreferenceService;
+import org.nrg.prefs.services.ToolService;
+import org.nrg.prefs.services.impl.DefaultNrgPreferenceService;
+import org.nrg.prefs.services.impl.hibernate.HibernatePreferenceService;
+import org.nrg.prefs.services.impl.hibernate.HibernateToolService;
+import org.nrg.prefs.transformers.PreferenceTransformer;
+import org.nrg.test.utils.TestBeans;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.eventservice.actions.EventServiceLoggingAction;
 import org.nrg.xnat.eventservice.actions.TestAction;
 import org.nrg.xnat.eventservice.daos.EventSubscriptionEntityDao;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
-import org.nrg.xnat.eventservice.entities.EventServiceFilterEntity;
-import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
-import org.nrg.xnat.eventservice.entities.TriggeringEventEntity;
-import org.nrg.xnat.eventservice.events.ProjectEvent;
-import org.nrg.xnat.eventservice.events.ScanEvent;
-import org.nrg.xnat.eventservice.events.SessionEvent;
-import org.nrg.xnat.eventservice.events.SubjectEvent;
-import org.nrg.xnat.eventservice.events.TestCombinedEvent;
-import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
+import org.nrg.xnat.eventservice.entities.*;
+import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventPropertyService;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
-import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
-import org.nrg.xnat.eventservice.services.impl.ActionManagerImpl;
-import org.nrg.xnat.eventservice.services.impl.EventPropertyServiceImpl;
-import org.nrg.xnat.eventservice.services.impl.EventServiceComponentManagerImpl;
-import org.nrg.xnat.eventservice.services.impl.EventServiceImpl;
-import org.nrg.xnat.eventservice.services.impl.EventSubscriptionEntityServiceImpl;
-import org.nrg.xnat.eventservice.services.impl.SubscriptionDeliveryEntityServiceImpl;
+import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.services.impl.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.*;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.bus.EventBus;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 @Configuration
-@Import({HibernateConfig.class, ObjectMapperConfig.class})
+@Import({HibernateConfig.class, ObjectMapperConfig.class, SerializerConfig.class})
+@ComponentScan({"org.nrg.prefs.repositories", "org.nrg.prefs.transformers"})
 public class EventServiceTestConfig {
+    @Bean
+    public PreferenceEntityResolver defaultResolver() throws IOException {
+        return new SimplePrefsEntityResolver(preferenceService(), TestBeans.getDefaultTestSiteMap());
+    }
 
+    @Bean
+    public ToolService toolService() {
+        return new HibernateToolService();
+    }
+
+    @Bean
+    public PreferenceService preferenceService() {
+        return new HibernatePreferenceService(toolService());
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Bean
+    public NrgPreferenceService nrgPreferenceService(final List<PreferenceTransformer> transformers, final Map<String, PreferenceEntityResolver> resolvers) {
+        return new DefaultNrgPreferenceService(toolService(), preferenceService(), transformers, resolvers);
+    }
 
     @Bean
     public EventService eventService(ContextService contextService,
@@ -66,7 +75,7 @@ public class EventServiceTestConfig {
                                      UserManagementServiceI userManagementService,
                                      EventPropertyService eventPropertyService,
                                      ObjectMapper mapper,
-                                     EventServicePrefsBean mockEventServicePrefsBean){
+                                     EventServicePrefsBean mockEventServicePrefsBean) {
         return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
@@ -79,7 +88,7 @@ public class EventServiceTestConfig {
                                          UserManagementServiceI userManagementService,
                                          EventPropertyService eventPropertyService,
                                          ObjectMapper mapper,
-                                         EventServicePrefsBean mockEventServicePrefsBean){
+                                         EventServicePrefsBean mockEventServicePrefsBean) {
         return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
@@ -102,18 +111,24 @@ public class EventServiceTestConfig {
 
 
     @Bean
-    public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService, final @Lazy EventSubscriptionEntityService eventSubscriptionService){
+    public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService, final @Lazy EventSubscriptionEntityService eventSubscriptionService) {
         return new SubscriptionDeliveryEntityServiceImpl(eventService, eventSubscriptionService);
     }
 
     @Bean
-    public SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService() {return Mockito.mock(SubscriptionDeliveryEntityService.class);}
+    public SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService() {
+        return Mockito.mock(SubscriptionDeliveryEntityService.class);
+    }
 
     @Bean
-    public TestListener testListener() {return new TestListener(); }
+    public TestListener testListener() {
+        return new TestListener();
+    }
 
     @Bean
-    public TestCombinedEvent testCombinedEvent() {return new TestCombinedEvent(); }
+    public TestCombinedEvent testCombinedEvent() {
+        return new TestCombinedEvent();
+    }
 
     @Bean
     public ContextService contextService(final ApplicationContext applicationContext) {
@@ -128,10 +143,14 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventServiceActionProvider eventServiceLoggingAction() {return new EventServiceLoggingAction(); }
+    public EventServiceActionProvider eventServiceLoggingAction() {
+        return new EventServiceLoggingAction();
+    }
 
     @Bean
-    public EventServiceLoggingAction mockEventServiceLoggingAction() { return Mockito.mock(EventServiceLoggingAction.class); }
+    public EventServiceLoggingAction mockEventServiceLoggingAction() {
+        return Mockito.mock(EventServiceLoggingAction.class);
+    }
 
     @Bean
     public ActionManager actionManager(EventServiceComponentManager componentManager,
@@ -148,16 +167,24 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public SubscriptionDeliveryEntityDao subscriptionDeliveryEntityDao() {return new SubscriptionDeliveryEntityDao();}
+    public SubscriptionDeliveryEntityDao subscriptionDeliveryEntityDao() {
+        return new SubscriptionDeliveryEntityDao();
+    }
 
     @Bean
-    public List<EventServiceActionProvider> actionProviders () {return null;}
+    public List<EventServiceActionProvider> actionProviders() {
+        return null;
+    }
 
     @Bean
-    public EventBus eventBus(ContextService contextService) {return EventBus.create(); }
+    public EventBus eventBus() {
+        return EventBus.create();
+    }
 
     @Bean
-    public EventSubscriptionEntityDao eventSubscriptionDao() { return new EventSubscriptionEntityDao();  }
+    public EventSubscriptionEntityDao eventSubscriptionDao() {
+        return new EventSubscriptionEntityDao();
+    }
 
     @Bean
     public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
@@ -174,13 +201,16 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
+    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) {
         return new HibernateTransactionManager(sessionFactory);
     }
 
     @Bean
-    public EventServiceComponentManager mockComponentManager() { return Mockito.mock(EventServiceComponentManager.class); }
+    public EventServiceComponentManager mockComponentManager() {
+        return Mockito.mock(EventServiceComponentManager.class);
+    }
 
+    @SuppressWarnings("rawtypes")
     @Bean
     public EventServiceComponentManager componentManager(final List<EventServiceListener> eventListeners,
                                                          final List<EventServiceActionProvider> actionProviders) {
@@ -193,17 +223,33 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventPropertyService eventPropertyService(EventServiceComponentManager componentManager, ObjectMapper mapper){return new EventPropertyServiceImpl(componentManager, mapper);}
+    public EventPropertyService eventPropertyService(EventServiceComponentManager componentManager, ObjectMapper mapper) {
+        return new EventPropertyServiceImpl(componentManager, mapper);
+    }
 
     //** Combined Events/Listener **//
     @Bean
-    public ProjectEvent projectCreatedEvent() {return new ProjectEvent();}
+    public ProjectEvent projectCreatedEvent() {
+        return new ProjectEvent();
+    }
+
     @Bean
-    public SubjectEvent subjectCreatedEvent() {return new SubjectEvent();}
+    public SubjectEvent subjectCreatedEvent() {
+        return new SubjectEvent();
+    }
+
     @Bean
-    public ScanEvent scanArchiveEvent() {return new ScanEvent();}
+    public ScanEvent scanArchiveEvent() {
+        return new ScanEvent();
+    }
+
     @Bean
-    public SessionEvent sessionArchiveEvent() {return new SessionEvent();}
+    public SessionEvent sessionArchiveEvent() {
+        return new SessionEvent();
+    }
+
     @Bean
-    public WorkflowStatusChangeEvent workflowStatusChangeEvent() {return new WorkflowStatusChangeEvent();}
+    public WorkflowStatusChangeEvent workflowStatusChangeEvent() {
+        return new WorkflowStatusChangeEvent();
+    }
 }

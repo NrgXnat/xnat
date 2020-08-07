@@ -1,10 +1,12 @@
 package org.nrg.xnat.security.provider;
 
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.nrg.xdat.services.XdatUserAuthService.LOCALDB;
+import static org.nrg.xnat.security.provider.ProviderAttributes.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -24,10 +26,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
-import static org.nrg.xdat.services.XdatUserAuthService.LOCALDB;
-import static org.nrg.xnat.security.provider.ProviderAttributes.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -68,6 +67,7 @@ public class AuthenticationProviderConfigurationLocator {
      * @return A map of all providers for the indicated authentication method. If no providers for that
      *         method are defined, this returns an empty list.
      */
+    @SuppressWarnings("unused")
     @Nonnull
     public Map<String, ProviderAttributes> getProviderDefinitionsByAuthMethod(final String authMethod) {
         if (StringUtils.isBlank(authMethod) || !_definitionsByAuthMethod.containsKey(authMethod)) {
@@ -124,15 +124,7 @@ public class AuthenticationProviderConfigurationLocator {
             if (directory.exists() && directory.isDirectory()) {
                 final Collection<File> files = FileUtils.listFiles(directory, PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
                 log.debug("Found {} files under auth path '{}'", files.size(), authPath);
-                authFilePaths.addAll(Lists.transform(new ArrayList<>(files), new Function<File, String>() {
-                    @Nullable
-                    @Override
-                    public String apply(final File file) {
-                        final String path = file.toString();
-                        log.trace("Adding path '{}' to auth file paths", path);
-                        return path;
-                    }
-                }));
+                authFilePaths.addAll(files.stream().map(File::getAbsolutePath).collect(Collectors.toList()));
             }
         }
         if (!authFilePaths.isEmpty()) {
@@ -155,7 +147,7 @@ public class AuthenticationProviderConfigurationLocator {
                 } catch (FileNotFoundException e) {
                     log.info("Tried to load properties from found properties file at {}, but got a FileNotFoundException", authFilePath);
                 } catch (IOException e) {
-                    log.warn("Tried to load properties from found properties file at {}, but got an error trying to load", authFilePath, e.getMessage());
+                    log.warn("Tried to load properties from found properties file at {}, but got an error trying to load", authFilePath, e);
                 }
             }
         }
@@ -168,7 +160,7 @@ public class AuthenticationProviderConfigurationLocator {
                 providers.addAll(collate(PropertiesLoaderUtils.loadProperties(resource)));
             }
         } catch (IOException e) {
-            log.warn("Tried to find plugin authentication provider definitions, but got an error trying to search {}", PROVIDER_CLASSPATH, e.getMessage());
+            log.warn("Tried to find plugin authentication provider definitions, but got an error trying to search {}", PROVIDER_CLASSPATH, e);
         }
 
         if (providers.isEmpty()) {
@@ -237,14 +229,18 @@ public class AuthenticationProviderConfigurationLocator {
     private static Collection<Properties> collate(final Properties properties) {
         final Map<String, Properties> collated = new HashMap<>();
         for (final String key : properties.stringPropertyNames()) {
-            final Matcher matcher    = PROPERTY_NAME_VALUE_PATTERN.matcher(key);
-            final String  providerId = matcher.group("providerId");
-            final String  property   = matcher.group("property");
-            final String  value      = properties.getProperty(key);
-            if (!collated.containsKey(providerId)) {
-                collated.put(providerId, new Properties());
+            try {
+                final Matcher matcher    = PROPERTY_NAME_VALUE_PATTERN.matcher(key);
+                final String  providerId = matcher.group("providerId");
+                final String  property   = matcher.group("property");
+                final String  value      = properties.getProperty(key);
+                if (!collated.containsKey(providerId)) {
+                    collated.put(providerId, new Properties());
+                }
+                collated.get(providerId).setProperty(property, value);
+            } catch (IllegalStateException e) {
+                log.error("A provider property key should be in the form \"provider.<providerId>.<property>\", skipping {}={}", key, properties.getProperty(key));
             }
-            collated.get(providerId).setProperty(property, value);
         }
         return collated.values();
     }

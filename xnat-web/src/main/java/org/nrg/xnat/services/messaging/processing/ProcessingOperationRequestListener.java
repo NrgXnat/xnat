@@ -10,6 +10,7 @@
 package org.nrg.xnat.services.messaging.processing;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.messaging.JmsRequestListener;
 import org.nrg.xnat.helpers.processing.handlers.ProcessingOperationHandler;
 import org.nrg.xnat.helpers.processing.handlers.ProcessingOperationHandlerResolver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +23,13 @@ import static java.util.stream.Collectors.joining;
 
 @Component
 @Slf4j
-public class ProcessingOperationRequestListener {
+public class ProcessingOperationRequestListener implements JmsRequestListener<ProcessingOperationRequest<? extends ProcessingOperationRequestData>> {
     @Autowired
     public ProcessingOperationRequestListener(final ProcessingOperationHandlerResolver resolver) {
         _resolver = resolver;
     }
 
-    @JmsListener(destination = "processingOperationRequest", containerFactory = "listenerContainerFactory")
+    @JmsListener(id = "processingOperationRequest", destination = "processingOperationRequest")
     public void onRequest(final ProcessingOperationRequest<? extends ProcessingOperationRequestData> request) {
         final ProcessingOperationRequestData   data     = request.getRequestData();
         final List<ProcessingOperationHandler> handlers = _resolver.getHandlers(data);

@@ -3,6 +3,7 @@ package org.nrg.xnat.eventservice.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.model.XnatExperimentdataI;
 import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
@@ -116,6 +117,16 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     }
 
     @Override
+    public List<String> getStoredScanResourceLabels(XnatImagescandataI scan) {
+        List<String> labels = new ArrayList<>();
+        final List<Map<String, Object>> resources = simpleQuery(QUERY_SCANRESOURCELABEL, "scanId", scan.getXnatImagescandataId());
+        if(resources != null){
+            resources.forEach(rc->labels.add((String) rc.get("label")));
+        }
+        return labels;
+    }
+
+    @Override
     public boolean storedInDatabase(XnatImageassessordataI assessor) {
         List<Map<String, Object>> result = simpleQuery(QUERY_IMAGEASSESSORDATA, "imageAssessorId", assessor.getId());
         if(result != null && !result.isEmpty()){
@@ -148,6 +159,14 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
         return null;
     }
 
+    private List<Map<String, Object>> simpleQuery(String queryString, String parameterName, Integer parameterValue){
+        try {
+            return jdbcTemplate.queryForList(queryString, new MapSqlParameterSource(parameterName, parameterValue));
+        } catch (Throwable e){
+            log.error("XnatObjectIntrospectionService DB query failed. " + e.getMessage());
+        }
+        return null;
+    }
 
     private static final String QUERY_IS_EXPERIMENT_MODIFIED =  "SELECT xnat_experimentdata_meta_data.modified AS modified FROM xnat_experimentdata_meta_data WHERE meta_data_id IN " +
                                                                     "(SELECT experimentdata_info FROM xnat_experimentData WHERE id = :experimentId)";
@@ -173,6 +192,8 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     private static final String QUERY_COUNT_SUBJECTASESSORS_BY_ID = "SELECT COUNT(id) from xnat_subjectassessordata WHERE id = :subjectAssessorId";
 
     private static final String QUERY_SCANDATAID = "SELECT id FROM xnat_imagescandata WHERE image_session_id = :experimentId";
+
+    private static final String QUERY_SCANRESOURCELABEL = "SELECT label FROM xnat_abstractresource WHERE xnat_imagescandata_xnat_imagescandata_id = :scanId";
 
     private static final String COUNT_PROJECTDATA_RESOURCES = "SELECT COUNT(*) FROM xnat_projectdata_meta_data WHERE meta_data_id IN (SELECT projectdata_info FROM xnat_projectdata WHERE id = :projectId)";
 }

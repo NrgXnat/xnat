@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Import;
 import java.io.IOException;
 
 @Configuration
-@ComponentScan("org.nrg.config.daos")
+@ComponentScan({"org.nrg.config.daos", "org.nrg.prefs.repositories"})
 @Import(NrgPrefsConfiguration.class)
 public class PreferencesConfig {
     @Bean

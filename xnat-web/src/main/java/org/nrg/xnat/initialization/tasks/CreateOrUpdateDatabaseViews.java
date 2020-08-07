@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.servlet.XDATServlet;
@@ -53,6 +54,14 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_search.xs_item_access'.", e);
+            }
+
+            try {
+                if (_helper.tableExists("xs_item_cache") && StringUtils.isBlank(_helper.columnExists("xs_item_cache", "id"))) {
+                    _helper.getJdbcTemplate().update("ALTER TABLE xs_item_cache ADD COLUMN id BIGSERIAL PRIMARY KEY");
+                }
+            } catch (SQLException e) {
+                throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table and column 'xs_item_cache.id'.", e);
             }
 
             if (!shouldUpdateViews) {

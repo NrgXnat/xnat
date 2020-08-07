@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="ImageAssessorEvent")
 public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, XnatImageassessordataI> {
 
-    public enum Status {CREATED};
+    public enum Status {CREATED, UPDATED};
 
     public ImageAssessorEvent(){};
 

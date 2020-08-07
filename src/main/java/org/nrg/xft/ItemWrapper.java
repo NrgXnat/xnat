@@ -209,7 +209,7 @@ public abstract class ItemWrapper implements ItemI {
         } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("", e);
         }
-        return item.getItem();
+        return item != null ? item.getItem() : XFTItem.NewEmptyItem(null);
     }
 
     public void extend(boolean allowMultiples) throws Exception {

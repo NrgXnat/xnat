@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.7-INTERNAL</version>
+    <version>1.7.7.1-INTERNAL</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -65,11 +65,12 @@
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.7.7-INTERNAL</xnat.version>
-        <xnat-web.version>${xnat.version}</xnat-web.version>
+        <patch.version>1.7.7.1-INTERNAL</patch.version>
+        <xnat-web.version>${patch.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
+        <xnat-data-models.version>${patch.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
         <xdat.version>${xnat.version}</xdat.version>
 

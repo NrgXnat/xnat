@@ -306,17 +306,10 @@ public class SubjectResource extends ItemResource {
                         sub.setProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender", this.getQueryVariable("gender"));
                     }
 
-                    if (StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.isValidId(sub.getId())) {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in subject label.");
+                    if (!validateSubject(sub)) {
                         return;
                     }
 
-                    final ValidationResults vr = sub.validate();
-                    if (vr != null && !vr.isValid()) {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, vr.toFullString());
-                        return;
-                    }
-                    
                     PersistentWorkflowI wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, sub.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(sub.getXSIType(), (existing == null))));
                     EventMetaI c = wrk.buildEvent();
 

@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.helpers.merge.anonymize;
 
-import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
@@ -22,8 +22,6 @@ import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -33,8 +31,11 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@SuppressWarnings("RedundantThrows")
 @Service
+@Slf4j
 public class DefaultAnonUtils implements AnonUtils {
     @Autowired
     public DefaultAnonUtils(final ConfigService configService, final CacheManager cacheManager) throws Exception {
@@ -55,23 +56,22 @@ public class DefaultAnonUtils implements AnonUtils {
 
     public static String getDefaultScript() throws IOException {
         final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_ANON_SCRIPT);
-        if (resources.size() == 0) {
+        if (resources.isEmpty()) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Didn't find any default anonymization scripts at: " + DEFAULT_ANON_SCRIPT);
-        } else if (resources.size() > 1) {
-            boolean isFirst = true;
-            final StringBuilder duplicates = new StringBuilder();
-            for (final Resource resource : resources) {
-                if (!isFirst) {
-                    duplicates.append(", ");
-                } else {
-                    isFirst = false;
-                }
-                duplicates.append(resource.getURI());
-            }
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + duplicates.toString());
+        }
+        if (resources.size() > 1) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + resources.stream().map(DefaultAnonUtils::getURI).collect(Collectors.joining(", ")));
         }
         try (final InputStream input = resources.get(0).getInputStream()) {
-            return Joiner.on("\n").join(IOUtils.readLines(input, "UTF-8"));
+            return StringUtils.join(IOUtils.readLines(input, "UTF-8"), "\n");
+        }
+    }
+
+    private static String getURI(final Resource resource) {
+        try {
+            return resource.getURI().toString();
+        } catch (IOException e) {
+            return resource.toString();
         }
     }
 
@@ -99,8 +99,8 @@ public class DefaultAnonUtils implements AnonUtils {
     public Configuration getProjectScriptConfiguration(final String projectId) {
         final boolean isSiteWide = StringUtils.isBlank(projectId);
         final String path = isSiteWide ? SITE_WIDE_PATH : DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Retrieving script for {}, {}", DicomEdit.ToolName, path, projectId);
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving script for tool {} path {} for project {}", DicomEdit.ToolName, path, projectId);
         }
 
         return isSiteWide
@@ -116,12 +116,12 @@ public class DefaultAnonUtils implements AnonUtils {
     @Override
     public boolean isProjectScriptEnabled(final String projectId) {
         final Configuration config = getProjectScriptConfiguration(projectId);
-        final boolean enabled = config.getStatus().equals(Configuration.ENABLED_STRING);
-        if (logger.isDebugEnabled()) {
+        final boolean enabled = config != null && config.getStatus().equals(Configuration.ENABLED_STRING);
+        if (log.isDebugEnabled()) {
             if (StringUtils.isNotBlank(projectId)) {
-                logger.debug("Retrieved status {} for the site-wide anonymization script", enabled);
+                log.debug("Retrieved status {} for the site-wide anonymization script", enabled);
             } else {
-                logger.debug("Retrieved status {} for the anonymization script for project {}", enabled, projectId);
+                log.debug("Retrieved status {} for the anonymization script for project {}", enabled, projectId);
             }
         }
         return enabled;
@@ -139,14 +139,14 @@ public class DefaultAnonUtils implements AnonUtils {
                                             ? _configService.getConfigsByTool(DicomEdit.ToolName)
                                             : _configService.getConfigsByTool(DicomEdit.ToolName, Scope.Project, projectId);
 
-        if (logger.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             final String identifier = isSiteWide ? "the site" : "project: " + projectId;
             if (scripts == null) {
-                logger.debug("Retrieved no scripts for {}, {} for {}", DicomEdit.ToolName, identifier);
+                log.debug("Retrieved no scripts for tool {} identifier {}", DicomEdit.ToolName, identifier);
             } else if (scripts.size() == 0) {
-                logger.debug("Retrieved no scripts for {}, {} for {}", DicomEdit.ToolName, identifier);
+                log.debug("Retrieved no scripts for tool {} identifier {}", DicomEdit.ToolName, identifier);
             } else {
-                logger.debug("Retrieved {} scripts for {}, {} for {}", scripts.size(), DicomEdit.ToolName, identifier);
+                log.debug("Retrieved {} scripts for tool {} identifier {}", scripts.size(), DicomEdit.ToolName, identifier);
             }
         }
 
@@ -155,8 +155,8 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public String getStudyScript(String studyId) throws ConfigServiceException{
-        if (logger.isDebugEnabled()) {
-            logger.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
+        if (log.isDebugEnabled()) {
+            log.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
         }
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
         final boolean enabled = StringUtils.equals(_configService.getStatus(DicomEdit.ToolName, path, Scope.Site, studyId),Configuration.ENABLED_STRING);
@@ -170,8 +170,8 @@ public class DefaultAnonUtils implements AnonUtils {
 
     public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException{
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
-        if (logger.isDebugEnabled()) {
-            logger.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, studyId);
+        if (log.isDebugEnabled()) {
+            log.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, studyId);
         }
         if (studyId == null) {
             XDAT.getConfigService().replaceConfig(login, "", DicomEdit.ToolName, path, script);
@@ -183,8 +183,8 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public String getProjectScript(final String projectId) throws ConfigServiceException {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Getting {} script for project: {}", DicomEdit.ToolName, projectId);
+        if (log.isDebugEnabled()) {
+            log.debug("Getting {} script for project: {}", DicomEdit.ToolName, projectId);
         }
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
         return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Project, projectId);
@@ -193,8 +193,8 @@ public class DefaultAnonUtils implements AnonUtils {
     @Override
     public void setProjectScript(final String login, final String script, final String projectId) throws ConfigServiceException {
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
-        if (logger.isDebugEnabled()) {
-            logger.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, projectId);
+        if (log.isDebugEnabled()) {
+            log.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, projectId);
         }
         if (projectId == null) {
             _configService.replaceConfig(login, "", DicomEdit.ToolName, path, script);
@@ -205,16 +205,16 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public String getSiteWideScript() throws ConfigServiceException {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Getting {} site-wide script", DicomEdit.ToolName);
+        if (log.isDebugEnabled()) {
+            log.debug("Getting {} site-wide script", DicomEdit.ToolName);
         }
         return _configService.getConfigContents(DicomEdit.ToolName, SITE_WIDE_PATH);
     }
 
     @Override
     public void setSiteWideScript(String login, String script) throws ConfigServiceException {
-        if (logger.isDebugEnabled()) {
-            logger.debug("User {} is setting {} site-wide script", login, DicomEdit.ToolName);
+        if (log.isDebugEnabled()) {
+            log.debug("User {} is setting {} site-wide script", login, DicomEdit.ToolName);
         }
         _configService.replaceConfig(login, "", DicomEdit.ToolName, SITE_WIDE_PATH, script);
         invalidateSitewideAnonCache();
@@ -259,8 +259,6 @@ public class DefaultAnonUtils implements AnonUtils {
             _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Site, studyId);
         }
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(AnonUtils.class);
 
     private static final String DEFAULT_ANON_SCRIPT       = "classpath*:META-INF/xnat/defaults/**/id.das";
     private static final String SITE_WIDE_PATH            = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);

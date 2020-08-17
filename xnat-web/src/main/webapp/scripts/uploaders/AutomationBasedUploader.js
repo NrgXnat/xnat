@@ -628,11 +628,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			doneFunction:function(){
 					// Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
 					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
-						XNAT.app.abu.updateResourceStats();
-						// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
-						if (!XNAT.app.abu.filesProcessed) {
-							XNAT.app.abu.sendWorkflowWhenDone();
-						}
+						XNAT.app.abu.completeFileUpload();
 					}
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
 					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
@@ -683,6 +679,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						$("#xmodal-abu-cancel-button").hide();
 						$('#xmodal-abu-done-button').show();
 						$('#xmodal-abu-process-button').hide();
+						XNAT.app.abu.runFunctionIfIdle(60000, XNAT.app.abu.completeFileUpload);
 					}
 				},
 			processFunction:function(){
@@ -1710,6 +1707,42 @@ XNAT.app.abu.updateEmailOptionStatus=function() {
 	} else {
 		$('#ULC_RB_emailOptionChecked').prop("disabled",false);
 		$('#ULC_RB_showCloseWindowOption').prop("disabled",false);
+	}
+}
+
+XNAT.app.abu.idleTimer = undefined;
+XNAT.app.abu.markNotIdle = function() {
+	if (XNAT.app.abu.idleTimer) {
+		for (let i = 0; i < actionsList.length; i++) {
+			window.removeEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+		}
+		window.removeEventListener('scroll', XNAT.app.abu.markNotIdle, true);
+		clearTimeout(XNAT.app.abu.idleTimer);
+	}
+}
+const actionsList = ['load', 'mousemove', 'mousedown', 'touchstart', 'click', 'keypress'];
+XNAT.app.abu.runFunctionIfIdle = function(timeoutms, toRun) {
+	for (let i = 0; i < actionsList.length; i++) {
+		window.addEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+	}
+	window.addEventListener('scroll', XNAT.app.abu.markNotIdle, true);
+
+	// if session is going to end inside the timeout window (1 sec cushion), run now.
+	let diff = XNAT.app.timeout.endTime - new Date().getTime();
+	if (diff < 1000) {
+		toRun();
+	} else if (diff < timeoutms) {
+		XNAT.app.abu.idleTimer = setTimeout(toRun, 1000);
+	} else {
+		XNAT.app.abu.idleTimer = setTimeout(toRun, timeoutms);
+	}
+}
+
+XNAT.app.abu.completeFileUpload = function() {
+	XNAT.app.abu.updateResourceStats();
+	// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
+	if (!XNAT.app.abu.filesProcessed) {
+		XNAT.app.abu.sendWorkflowWhenDone();
 	}
 }
 

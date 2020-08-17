@@ -126,6 +126,12 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                 $('#' + id + '-done-button').show();
                 if ($('.abu-upload-complete-text').length === 0) {
                     $('#' + id + '-process-button').prop('disabled', true);
+                } else {
+                    if (!interval) {
+                        XNAT.app.abu.runFunctionIfIdle(60000, function() {
+                            $('#' + id + '-process-button').click();
+                        });
+                    }
                 }
             },
             processFunction: function(){},

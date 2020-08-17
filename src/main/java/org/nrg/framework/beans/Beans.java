@@ -9,8 +9,6 @@
 
 package org.nrg.framework.beans;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,14 +23,20 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Beans {
     public static <T> T getInitializedBean(final Properties properties, final Class<? extends T> clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        return getInitializedBean(properties.keySet().stream().map(Object::toString).collect(Collectors.toMap(Function.identity(), properties::get)), clazz);
+    }
+
+    public static <T> T getInitializedBean(final Map<String, Object> properties, final Class<? extends T> clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
         final T bean = clazz.newInstance();
-        for (final Object key : properties.keySet()) {
-            BeanUtils.setProperty(bean, key.toString(), properties.get(key));
+        for (final String key : properties.keySet()) {
+            BeanUtils.setProperty(bean, key, properties.get(key));
         }
         return bean;
     }
@@ -66,12 +70,8 @@ public class Beans {
     }
 
     public static Properties getNamespacedProperties(final Collection<Properties> properties, final String namespace, final boolean truncate) {
-        return getNamespacedProperties(Iterables.transform(properties, new Function<Properties, PropertySource<?>>() {
-            @Override
-            public PropertiesPropertySource apply(final Properties props) {
-                return new PropertiesPropertySource(StringUtils.defaultIfBlank(namespace, "namespacedProperties"), props);
-            }
-        }), namespace, truncate);
+        final String resolved = StringUtils.defaultIfBlank(namespace, "namespacedProperties");
+        return getNamespacedProperties(properties.stream().map(props -> new PropertiesPropertySource(resolved, props)).collect(Collectors.toList()), namespace, truncate);
     }
 
     public static Properties getNamespacedProperties(final Iterable<PropertySource<?>> propertySources, final String namespace, final boolean truncate) {

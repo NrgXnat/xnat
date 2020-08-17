@@ -1054,7 +1054,7 @@ public class PoolDBUtils {
 	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
 	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +
 															  "\n(" +
-															  "\n  id SERIAL PRIMARY KEY," +
+															  "\n  id BIGSERIAL PRIMARY KEY," +
 															  "\n  elementName VARCHAR(255) NOT NULL," +
 															  "\n  ids VARCHAR(255) NOT NULL," +
 															  "\n  create_date timestamp DEFAULT now()," +

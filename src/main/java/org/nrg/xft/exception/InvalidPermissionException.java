@@ -9,6 +9,8 @@
 
 package org.nrg.xft.exception;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * @author Tim
  */
@@ -24,6 +26,9 @@ public class InvalidPermissionException extends XftItemException {
         super("The user " + username + " has insufficient privileges for the '" + dataType + "' item with ID '" + itemId + "'.");
     }
     public InvalidPermissionException(final String username, final String action, final String dataType, final String itemId) {
-        super("The user " + username + " has insufficient privileges to " + action + " the '" + dataType + "' item with ID '" + itemId + "'.");
+        super("The user " + username + " has insufficient privileges to " + action + " the '" + dataType + (itemId != null ? "' item with ID '" + itemId + "'." : ""));
+    }
+    public InvalidPermissionException(final String username, final String action, final String dataType, final String itemId, final String message) {
+        super("The user " + username + " has insufficient privileges to " + action + " the '" + dataType + (StringUtils.isNotBlank(itemId) ? "' item with ID '" + itemId + "'." : "") + (StringUtils.isNotBlank(message) ? ": " + message : ""));
     }
 }

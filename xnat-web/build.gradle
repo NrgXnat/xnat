@@ -6,7 +6,6 @@
  *  
  * Released under the Simplified BSD.
  */
-
 buildscript {
     ext {
         vXnat = "1.8.0-SNAPSHOT"
@@ -21,8 +20,9 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
-        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.1"
-        classpath "io.franzbecker:gradle-lombok:3.3.0"
+        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.3"
+        classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.5"
+        classpath "io.franzbecker:gradle-lombok:4.0.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
     }
 }
@@ -39,6 +39,7 @@ apply plugin: "maven-publish"
 apply plugin: "war"
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.dorongold.task-tree"
 apply plugin: "com.palantir.git-version"
 apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "io.spring.dependency-management"
@@ -137,15 +138,13 @@ dependencyManagement {
     }
 }
 
-def vMockito = '1.10.19'
-def vPowerMock = '1.7.0'
-
 configurations.all {
-    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
+    resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
 }
 
 dependencies {
     annotationProcessor "org.nrg:framework"
+    annotationProcessor "com.google.auto.value:auto-value"
 
     api platform("org.nrg:parent:${vXnat}")
     implementation platform("org.nrg:parent:${vXnat}")
@@ -165,6 +164,12 @@ dependencies {
     api "org.springframework:spring-core"
 
     implementation "org.nrg.xnat:spawner"
+
+    implementation("org.nrg.xnat:xnat-data-models") {
+        transitive = false
+    }
+    implementation "org.nrg.xdat:core"
+    implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"
@@ -172,6 +177,7 @@ dependencies {
     implementation "org.nrg:dicomtools"
     implementation "org.nrg.dicom:dicom-edit4"
     implementation "org.nrg.dicom:dicom-edit6"
+    implementation "org.nrg.dicom:pixelEditor"
     implementation "org.nrg:mail"
     implementation "org.nrg:notify"
 
@@ -241,6 +247,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "com.jayway.jsonpath:json-path"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
 
@@ -261,6 +268,7 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
+    implementation "org.codehaus.groovy.modules.http-builder:http-builder"
 
     implementation "eu.bitwalker:UserAgentUtils"
     implementation "com.twmacinta:fast-md5"
@@ -277,8 +285,8 @@ dependencies {
     implementation "javax.servlet:jstl"
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
-
     implementation "org.postgresql:postgresql"
+    implementation "net.ttddyy:datasource-proxy"
 
     implementation "org.slf4j:slf4j-api"
     implementation "org.slf4j:jul-to-slf4j"
@@ -287,9 +295,9 @@ dependencies {
     implementation "ch.qos.logback:logback-classic"
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
+    implementation "com.google.auto.value:auto-value-annotations"
 
     providedCompile "com.google.code.findbugs:jsr305"
-    providedCompile "junit:junit"
     providedCompile "javax.servlet:javax.servlet-api"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
@@ -301,7 +309,6 @@ dependencies {
     runtimeOnly "axis:axis-schema"
     runtimeOnly "cglib:cglib"
     runtimeOnly "org.hsqldb:hsqldb"
-    runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
     runtimeOnly "net.imagej:ij"
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
@@ -309,8 +316,8 @@ dependencies {
     runtimeOnly "org.python:jython-standalone"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+           "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
           "org.codehaus.cargo:cargo-ant",
@@ -323,10 +330,12 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
-    testImplementation "org.hamcrest:hamcrest-core:2.2"
+    testImplementation "org.springframework.security:spring-security-test"
+    testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.powermock:powermock-module-junit4"
     testImplementation "org.powermock:powermock-api-mockito2"
+    testImplementation "org.powermock:powermock-module-junit4"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

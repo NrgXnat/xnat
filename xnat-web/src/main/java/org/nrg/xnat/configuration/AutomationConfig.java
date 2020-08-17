@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@ComponentScan({"org.nrg.automation.services.impl.hibernate", "org.nrg.automation.repositories"})
+@ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.automation.services.impl.hibernate"})
 public class AutomationConfig {
 
     @Bean

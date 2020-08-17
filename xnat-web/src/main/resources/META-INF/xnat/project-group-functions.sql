@@ -9,7 +9,8 @@ DROP FUNCTION IF EXISTS public.project_groups_create_mappings(projectId VARCHAR(
 DROP FUNCTION IF EXISTS public.project_groups_get_groups_and_permissions(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_create_groups_and_permissions(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_fix_irregular_settings();
-DROP FUNCTION IF EXISTS public.project_groups_get_setting_flip_value(element_name VARCHAR(255), mismatched_value INTEGER);
+DROP FUNCTION IF EXISTS public.project_groups_fix_irregular_settings(executeFixQueries BOOLEAN);
+DROP FUNCTION IF EXISTS public.project_groups_get_setting_flip_value(elementName VARCHAR(255), mismatchedValue INTEGER);
 DROP VIEW IF EXISTS public.project_groups_find_irregular_settings;
 
 CREATE OR REPLACE VIEW public.project_groups_find_irregular_settings AS
@@ -622,24 +623,24 @@ END
 $$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.project_groups_get_setting_flip_value(element_name VARCHAR(255), mismatched_value INTEGER)
+CREATE OR REPLACE FUNCTION public.project_groups_get_setting_flip_value(elementName VARCHAR(255), mismatchedValue INTEGER)
     RETURNS VARCHAR(255)
 AS
 $$
 BEGIN
-    IF mismatched_value IS NULL
+    IF mismatchedValue IS NULL
     THEN
         RETURN NULL;
-    ELSEIF mismatched_value = 1
+    ELSEIF mismatchedValue = 1
     THEN
-        RETURN element_name || '_element = 0';
+        RETURN elementName || '_element = 0';
     END IF;
-    RETURN element_name || '_element = 1';
+    RETURN elementName || '_element = 1';
 END
 $$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.project_groups_fix_irregular_settings()
+CREATE OR REPLACE FUNCTION public.project_groups_fix_irregular_settings(executeFixQueries BOOLEAN DEFAULT FALSE)
     RETURNS SETOF INTEGER
 AS
 $$
@@ -647,6 +648,10 @@ BEGIN
     DECLARE
         current_index RECORD;
     BEGIN
+        IF executeFixQueries = FALSE
+        THEN
+            RAISE NOTICE 'Dry run specified, queries will be displayed but not executed.';
+        END IF;
         FOR current_index IN SELECT * FROM project_groups_find_irregular_settings
             LOOP
                 DECLARE
@@ -661,7 +666,10 @@ BEGIN
                                                    project_groups_get_setting_flip_value('active', current_index.mismatched_active_value)),
                                          current_index.xdat_field_mapping_id);
                     RAISE NOTICE 'Fixing irregular permissions for field mapping % with SQL: %', current_index.xdat_field_mapping_id, update_sql;
-                    EXECUTE update_sql;
+                    IF executeFixQueries = TRUE
+                    THEN
+                        EXECUTE update_sql;
+                    END IF;
                 END;
                 RETURN NEXT current_index.xdat_field_mapping_id;
             END LOOP;

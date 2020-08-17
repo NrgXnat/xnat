@@ -285,6 +285,7 @@ var XNAT = getObject(XNAT);
             $form.find('[name="XNAT_CSRF"]').remove();
             $form.submitJSON({
                 // dataType: 'text/plain',
+                stringValues: ['projectIds[]'],
                 validate: function(){
                     var errorMsg = '';
                     var sessionSelected, countChecked;

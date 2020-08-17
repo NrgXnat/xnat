@@ -24,7 +24,6 @@ import java.util.*;
 import org.nrg.dicom.mizer.service.MizerService;
 
 @Configuration
-@ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
 public class ProcessorImporterConfig {
     @Bean
     @Primary

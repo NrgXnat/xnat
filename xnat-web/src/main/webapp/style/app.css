@@ -1122,6 +1122,7 @@ body [type="reset"] {
     letter-spacing: 0.02em;
     text-decoration: none;
     box-shadow: 0 1px 1px rgba(153,153,153,0.4);
+    margin: 0;
 }
 
 /* style for button hover */
@@ -3321,6 +3322,49 @@ th.sort:hover {
 
 .data-table-wrapper.no-body .xnat-table.data-table {
     border-bottom: 1px solid #ccc;
+}
+
+/* override datatable.css */
+.dataTables_length {
+    margin-bottom: 1em;
+}
+
+.paginate_disabled_previous, .paginate_enabled_previous,
+.paginate_disabled_next, .paginate_enabled_next {
+    background: none;
+}
+.paginate_disabled_previous:before, .paginate_enabled_previous:before,
+.paginate_disabled_next:after, .paginate_enabled_next:after {
+    font-family: "FontAwesome";
+    content: "\f053";
+    display: inline-block;
+    margin: 0 4px;
+    width: 1em;
+}
+.paginate_disabled_next:after, .paginate_enabled_next:after {
+    content: "\f054";
+}
+.paginate_disabled_previous:before, .paginate_disabled_next:before {
+    color: #f0f0f0;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 3px 7px;
+}
+.dataTables_wrapper .dataTables_paginate,
+.dataTables_wrapper .dataTables_info {
+    display: inline-block;
+    padding-top: 1em;
+    width: 50%
+}
+.dataTables_wrapper .dataTables_paginate {
+    text-align: right;
+}
+table.dataTable thead input,
+table.data-table thead input {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 /* container for data tables in report page panels */

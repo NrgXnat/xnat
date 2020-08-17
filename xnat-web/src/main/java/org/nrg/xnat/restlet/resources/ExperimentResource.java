@@ -14,7 +14,12 @@ import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatExperimentdataShare;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -69,10 +74,10 @@ public class ExperimentResource extends ItemResource {
     }
 
     @Override
-    public Representation represent(Variant variant) throws ResourceException {
-        final MediaType mt = overrideVariant(variant);
+    public Representation represent(final Variant variant) throws ResourceException {
+        final MediaType mediaType = overrideVariant(variant);
 
-        if (_experiment == null && _experimentId != null) {
+        if (_experiment == null && StringUtils.isNotBlank(_experimentId)) {
             final UserI user = getUser();
             _experiment = XnatExperimentdata.getXnatExperimentdatasById(_experimentId, user, false);
 
@@ -83,29 +88,26 @@ public class ExperimentResource extends ItemResource {
             }
         }
 
-        if (_experiment != null) {
-            if (filepath != null && !filepath.equals("") && filepath.equals("status")) {
-
-                return returnStatus(_experiment, mt);
-            } else if (filepath != null && !filepath.equals("") && filepath.equals("history")) {
-                try {
-                    return buildChangesets(_experiment.getItem(), _experiment.getStringProperty("ID"), mt);
-                } catch (Exception e) {
-                    logger.error("", e);
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-                    return null;
-                }
-            } else if (StringUtils.startsWith(filepath, "projects")) {
-                return representProjectsForArchivableItem(_experiment.getLabel(), _experiment.getPrimaryProject(false), _experiment.getProjectDatas(), mt);
-            } else {
-                return representItem(_experiment.getItem(), mt);
-            }
-        } else {
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,
-                    "Unable to find the specified experiment.");
+        if (_experiment == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified experiment.");
             return null;
         }
 
+        if (StringUtils.equals(filepath, "status")) {
+            return returnStatus(_experiment, mediaType);
+        } else if (StringUtils.equals(filepath, "history")) {
+            try {
+                return buildChangesets(_experiment.getItem(), _experiment.getStringProperty("ID"), mediaType);
+            } catch (Exception e) {
+                logger.error("", e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                return null;
+            }
+        } else if (StringUtils.startsWith(filepath, "projects")) {
+            return representProjectsForArchivableItem(_experiment.getLabel(), _experiment.getPrimaryProject(false), _experiment.getProjectDatas(), mediaType);
+        } else {
+            return representItem(_experiment.getItem(), mediaType);
+        }
     }
 
     @Override

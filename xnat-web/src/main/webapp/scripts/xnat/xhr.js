@@ -504,6 +504,12 @@ var XNAT = getObject(XNAT||{}),
         return $el;
     }
 
+    function form2jsProxy(inputs, opts) {
+        if (opts.stringValues) {
+            return form2js(inputs, opts.delimiter||opts.delim||':', false, null, null, null, opts.stringValues);
+        }
+        return form2js(inputs, opts.delimiter||opts.delim||':', false);
+    }
 
     // accept either a form element or array (or collection)
     // of input elements for the 'inputs' argument
@@ -642,7 +648,8 @@ var XNAT = getObject(XNAT||{}),
             }
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
-                opts.data = firstDefined(opts.data, JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false)));
+                const json = form2jsProxy(_inputs, opts);
+                opts.data = firstDefined(opts.data, JSON.stringify(json));
                 opts.processData = false;
                 if (opts.contentType === 'text/json') {
                     opts.contentType = 'text/plain';

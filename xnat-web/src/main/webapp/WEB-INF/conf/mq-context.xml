@@ -46,6 +46,7 @@
             <amq:redeliveryPolicy queue="moveStoredFileRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#moveStoredFileRequest"/>
             <amq:redeliveryPolicy queue="prearchiveOperationRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#prearchiveOperationRequest"/>
             <amq:redeliveryPolicy queue="initializeGroupRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#initializeGroupRequest"/>
+            <amq:redeliveryPolicy queue="processingOperationRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#processingOperationRequest"/>
             <!-- Additional redelivery policies go here; otherwise default is used. The destination attribute is not apparently used, but is required. -->
         </amq:redeliveryPolicyEntries>
     </amq:redeliveryPolicyMap>
@@ -67,6 +68,7 @@
     <amq:queue id="prearchiveOperationRequest" physicalName="prearchiveOperationRequest" />
     <amq:queue id="initializeGroupRequest" physicalName="initializeGroupRequest" />
     <amq:queue id="dicomInboxImportRequest" physicalName="dicomInboxImportRequest" />
+    <amq:queue id="processingOperationRequest" physicalName="processingOperationRequest" />
     <!-- new request types go here -->
 
     <!-- listeners for new request types go here -->

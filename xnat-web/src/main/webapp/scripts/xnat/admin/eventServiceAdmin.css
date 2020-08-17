@@ -1,0 +1,21 @@
+form.panel.invalid:before {
+    background: #ffeaf5;
+    border: 1px solid #ccc;
+    content: "This subscription is invalid.";
+    display: block;
+    margin-bottom: 1em;
+    padding: 10px;
+}
+form.panel textarea.disabled {
+    background-color: #f9f9f9;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+}
+
+.xnat-table tr.invalid td:first-child:after {
+    color: #ccc;
+    font-size: 10px;
+    text-transform: uppercase;
+    content: 'Invalid';
+    display: block;
+}

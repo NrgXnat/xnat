@@ -107,7 +107,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         }
     }
 
-    public A call() throws ClientException, ServerException {
+    public A call() throws ClientException, ServerException, IOException {
         processing("Preparing to move uploaded resources into destination directory.");
         File backupDIR  = null;
         this.checkForConflict();

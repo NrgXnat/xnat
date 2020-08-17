@@ -15,6 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -80,6 +81,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                     final Authentication authResult = getAuthenticationManager().authenticate(authRequest);
                     _authenticationStrategy.onAuthentication(authResult, request, response);
 
+                    AccessLogger.LogServiceAccess(username, request, "Authentication", "SUCCESS");
                     log.debug("Authentication success, got principal of type {}", authResult.getClass().getName());
 
                     SecurityContextHolder.getContext().setAuthentication(authResult);
@@ -91,7 +93,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                     SecurityContextHolder.getContext().setAuthentication(null);
                     onUnsuccessfulAuthentication(request, response, failed);
 
-                    XnatAuthenticationFilter.logFailedAttempt(username, request); //originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
+                    XnatAuthenticationFilter.logFailedAttempt(username, request, failed); //originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AdminUtils.GetLoginFailureMessage());
                     return;
                 }

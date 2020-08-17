@@ -70,6 +70,8 @@ import org.nrg.xft.presentation.ItemJSONBuilder;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
@@ -1744,7 +1746,7 @@ public abstract class SecureResource extends Resource {
         try {
             new Rename(proj, existing, label, user, getReason(), getEventType()).call();
         } catch (Rename.ProcessingInProgress e) {
-            final String message = "Specified session is being processed (" + e.getPipeline_name() + ").";
+            final String message = "Specified session is being processed (" + e.getPipelineName() + ").";
             logger.error(message, e);
             getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, message);
             return false;
@@ -1941,6 +1943,21 @@ public abstract class SecureResource extends Resource {
             response.setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "No extra path information is permitted for this operation.");
             return false;
         }
+        return true;
+    }
+
+    protected boolean validateSubject(final XnatSubjectdata subject) throws Exception {
+        if (StringUtils.isNotBlank(subject.getLabel()) && !XftStringUtils.isValidId(subject.getId())) {
+            getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in subject label.");
+            return false;
+        }
+
+        final ValidationResults results = subject.validate();
+        if (results != null && !results.isValid()) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, results.toFullString());
+            return false;
+        }
+
         return true;
     }
 

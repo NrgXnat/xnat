@@ -25,8 +25,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
-import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -72,123 +70,109 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 
 	@Override
 	public void handlePost() {
-	        XFTItem item = null;			
+		XFTItem item;
 
-			try {
-			item=this.loadItem("xnat:subjectData",true);
+		try {
+			item = this.loadItem("xnat:subjectData", true);
 
-				final UserI user = getUser();
-				if(item == null){
-					item=XFTItem.NewItem("xnat:subjectData", user);
+			final UserI user = getUser();
+			if (item == null) {
+				item = XFTItem.NewItem("xnat:subjectData", user);
+			}
+
+			if (item.instanceOf("xnat:subjectData")) {
+				XnatSubjectdata sub = new XnatSubjectdata(item);
+
+				if (sub.getExperiments_experiment().size() > 0) {
+					this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must not include subject assessors.");
+					return;
 				}
-				
-				if(item.instanceOf("xnat:subjectData")){
-					XnatSubjectdata sub = new XnatSubjectdata(item);
 
-					if(sub.getExperiments_experiment().size()>0){
-						this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted subject record must not include subject assessors.");
-						return;
-					}
-					
-					if(this.proj==null && sub.getProject()!=null){
-						proj = XnatProjectdata.getXnatProjectdatasById(sub.getProject(), user, false);
-					}
-					
-					if(this.proj!=null){
-						if(sub.getProject()==null || sub.getProject().equals("")){
-							sub.setProject(this.proj.getId());
-						}else if(sub.getProject().equals(this.proj.getId())){
-						}else{
-							boolean matched=false;
-							for(XnatProjectparticipantI pp : sub.getSharing_share()){
-								if(pp.getProject().equals(this.proj.getId())){
-									matched=true;
-									break;
-								}
-							}
-							
-							if(!matched){
-								XnatProjectparticipantI pp= new XnatProjectparticipant(user);
-								((XnatProjectparticipant)pp).setProject(this.proj.getId());
-								sub.setSharing_share((XnatProjectparticipant)pp);
-							}
-						}
-					}else{
-						this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted subject record must include the project attribute.");
-						return;
-					}
+				if (this.proj == null && sub.getProject() != null) {
+					proj = XnatProjectdata.getXnatProjectdatasById(sub.getProject(), user, false);
+				}
 
-					XnatSubjectdata existing=null;
-					if(sub.getId()!=null){
-						existing=XnatSubjectdata.getXnatSubjectdatasById(sub.getId(), user, completeDocument);
-					}
-					
-					if(existing==null && sub.getProject()!=null && sub.getLabel()!=null){
-					existing=XnatSubjectdata.GetSubjectByProjectIdentifier(sub.getProject(), sub.getLabel(), user, completeDocument);
-					}
-					
-					if(existing==null){
-						for(XnatProjectparticipantI pp : sub.getSharing_share()){
-						existing=XnatSubjectdata.GetSubjectByProjectIdentifier(pp.getProject(), pp.getLabel(), user, completeDocument);
-							if(existing!=null){
+				if (this.proj != null) {
+					if (sub.getProject() == null || sub.getProject().equals("")) {
+						sub.setProject(this.proj.getId());
+					} else if (sub.getProject().equals(this.proj.getId())) {
+					} else {
+						boolean matched = false;
+						for (XnatProjectparticipantI pp : sub.getSharing_share()) {
+							if (pp.getProject().equals(this.proj.getId())) {
+								matched = true;
 								break;
 							}
 						}
+
+						if (!matched) {
+							final XnatProjectparticipant participant = new XnatProjectparticipant(user);
+							participant.setProject(proj.getId());
+							sub.setSharing_share(participant);
+						}
 					}
-					
-					if(existing==null){
-						if(!Permissions.canCreate(user, sub)){
-						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for subjects in this project.");
-						return;
-						}
-						//IS NEW
-						if(StringUtils.isBlank(sub.getId())){
-							sub.setId(XnatSubjectdata.CreateNewID());
-						}
-					}else{
-					this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT,"Subject already exists.");
+				} else {
+					getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must include the project attribute.");
 					return;
-						}
-				
-
-				if(StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.isValidId(sub.getId())){
-					this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in subject label.");
-					return;
-								}
-				
-
-				
-				final ValidationResults vr = sub.validate();
-	            
-	            if (vr != null && !vr.isValid())
-	            {
-	            	this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,vr.toFullString());
-					return;
-							}
-
-	            create(sub,false,false,newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(sub.getXSIType(), (existing==null))));
-
-	            postSaveManageStatus(sub);
-					
-				this.returnSuccessfulCreateFromList(sub.getId());
-				}else{
-					this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only xnat:Subject documents can be PUT to this address.");
 				}
+
+				XnatSubjectdata existing = null;
+				if (sub.getId() != null) {
+					existing = XnatSubjectdata.getXnatSubjectdatasById(sub.getId(), user, completeDocument);
+				}
+
+				if (existing == null && sub.getProject() != null && sub.getLabel() != null) {
+					existing = XnatSubjectdata.GetSubjectByProjectIdentifier(sub.getProject(), sub.getLabel(), user, completeDocument);
+				}
+
+				if (existing == null) {
+					for (XnatProjectparticipantI pp : sub.getSharing_share()) {
+						existing = XnatSubjectdata.GetSubjectByProjectIdentifier(pp.getProject(), pp.getLabel(), user, completeDocument);
+						if (existing != null) {
+							break;
+						}
+					}
+				}
+
+				if (existing == null) {
+					if (!Permissions.canCreate(user, sub)) {
+						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient create privileges for subjects in this project.");
+						return;
+					}
+					//IS NEW
+					if (StringUtils.isBlank(sub.getId())) {
+						sub.setId(XnatSubjectdata.CreateNewID());
+					}
+				} else {
+					this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Subject already exists.");
+					return;
+				}
+
+
+				if (!validateSubject(sub)) {
+					return;
+				}
+
+				create(sub, false, false, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(sub.getXSIType(), true)));
+
+				postSaveManageStatus(sub);
+
+				this.returnSuccessfulCreateFromList(sub.getId());
+			} else {
+				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
+			}
 		} catch (ActionException e) {
-			this.getResponse().setStatus(e.getStatus(),e.getMessage());
-			return;
+			this.getResponse().setStatus(e.getStatus(), e.getMessage());
 		} catch (SAXParseException e) {
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,e.getMessage());
+			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
 		} catch (InvalidValueException e) {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-			} catch (Exception e) {
-				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
-			logger.error("",e);
-			}
+		} catch (Exception e) {
+			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+			logger.error("", e);
 		}
+	}
 
-	
-	
 	@Override
 	public ArrayList<String> getDefaultFields(GenericWrapperElement e) {
 		ArrayList<String> al= new ArrayList<>();

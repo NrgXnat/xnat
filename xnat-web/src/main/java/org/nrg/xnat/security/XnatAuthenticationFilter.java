@@ -9,6 +9,11 @@
 
 package org.nrg.xnat.security;
 
+import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
+
+import java.text.ParseException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,14 +38,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.text.ParseException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
 
 @Slf4j
 public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -103,7 +100,6 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         setDetails(request, authRequest);
 
         try {
-            AccessLogger.LogServiceAccess(username, request, "Authentication", "SUCCESS");
             final Authentication authentication;
             try {
                 authentication = getAuthenticationManager().authenticate(authRequest);
@@ -113,6 +109,8 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                 response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/RegisterExternalLogin.vm");
                 return null;
             }
+
+            AccessLogger.LogServiceAccess(username, request, "Authentication", "SUCCESS");
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
             if(StringUtils.isNotBlank(request.getParameter("par"))){
@@ -130,7 +128,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
             return authentication;
         } catch (AuthenticationException e) {
-            logFailedAttempt(username, request);
+            logFailedAttempt(username, request, e);
             throw e;
         } catch (UserNotFoundException e) {
             log.error("Couldn't find a user with the name '" + username + "'", e);
@@ -142,21 +140,19 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         return null;
     }
 
-    static void logFailedAttempt(final String username, final HttpServletRequest request) {
+    static void logFailedAttempt(final String username, final HttpServletRequest request, final AuthenticationException exception) {
         if (!StringUtils.isBlank(username)) {
             try {
-                 UserI user = Users.getUser(username);
-                 Users.recordFailedUserLogin(user,request);
-            }catch(UserNotFoundException unfe) { 
-                /** If the user isn't found in the system don't log anything. **/
-            }catch(Exception e ) {
+                UserI user = Users.getUser(username);
+                Users.recordFailedUserLogin(user, request);
+            } catch (UserNotFoundException ignored) {
+                // If the user isn't found in the system don't log anything.
+            } catch (Exception e) {
                 log.error("An exception occurred trying to log a failed login attempt for the user {}", username, e);
             }
-            AccessLogger.LogServiceAccess(username, request, "Authentication", "FAILED");
+            AccessLogger.LogServiceAccess(username, request, "Authentication", "FAILED (" + exception.getClass().getSimpleName() + "): " + exception.getMessage());
         }
     }
-
-    private static final Map<String, Integer> checked = new ConcurrentHashMap<>();
 
     private XnatProviderManager _providerManager;
 }

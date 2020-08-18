@@ -749,7 +749,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		try {
 			returnList.add("Building workflow entry for configured resource / event handler - " + eventText);
 			wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, params.get("xsiType").toString(),
-					(exp.getId()!=null) ? exp.getId() : (subj.getId()!=null) ? subj.getId() : proj.getId(), proj.getId(),
+					(exp != null && exp.getId()!=null) ? exp.getId() : (subj != null && subj.getId()!=null) ? subj.getId() : proj.getId(), proj.getId(),
 			EventUtils.newEventInstance(CATEGORY.DATA, TYPE.WEB_SERVICE, eventText, "Automation-based upload", null));
 			wrk.setStatus(STATUS_COMPLETE);
 			//wrk.setDetails(JSONObject.fromObject(passMap).toString());

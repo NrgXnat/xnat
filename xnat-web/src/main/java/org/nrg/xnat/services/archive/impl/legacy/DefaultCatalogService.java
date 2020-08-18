@@ -534,18 +534,18 @@ public class DefaultCatalogService implements CatalogService {
         final Class<? extends URIManager.ArchiveItemURI> parentClass = resourceURI.getClass();
         final BaseElement                                parent;
         try {
-            if (AssessorURII.class.isAssignableFrom(parentClass)) {
+            if (ReconURII.class.isAssignableFrom(parentClass)) {
+                parent = ((ReconURII) resourceURI).getRecon();
+            } else if (ScanURII.class.isAssignableFrom(parentClass)) {
+                parent = ((ScanURII) resourceURI).getScan();
+            } else if (AssessorURII.class.isAssignableFrom(parentClass)) {
                 parent = ((AssessorURII) resourceURI).getAssessor();
             } else if (ExperimentURII.class.isAssignableFrom(parentClass)) {
                 parent = ((ExperimentURII) resourceURI).getExperiment();
-            } else if (ScanURII.class.isAssignableFrom(parentClass)) {
-                parent = ((ScanURII) resourceURI).getScan();
-            } else if (ProjectURII.class.isAssignableFrom(parentClass)) {
-                parent = ((ProjectURII) resourceURI).getProject();
             } else if (SubjectURII.class.isAssignableFrom(parentClass)) {
                 parent = ((SubjectURII) resourceURI).getSubject();
-            } else if (ReconURII.class.isAssignableFrom(parentClass)) {
-                parent = ((ReconURII) resourceURI).getRecon();
+            } else if (ProjectURII.class.isAssignableFrom(parentClass)) {
+                parent = ((ProjectURII) resourceURI).getProject();
             } else {
                 log.error("The URI is of an unknown type: " + resourceURI.getClass().getName());
                 return null;

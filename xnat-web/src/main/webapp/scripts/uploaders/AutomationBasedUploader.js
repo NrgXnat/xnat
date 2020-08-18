@@ -625,13 +625,15 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			element:document.getElementById('modalUploadDiv'),
 			action:'TBD',
 			debug:true,
-			doneFunction:function(){
+			doneFunction:function(anySuccessfulUploads = true){
 					// Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
 					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
-						XNAT.app.abu.completeFileUpload();
+						if (anySuccessfulUploads) {
+							XNAT.app.abu.completeFileUpload();
+						}
 					}
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0 && anySuccessfulUploads) {
 						setTimeout(function(){
 							window.location.reload(true);
 						},20);
@@ -653,7 +655,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					}
 					$("#usageSelect").prop('disabled','disabled');
 				},
-			uploadCompletedFunction:function(anyFailedUploads){
+			uploadCompletedFunction:function(anyFailedUploads, anySuccessfulUploads = true){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						if ($(".abu-upload-complete-text").length==0) {
@@ -679,7 +681,9 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						$("#xmodal-abu-cancel-button").hide();
 						$('#xmodal-abu-done-button').show();
 						$('#xmodal-abu-process-button').hide();
-						XNAT.app.abu.runFunctionIfIdle(60000, XNAT.app.abu.completeFileUpload);
+						if (anySuccessfulUploads) {
+							XNAT.app.abu.runFunctionIfIdle(60000, XNAT.app.abu.completeFileUpload);
+						}
 					}
 				},
 			processFunction:function(){
@@ -999,6 +1003,9 @@ XNAT.app.abu.validatePassedParameters=function() {
 XNAT.app.abu.updateResourceStats=function() {
 	if (XNAT.app.abu.usageSelect !== 'Launch') {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
+			if (abu._fileUploader._currentAction.includes("/data/services/triage")) {
+				return;
+			}
 			var updateStatsUrl = "/data/services/refresh/catalog?resource=" + 
 				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'')
 					.replace(/^\/(data|REST)\/(archive\/)?/i,"/archive/")

@@ -27,7 +27,8 @@ abu.FileUploader = function(o){
 	this.overwriteConfirmIssued = false;
 	this.doOverwrite = false;
 	this.anyFailedUploads = false;
-	$(this._options.element).html(""); 
+	this.anySuccessfulUploads = false;
+	$(this._options.element).html("");
 
 	this.buildUploaderDiv = function() {
 		$(this._options.element).append(
@@ -87,7 +88,7 @@ abu.FileUploader = function(o){
 			'</div> ' 
 		); 
 		// $("#abu-upload-button").click(function() { $("#abu-done-button").removeClass("abu-button-disabled"); });
-		$("#xmodal-abu-done-button").click(this._options.doneFunction);
+		$("#xmodal-abu-done-button").click(this.triggerDone);
 
 		// replaced #abu-process-button with #xmodal-abu-process-button, which is defined in the xmodal options
 		$("#xmodal-abu-process-button").click(this._options.processFunction);
@@ -412,12 +413,13 @@ abu.FileUploader = function(o){
 					}
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
+					uploader.anySuccessfulUploads = true;
 				},
 				complete: function(xhr) {
 					uploader.uploadsInProgress--;
 					uploader.currentUploads--;
 					if (uploader.currentUploads==0) {
-						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
+						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads, uploader.anySuccessfulUploads);
 						uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
 						XNAT.app.timeout.maintainLogin = false;
 					}
@@ -446,6 +448,10 @@ abu.FileUploader = function(o){
 				break;
 			} 
 		}
+	}.bind(this)
+
+	this.triggerDone = function () {
+		this._options.doneFunction(this.anySuccessfulUploads);
 	}.bind(this)
 
 	this.uploaderHelp=function() {

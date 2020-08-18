@@ -21,6 +21,7 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
@@ -74,7 +75,7 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
 public class PrearcSessionArchiver extends ArchiveStatusProducer implements Callable<String> {
 
     public static final String MERGED = "Merged";
-    
+
     public static final String MERGED_UID = "Merged UIDs";
 
     private static final String TRIGGER_PIPELINES = "triggerPipelines";
@@ -480,7 +481,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 }
 			    workflow.setStepDescription("Validating");
                 c = workflow.buildEvent();
-                
+
 				if(existing!=null){
 					if(!StringUtils.equals(existing.getUid(),src.getUid())){
 						workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), MERGED_UID, justification, (String)params.get(EventUtils.EVENT_COMMENT)));
@@ -514,7 +515,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                         throw e;
                     }
                 }
-                
+
                 processing("validating loaded data");
                 validateSession();
 
@@ -606,7 +607,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 						 arcSessionDir,
 						 existing,
 						 arcSessionDir.getAbsolutePath(),
-						 allowSessionMerge, 
+						 allowSessionMerge,
 						 (overrideExceptions)?overrideExceptions:overwriteFiles,
 						 saveImpl,user,workflow.buildEvent());
 
@@ -787,21 +788,15 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
      *
      * @throws ServerException When an error occurs on the server.
      */
-    private void correctScanID(final XnatImagesessiondata existing) throws ServerException {
-        for (final XnatImagescandataI newScan : src.getScans_scan()) {
-            //find matching scan by UID
-            final XnatImagescandataI match2 = MergeUtils.getMatchingScanByUID(newScan, existing.getScans_scan());//match by UID
-            if (match2 != null) {
-                if (!StringUtils.equals(match2.getId(), newScan.getId())) {
-                    //this UID has been mapped to a different scan ID
-                    //update the prearc session to match
-                    processing("Renaming scan " + newScan.getId() + " to " + match2.getId() + " due to UID match.");
-                    moveScan(newScan, match2.getId());
-                }
-                //scan with matching UID is done (whether their ID's matched or not)
-                continue;
-            }
+    private void correctScanID(XnatImagesessiondata existing) throws ServerException {
+    	final List<List<XnatImagescandataI>> prexistingMatches=Lists.newArrayList();
 
+    	final List<String> usedIds=Lists.newArrayList();
+    	for(final XnatImagescandataI scan:existing.getScans_scan()){
+    		usedIds.add(scan.getId());
+    	}
+
+        for (final XnatImagescandataI newScan : src.getScans_scan()) {
             //build modality code via parsing of the xsi:type.  modality code matches first 2 characters after the : for xnat types.  Otherwise, leave it empty.
             //this is a bit of a hack.  It would be better to have an official mapping
             String modalityCode = (newScan.getXSIType().startsWith("xnat:")) ? newScan.getXSIType().substring(5, 7).toUpperCase() : "";
@@ -809,75 +804,151 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 modalityCode = "PT";//this works for everything but PET, which gets called PE instead of PT, so we correct it.
             }
 
+            //find matching scan by UID
+            final XnatImagescandataI match2 = MergeUtils.getMatchingScanByUID(newScan, existing.getScans_scan());//match by UID
+            if (match2 != null) {
+                if ((!StringUtils.equals(match2.getId(), newScan.getId())) || match2.getId().contains("-"+modalityCode)) {
+                    //this UID has been mapped to a different scan ID (or possibly different file system path)
+                    //update the prearc session to match
+                	//place them in an array and process them after the others, to avoid temporary conflicts
+                	prexistingMatches.add(Lists.newArrayList(newScan,match2));
+                }
+                //scan with matching UID is done (whether their ID's matched or not)
+                continue;
+            }
+
+
             String scan_id = newScan.getId();
+            String scan_stub = null;
+            final String original_scan_id=newScan.getId();
             int count = 1;
             boolean needsMove = false;
+
+            if(scan_id.matches(".-"+modalityCode+"[0-9]+$")) {
+            	scan_stub = scan_id.substring(0, scan_id.lastIndexOf("-"));
+            }
+
             //make sure there aren't any matches by ID.  if there aren't needsMove stays false.  And, it identifies a good scan_id to use in the process.
-            while (MergeUtils.getMatchingScanById(scan_id, existing.getScans_scan()) != null) {
-                scan_id = newScan.getId() + "-" + modalityCode + count++;
+            while (usedIds.contains(scan_id)) {
+            	if(scan_stub != null) {
+            		scan_id = scan_stub + "-" + modalityCode + count++;
+            	} else {
+            		scan_id = newScan.getId() + "-" + modalityCode + count++;
+            	}
                 needsMove = true;
             }
+
+        	usedIds.add(scan_id);
 
             if (needsMove) {
                 //the scan id conflicted with a pre-existing one, so we have to rename this one.
                 processing("Renaming scan " + newScan.getId() + " to " + scan_id + " due to ID conflict.");
-                moveScan(newScan, scan_id);
+                moveScan(newScan, scan_id, (scan_stub == null ? original_scan_id : scan_stub),null);
             }
         }
+
+        //process previously matched scans
+        for(List<XnatImagescandataI> prexistingMatch:prexistingMatches){
+        	final XnatImagescandataI newScan=prexistingMatch.get(0);
+        	final XnatImagescandataI match=prexistingMatch.get(1);
+
+        	String modalityCode = (newScan.getXSIType().startsWith("xnat:")) ? newScan.getXSIType().substring(5, 7).toUpperCase() : "";
+            if ("PE".equals(modalityCode)) {
+                modalityCode = "PT";//this works for everything but PET, which gets called PE instead of PT, so we correct it.
+            }
+
+        	String scan_stub = null;
+         	if(match.getId().matches(".-"+modalityCode+"[0-9]+$")) {
+         		scan_stub = match.getId().substring(0, match.getId().lastIndexOf("-"));
+         	}
+
+         	//use same catalog path as existing resource
+         	final XnatResourcecatalog cat = (XnatResourcecatalog) match.getFile().get(0);
+         	final String archivedPath=cat.getUri();
+         	final String partialPath=archivedPath.substring(archivedPath.lastIndexOf("SCANS"));
+
+            processing("Renaming scan " + newScan.getId() + " to " + match.getId() + " due to UID match.");
+            moveScan(newScan, match.getId(), (scan_stub == null ? match.getId() : scan_stub),partialPath);
+
+        	usedIds.add(match.getId());
+        }
+
     }
 
     /**
      * Used to move a scan to a different scan ID within the prearchive, prior to transfer
      *
-     * @param newScan The new scan to move to.
-     * @param scan_id The new scan ID.
-     *
-     * @throws ServerException When an error occurs on the server.
+     * @param srcScan The new scan to move to.
+     * @param destScan_id The new scan ID.
+     * @param srcScanId The new scan ID without the auto-incremented value that's on the end of some scan ids
+     * @throws ServerException
      */
-    private void moveScan(XnatImagescandataI newScan, String scan_id) throws ServerException {
-        /*
-         * SCANS\1\scan_1_catalog.xml
-         */
-        final String oldScanCatalogPath = ((XnatResourcecatalog) newScan.getFile().get(0)).getUri();
-        final File catalog = new File(src.getPrearchivepath(), oldScanCatalogPath);
-        final String oldScanFolderPath = "SCANS/" + newScan.getId();
-        final String newScanFolderPath = "SCANS/" + scan_id;
-        final String newScanCatalogPath = newScanFolderPath + "/DICOM/" + catalog.getName();
-        final String prearcPath = getSrcDIR().getAbsolutePath();
+    private void moveScan(final XnatImagescandataI srcScan, final String destScan_id, final String srcScanId, String destScanCatalogPath) throws ServerException {
+        final String srcScanCatalogPath = ((XnatResourcecatalog) srcScan.getFile().get(0)).getUri();
+        final File srcCatalog = new File(src.getPrearchivepath(), srcScanCatalogPath);
+        final String srcScanFolderPath = "SCANS/" + srcScanId;
+
+        if(destScanCatalogPath==null)destScanCatalogPath = "SCANS/" + destScan_id + "/DICOM/scan_" + destScan_id + "_catalog.xml";
+        final String prearcpath = getSrcDIR().getAbsolutePath();
 
         //confirm expected structure
-        if (!catalog.exists()) {
-            throw new ServerException("Non-standard prearchive structure- failed scan rename.");
+        if (!srcCatalog.exists()) {
+            throw new ServerException("Non-standard prearchive structure (no catalog)- failed scan rename.");
         }
 
-
-        if (oldScanCatalogPath.startsWith(oldScanFolderPath)) {
-            File oldFolder = new File(src.getPrearchivepath(), oldScanFolderPath);
-
-            //confirm expected structure
-            if (!oldFolder.exists()) {
-                throw new ServerException("Non-standard prearchive structure- failed scan rename.");
-            }
-
-            //move the directory
-            try {
-                FileUtils.MoveDir(oldFolder, new File(src.getPrearchivepath(), newScanFolderPath), false);
-            } catch (IOException e) {
-                throw new ServerException(e);
-            }
-
-            //fix the file path
-            XnatResourcecatalog cat = (XnatResourcecatalog) newScan.getFile().get(0);
-            cat.setUri(newScanCatalogPath);
-
-            //fix the scan ID
-            newScan.setId(scan_id);
-        } else {
-            throw new ServerException("Non-standard prearchive structure- failed scan rename.");
+        if(destScan_id.equals(srcScanId)) {
+	        if (!srcScanCatalogPath.startsWith(srcScanFolderPath)) {
+	            throw new ServerException("Non-standard prearchive structure (invalid catalog location)- failed scan rename.");
+	        }
         }
+
+        final File destCatalogFile= new File(src.getPrearchivepath(), destScanCatalogPath);
+
+        final File originalScanFolder = new File(src.getPrearchivepath(), srcScanFolderPath + "/DICOM/");
+        final File destinationScanFolder=destCatalogFile.getParentFile();
+
+    	//get list of all entries in the catalog
+        final CatCatalogBean catB = CatalogUtils.getCatalog(srcCatalog,project);
+        final Collection<CatEntryI> entries=CatalogUtils.getEntriesByFilter(catB,new CatalogUtils.CatEntryFilterI() {
+			@Override
+			public boolean accept(CatEntryI entry) {
+				return true;
+			}
+		});
+
+    	//move each entry to its new location
+    	for(final CatEntryI entry: entries){
+    		final File f=CatalogUtils.getFile(entry, originalScanFolder.getAbsolutePath(),project);
+    		if(f==null){
+
+    		}else{
+        		try {
+        			final File dest=new File(destinationScanFolder, entry.getUri());
+
+					FileUtils.MoveFile(f, dest,false);
+				} catch (IOException e) {
+					throw new ServerException(e);
+				}
+    		}
+    	}
+
+
+    	//move catalog file
+    	try {
+    		if(!StringUtils.equals(srcCatalog.getAbsolutePath(), destCatalogFile.getAbsolutePath())){
+    			FileUtils.MoveFile(srcCatalog, destCatalogFile, true);
+    		}
+    	} catch (IOException e) {
+    		throw new ServerException(e);
+    	}
+
+    	// fix the file path
+    	final XnatResourcecatalog cat = (XnatResourcecatalog) srcScan.getFile().get(0);
+    	cat.setUri(destScanCatalogPath);
+    	srcScan.setId(destScan_id);
 
         try {
-            updatePrearchiveSessionXML(prearcPath, src);
+            updatePrearchiveSessionXML(prearcpath, src);
         } catch (Throwable e) {
             throw new ServerException(e);
         }
@@ -886,7 +957,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     public interface PostArchiveAction {
         Boolean execute(UserI user, XnatImagesessiondata src, Map<String, Object> params);
     }
-    
+
 	public interface PreArchiveAction {
 		public Boolean execute(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing) throws ServerException,ClientException;
 	}
@@ -910,7 +981,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             throw new RuntimeException(exception);
         }
     }
-    
+
     private void preArchive(UserI user, XnatImagesessiondata src, Map<String,Object> params, XnatImagesessiondata existing){
 		List<Class<?>> classes;
 	     try {
@@ -1073,7 +1144,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         failed(msg);
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
-    
+
 
     private DicomFilterService getDicomFilterService() {
         if (_filterService == null) {

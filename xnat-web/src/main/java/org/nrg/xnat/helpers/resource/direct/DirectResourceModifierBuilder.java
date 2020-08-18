@@ -140,7 +140,7 @@ public class DirectResourceModifierBuilder implements ResourceModifierBuilderI {
 		}else if(project!=null){
 			return new DirectProjResourceImpl(project,overwrite,user,ci);
 		}else{
-			throw new Exception("Unknown resource");
+			throw new Exception("Invalid resource (perhaps a parent element has been deleted)");
 		}
 	}
 }

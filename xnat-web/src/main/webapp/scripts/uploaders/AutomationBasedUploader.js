@@ -809,11 +809,14 @@ XNAT.app.abu.updateModalAction = function(){
 					
 					if(resourceConfigs[i].triage){ // If resource has been configured to upload to the project's quarantine. 
 						$("#triageMessage").css('display', 'block');
-						target=$(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
-						target=target.replace("/data/projects",    "/data/archive/projects");
-						target=target.replace("/data/experiments", "/data/archive/experiments");
-						
-						abu._fileUploader._currentAction = serverRoot + "/data/services/triage/projects/" + XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
+						let target = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
+						// Make this a proper item URI (remove site context, prepend /archive)
+						target = target.replace(new RegExp("^" + XNAT.url.context),"/")
+							.replace(/^\/data\/(archive\/)?/, "/data/archive/");
+
+						abu._fileUploader._currentAction = XNAT.url.rootUrl("/data/services/triage/projects/" +
+							XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##") +
+							"?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
 					}else{
 						$("#triageMessage").css('display', 'none');
 						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
@@ -997,8 +1000,9 @@ XNAT.app.abu.updateResourceStats=function() {
 	if (XNAT.app.abu.usageSelect !== 'Launch') {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
 			var updateStatsUrl = "/data/services/refresh/catalog?resource=" + 
-				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'').replace(/^\/data\//i,"/archive/").replace(/^\/REST\//i,"/archive/" +
-				"&options=populateStats") + "&options=populateStats,append,delete,checksum&XNAT_CSRF=" + window.csrfToken;
+				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'')
+					.replace(/^\/(data|REST)\/(archive\/)?/i,"/archive/")
+					+ "&options=populateStats,append,delete,checksum&XNAT_CSRF=" + window.csrfToken;
 			var updateStatsAjax = $.ajax({
 				type : "POST",
 				url:serverRoot+updateStatsUrl,

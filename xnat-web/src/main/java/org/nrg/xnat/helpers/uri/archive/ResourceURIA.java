@@ -132,29 +132,21 @@ public abstract class ResourceURIA extends ArchiveURI implements ResourceURII {
 
     protected List<XnatAbstractresourceI> getAssessorResources(final XnatImageassessordata assessor, final String type) {
         switch (type) {
-            case "out":
-                return assessor.getOut_file();
-
             case "in":
                 return assessor.getIn_file();
-
+            case "out":
             default:
-                log.error("An unknown assessor type was specified: \"{}\". I don't know how to handle this so returning empty resource set.", type);
-                return Collections.emptyList();
+                return assessor.getOut_file();
         }
     }
 
     protected List<XnatAbstractresourceI> getReconstructionResources(final XnatReconstructedimagedata reconstruction, final String type) {
         switch (type) {
-            case "out":
-                return reconstruction.getOut_file();
-
             case "in":
                 return reconstruction.getIn_file();
-
+            case "out":
             default:
-                log.error("An unknown reconstruction type was specified: \"{}\". I don't know how to handle this so returning empty resource set.", type);
-                return Collections.emptyList();
+                return reconstruction.getOut_file();
         }
     }
 }

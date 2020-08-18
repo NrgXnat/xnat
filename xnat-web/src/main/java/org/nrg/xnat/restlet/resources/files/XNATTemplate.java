@@ -143,7 +143,7 @@ public class XNATTemplate extends SecureResource {
             }
         }
 
-        type = (String) getParameter(request, "TYPE");
+        type = StringUtils.defaultIfBlank((String) getParameter(request, "TYPE"), "out");
 
         String exptID = (String) getParameter(request, "EXPT_ID");
         if (exptID != null) {

@@ -99,6 +99,7 @@ public abstract class ResourceModifierA implements Serializable {
         XnatAbstractresource abst = (XnatAbstractresource) getResourceByIdentifier(resourceIdentifier, type);
 
         boolean isNew = false;
+        boolean metadataModified = false;
         if (abst == null) {
             isNew = true;
             //new resource
@@ -115,18 +116,20 @@ public abstract class ResourceModifierA implements Serializable {
             if (!(abst instanceof XnatResourcecatalog)) {
                 throw new Exception("Conflict:Non-catalog resource already exits.");
             }
+            metadataModified = CatalogUtils.configureResource((XnatResourcecatalog) abst, info, user);
         }
 
         try {
             return new ArrayList<>(CatalogUtils.storeCatalogEntry(writers, filepath, (XnatResourcecatalog) abst, getProject(), extract, info, overwrite, ci));
         } finally {
-            CatalogUtils.populateStats(abst, null);
+            boolean needsUpdate = !(ci instanceof UpdateMeta) || ((UpdateMeta) ci).getUpdate();
+            if (needsUpdate || isNew) {
+                CatalogUtils.populateStats(abst, null);
+            }
             if (isNew) {
                 addResource((XnatResourcecatalog) abst, type, user);
-            } else {
-                if ((!(ci instanceof UpdateMeta)) || ((UpdateMeta) ci).getUpdate()) {
-                    SaveItemHelper.authorizedSave(abst, user, false, false, ci);
-                }
+            } else if (needsUpdate || metadataModified) {
+                SaveItemHelper.authorizedSave(abst, user, false, false, ci);
             }
         }
     }

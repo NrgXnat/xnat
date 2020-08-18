@@ -1510,15 +1510,19 @@ public class CatalogUtils {
         return modified;
     }
 
-    public static void configureResource(final XnatResource resource, final XnatResourceInfo info, final UserI user) throws Exception {
+    public static boolean configureResource(final XnatResource resource, final XnatResourceInfo info, final UserI user) throws Exception {
+        boolean modified = false;
         if (info.getDescription() != null) {
             resource.setDescription(info.getDescription());
+            modified = true;
         }
         if (info.getFormat() != null) {
             resource.setFormat(info.getFormat());
+            modified = true;
         }
         if (info.getContent() != null) {
             resource.setContent(info.getContent());
+            modified = true;
         }
         if (info.getTags().size() > 0) {
             for (final String entry : info.getTags()) {
@@ -1526,6 +1530,7 @@ public class CatalogUtils {
                 t.setTag(entry);
                 resource.setTags_tag(t);
             }
+            modified = true;
         }
         if (info.getMeta().size() > 0) {
             for (final Map.Entry<String, String> entry : info.getMeta().entrySet()) {
@@ -1534,7 +1539,9 @@ public class CatalogUtils {
                 t.setName(entry.getKey());
                 resource.setTags_tag(t);
             }
+            modified = true;
         }
+        return modified;
     }
 
     public static List<String> storeCatalogEntry(final List<? extends FileWriterWrapperI> fileWriters,

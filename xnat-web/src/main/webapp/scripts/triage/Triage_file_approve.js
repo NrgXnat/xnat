@@ -19,6 +19,7 @@ XNAT.app.TriageFileApprover={
 		this.params+="&event_action=Uploaded "+ this.shortname;
 		this.params+="&event_reason="+ this.event_reason;
 		this.params+="&overwrite=false";
+		this.loadingModal = null;
 		if(format!=undefined && format!=null && format!=""){
 			this.params+="&format=" + format;
 		}
@@ -45,12 +46,14 @@ XNAT.app.TriageFileApprover={
             scope:this
         };
 		if(this.lastScan!=undefined && this.lastScan!=null){
-			openModalPanel("move_scan","Moving file " + this.shortname);
+			this.loadingModal = xModalLoadingOpen({id: "move_resource", title: "Moving file " + this.shortname});
 			
 			this.tempURL=serverRoot+"/data/services/triage/approve?XNAT_CSRF=" + csrfToken;
 			this.params=this.params+"&src=" + this.lastScan+"&dest="+this.target
 	        YAHOO.util.Connect.asyncRequest('POST',this.tempURL,this.moveCallback,this.params,this);
 
+		} else {
+			xModalMessage("Error", "Cannot determine triage source location");
 		}
 	},
 	doMoveWithOverwrite:function(){
@@ -62,7 +65,10 @@ XNAT.app.TriageFileApprover={
 		this.doMove();
 	},
 	handleSuccess:function(o){
-		closeModalPanel("move_scan");
+		if (this.loadingModal) {
+			this.loadingModal.close();
+			this.loadingModal = null;
+		}
 	    if(o.responseText!=undefined && (o.responseText.indexOf("Duplicate File")>-1)){
 			if(this.overwrite=='true'){
 				xModalConfirm({
@@ -82,7 +88,10 @@ XNAT.app.TriageFileApprover={
 		}
 	},
 	handleFailure:function(o){
-		closeModalPanel("move_scan");
+		if (this.loadingModal) {
+			this.loadingModal.close();
+			this.loadingModal = null;
+		}
 		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
 		showMessage("page_body", "Error", "Failed to move file" + details);
 	}

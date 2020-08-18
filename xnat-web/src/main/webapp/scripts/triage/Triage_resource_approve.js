@@ -23,6 +23,7 @@ XNAT.app.TriageResourceApprover={
 		this.params+="&event_action=Quarantine Approval"+ this.shortname;
 		this.params+="&event_reason=Quarantine Approval";
 		this.params+="&overwrite=false";
+		this.loadingModal = null;
 		if(format!=undefined && format!=null && format!=""){
 			this.params+="&format=" + format;
 		}
@@ -50,9 +51,12 @@ XNAT.app.TriageResourceApprover={
             scope:this
         };
 		if(this.source!=undefined && this.source!=null){
+			this.loadingModal = xModalLoadingOpen({id: "move_resource", title: "Moving..."});
 			this.tempURL=serverRoot+"/data/services/triage/approve?XNAT_CSRF=" + csrfToken;
 			this.params=this.params+"&src=" + this.source+"&dest="+this.target
 	        YAHOO.util.Connect.asyncRequest('POST',this.tempURL,this.moveCallback,this.params,this);
+		} else {
+			xModalMessage("Error", "Cannot determine triage source location");
 		}
 	},
 	doMoveWithOverwrite:function(){
@@ -64,7 +68,10 @@ XNAT.app.TriageResourceApprover={
 		this.doMove();
 	},
 	handleSuccess:function(o){
-		closeModalPanel("move_resource");
+		if (this.loadingModal) {
+			this.loadingModal.close();
+			this.loadingModal = null;
+		}
 	    if(o.responseText!=undefined && (o.responseText.indexOf("Duplicate File")>-1)){
 			if(this.overwrite=='true'){
 				xModalConfirm({
@@ -87,7 +94,10 @@ XNAT.app.TriageResourceApprover={
 		}
 	},
 	handleFailure:function(o){
-		closeModalPanel("move_resource");
+		if (this.loadingModal) {
+			this.loadingModal.close();
+			this.loadingModal = null;
+		}
 		const details = o.responseText ? ":<br><br>" + o.responseText : ".";
 	    showMessage("page_body", "Error", "Failed to move file into archive" + details);
 	}

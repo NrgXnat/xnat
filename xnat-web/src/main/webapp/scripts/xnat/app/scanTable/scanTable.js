@@ -272,7 +272,7 @@ var XNAT = getObject(XNAT);
         var noteEditor = spawn('textarea.note-editor', {
             name: xsiType + '/scans/scan[ID=' + scanId + ']/note',
             value: noteText,
-            attr: {rows: 10, maxlength: 250},
+            attr: {rows: 10, maxlength: 2500},
             style: {width: '100%'}
         });
 

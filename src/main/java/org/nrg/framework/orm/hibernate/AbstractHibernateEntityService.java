@@ -11,6 +11,7 @@ package org.nrg.framework.orm.hibernate;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -195,6 +196,19 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     public List<E> getAllWithDisabled() {
         _log.debug("Getting all enabled and disabled entities");
         final List<E> list = getDao().findAll();
+        if (_initialize) {
+            for (final E entity : list) {
+                initialize(entity);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    @Transactional
+    public List<E> getPaginated(HibernatePaginatedRequest paginatedRequest) {
+        _log.debug("Getting all entities matching request");
+        final List<E> list = getDao().findPaginated(paginatedRequest);
         if (_initialize) {
             for (final E entity : list) {
                 initialize(entity);

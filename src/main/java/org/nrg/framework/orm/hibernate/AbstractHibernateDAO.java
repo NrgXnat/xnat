@@ -19,6 +19,8 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
+import org.hibernate.metadata.ClassMetadata;
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.generics.AbstractParameterizedWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,6 +150,27 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
     public List<E> findAllEnabled() {
         final Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("enabled", true));
+        return criteria.list();
+    }
+
+    /**
+     * @see BaseHibernateDAO#findPaginated(HibernatePaginatedRequest paginatedRequest)
+     */
+    @Override
+    public List<E> findPaginated(HibernatePaginatedRequest paginatedRequest) {
+        final Criteria criteria = getCriteriaForType();
+        if (paginatedRequest.hasFilters()) {
+            ClassMetadata classMetadata = getSession().getSessionFactory().getClassMetadata(getParameterizedType());
+            for (Criterion criterion : paginatedRequest.getCriterion(classMetadata)) {
+                criteria.add(criterion);
+            }
+        }
+        if (_isAuditable) {
+            criteria.add(Restrictions.eq("enabled", true));
+        }
+        criteria.addOrder(paginatedRequest.getOrder());
+        criteria.setMaxResults(paginatedRequest.getPageSize());
+        criteria.setFirstResult(paginatedRequest.getOffset());
         return criteria.list();
     }
 

@@ -9,6 +9,7 @@
 
 package org.nrg.framework.orm.hibernate;
 
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgService;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,6 +106,13 @@ public interface BaseHibernateService<E extends BaseHibernateEntity> extends Nrg
      * @return A list of all of the active enabled objects of the service's parameterized type.
      */
     List<E> getAll();
+
+    /**
+     * Get all objects of the service's parameterized type per parameters in paginatedRequest
+     * @param paginatedRequest request including filter, sort, page, and size params
+     * @return a list of all objects of the service's parameterized type per parameters in paginatedRequest
+     */
+    List<E> getPaginated(HibernatePaginatedRequest paginatedRequest);
 
     /**
      * Gets all objects of the service's parameterized type, including those that are inactive or disabled.

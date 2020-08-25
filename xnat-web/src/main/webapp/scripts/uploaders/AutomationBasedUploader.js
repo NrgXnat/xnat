@@ -815,8 +815,8 @@ XNAT.app.abu.updateModalAction = function(){
 						$("#triageMessage").css('display', 'block');
 						let target = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
 						// Make this a proper item URI (remove site context, prepend /archive)
-						target = target.replace(new RegExp("^" + XNAT.url.context),"/")
-							.replace(/^\/data\/(archive\/)?/, "/data/archive/");
+						target = target.replace(new RegExp("^" + XNAT.url.context), "")
+							.replace(/^\/?data\/(archive\/)?/, "/data/archive/");
 
 						abu._fileUploader._currentAction = XNAT.url.rootUrl("/data/services/triage/projects/" +
 							XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##") +

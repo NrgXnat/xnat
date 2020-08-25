@@ -54,7 +54,7 @@ var XNAT = getObject(XNAT);
             callbackPath = 'XNAT.app.activityTab.populateArchivalDetails';
         }
         if (!timeout) {
-            timeout = 1;
+            timeout = 500;
         }
 
         let activities = getActivities(),

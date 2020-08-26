@@ -810,10 +810,13 @@ XNAT.app.abu.updateModalAction = function(){
 					// NOTE:  Setting update-stats=false (no workflow entry for individual files).  The process step will create a workflow entry for the entire upload.
 					var subdir = resourceConfigs[i].subdir;
 					subdir = (typeof subdir !== 'undefined' && subdir.length > 0) ? "/" + subdir : subdir;
-					
+					let resourceType = (!resourceConfigs[i].level || resourceConfigs[i].level === 'default') ? '' :
+						'/' + resourceConfigs[i].level;
+
 					if(resourceConfigs[i].triage){ // If resource has been configured to upload to the project's quarantine. 
 						$("#triageMessage").css('display', 'block');
-						let target = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
+						let target = $(XNAT.app.abu.currentLink).attr("data-uri") + resourceType + "/resources/" +
+							resourceConfigs[i].label + "/files";
 						// Make this a proper item URI (remove site context, prepend /archive)
 						target = target.replace(new RegExp("^" + XNAT.url.context), "")
 							.replace(/^\/?data\/(archive\/)?/, "/data/archive/");
@@ -823,7 +826,10 @@ XNAT.app.abu.updateModalAction = function(){
 							"?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
 					}else{
 						$("#triageMessage").css('display', 'none');
-						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
+						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + resourceType +
+							"/resources/" + resourceConfigs[i].label + "/files" + subdir +
+							"/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite +
+							"&update-stats=false&XNAT_CSRF=" + window.csrfToken;
 					}
 					
 					if(resourceConfigs[i].format){

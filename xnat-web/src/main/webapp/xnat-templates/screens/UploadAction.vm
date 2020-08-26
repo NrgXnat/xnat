@@ -45,6 +45,7 @@
 #set($userHelper = $data.getSession().getAttribute("userHelper"))
 
 #if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>

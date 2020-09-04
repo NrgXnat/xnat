@@ -359,7 +359,7 @@ var XNAT = getObject(XNAT || {});
                 name: 'event-selector',
                 label: 'Select Event',
                 id: 'subscription-event-selector',
-                // element: emptyOptionObj,
+                element: emptyOptionObj,
                 order: 20
             },
             subEventType: {
@@ -686,6 +686,9 @@ var XNAT = getObject(XNAT || {});
                     $form.find('#subscription-project-selector').parents('.panel-element').hide();
                 }
 
+                // when editing an existing event subscription, always show the attributes preview panel
+                $form.find('#subscription-action-preview').show();
+
                 Object.keys(eventServicePanel.events).forEach(function(event){
                     var thisEvent = eventServicePanel.events[event];
 
@@ -762,7 +765,7 @@ var XNAT = getObject(XNAT || {});
                 {
                     label: 'OK',
                     isDefault: true,
-                    close: true,
+                    close: false,
                     action: function(obj){
                         // Convert form inputs to a parseable JSON object
                         // This also involves a conversion into the accepted JSON attribute hierarchy
@@ -820,6 +823,7 @@ var XNAT = getObject(XNAT || {});
                             success: function(){
                                 XNAT.ui.banner.top(2000,successMessages[action],'success');
                                 eventServicePanel.refreshSubscriptionList();
+                                XNAT.dialog.closeAll();
                             },
                             fail: function(e){
                                 errorHandler(e,'Could not create event subscription')

@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-abstract public class AbstractHibernateEntityService<E extends BaseHibernateEntity, DAO extends BaseHibernateDAO<E>> extends AbstractParameterizedWorker<E> implements BaseHibernateService<E>, ApplicationContextAware, InitializingBean {
+public abstract class AbstractHibernateEntityService<E extends BaseHibernateEntity, DAO extends BaseHibernateDAO<E>> extends AbstractParameterizedWorker<E> implements BaseHibernateService<E>, ApplicationContextAware, InitializingBean {
     public AbstractHibernateEntityService() {
         super();
         _isAuditable = HibernateUtils.isAuditable(getParameterizedType());

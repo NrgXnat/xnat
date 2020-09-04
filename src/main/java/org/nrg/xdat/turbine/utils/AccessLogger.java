@@ -9,6 +9,8 @@
 
 package org.nrg.xdat.turbine.utils;
 
+import static org.springframework.http.HttpHeaders.USER_AGENT;
+
 import com.noelios.restlet.ext.servlet.ServletCall;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.AxisEngine;
@@ -21,7 +23,6 @@ import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.python.antlr.ast.arguments;
 import org.restlet.data.Request;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -31,8 +32,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-
-import static org.springframework.http.HttpHeaders.USER_AGENT;
 
 /**
  * @author Tim
@@ -147,6 +146,19 @@ public class AccessLogger {
         return request.getRequestURL().append("?").append(querystring).toString();
     }
 
+    public static boolean hasNodeId() {
+        return StringUtils.isNotBlank(NODE_ID);
+    }
+
+    public static String getNodeId() {
+        return NODE_ID;
+    }
+
+    public static void setNodeId(final String nodeId) {
+        log.info("I've been asked to set the node ID to {}", nodeId);
+        NODE_ID = nodeId;
+    }
+
     private static void logAccess(final RunData data, final boolean isScreen) {
         logAccess(data, isScreen, null);
     }
@@ -208,4 +220,5 @@ public class AccessLogger {
     private static final String  NULL_ADDRESS      = "0.0.0.0";
     private static final String  REQUEST_HISTORY   = "request_history";
     private static       Boolean TRACKING_SESSIONS = null;
+    private static       String  NODE_ID           = null;
 }

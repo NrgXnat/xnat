@@ -112,7 +112,37 @@ public abstract class AutoXdatUserLogin extends org.nrg.xdat.base.BaseElement im
 		_IpAddress=null;
 		} catch (Exception e1) {logger.error(e1);}
 	}
-	 private org.nrg.xdat.om.XdatUserI _userProperty =null;
+
+	//FIELD
+
+	private String _NodeId=null;
+
+	/**
+	 * @return Returns the node_id.
+	 */
+	public String getNodeId(){
+		try{
+			if (_NodeId==null){
+				_NodeId=getStringProperty("node_id");
+				return _NodeId;
+			}else {
+				return _NodeId;
+			}
+		} catch (Exception e1) {logger.error(e1);return null;}
+	}
+
+	/**
+	 * Sets the value for node_id.
+	 * @param v Value to Set.
+	 */
+	public void setNodeId(String v){
+		try{
+			setProperty(SCHEMA_ELEMENT_NAME + "/node_id",v);
+			_NodeId=null;
+		} catch (Exception e1) {logger.error(e1);}
+	}
+
+	private org.nrg.xdat.om.XdatUserI _userProperty =null;
 
 	/**
 	 * user

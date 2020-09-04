@@ -59,10 +59,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @Transactional
-public class EventSubscriptionEntityServiceImpl
-        extends AbstractHibernateEntityService<SubscriptionEntity, EventSubscriptionEntityDao>
-        implements EventSubscriptionEntityService {
-
+public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityService<SubscriptionEntity, EventSubscriptionEntityDao> implements EventSubscriptionEntityService {
     private EventBus eventBus;
     private ContextService contextService;
     private ActionManager actionManager;
@@ -71,7 +68,6 @@ public class EventSubscriptionEntityServiceImpl
     private ObjectMapper mapper;
     private UserManagementServiceI userManagementService;
     private SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
-
 
     @Autowired
     public EventSubscriptionEntityServiceImpl(final EventBus eventBus,

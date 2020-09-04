@@ -18,9 +18,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
-public class EventTrackingDataHibernateServiceImpl
-        extends AbstractHibernateEntityService<EventTrackingData, EventTrackingDataDao>
-        implements EventTrackingDataHibernateService {
+public class EventTrackingDataHibernateServiceImpl extends AbstractHibernateEntityService<EventTrackingData, EventTrackingDataDao> implements EventTrackingDataHibernateService {
 
     /**
      * {@inheritDoc}

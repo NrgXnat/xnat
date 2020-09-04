@@ -76,7 +76,7 @@ var XNAT = getObject(XNAT);
             if (elementLoaded) {
                 return true;
             }
-            var src = '/data/experiments/' + exprId + '/scans/' + scanID + '/resources/SNAPSHOTS/files';
+            var src = serverRoot + '/data/experiments/' + exprId + '/scans/' + scanID + '/resources/SNAPSHOTS/files';
             var origSrc = src + '?file_content=ORIGINAL&index=0';
             var thumbSrc = src + '?file_content=THUMBNAIL&index=0';
             $.ajax({

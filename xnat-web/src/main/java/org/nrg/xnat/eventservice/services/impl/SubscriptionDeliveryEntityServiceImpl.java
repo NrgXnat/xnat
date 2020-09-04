@@ -32,9 +32,7 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.E
 @Slf4j
 @Service
 @Transactional
-public class SubscriptionDeliveryEntityServiceImpl
-        extends AbstractHibernateEntityService<SubscriptionDeliveryEntity, SubscriptionDeliveryEntityDao>
-        implements SubscriptionDeliveryEntityService {
+public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEntityService<SubscriptionDeliveryEntity, SubscriptionDeliveryEntityDao> implements SubscriptionDeliveryEntityService {
 
     private EventService eventService;
     private EventSubscriptionEntityService eventSubscriptionEntityService;

@@ -36,13 +36,7 @@ public class NodeConfig {
     @Bean
     public XnatNode xnatNode(final Environment environment) {
         final Properties properties = Beans.getNamespacedProperties(environment, NODE_PROPERTIES_NAMESPACE, true);
-        final XnatNode xnatNode = new XnatNode();
-        if (properties.containsKey(NODE_PROPERTY_ID)) {
-        	xnatNode.setNodeId(properties.getProperty(NODE_PROPERTY_ID));
-        } else {
-        	xnatNode.setNodeId(XnatNode.NODE_ID_NOT_CONFIGURED);
-        }
-        return xnatNode;
+        return new XnatNode(properties.getProperty(NODE_PROPERTY_ID, XnatNode.NODE_ID_NOT_CONFIGURED));
     }
     
     /**

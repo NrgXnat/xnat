@@ -10,41 +10,35 @@
 package org.nrg.xnat.restlet.extensions;
 
 import com.noelios.restlet.ext.servlet.ServletCall;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.restlet.XnatRestlet;
-import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.security.XnatProviderManager;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Resource;
 import org.restlet.resource.Variant;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 @XnatRestlet(value = "/services/auth", secure = false)
+@Slf4j
 public class AuthenticationRestlet extends Resource {
-    private static final Log _log = LogFactory.getLog(AuthenticationRestlet.class);
-
     public AuthenticationRestlet(Context context, Request request, Response response) throws Exception {
         super(context, request, response);
-        this.getVariants().add(new Variant(MediaType.ALL));
+        getVariants().add(new Variant(MediaType.ALL));
         if (request.getMethod().equals(Method.GET)) {
             throw new Exception("You must POST or PUT authentication credentials in the request body.");
         }
-        if (request.isEntityAvailable()) {
-            extractCredentials(request.getEntity().getText());
-        } else {
+        if (!request.isEntityAvailable()) {
             throw new Exception("You must provide authentication credentials in the request body.");
         }
+        extractCredentials(request.getEntity().getText());
     }
 
     @Override
@@ -73,27 +67,24 @@ public class AuthenticationRestlet extends Resource {
     }
 
     private void runAuthenticate() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Passing a representation of the verify extensions restlet.");
-        }
+        log.debug("Passing a representation of the verify extensions restlet.");
 
-        if (XDAT.getSiteConfigPreferences().getRequireLogin() && (StringUtils.isBlank(_username) || StringUtils.isBlank(_password))) {
+        if (XDAT.getSiteConfigPreferences().getRequireLogin() && StringUtils.isAnyBlank(_username, _password)) {
             fail();
             return;
         }
 
         final XnatProviderManager manager = XDAT.getContextService().getBean(XnatProviderManager.class);
 
-        if(StringUtils.isEmpty(_authMethod) && !StringUtils.isEmpty(_username)){
+        if (StringUtils.isEmpty(_authMethod) && !StringUtils.isEmpty(_username)) {
             //try to guess the auth method
             _authMethod = manager.retrieveAuthMethod(_username);
-            if(StringUtils.isEmpty(_authMethod)) {
+            if (StringUtils.isEmpty(_authMethod)) {
                 throw new BadCredentialsException("Missing login method parameter.");
             }
         }
 
-        UsernamePasswordAuthenticationToken authRequest = manager.buildUPTokenForAuthMethod(_authMethod, _username, _password);
-        Authentication authentication = manager.authenticate(authRequest);
+        final Authentication authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(_authMethod, _username, _password));
         if (authentication.isAuthenticated()) {
             succeed(authentication);
             getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
@@ -112,12 +103,11 @@ public class AuthenticationRestlet extends Resource {
     }
 
     private void extractCredentials(String text) {
-        String[] entries = text.split("&");
-        for (String entry : entries) {
-            String[] atoms = entry.split("=", 2);
+        for (String entry : text.split("&")) {
+            final String[] atoms = entry.split("=", 2);
             if (atoms.length < 2) {
                 // TODO: Just ignoring for now, should we do something here?
-                _log.warn("Found insufficient number of atoms in credential entry: " + entry);
+                log.warn("Found insufficient number of atoms in credential entry: " + entry);
             } else {
                 try {
                     switch (atoms[0]) {
@@ -135,7 +125,7 @@ public class AuthenticationRestlet extends Resource {
                             break;
                         default:
                             // TODO: Just ignoring for now, should we do something here?
-                            _log.warn("Unknown credential property: " + atoms[0]);
+                            log.warn("Unknown credential property: " + atoms[0]);
                             break;
                     }
                 } catch (UnsupportedEncodingException e) {

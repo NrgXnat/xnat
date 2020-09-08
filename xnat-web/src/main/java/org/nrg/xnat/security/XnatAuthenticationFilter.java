@@ -90,9 +90,8 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             final String authMethod = _providerManager.retrieveAuthMethod(username);
             if (StringUtils.isEmpty(authMethod)) {
                 throw new BadCredentialsException("Missing login_method parameter.");
-            } else {
-                authRequest = _providerManager.buildUPTokenForAuthMethod(authMethod, username, password);
             }
+            authRequest = _providerManager.buildUPTokenForAuthMethod(authMethod, username, password);
         } else {
             authRequest = _providerManager.buildUPTokenForProviderName(providerName, username, password);
         }

@@ -22,7 +22,12 @@ import org.nrg.xnat.security.XnatProviderManager;
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
     @Override
     protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
-        context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());
+        final boolean forceLocalLogin = data.getParameters().getBoolean("forceLocalLogin");
+        if (!forceLocalLogin) {
+            context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());
+        } else {
+            log.info("Got login request with forceLocalLogin set to true");
+        }
 
         final ThemeService themeService   = XDAT.getThemeService();
         final String       themedRedirect = themeService.getThemePage("Login");

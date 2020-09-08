@@ -39,9 +39,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
-class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
-    @SuppressWarnings("WeakerAccess")
-    protected Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
+public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
+    public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
         super(userProjectCache);
     }
 
@@ -57,6 +56,9 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
     }
 
     private static final String DICOM_PROJECT_RULES = "dicom-project.rules";
+
+    public static final String DICOM_ROUTING_TOOL = "dicom";
+    public static final String PROJECT_ROUTING_RULES_CFG = "projectRules";
 
     private static final Logger _log = LoggerFactory.getLogger(Xnat15DicomProjectIdentifier.class);
     
@@ -96,7 +98,7 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
     private static void loadFrom15Config(final Collection<DicomDerivedString> identifiers) {
         try {
             final Reader        source;
-            final Configuration configuration = XDAT.getConfigService().getConfig("dicom", "projectRules");
+            final Configuration configuration = XDAT.getConfigService().getConfig(DICOM_ROUTING_TOOL, PROJECT_ROUTING_RULES_CFG);
             final ConfigPaths   paths         = XDAT.getContextService().getBeanSafely(ConfigPaths.class);
             final Path          confDir       = Paths.get(XFT.GetConfDir());
             if (!paths.contains(confDir)) {

@@ -477,7 +477,11 @@ var XNAT = getObject(XNAT);
 
             window.setTimeout(function(){
 
-                $container.fadeIn(100);
+                $container.fadeIn(100, function() {
+                    if (isFunction(callback)) {
+                        callback.call(spawneri, obj);
+                    }
+                });
 
                 // fire collected callbacks
                 callbacks.forEach(function(fn){
@@ -488,10 +492,6 @@ var XNAT = getObject(XNAT);
                         console.log(e)
                     }
                 });
-
-                if (isFunction(callback)) {
-                    callback.call(spawneri, obj);
-                }
 
             }, 1);
 

@@ -991,6 +991,17 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiDisplayScanModality() { return getBooleanValue("uiDisplayScanModality"); }
+
+    public void setUiDisplayScanModality(final boolean uiDisplayScanModality) {
+        try {
+            setBooleanValue(uiDisplayScanModality, "uiDisplayScanModality");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDisplayScanModality': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.display-series-description")
     public boolean getUiDisplaySeriesDescription() {
         return getBooleanValue("uiDisplaySeriesDescription");

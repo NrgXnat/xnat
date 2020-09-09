@@ -51,6 +51,6 @@ public class FixedProjectSubjectDicomObjectIdentifier extends ReferencedComposit
               new FixedDicomProjectIdentifier(projectId),
               new FixedSubjectExtractor(subjectLabel),
               new NextAvailableSessionLabelExtractor(template),
-              new ChainExtractor(ClassicDicomObjectIdentifier.getAAExtractors()));
+              new ChainExtractor(XnatDefaultDicomObjectIdentifier.getAAExtractors()));
     }
 }

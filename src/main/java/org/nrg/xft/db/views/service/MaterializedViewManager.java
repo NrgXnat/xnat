@@ -127,7 +127,7 @@ public class MaterializedViewManager {
 		}
 		
 		public MaterializedViewI getViewBySearchID(String search_id, UserI user,MaterializedViewServiceI service) throws Exception {
-			XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE search_id='" + search_id+"';", PoolDBUtils.getDefaultDBName(), user.getUsername());
+			XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE search_id='" + search_id+"' AND  username='" + user.getUsername() + "';", PoolDBUtils.getDefaultDBName(), user.getUsername());
 			if(t.size()>0){
 				return service.populateView(t.nextRowHash(),user);
 			}

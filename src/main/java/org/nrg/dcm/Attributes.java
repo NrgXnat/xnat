@@ -34,6 +34,7 @@ public final class Attributes {
     Modality = new FixedDicomAttributeIndex("Modality", Tag.Modality),
     PatientComments = new FixedDicomAttributeIndex(Tag.PatientComments),
     StudyComments = new FixedDicomAttributeIndex(Tag.StudyComments),
+    AdditionalPatientHistory = new FixedDicomAttributeIndex(Tag.AdditionalPatientHistory),
     StudyDate = new FixedDicomAttributeIndex(Tag.StudyDate),
     StudyDescription = new FixedDicomAttributeIndex(Tag.StudyDescription),
     AccessionNumber = new FixedDicomAttributeIndex(Tag.AccessionNumber),

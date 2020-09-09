@@ -195,7 +195,6 @@ public class SearchResource extends SecureResource {
             }
 
             if (mv != null && (search.getId().startsWith("@") || isQueryVariableTrue("refresh"))) {
-                mv.delete();
                 mv = null;
             }
 

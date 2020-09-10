@@ -49,7 +49,11 @@ var XNAT = getObject(XNAT);
     function setRoot(url){
         url = (url+'').trim().replace(/^([*~.]*\/+)/, '/');
         // only modify 'url' values that start with '/'
-        return /^\//.test(url) ? XNAT.url.rootUrl(url) : url
+        if (/^\//.test(url)) {
+            return /^\/data\//.test(url) ? XNAT.url.csrfUrl(url) : XNAT.url.rootUrl(url);
+        } else {
+            return url;
+        }
     }
 
     // process URL for spawner elements

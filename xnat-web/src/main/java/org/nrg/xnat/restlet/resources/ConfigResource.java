@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,10 +38,9 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -312,10 +312,20 @@ public class ConfigResource extends SecureResource {
 
             fixAnonPath();
 
+            Representation entity = getRequest().getEntity();
+            Map<String, String> jsonParams = null;
+            String status;
+            if (entity.getMediaType().equals(MediaType.APPLICATION_JSON)) {
+                jsonParams = getSerializer().deserializeJson(entity.getText(),
+                        new TypeReference<HashMap<String, String>>() {});
+                status = jsonParams.get("status");
+            } else {
+                status = getQueryVariable("status");
+            }
+
             boolean handledStatus = false;
             //if this is a status update, do it and return
-            if (hasQueryVariable("status")) {
-                final String status = getQueryVariable("status");
+            if (StringUtils.isNotBlank(status)) {
                 final Matcher matcher = REGEX_ENABLED_VALUES.matcher(status);
                 // Add support for true or false to make compatible with generic controls in settingsManager.js.
                 if (!matcher.matches() && !status.equals("true") && !status.equals("false")) {
@@ -344,8 +354,8 @@ public class ConfigResource extends SecureResource {
                 }
             }
 
-            Representation entity = getRequest().getEntity();
-            boolean hasBodyContent = entity.getAvailableSize() > 0;
+            boolean hasBodyContent = entity.getAvailableSize() > 0 ||
+                    (jsonParams != null && jsonParams.containsKey("contents"));
 
             // If we handled the status and there was no content posted, i.e.
             // no change to the configuration's contents, then we're done, OK.
@@ -359,8 +369,10 @@ public class ConfigResource extends SecureResource {
             // status, since a status change operation with no body presumes that
             // all you wanted to do was change the status and returns OK (see lines
             // immediately above here).
-            final String contents = hasBodyContent ? getBodyContents() : "";
-            assert contents != null;
+            final String contents = hasBodyContent ? getBodyContents(jsonParams) : "";
+            if (contents == null) {
+                throw new ConfigServiceException("No contents provided");
+            }
 
             final String isUnversionedParam = getQueryVariable("unversioned");
 
@@ -420,25 +432,29 @@ public class ConfigResource extends SecureResource {
 
     }
 
-    private String getBodyContents() throws FileUploadException, ClientException, IOException {
-        List<FileWriterWrapperI> fws = getFileWriters();
-        if (fws.size() == 0) {
-            _log.warn("Unknown upload format", getUser().getUsername(), projectId);
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
-            return null;
+    private String getBodyContents(@Nullable Map<String, String> jsonParams)
+            throws FileUploadException, ClientException, IOException {
+        if (jsonParams != null) {
+            return jsonParams.get("contents");
+        } else {
+            List<FileWriterWrapperI> fws = getFileWriters();
+            if (fws.size() == 0) {
+                _log.warn("Unknown upload format", getUser().getUsername(), projectId);
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
+                return null;
+            }
+
+            if (fws.size() > 1) {
+                _log.info("Importer is limited to one uploaded resource at a time.", getUser().getUsername(), projectId);
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
+                return null;
+            }
+
+            FileWriterWrapperI fw = fws.get(0);
+
+            //read the input stream into a string buffer.
+            return IOUtils.toString(fw.getInputStream(), "UTF-8");//modified to use IOUtils because old code was adding a line break to single line files which wasn't in the uploaded content... true should be true, not true\n
         }
-
-        if (fws.size() > 1) {
-            _log.info("Importer is limited to one uploaded resource at a time.", getUser().getUsername(), projectId);
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
-            return null;
-        }
-
-        FileWriterWrapperI fw = fws.get(0);
-
-        //read the input stream into a string buffer.
-        return IOUtils.toString(fw.getInputStream(), "UTF-8");//modified to use IOUtils because old code was adding a line break to single line files which wasn't in the uploaded content... true should be true, not true\n
-        
     }
 
     private void fixAnonPath() {

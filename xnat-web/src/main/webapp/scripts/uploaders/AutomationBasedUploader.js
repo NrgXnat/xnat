@@ -682,7 +682,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						$('#xmodal-abu-done-button').show();
 						$('#xmodal-abu-process-button').hide();
 						if (anySuccessfulUploads) {
-							XNAT.app.abu.runFunctionIfIdle(60000, XNAT.app.abu.completeFileUpload);
+							XNAT.app.abu.completeFileUpload();
 						}
 					}
 				},

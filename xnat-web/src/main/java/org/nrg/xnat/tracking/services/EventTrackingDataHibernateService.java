@@ -5,6 +5,8 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 
+import java.util.Date;
+
 public interface EventTrackingDataHibernateService extends BaseHibernateService<EventTrackingData> {
     /**
      * Create new EventListenerData entity with key, if entity already exists with key, restart its tracking
@@ -31,4 +33,10 @@ public interface EventTrackingDataHibernateService extends BaseHibernateService<
      * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
     EventTrackingData findByKey(String key, Integer userId) throws NotFoundException;
+
+    /**
+     * Remove entries older than expiration
+     * @param expiration entries older than this date will be removed
+     */
+    void deleteEntriesOlderThan(Date expiration);
 }

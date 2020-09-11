@@ -52,4 +52,9 @@ public interface EventTrackingDataService {
      * @throws IllegalAccessException if user cannot read this event tracking data
      */
     void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException;
+
+    /**
+     * Remove entries older than 1 month
+     */
+    void cleanupOldEntries();
 }

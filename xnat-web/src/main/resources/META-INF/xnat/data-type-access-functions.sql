@@ -36,6 +36,7 @@ DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_permissions(username VAR
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_entity_projects(entityId VARCHAR(255), projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.data_type_fns_get_all_accessible_expts_of_type(username VARCHAR(255), dataType VARCHAR(255));
+DROP FUNCTION IF EXISTS public.data_type_fns_get_user_access_by_project(username VARCHAR(255));
 DROP VIEW IF EXISTS public.secured_identified_data_types;
 DROP VIEW IF EXISTS public.scan_data_types;
 DROP VIEW IF EXISTS public.get_xnat_hash_indices;
@@ -1183,6 +1184,67 @@ BEGIN
             u.login IN (username, 'guest')
         ORDER BY
             id;
+END
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.data_type_fns_get_user_access_by_project(username VARCHAR(255))
+
+    RETURNS TABLE (
+                      data_type    TEXT,
+                      project      VARCHAR(255),
+                      shared       BOOLEAN,
+                      can_create   BOOLEAN,
+                      can_read     BOOLEAN,
+                      can_edit     BOOLEAN,
+                      can_delete   BOOLEAN,
+                      can_active   BOOLEAN)
+AS
+$$
+BEGIN
+    RETURN QUERY
+        WITH fa AS
+                 (SELECT m.field                   AS field,
+                         m.field_value             AS project,
+                         m.create_element::BOOLEAN AS can_create,
+                         m.read_element::BOOLEAN   AS can_read,
+                         m.edit_element::BOOLEAN   AS can_edit,
+                         m.delete_element::BOOLEAN AS can_delete,
+                         m.active_element::BOOLEAN AS can_active
+                  FROM xdat_field_mapping m
+                           LEFT JOIN xdat_field_mapping_set s
+                                     ON m.xdat_field_mapping_set_xdat_field_mapping_set_id =
+                                        s.xdat_field_mapping_set_id
+                           LEFT JOIN xdat_element_access a
+                                     ON s.permissions_allow_set_xdat_elem_xdat_element_access_id =
+                                        a.xdat_element_access_id
+                           LEFT JOIN xdat_usergroup g ON a.xdat_usergroup_xdat_usergroup_id = g.xdat_usergroup_id
+                           LEFT JOIN xdat_user_groupid i ON g.id = i.groupid
+                           LEFT JOIN xdat_user u ON a.xdat_user_xdat_user_id = u.xdat_user_id OR
+                                                    i.groups_groupid_xdat_user_xdat_user_id = u.xdat_user_id
+                  WHERE u.login IN ('guest', username))
+        SELECT 'xnat:projectData' AS data_type,
+               fa.project,
+               FALSE              AS shared,
+               fa.can_create,
+               fa.can_read,
+               fa.can_edit,
+               fa.can_delete,
+               fa.can_active
+        FROM fa
+        WHERE fa.field = 'xnat:projectData/ID'
+        UNION
+        SELECT REGEXP_REPLACE(fa.field, '(/sharing/share)?/project$', '') AS data_type,
+               fa.project,
+               fa.field ~ '/sharing/share/project$' AS shared,
+               fa.can_create,
+               fa.can_read,
+               fa.can_edit,
+               fa.can_delete,
+               fa.can_active
+        FROM fa
+        WHERE fa.field ~ '(/sharing/share)?/project$'
+    ;
 END
 $$
     LANGUAGE plpgsql;

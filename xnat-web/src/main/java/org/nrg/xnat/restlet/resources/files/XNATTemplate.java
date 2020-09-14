@@ -507,8 +507,10 @@ public class XNATTemplate extends SecureResource {
                     return experiment.getId();
                 }
             });
-            if (!assesseds.isEmpty()) {
-                security = assesseds.get(0);
+            if (!assesseds.isEmpty() || security instanceof XnatImageassessordata) {
+                if (!assesseds.isEmpty()) {
+                    security = assesseds.get(0);
+                }
                 if (isInResource) {
                     xmlPath = "xnat:imageAssessorData/in/file";
                     query.append(STARTER_FIELDS);

@@ -14,6 +14,8 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.search.CriteriaCollection;
@@ -199,6 +201,21 @@ public class URIManager {
                 }
             }
             return null;
+        }
+
+        protected XnatImageassessordata getImageAssessorByIdOrLabel(final XnatImagesessiondata session,
+                                                                    final String assessorIdOrLabel) {
+            if (session == null) {
+                return (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(assessorIdOrLabel,
+                        null, false);
+            }
+
+            XnatImageassessordata assessor = session.getAssessorById(assessorIdOrLabel);
+            if (assessor == null) {
+                return session.getAssessorByLabel(assessorIdOrLabel);
+            } else {
+                return assessor;
+            }
         }
     }
 

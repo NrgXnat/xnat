@@ -62,7 +62,7 @@ public class ExptAssessorURI extends ArchiveURI implements ArchiveItemURI, Asses
             final String exptID = (String) props.get(URIManager.EXPT_ID);
 
             if (experiment == null) {
-                experiment = (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(exptID, null, false);
+                experiment = getImageAssessorByIdOrLabel(session, exptID);
             }
         }
     }

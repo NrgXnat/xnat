@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -313,9 +314,10 @@ public class ConfigResource extends SecureResource {
             fixAnonPath();
 
             Representation entity = getRequest().getEntity();
+            MediaType mt;
             Map<String, String> jsonParams = null;
             String status;
-            if (entity.getMediaType().equals(MediaType.APPLICATION_JSON)) {
+            if (entity != null && (mt = entity.getMediaType()) != null && mt.equals(MediaType.APPLICATION_JSON)) {
                 jsonParams = getSerializer().deserializeJson(entity.getText(),
                         new TypeReference<HashMap<String, String>>() {});
                 status = jsonParams.get("status");
@@ -354,7 +356,7 @@ public class ConfigResource extends SecureResource {
                 }
             }
 
-            boolean hasBodyContent = entity.getAvailableSize() > 0 ||
+            boolean hasBodyContent = (entity != null && entity.getAvailableSize() > 0) ||
                     (jsonParams != null && jsonParams.containsKey("contents"));
 
             // If we handled the status and there was no content posted, i.e.
@@ -439,21 +441,21 @@ public class ConfigResource extends SecureResource {
         } else {
             List<FileWriterWrapperI> fws = getFileWriters();
             if (fws.size() == 0) {
-                _log.warn("Unknown upload format", getUser().getUsername(), projectId);
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
+                _log.warn("No body contents");
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "No body contents.");
                 return null;
             }
 
             if (fws.size() > 1) {
-                _log.info("Importer is limited to one uploaded resource at a time.", getUser().getUsername(), projectId);
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
+                _log.info("Config contents are limited to a single file");
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Config contents are limited to a single file");
                 return null;
             }
 
             FileWriterWrapperI fw = fws.get(0);
 
             //read the input stream into a string buffer.
-            return IOUtils.toString(fw.getInputStream(), "UTF-8");//modified to use IOUtils because old code was adding a line break to single line files which wasn't in the uploaded content... true should be true, not true\n
+            return IOUtils.toString(fw.getInputStream(), StandardCharsets.UTF_8);//modified to use IOUtils because old code was adding a line break to single line files which wasn't in the uploaded content... true should be true, not true\n
         }
     }
 

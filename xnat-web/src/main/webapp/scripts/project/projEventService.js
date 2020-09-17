@@ -1082,18 +1082,6 @@ var XNAT = getObject(XNAT || {});
         var datatableOptions = {
             aaData: data,
             aoColumns: [
-                // {
-                //     sTitle: '<b>Subscription Name</b>',
-                //     sClass: 'left',
-                //     sWidth: '200px',
-                //     mData: function(source){
-                //         var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
-                //         if (source['trigger-label']) {
-                //             message = message + '<br>Trigger: ' + source['trigger-label'];
-                //         }
-                //         return message;
-                //     }
-                // },
                 {
                     sTitle: '<b>Date</b>',
                     mData: function(source){
@@ -1115,6 +1103,18 @@ var XNAT = getObject(XNAT || {});
                     sWidth: '150px'
                 },
                 {
+                    sTitle: '<b>Subscription Name</b>',
+                    sClass: 'left',
+                    sWidth: '200px',
+                    mData: function(source){
+                        var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
+                        if (source['trigger-label']) {
+                            message = message + '<br>Trigger: ' + source['trigger-label'];
+                        }
+                        return message;
+                    }
+                },
+                {
                     sTitle: '<b>Event Type</b>',
                     mData: function(source){
                         return (source['event-name']) ? source['event-name'] : 'Unknown';
@@ -1132,12 +1132,6 @@ var XNAT = getObject(XNAT || {});
                     sTitle: '<b>Status</b>',
                     mData: function(source){
                         return source.status
-                    },
-                    sWidth: '150px'
-                },                {
-                    sTitle: '<b>Project</b>',
-                    mData: function(source){
-                        return source.project
                     },
                     sWidth: '150px'
                 }
@@ -1312,7 +1306,7 @@ var XNAT = getObject(XNAT || {});
                         'button.btn2.btn-sm',[
                             spawn('i.fa.fa-search',{
                                 title: 'Find By ID',
-                                onclick: XNAT.admin.eventServicePanel.historyTable.findById
+                                onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
                             })
                         ]);
                 target.append(spawn('div.pull-right',[

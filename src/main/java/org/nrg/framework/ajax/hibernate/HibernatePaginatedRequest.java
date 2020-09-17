@@ -1,42 +1,33 @@
 package org.nrg.framework.ajax.hibernate;
 
+import org.apache.commons.collections.MapUtils;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.metadata.ClassMetadata;
-import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.PaginatedRequest;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class HibernatePaginatedRequest extends PaginatedRequest {
-
     public boolean hasFilters() {
-        return filtersMap != null && !filtersMap.isEmpty();
+        return !MapUtils.isEmpty(filtersMap);
     }
 
     @Nonnull
     public List<Criterion> getCriterion(ClassMetadata classMetadata) {
-        List<Criterion> criteria = new ArrayList<>();
         if (filtersMap == null) {
-            return criteria;
+            return Collections.emptyList();
         }
-        for (String property : filtersMap.keySet()) {
-            Filter filter = filtersMap.get(property);
-            if (!(filter instanceof HibernateFilter)) {
-                throw new RuntimeException("Invalid filter");
-            }
-            criteria.add(((HibernateFilter) filter).makeCriterion(property, classMetadata));
+        if (filtersMap.entrySet().stream().anyMatch(entry -> !(entry.getValue() instanceof HibernateFilter))) {
+            throw new RuntimeException("Invalid filter");
         }
-        return criteria;
+        return filtersMap.entrySet().stream().map(entry -> ((HibernateFilter) entry.getValue()).makeCriterion(entry.getKey(), classMetadata)).collect(Collectors.toList());
     }
 
     public Order getOrder() {
-        if (sortDir == SortDir.ASC) {
-            return Order.asc(getSortColumn());
-        } else {
-            return Order.desc(getSortColumn());
-        }
+        return sortDir == SortDir.ASC ? Order.asc(getSortColumn()) : Order.desc(getSortColumn());
     }
 }

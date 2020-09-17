@@ -1,9 +1,11 @@
 package org.nrg.framework.ajax.hibernate;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
@@ -11,64 +13,30 @@ import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.type.LongType;
 import org.hibernate.type.Type;
 import org.nrg.framework.ajax.Filter;
-import org.nrg.framework.ajax.sql.SortOrFilterException;
+import org.nrg.framework.ajax.sql.NumericFilter;
+import org.nrg.framework.ajax.sql.StringFilter;
+import org.nrg.framework.ajax.sql.TimestampFilter;
+import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 
+import java.util.Arrays;
+
+/**
+ * Provides filtering for {@link HibernatePaginatedRequest Hibernate-based paginated requests}. This is the <i>only</i>
+ * filter you should use when filtering Hibernate services and DAOs that extend {@link AbstractHibernateDAO}. The other
+ * core implementations–{@link NumericFilter}, {@link StringFilter}, and {@link TimestampFilter}–should only be used for
+ * handling pure SQL queries.
+ */
+@Data
+@EqualsAndHashCode(callSuper = false)
+@Builder
 @JsonInclude
 public class HibernateFilter extends Filter {
-    public boolean not = false;
-    public Object value;
-    public Object[] values;
-    public Object lo;
-    public Object hi;
-    public Operator operator;
-
-    public boolean isNot() {
-        return not;
-    }
-
-    public void setNot(boolean not) {
-        this.not = not;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
-    public Object[] getValues() {
-        return values;
-    }
-
-    public void setValues(Object[] values) {
-        this.values = values;
-    }
-
-    public Object getLo() {
-        return lo;
-    }
-
-    public void setLo(Object lo) {
-        this.lo = lo;
-    }
-
-    public Object getHi() {
-        return hi;
-    }
-
-    public void setHi(Object hi) {
-        this.hi = hi;
-    }
-
-    public Operator getOperator() {
-        return operator;
-    }
-
-    public void setOperator(Operator operator) {
-        this.operator = operator;
-    }
+    private boolean not;
+    private Object value;
+    private Object[] values;
+    private Object lo;
+    private Object hi;
+    private Operator operator;
 
     @JsonIgnore
     public Criterion makeCriterion(String property, ClassMetadata classMetadata) {
@@ -83,11 +51,7 @@ public class HibernateFilter extends Filter {
                 value = handleLongType(value, classMetadata.getPropertyType(property));
                 break;
             case IN:
-                Object[] newVals = new Object[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    newVals[i] = handleLongType(values[i], classMetadata.getPropertyType(property));
-                }
-                values = newVals;
+                values = Arrays.stream(values).map(value1 -> handleLongType(value1, classMetadata.getPropertyType(property))).toArray();
             case BETWEEN:
                 lo = handleLongType(lo, classMetadata.getPropertyType(property));
                 hi = handleLongType(hi, classMetadata.getPropertyType(property));
@@ -162,10 +126,11 @@ public class HibernateFilter extends Filter {
         BETWEEN("between");
 
         String op;
-        private Operator(String op) {
+        Operator(String op) {
             this.op = op;
         }
 
+        @SuppressWarnings({"unused", "RedundantSuppression"})
         @JsonValue
         public String getOp() {
             return op;

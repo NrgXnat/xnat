@@ -1,8 +1,5 @@
 package org.nrg.xnat.eventservice.rest;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.*;
-import static org.springframework.web.bind.annotation.RequestMethod.*;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -20,18 +17,41 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.exceptions.UnauthorizedException;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.ProjectSubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
+import static org.nrg.xdat.security.helpers.AccessLevel.Delete;
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @SuppressWarnings("deprecation")
 @Slf4j
@@ -259,7 +279,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDeliveriesCount(project, subscriptionId, includeFilterMismatch);
     }
 
-    @XapiRequestMapping(restrictTo = Delete, value = "/events/{project}/delivered/{id}", method = GET)
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/{id}", method = GET)
     @ResponseBody
     public SubscriptionDelivery getDeliveredProjectSubscriptions(
             final @PathVariable long id,

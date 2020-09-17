@@ -73,7 +73,7 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     @Override
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
-        log.info("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
+        log.info("EventServiceLoggingAction called for Subscription " + subscription.name());
         try {
 
             Object serializableObject = componentManager.getModelObject(event.getObject(), user);

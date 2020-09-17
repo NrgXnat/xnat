@@ -18,11 +18,13 @@ import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import reactor.bus.Event;
 
 import java.util.List;
 import java.util.Map;
 
+@EnableScheduling
 public interface EventService {
     
     List<SimpleEvent> getEvents() throws Exception;
@@ -94,4 +96,6 @@ public interface EventService {
     EventServicePrefsBean getPrefs();
     EventServicePrefs getPrefsPojo();
     void updatePrefs(EventServicePrefs prefs);
+
+    void syncReactorRegistrations();
 }

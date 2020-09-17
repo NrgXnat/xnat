@@ -1,12 +1,5 @@
 package org.nrg.xnat.eventservice.services;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-import static reactor.bus.selector.Selectors.type;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
@@ -24,7 +17,11 @@ import org.mockito.Mockito;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
-import org.nrg.xdat.model.*;
+import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -36,10 +33,29 @@ import org.nrg.xnat.eventservice.actions.SingleActionProvider;
 import org.nrg.xnat.eventservice.actions.TestAction;
 import org.nrg.xnat.eventservice.config.EventServiceTestConfig;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.events.*;
+import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.ProjectEvent;
+import org.nrg.xnat.eventservice.events.SampleEvent;
+import org.nrg.xnat.eventservice.events.ScanEvent;
+import org.nrg.xnat.eventservice.events.SessionEvent;
+import org.nrg.xnat.eventservice.events.SubjectEvent;
+import org.nrg.xnat.eventservice.events.TestCombinedEvent;
+import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
+import org.nrg.xnat.eventservice.model.ActionProvider;
+import org.nrg.xnat.eventservice.model.EventFilter;
+import org.nrg.xnat.eventservice.model.EventFilterCreator;
+import org.nrg.xnat.eventservice.model.EventSignature;
+import org.nrg.xnat.eventservice.model.ProjectEventFilterCreator;
+import org.nrg.xnat.eventservice.model.ProjectSubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.TimedEventStatus;
 import org.nrg.xnat.eventservice.model.xnat.Scan;
 import org.nrg.xnat.eventservice.model.xnat.Session;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +70,24 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.selector.Selector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
+import static reactor.bus.selector.Selectors.type;
 
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -270,19 +303,18 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: No qualifying bean of type 'org.nrg.xnat.eventservice.events.ImageAssessorEvent' available")
     @Test
     @DirtiesContext
     public void createSubscription() throws Exception {
-        List<SimpleEvent> events = eventService.getEvents();
+        List<SimpleEvent> events = mockEventService.getEvents();
         assertThat("eventService.getEvents() should not return a null list", events, notNullValue());
         assertThat("eventService.getEvents() should not return an empty list", events, is(not(empty())));
 
-        List<Action> actions = eventService.getAllActions();
+        List<Action> actions = mockEventService.getAllActions();
         assertThat("eventService.getAllActions() should not return a null list", actions, notNullValue());
         assertThat("eventService.getAllActions() should not return an empty list", actions, is(not(empty())));
 
-        List<EventServiceListener> listeners = componentManager.getInstalledListeners();
+        List<EventServiceListener> listeners = mockComponentManager.getInstalledListeners();
         assertThat("componentManager.getInstalledListeners() should not return a null list", listeners, notNullValue());
         assertThat("componentManager.getInstalledListeners() should not return an empty list", listeners, is(not(empty())));
 
@@ -310,8 +342,7 @@ public class EventServiceIntegrationTest {
         assertThat("eventService.createSubscription() should not return null", savedSubscription, notNullValue());
         assertThat("subscription id should not be null", savedSubscription.id(), notNullValue());
         assertThat("subscription id should not be zero", savedSubscription.id(), not(0));
-        assertThat("subscription registration key should not be null", savedSubscription.listenerRegistrationKey(), notNullValue());
-        assertThat("subscription registration key should not be empty", savedSubscription.listenerRegistrationKey(), not(""));
+        assertThat("subscription registration key should not be null", eventSubscriptionEntityService.getListenerId(savedSubscription.id()), notNullValue());
 
         subscriptionCreator = SubscriptionCreator.builder().name("Test 2 Subscription")
                                                  .active(true)
@@ -327,7 +358,7 @@ public class EventServiceIntegrationTest {
 
         Subscription secondSavedSubscription = eventService.createSubscription(subscription);
 
-        assertThat("Subscriptions should have unique listener IDs", savedSubscription.listenerRegistrationKey(), not(secondSavedSubscription.listenerRegistrationKey()));
+        assertThat("Subscriptions should have unique listener IDs", eventSubscriptionEntityService.getListenerId(savedSubscription.id()), not(eventSubscriptionEntityService.getListenerId(secondSavedSubscription.id())));
         assertThat("Subscriptions should have unique IDs", savedSubscription.id(), not(secondSavedSubscription.id()));
     }
 
@@ -412,12 +443,14 @@ public class EventServiceIntegrationTest {
     public void activateAndSaveSubscriptions() throws Exception {
         Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         assertThat(subscription1, not(nullValue()));
-        assertThat(subscription1.listenerRegistrationKey(), not(nullValue()));
+        assertThat("Expected an active subscription entry with subscription id = " + Long.toString(subscription1.id()), eventSubscriptionEntityService.getActiveRegistrationSubscriptionIds().iterator().next(), equalTo(subscription1.id()));
 
         Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(project2CreatedSubscription, mockUser.getLogin()));
         assertThat("Subscription 2 needs a non-null ID", subscription2.id(), not(nullValue()));
         assertThat("Subscription 1 and 2 need unique IDs", subscription2.id(), not(is(subscription1.id())));
-        assertThat("Subscription 1 and 2 should have unique registration keys.", subscription2.listenerRegistrationKey().toString(), not(containsString(subscription1.listenerRegistrationKey().toString())));
+        assertThat("Subscription 1 and 2 should have unique registration keys.",
+                eventSubscriptionEntityService.getListenerId(subscription1.id()).toString(),
+                not(containsString(eventSubscriptionEntityService.getListenerId(subscription2.id()).toString())));
     }
 
     @Test
@@ -643,7 +676,7 @@ public class EventServiceIntegrationTest {
 
         Subscription createdSubsciption = eventService.createSubscription(subscription);
         assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
-        assertThat("Created subscription is missing listener registration key.", createdSubsciption.listenerRegistrationKey(), not(nullValue()));
+        assertThat("Created subscription is missing listener registration key.", eventSubscriptionEntityService.getListenerId(createdSubsciption.id()), not(nullValue()));
         assertThat("Created subscription is missing DB id.", createdSubsciption.id(), not(nullValue()));
 
     }
@@ -675,7 +708,7 @@ public class EventServiceIntegrationTest {
 
         Subscription createdSubsciption = eventService.createSubscription(subscription);
         assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
-        assertThat("Created subscription is missing listener registration key.", createdSubsciption.listenerRegistrationKey(), not(nullValue()));
+        assertThat("Created subscription is missing listener registration key.", eventSubscriptionEntityService.getActiveRegistrationSubscriptionIds().size(), is(1));
         assertThat("Created subscription is missing DB id.", createdSubsciption.id(), not(nullValue()));
     }
 
@@ -815,14 +848,14 @@ public class EventServiceIntegrationTest {
         assertThat("Expected one subscription to be created.", allSubscriptions1.size(), is(1));
 
         final Subscription subscription1 = allSubscriptions1.get(0);
-        String             regKey1       = subscription1.listenerRegistrationKey();
+        String             regKey1       = eventSubscriptionEntityService.getListenerId(subscription1.id()).toString();
 
         eventService.reactivateAllSubscriptions();
 
         List<Subscription> allSubscriptions2 = eventSubscriptionEntityService.getAllSubscriptions();
         assertThat("Expected only a single subscription after reactivation", allSubscriptions2.size(), is(1));
         final Subscription subscription2 = allSubscriptions2.get(0);
-        String             regKey2       = subscription2.listenerRegistrationKey();
+        String             regKey2       = eventSubscriptionEntityService.getListenerId(subscription2.id()).toString();
 
         assertThat("Expected reactivated subscription to have unique registration key.", regKey1, is(not(regKey2)));
 
@@ -1091,7 +1124,7 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: Expected two detected events. Expected: is <2> but: was <1>")
+    //@Ignore("Fails with error message: Expected two detected events. Expected: is <2> but: was <1>")
     @Test
     @DirtiesContext
     public void create1000SubscriptionsCatchTwoWithDifferentProjectId() throws Exception {
@@ -1130,7 +1163,7 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: Expected 100 detected events. Expected: is <1000> but: was <1>")
+    //@Ignore("Fails with error message: Expected 100 detected events. Expected: is <1000> but: was <1>")
     @Test
     @DirtiesContext
     public void createManySubscriptionsTriggerManyEventsCatch1000() throws Exception {

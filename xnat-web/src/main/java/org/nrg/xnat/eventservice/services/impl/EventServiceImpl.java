@@ -44,6 +44,8 @@ import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -55,6 +57,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
@@ -69,6 +72,7 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.S
 @Slf4j
 @Service
 @EnableAsync
+@EnableScheduling
 public class EventServiceImpl implements EventService {
 
     private ContextService contextService;
@@ -295,27 +299,6 @@ public class EventServiceImpl implements EventService {
     }
 
 
-//    @Override
-//    public SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception {
-//         for(EventServiceEvent e :componentManager.getInstalledEvents()){
-//            if(e.getEventUUID().equals(uuid)){
-//                SimpleEvent simpleEvent = toPojo(e);
-//                if(loadDetails){
-//                    Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
-//                    if(eventFilterNodes != null && eventFilterNodes.size()>0){
-//                        simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
-//                    }
-//                    List<EventPropertyNode> eventPropertyNodes = getEventPropertyNodes(simpleEvent.id());
-//                    if(eventPropertyNodes != null && !eventPropertyNodes.isEmpty()){
-//                        simpleEvent = simpleEvent.toBuilder().eventProperties(eventPropertyNodes).build();
-//                    }
-//                }
-//                return simpleEvent;
-//            }
-//        }
-//        return null;
-//    }
-
     @Override
     public SimpleEvent getEvent(@Nonnull final String eventId, Boolean loadDetails) throws Exception {
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
@@ -402,8 +385,8 @@ public class EventServiceImpl implements EventService {
             XnatModelObject modelObject = null;
             if(event.getData() instanceof EventServiceEvent) {
                 EventServiceEvent esEvent = (EventServiceEvent) event.getData();
-                for (Subscription subscription : subscriptionService.getSubscriptionsByKey(listener.getInstanceId().toString())) {
-                    log.debug("RegKey matched for " + subscription.listenerRegistrationKey() + "  " + subscription.name());
+                for (Subscription subscription : subscriptionService.getSubscriptionsByListenerId(listener.getInstanceId())) {
+                    log.debug("RegKey matched for " + listener.getInstanceId() + "  " + subscription.name());
                     // Create subscription delivery entry
                     Long deliveryId = subscriptionDeliveryEntityService.create(
                             SubscriptionEntity.fromPojoWithTemplate(subscription, subscriptionService.retrieve(subscription.id())),
@@ -612,6 +595,34 @@ public class EventServiceImpl implements EventService {
             }
             reactivateAllSubscriptions();
         }
+    }
+
+    @Override
+    @Scheduled(cron = "*/30 * * * * *")
+    public void syncReactorRegistrations()
+    {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions();
+        Set activeRegistrationSubscriptionIds = subscriptionService.getActiveRegistrationSubscriptionIds();
+
+        // Activate non-active enabled subscriptions
+        allSubscriptions.stream()
+                           .filter(s -> s.active())
+                           .filter(s -> !activeRegistrationSubscriptionIds.contains(s.id()))
+                           .forEach(s -> subscriptionService.activate(s));
+
+        // Deactivate disabled active subscriptions
+        allSubscriptions.stream()
+                           .filter(s -> !s.active())
+                           .filter(s -> activeRegistrationSubscriptionIds.contains(s.id()))
+                           .forEach(s -> subscriptionService.removeActiveRegistration(s.id()));
+
+        // Deactivate deleted active subscriptions
+        List<Long> enabledSubscriptionIds = allSubscriptions.stream()
+                                                            .filter(s -> s.active())
+                                                            .map(Subscription::id).collect(Collectors.toList());
+        activeRegistrationSubscriptionIds.stream()
+                                         .filter(arsid -> !enabledSubscriptionIds.contains(arsid))
+                                         .forEach(arsid -> subscriptionService.removeActiveRegistration((Long) arsid));
     }
 
     private void throwIfDisabled() throws SubscriptionAccessException{

@@ -232,7 +232,6 @@ public class EventServiceEmailAction extends SingleActionProvider {
             failWithMessage(deliveryId,"Email service failed to send message. \nCheck configuration");
         }
 
-        log.error("EventServiceLoggingAction called for RegKey " + subscription.listenerRegistrationKey());
 
     }
 

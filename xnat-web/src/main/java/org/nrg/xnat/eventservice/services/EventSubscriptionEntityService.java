@@ -12,25 +12,36 @@ import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.Transient;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-public interface EventSubscriptionEntityService extends BaseHibernateService<SubscriptionEntity>{
+public interface EventSubscriptionEntityService extends BaseHibernateService<SubscriptionEntity> {
 
 
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
+
     Subscription validate(Subscription eventSubscription) throws SubscriptionValidationException;
+
     Subscription activate(Subscription eventSubscription);
+
     Subscription deactivate(Subscription eventSubscription) throws NotFoundException, EntityNotFoundException;
+
     Subscription save(Subscription subscription);
 
     void throwExceptionIfNameExists(final Subscription subscription) throws NrgServiceRuntimeException;
 
     Subscription update(Subscription subscription) throws NotFoundException, SubscriptionValidationException;
+
     void delete(Long subscriptionId) throws Exception;
 
     List<Subscription> getAllSubscriptions();
+
     List<Subscription> getSubscriptions(String projectId);
-    List<Subscription> getSubscriptionsByKey(String key) throws NotFoundException;
+
     Subscription getSubscription(Long id) throws NotFoundException;
+
+    @Transient
+    List<Subscription> getSubscriptionsByListenerId(UUID listenerId) throws NotFoundException;
 
     @Transient
     Subscription toPojo(SubscriptionEntity entity);
@@ -38,4 +49,13 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     @Nonnull
     @Transient
     List<Subscription> toPojo(List<SubscriptionEntity> subscriptionEntities);
+
+    @Transient
+    UUID getListenerId(Long subscriptionId);
+
+    @Transient
+    Set getActiveRegistrationSubscriptionIds();
+
+    @Transient
+    void removeActiveRegistration(Long subscriptionId);
 }

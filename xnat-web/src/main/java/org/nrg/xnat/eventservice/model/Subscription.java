@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
-import reactor.bus.registry.Registration;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -19,7 +18,6 @@ public abstract class Subscription {
     @Nullable @JsonProperty("id") public abstract Long id();
     @Nullable @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("active") public abstract Boolean active();
-    @Nullable @JsonProperty("registration-key") public abstract  String listenerRegistrationKey();
     @JsonIgnore @Nullable public abstract String customListenerId();
     @JsonProperty("action-key") public abstract String actionKey();
     @Nullable @JsonProperty("attributes") public abstract Map<String, String> attributes();
@@ -28,7 +26,6 @@ public abstract class Subscription {
     @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
     @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
-    @Nullable @JsonIgnore @JsonProperty("registration") public abstract Registration registration();
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss z",
@@ -50,7 +47,7 @@ public abstract class Subscription {
         return this.toBuilder().valid(true).validationMessage("").build();
     }
 
-    public static Subscription create(Long id, String name, Boolean active, String listenerRegistrationKey,
+    public static Subscription create(Long id, String name, Boolean active,
                                       String customListenerId, String actionKey, Map<String, String> attributes,
                                       EventFilter eventFilter, Boolean actAsEventUser, String subscriptionOwner,
                                       Boolean valid, String validationMessage) {
@@ -58,7 +55,6 @@ public abstract class Subscription {
                 .id(id)
                 .name(name)
                 .active(active)
-                .listenerRegistrationKey(listenerRegistrationKey)
                 .customListenerId(customListenerId)
                 .actionKey(actionKey)
                 .attributes(attributes)
@@ -82,7 +78,6 @@ public abstract class Subscription {
                 .id(id)
                 .name(name)
                 .active(active)
-                .listenerRegistrationKey(null)
                 .customListenerId(null)
                 .actionKey(actionKey)
                 .attributes(attributes)
@@ -159,8 +154,6 @@ public abstract class Subscription {
 
         public abstract Builder name(String name);
 
-        public abstract Builder listenerRegistrationKey(String listenerRegistrationKey);
-
         public abstract Builder active(Boolean active);
 
         public abstract Builder customListenerId(String listenerId);
@@ -178,8 +171,6 @@ public abstract class Subscription {
         public abstract Builder valid(Boolean valid);
 
         public abstract Builder validationMessage(String validationMessage);
-
-        public abstract Builder registration(Registration registration);
 
         public abstract Builder created(Date created);
 

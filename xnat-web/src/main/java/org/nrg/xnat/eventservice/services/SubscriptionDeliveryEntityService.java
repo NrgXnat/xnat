@@ -16,7 +16,7 @@ import java.util.List;
 
 public interface SubscriptionDeliveryEntityService extends BaseHibernateService<SubscriptionDeliveryEntity> {
 
-    Long create(SubscriptionEntity subscription, EventServiceEvent event, EventServiceListener listener,
+    Long create(SubscriptionEntity subscription, EventServiceEvent<?> event, EventServiceListener<?> listener,
                 String actionUserLogin, String projectId, String actionInputs);
     void addStatus(Long deliveryId, TimedEventStatusEntity.Status status, Date statusTimestamp, String message);
 
@@ -30,7 +30,9 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     SubscriptionDelivery get(Long id, String projectId) throws NotFoundException;
 
-    List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, Integer firstResult, Integer maxResults);
+    List<SubscriptionDelivery> getAll(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
+
+    List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request);
 
     List<SubscriptionDeliverySummary> getSummaries(String projectId);
 

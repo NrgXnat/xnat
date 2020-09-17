@@ -1,97 +1,74 @@
 package org.nrg.xnat.eventservice.daos;
 
-import com.google.common.base.Strings;
+import static org.nrg.framework.generics.GenericUtils.convertToTypedList;
+
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
 import org.hibernate.Query;
-import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.nrg.framework.ajax.Filter;
+import org.nrg.framework.ajax.hibernate.HibernateFilter;
+import org.nrg.framework.ajax.sql.NumericFilter;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
 import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<SubscriptionDeliveryEntity> {
-
-    //public List<SubscriptionDeliveryEntity> findByProjectId(String projectId){
-    //    return findByProperty("projectId", projectId);
-    //}
-//
-    //public List<SubscriptionDeliveryEntity> findBySubscriptionId(Long subscriptionId){
-    //    return getSession()
-    //            .createQuery("select sde from SubscriptionDeliveryEntity as sde where sde.subscription.id = :subscriptionId")
-    //            .setLong("subscriptionId", subscriptionId)
-    //            .list();
-    //}
-//
-    //public List<SubscriptionDeliveryEntity> findByProjectIdAndSubscriptionId(String projectId, Long subscriptionId) {
-    //    return getSession()
-    //            .createQuery("select sde from SubscriptionDeliveryEntity as sde where sde.subscription.id = :subscriptionId and sde.projectId = :projectId")
-    //            .setLong("subscriptionId", subscriptionId)
-    //            .setString("projectId", projectId)
-    //            .list();
-    //}
-
-    public List<SubscriptionDeliverySummaryEntity> getSummaryDeliveries(String projectId){
-        TimedEventStatusEntity.Status statusToExclude = TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
-
-        String selectString = "SELECT NEW org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity(" +
-                "D.id, D.eventType, D.subscription.id, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.errorState, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D ";
-        String whereString = "WHERE D.status != :statusToExclude " +  (Strings.isNullOrEmpty(projectId) ? "" : " AND D.projectId = :projectId ");
-
-        Query query = getSession().createQuery(selectString + " " + whereString + " ORDER BY D.id ASC");
-
-        query.setInteger("statusToExclude", statusToExclude.ordinal());
-        if(!Strings.isNullOrEmpty(projectId)) {
+    public List<SubscriptionDeliverySummaryEntity> getSummaryDeliveries(final String projectId) {
+        final boolean hasProjectId = StringUtils.isNotBlank(projectId);
+        final Query   query        = getSession().createQuery(hasProjectId ? QUERY_SUMMARY_DELIVERIES_BY_PROJECT : QUERY_SUMMARY_DELIVERIES);
+        query.setInteger("statusToExclude", TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT.ordinal());
+        if (hasProjectId) {
             query.setString("projectId", projectId);
         }
-        return query.list();
+        return convertToTypedList(query.list(), SubscriptionDeliverySummaryEntity.class);
     }
 
-    public List<SubscriptionDeliveryEntity> get(String projectId, Long subscriptionId, Integer firstResult, Integer maxResults, TimedEventStatusEntity.Status statusToExclude){
-        Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);
-        if(!Strings.isNullOrEmpty(projectId)){
+    public List<SubscriptionDeliveryEntity> get(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude, final SubscriptionDeliveryEntityPaginatedRequest request) {
+        final Map<String, Filter> filters = new HashMap<>();
+        if (StringUtils.isNotBlank(projectId)) {
+            filters.put("projectId", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(projectId).build());
+        }
+        if (subscriptionId != null) {
+            filters.put("subscription.id", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(subscriptionId).build());
+        }
+        if (statusToExclude != null) {
+            filters.put("status", NumericFilter.builder().neq(statusToExclude.ordinal()).build());
+        }
+        request.setFiltersMap(filters);
+        // Previous code had this. May need to add code in PaginatedRequest handling to set fetch mode.
+        // cr.setFetchMode("timedEventStatuses", FetchMode.SELECT);
+        return findPaginated(request);
+    }
+
+    public Integer count(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude) {
+        final Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);
+        if (StringUtils.isNotBlank(projectId)) {
             cr.add(Restrictions.eq("projectId", projectId));
         }
-        if (subscriptionId != null){
+        if (subscriptionId != null) {
             cr.createAlias("subscription", "sub");
             cr.add(Restrictions.eq("sub.id", subscriptionId));
         }
-        if(statusToExclude != null){
-            cr.add(Restrictions.ne("status", statusToExclude));
-        }
-
-        if (firstResult == null || firstResult < 1){
-            firstResult = 1;
-        }
-        if (maxResults != null && maxResults > 0){
-            cr.setFirstResult(firstResult);
-            cr.setMaxResults(maxResults);
-        }
-        cr.addOrder(Order.desc("id"));
-        cr.setFetchMode("timedEventStatuses", FetchMode.SELECT);
-        return cr.list();
-    }
-
-    public Integer count(String projectId, Long subscriptionId, TimedEventStatusEntity.Status statusToExclude) {
-        Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);
-        if (!Strings.isNullOrEmpty(projectId)) {
-            cr.add(Restrictions.eq("projectId", projectId));
-        }
-        if (subscriptionId != null){
-            cr.createAlias("subscription", "sub");
-            cr.add(Restrictions.eq("sub.id", subscriptionId));
-        }
-        if(statusToExclude != null){
+        if (statusToExclude != null) {
             cr.add(Restrictions.ne("status", statusToExclude));
         }
         cr.setProjection(Projections.rowCount());
-        Long count = (Long)cr.uniqueResult();
+        final Long count = (Long) cr.uniqueResult();
         return count != null ? count.intValue() : null;
     }
+
+    private static final String BASE_QUERY_SUMMARY_DELIVERIES          = "SELECT NEW org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity(D.id, D.eventType, D.subscription.id, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.errorState, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D WHERE D.status != :statusToExclude";
+    private static final String BASE_QUERY_SUMMARY_DELIVERIES_ORDER_BY = " ORDER BY D.id ASC";
+    private static final String QUERY_SUMMARY_DELIVERIES               = BASE_QUERY_SUMMARY_DELIVERIES + BASE_QUERY_SUMMARY_DELIVERIES_ORDER_BY;
+    private static final String QUERY_SUMMARY_DELIVERIES_BY_PROJECT    = BASE_QUERY_SUMMARY_DELIVERIES + " AND D.projectId = :projectId" + BASE_QUERY_SUMMARY_DELIVERIES_ORDER_BY;
 }

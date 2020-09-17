@@ -67,8 +67,7 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventService eventService(ContextService contextService,
-                                     EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventService eventService(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
                                      EventServiceComponentManager componentManager,
                                      ActionManager actionManager,
                                      SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
@@ -76,12 +75,11 @@ public class EventServiceTestConfig {
                                      EventPropertyService eventPropertyService,
                                      ObjectMapper mapper,
                                      EventServicePrefsBean mockEventServicePrefsBean) {
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
+        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
     @Bean
-    public EventService mockEventService(ContextService contextService,
-                                         EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventService mockEventService(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
                                          EventServiceComponentManager componentManager,
                                          ActionManager actionManager,
                                          SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
@@ -89,7 +87,7 @@ public class EventServiceTestConfig {
                                          EventPropertyService eventPropertyService,
                                          ObjectMapper mapper,
                                          EventServicePrefsBean mockEventServicePrefsBean) {
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
+        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
     }
 
     @Bean

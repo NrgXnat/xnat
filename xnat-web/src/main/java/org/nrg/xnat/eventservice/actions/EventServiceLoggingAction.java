@@ -73,7 +73,7 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
     @Override
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
-        log.info("EventServiceLoggingAction called for Subscription " + subscription.name());
+        log.info("EventServiceLoggingAction called for Subscription {}", subscription.name());
         try {
 
             Object serializableObject = componentManager.getModelObject(event.getObject(), user);
@@ -83,17 +83,15 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
             if(serializableObject != null){
                 subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_STEP, new Date(), "Filterable Event Payload Type: " + serializableObject.getClass().getSimpleName(), serializableObject);
-                if(log.isDebugEnabled()) {
-                    String jsonString = mapper.writeValueAsString(serializableObject);
-                    log.info("Subscription: " + mapper.writeValueAsString(subscription));
-                    log.info("Event: " + event.toString());
-                    log.info("Event Payload:");
-                    log.info(jsonString);
+                if(log.isInfoEnabled()) {
+                    log.info("Subscription: {}", mapper.writeValueAsString(subscription));
+                    log.info("Event: {}", event.toString());
+                    log.info("Event Payload: {}", mapper.writeValueAsString(serializableObject));
                 }
             }
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_COMPLETE, new Date(), "Logging action completed successfully.");
         } catch (Throwable e) {
-            log.error("Could not write subscription values to log. ", e.getMessage());
+            log.error("Could not write subscription values to log.", e);
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_FAILED, new Date(), "Could not write subscription values to log. " + e.getMessage());
         }
 

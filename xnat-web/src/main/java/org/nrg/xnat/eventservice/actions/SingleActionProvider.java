@@ -8,10 +8,7 @@ import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public abstract class SingleActionProvider implements  EventServiceActionProvider {
@@ -35,23 +32,19 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
 
     @Override
     public List<Action> getActions(String projectId, List<String> xnatTypes, UserI user) {
-        return new ArrayList<>(Arrays.asList(
-                Action.builder().id(getName())
-                      .actionKey(getActionKey() )
-                      .displayName(getDisplayName())
-                      .description(getDescription())
-                      .attributes(getAttributes(projectId, user))
-                      .provider(this)
-                      .build()
-        ));
+        return new ArrayList<>(Collections.singletonList(Action.builder().id(getName())
+                                                               .actionKey(getActionKey())
+                                                               .displayName(getDisplayName())
+                                                               .description(getDescription())
+                                                               .attributes(getAttributes(projectId, user))
+                                                               .provider(this)
+                                                               .build()));
     }
 
     @Override
     public Boolean isActionAvailable(String actionKey, String projectId, UserI user) {
-        List<Action> actions = getActions(projectId, null, user);
-        return actions != null && actions.size() > 0
-                ? actions.get(0).actionKey().contentEquals(actionKey)
-                : false;
+        final List<Action> actions = getActions(projectId, null, user);
+        return actions != null && !actions.isEmpty() && actions.get(0).actionKey().contentEquals(actionKey);
     }
 
     public String getActionKey() {

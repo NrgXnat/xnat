@@ -528,10 +528,10 @@ var XNAT = getObject(XNAT || {});
         var url;
 
         if (project && actionSelector) {
-            url = getEventActionsUrl(project,eventType);
+            url = getEventActionsUrl(eventType);
         }
         else if (actionSelector) {
-            url = getEventActionsUrl(false,eventType);
+            url = getEventActionsUrl(eventType);
         }
         else {
             url = getEventActionsUrl();
@@ -1397,16 +1397,11 @@ var XNAT = getObject(XNAT || {});
 
         function projectLink(cfg, txt){
             return spawn('a.last', extend(true, {
-                href: '${SITE_ROOT}/data/projects/' + projectId + '?format=html',
+                href: rootUrl('/data/projects/' + projectId + '?format=html'),
                 style: { textDecoration: 'underline' },
                 data: { projectId: projectId }
             }, cfg), txt || projectId );
         }
-
-        // // render the breadcrumb(s) here in case the project id is in the URL hash
-        // $('#breadcrumbs').spawn('span.crumb', [
-        //     projectLink({ id: 'breadcrumb-' + PROJECT_ID })
-        // ]);
 
         $('.project-link').each(function(){
             this.appendChild(projectLink())

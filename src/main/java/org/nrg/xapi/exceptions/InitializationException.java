@@ -17,7 +17,12 @@ public class InitializationException extends XapiException {
     public InitializationException(final Throwable throwable) {
         super(HttpStatus.INTERNAL_SERVER_ERROR, throwable);
     }
+
     public InitializationException(final String message) {
         super(HttpStatus.INTERNAL_SERVER_ERROR, message);
+    }
+
+    public InitializationException(final String message, final Throwable throwable) {
+        super(HttpStatus.INTERNAL_SERVER_ERROR, message, throwable);
     }
 }

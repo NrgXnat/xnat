@@ -598,6 +598,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Async
     @Scheduled(cron = "*/30 * * * * *")
     public void syncReactorRegistrations()
     {

@@ -706,20 +706,6 @@ var XNAT = getObject(XNAT || {});
 
                 $form.find('#subscription-project-selector').val(getProjectId());
 
-                // if (projs.length) {
-                //     projs.forEach(function(project){
-                //         $form.find('#subscription-project-selector')
-                //             .append(spawn(
-                //                 'option',
-                //                 { value: project.ID },
-                //                 project['secondary_ID']
-                //             ));
-                //     });
-                // }
-                // else {
-                //     $form.find('#subscription-project-selector').parents('.panel-element').hide();
-                // }
-
                 // when editing an existing event subscription, always show the attributes preview panel
                 $form.find('#subscription-action-preview').show();
 
@@ -942,7 +928,7 @@ var XNAT = getObject(XNAT || {});
                     close: true,
                     action: function(){
                         projEventServicePanel.deleteSubscription(subscription.id);
-                        projEventServicePanel.historyTable.refresh();
+                        projEventServicePanel.projHistoryTable.refresh();
                     }
                 },
                 {
@@ -985,18 +971,18 @@ var XNAT = getObject(XNAT || {});
      * Display Event Subscription History *
      * ---------------------------------- */
 
-    var historyTable, historyData;
+    var projHistoryTable, projHistoryData;
 
-    XNAT.admin.projEventServicePanel.historyTable = historyTable =
-        getObject(XNAT.admin.projEventServicePanel.historyTable || {});
+    XNAT.admin.projEventServicePanel.projHistoryTable = projHistoryTable =
+        getObject(XNAT.admin.projEventServicePanel.projHistoryTable || {});
 
-    XNAT.admin.projEventServicePanel.historyData = historyData =
-        getObject(XNAT.admin.projEventServicePanel.historyData || {});
+    XNAT.admin.projEventServicePanel.projHistoryData = projHistoryData =
+        getObject(XNAT.admin.projEventServicePanel.projHistoryData || {});
 
     function viewHistoryDialog(e, onclose){
         e.preventDefault();
         var historyId = $(this).data('id') || $(this).closest('tr').prop('title');
-        projEventServicePanel.historyTable.viewHistory(historyId);
+        projEventServicePanel.projHistoryTable.viewHistory(historyId);
     }
 
     function getHistoryUrl(project,sub){
@@ -1007,7 +993,7 @@ var XNAT = getObject(XNAT || {});
         return XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/summary' + appended);
     }
 
-    historyTable.getHistory = function(opts,callback){
+    projHistoryTable.getHistory = function(opts,callback){
         callback = isFunction(callback) ? callback : function(){};
         var project = (opts) ? opts.project : false;
         var subscription = (opts) ? opts.subscription : false;
@@ -1017,7 +1003,7 @@ var XNAT = getObject(XNAT || {});
             success: function(data){
                 if (data.length){
                     data.forEach(function(entry){
-                        historyData[entry.id] = entry;
+                        projHistoryData[entry.id] = entry;
                     });
 
                     data = data.sort(function(a,b){ return (a.id < b.id) ? 1 : -1 });
@@ -1037,7 +1023,7 @@ var XNAT = getObject(XNAT || {});
         var datatableId = $datatable.prop('id');
         $datatable.find('thead').append('<tr id="' + filterHeaderRowId + '" class="filter">');
 
-        dataTableColumns.forEach(function(column){
+        dataTableColumns.forEach(function(column,i){
             if (column.mData) {
                 var inputId = filterHeaderRowId + "Input" + i;
                 jq("#" + filterHeaderRowId).append('<th class="noPointer"><input type="text" id="' + inputId + '" name="' + inputId + '" placeholder="Filter..." class="filter_init datatable-filter" /></th>');
@@ -1077,7 +1063,7 @@ var XNAT = getObject(XNAT || {});
         $("#" + datatableId + "_filter").css("display", "none");
     };
 
-    historyTable.datatable = function(data, $datatable){
+    projHistoryTable.datatable = function(data, $datatable){
 
         // sample object returned with call to
         // /xapi/projects/'+projectId+'/events/delivered/summary
@@ -1096,25 +1082,37 @@ var XNAT = getObject(XNAT || {});
         var datatableOptions = {
             aaData: data,
             aoColumns: [
+                // {
+                //     sTitle: '<b>Subscription Name</b>',
+                //     sClass: 'left',
+                //     sWidth: '200px',
+                //     mData: function(source){
+                //         var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
+                //         if (source['trigger-label']) {
+                //             message = message + '<br>Trigger: ' + source['trigger-label'];
+                //         }
+                //         return message;
+                //     }
+                // },
                 {
-                    sTitle: '<b>Subscription ID</b>',
-                    sClass: 'left',
-                    sWidth: '80px',
+                    sTitle: '<b>Date</b>',
                     mData: function(source){
-                        return source['subscription-id']
-                    }
-                },
-                {
-                    sTitle: '<b>Subscription Name</b>',
-                    sClass: 'left',
-                    sWidth: '200px',
-                    mData: function(source){
-                        var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
-                        if (source['trigger-label']) {
-                            message = message + '<br>Trigger: ' + source['trigger-label'];
+                        var timestamp  = source.timestamp || '';
+                        var dateString = '';
+                        if (timestamp) {
+                            timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
+                            if (timestamp.indexOf('UTC') < 0) {
+                                timestamp = timestamp.trim() + ' UTC';
+                            }
+                            dateString = (new Date(timestamp)).toLocaleString();
+                            // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+
+                        } else {
+                            dateString = 'N/A';
                         }
-                        return message;
-                    }
+                        return dateString
+                    },
+                    sWidth: '150px'
                 },
                 {
                     sTitle: '<b>Event Type</b>',
@@ -1140,26 +1138,6 @@ var XNAT = getObject(XNAT || {});
                     sTitle: '<b>Project</b>',
                     mData: function(source){
                         return source.project
-                    },
-                    sWidth: '150px'
-                },
-                {
-                    sTitle: '<b>Date</b>',
-                    mData: function(source){
-                        var timestamp  = source.timestamp || '';
-                        var dateString = '';
-                        if (timestamp) {
-                            timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
-                            if (timestamp.indexOf('UTC') < 0) {
-                                timestamp = timestamp.trim() + ' UTC';
-                            }
-                            dateString = (new Date(timestamp)).toLocaleString();
-                            // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
-
-                        } else {
-                            dateString = 'N/A';
-                        }
-                        return dateString
                     },
                     sWidth: '150px'
                 }
@@ -1197,7 +1175,7 @@ var XNAT = getObject(XNAT || {});
     }
 
 
-    historyTable.viewHistory = function(id){
+    projHistoryTable.viewHistory = function(id){
 
         var historyItemRequest = XNAT.xhr.get({
             url: XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/' + id),
@@ -1209,7 +1187,7 @@ var XNAT = getObject(XNAT || {});
             if (!data) { historyItemErrorDialog(id); }
 
             var historyEntry =
-                projEventServicePanel.historyData[id] =
+                projEventServicePanel.projHistoryData[id] =
                     data;
 
             var historyDialogButtons = [
@@ -1293,18 +1271,55 @@ var XNAT = getObject(XNAT || {});
     $(document).off('click','a.view-event-history').on('click','a.view-event-history',function(e){
         e.preventDefault();
         var historyEntry = $(this).data('id');
-        if (historyEntry) historyTable.viewHistory(historyEntry);
+        if (historyEntry) projHistoryTable.viewHistory(historyEntry);
     });
 
-    historyTable.init = historyTable.refresh = function(container){
-        var $container = $$(container || '#history-table-container'), _historyTable;
+    projHistoryTable.findById = function(e){
+        e.preventDefault();
+        var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
+            submittedId = $('#event-id-entry').val();
+        if (submittedId && validIds.indexOf(submittedId) >= 0) {
+            XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
+            $('#event-id-entry').val('');
+            return;
+        }
+        else {
+            XNAT.ui.dialog.message('Please enter a valid event history ID');
+            $('#event-id-entry').focus();
+        }
+    };
 
-        historyTable.getHistory().done(function(data){
+    projHistoryTable.init = projHistoryTable.refresh = function(container){
+        var $container = $$(container || '#history-table-container');
+
+        projHistoryTable.getHistory().done(function(data){
             if (data.length){
                 var h3 = spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site');
                 var $datatable = $.spawn('table#event-history-table.xnat-table.data-table.compact', { style: { width: '100%' }});
                 $container.empty().append([h3, $datatable]);
-                historyTable.datatable(data, $datatable);
+                projHistoryTable.datatable(data, $datatable);
+
+                // add a "find by ID" input field after the table renders
+                var target = $('#event-history-table_length'),
+                    searchHistoryInput = spawn('input#event-id-entry', {
+                        type:'text',
+                        name: 'findbyid',
+                        placeholder: 'Find By ID',
+                        size: 12,
+                        style: {'font-size':'12px' }}
+                    ),
+                    searchHistoryButton = spawn(
+                        'button.btn2.btn-sm',[
+                            spawn('i.fa.fa-search',{
+                                title: 'Find By ID',
+                                onclick: XNAT.admin.eventServicePanel.historyTable.findById
+                            })
+                        ]);
+                target.append(spawn('div.pull-right',[
+                    searchHistoryInput,
+                    spacer(4),
+                    searchHistoryButton
+                ]));
             } else {
                 $container.empty().append(spawn('p','No event history to display'));
             }
@@ -1422,7 +1437,7 @@ var XNAT = getObject(XNAT || {});
                 projEventServicePanel.populateDisplay();
 
                 // initialize history table
-                projEventServicePanel.historyTable.init();
+                projEventServicePanel.projHistoryTable.init();
             });
 
         });

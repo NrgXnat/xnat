@@ -41,7 +41,7 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
         TimedEventStatusEntity.Status statusToExclude = TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
 
         String selectString = "SELECT NEW org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity(" +
-                "D.id, D.eventType, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D ";
+                "D.id, D.eventType, D.subscription.id, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.errorState, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D ";
         String whereString = "WHERE D.status != :statusToExclude " +  (Strings.isNullOrEmpty(projectId) ? "" : "AND WHERE project_id = :projectId");
 
         Query query = getSession().createQuery(selectString + " " + whereString + " ORDER BY D.id ASC");

@@ -12,6 +12,7 @@ public class TriggeringEventEntity implements Serializable{
 
     private long id;
     private String eventName;
+    private String status;
     private Boolean isXsiType;
     private String xnatType;
     private String xsiUri;
@@ -21,9 +22,10 @@ public class TriggeringEventEntity implements Serializable{
 
     }
 
-    public TriggeringEventEntity(String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {
+    public TriggeringEventEntity(String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {
 
         this.eventName = eventName;
+        this.status = status;
         this.isXsiType = isXsiType;
         this.xnatType = xnatType;
         this.xsiUri = xsiUri;
@@ -48,6 +50,10 @@ public class TriggeringEventEntity implements Serializable{
     public void setEventName(String eventName) {
         this.eventName = eventName;
     }
+
+    public String getStatus() { return status; }
+
+    public void setStatus(String status) { this.status = status; }
 
     @Column(name = "is_xsi_type")
     public Boolean getXsiType() {
@@ -89,6 +95,7 @@ public class TriggeringEventEntity implements Serializable{
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("eventName", eventName)
+                .add("status", status)
                 .add("isXsiType", isXsiType)
                 .add("xnatType", xnatType)
                 .add("xsiUri", xsiUri)
@@ -102,6 +109,7 @@ public class TriggeringEventEntity implements Serializable{
         if (o == null || getClass() != o.getClass()) return false;
         TriggeringEventEntity that = (TriggeringEventEntity) o;
         return Objects.equals(eventName, that.eventName) &&
+                Objects.equals(status, that.status) &&
                 Objects.equals(isXsiType, that.isXsiType) &&
                 Objects.equals(xnatType, that.xnatType) &&
                 Objects.equals(xsiUri, that.xsiUri) &&
@@ -111,12 +119,13 @@ public class TriggeringEventEntity implements Serializable{
     @Override
     public int hashCode() {
 
-        return Objects.hash(eventName, isXsiType, xnatType, xsiUri, objectLabel);
+        return Objects.hash(eventName, status, isXsiType, xnatType, xsiUri, objectLabel);
     }
 
     public TriggeringEvent toPojo(){
         return TriggeringEvent.builder()
                 .eventName(this.eventName != null ? this.eventName : "")
+                .status(this.status != null ? this.status : "")
                 .isXsiType(this.isXsiType != null ? this.isXsiType : false)
                 .xnatType(this.xnatType != null ? this.xnatType : "")
                 .xsiUri(this.xsiUri)

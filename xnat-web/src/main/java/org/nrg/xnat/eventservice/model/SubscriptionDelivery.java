@@ -20,8 +20,19 @@ public abstract class SubscriptionDelivery {
     @JsonProperty("inputs") public abstract String actionInputs();
     @Nullable @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
     @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
+    @JsonProperty(value = "error", defaultValue = "false") public abstract Boolean errorState();
 
-    public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser, String projectId, String actionInputs, TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses) {
+    
+
+    public static Builder builder() {
+        return new AutoValue_SubscriptionDelivery.Builder();
+    }
+
+    public abstract SubscriptionDelivery.Builder toBuilder();
+
+    public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser,
+                                              String projectId, String actionInputs, TriggeringEvent triggeringEvent,
+                                              List<TimedEventStatus> timedEventStatuses, Boolean errorState) {
         return builder()
                 .id(id)
                 .event(event)
@@ -31,14 +42,9 @@ public abstract class SubscriptionDelivery {
                 .actionInputs(actionInputs)
                 .triggeringEvent(triggeringEvent)
                 .timedEventStatuses(timedEventStatuses)
+                .errorState(errorState)
                 .build();
     }
-
-    public static Builder builder() {
-        return new AutoValue_SubscriptionDelivery.Builder();
-    }
-
-    public abstract SubscriptionDelivery.Builder toBuilder();
 
     @AutoValue.Builder
     public abstract static class Builder {
@@ -57,6 +63,8 @@ public abstract class SubscriptionDelivery {
         public abstract Builder triggeringEvent(TriggeringEvent triggeringEvent);
 
         public abstract Builder timedEventStatuses(List<TimedEventStatus> timedEventStatuses);
+        
+        public abstract Builder errorState(Boolean errorState);
 
         public abstract SubscriptionDelivery build();
     }

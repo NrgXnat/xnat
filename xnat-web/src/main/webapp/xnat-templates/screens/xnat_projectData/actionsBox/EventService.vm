@@ -1,0 +1,10 @@
+#if($canEditOrDeleteProject)
+<!-- position 99 -->
+    <li class="yuimenuitem hidden" id="project-settings-action">
+        #set ( $projectEventServiceUri = "/app/template/Page.vm?view=project/event-service&id=$project.getId()" )
+        <a href="$content.getURI($projectEventServiceUri)">Event Service</a>
+    </li>
+##    <script>
+##        XNAT.app.pluginSettings.projectSettingsActionItem('#project-settings-action');
+##    </script>
+#end

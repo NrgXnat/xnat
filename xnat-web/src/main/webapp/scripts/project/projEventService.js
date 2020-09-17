@@ -130,9 +130,9 @@ var XNAT = getObject(XNAT || {});
     projEventServicePanel.events = {};
     projEventServicePanel.actions = {};
 
-    function getProjectListUrl(){
-        return restUrl('/data/projects?format=json');
-    }
+    // function getProjectListUrl(){
+    //     return restUrl('/data/projects?format=json');
+    // }
 
     function getEventActionsUrl(eventType){
         var path = (eventType) ?
@@ -159,21 +159,21 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl(path + appended);
     }
 
-    projEventServicePanel.getProjects = function(callback){
-        callback = isFunction(callback) ? callback : function(){};
-        return XNAT.xhr.getJSON({
-            url: getProjectListUrl(),
-            success: function(data){
-                if (data) {
-                    return data;
-                }
-                callback.apply(this, arguments);
-            },
-            fail: function(e){
-                errorHandler(e,'Could not retrieve projects');
-            }
-        })
-    };
+    // projEventServicePanel.getProjects = function(callback){
+    //     callback = isFunction(callback) ? callback : function(){};
+    //     return XNAT.xhr.getJSON({
+    //         url: getProjectListUrl(),
+    //         success: function(data){
+    //             if (data) {
+    //                 return data;
+    //             }
+    //             callback.apply(this, arguments);
+    //         },
+    //         fail: function(e){
+    //             errorHandler(e,'Could not retrieve projects');
+    //         }
+    //     })
+    // };
 
     projEventServicePanel.getEvents = function(callback){
         callback = isFunction(callback) ? callback : function(){};
@@ -341,7 +341,8 @@ var XNAT = getObject(XNAT || {});
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
                         .td(subscription['id'])
                         .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
-                        .td([ displayProjects(subscription['event-filter']['project-ids']) ])
+                        .td( getProjectId() )
+                        // .td([ displayProjects(subscription['event-filter']['project-ids']) ])
                         .td([ eventNiceName(subscription) ])
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
@@ -409,14 +410,9 @@ var XNAT = getObject(XNAT || {});
                 id: 'subscription-event-status'
             },
             subProjSelector: {
-                kind: 'panel.select.single',
+                kind: 'panel.input.hidden',
                 name: 'project-id',
-                label: 'Select Project',
                 id: 'subscription-project-selector',
-                element: {
-                    html: '<option selected value="">Any Project</option>'
-                },
-                order: 30
             },
             subActionSelector: {
                 kind: 'panel.select.single',
@@ -520,7 +516,7 @@ var XNAT = getObject(XNAT || {});
     // populate the Action Select menu based on selected project and event (which provides xsitype)
     function findActions($element){
         var $form = $element.parents('form');
-        var project = $form.find('select[name=project-id]').find('option:selected').val();
+        var project = $form.find('input[name=project-id]').val();
         var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
         var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type');
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
@@ -694,7 +690,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     projEventServicePanel.modifySubscription = function(action,subscription){
-        var projs = projEventServicePanel.projects;
+        // var projs = projEventServicePanel.projects;
         subscription = subscription || false;
         action = action || 'Create';
 
@@ -708,19 +704,21 @@ var XNAT = getObject(XNAT || {});
 
                 var $form = obj.$modal.find('form');
 
-                if (projs.length) {
-                    projs.forEach(function(project){
-                        $form.find('#subscription-project-selector')
-                            .append(spawn(
-                                'option',
-                                { value: project.ID },
-                                project['secondary_ID']
-                            ));
-                    });
-                }
-                else {
-                    $form.find('#subscription-project-selector').parents('.panel-element').hide();
-                }
+                $form.find('#subscription-project-selector').val(getProjectId());
+
+                // if (projs.length) {
+                //     projs.forEach(function(project){
+                //         $form.find('#subscription-project-selector')
+                //             .append(spawn(
+                //                 'option',
+                //                 { value: project.ID },
+                //                 project['secondary_ID']
+                //             ));
+                //     });
+                // }
+                // else {
+                //     $form.find('#subscription-project-selector').parents('.panel-element').hide();
+                // }
 
                 // when editing an existing event subscription, always show the attributes preview panel
                 $form.find('#subscription-action-preview').show();
@@ -782,9 +780,9 @@ var XNAT = getObject(XNAT || {});
                 else delete projEventServicePanel.subscriptionAttributes;
 
                 // Create form-specific event handlers, enable them after setValues() has run
-                $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
-                    findActions($(this));
-                });
+                // $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
+                //     findActions($(this));
+                // });
                 $form.off('change','select[name=event-selector]').on('change','select[name=event-selector]', function(){
                     findActions($(this));
                     setEventStatus($(this));
@@ -1428,11 +1426,11 @@ var XNAT = getObject(XNAT || {});
             });
 
         });
-
-        // initialize arrays of values that we'll need later
-        projEventServicePanel.getProjects().done(function(data){
-            projEventServicePanel.projects = data.ResultSet.Result;
-        });
+        //
+        // // initialize arrays of values that we'll need later
+        // projEventServicePanel.getProjects().done(function(data){
+        //     projEventServicePanel.projects = data.ResultSet.Result;
+        // });
     };
 
 }));

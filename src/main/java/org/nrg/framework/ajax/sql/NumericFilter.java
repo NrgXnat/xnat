@@ -5,9 +5,7 @@ package org.nrg.framework.ajax.sql;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.ajax.PaginatedRequest;
@@ -26,8 +24,10 @@ import java.util.List;
  * Hibernate services and DAOs that extend {@link AbstractHibernateDAO}.
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class NumericFilter extends SqlFilter {
     @Nullable @JsonProperty private Number eq;
     @Nullable @JsonProperty private Number neq;

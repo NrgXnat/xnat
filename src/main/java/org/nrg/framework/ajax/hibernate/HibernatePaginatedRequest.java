@@ -1,5 +1,6 @@
 package org.nrg.framework.ajax.hibernate;
 
+import lombok.NoArgsConstructor;
 import org.apache.commons.collections.MapUtils;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@NoArgsConstructor
 public abstract class HibernatePaginatedRequest extends PaginatedRequest {
     public boolean hasFilters() {
         return !MapUtils.isEmpty(filtersMap);

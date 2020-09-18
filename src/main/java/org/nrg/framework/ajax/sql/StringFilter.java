@@ -5,9 +5,7 @@ package org.nrg.framework.ajax.sql;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import org.nrg.framework.ajax.PaginatedRequest;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -22,8 +20,10 @@ import java.util.regex.Pattern;
  * services and DAOs that extend {@link AbstractHibernateDAO}.
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class StringFilter extends SqlFilter {
     @JsonIgnore private final static Pattern validRegex = Pattern.compile("^[A-Za-z0-9_.\\-/ ]+$");
     @JsonProperty private String like;

@@ -3,9 +3,7 @@ package org.nrg.framework.ajax.hibernate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
@@ -27,8 +25,10 @@ import java.util.Arrays;
  * handling pure SQL queries.
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false)
 @JsonInclude
 public class HibernateFilter extends Filter {
     private boolean not;

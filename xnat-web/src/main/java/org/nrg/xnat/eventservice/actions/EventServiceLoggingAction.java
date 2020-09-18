@@ -83,10 +83,10 @@ public class EventServiceLoggingAction extends SingleActionProvider {
 
             if(serializableObject != null){
                 subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_STEP, new Date(), "Filterable Event Payload Type: " + serializableObject.getClass().getSimpleName(), serializableObject);
-                if(log.isInfoEnabled()) {
-                    log.info("Subscription: {}", mapper.writeValueAsString(subscription));
-                    log.info("Event: {}", event.toString());
-                    log.info("Event Payload: {}", mapper.writeValueAsString(serializableObject));
+                if(log.isDebugEnabled()) {
+                    log.debug("Subscription: {}", mapper.writeValueAsString(subscription));
+                    log.debug("Event: {}", event.toString());
+                    log.debug("Event Payload: {}", mapper.writeValueAsString(serializableObject));
                 }
             }
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_COMPLETE, new Date(), "Logging action completed successfully.");

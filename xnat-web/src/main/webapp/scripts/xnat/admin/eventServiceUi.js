@@ -375,14 +375,20 @@ var XNAT = getObject(XNAT || {});
                 id: 'subscription-event-status'
             },
             subProjSelector: {
-                kind: 'panel.select.single',
+                kind: 'panel.select.multiple',
                 name: 'project-id',
                 label: 'Select Project',
                 id: 'subscription-project-selector',
                 element: {
-                    html: '<option selected value="">Any Project</option>'
+                    // html: '<option selected value="">Any Project</option>'
                 },
-                order: 30
+                order: 30,
+                onchange: XNAT.admin.eventServicePanel.projectSubscriptionCheck
+            },
+            subProjGlobalSelect: {
+                kind: 'panel.element',
+                html: '<label class="disabled"><input type="checkbox" id="subscription-anyproject-selector" disabled /> Apply to All Projects</label>',
+                order: 31
             },
             subActionSelector: {
                 kind: 'panel.select.single',
@@ -718,7 +724,8 @@ var XNAT = getObject(XNAT || {});
 
                     eventServicePanel.subscriptionAttributes = subscription.attributes;
 
-                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    // subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'];
                     subscriptionData['event-type'] = subscription['event-filter']['event-type'];
                     subscriptionData['status'] = subscription['event-filter']['status'];
                     subscriptionData['event-selector'] = subscription['event-filter']['event-type'] + ':' + subscription['event-filter']['status'];
@@ -747,9 +754,14 @@ var XNAT = getObject(XNAT || {});
                 }
                 else delete eventServicePanel.subscriptionAttributes;
 
+                if (!subscription || !subscription['event-filter']['project-ids'].length) {
+                    $form.find('#subscription-anyproject-selector').prop('checked','checked');
+                }
+
                 // Create form-specific event handlers, enable them after setValues() has run
-                $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
+                $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(e){
                     findActions($(this));
+                    eventServicePanel.projectSubscriptionCheck(e);
                 });
                 $form.off('change','select[name=event-selector]').on('change','select[name=event-selector]', function(){
                     findActions($(this));
@@ -772,7 +784,15 @@ var XNAT = getObject(XNAT || {});
                         // Convert form inputs to a parseable JSON object
                         // This also involves a conversion into the accepted JSON attribute hierarchy
                         var formData, jsonFormData = {}, projectArray = [];
-                        obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
+                        var formArrayData = obj.dialog$.find('form').serializeArray();
+                        formArrayData.map(function(x){jsonFormData[x.name] = x.value;});
+
+                        // accommodate multiple selected projects
+                        formArrayData.filter(function(item){
+                            if (item.name === 'project-id') projectArray.push(item.value);
+                            return;
+                        });
+                        jsonFormData['project-id'] = projectArray.join(',');
 
                         if (eventServicePanel.subscriptionAttributes) {
                             jsonFormData.attributes = (typeof eventServicePanel.subscriptionAttributes === 'object') ?
@@ -794,7 +814,7 @@ var XNAT = getObject(XNAT || {});
                         delete jsonFormData['inherited-action'];
 
                         if (jsonFormData['project-id']) {
-                            projectArray.push(jsonFormData['project-id']);
+                            // projectArray.push(jsonFormData['project-id']);
                             jsonFormData['event-filter']['project-ids'] = projectArray;
                             delete jsonFormData['project-id'];
                         }
@@ -854,6 +874,16 @@ var XNAT = getObject(XNAT || {});
                 errorHandler(e,'Could not retrieve event subscription details');
             }
         })
+    };
+
+    eventServicePanel.projectSubscriptionCheck = function(e){
+        e.preventDefault();
+        var element = $(e.target),
+            selected = element.find('option:selected');
+        if (selected.length) {
+            $('#subscription-anyproject-selector').prop('checked',false)
+        }
+        else $('#subscription-anyproject-selector').prop('checked','checked');
     };
 
     eventServicePanel.toggleSubscription = function(id,selector){

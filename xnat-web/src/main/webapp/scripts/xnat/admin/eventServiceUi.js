@@ -724,8 +724,8 @@ var XNAT = getObject(XNAT || {});
 
                     eventServicePanel.subscriptionAttributes = subscription.attributes;
 
-                    // subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
-                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'];
+                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    // subscriptionData['project-id'] = subscription['event-filter']['project-ids'];
                     subscriptionData['event-type'] = subscription['event-filter']['event-type'];
                     subscriptionData['status'] = subscription['event-filter']['status'];
                     subscriptionData['event-selector'] = subscription['event-filter']['event-type'] + ':' + subscription['event-filter']['status'];
@@ -742,6 +742,11 @@ var XNAT = getObject(XNAT || {});
                     }
 
                     $form.setValues(subscriptionData); // sets values in inputs and selectors, which triggers the onchange listeners below. Action has to be added again after the fact.
+                    // special case for collapsing project-ids into the multiselect input
+                    subscription['event-filter']['project-ids'].forEach(function(project){
+                        $form.find('select[name=project-id]').find('option[value='+project+']').prop('selected','selected');
+                    });
+
                     findActions($form.find('#subscription-event-selector'));
                     $form.addClass((subscription.valid) ? 'valid' : 'invalid');
 

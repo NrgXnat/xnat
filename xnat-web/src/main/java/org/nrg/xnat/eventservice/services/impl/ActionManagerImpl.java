@@ -27,9 +27,11 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_CALLED;
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_ERROR;
@@ -102,10 +104,26 @@ public class ActionManagerImpl implements ActionManager {
 
     @Override
     public List<Action> getActions(String projectId, @Nonnull List<String> xnatTypes, UserI user) {
-        List<Action> actions = new ArrayList<>();
+        List<String> projectIds;
+        projectId = projectId.replaceAll("\\s+", "");
+        // If PID is a comma separated list, return the intersection of available actions
+        if(projectId.contains(",")) {
+            projectIds = Arrays.asList(projectId.split(","));
+        } else {
+            projectIds = Arrays.asList(projectId);
+        }
+        List<Action> actions = null;
         for (EventServiceActionProvider provider : getActionProviders()) {
             try {
-                Optional.ofNullable(provider.getActions(projectId, xnatTypes, user)).ifPresent(actions::addAll);
+                for(String pid : projectIds){
+                    if(actions == null) {
+                        actions = provider.getActions(pid, xnatTypes, user);
+                    } else {
+                        actions = actions.stream().distinct()
+                               .filter(provider.getActions(pid, xnatTypes, user)::contains)
+                               .collect(Collectors.toList());
+                    }
+                }
             }catch (Throwable e){
                 log.error("Exception attempting to get actions from " + provider.toString(), e.getCause());
             }

@@ -492,7 +492,12 @@ var XNAT = getObject(XNAT || {});
     // populate the Action Select menu based on selected project and event (which provides xsitype)
     function findActions($element){
         var $form = $element.parents('form');
-        var project = $form.find('select[name=project-id]').find('option:selected').val();
+        // var project = $form.find('select[name=project-id]').find('option:selected').val();
+        var project, projectArray = [], projects = $form.find('select[name=project-id]').find('option:selected');
+        projects.each(function(selectedProject) {
+            projectArray.push($(this).val())
+        });
+        project = projectArray.join(',');
         var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
         var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type');
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription

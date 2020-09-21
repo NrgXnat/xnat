@@ -18,6 +18,7 @@ public interface ActionManager {
     @Deprecated
     List<Action> getActions(UserI user);
 
+    List<Action> getActions(List<String> xnatType, UserI user);
     List<Action> getActions(String projectId, List<String> xnatType, UserI user);
 
     List<Action> getActionsByProvider(String providerName, UserI user);

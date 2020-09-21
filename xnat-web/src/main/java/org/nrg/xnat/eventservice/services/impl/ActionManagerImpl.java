@@ -94,16 +94,20 @@ public class ActionManagerImpl implements ActionManager {
     @Override
     @Deprecated
     public List<Action> getActions(UserI user) {
+        return getActions(null, user);
+    }
+
+    @Override
+    public List<Action> getActions(List<String> xnatTypes, UserI user){
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {
-            Optional.ofNullable(provider.getActions(null, null, user)).ifPresent(actions::addAll);
-
+            Optional.ofNullable(provider.getActions(null, xnatTypes, user)).ifPresent(actions::addAll);
         }
         return actions;
     }
 
     @Override
-    public List<Action> getActions(String projectId, @Nonnull List<String> xnatTypes, UserI user) {
+    public List<Action> getActions(@Nonnull String projectId, List<String> xnatTypes, UserI user) {
         List<String> projectIds;
         projectId = projectId.replaceAll("\\s+", "");
         // If PID is a comma separated list, return the intersection of available actions
@@ -112,22 +116,19 @@ public class ActionManagerImpl implements ActionManager {
         } else {
             projectIds = Arrays.asList(projectId);
         }
+
         List<Action> actions = null;
-        for (EventServiceActionProvider provider : getActionProviders()) {
-            try {
-                for(String pid : projectIds){
-                    if(actions == null) {
-                        actions = provider.getActions(pid, xnatTypes, user);
-                    } else {
-                        actions = actions.stream().distinct()
-                               .filter(provider.getActions(pid, xnatTypes, user)::contains)
-                               .collect(Collectors.toList());
-                    }
-                }
-            }catch (Throwable e){
-                log.error("Exception attempting to get actions from " + provider.toString(), e.getCause());
-            }
+        for(String pid : projectIds) {
+            List<Action> providerActions = new ArrayList<>();
+            getActionProviders().stream().forEach(provider ->
+                    Optional.ofNullable(provider.getActions(pid, xnatTypes, user))
+                            .ifPresent(providerActions::addAll));
+
+            // If actions is already populated, find the intersection of list elements
+            actions = actions == null ? providerActions :
+                    actions.stream().filter(a -> providerActions.contains(a)).collect(Collectors.toList());
         }
+
         return actions;
     }
 

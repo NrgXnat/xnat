@@ -1,7 +1,5 @@
 package org.nrg.xnat.eventservice.services.impl;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -23,9 +21,27 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.*;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.ActionProvider;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
+import org.nrg.xnat.eventservice.model.EventSignature;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.Listener;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.services.ActionManager;
+import org.nrg.xnat.eventservice.services.EventPropertyService;
+import org.nrg.xnat.eventservice.services.EventService;
+import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
+import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
+import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,8 +50,24 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERING_FAULT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZATION_FAULT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_DISABLED_HALT;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_TRIGGERED;
 
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
@@ -176,7 +208,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<Action> getActions(List<String> xnatTypes, UserI user) {
-        return actionManager.getActions(null, xnatTypes, user);
+        return actionManager.getActions(xnatTypes, user);
     }
 
     @Override

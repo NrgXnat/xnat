@@ -289,6 +289,9 @@ var XNAT = getObject(XNAT || {});
         }
         function subscriptionEnabledCheckbox(subscription){
             var enabled = !!subscription.active;
+            // Do not return a user-settable switchbox if it is not considered editable by a project owner
+            if (!subscription.editable) return spawn('i',{title: 'Subscription set by Admin'}, enabled);
+
             var ckbox = spawn('input.subscription-enabled', {
                 type: 'checkbox',
                 checked: enabled,
@@ -306,7 +309,13 @@ var XNAT = getObject(XNAT || {});
             ]);
         }
         function editSubscriptionButton(subscription){
-            return spawn('button.btn.sm', {
+            var disabled = (!subscription.editable);
+            var classes = (disabled) ?
+                'btn btn-sm disabled' :
+                'btn btn-sm';
+            return spawn('button', {
+                disabled: disabled,
+                addClass: classes,
                 onclick: function(e){
                     e.preventDefault();
                     projEventServicePanel.editSubscription('Edit',subscription.id);
@@ -324,7 +333,13 @@ var XNAT = getObject(XNAT || {});
             }, [ spawn('span.fa.fa-clone') ]);
         }
         function deleteSubscriptionButton(subscription){
-            return spawn('button.btn.sm', {
+            var disabled = (!subscription.editable);
+            var classes = (disabled) ?
+                'btn btn-sm disabled' :
+                'btn btn-sm';
+            return spawn('button', {
+                disabled: disabled,
+                addClass: classes,
                 onclick: function(e){
                     e.preventDefault();
                     projEventServicePanel.deleteSubscriptionConfirmation(subscription);
@@ -1435,11 +1450,6 @@ var XNAT = getObject(XNAT || {});
             });
 
         });
-        //
-        // // initialize arrays of values that we'll need later
-        // projEventServicePanel.getProjects().done(function(data){
-        //     projEventServicePanel.projects = data.ResultSet.Result;
-        // });
     };
 
 }));

@@ -182,8 +182,11 @@ var XNAT = getObject(XNAT || {});
 
         callback = isFunction(callback) ? callback : function(){};
 
+        if (project) xmodal.loading.open('Getting available actions');
+
         return XNAT.xhr.getJSON({
             url: getEventActionsUrl(project,xsiType),
+            done: xmodal.loading.close(),
             success: function(data){
                 if (data) {
                     return data;
@@ -514,9 +517,11 @@ var XNAT = getObject(XNAT || {});
             url = getEventActionsUrl();
         }
 
+        if (project) xmodal.loading.open('Getting Available Actions...');
 
         XNAT.xhr.get({
             url: url,
+            done: xmodal.loading.close(),
             success: function(data){
                 actionSelector
                     .empty()

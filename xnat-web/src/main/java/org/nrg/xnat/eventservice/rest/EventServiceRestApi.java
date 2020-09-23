@@ -27,6 +27,7 @@ import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionCreator;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
 import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.nrg.xnat.eventservice.model.SubscriptionDisplay;
 import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
@@ -41,9 +42,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
@@ -198,8 +201,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscriptions", method = GET, produces = JSON)
     @ResponseBody
-    public List<Subscription> getAllSubscriptions(final @PathVariable @Project String project) throws SubscriptionAccessException {
-        return eventService.getSubscriptions(project);
+    public List<SubscriptionDisplay> getAllSubscriptions(final @Nonnull @PathVariable @Project String project) throws SubscriptionAccessException {
+        return setSubscriptionDisplayEditFlag(eventService.getSubscriptions(project), project);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/{id}"}, method = GET, produces = JSON)
@@ -212,10 +215,10 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(restrictTo = Delete, value = {"/projects/{project}/events/subscription/{id}"}, method = GET, produces = JSON)
     @ApiOperation(value = "Get a Subscription by ID")
     @ResponseBody
-    public Subscription retrieveSubscription(final @PathVariable long id,
+    public SubscriptionDisplay retrieveSubscription(final @PathVariable long id,
                                              final @PathVariable @Project String project) throws NotFoundException, UnauthorizedException, SubscriptionAccessException {
         checkProjectSubscriptionAccess(id, project, getSessionUser());
-        return eventService.getSubscription(id);
+        return setSubscriptionDisplayEditFlag(eventService.getSubscription(id), project);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}", method = DELETE)
@@ -429,6 +432,23 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return true;
     }
 
+    // Set editable to false for Site or Multi-project subscriptions
+    // Set editable to true only if being accessed from the project page of the only project on the subscription
+    private SubscriptionDisplay setSubscriptionDisplayEditFlag(@Nonnull Subscription subscription, @Nonnull String projectIdAccess){
+        Boolean editable = false;
+        List<String> projectIds = subscription.eventFilter().projectIds();
+        if(projectIds != null && projectIds.size() == 1)  {
+            editable = projectIds.get(0).contentEquals(projectIdAccess);
+        }
+        return SubscriptionDisplay.create(subscription, editable);
+    }
+
+    private List<SubscriptionDisplay> setSubscriptionDisplayEditFlag(List<Subscription> subscriptions, String projectIdAccess){
+        return subscriptions.stream()
+                     .map(s -> setSubscriptionDisplayEditFlag(s, projectIdAccess))
+                     .collect(Collectors.toList());
+    }
+
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {SubscriptionValidationException.class})
     public String handleFailedSubscriptionValidation(SubscriptionValidationException e) {
@@ -440,5 +460,6 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public String handleUnauthorized(final Exception e) {
         return "Unauthorized.\n" + e.getMessage();
     }
+
 
 }

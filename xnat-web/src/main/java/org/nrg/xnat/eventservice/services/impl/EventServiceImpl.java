@@ -164,7 +164,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Subscription> getSubscriptions(String projectId) {
+    public List<Subscription> getSubscriptions(@Nonnull String projectId) {
         return prefs.getEnabled() ? subscriptionService.getSubscriptions(projectId) : Collections.emptyList();
     }
 

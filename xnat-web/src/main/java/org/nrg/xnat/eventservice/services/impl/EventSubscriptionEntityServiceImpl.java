@@ -373,20 +373,21 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
-    public List<Subscription> getSubscriptions(String projectId) {
+    public List<Subscription> getSubscriptions(@Nonnull String projectId) {
         List<Subscription> subscriptions = new ArrayList<>();
-        for (SubscriptionEntity se : super.getAll()) {
-            try {
-                List<String> projectIds = se.getEventServiceFilterEntity().getProjectIds();
-                if(!Strings.isNullOrEmpty(projectId) && projectIds != null && projectIds.contains(projectId)){
-                   subscriptions.add(getSubscription(se.getId()));
-                } else if(Strings.isNullOrEmpty(projectId) && (projectIds == null || projectIds.isEmpty())){
-                    subscriptions.add(getSubscription(se.getId()));
-                }
-            } catch (NotFoundException e) {
-                log.error("Could not find subscription for ID: " + Long.toString(se.getId()) + "\n" + e.getMessage());
-            }
-        }
+        super.getAll().stream()
+             .filter(se -> se.getEventServiceFilterEntity() == null ||
+                     se.getEventServiceFilterEntity().getProjectIds() == null ||
+                     se.getEventServiceFilterEntity().getProjectIds().isEmpty() ||
+                     se.getEventServiceFilterEntity().getProjectIds().contains(projectId))
+             .forEach(se -> {
+                 try {
+                     subscriptions.add(getSubscription(se.getId()));
+                 } catch (NotFoundException e) {
+                     log.error("Could not find subscription for ID: " + Long.toString(se.getId()) + "\n" + e.getMessage());
+
+                 }
+             });
         return subscriptions;
     }
 

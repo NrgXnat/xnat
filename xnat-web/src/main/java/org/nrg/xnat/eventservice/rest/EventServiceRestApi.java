@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +150,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         final UserI        userI    = getSessionUser();
         final Subscription toUpdate = eventService.getSubscription(id);
         Subscription       updated  = toUpdate.update(update);
-        checkProjectSubscriptionAccess(updated, project, userI);
+        checkProjectSubscriptionAccess(toUpdate, project, userI);
         eventService.updateSubscription(updated);
         return ResponseEntity.ok().build();
     }
@@ -217,7 +218,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @ResponseBody
     public SubscriptionDisplay retrieveSubscription(final @PathVariable long id,
                                              final @PathVariable @Project String project) throws NotFoundException, UnauthorizedException, SubscriptionAccessException {
-        checkProjectSubscriptionAccess(id, project, getSessionUser());
+        checkReadProjectSubscriptionAccess(id, project, getSessionUser());
         return setSubscriptionDisplayEditFlag(eventService.getSubscription(id), project);
     }
 
@@ -400,11 +401,11 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getActions(projectId, xnatType, user).stream().filter(a -> actionkey.contentEquals(a.actionKey())).findFirst().orElse(null);
     }
 
-    private void checkProjectSubscriptionAccess(Long subscriptionId, String project, UserI userI) throws UnauthorizedException, NotFoundException, SubscriptionAccessException {
+    private void checkProjectSubscriptionAccess(@Nonnull Long subscriptionId, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException, NotFoundException, SubscriptionAccessException {
         checkProjectSubscriptionAccess(eventService.getSubscription(subscriptionId), project, userI);
     }
 
-    private void checkProjectSubscriptionAccess(Subscription subscription, String project, UserI userI) throws UnauthorizedException {
+    private void checkProjectSubscriptionAccess(@Nonnull Subscription subscription, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException {
         if (subscription.eventFilter().projectIds() == null ||
             subscription.eventFilter().projectIds().isEmpty() ||
             !subscription.eventFilter().projectIds().contains(project) ||
@@ -412,6 +413,21 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
             throw new UnauthorizedException(userI.getLogin() + " not authorized to modify subscriptions for project(s): "
                                             + ((subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty()) ? "Site" : StringUtils.join(subscription.eventFilter().projectIds(), ',')));
+        }
+    }
+
+    private void checkReadProjectSubscriptionAccess(@Nonnull Long subscriptionId, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException, NotFoundException, SubscriptionAccessException {
+        checkReadProjectSubscriptionAccess(eventService.getSubscription(subscriptionId), project, userI);
+    }
+
+    private void checkReadProjectSubscriptionAccess(@Nonnull Subscription subscription, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException {
+        if (subscription.eventFilter().projectIds() == null ||
+                subscription.eventFilter().projectIds().isEmpty() ||
+                !subscription.eventFilter().projectIds().contains(project) ||
+                !(isAdmin(userI) || isOwner(userI, Arrays.asList(project)))) {
+
+            throw new UnauthorizedException(userI.getLogin() + " not authorized to read subscriptions for project(s): "
+                    + ((subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty()) ? "Site" : StringUtils.join(subscription.eventFilter().projectIds(), ',')));
         }
     }
 

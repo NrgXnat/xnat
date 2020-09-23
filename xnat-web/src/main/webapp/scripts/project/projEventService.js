@@ -40,35 +40,35 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function errorHandler(e, title, closeAll){
+    function errorHandler(e, title, silent, closeAll){
         title = (title) ? 'Error Found: '+ title : 'Error';
         console.log(title);
         console.warn(e);
         if (closeAll) {
             xmodal.closeAll();
-
         }
+        if (!silent) {
+            // closeAll = (closeAll === undefined) ? true : closeAll;
+            var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
+            XNAT.dialog.open({
+                width: 450,
+                title: title,
+                content: errormsg,
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function(){
+                            if (closeAll) {
+                                xmodal.closeAll();
 
-        // closeAll = (closeAll === undefined) ? true : closeAll;
-        // var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
-        // XNAT.dialog.open({
-        //     width: 450,
-        //     title: title,
-        //     content: errormsg,
-        //     buttons: [
-        //         {
-        //             label: 'OK',
-        //             isDefault: true,
-        //             close: true,
-        //             action: function(){
-        //                 if (closeAll) {
-        //                     xmodal.closeAll();
-        //
-        //                 }
-        //             }
-        //         }
-        //     ]
-        // });
+                            }
+                        }
+                    }
+                ]
+            });
+        }
     }
 
     function titleCase(string){
@@ -130,10 +130,6 @@ var XNAT = getObject(XNAT || {});
     projEventServicePanel.events = {};
     projEventServicePanel.actions = {};
 
-    // function getProjectListUrl(){
-    //     return restUrl('/data/projects?format=json');
-    // }
-
     function getEventActionsUrl(eventType){
         var path = (eventType) ?
             '/xapi/projects/'+projectId+'/events/actionsbyevent?event-type='+eventType :
@@ -159,22 +155,6 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl(path + appended);
     }
 
-    // projEventServicePanel.getProjects = function(callback){
-    //     callback = isFunction(callback) ? callback : function(){};
-    //     return XNAT.xhr.getJSON({
-    //         url: getProjectListUrl(),
-    //         success: function(data){
-    //             if (data) {
-    //                 return data;
-    //             }
-    //             callback.apply(this, arguments);
-    //         },
-    //         fail: function(e){
-    //             errorHandler(e,'Could not retrieve projects');
-    //         }
-    //     })
-    // };
-
     projEventServicePanel.getEvents = function(callback){
         callback = isFunction(callback) ? callback : function(){};
 
@@ -188,7 +168,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve events');
+                errorHandler(e,'Could not retrieve events','silent');
             }
         })
     };
@@ -205,7 +185,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve event subscriptions');
+                errorHandler(e,'Could not retrieve event subscriptions','silent');
             }
         })
     };
@@ -225,7 +205,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve event actions');
+                errorHandler(e,'Could not retrieve event actions','silent');
             }
         })
     };
@@ -247,9 +227,8 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         subTable.tr()
-            .th('<b>ID</b>')
+            // .th('<b>ID</b>')
             .th({ addClass: 'left', html: '<b>Name</b>' })
-            .th('<b>Project</b>')
             .th('<b>Trigger Event</b>')
             .th('<b>Action</b>')
             .th('<b>Created By</b>')
@@ -257,23 +236,22 @@ var XNAT = getObject(XNAT || {});
             .th({ style: { width: '125px' }, html: '<b>Action</b>' });
 
         /* Formatted table cells */
-        function subscriptionNiceLabel(label,id){
-            return spawn('a',{
-                href: '#!',
-                style: { 'font-weight': 'bold' },
-                onclick: function(e){
-                    e.preventDefault();
-                    projEventServicePanel.editSubscription('Edit',id);
-                }
-            }, label);
-        }
-        function displayProjects(projects){
-            if (isArray(projects) && projects.length) {
-                return projects.join(', ');
-            }
-            else {
-                return 'All Projects';
-            }
+        function subscriptionNiceLabel(subscription){
+            var action = (subscription.editable) ? 'Edit' : 'View';
+            var appended = (subscription['event-filter']['project-ids'].length !== 1) ?
+                spawn('em.small', { style: { 'font-size': '11px', display: 'block' }}, 'Multi-project Subscription') :
+                '';
+            return spawn('!', [
+                spawn('a',{
+                    href: '#!',
+                    style: { 'font-weight': 'bold' },
+                    onclick: function(e){
+                        e.preventDefault();
+                        projEventServicePanel.editSubscription(action,subscription.id);
+                    }
+                }, subscription.name),
+                appended
+            ]);
         }
         function eventNiceName(subscription){
             var eventId = subscription['event-filter']['event-type'];
@@ -354,10 +332,8 @@ var XNAT = getObject(XNAT || {});
 
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
-                        .td(subscription['id'])
-                        .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
-                        .td( getProjectId() )
-                        // .td([ displayProjects(subscription['event-filter']['project-ids']) ])
+                        // .td(subscription['id'])
+                        .td([ subscriptionNiceLabel(subscription) ])
                         .td([ eventNiceName(subscription) ])
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
@@ -497,15 +473,6 @@ var XNAT = getObject(XNAT || {});
                 label: 'Event Payload Filter',
                 description: 'Optional. Enter filter in JSON path notation without enclosing brackets, e.g. <pre style="margin-top:0">(@.xsiType == "xnat:mrScanData")</pre>',
                 order: 50
-            },
-            subUserProxy: {
-                kind: 'panel.input.switchbox',
-                name: 'act-as-event-user',
-                label: 'Perform Action As:',
-                onText: 'Action is performed as the user who initiates the event',
-                offText: 'Action is performed as you (the subscription owner)',
-                value: 'true',
-                order: 60
             },
             subActive: {
                 kind: 'panel.input.switchbox',
@@ -709,6 +676,90 @@ var XNAT = getObject(XNAT || {});
         subscription = subscription || false;
         action = action || 'Create';
 
+        var saveButtons = [
+            {
+                label: 'OK',
+                isDefault: true,
+                close: false,
+                action: function(obj){
+                    // Convert form inputs to a parseable JSON object
+                    // This also involves a conversion into the accepted JSON attribute hierarchy
+                    var formData, jsonFormData = {}, projectArray = [];
+                    obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
+
+                    if (projEventServicePanel.subscriptionAttributes) {
+                        jsonFormData.attributes = (typeof projEventServicePanel.subscriptionAttributes === 'object') ?
+                            projEventServicePanel.subscriptionAttributes :
+                            JSON.parse(projEventServicePanel.subscriptionAttributes);
+                    }
+                    else {
+                        jsonFormData.attributes = {};
+                    }
+
+                    jsonFormData['event-filter'] = {};
+
+                    jsonFormData['event-filter']['event-type'] = jsonFormData['event-type'];
+                    delete jsonFormData['event-type'];
+
+                    jsonFormData['event-filter']['status'] = jsonFormData['status'];
+                    delete jsonFormData['status'];
+
+                    delete jsonFormData['inherited-action'];
+
+                    if (jsonFormData['project-id']) {
+                        projectArray.push(jsonFormData['project-id']);
+                        jsonFormData['event-filter']['project-ids'] = projectArray;
+                        delete jsonFormData['project-id'];
+                    }
+                    if (jsonFormData['payload-filter']) {
+                        jsonFormData['event-filter']['payload-filter'] = jsonFormData['payload-filter'];
+                        delete jsonFormData['payload-filter'];
+                    } else {
+                        jsonFormData['event-filter']['payload-filter'] = '';
+                    }
+                    if (!jsonFormData['active']) jsonFormData['active'] = false;
+                    if (!jsonFormData['act-as-event-user']) jsonFormData['act-as-event-user'] = false;
+
+                    formData = JSON.stringify(jsonFormData);
+
+                    var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
+                    var method = (action.toLowerCase() === 'edit') ? 'PUT' : 'POST';
+                    var successMessages = {
+                        'Create': 'Created new event subscription',
+                        'Edit' : 'Edited event subscription',
+                        'Clone' : 'Created new event subscription'
+                    };
+
+                    XNAT.xhr.ajax({
+                        url: url,
+                        data: formData,
+                        method: method,
+                        contentType: 'application/json',
+                        success: function(){
+                            XNAT.ui.banner.top(2000,successMessages[action],'success');
+                            projEventServicePanel.refreshSubscriptionList();
+                            XNAT.dialog.closeAll();
+                        },
+                        fail: function(e){
+                            errorHandler(e,'Could not create event subscription')
+                        }
+                    })
+                }
+            },
+            {
+                label: 'Cancel',
+                close: true
+            }
+        ];
+
+        var viewButtons = [
+            {
+                label: 'OK',
+                isDefault: true,
+                close: true
+            }
+        ];
+
         XNAT.ui.dialog.open({
             title: action + ' Event Subscription',
             width: 600,
@@ -780,10 +831,13 @@ var XNAT = getObject(XNAT || {});
                 }
                 else delete projEventServicePanel.subscriptionAttributes;
 
-                // Create form-specific event handlers, enable them after setValues() has run
-                // $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
-                //     findActions($(this));
-                // });
+                if (action.toLowerCase() === "view") {
+                    $form.find('input').addClass('disabled').prop('disabled','disabled');
+                    $form.find('select').addClass('disabled').prop('disabled','disabled');
+                    $form.find('textarea').addClass('disabled').prop('disabled','disabled');
+                    $form.find('#set-sub-action-attributes').parents('p').remove();
+                }
+
                 $form.off('change','select[name=event-selector]').on('change','select[name=event-selector]', function(){
                     findActions($(this));
                     setEventStatus($(this));
@@ -796,81 +850,9 @@ var XNAT = getObject(XNAT || {});
                     setActionAttributes($(this));
                 });
             },
-            buttons: [
-                {
-                    label: 'OK',
-                    isDefault: true,
-                    close: false,
-                    action: function(obj){
-                        // Convert form inputs to a parseable JSON object
-                        // This also involves a conversion into the accepted JSON attribute hierarchy
-                        var formData, jsonFormData = {}, projectArray = [];
-                        obj.dialog$.find('form').serializeArray().map(function(x){jsonFormData[x.name] = x.value;});
-
-                        if (projEventServicePanel.subscriptionAttributes) {
-                            jsonFormData.attributes = (typeof projEventServicePanel.subscriptionAttributes === 'object') ?
-                                projEventServicePanel.subscriptionAttributes :
-                                JSON.parse(projEventServicePanel.subscriptionAttributes);
-                        }
-                        else {
-                            jsonFormData.attributes = {};
-                        }
-
-                        jsonFormData['event-filter'] = {};
-
-                        jsonFormData['event-filter']['event-type'] = jsonFormData['event-type'];
-                        delete jsonFormData['event-type'];
-
-                        jsonFormData['event-filter']['status'] = jsonFormData['status'];
-                        delete jsonFormData['status'];
-
-                        delete jsonFormData['inherited-action'];
-
-                        if (jsonFormData['project-id']) {
-                            projectArray.push(jsonFormData['project-id']);
-                            jsonFormData['event-filter']['project-ids'] = projectArray;
-                            delete jsonFormData['project-id'];
-                        }
-                        if (jsonFormData['payload-filter']) {
-                            jsonFormData['event-filter']['payload-filter'] = jsonFormData['payload-filter'];
-                            delete jsonFormData['payload-filter'];
-                        } else {
-                            jsonFormData['event-filter']['payload-filter'] = '';
-                        }
-                        if (!jsonFormData['active']) jsonFormData['active'] = false;
-                        if (!jsonFormData['act-as-event-user']) jsonFormData['act-as-event-user'] = false;
-
-                        formData = JSON.stringify(jsonFormData);
-
-                        var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
-                        var method = (action.toLowerCase() === 'edit') ? 'PUT' : 'POST';
-                        var successMessages = {
-                            'Create': 'Created new event subscription',
-                            'Edit' : 'Edited event subscription',
-                            'Clone' : 'Created new event subscription'
-                        };
-
-                        XNAT.xhr.ajax({
-                            url: url,
-                            data: formData,
-                            method: method,
-                            contentType: 'application/json',
-                            success: function(){
-                                XNAT.ui.banner.top(2000,successMessages[action],'success');
-                                projEventServicePanel.refreshSubscriptionList();
-                                XNAT.dialog.closeAll();
-                            },
-                            fail: function(e){
-                                errorHandler(e,'Could not create event subscription')
-                            }
-                        })
-                    }
-                },
-                {
-                    label: 'Cancel',
-                    close: true
-                }
-            ]
+            buttons: (action.toLowerCase() === "view") ?
+                viewButtons :
+                saveButtons
         })
     };
 
@@ -1028,7 +1010,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could Not Get History');
+                errorHandler(e,'Could Not Get History','silent');
             }
         })
     };

@@ -40,7 +40,7 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function errorHandler(e, title, closeAll){
+    function errorHandler(e, title, silent, closeAll){
         console.log(e);
         title = (title) ? 'Error Found: '+ title : 'Error';
         closeAll = (closeAll === undefined) ? true : closeAll;
@@ -137,7 +137,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve projects');
+                errorHandler(e,'Could not retrieve projects','silent');
             }
         })
     };
@@ -154,7 +154,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve events');
+                errorHandler(e,'Could not retrieve events','silent');
             }
         })
     };
@@ -171,7 +171,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve event subscriptions');
+                errorHandler(e,'Could not retrieve event subscriptions','silent');
             }
         })
     };
@@ -194,7 +194,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not retrieve event actions');
+                errorHandler(e,'Could not retrieve event actions','silent');
             }
         })
     };
@@ -1040,7 +1040,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could Not Get History');
+                errorHandler(e,'Could Not Get History','silent');
             }
         })
     };

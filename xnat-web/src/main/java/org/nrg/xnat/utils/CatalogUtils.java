@@ -76,8 +76,8 @@ import java.util.zip.ZipOutputStream;
 @SuppressWarnings({"deprecation", "UnusedReturnValue"})
 public class CatalogUtils {
 
-    public final static String[] FILE_HEADERS = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest", "format", "content"};
-    public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest", "format", "content"};
+    public final static String[] FILE_HEADERS = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest"};
+    public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest"};
 
     public static final String PROJECT_PATH  = "projectPath";
     public static final String ABSOLUTE_PATH = "absolutePath";

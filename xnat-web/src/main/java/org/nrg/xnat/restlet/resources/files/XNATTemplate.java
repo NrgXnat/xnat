@@ -19,11 +19,10 @@ import org.apache.commons.text.StringSubstitutor;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.*;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -80,9 +79,8 @@ public class XNATTemplate extends SecureResource {
         if (pID != null) {
             proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 
-            if (proj == null) {
-                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND,
-                                   "Unable to identify project");
+            if (proj == null || !Permissions.canReadProject(user, pID)) {
+                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project");
                 return;
             }
         }
@@ -90,8 +88,7 @@ public class XNATTemplate extends SecureResource {
         String subID = (String) getParameter(request, "SUBJECT_ID");
         if (subID != null) {
             if (this.proj != null) {
-                sub = XnatSubjectdata.GetSubjectByProjectIdentifier(proj
-                                                                            .getId(), subID, user, false);
+                sub = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subID, user, false);
             }
 
             if (sub == null) {

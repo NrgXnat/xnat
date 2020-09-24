@@ -817,6 +817,7 @@ var XNAT = getObject(XNAT);
 
                     var tdElement = opts.items && opts.items[name] ? cloneObject(opts.items[name].th) || {} : {},
                         $filterInput = '',
+                        $filterSubmit = '',
                         tdContent = [];
 
                     // don't create a <td> for hidden items
@@ -837,15 +838,25 @@ var XNAT = getObject(XNAT);
 
                             $filterInput = $.spawn('input.filter-data', {
                                 type: 'text',
-                                title: name + ':filter',
+                                title: 'Use the enter key to filter on ' + name,
                                 placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : ''),
                                 style: 'width: 90%;'
                             });
+                            $filterSubmit = $.spawn(
+                                'div.filter-submit.hidden',
+                                '<i class="fa fa-arrow-right"></i>'
+                            );
                             filterInputs.push($filterInput);
 
                             if (typeof opts.filterAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
                                 $filterInput.on('focus', function(){
+                                    $(this).parents('td').find('.filter-submit').removeClass('hidden');
+
                                     $(this).select();
+                                });
+
+                                $filterInput.on('blur',function(){
+                                    $(this).parents('td').find('.filter-submit').addClass('hidden');
                                 });
 
                                 var filterFn = opts.filterAjax;
@@ -855,14 +866,31 @@ var XNAT = getObject(XNAT);
                                     };
                                 }
 
-                                $filterInput.on('keyup', function(){
-                                    var val = this.value;
-                                    setTimeout(function() {
-                                        filterFn.call(newTable, name, val);
-                                    }, 500);
+                                $filterSubmit.on('click',function(e){
+                                    // e.preventDefault();
+                                    var val = $(this).parents('td').find('.filter-data').val();
+                                    filterFn.call(newTable, name, val);
                                 });
-                            } else {
+
+                                $filterInput.on('keyup',function(e){
+                                    var val = this.value;
+                                    if (e.key === 'Enter' || e.keyCode === '13') {
+                                        filterFn.call(newTable, name, val);
+                                        $(this).parents('td').find('.filter-submit').addClass('hidden');
+                                    }
+                                })
+
+                                // $filterInput.on('keyup', function(){
+                                //     var val = this.value;
+                                //     setTimeout(function() {
+                                //         filterFn.call(newTable, name, val);
+                                //     }, 500);
+                                // });
+                            }
+                            else {
                                 $filterInput.on('focus', function(){
+                                    $(this).parents('td').find('.filter-submit').removeClass('hidden');
+
                                     $(this).select();
                                     // clear all filters on focus
                                     //$table.find('input.filter-data').val('');
@@ -870,6 +898,10 @@ var XNAT = getObject(XNAT);
                                     // (should make filtering slightly faster)
                                     // $dataRows = $table.find('tr[data-filter]');
                                     cacheRows();
+                                });
+
+                                $filterInput.on('blur',function(){
+                                    $(this).find('.filter-submit').remove();
                                 });
 
                                 $filterInput.on('keyup', function(e){
@@ -891,7 +923,7 @@ var XNAT = getObject(XNAT);
                                 });
                             }
 
-                            tdContent.push($filterInput[0]);
+                            tdContent.push($filterInput[0],$filterSubmit);
                         }
                     }
 

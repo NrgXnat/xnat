@@ -43,7 +43,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -423,12 +422,10 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     private void checkReadProjectSubscriptionAccess(@Nonnull Subscription subscription, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException {
         if (subscription.eventFilter().projectIds() == null ||
                 subscription.eventFilter().projectIds().isEmpty() ||
-                !subscription.eventFilter().projectIds().contains(project) ||
-                !(isAdmin(userI) || isOwner(userI, Arrays.asList(project)))) {
-
-            throw new UnauthorizedException(userI.getLogin() + " not authorized to read subscriptions for project(s): "
-                    + ((subscription.eventFilter().projectIds() == null || subscription.eventFilter().projectIds().isEmpty()) ? "Site" : StringUtils.join(subscription.eventFilter().projectIds(), ',')));
+                subscription.eventFilter().projectIds().contains(project)) {
+            return;
         }
+        throw new UnauthorizedException(userI.getLogin() + " not authorized to read subscriptions for other projects");
     }
 
     private boolean isAdmin(final UserI user) {

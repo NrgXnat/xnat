@@ -180,7 +180,7 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "datatypes/names/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public Set<String> getSpecifiedElementTypeNames(@ApiParam("The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
+    public SetMultimap<String, String> getSpecifiedElementTypeNames(@ApiParam("The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
         return getElementNames(dataType);
     }
 
@@ -295,8 +295,8 @@ public class SchemaApi extends AbstractXapiRestController {
         return getElementNames(elementNames);
     }
 
-    private Set<String> getElementNames(final String elementName) throws NotFoundException {
-        return getElementNames(Collections.singletonList(elementName)).get(elementName);
+    private SetMultimap<String, String> getElementNames(final String elementName) throws NotFoundException {
+        return getElementNames(Collections.singletonList(elementName));
     }
 
     private SetMultimap<String, String> getElementNames(final List<String> elementNames) throws NotFoundException {

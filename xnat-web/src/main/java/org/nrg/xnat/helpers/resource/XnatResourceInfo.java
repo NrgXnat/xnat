@@ -10,8 +10,8 @@
 package org.nrg.xnat.helpers.resource;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Singular;
-import lombok.Value;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.core.io.FileSystemResource;
@@ -27,7 +27,7 @@ import java.util.Map;
  * Provides a package for passing resources to methods on the {@link CatalogService} that insert resources into a
  * catalog. This descriptor includes a file or resource stream and optional path, content, and format specifiers.
  */
-@Value
+@Data
 @Builder
 public class XnatResourceInfo implements Serializable {
     public static class XnatResourceInfoBuilder {
@@ -40,17 +40,17 @@ public class XnatResourceInfo implements Serializable {
         }
     }
 
-    String              name;
-    String              description;
-    String              format;
-    String              content;
-    Number              eventId;
-    Date                lastModified;
-    Date                created;
-    String              username;
-    InputStreamSource   source;
+    private final String              name;
+    private final String              description;
+    private final String              format;
+    private final String              content;
+    private final Number              eventId;
+    private final Date                lastModified;
+    private final Date                created;
+    private final String              username;
+    private final InputStreamSource   source;
     @Singular
-    List<String>        tags;
+    private final List<String>        tags;
     @Singular("data")
-    Map<String, String> metadata;
+    private final Map<String, String> metadata;
 }

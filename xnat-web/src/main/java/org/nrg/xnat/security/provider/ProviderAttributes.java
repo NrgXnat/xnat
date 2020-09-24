@@ -154,7 +154,7 @@ public class ProviderAttributes {
 
     private static Properties getScrubbedProperties(final Properties properties) {
         final Properties scrubbed = new Properties();
-        for (final String property : properties.stringPropertyNames().stream().filter(EXCLUDED_PROPERTIES::contains).collect(Collectors.toSet())) {
+        for (final String property : properties.stringPropertyNames().stream().filter(name -> !EXCLUDED_PROPERTIES.contains(name)).collect(Collectors.toSet())) {
             scrubbed.setProperty(property, properties.getProperty(property));
         }
         return scrubbed;

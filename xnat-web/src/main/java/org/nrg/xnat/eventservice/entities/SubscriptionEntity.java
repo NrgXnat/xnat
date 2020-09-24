@@ -13,15 +13,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
 import java.util.Map;
 import java.util.Set;
 
 
 @Entity
-@Table(uniqueConstraints= {
-        @UniqueConstraint(columnNames="name")
-})
+@Table
+
 public class SubscriptionEntity extends AbstractHibernateEntity {
 
     public SubscriptionEntity() {}

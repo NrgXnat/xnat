@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -148,11 +147,6 @@ public class EventServiceImpl implements EventService {
     public void deleteSubscription(Long id) throws Exception {
         throwIfDisabled();
         subscriptionService.delete(id);
-    }
-
-    @Override
-    public void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException {
-        subscriptionService.throwExceptionIfNameExists(subscription);
     }
 
     @Override

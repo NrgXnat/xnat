@@ -15,7 +15,6 @@ import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -303,22 +302,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
-    public void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException {
-        String name = subscription.name();
-        SubscriptionEntity existing = null;
-        try {
-            existing = this.getDao().findByName(name);
-        } catch (Exception e) {
-            log.error("Could not check database for duplication subscription name.");
-            throw new NrgServiceRuntimeException("Could not check database for duplication subscription name.");
-        }
-        if (existing != null) {
-            log.error("Subscription with the name :" + name + " exists.");
-            throw new NrgServiceRuntimeException("Subscription with the name :" + name + " exists.");
-        }
-    }
-
-    @Override
     public void delete(@Nonnull Long subscriptionId) throws NotFoundException {
         if(subscriptionId != null) {
             Subscription subscription = getSubscription(subscriptionId);
@@ -362,9 +345,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     @Override
     public Subscription update(final Subscription subscription) throws NotFoundException, SubscriptionValidationException{
         SubscriptionEntity subscriptionEntity = retrieve(subscription.id());
-        if(subscription.name() != null && !subscription.name().equals(subscriptionEntity.getName())){
-            throwExceptionIfNameExists(subscription);
-        }
         subscriptionEntity = SubscriptionEntity.fromPojoWithTemplate(subscription, subscriptionEntity);
         Subscription updatedSubscription = toPojo(subscriptionEntity);
         validate(updatedSubscription);
@@ -416,7 +396,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
 
-    // Generate descriptive subscription name
+    // Generate descriptive subscription name - unique to project combination
     private String autoGenerateUniqueSubscriptionName(Subscription subscription){
         String uniqueName = Strings.isNullOrEmpty(subscription.name()) ? "" : subscription.name();
         try {

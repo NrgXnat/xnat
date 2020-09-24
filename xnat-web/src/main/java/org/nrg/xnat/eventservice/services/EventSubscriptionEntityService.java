@@ -2,7 +2,6 @@ package org.nrg.xnat.eventservice.services;
 
 
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
@@ -27,8 +26,6 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     Subscription deactivate(Subscription eventSubscription) throws NotFoundException, EntityNotFoundException;
 
     Subscription save(Subscription subscription);
-
-    void throwExceptionIfNameExists(final Subscription subscription) throws NrgServiceRuntimeException;
 
     Subscription update(Subscription subscription) throws NotFoundException, SubscriptionValidationException;
 

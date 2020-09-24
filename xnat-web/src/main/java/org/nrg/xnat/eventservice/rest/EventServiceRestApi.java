@@ -87,7 +87,6 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                                      final @RequestParam(value = "overpopulate-attributes", required = false) Boolean overpopulateAttributes) throws SubscriptionValidationException, SubscriptionAccessException {
         final UserI        userI    = getSessionUser();
         final Subscription toCreate = Subscription.create(subscription, userI.getLogin());
-        eventService.throwExceptionIfNameExists(toCreate);
         final Subscription created = eventService.createSubscription(toCreate, overpopulateAttributes);
         if (created == null) {
             return new ResponseEntity<>("Failed to create subscription.", HttpStatus.FAILED_DEPENDENCY);
@@ -102,7 +101,6 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         final UserI  userI    = getSessionUser();
         Subscription toCreate = Subscription.createOnProject(subscription, userI.getLogin());
         checkProjectSubscriptionAccess(toCreate, project, userI);
-        eventService.throwExceptionIfNameExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
         if (created == null) {
             return new ResponseEntity<>("Failed to create subscription.", HttpStatus.FAILED_DEPENDENCY);

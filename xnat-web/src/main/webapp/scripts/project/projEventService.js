@@ -707,8 +707,7 @@ var XNAT = getObject(XNAT || {});
                     delete jsonFormData['inherited-action'];
 
                     if (jsonFormData['project-id']) {
-                        projectArray.push(jsonFormData['project-id']);
-                        jsonFormData['event-filter']['project-ids'] = projectArray;
+                        jsonFormData['event-filter']['project-ids'] = [jsonFormData['project-id']];
                         delete jsonFormData['project-id'];
                     }
                     if (jsonFormData['payload-filter']) {
@@ -802,7 +801,8 @@ var XNAT = getObject(XNAT || {});
 
                     projEventServicePanel.subscriptionAttributes = subscription.attributes;
 
-                    subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    // subscriptionData['project-id'] = subscription['event-filter']['project-ids'][0];
+                    subscriptionData['project-id'] = projectId;
                     subscriptionData['event-type'] = subscription['event-filter']['event-type'];
                     subscriptionData['status'] = subscription['event-filter']['status'];
                     subscriptionData['event-selector'] = subscription['event-filter']['event-type'] + ':' + subscription['event-filter']['status'];
@@ -1081,6 +1081,7 @@ var XNAT = getObject(XNAT || {});
             aoColumns: [
                 {
                     sTitle: '<b>Date</b>',
+                    sClass: 'left',
                     mData: function(source){
                         var timestamp  = source.timestamp || '';
                         var dateString = '';
@@ -1101,7 +1102,6 @@ var XNAT = getObject(XNAT || {});
                 },
                 {
                     sTitle: '<b>Subscription Name</b>',
-                    sClass: 'left',
                     sWidth: '200px',
                     mData: function(source){
                         var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';

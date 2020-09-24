@@ -112,6 +112,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         }
         final String prefix = "xnat_" + System.nanoTime();
         try {
+            log.debug("Found root folder {} with subfolder {}, will try to create a temporary folder with prefix {}", root, subfolder, prefix);
             final Path workPath = Paths.get(root, subfolder);
             workPath.toFile().mkdirs();
             final Path tmpDir = Files.createTempDirectory(workPath, prefix);
@@ -132,7 +133,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             }
             return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), maxFileSize, maxRequestSize, fileSizeThreshold);
         } catch (IOException e) {
-            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder " + root);
+            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder " + root, e);
         }
     }
 
@@ -197,7 +198,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             return Collections.enumeration(parameters);
         }
 
-        private ServletContext _context;
+        private final ServletContext _context;
     }
 
     private static final int            ONE_MB                       = 1048576;

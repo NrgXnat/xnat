@@ -15,11 +15,16 @@ import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
 import java.io.File;
 
-public interface ArchivableItem extends ItemI{
-	public String getArchiveDirectoryName();
-	public File getExpectedCurrentDirectory() throws InvalidArchiveStructure, UnknownPrimaryProjectException;
-	public String getXSIType();
-	public String getId();
-	public String getProject();
-	public String getArchiveRootPath() throws UnknownPrimaryProjectException;
+public interface ArchivableItem extends ItemI {
+    String getArchiveDirectoryName();
+
+    File getExpectedCurrentDirectory() throws InvalidArchiveStructure, UnknownPrimaryProjectException;
+
+    String getXSIType();
+
+    String getId();
+
+    String getProject();
+
+    String getArchiveRootPath() throws UnknownPrimaryProjectException;
 }

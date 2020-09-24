@@ -66,14 +66,13 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@ComponentScan({"org.nrg.dcm.xnat",
-                "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate", "org.nrg.framework.services.impl",
-                "org.nrg.resources", "org.nrg.xdat.daos",
-                "org.nrg.xdat.security.validators", "org.nrg.xdat.services.cache.impl", "org.nrg.xdat.services.impl.hibernate",
-                "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xft.utils",
-                "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services",
-                "org.nrg.xnat.eventservice.actions", "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.events",
-                "org.nrg.xnat.eventservice.listeners", "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing",
+@ComponentScan({"org.nrg.dcm.xnat", "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
+                "org.nrg.framework.services.impl", "org.nrg.resources", "org.nrg.xdat.daos", "org.nrg.xdat.security.validators",
+                "org.nrg.xdat.services.cache.impl", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
+                "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xft.utils", "org.nrg.xnat.configuration",
+                "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services", "org.nrg.xnat.eventservice.actions",
+                "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.events", "org.nrg.xnat.eventservice.listeners",
+                "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
                 "org.nrg.xnat.processor.importer", "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
                 "org.nrg.xnat.task", "org.nrg.xnat.tracking"})

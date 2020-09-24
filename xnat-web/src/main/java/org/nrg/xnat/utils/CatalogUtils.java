@@ -9,13 +9,15 @@
 
 package org.nrg.xnat.utils;
 
+import static org.apache.commons.io.FileUtils.listFiles;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -36,11 +38,11 @@ import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
+import org.nrg.xnat.helpers.resource.XnatResourceInfoMap;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.xml.sax.SAXException;
@@ -48,24 +50,24 @@ import org.xml.sax.SAXException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
-import java.net.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.security.NoSuchAlgorithmException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.*;
 import java.nio.charset.Charset;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
-import java.security.MessageDigest;
-
-import static org.apache.commons.io.FileUtils.listFiles;
 
 /**
  * @author timo
@@ -74,8 +76,8 @@ import static org.apache.commons.io.FileUtils.listFiles;
 @SuppressWarnings({"deprecation", "UnusedReturnValue"})
 public class CatalogUtils {
 
-    public final static String[] FILE_HEADERS = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest"};
-    public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest"};
+    public final static String[] FILE_HEADERS = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "digest", "format", "content"};
+    public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest", "format", "content"};
 
     public static final String PROJECT_PATH  = "projectPath";
     public static final String ABSOLUTE_PATH = "absolutePath";
@@ -88,13 +90,17 @@ public class CatalogUtils {
         public long size;
         public Date lastModified;
         public String md5;
+        public String format;
+        public String content;
 
-        public CatalogEntryAttributes(String relativePath, String name, long size, Date lastModified, String md5) {
+        public CatalogEntryAttributes(String relativePath, String name, long size, Date lastModified, String md5, String format, String content) {
             this.relativePath = relativePath;
             this.name = name;
             this.size = size;
             this.md5 = md5;
             this.lastModified = lastModified;
+            this.format = format;
+            this.content = content;
         }
     }
 
@@ -159,7 +165,7 @@ public class CatalogUtils {
             this.catPath  = this.catFile.getParent();
             this.catRes = catRes;
             if (this.catFile.exists()) {
-                readCatalogBeanFromCatalogFile();
+                this.catBean = readCatalogBeanFromCatalogFile();
             } else if (create) {
                 CatCatalogBean cat = new CatCatalogBean();
                 if (StringUtils.isNotBlank(catId)) cat.setId(catId);
@@ -180,7 +186,7 @@ public class CatalogUtils {
             setCatalogProject(catBean, this.project);
         }
 
-        private void readCatalogBeanFromCatalogFile() throws ServerException {
+        private CatCatalogBean readCatalogBeanFromCatalogFile() throws ServerException {
             CatCatalogBean cat = null;
             InputStream inputStream = null;
             try {
@@ -227,9 +233,8 @@ public class CatalogUtils {
 
             if (cat == null) {
                 throw new ServerException("No catalog bean stored in " + catFile);
-            } else {
-                catBean = cat;
             }
+            return cat;
         }
 
         @Nullable
@@ -243,8 +248,7 @@ public class CatalogUtils {
                 log.error("Unable to query for resource project bc couldn't acquire NamedParameterJdbcTemplate");
                 return null;
             }
-            final List<String> projects = template.query(QUERY_PROJECT_FROM_RESOURCE,
-                    new MapSqlParameterSource("abstractResourceId", id), RESOURCE_PROJECT_ROW_MAPPER);
+            final List<String> projects = template.query(QUERY_PROJECT_FROM_RESOURCE, new MapSqlParameterSource("abstractResourceId", id), (resultSet, index) -> resultSet.getString("project"));
             if (projects.isEmpty()) {
                 log.warn("No projects associated with resource {}", catRes);
                 return null;
@@ -388,13 +392,6 @@ public class CatalogUtils {
      */
     @Nonnull
     public static String getHash(final File file) {
-        //try {
-        //    return MD5.asHex(MD5.getHash(file));
-        //} catch (IOException e) {
-        //    log.error("An error occurred calculating the checksum for a file at the path: " + file.getPath(), e);
-        //    return "";
-        //}
-        //faster to use java's MD5 than FastMD5 (com.twmacinta.util.MD5) library
         return getHash(file, true);
     }
 
@@ -413,11 +410,12 @@ public class CatalogUtils {
         return getHash(file, needLock, "MD5");
     }
 
+    @SuppressWarnings("SameParameterValue")
     @Nonnull
-    private static String getHash(File file, boolean needLock, String hash_type) {
+    private static String getHash(File file, boolean needLock, String hashType) {
         String digest = "";
         try {
-            MessageDigest md5 = MessageDigest.getInstance(hash_type);
+            MessageDigest md5 = MessageDigest.getInstance(hashType);
 
             //read into buffer and update md5
             try {
@@ -449,7 +447,7 @@ public class CatalogUtils {
                 if (needLock) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
             }
         } catch(NoSuchAlgorithmException e){
-            log.error("Unsupported hashing algorithm {}", hash_type, e);
+            log.error("Unsupported hashing algorithm {}", hashType, e);
         }
         return digest;
     }
@@ -558,6 +556,7 @@ public class CatalogUtils {
                 } else if (locator.equalsIgnoreCase(PROJECT_PATH)) {
                     String projectPath;
                     try {
+                        assert proj != null;
                         projectPath = Paths.get(proj.getRootArchivePath()).relativize(Paths.get(entryPath)).toString();
                     } catch (IllegalArgumentException e) {
                         // Not relative to project, likely a full path
@@ -642,7 +641,6 @@ public class CatalogUtils {
      * @param rawSize   The size of the files that compose the object.
      * @return A formatted display of the file statistics.
      */
-    @SuppressWarnings("unused")
     public static String formatFileStats(final String label, final long fileCount, final Object rawSize) {
         long size = 0;
         if (rawSize != null) {
@@ -658,12 +656,11 @@ public class CatalogUtils {
         return String.format("%s: %s in %s files", label, formatSize(size), fileCount);
     }
 
-    @SuppressWarnings("unused")
     public static Map<File, CatEntryI> getCatalogEntriesForFiles(final String rootPath,
                                                                  final XnatResourcecatalog catalog,
                                                                  final List<File> files,
                                                                  final String project) {
-        final Map<File, CatEntryI> entries = Maps.newHashMap();
+        final Map<File, CatEntryI> entries = new HashMap<>();
 
         CatalogData catalogData;
         try {
@@ -673,12 +670,8 @@ public class CatalogUtils {
             return entries;
         }
 
-        final File          catFile = catalogData.catFile;
-        final String     parentPath = catalogData.catPath;
-        final CatCatalogBean    cat = catalogData.catBean;
-
-
-        for (final CatEntryI entry : cat.getEntries_entry()) {
+        final String parentPath = catalogData.catPath;
+        for (final CatEntryI entry : catalogData.catBean.getEntries_entry()) {
             final File file = getFile(entry, parentPath, project);
             if (file != null && files.contains(file)) {
                 entries.put(file, entry);
@@ -773,18 +766,56 @@ public class CatalogUtils {
      * @param checksums             computes/updates checksums
      * @return new Object[] { modified, auditSummary }     modified: true if cat modified and needs save
      *                                                     auditSummary: audit hashmap
+     * @deprecated Use {@link #refreshCatalog(UserI, CatalogData, EventMetaI, boolean, boolean, boolean, boolean)} instead.
      */
+    @Deprecated
     public static Object[] refreshCatalog(final CatalogData catalogData, final UserI user, final EventMetaI eventMeta,
                                           final boolean addUnreferencedFiles, final boolean removeMissingFiles,
                                           final boolean populateStats, final boolean checksums) {
+        final Pair<Boolean, Map<String, Map<String, Integer>>> pair = refreshCatalog(user, catalogData, eventMeta, addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+        return new Object[]{pair.getKey(), pair.getValue()};
+    }
 
+    /**
+     * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
+     *  removes any that have been deleted, computes checksums, and updates catalog stats.
+     *
+     * @param catalogData           catalog data object
+     * @param user                  user for transaction
+     * @param eventMeta             event for transaction
+     * @param addUnreferencedFiles  adds files not referenced in catalog
+     * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
+     * @param populateStats         updates file count & size for catRes in XNAT db
+     * @param checksums             computes/updates checksums
+     * @return Pair with boolean set as true if the catalog was modified and needs saved. The map value contains info on the changes made.
+     */
+    public static Pair<Boolean, Map<String, Map<String, Integer>>> refreshCatalog(final UserI user, final CatalogData catalogData, final EventMetaI eventMeta,
+                                                                                  final boolean addUnreferencedFiles, final boolean removeMissingFiles,
+                                                                                  final boolean populateStats, final boolean checksums) {
+        return refreshCatalog(user, catalogData, null, eventMeta, addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+    }
+
+    /**
+     * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
+     *  removes any that have been deleted, computes checksums, and updates catalog stats.
+     *
+     * @param catalogData           catalog data object
+     * @param user                  user for transaction
+     * @param eventMeta             event for transaction
+     * @param addUnreferencedFiles  adds files not referenced in catalog
+     * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
+     * @param populateStats         updates file count & size for catRes in XNAT db
+     * @param checksums             computes/updates checksums
+     * @return Pair with boolean set as true if the catalog was modified and needs saved. The map value contains info on the changes made.
+     */
+    public static Pair<Boolean, Map<String, Map<String, Integer>>> refreshCatalog(@SuppressWarnings("unused") final UserI user, final CatalogData catalogData, final XnatResourceInfoMap resources,
+                                                                                  final EventMetaI eventMeta, final boolean addUnreferencedFiles, final boolean removeMissingFiles,
+                                                                                  final boolean populateStats, final boolean checksums) {
         final Date now = eventMeta.getEventDate();
         final int eventId = eventMeta.getEventId().intValue();
-        boolean modified;
 
         final AtomicInteger rtn = new AtomicInteger(0);
-        final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null,
-                null, null, user, now, now, eventId);
+        final XnatResourceInfo info = XnatResourceInfo.builder().created(now).lastModified(now).eventId(eventId).build();
 
         //Needed for audit summary
         final AtomicInteger added = new AtomicInteger(0);
@@ -805,6 +836,15 @@ public class CatalogUtils {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     boolean mod = false;
                     File f = file.toFile();
+                    final String relative = catalogPath.relativize(file).toString();
+                    final String format, content;
+                    if (resources.containsKey(relative)) {
+                        format = resources.get(relative).getFormat();
+                        content = resources.get(relative).getContent();
+                    } else {
+                        format = null;
+                        content = null;
+                    }
 
                     if (f.equals(catalogData.catFile) || f.isHidden()) {
                         //don't add the catalog xml, ignore hidden files
@@ -820,13 +860,11 @@ public class CatalogUtils {
                     }
 
                     //check if file exists in catalog already
-                    final String relative = catalogPath.relativize(f.toPath()).toString();
-
                     if (catalogMap.containsKey(relative)) {
                         CatalogMapEntry mapEntry = catalogMap.get(relative);
                         mapEntry.entryExists = true; //mark that file exists
                         mod = updateExistingCatEntry(mapEntry.entry, null, relative, f.getName(), attrs.size(),
-                                checksums ? getHash(f) : null, info, eventMeta);
+                                checksums ? getHash(f) : null, format, content, info, eventMeta);
                         if (mod) modded.getAndIncrement();
                     } else {
                         if (addUnreferencedFiles) {
@@ -834,7 +872,7 @@ public class CatalogUtils {
                             String digest = checksums ? getHash(f) : null;
 
                             CatEntryBean entry = populateAndAddCatEntry(catalogData.catBean, relative, relative,
-                                    f.getName(), attrs.size(), info, digest);
+                                    f.getName(), attrs.size(), info, digest, format, content, null);
                             catalogMap.put(relative, new CatalogMapEntry(entry, catalogData.catBean, true));
 
                             mod = true;
@@ -866,18 +904,16 @@ public class CatalogUtils {
                 }
             });
         } catch (IOException e) {
-            throw new AssertionError("Files.walkFileTree shouldn't throw IOException since we modified " +
-                    "SimpleFileVisitor not to do so");
+            throw new AssertionError("Files.walkFileTree shouldn't throw IOException since we modified SimpleFileVisitor not to do so");
         }
 
         int rtn_val = rtn.get();
         if (rtn_val == -1) {
             //multiple catalog files
-            return new Object[] {false, null};
+            return Pair.of(false, null);
         }
-        modified = rtn_val == 1;
-
-        int nremoved = 0;
+        final AtomicBoolean modified = new AtomicBoolean(rtn_val == 1);
+        int nRemoved = 0;
         if (removeMissingFiles || populateStats) {
             for (CatalogMapEntry mapEntry : catalogMap.values()) {
                 if (mapEntry.entryExists) {
@@ -888,8 +924,8 @@ public class CatalogUtils {
                 } else if (removeMissingFiles) {
                     //File wasn't visited, doesn't exist, remove from catalog
                     mapEntry.catalog.getEntries_entry().remove(mapEntry.entry);
-                    modified = true;
-                    nremoved++;
+                    modified.set(true);
+                    nRemoved++;
                     if (populateStats) {
                         size.getAndAdd(-1 * getCatalogEntrySize(mapEntry.entry));
                         count.getAndDecrement();
@@ -899,15 +935,15 @@ public class CatalogUtils {
         }
 
         //Add to auditSummary
-        Map<String, Map<String, Integer>> auditSummary = new HashMap<>();
-        if (nremoved > 0)
-            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.REMOVED, nremoved);
-        int nmod = modded.get();
-        if (nmod > 0)
-            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.MODIFIED, nmod);
-        int nadded = added.get();
-        if (nadded > 0)
-            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.ADDED, nadded);
+        final Map<String, Map<String, Integer>> auditSummary = new HashMap<>();
+        if (nRemoved > 0)
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.REMOVED, nRemoved);
+        final int nModified = modded.get();
+        if (nModified > 0)
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.MODIFIED, nModified);
+        final int nAdded = added.get();
+        if (nAdded > 0)
+            addAuditEntry(auditSummary, eventId, now, ChangeSummaryBuilderA.ADDED, nAdded);
 
         //Update resource with new file count & size
         // This is going to implicitly removeMissingFiles, since file count & size attributes are computed
@@ -919,15 +955,15 @@ public class CatalogUtils {
             Long s = size.get();
             if (!c.equals(catalogData.catRes.getFileCount())) {
                 catalogData.catRes.setFileCount(c);
-                modified = true;
+                modified.set(true);
             }
 
             if (!s.equals(catalogData.catRes.getFileSize())) {
                 catalogData.catRes.setFileSize(s);
-                modified = true;
+                modified.set(true);
             }
         }
-        return new Object[]{ modified, auditSummary};
+        return Pair.of(modified.get(), auditSummary);
     }
 
     public static class CatalogMapEntry {
@@ -1034,6 +1070,7 @@ public class CatalogUtils {
         writeCatalogToFile(catalogData, false, auditSummary);
 
         // Update resource stats
+        assert catalogData.catRes != null;
         catalogData.catRes.setFileSize(catSize);
         catalogData.catRes.setFileCount(fileCount);
         catalogData.catRes.save(user, false, false, eventMeta);
@@ -1134,7 +1171,6 @@ public class CatalogUtils {
         return entries;
     }
 
-    @SuppressWarnings("unused")
     public static CatCatalogI getCatalogByFilter(final CatCatalogI cat) {
         CatCatalogI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1305,7 +1341,6 @@ public class CatalogUtils {
         return null;
     }
 
-    @SuppressWarnings("unused")
     public static CatEntryI getEntryByName(CatCatalogI cat, String name) {
         CatEntryI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1363,7 +1398,6 @@ public class CatalogUtils {
         return null;
     }
 
-    @SuppressWarnings("unused")
     public static CatDcmentryI getDCMEntryByInstanceNumber(CatCatalogI cat, Integer num) {
         CatDcmentryI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1485,8 +1519,8 @@ public class CatalogUtils {
             }
             modified = true;
         }
-        if (info.getMeta().size() > 0) {
-            for (final Map.Entry<String, String> e : info.getMeta().entrySet()) {
+        if (!info.getMetadata().isEmpty()) {
+            for (final Map.Entry<String, String> e : info.getMetadata().entrySet()) {
                 final CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
                 meta.setName(e.getKey());
                 meta.setMetafield(e.getValue());
@@ -1496,14 +1530,14 @@ public class CatalogUtils {
         }
 
         if (isNew) {
-            if (info.getUser() != null && entry.getCreatedby() == null) {
-                entry.setCreatedby(info.getUser().getUsername());
+            if (StringUtils.isNotBlank(info.getUsername()) && entry.getCreatedby() == null) {
+                entry.setCreatedby(info.getUsername());
             }
             if (info.getCreated() != null && entry.getCreatedtime() == null) {
                 entry.setCreatedtime(info.getCreated());
             }
-            if (info.getEvent_id() != null && entry.getCreatedeventid() == null) {
-                entry.setCreatedeventid(info.getEvent_id().toString());
+            if (info.getEventId() != null && entry.getCreatedeventid() == null) {
+                entry.setCreatedeventid(info.getEventId().toString());
             }
         }
 
@@ -1532,8 +1566,8 @@ public class CatalogUtils {
             }
             modified = true;
         }
-        if (info.getMeta().size() > 0) {
-            for (final Map.Entry<String, String> entry : info.getMeta().entrySet()) {
+        if (!info.getMetadata().isEmpty()) {
+            for (final Map.Entry<String, String> entry : info.getMetadata().entrySet()) {
                 final XnatAbstractresourceTag t = new XnatAbstractresourceTag(user);
                 t.setTag(entry.getValue());
                 t.setName(entry.getKey());
@@ -1576,8 +1610,7 @@ public class CatalogUtils {
                 }
 
                 try (final InputStream input = fileWriter.getInputStream()) {
-                    @SuppressWarnings("unchecked") final List<File> files = zipper.extract(input,
-                            destinationDir.getAbsolutePath(), overwrite, ci);
+                    final List<File> files = zipper.extract(input, destinationDir.getAbsolutePath(), overwrite, ci);
                     for (final File file : files) {
                         if (!file.isDirectory()) {
                             // relative path is used to compare to existing catalog entries, and add if missing.
@@ -1700,7 +1733,7 @@ public class CatalogUtils {
         }
     }
 
-    public static Map<String, Map<String, Integer>> retrieveAuditySummary(CatCatalogI cat) {
+    public static Map<String, Map<String, Integer>> retrieveAuditSummary(CatCatalogI cat) {
         if (cat == null) return new HashMap<>();
         CatCatalogMetafieldI field = null;
         for (CatCatalogMetafieldI mf : cat.getMetafields_metafield()) {
@@ -1720,7 +1753,7 @@ public class CatalogUtils {
 
     public static void addAuditEntry(Map<String, Map<String, Integer>> summary, String key, String action, Integer i) {
         if (!summary.containsKey(key)) {
-            summary.put(key, new HashMap<String, Integer>());
+            summary.put(key, new HashMap<>());
         }
 
         if (!summary.get(key).containsKey(action)) {
@@ -1739,7 +1772,7 @@ public class CatalogUtils {
      * Deprecated: use {@link #writeCatalogToFile(CatalogData)}
      * @param xml the catalog bean
      * @param dest the file destination
-     * @param project the projct
+     * @param project the project
      * @throws Exception for errors
      */
     @Deprecated
@@ -1758,6 +1791,7 @@ public class CatalogUtils {
      * @param project the project
      * @param calculateChecksums compute checksums or skip?
      * @throws Exception for errors
+     * @deprecated Use {@link #writeCatalogToFile(CatalogData, boolean)} instead.
      */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, String project, boolean calculateChecksums) throws Exception {
@@ -1765,13 +1799,14 @@ public class CatalogUtils {
     }
 
     /**
-     * Deprecated: use {@link #writeCatalogToFile(CatalogData, boolean, Map<String, Map<String, Integer>>)}
+     * This method is deprecated.
      * @param xml the catalog bean
      * @param dest the file destination
      * @param project the project
      * @param calculateChecksums compute checksums or skip?
      * @param auditSummary the audit summary map
      * @throws Exception for errors
+     * @deprecated Use {@link #writeCatalogToFile(CatalogData, boolean, Map)} instead.
      */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, String project, boolean calculateChecksums,
@@ -1780,7 +1815,7 @@ public class CatalogUtils {
     }
 
     /**
-     * Deprecated: use {@link #writeCatalogToFile(CatalogData, boolean, Map<String, Map<String, Integer>>)}
+     * This method is deprecated.
      * @param xml the catalog bean
      * @param dest the file destination
      * @param project the project
@@ -1788,6 +1823,7 @@ public class CatalogUtils {
      * @param auditSummary the audit summary map
      * @param previousCatalogChecksum the checksum of the catalog when it was read, so that it isn't incorrectly overwritten
      * @throws Exception for errors
+     * @deprecated Use {@link #writeCatalogToFile(CatalogData, boolean, Map)} instead.
      */
     @Deprecated
     public static void writeCatalogToFile(CatCatalogI xml, File dest, String project, boolean calculateChecksums,
@@ -2037,7 +2073,7 @@ public class CatalogUtils {
         File catalogFile = handleCatalogFile(project, rootPath, resource);
         CatCatalogBean cat = getCatalog(catalogFile, project);
 
-        if (cat != null) {
+        if (cat != null && catalogFile != null) {
             String parentPath = catalogFile.getParent();
             formalizeCatalog(cat, parentPath, project, user, c);
             if (includeFullPaths) {
@@ -2099,24 +2135,15 @@ public class CatalogUtils {
         return fullPath;
     }
 
-    @SuppressWarnings("unused")
     public boolean modifyEntry(CatCatalogI cat, CatEntryI oldEntry, CatEntryI newEntry) {
-        for (int i = 0; i < cat.getEntries_entry().size(); i++) {
-            CatEntryI e = cat.getEntries_entry().get(i);
-            if (e.getUri().equals(oldEntry.getUri())) {
-                cat.getEntries_entry().remove(i);
-                cat.getEntries_entry().add(newEntry);
-                return true;
-            }
+        final List<CatEntryI>     entries = cat.getEntries_entry();
+        final Optional<CatEntryI> current       = entries.stream().filter(entry -> StringUtils.equals(entry.getUri(), oldEntry.getUri())).findAny();
+        if (current.isPresent()) {
+            entries.remove(current.get());
+            entries.add(newEntry);
+            return true;
         }
-
-        for (CatCatalogI subset : cat.getSets_entryset()) {
-            if (modifyEntry(subset, oldEntry, newEntry)) {
-                return true;
-            }
-        }
-
-        return false;
+        return cat.getSets_entryset().stream().anyMatch(entrySet -> modifyEntry(entrySet, oldEntry, newEntry));
     }
 
     public static List<File> findHistoricalCatFiles(File catFile) {
@@ -2126,12 +2153,7 @@ public class CatalogUtils {
 
         final String name = catFile.getName();
 
-        final FilenameFilter filter = new FilenameFilter() {
-            @Override
-            public boolean accept(File arg0, String arg1) {
-                return (arg1.equals(name));
-            }
-        };
+        final FilenameFilter filter = (arg0, arg1) -> (arg1.equals(name));
 
         if (historyDir.exists()) {
             final File[] historyFiles = historyDir.listFiles();
@@ -2276,30 +2298,33 @@ public class CatalogUtils {
         return modified;
     }
 
-    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname,
+    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String filename,
                                                       long size, XnatResourceInfo info) {
-        return populateAndAddCatEntry(cat, uri, id, fname, size, info, null);
+        return populateAndAddCatEntry(cat, uri, id, filename, size, info, null);
     }
 
-    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname,
+    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String filename,
                                                       long size, XnatResourceInfo info, @Nullable String digest) {
-        return populateAndAddCatEntry(cat, uri, id, fname, size, info, digest, null);
+        return populateAndAddCatEntry(cat, uri, id, filename, size, info, digest, null, null, null);
     }
 
-    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String fname,
+    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat, String uri, String id, String filename,
                                                       long size, XnatResourceInfo info, @Nullable String digest,
+                                                      @Nullable String format, @Nullable String content,
                                                       @Nullable String cachePath) {
         CatEntryBean newEntry = new CatEntryBean();
         newEntry.setUri(uri);
-        newEntry.setName(fname);
+        newEntry.setName(filename);
         newEntry.setId(id);
-        if (StringUtils.isNotBlank(cachePath)) {
-            newEntry.setCachepath(cachePath);
-        } else {
-            newEntry.setCachepath(id);
-        }
+        newEntry.setCachepath(StringUtils.defaultIfBlank(cachePath, id));
         if (StringUtils.isNotBlank(digest)) {
             newEntry.setDigest(digest);
+        }
+        if (StringUtils.isNotBlank(format)) {
+            newEntry.setFormat(format);
+        }
+        if (StringUtils.isNotBlank(content)) {
+            newEntry.setContent(content);
         }
         setMetaFieldByName(newEntry, SIZE, Long.toString(size));
         configureEntry(newEntry, info, true);
@@ -2313,7 +2338,7 @@ public class CatalogUtils {
                                                       XnatResourceInfo info) {
 
         return populateAndAddCatEntry(cat, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, info, attr.md5, attr.relativePath);
+                attr.relativePath, attr.name, attr.size, info, attr.md5, attr.format, attr.content, attr.relativePath);
     }
 
     public static void addOrUpdateEntry(CatalogData catalogData, @Nullable CatEntryI entry, String uri,
@@ -2327,18 +2352,20 @@ public class CatalogUtils {
             } catch (ConfigServiceException e) {
                 // Ignore
             }
-            updateExistingCatEntry(entry, uri, relativePath, f.getName(), f.length(), digest, info, ci);
+            updateExistingCatEntry(entry, uri, relativePath, f.getName(), f.length(), digest, null, null, info, ci);
         }
     }
 
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     public static boolean updateExistingCatEntry(final CatEntryI entry,
                                                  @Nullable String uri,
                                                  final CatalogEntryAttributes attr,
                                                  final EventMetaI eventMeta) {
         return updateExistingCatEntry(entry, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, attr.md5, null, eventMeta);
+                attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, null, eventMeta);
     }
 
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,
                                                  final EventMetaI eventMeta) {
         String digest = null;
@@ -2349,13 +2376,13 @@ public class CatalogUtils {
         } catch (ConfigServiceException e) {
             //Ignore
         }
-        return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest,
+        return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest, null, null,
                 null, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, @Nullable String uri, String relativePath, String name,
-                                                 long fsize, @Nullable String digest, @Nullable XnatResourceInfo info,
-                                                 final EventMetaI eventMeta) {
+                                                 long fileSize, @Nullable String digest, @Nullable String format, @Nullable String content,
+                                                 @Nullable XnatResourceInfo info, final EventMetaI eventMeta) {
 
         boolean mod = false;
 
@@ -2411,7 +2438,7 @@ public class CatalogUtils {
         }
 
         //Set size
-        if (setMetaFieldByName(entry, SIZE, Long.toString(fsize))) {
+        if (setMetaFieldByName(entry, SIZE, Long.toString(fileSize))) {
             mod = true;
         }
 
@@ -2419,6 +2446,16 @@ public class CatalogUtils {
         //however, that code didn't update checksums if they'd changed
         if (StringUtils.isNotBlank(digest) && !digest.equals(entry.getDigest())) {
             entry.setDigest(digest);
+            mod = true;
+        }
+
+        if (!StringUtils.equals(format, entry.getFormat())) {
+            entry.setFormat(format);
+            mod = true;
+        }
+
+        if (!StringUtils.equals(content, entry.getContent())) {
+            entry.setContent(content);
             mod = true;
         }
 
@@ -2539,7 +2576,7 @@ public class CatalogUtils {
      * @return true if the cat was modified (and needs to be saved).
      */
     @Deprecated
-    public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, final UserI user, final Number event_id) {
+    public static boolean addUnreferencedFiles(final File catFile, final CatCatalogI cat, @SuppressWarnings("unused") final UserI user, final Number event_id) {
         //list of all files in the catalog folder
         final Collection<File> files = listFiles(catFile.getParentFile(), null, true);
 
@@ -2553,36 +2590,34 @@ public class CatalogUtils {
             }
         }
 
-        //URI object for the catalog folder (used to generate relative file paths)
-        final URI catFolderURI = catFile.getParentFile().toURI();
-
-        final Date now = Calendar.getInstance().getTime();
-
-        boolean modified = false;
-
+        final String content;
         try {
-            String content= org.apache.commons.io.FileUtils.readFileToString(catFile);
-            final XnatResourceInfo info = XnatResourceInfo.buildResourceInfo(null, null, null, null, user, now, now, event_id);
-            for (final File f : files) {
-                if (!f.equals(catFile)) {//don't add the catalog xml to its own list
-                    //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
-                    final String relative = catFolderURI.relativize(f.toURI()).getPath();
-
-                    if (!checkEntryByURI(content,relative)) {
-                        populateAndAddCatEntry((CatCatalogBean) cat,relative,relative,f.getName(), f.length(), info);
-                        modified = true;
-                    }
-
-                }
-            }
+            content = org.apache.commons.io.FileUtils.readFileToString(catFile);
         } catch (IOException e) {
-            log.error(e.getMessage(),e);
+            log.error("Failed reading the catalog file {} while trying to add entries for the following files: {}", catFile.getAbsolutePath(), files.stream().map(File::getPath).collect(Collectors.joining(", ")), e);
+            return false;
         }
 
-        return modified;
+        //URI object for the catalog folder (used to generate relative file paths)
+        final URI              catFolderURI = catFile.getParentFile().toURI();
+        final Date             now          = Calendar.getInstance().getTime();
+        final AtomicBoolean    modified     = new AtomicBoolean();
+        final XnatResourceInfo info         = XnatResourceInfo.builder().created(now).lastModified(now).eventId(event_id).build();
+        for (final File file : files) {
+            if (!file.equals(catFile)) {//don't add the catalog xml to its own list
+                //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
+                final String relative = catFolderURI.relativize(file.toURI()).getPath();
+                if (!checkEntryByURI(content, relative)) {
+                    populateAndAddCatEntry((CatCatalogBean) cat, relative, relative, file.getName(), file.length(), info);
+                    modified.set(true);
+                }
+            }
+        }
+
+        return modified.get();
     }
 
-    public static boolean isCatalogFile(File f) {
+    public static boolean isCatalogFile(final File f) {
         if (f.getName().endsWith("_catalog.xml")) {
             return true;
         }
@@ -2710,37 +2745,32 @@ public class CatalogUtils {
     public static final String PROJECT       = "PROJECT";
     public static final String ORIG_URI      = "ORIG_URI";
     private static AtomicBoolean _maintainFileHistory = null;
-    private static AtomicBoolean _checksumConfig      = null;
-    private static AtomicReference<NamedParameterJdbcTemplate> _jdbcTemplate = new AtomicReference<>(null);
+    private static       AtomicBoolean                               _checksumConfig = null;
+    private static final AtomicReference<NamedParameterJdbcTemplate> _jdbcTemplate   = new AtomicReference<>(null);
 
+    // Previous query was less efficient for targeted query, i.e. with the WHERE clause, which is what this query uses.
+    // For an aggregate query on resources, use the query from earlier revisions of this code.
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-    private static final String QUERY_PROJECT_FROM_RESOURCE = "SELECT res.xnat_abstractresource_id, COALESCE(SCAN.project, IAD_IN.project, IAD_OUT.project, EXPT.project, SUBJ.project, PROJ.ID) AS project, res.uri " +
-            "FROM xnat_resourceCatalog cat " +
-            "LEFT JOIN xnat_Resource res ON cat.xnat_abstractresource_id=res.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT abst.xnat_abstractresource_id,COALESCE(scan.project,expt.project) AS project FROM xnat_abstractResource abst LEFT JOIN xnat_imageScanData scan ON abst.xnat_imagescandata_xnat_imagescandata_id=scan.xnat_imagescandata_id LEFT JOIN xnat_experimentdata expt ON scan.image_session_id=expt.id" +
-            ") SCAN ON cat.xnat_abstractresource_id=SCAN.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractResource res LEFT JOIN img_assessor_in_resource  map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT" +
-            "     JOIN Xnat_imageAssessorData iad ON map.xnat_imageassessordata_id=iad.id LEFT JOIN xnat_experimentData expt ON  iad.id=expt.id" +
-            ") IAD_IN ON cat.xnat_abstractresource_id=IAD_IN.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractResource res LEFT JOIN img_assessor_out_resource     map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN    Xnat_imageAssessorData iad ON map.xnat_imageassessordata_id=iad.id LEFT JOIN xnat_experimentData expt ON    iad.id=expt.id" +
-            ") IAD_OUT ON cat.xnat_abstractresource_id=IAD_OUT.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractresource res LEFT JOIN xnat_experimentdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_experimentdata       expt ON map.xnat_experimentdata_id=expt.id" +
-            ") EXPT ON cat.xnat_abstractresource_id=EXPT.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT xnat_abstractresource_id,expt.project FROM xnat_abstractresource res LEFT JOIN xnat_subjectdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_subjectdata expt         ON map.xnat_subjectdata_id=expt.id" +
-            ") SUBJ ON cat.xnat_abstractresource_id=SUBJ.xnat_abstractresource_id " +
-            "LEFT JOIN (" +
-            "    SELECT xnat_abstractresource_id,expt.ID FROM xnat_abstractresource res LEFT JOIN xnat_projectdata_resource map ON res.xnat_abstractresource_id=map.xnat_abstractresource_xnat_abstractresource_id LEFT JOIN xnat_projectdata expt         ON map.xnat_projectdata_id=expt.id" +
-            ") PROJ ON cat.xnat_abstractresource_id=PROJ.xnat_abstractresource_id WHERE res.xnat_abstractresource_id = :abstractResourceId";
-
-    private static final RowMapper<String> RESOURCE_PROJECT_ROW_MAPPER = new RowMapper<String>() {
-        @Override
-        public String mapRow(final ResultSet resultSet, final int index) throws SQLException {
-            return resultSet.getString("project");
-        }
-    };
+    private static final String QUERY_PROJECT_FROM_RESOURCE = "SELECT " +
+                                                              "    a.xnat_abstractresource_id, " +
+                                                              "    CASE " +
+                                                              "        WHEN xpr.xnat_projectdata_id IS NOT NULL        THEN xpr.xnat_projectdata_id " +
+                                                              "        WHEN xsr.xnat_subjectdata_id IS NOT NULL        THEN (SELECT project FROM xnat_subjectdata WHERE id = xsr.xnat_subjectdata_id) " +
+                                                              "        WHEN xer.xnat_experimentdata_id IS NOT NULL     THEN (SELECT project FROM xnat_experimentdata WHERE id = xer.xnat_experimentdata_id) " +
+                                                              "        WHEN xis.xnat_imagescandata_id IS NOT NULL      THEN (SELECT project FROM xnat_experimentdata WHERE id = xis.image_session_id) " +
+                                                              "        WHEN iair.xnat_imageassessordata_id IS NOT NULL THEN (SELECT project FROM xnat_experimentdata WHERE id = iair.xnat_imageassessordata_id) " +
+                                                              "        WHEN iaor.xnat_imageassessordata_id IS NOT NULL THEN (SELECT project FROM xnat_experimentdata WHERE id = iaor.xnat_imageassessordata_id) " +
+                                                              "    END AS project, " +
+                                                              "    r.uri " +
+                                                              "FROM " +
+                                                              "    xnat_abstractresource a " +
+                                                              "        LEFT JOIN xnat_resource r ON a.xnat_abstractresource_id = r.xnat_abstractresource_id " +
+                                                              "        LEFT JOIN xnat_projectdata_resource xpr ON a.xnat_abstractresource_id = xpr.xnat_abstractresource_xnat_abstractresource_id " +
+                                                              "        LEFT JOIN xnat_subjectdata_resource xsr ON a.xnat_abstractresource_id = xsr.xnat_abstractresource_xnat_abstractresource_id " +
+                                                              "        LEFT JOIN xnat_experimentdata_resource xer ON a.xnat_abstractresource_id = xer.xnat_abstractresource_xnat_abstractresource_id " +
+                                                              "        LEFT JOIN xnat_imagescandata xis ON a.xnat_imagescandata_xnat_imagescandata_id = xis.xnat_imagescandata_id " +
+                                                              "        LEFT JOIN img_assessor_in_resource iair ON a.xnat_abstractresource_id = iair.xnat_abstractresource_xnat_abstractresource_id " +
+                                                              "        LEFT JOIN img_assessor_out_resource iaor ON a.xnat_abstractresource_id = iaor.xnat_abstractresource_xnat_abstractresource_id " +
+                                                              "WHERE " +
+                                                              "    a.xnat_abstractresource_id = :abstractResourceId";
 }

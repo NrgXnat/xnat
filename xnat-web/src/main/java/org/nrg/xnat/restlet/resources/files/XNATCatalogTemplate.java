@@ -9,18 +9,15 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -40,9 +37,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import javax.annotation.Nonnull;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @Getter
@@ -56,15 +54,17 @@ public class XNATCatalogTemplate extends XNATTemplate {
         super(context, request, response);
 
         final String       requestedResourceId = (String) getParameter(request, RESOURCE_ID);
-        final List<String> requestedResources  = StringUtils.isNotBlank(requestedResourceId) ? Arrays.asList(requestedResourceId.split("\\s*,\\s*")) : Collections.<String>emptyList();
+        final List<String> requestedResources  = StringUtils.isNotBlank(requestedResourceId) ? Arrays.asList(requestedResourceId.split("\\s*,\\s*")) : Collections.emptyList();
         if (!requestedResources.isEmpty()) {
             // Separate numeric and non-numeric IDs to start. Non-numeric IDs get qualified by project/experiment/etc later.
-            _resourceIds.addAll(Lists.newArrayList(Iterables.filter(requestedResources, Predicates.not(Predicates.containsPattern("^\\d+$")))));
-            final List<String> requestedResourceIds = Lists.newArrayList(Iterables.filter(requestedResources, Predicates.containsPattern("^\\d+$")));
+            final Map<Boolean, List<String>> separated = requestedResources.stream().collect(Collectors.partitioningBy(NumberUtils::isDigits));
+            _resourceIds.addAll(separated.get(false));
+            final List<String> requestedResourceIds = separated.get(true);
 
             // Add all numeric IDs that are either permitted based on associated security ID or that have no security ID (in construction)
             if (!requestedResourceIds.isEmpty()) {
-                final List<String> resourceIds = Lists.transform(Lists.newArrayList(Iterables.filter(getTemplate().query(QUERY_FIND_RESOURCE_SECURE_OBJECTS, new MapSqlParameterSource("resourceIds", requestedResourceIds), RESOURCE_MAP_ROW_MAPPER), new PermittedResourcePredicate(getUser()))), ResourceMap.FUNCTION_RESOURCE_MAP);
+                final Predicate<ResourceMap> predicate = new PermittedResourcePredicate(getUser());
+                final List<String> resourceIds = getTemplate().query(QUERY_FIND_RESOURCE_SECURE_OBJECTS, new MapSqlParameterSource("resourceIds", requestedResourceIds), RESOURCE_MAP_ROW_MAPPER).stream().filter(predicate).map(ResourceMap::resourceIdAsString).collect(Collectors.toList());
                 if (resourceIds.size() < requestedResourceIds.size()) {
                     final int requested = requestedResourceIds.size();
                     requestedResourceIds.removeAll(resourceIds);
@@ -94,39 +94,29 @@ public class XNATCatalogTemplate extends XNATTemplate {
         }
         if (!recons.isEmpty()) {
             buffer.append("/experiments/");
-            buffer.append(StringUtils.join(Lists.transform(assesseds, FUNCTION_EXPERIMENT_IDS), ","));
+            buffer.append(assesseds.stream().map(XnatExperimentdata::getId).collect(Collectors.joining(",")));
             buffer.append("/reconstructions/");
-            buffer.append(StringUtils.join(Lists.transform(recons, new Function<XnatReconstructedimagedata, String>() {
-                @Override
-                public String apply(final XnatReconstructedimagedata recon) {
-                    return recon.getId();
-                }
-            }), ","));
-            if (type != null) {
+            buffer.append(recons.stream().map(XnatReconstructedimagedata::getId).collect(Collectors.joining(",")));
+            if (StringUtils.isNotBlank(type)) {
                 buffer.append("/").append(type);
             }
         } else if (!scans.isEmpty()) {
             buffer.append("/experiments/");
-            buffer.append(StringUtils.join(Lists.transform(assesseds, FUNCTION_EXPERIMENT_IDS), ","));
+            buffer.append(assesseds.stream().map(XnatExperimentdata::getId).collect(Collectors.joining(",")));
             buffer.append("/scans/");
-            buffer.append(StringUtils.join(Lists.transform(scans, new Function<XnatImagescandata, String>() {
-                @Override
-                public String apply(final XnatImagescandata scan) {
-                    return scan.getId();
-                }
-            }), ","));
+            buffer.append(scans.stream().map(XnatImagescandata::getId).collect(Collectors.joining(",")));
         } else if (!expts.isEmpty()) {
             if (!assesseds.isEmpty()) {
                 buffer.append("/experiments/");
-                buffer.append(StringUtils.join(Lists.transform(assesseds, FUNCTION_EXPERIMENT_IDS), ","));
+                buffer.append(assesseds.stream().map(XnatExperimentdata::getId).collect(Collectors.joining(",")));
                 buffer.append("/assessors/");
-                buffer.append(StringUtils.join(Lists.transform(expts, FUNCTION_EXPERIMENT_IDS), ","));
+                buffer.append(expts.stream().map(XnatExperimentdata::getId).collect(Collectors.joining(",")));
                 if (type != null) {
                     buffer.append("/").append(type);
                 }
             } else {
                 buffer.append("/experiments/");
-                buffer.append(StringUtils.join(Lists.transform(expts, FUNCTION_EXPERIMENT_IDS), ","));
+                buffer.append(expts.stream().map(XnatExperimentdata::getId).collect(Collectors.joining(",")));
             }
         } else if (sub == null && proj != null) {
             buffer.append("/projects/");
@@ -136,36 +126,22 @@ public class XNATCatalogTemplate extends XNATTemplate {
     }
 
     protected XnatResourceInfo buildResourceInfo(EventMetaI ci) {
-        final String description;
-        if (this.getQueryVariable("description") != null) {
-            description = this.getQueryVariable("description");
-        } else {
-            description = null;
+        final XnatResourceInfo.XnatResourceInfoBuilder builder = XnatResourceInfo.builder();
+        if (StringUtils.isNotBlank(getQueryVariable("description"))) {
+            builder.description(getQueryVariable("description"));
+        }
+        if (StringUtils.isNotBlank(getQueryVariable("format"))) {
+            builder.format(getQueryVariable("format"));
+        }
+        if (StringUtils.isNotBlank(getQueryVariable("content"))) {
+            builder.content(getQueryVariable("content"));
+        }
+        if (getQueryVariables("tags") != null) {
+            builder.tags(Arrays.asList(getQueryVariables("tags")));
         }
 
-        final String format;
-        if (this.getQueryVariable("format") != null) {
-            format = this.getQueryVariable("format");
-        } else {
-            format = null;
-        }
-
-        final String content;
-        if (this.getQueryVariable("content") != null) {
-            content = this.getQueryVariable("content");
-        } else {
-            content = null;
-        }
-
-        String[] tags;
-        if (this.getQueryVariables("tags") != null) {
-            tags = this.getQueryVariables("tags");
-        } else {
-            tags = null;
-        }
-
-        Date d = EventUtils.getEventDate(ci, false);
-        return XnatResourceInfo.buildResourceInfo(description, format, content, tags, getUser(), d, d, EventUtils.getEventId(ci));
+        final Date now = EventUtils.getEventDate(ci, false);
+        return builder.username(getUser().getUsername()).created(now).lastModified(now).eventId(EventUtils.getEventId(ci)).build();
     }
 
     protected ResourceModifierA buildResourceModifier(final boolean overwrite, final EventMetaI ci) throws Exception {
@@ -196,19 +172,16 @@ public class XNATCatalogTemplate extends XNATTemplate {
         return builder.buildResourceModifier(overwrite, getUser(), ci);
     }
 
-    @Data
+    @Value
     @Accessors(prefix = "_")
     private static class ResourceMap {
-        private static final Function<ResourceMap, String> FUNCTION_RESOURCE_MAP = new Function<ResourceMap, String>() {
-            @Override
-            public String apply(final ResourceMap resourceMap) {
-                return Long.toString(resourceMap.getResourceId());
-            }
-        };
-        private final        long                          _resourceId;
-        private final        String                        _xsiType;
-        private final        String                        _securityId;
-        private final        String                        _projectId;
+        String resourceIdAsString() {
+            return Long.toString(_resourceId);
+        }
+        long   _resourceId;
+        String _xsiType;
+        String _securityId;
+        String _projectId;
     }
 
     @Data
@@ -219,22 +192,20 @@ public class XNATCatalogTemplate extends XNATTemplate {
         }
 
         @Override
-        public boolean apply(final ResourceMap resourceMap) {
+        public boolean test(final ResourceMap resourceMap) {
+            if (resourceMap == null) {
+                return false;
+            }
             final String xsiType   = resourceMap.getXsiType();
             final String projectId = resourceMap.getProjectId();
-
-            final List<String> xmlPaths = StringUtils.equalsIgnoreCase(xsiType, XnatProjectdata.SCHEMA_ELEMENT_NAME)
-                                          ? Collections.singletonList(XnatProjectdata.SCHEMA_ELEMENT_NAME + "/ID")
-                                          : Arrays.asList(xsiType + "/project", xsiType + "/sharing/share/project");
             try {
-                if (Iterables.any(xmlPaths, new Predicate<String>() {
-                    @Override
-                    public boolean apply(final String xmlPath) {
-                        try {
-                            return Permissions.canRead(getUser(), xmlPath, projectId);
-                        } catch (Exception e) {
-                            return false;
-                        }
+                if ((StringUtils.equalsIgnoreCase(xsiType, XnatProjectdata.SCHEMA_ELEMENT_NAME)
+                     ? Collections.singletonList(XnatProjectdata.SCHEMA_ELEMENT_NAME + "/ID")
+                     : Arrays.asList(xsiType + "/project", xsiType + "/sharing/share/project")).stream().anyMatch(xmlPath -> {
+                    try {
+                        return Permissions.canRead(getUser(), xmlPath, projectId);
+                    } catch (Exception e) {
+                        return false;
                     }
                 })) {
                     return true;
@@ -300,18 +271,9 @@ public class XNATCatalogTemplate extends XNATTemplate {
                                                                      "WHERE " +
                                                                      "  a.xnat_abstractresource_id::VARCHAR(64) IN (:resourceIds)";
 
-    private static final RowMapper<ResourceMap>               RESOURCE_MAP_ROW_MAPPER = new RowMapper<ResourceMap>() {
-        @Override
-        public ResourceMap mapRow(final ResultSet resultSet, final int index) throws SQLException {
-            return new ResourceMap(resultSet.getLong("resourceId"), resultSet.getString("xsiType"), resultSet.getString("securityId"), resultSet.getString("projectId"));
-        }
-    };
-    private static final Function<XnatExperimentdata, String> FUNCTION_EXPERIMENT_IDS = new Function<XnatExperimentdata, String>() {
-        @Override
-        public String apply(final XnatExperimentdata experiment) {
-            return experiment.getId();
-        }
-    };
+    private static final RowMapper<ResourceMap> RESOURCE_MAP_ROW_MAPPER = (resultSet, index) -> new ResourceMap(resultSet.getLong("resourceId"), resultSet.getString("xsiType"), resultSet.getString("securityId"), resultSet.getString("projectId"));
+    private static final Predicate<String>      IS_A_NUMBER             = Pattern.compile("^\\d+$").asPredicate();
+    private static final Predicate<String>      NOT_A_NUMBER            = IS_A_NUMBER.negate();
 
     @Nonnull
     private final List<String>               _resourceIds = new ArrayList<>();

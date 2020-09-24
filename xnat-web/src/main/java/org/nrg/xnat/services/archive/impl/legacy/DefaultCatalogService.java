@@ -9,15 +9,21 @@
 
 package org.nrg.xnat.services.archive.impl.legacy;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.*;
+import static org.nrg.xft.event.EventUtils.*;
+import static org.nrg.xft.event.EventUtils.TYPE.WEB_FORM;
+import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.action.ClientException;
@@ -55,12 +61,14 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
-import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.archive.ResourceData;
+import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
+import org.nrg.xnat.helpers.resource.XnatResourceInfo;
+import org.nrg.xnat.helpers.resource.XnatResourceInfoMap;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
@@ -76,7 +84,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -92,17 +99,14 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.nrg.xft.event.EventUtils.*;
-import static org.nrg.xft.event.EventUtils.TYPE.WEB_FORM;
-import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp;
+import java.util.stream.Collectors;
 
 /**
  * {@inheritDoc}
@@ -112,7 +116,6 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
 @Service
 @Slf4j
 public class DefaultCatalogService implements CatalogService {
-
     @Autowired
     public DefaultCatalogService(final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager, final UserDataCache userDataCache) {
         _parameterized = parameterized;
@@ -323,7 +326,7 @@ public class DefaultCatalogService implements CatalogService {
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource,
                                                final String label, final String description, final String format,
                                                final String content, final String... tags) throws Exception {
-        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(Collections.singletonList(resource)), null, false, false, label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsXnatResourceInfoMap(Collections.singletonList(resource)), null, false, false, label, description, format, content, tags);
     }
 
     /**
@@ -333,7 +336,7 @@ public class DefaultCatalogService implements CatalogService {
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources,
                                                final String label, final String description, final String format,
                                                final String content, final String... tags) throws Exception {
-        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(resources), null, false, false, label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsXnatResourceInfoMap(resources), null, false, false, label, description, format, content, tags);
     }
 
     /**
@@ -344,8 +347,8 @@ public class DefaultCatalogService implements CatalogService {
                                                @Nullable Integer parentEventId, final boolean preserveDirectories,
                                                final String label, final String description, final String format,
                                                final String content, final String... tags) throws Exception {
-        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(resources), parentEventId, preserveDirectories, false,
-                label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsXnatResourceInfoMap(resources), parentEventId, preserveDirectories, false,
+                               label, description, format, content, tags);
     }
 
     /**
@@ -353,8 +356,8 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final Collection<File> resources, @Nullable Integer parentEventId, final boolean preserveDirectories, final boolean uploadToRemote, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
-        return insertResources(user, null, parentUri, getFilesAsInputStreamSources(resources), parentEventId, preserveDirectories, uploadToRemote,
-                label, description, format, content, tags);
+        return insertResources(user, null, parentUri, getFilesAsXnatResourceInfoMap(resources), parentEventId, preserveDirectories, uploadToRemote,
+                               label, description, format, content, tags);
     }
 
     /**
@@ -362,7 +365,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final File resource) throws Exception {
-        return insertResources(user, catalog, null, getFilesAsInputStreamSources(Collections.singletonList(resource)), null, false, false, null, null, null, null);
+        return insertResources(user, catalog, null, getFilesAsXnatResourceInfoMap(Collections.singletonList(resource)), null, false, false, null, null, null, null);
     }
 
     /**
@@ -370,7 +373,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources) throws Exception {
-        return insertResources(user, catalog, null, getFilesAsInputStreamSources(resources), null, false, false, null, null, null, null);
+        return insertResources(user, catalog, null, getFilesAsXnatResourceInfoMap(resources), null, false, false, null, null, null, null);
     }
 
     /**
@@ -378,7 +381,42 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final Collection<File> resources, final boolean preserveDirectories) throws Exception {
-        return insertResources(user, catalog, null, getFilesAsInputStreamSources(resources), null, preserveDirectories, false, null, null, null, null);
+        return insertResources(user, catalog, null, getFilesAsXnatResourceInfoMap(resources), null, preserveDirectories, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final XnatResourceInfo descriptor, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        return insertResources(user, null, parentUri, new XnatResourceInfoMap(descriptor), null, false, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final XnatResourceInfoMap resourceMap, @Nullable final Integer parentEventId, final boolean preserveDirectories, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        return insertResources(user, null, parentUri, resourceMap, parentEventId, preserveDirectories, false, label, description, format, content, tags);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final XnatResourceInfoMap resourceMap, @Nullable final Integer parentEventId, final boolean preserveDirectories, final boolean uploadToRemote, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        return insertResources(user, null, parentUri, resourceMap, parentEventId, preserveDirectories, uploadToRemote, label, description, format, content, tags);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final String parentUri, final XnatResourceInfoMap resourceMap, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+        return insertResources(user, null, parentUri, resourceMap, null, false, false, label, description, format, content, tags);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfoMap resourceMap) throws Exception {
+        return insertResources(user, catalog, null, resourceMap, null, false, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfoMap resourceMap, final boolean preserveDirectories) throws Exception {
+        return insertResources(user, catalog, null, resourceMap, null, preserveDirectories, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfo descriptor) throws Exception {
+        return insertResources(user, catalog, null, new XnatResourceInfoMap(descriptor), null, false, false, null, null, null, null);
     }
 
     /**
@@ -386,7 +424,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final String name, final InputStreamSource source) throws Exception {
-        return insertResources(user, catalog, null, Collections.singletonMap(name, source), null, false, false, null, null, null, null);
+        return insertResources(user, catalog, null, new XnatResourceInfoMap(name, source), null, false, false, null, null, null, null);
     }
 
     /**
@@ -394,7 +432,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources) throws Exception {
-        return insertResources(user, catalog, null, sources, null, false, false, null, null, null, null);
+        return insertResources(user, catalog, null, new XnatResourceInfoMap(sources), null, false, false, null, null, null, null);
     }
 
     /**
@@ -402,7 +440,22 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final Map<String, ? extends InputStreamSource> sources, final boolean preserveDirectories) throws Exception {
-        return insertResources(user, catalog, null, sources, null, preserveDirectories, false, null, null, null, null);
+        return insertResources(user, catalog, null, new XnatResourceInfoMap(sources), null, preserveDirectories, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfo descriptor) throws Exception {
+        return insertResources(user, catalog, null, new XnatResourceInfoMap(descriptor), null, false, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfoMap resourceMap) throws Exception {
+        return insertResources(user, catalog, null, resourceMap, null, false, false, null, null, null, null);
+    }
+
+    @Override
+    public XnatResourcecatalog insertResourceStreams(final UserI user, final XnatResourcecatalog catalog, final XnatResourceInfoMap resourceMap, final boolean preserveDirectories) throws Exception {
+        return insertResources(user, catalog, null, resourceMap, null, preserveDirectories, false, null, null, null, null);
     }
 
     /**
@@ -455,12 +508,12 @@ public class DefaultCatalogService implements CatalogService {
                                                               final String content, final String... tags) throws Exception {
 
         ResourceData resourceData = getResourceDataFromUri(parentUri);
-        File parentDir = resourceData.getItem().getExpectedCurrentDirectory();
+        File         parentDir    = resourceData.getItem().getExpectedCurrentDirectory();
         Files.createDirectories(parentDir.toPath());
         File lockFile = new File(parentDir.toString(), ".resourcecheck" + label);
         try {
             final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
-                    false);
+                                                                                                     false);
             fl.tryLock(2L, TimeUnit.MINUTES);
             try {
                 // Test if catalog already exists
@@ -498,6 +551,7 @@ public class DefaultCatalogService implements CatalogService {
             throws Exception {
         return insertResourceCatalog(user, parentUri, catalog, null);
     }
+
     /**
      * {@inheritDoc}
      */
@@ -516,19 +570,19 @@ public class DefaultCatalogService implements CatalogService {
                                                      @Nullable Integer parentEventId, final Map<String, String> parameters)
             throws Exception {
 
-        ResourceData resourceData = getResourceDataFromUri(parentUri);
-        final URIManager.ArchiveItemURI resourceURI = resourceData.getXnatUri();
+        ResourceData                    resourceData = getResourceDataFromUri(parentUri);
+        final URIManager.ArchiveItemURI resourceURI  = resourceData.getXnatUri();
 
         try {
             if (!Permissions.canEdit(user, resourceData.getItem())) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
-                        " does not have permission to edit the resource " + parentUri + ".");
+                                                                         " does not have permission to edit the resource " + parentUri + ".");
             }
         } catch (ClientException e) {
             throw e;
         } catch (Exception e) {
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
-                    user.getLogin() + " permissions for resource " + parentUri + ".");
+                                                                    user.getLogin() + " permissions for resource " + parentUri + ".");
         }
 
         final Class<? extends URIManager.ArchiveItemURI> parentClass = resourceURI.getClass();
@@ -557,6 +611,7 @@ public class DefaultCatalogService implements CatalogService {
 
         return insertResourceCatalog(user, parent, catalog, parentEventId, parameters);
     }
+
     /**
      * {@inheritDoc}
      */
@@ -580,7 +635,6 @@ public class DefaultCatalogService implements CatalogService {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("ConstantConditions")
     @Override
     public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent,
                                                      final XnatResourcecatalog catalog, @Nullable Integer parentEventId,
@@ -602,15 +656,15 @@ public class DefaultCatalogService implements CatalogService {
             uploadId = StringUtils.isNotBlank(catalog.getLabel()) ? catalog.getLabel() : getPrearchiveTimestamp();
         }
 
-        final EventDetails event = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, CREATE_RESOURCE, "Catalog service invoked", "");
-        PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
-        EventMetaI eventMetaI = workflow.buildEvent();
+        final EventDetails  event      = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, CREATE_RESOURCE, "Catalog service invoked", "");
+        PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
+        EventMetaI          eventMetaI = workflow.buildEvent();
 
         try {
             if (isExperiment) {
                 final XnatExperimentdata experiment = (XnatExperimentdata) parent;
                 event.setComment("Created experiment resource " + uploadId + " for " + experiment.getId() + " at " + catalog.getUri());
-                insertExperimentResourceCatalog(user, experiment, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
+                insertExperimentResourceCatalog(user, experiment, catalog, uploadId, eventMetaI, parameters == null ? Collections.emptyMap() : parameters);
             } else if (isScan) {
                 final XnatImagescandata scan = (XnatImagescandata) parent;
                 event.setComment("Created scan resource " + uploadId + " for image session " + scan.getImageSessionId() + " scan " + scan.getId() + " at " + catalog.getUri());
@@ -622,11 +676,11 @@ public class DefaultCatalogService implements CatalogService {
             } else if (isSubject) {
                 final XnatSubjectdata subject = (XnatSubjectdata) parent;
                 event.setComment("Created subject resource " + uploadId + " for " + subject.getId() + " at " + catalog.getUri());
-                insertSubjectResourceCatalog(user, subject, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
+                insertSubjectResourceCatalog(user, subject, catalog, uploadId, eventMetaI, parameters == null ? Collections.emptyMap() : parameters);
             } else if (isReconstruction) {
                 final XnatReconstructedimagedata reconstruction = (XnatReconstructedimagedata) parent;
                 event.setComment("Created reconstruction resource " + uploadId + " for image session " + reconstruction.getImageSessionId() + " reconstruction " + reconstruction.getId() + " at " + catalog.getUri());
-                insertReconstructionResourceCatalog(user, reconstruction, catalog, uploadId, eventMetaI, parameters == null ? EMPTY_MAP : parameters);
+                insertReconstructionResourceCatalog(user, reconstruction, catalog, uploadId, eventMetaI, parameters == null ? Collections.emptyMap() : parameters);
             }
             return catalog;
         } catch (Exception e) {
@@ -635,9 +689,9 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void refreshResourceCatalog(final UserI user, final String parentURI, XnatResourcecatalog catalog,
+    private void refreshResourceCatalog(final UserI user, final String parentURI, XnatResourcecatalog catalog, final XnatResourceInfoMap resourceMap,
                                         @Nullable Integer parentEventId, final Operation... operations) throws ServerException, ClientException {
-        _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog, parentEventId);
+        _refreshCatalog(user, parentURI, Arrays.asList(operations), catalog, resourceMap, parentEventId);
     }
 
     /**
@@ -706,12 +760,12 @@ public class DefaultCatalogService implements CatalogService {
         final ArchivableItem item = xnatUri.getSecurityItem();
         if (item == null) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Cannot locate archivable item securing "
-                    + uriString);
+                                                                       + uriString);
         }
 
         // Is it a catalog resource?
-        XnatResourcecatalog catRes = null;
-        String resourceFilePath = null;
+        XnatResourcecatalog catRes           = null;
+        String              resourceFilePath = null;
         if (xnatUri instanceof ResourceURII) {
             // Do we have the path to a file?
             resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
@@ -719,7 +773,7 @@ public class DefaultCatalogService implements CatalogService {
             if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
                 if (!acceptFileUri) {
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Resource URI: " + uriString +
-                            " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
+                                                                               " is a file; you should provide the path to a resource (leave off the *_catalog.xml).");
                 }
             } else {
                 resourceFilePath = null;
@@ -736,7 +790,7 @@ public class DefaultCatalogService implements CatalogService {
             if (resourceFilePath != null && catRes == null) {
                 // This shouldn't happen - cannot reference a file outside a catalog resource, right?
                 throw new ClientException("File " + resourceFilePath + " does not appear to be within a catalog " +
-                        "resource.");
+                                          "resource.");
             }
         }
 
@@ -763,13 +817,13 @@ public class DefaultCatalogService implements CatalogService {
 
         checkPermissionsOnItem(user, item, SecurityManager.READ, uriString);
 
-        XnatResourcecatalog catRes = resourceData.getCatalogResource();
-        String resourceFilePath = resourceData.getResourceFilePath();
+        XnatResourcecatalog catRes           = resourceData.getCatalogResource();
+        String              resourceFilePath = resourceData.getResourceFilePath();
         if (resourceFilePath != null) {
             // We have just one file, but in order to pull it, we need to determine the URL via the catalog (bummer)
-            CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(item, catRes);
-            Map<String, CatalogUtils.CatalogMapEntry> catalogMap = CatalogUtils.buildCatalogMap(catalogData);
-            CatalogUtils.CatalogMapEntry mapEntry = catalogMap.get(resourceFilePath);
+            CatalogUtils.CatalogData                  catalogData = CatalogUtils.CatalogData.getOrCreate(item, catRes);
+            Map<String, CatalogUtils.CatalogMapEntry> catalogMap  = CatalogUtils.buildCatalogMap(catalogData);
+            CatalogUtils.CatalogMapEntry              mapEntry    = catalogMap.get(resourceFilePath);
             try {
                 if (mapEntry == null) {
                     throw new FileNotFoundException();
@@ -780,12 +834,7 @@ public class DefaultCatalogService implements CatalogService {
                 throw new ClientException("Unable to pull file indicated by " + uriString);
             }
         } else {
-            List<XnatAbstractresourceI> resources;
-            if (catRes != null) {
-                resources = Collections.singletonList((XnatAbstractresourceI) catRes);
-            } else {
-                resources = resourceURI.getResources(true);
-            }
+            final List<XnatAbstractresourceI> resources = catRes != null ? Collections.singletonList(catRes) : resourceURI.getResources(true);
             _remoteFilesService.pullItem(item, resources, archiveRelativeDir, destinationDir);
         }
     }
@@ -859,10 +908,10 @@ public class DefaultCatalogService implements CatalogService {
             final SAXReader reader = new SAXReader(user);
             final XFTItem   item   = reader.parse(parserInput);
 
-            final boolean isExperiment  = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
-            final boolean isSubject     = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
-            final boolean isProject     = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
-            final boolean isScan        = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
+            final boolean isExperiment = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
+            final boolean isSubject    = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isProject    = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
+            final boolean isScan       = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
 
             final ValidationResults validation = XFTValidator.Validate(item);
 
@@ -870,7 +919,7 @@ public class DefaultCatalogService implements CatalogService {
             // validation failure is the lack of ID, so let's check for that scenario.
             final boolean generateId;
             if ((isExperiment || isSubject) &&
-                    !validation.isValid() && validation.getResults().size() == 1 && validation.hasField("ID")) {
+                !validation.isValid() && validation.getResults().size() == 1 && validation.hasField("ID")) {
                 generateId = true;
                 validation.removeResult("ID");
             } else {
@@ -886,8 +935,8 @@ public class DefaultCatalogService implements CatalogService {
                 isCreate = StringUtils.isBlank(persistedXsiType);
                 if (!isCreate && !item.instanceOf(persistedXsiType)) {
                     throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Trying to insert XML for an object of type '" +
-                            xsiType + "' and ID '" + primaryKey + "', but that ID already exists with type '" +
-                            persistedXsiType + "', which is not compatible.");
+                                                                            xsiType + "' and ID '" + primaryKey + "', but that ID already exists with type '" +
+                                                                            persistedXsiType + "', which is not compatible.");
                 }
             } else if (isSubject) {
                 isCreate = !Permissions.verifySubjectExists(_parameterized, primaryKey);
@@ -904,7 +953,7 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             log.info("Loaded XML item: {}. This looks to be a '{}' operation.", item.getProperName(),
-                    isCreate ? "create" : "update");
+                     isCreate ? "create" : "update");
 
             if (!validation.isValid()) {
                 throw new ValidationException(validation);
@@ -918,19 +967,19 @@ public class DefaultCatalogService implements CatalogService {
             String eventItemXsiType = xsiType;
             if (isProject && isCreate) {
                 // Project creation
-                final XnatProjectdata project   = new XnatProjectdata(item);
-                final EventMetaI      eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
-                        user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(),
-                        newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
+                final XnatProjectdata project = new XnatProjectdata(item);
+                final EventMetaI eventMeta = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
+                                                                                             user, AutoXnatProjectdata.SCHEMA_ELEMENT_NAME, project.getId(), project.getId(),
+                                                                                             newEventInstance(CATEGORY.PROJECT_ADMIN, parameters)).buildEvent();
                 XnatProjectdata.createProject(project, user, allowDataDeletion, false, eventMeta, "private");
             } else {
-                EventDetails event = newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters);
-                EventMetaI eventMetaI = null;
+                EventDetails event      = newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters);
+                EventMetaI   eventMetaI = null;
                 if (parentEventId != null || item.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)
-                        || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
+                    || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
                     try {
                         PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
-                                user, item.getItem(), event);
+                                                                                                       user, item.getItem(), event);
                         if (workflow != null) {
                             eventMetaI = workflow.buildEvent();
                         }
@@ -941,29 +990,29 @@ public class DefaultCatalogService implements CatalogService {
 
                 if (isScan) {
                     final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME +
-                            "/image_session_ID");
+                                                                   "/image_session_ID");
 
                     final XnatExperimentdata parent;
                     if (parentId == null || (parent =
-                            XnatExperimentdata.getXnatExperimentdatasById(parentId, user, false)) == null
-                            || !(parent instanceof XnatImagesessiondata)) {
+                                                     XnatExperimentdata.getXnatExperimentdatasById(parentId, user, false)) == null
+                        || !(parent instanceof XnatImagesessiondata)) {
                         throw new ClientException("Cannot insert scan: image_session_ID is not populated or " +
-                                "doesn't refer to a valid image session");
+                                                  "doesn't refer to a valid image session");
                     }
                     XnatImagesessiondata session = (XnatImagesessiondata) parent;
-                    final String scanId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/ID");
-                    XnatImagescandata scan = session.getScanById(scanId);
+                    final String         scanId  = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/ID");
+                    XnatImagescandata    scan    = session.getScanById(scanId);
                     if (scan != null) {
                         if (allowDataDeletion) {
                             // Authorize
                             boolean preventDel = !StringUtils.contains(XDAT.getSiteConfigurationProperty(
                                     "security.prevent-data-deletion-override", "[]"),
-                                    session.getItem().getStatus()) && XDAT.getBoolSiteConfigurationProperty(
-                                            "security.prevent-data-deletion", false);
+                                                                       session.getItem().getStatus()) && XDAT.getBoolSiteConfigurationProperty(
+                                    "security.prevent-data-deletion", false);
 
                             if (!Permissions.canDelete(user, session) || preventDel) {
                                 throw new ClientException("User account doesn't have permission to modify session " +
-                                        parentId + " to replace scan " + scanId + " and/or deletion disabled for session");
+                                                          parentId + " to replace scan " + scanId + " and/or deletion disabled for session");
                             }
 
                             // Delete
@@ -972,17 +1021,17 @@ public class DefaultCatalogService implements CatalogService {
                             session = (XnatImagesessiondata) XnatExperimentdata.getXnatExperimentdatasById(parentId, user, false);
                         } else {
                             throw new ClientException("Cannot insert scan into session " + parentId + ": ID " +
-                                    scanId + "in use. Rerun with allowDataDeletion or choose a new ID");
+                                                      scanId + "in use. Rerun with allowDataDeletion or choose a new ID");
                         }
                     }
                     item.setProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/project", session.getProject());
                     session.addScans_scan(new XnatImagescandata(item));
                     if (eventMetaI != null) {
                         SaveItemHelper.unauthorizedSave(session, user, false, quarantine,
-                                false, allowDataDeletion, eventMetaI);
+                                                        false, allowDataDeletion, eventMetaI);
                     } else {
                         SaveItemHelper.unauthorizedSave(session, user, false, quarantine,
-                                false, allowDataDeletion, event);
+                                                        false, allowDataDeletion, event);
                     }
                     eventItemIdValue = session.getId();
                     eventItemXsiType = session.getXSIType();
@@ -997,10 +1046,10 @@ public class DefaultCatalogService implements CatalogService {
                     try {
                         if (eventMetaI != null) {
                             SaveItemHelper.unauthorizedSave(item, user, false, quarantine,
-                                    false, allowDataDeletion, eventMetaI);
+                                                            false, allowDataDeletion, eventMetaI);
                         } else {
                             SaveItemHelper.unauthorizedSave(item, user, false, quarantine,
-                                    false, allowDataDeletion, event);
+                                                            false, allowDataDeletion, event);
                         }
                     } catch (ClientException e) {
                         log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
@@ -1011,15 +1060,15 @@ public class DefaultCatalogService implements CatalogService {
                 }
 
                 XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,
-                        isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
+                                         isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
             }
 
             log.debug("Item '{}' of type {} successfully stored", eventItemXsiType, eventItemIdValue);
 
             final SchemaElementI schemaElement = SchemaElement.GetElement(xsiType);
             if (StringUtils.equalsIgnoreCase(schemaElement.getGenericXFTElement().getType().getLocalPrefix(), "xdat")
-                    || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(),
-                    "xnat:investigatorData", "xnat:projectData")) {
+                || StringUtils.equalsAnyIgnoreCase(schemaElement.getFullXMLName(),
+                                                   "xnat:investigatorData", "xnat:projectData")) {
                 ElementSecurity.refresh();
             }
 
@@ -1027,25 +1076,21 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private static Map<String, ? extends InputStreamSource> getFilesAsInputStreamSources(final Collection<File> files) throws FileNotFoundException {
-        if (Iterables.any(files, Predicates.not(FILE_OR_DIR_EXISTS))) {
-            throw new FileNotFoundException("Unable to find the following source files/folders: " + StringUtils.join(Iterables.filter(files, Predicates.not(FILE_OR_DIR_EXISTS)), ", "));
+    private static XnatResourceInfoMap getFilesAsXnatResourceInfoMap(final Collection<File> files) throws FileNotFoundException {
+        if (!files.stream().allMatch(File::exists)) {
+            throw new FileNotFoundException("Unable to find the following source files/folders: " + files.stream().filter(file -> !file.exists()).map(File::toString).collect(Collectors.joining(", ")));
         }
-        final Map<String, InputStreamSource> sources = new HashMap<>();
-        for (final File file : files) {
-            sources.put(file.getName(), new FileSystemResource(file));
-        }
-        return sources;
+        return new XnatResourceInfoMap(files.stream().map(file -> XnatResourceInfo.builder().name(file.getName()).file(file).build()).collect(Collectors.toList()));
     }
 
-    private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final Map<String, ? extends InputStreamSource> resources, @Nullable Integer parentEventId, final boolean preserveDirectories, final boolean uploadToRemote, final String label, final String description, final String format, final String content, final String... tags) throws Exception {
+    private XnatResourcecatalog insertResources(final UserI user, final XnatResourcecatalog existing, final String parentUri, final XnatResourceInfoMap resourceMap, @Nullable Integer parentEventId, final boolean preserveDirectories, final boolean uploadToRemote, final String label, final String description, final String catalogFormat, final String catalogContent, final String... tags) throws Exception {
         final XnatResourcecatalog catalog;
         final String              uri;
         if (existing != null) {
             catalog = existing;
             uri = UriParserUtils.getArchiveUri(catalog.getParent());
         } else {
-            catalog = createAndInsertResourceCatalog(user, parentUri, parentEventId, label, description, format, content, tags);
+            catalog = createAndInsertResourceCatalog(user, parentUri, parentEventId, label, description, catalogFormat, catalogContent, tags);
             uri = parentUri;
         }
 
@@ -1054,15 +1099,13 @@ public class DefaultCatalogService implements CatalogService {
             try {
                 if (_remoteFilesService == null) {
                     throw new UnsupportedRemoteFilesOperationException("No remote filesystems configured for this site; " +
-                            "all catalogs must be local");
+                                                                       "all catalogs must be local");
                 }
-                ArchivableItem item = getResourceDataFromUri(parentUri).getItem();
-                _remoteFilesService.pushProcessingOutputsAndAddUrlsToCatalog(user, item, catalog, resources, preserveDirectories,
-                        parentEventId);
+                _remoteFilesService.pushProcessingOutputsAndAddUrlsToCatalog(user, getResourceDataFromUri(parentUri).getItem(), catalog, resourceMap, preserveDirectories, parentEventId);
             } catch (Exception e) {
                 // For any exception, default to local add
                 if (!(e instanceof UnsupportedRemoteFilesOperationException)) {
-                    log.error("Error uploading {} to remote and adding to {} by URL", resources, catalog.getUri(), e);
+                    log.error("Error uploading {} resources to remote and adding to {} by URL", resourceMap.size(), catalog.getUri(), e);
                 }
                 doLocalAdd = true;
             }
@@ -1073,8 +1116,10 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final File destination = new File(catalog.getUri()).getParentFile();
-        for (final String resourceName : resources.keySet()) {
-            final InputStreamSource source = resources.get(resourceName);
+        for (final Map.Entry<String, XnatResourceInfo> entry : resourceMap.entrySet()) {
+            final String            resourceName = entry.getKey();
+            final XnatResourceInfo  descriptor   = entry.getValue();
+            final InputStreamSource source       = descriptor.getSource();
             if (source instanceof ByteArrayResource) {
                 FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) source).getByteArray()), destination.toPath().resolve(resourceName).toFile());
             } else if (source instanceof Resource) {
@@ -1110,7 +1155,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        refreshResourceCatalog(user, uri, catalog, parentEventId);
+        refreshResourceCatalog(user, uri, catalog, resourceMap, parentEventId);
         return catalog;
     }
 
@@ -1119,7 +1164,7 @@ public class DefaultCatalogService implements CatalogService {
             return _parameterized.queryForObject(Permissions.getObjectExistsQuery(table, column, "objectId"), new MapSqlParameterSource("objectId", primaryKey), Boolean.class);
         } catch (BadSqlGrammarException e) {
             log.error("Tried to query table {} column {} for the value '{}', but got a bad grammar exception. " +
-                    "Returning false.", table, column, primaryKey, e);
+                      "Returning false.", table, column, primaryKey, e);
             return false;
         }
     }
@@ -1182,29 +1227,29 @@ public class DefaultCatalogService implements CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations) throws ServerException, ClientException {
-        _refreshCatalog(user, resourcePath, operations, null, null);
+        _refreshCatalog(user, resourcePath, operations, null, null, null);
     }
 
     /**
      * Performs the actual work of refreshing a single catalog within resourcePath
      *
-     * @param user          The user requesting the refresh operation.
-     * @param resourcePath  The archive path for the resource to refresh.
-     * @param operations    The operations to be performed.
-     * @param catalog       If null, refresh all catalogs in resourcePath. Otherwise, just refresh this one
+     * @param user         The user requesting the refresh operation.
+     * @param resourcePath The archive path for the resource to refresh.
+     * @param operations   The operations to be performed.
+     * @param catalog      If null, refresh all catalogs in resourcePath. Otherwise, just refresh this one
      *
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     private void _refreshCatalog(final UserI user, final String resourcePath, final Collection<Operation> operations,
-                                 @Nullable XnatAbstractresourceI catalog, @Nullable Integer parentEventId)
+                                 @Nullable XnatAbstractresourceI catalog, @Nullable final XnatResourceInfoMap resourceMap, @Nullable Integer parentEventId)
             throws ServerException, ClientException {
 
         PersistentWorkflowI workflow = null;
         try {
-            ResourceData resourceData = getResourceDataFromUri(resourcePath);
-            final URIManager.ArchiveItemURI resourceURI = resourceData.getXnatUri();
-            final ArchivableItem            item        = resourceData.getItem();
+            ResourceData                    resourceData = getResourceDataFromUri(resourcePath);
+            final URIManager.ArchiveItemURI resourceURI  = resourceData.getXnatUri();
+            final ArchivableItem            item         = resourceData.getItem();
 
             checkPermissionsOnItem(user, item, SecurityManager.EDIT, resourcePath);
 
@@ -1221,17 +1266,17 @@ public class DefaultCatalogService implements CatalogService {
                 }
                 if (!found) {
                     throw new ClientException("Unauthorized: attempted to refresh catalog " + catalog.getLabel() +
-                            " which is not a resource of " + item.getId());
+                                              " which is not a resource of " + item.getId());
                 }
-                reason = "Refreshed "+ catalog.getLabel() +" catalog for resource " + resourceURI.getUri();
+                reason = "Refreshed " + catalog.getLabel() + " catalog for resource " + resourceURI.getUri();
                 resources = Collections.singletonList(catalog);
             }
 
             final EventDetails event = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, "Catalog(s) Refreshed",
-                    reason, "");
+                                                        reason, "");
             if (resources.isEmpty()) {
                 log.warn("Trying to refresh the resources for catalog '{}', but no resources were returned for the " +
-                        "calculated URI: {}", resourcePath, resourceURI.getUri());
+                         "calculated URI: {}", resourcePath, resourceURI.getUri());
             }
 
             final Collection<Operation> list = getOperations(operations);
@@ -1243,11 +1288,11 @@ public class DefaultCatalogService implements CatalogService {
 
             workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
             // Note that resources will contain only catalog if that is specified
-            final String project = item.getProject();
+            final String project         = item.getProject();
             final String archiveRootPath = item.getArchiveRootPath();
             for (final XnatAbstractresourceI resource : resources) {
-                refreshResourceCatalog((XnatAbstractresource) resource, project, archiveRootPath,
-                        populateStats, checksum, delete, append, user, workflow.buildEvent());
+                refreshResourceCatalog((XnatAbstractresource) resource, resourceMap, project, archiveRootPath,
+                                       populateStats, checksum, delete, append, user, workflow.buildEvent());
             }
 
             if (parentEventId == null) {
@@ -1259,15 +1304,15 @@ public class DefaultCatalogService implements CatalogService {
         } catch (PersistentWorkflowUtils.JustificationAbsent justificationAbsent) {
             failWorkflow(parentEventId, workflow);
             throw new ClientException("No justification was provided for the refresh action, " +
-                    "but is required by the system configuration.");
+                                      "but is required by the system configuration.");
         } catch (PersistentWorkflowUtils.ActionNameAbsent actionNameAbsent) {
             failWorkflow(parentEventId, workflow);
             throw new ClientException("No action name was provided for the refresh action, " +
-                    "but is required by the system configuration.");
+                                      "but is required by the system configuration.");
         } catch (PersistentWorkflowUtils.IDAbsent idAbsent) {
             failWorkflow(parentEventId, workflow);
             throw new ClientException("No workflow ID was provided for the refresh action, " +
-                    "but is required by the system configuration.");
+                                      "but is required by the system configuration.");
         } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException e) {
             failWorkflow(parentEventId, workflow);
             throw new ClientException("Couldn't find the primary project for the specified resource " + resourcePath);
@@ -1480,27 +1525,23 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectId,
-                                        final String projectPath, final boolean populateStats, final boolean checksums,
-                                        final boolean removeMissingFiles, final boolean addUnreferencedFiles,
+    private void refreshResourceCatalog(final XnatAbstractresource resource, final XnatResourceInfoMap resourceMap,
+                                        final String projectId, final String projectPath, final boolean populateStats,
+                                        final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles,
                                         final UserI user, final EventMetaI now) throws ServerException {
         long startTime = Calendar.getInstance().getTimeInMillis();
 
-    	if (resource instanceof XnatResourcecatalog) {
+        if (resource instanceof XnatResourcecatalog) {
             File lockFile = new File(((XnatResourcecatalog) resource).getUri() + ".refresh");
             try {
                 final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
-                        false);
+                                                                                                         false);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 try {
-                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
-                            (XnatResourcecatalog) resource, projectId);
-                    Object[] refreshInfo = CatalogUtils.refreshCatalog(catalogData, user, now,
-                            addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
-                    boolean modified = (boolean) refreshInfo[0];
-                    Map<String, Map<String, Integer>> auditSummary = (Map<String, Map<String, Integer>>) refreshInfo[1];
-
-                    if (modified) {
+                    final CatalogUtils.CatalogData                         catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath, (XnatResourcecatalog) resource, projectId);
+                    final Pair<Boolean, Map<String, Map<String, Integer>>> refreshInfo = CatalogUtils.refreshCatalog(user, catalogData, resourceMap, now, addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+                    if (refreshInfo.getLeft()) {
+                        final Map<String, Map<String, Integer>> auditSummary = refreshInfo.getRight();
                         try {
                             //checksums and auditSummary computed in CatalogUtils.refreshCatalog
                             CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
@@ -1509,7 +1550,7 @@ public class DefaultCatalogService implements CatalogService {
                             }
                         } catch (Exception e) {
                             throw new ServerException("An error occurred writing the catalog file " +
-                                    catalogData.catFile.getAbsolutePath(), e);
+                                                      catalogData.catFile.getAbsolutePath(), e);
                         }
                     }
                 } finally {
@@ -1526,7 +1567,7 @@ public class DefaultCatalogService implements CatalogService {
                     resource.save(user, false, false, now);
                 } catch (Exception e) {
                     throw new ServerException("An error occurred saving the resource " +
-                            resource.getFullPath(projectPath), e);
+                                              resource.getFullPath(projectPath), e);
                 }
             }
         } else {
@@ -1536,25 +1577,24 @@ public class DefaultCatalogService implements CatalogService {
         log.debug("refreshResourceCatalog runtime: {} ms", (Calendar.getInstance().getTimeInMillis() - startTime));
     }
 
-
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
         final Cache.ValueWrapper cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
-        if (cached == null) {
-            final File cacheFile = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
-            if (cacheFile.exists()) {
-                final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile, null);
-                if (catalog != null) {
+        try {
+            if (cached == null) {
+                final File cacheFile = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
+                if (cacheFile.exists()) {
+                    final CatCatalogBean catalog = new CatalogUtils.CatalogData(cacheFile, null).catBean;
                     storeToCache(user, catalog);
                     return catalog;
-                } else {
-                    log.info("User {} requested catalog {} but that doesn't exist", user.getUsername(), catalogId);
+                }
+            } else {
+                final File file = (File) cached.get();
+                if (file.exists()) {
+                    return new CatalogUtils.CatalogData(file, null).catBean;
                 }
             }
-        } else {
-            final File file = (File) cached.get();
-            if (file.exists()) {
-                return CatalogUtils.getCatalog(file, null);
-            }
+        } catch (ServerException e) {
+            log.info("User {} requested catalog {} but that doesn't exist", user.getUsername(), catalogId);
         }
         return null;
     }
@@ -1583,8 +1623,8 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final Multimap<String, String>                      matchingSessions = ArrayListMultimap.create();
-        final Map<String, String[]>                         subjectLabelMap  = Maps.newHashMap();
-        final Map<String, Map<String, Map<String, String>>> sessionMap       = Maps.newHashMap();
+        final Map<String, String[]>                         subjectLabelMap  = new HashMap<>();
+        final Map<String, Map<String, Map<String, String>>> sessionMap       = new HashMap<>();
 
         for (final String sessionInfo : sessions) {
             final String[] atoms     = sessionInfo.split(":");
@@ -1685,29 +1725,17 @@ public class DefaultCatalogService implements CatalogService {
 
         return sessionMap;
     }
-    
+
     // Clean up scan formats before we search for them in the database
-    private List<String> cleanupScanFormats(List<String> scanFormats){
+    private List<String> cleanupScanFormats(List<String> scanFormats) {
         // Remove null
-        return Lists.newArrayList(Iterables.filter(scanFormats, Predicates.<String>notNull()));
+        return scanFormats.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
-    
+
     // Clean up scan types before we search for them in the database
-    private List<String> cleanupScanTypes(List<String> scanTypes){
-        // First remove null values
-        final List<String> types      = Lists.newArrayList(Iterables.filter(scanTypes, Predicates.<String>notNull()));
-        
-        final List<String> cleanTypes = new ArrayList<String>(); 
-        for (String type : types) {
-            //A \ in scantype is stored in the database as \\
-            //We will use what the database expects to query it
-            if (type.contains("\\")) {
-                cleanTypes.add(type.replace("\\", "\\\\"));
-            }else {
-                cleanTypes.add(type);
-             }
-        }
-        return cleanTypes;
+    private List<String> cleanupScanTypes(List<String> scanTypes) {
+        // Remove null values and replace "\" with "\\"
+        return scanTypes.stream().filter(Objects::nonNull).map(type -> StringUtils.replace(type, "\\", "\\\\")).collect(Collectors.toList());
     }
 
     private Map<String, Object> getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
@@ -1730,7 +1758,7 @@ public class DefaultCatalogService implements CatalogService {
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
 
-            final List<String> scanTypesWithNullRemoved = cleanupScanTypes(scanTypes);
+            final List<String> scanTypesWithNullRemoved   = cleanupScanTypes(scanTypes);
             final List<String> scanFormatsWithNullRemoved = cleanupScanFormats(scanFormats);
 
             parameters.addValue("scanTypes", scanTypesWithNullRemoved);
@@ -1748,40 +1776,40 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry    = new CatEntryBean();
                 final String       scanId   = (String) scan.get("scan_id");
-                      String       scanType = (String) scan.get("scan_type");
+                String             scanType = (String) scan.get("scan_type");
                 final Long         scanSize = (Long) scan.get("size");
                 final String       resource = URLEncoder.encode(StringUtils.defaultIfBlank((String) scan.get("resource"), "NULL"), "UTF-8");
-                
+
                 if (options.isSimplified()) {
                     entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
-                }else {
+                } else {
                     // Include Series Description in the folder name for "Non Simplified" Download
-                
+
                     // ScanType may have characters not conformant to naming conventions on the OS
                     // InvalidPathException should take care of that
                     if (null == scanType) {
                         entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
-                    }else {
-                        
+                    } else {
+
                         // First clean up the scan type string so we don't break the download
                         // Replace '\','/','(',')',',', and spaces with underscores
-                        scanType = scanType.replaceAll("[\\\\/(), ]", "_"); 
-                        String path = null;
+                        scanType = scanType.replaceAll("[\\\\/(), ]", "_");
+                        String path;
                         try {
-                            path=getPath(options, project, subject, label, "scans", scanId+"-"+scanType, "resources", resource);
-                        }catch(InvalidPathException ipe) {
-                            path=getPath(options, project, subject, label, "scans", scanId, "resources", resource);
+                            path = getPath(options, project, subject, label, "scans", scanId + "-" + scanType, "resources", resource);
+                        } catch (InvalidPathException ipe) {
+                            path = getPath(options, project, subject, label, "scans", scanId, "resources", resource);
                         }
-                        if (null != path) { 
+                        if (null != path) {
                             entry.setName(path);
                         }
                     }
                 }
-                
+
                 entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                 log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
                 catalog.addEntries_entry(entry);
-                
+
                 if (scanSize != null) {
                     totalSize.getAndAdd(scanSize);
                 } else {
@@ -1946,12 +1974,7 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private static boolean isAnyBlankList(final List<?>... lists) {
-        return Iterables.any(Arrays.asList(lists), new Predicate<List<?>>() {
-            @Override
-            public boolean apply(@Nullable final List<?> list) {
-                return list == null || list.isEmpty();
-            }
-        });
+        return Arrays.stream(lists).anyMatch(list -> list == null || list.isEmpty());
     }
 
     private static Collection<Operation> getOperations(final Collection<Operation> operations) {
@@ -1962,7 +1985,7 @@ public class DefaultCatalogService implements CatalogService {
 
         // If ANY of the operations are All, give them all as well.
         // If All isn't specified, just return a list of the actual values.
-        return Iterables.contains(operations, Operation.All) ? Operation.ALL : operations;
+        return operations.stream().anyMatch(operation -> operation == Operation.All) ? Operation.ALL : operations;
     }
 
     @Override
@@ -1972,14 +1995,14 @@ public class DefaultCatalogService implements CatalogService {
         try {
             if (!Permissions.can(user, item, accessType)) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
-                        " does not have permission to " + accessType + " the resource " + resourceName + " for item " +
-                        item.getId());
+                                                                         " does not have permission to " + accessType + " the resource " + resourceName + " for item " +
+                                                                         item.getId());
             }
         } catch (ClientException e) {
             throw e;
         } catch (Exception e) {
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
-                    user.getLogin() + " permissions for resource " + resourceName + " for item " + item.getId());
+                                                                    user.getLogin() + " permissions for resource " + resourceName + " for item " + item.getId());
         }
     }
 
@@ -2000,125 +2023,117 @@ public class DefaultCatalogService implements CatalogService {
     private static final Map<String, String> SCAN_TYPE_CLAUSES              = ImmutableMap.of(KEY_NO_NULLS, CLAUSE_SCAN_TYPES, KEY_WITH_NULLS, CLAUSE_SCAN_TYPES_WITH_NULLS, KEY_NULL_ONLY, CLAUSE_NULL_SCAN_TYPES);
 
     private static final String QUERY_FIND_SCANS_BY_SESSION               = "SELECT DISTINCT image_session_id " +
-            "FROM xnat_imagescandata scan " +
-            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-            "WHERE " +
-            "  image_session_id IN (:sessionIds) AND " +
-            "  ${scanTypesClause} AND " +
-            "  ${scanFormatsClause}";
+                                                                            "FROM xnat_imagescandata scan " +
+                                                                            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                            "WHERE " +
+                                                                            "  image_session_id IN (:sessionIds) AND " +
+                                                                            "  ${scanTypesClause} AND " +
+                                                                            "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT    = "SELECT DISTINCT scan.image_session_id AS session_id " +
-            "FROM xnat_imagescandata scan " +
-            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-            "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
-            "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
-            "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
-            "WHERE " +
-            "  expt.id IN (:sessionIds) AND " +
-            "  (share.project = :projectId OR expt.project = :projectId) AND " +
-            "  ${scanTypesClause} AND " +
-            "  ${scanFormatsClause}";
+                                                                            "FROM xnat_imagescandata scan " +
+                                                                            "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                            "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id " +
+                                                                            "WHERE " +
+                                                                            "  expt.id IN (:sessionIds) AND " +
+                                                                            "  (share.project = :projectId OR expt.project = :projectId) AND " +
+                                                                            "  ${scanTypesClause} AND " +
+                                                                            "  ${scanFormatsClause}";
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT       = "SELECT " +
-            "  scan.id   AS scan_id, " + 
-            "  scan.type AS scan_type, " +
-            "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
-            "  res.file_size AS size " +
-            "FROM xnat_imagescandata scan " +
-            "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-            "WHERE " +
-            "  scan.image_session_id = :sessionId AND " +
-            "  ${scanTypesClause} AND " +
-            "  ${scanFormatsClause} " +
-            "ORDER BY scan_id";
+                                                                            "  scan.id   AS scan_id, " +
+                                                                            "  scan.type AS scan_type, " +
+                                                                            "  coalesce(res.label, res.xnat_abstractresource_id :: VARCHAR) AS resource," +
+                                                                            "  res.file_size AS size " +
+                                                                            "FROM xnat_imagescandata scan " +
+                                                                            "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                            "WHERE " +
+                                                                            "  scan.image_session_id = :sessionId AND " +
+                                                                            "  ${scanTypesClause} AND " +
+                                                                            "  ${scanFormatsClause} " +
+                                                                            "ORDER BY scan_id";
     private static final String QUERY_FIND_XSI_TYPE_FOR_EXPERIMENT_ID     = "SELECT " +
-            "  xme.element_name " +
-            "FROM xnat_experimentData expt " +
-            "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
-            "WHERE expt.id = :id";
+                                                                            "  xme.element_name " +
+                                                                            "FROM xnat_experimentData expt " +
+                                                                            "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id " +
+                                                                            "WHERE expt.id = :id";
     private static final String QUERY_SESSION_RESOURCES                   = "SELECT res.label resource, " +
-            "  res.file_size AS size " +
-            "FROM xnat_abstractresource res " +
-            "  LEFT JOIN xnat_experimentdata_resource exptRes " +
-            "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
-            "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
-            "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
+                                                                            "  res.file_size AS size " +
+                                                                            "FROM xnat_abstractresource res " +
+                                                                            "  LEFT JOIN xnat_experimentdata_resource exptRes " +
+                                                                            "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id " +
+                                                                            "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id " +
+                                                                            "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds)";
     private static final String QUERY_SESSION_ASSESSORS                   = "SELECT " +
-            "  abstract.xnat_abstractresource_id AS resource_id, " +
-            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-            "  assessor.id AS assessor_id, " +
-            "  coalesce(share.label, assessor.label) AS assessor_label, " +
-            "  session.id AS session_id, " +
-            "  session.label AS session_label, " +
-            "  :projectId AS project, " +
-            "  CASE WHEN share.project = :projectId THEN TRUE ELSE FALSE END AS is_shared, " +
-            "  xme.element_name AS xsi, " +
-            "  abstract.file_size AS size " +
-            "FROM " +
-            "  xnat_abstractresource abstract " +
-            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
-            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-            "WHERE " +
-            "  :projectId IN (share.project, assessor.project) AND " +
-            "  xme.element_name IN (:assessorTypes) AND " +
-            "  session.id = :sessionId";
-    @SuppressWarnings("unused")
+                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
+                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+                                                                            "  assessor.id AS assessor_id, " +
+                                                                            "  coalesce(share.label, assessor.label) AS assessor_label, " +
+                                                                            "  session.id AS session_id, " +
+                                                                            "  session.label AS session_label, " +
+                                                                            "  :projectId AS project, " +
+                                                                            "  CASE WHEN share.project = :projectId THEN TRUE ELSE FALSE END AS is_shared, " +
+                                                                            "  xme.element_name AS xsi, " +
+                                                                            "  abstract.file_size AS size " +
+                                                                            "FROM " +
+                                                                            "  xnat_abstractresource abstract " +
+                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+                                                                            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+                                                                            "WHERE " +
+                                                                            "  :projectId IN (share.project, assessor.project) AND " +
+                                                                            "  xme.element_name IN (:assessorTypes) AND " +
+                                                                            "  session.id = :sessionId";
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     private static final String QUERY_SESSION_ASSESSORS_WITH_ALL_PROJECTS = "SELECT " +
-            "  abstract.xnat_abstractresource_id AS resource_id, " +
-            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-            "  assessor.id AS assessor_id, " +
-            "  assessor.label AS assessor_label, " +
-            "  session.id AS session_id, " +
-            "  session.label AS session_label, " +
-            "  assessor.project AS project, " +
-            "  xme.element_name AS xsi, " +
-            "  abstract.file_size AS size " +
-            "FROM " +
-            "  xnat_abstractresource abstract " +
-            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-            "WHERE " +
-            "  xme.element_name IN (:assessorTypes) AND " +
-            "  session.id = :sessionId " +
-            "UNION " +
-            "SELECT " +
-            "  abstract.xnat_abstractresource_id AS resource_id, " +
-            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
-            "  assessor.id AS assessor_id, " +
-            "  share.label AS assessor_label, " +
-            "  session.id AS session_id, " +
-            "  session.label AS session_label, " +
-            "  share.project AS project, " +
-            "  xme.element_name AS xsi, " +
-            "  abstract.file_size AS size " +
-            "FROM " +
-            "  xnat_abstractresource abstract " +
-            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
-            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
-            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
-            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
-            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
-            "WHERE " +
-            "  share.label IS NOT NULL AND " +
-            "  xme.element_name IN (:assessorTypes) AND " +
-            "  session.id = :sessionId ";
-
-    private static final Map<String, String> EMPTY_MAP          = ImmutableMap.of();
-    private static final Predicate<File>     FILE_OR_DIR_EXISTS = new Predicate<File>() {
-        @Override
-        public boolean apply(@Nullable final File file) {
-            return file != null && file.exists();
-        }
-    };
+                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
+                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+                                                                            "  assessor.id AS assessor_id, " +
+                                                                            "  assessor.label AS assessor_label, " +
+                                                                            "  session.id AS session_id, " +
+                                                                            "  session.label AS session_label, " +
+                                                                            "  assessor.project AS project, " +
+                                                                            "  xme.element_name AS xsi, " +
+                                                                            "  abstract.file_size AS size " +
+                                                                            "FROM " +
+                                                                            "  xnat_abstractresource abstract " +
+                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+                                                                            "WHERE " +
+                                                                            "  xme.element_name IN (:assessorTypes) AND " +
+                                                                            "  session.id = :sessionId " +
+                                                                            "UNION " +
+                                                                            "SELECT " +
+                                                                            "  abstract.xnat_abstractresource_id AS resource_id, " +
+                                                                            "  coalesce(abstract.label, abstract.xnat_abstractresource_id :: VARCHAR) AS resource_label, " +
+                                                                            "  assessor.id AS assessor_id, " +
+                                                                            "  share.label AS assessor_label, " +
+                                                                            "  session.id AS session_id, " +
+                                                                            "  session.label AS session_label, " +
+                                                                            "  share.project AS project, " +
+                                                                            "  xme.element_name AS xsi, " +
+                                                                            "  abstract.file_size AS size " +
+                                                                            "FROM " +
+                                                                            "  xnat_abstractresource abstract " +
+                                                                            "  LEFT JOIN img_assessor_out_resource imgOut ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id " +
+                                                                            "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id " +
+                                                                            "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id " +
+                                                                            "  LEFT JOIN xnat_experimentdata_share share ON assessor.id = share.sharing_share_xnat_experimentda_id " +
+                                                                            "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id " +
+                                                                            "WHERE " +
+                                                                            "  share.label IS NOT NULL AND " +
+                                                                            "  xme.element_name IN (:assessorTypes) AND " +
+                                                                            "  session.id = :sessionId ";
 
     private final NamedParameterJdbcTemplate _parameterized;
     private final Cache                      _cache;
     private final UserDataCache              _userDataCache;
-    private RemoteFilesService               _remoteFilesService = null;
+    private       RemoteFilesService         _remoteFilesService = null;
 }

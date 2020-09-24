@@ -991,8 +991,9 @@ public  class FileUtils
 
             final URI rootU = root.normalize();
             logger.debug("Validating URI \"{}\" against root URI \"{}\"", u, rootU);
-            if (rootU.relativize(u).equals(u)) {
-                logger.error("The relative path from root is \"{}\", apparently that's not good enough", rootU.relativize(u));
+            final URI relativized = rootU.relativize(u);
+            if (relativized.equals(u)) {
+                logger.error("Testing URI \"{}\" against normalized root URI \"{}\" gives relative path from root is \"{}\", apparently that's not good enough", u, rootU, relativized);
                 throw new InvalidValueException(message);
             }
         }

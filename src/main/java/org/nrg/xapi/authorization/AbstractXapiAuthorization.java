@@ -123,6 +123,9 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
             return NO_PARAMETERS;
         }
         final Object candidate = joinPoint.getArgs()[parameterIndex];
+        if (candidate == null) {
+            return Collections.emptyList();
+        }
         if (candidate instanceof String) {
             return Collections.singletonList((String) candidate);
         }

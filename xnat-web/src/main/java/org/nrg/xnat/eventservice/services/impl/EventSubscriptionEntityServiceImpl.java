@@ -6,6 +6,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
@@ -215,6 +216,11 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
+    public JsonPath compileJsonPathFilter(String jsonPathPredicate) throws InvalidPathException {
+        return JsonPath.compile("$[?(" + jsonPathPredicate + ")]");
+    }
+
+    @Override
     public Subscription activate(Subscription subscription) {
         try {
             if(getActiveRegistrationSubscriptionIds().contains(subscription.id())){
@@ -353,7 +359,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
-    public List<Subscription> getSubscriptions(@Nonnull String projectId) {
+    public List<Subscription> getSubscriptions(String projectId) {
         List<Subscription> subscriptions = new ArrayList<>();
         super.getAll().stream()
              .filter(se -> se.getEventServiceFilterEntity() == null ||

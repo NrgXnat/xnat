@@ -1,6 +1,8 @@
 package org.nrg.xnat.eventservice.services;
 
 
+import com.jayway.jsonpath.InvalidPathException;
+import com.jayway.jsonpath.JsonPath;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
@@ -20,6 +22,8 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
 
     Subscription validate(Subscription eventSubscription) throws SubscriptionValidationException;
+
+    JsonPath compileJsonPathFilter(String jsonPathPredicate) throws InvalidPathException;
 
     Subscription activate(Subscription eventSubscription);
 

@@ -539,7 +539,7 @@
     <logger name="JdbcLogger" additivity="false" level="DEBUG">
         <appender-ref ref="jdbc"/>
     </logger>
-    <logger name="org.nrg.xnat.eventservice" additivity="false" level="DEBUG">
+    <logger name="org.nrg.xnat.eventservice" additivity="false" level="ERROR">
         <appender-ref ref="eventservice"/>
     </logger>
 </configuration>

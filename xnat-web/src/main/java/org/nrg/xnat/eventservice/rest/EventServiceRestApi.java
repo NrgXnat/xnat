@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.rest;
 
+import com.jayway.jsonpath.InvalidPathException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -126,6 +127,13 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Generate a subscription RegEx filter string from filter node set")
     public String generateFilterRegEx(final @RequestBody Map<String, JsonPathFilterNode> filterNodes) {
         return eventService.generateFilterRegEx(filterNodes);
+    }
+
+    @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/subscription/filter/validate"}, method = POST)
+    @ApiOperation(value = "Validate a JsonPath predicate for use in event service filter.")
+    public ResponseEntity<Void> validateFilterJsonPathPredicate(final @RequestBody String jsonPathPredicate) throws InvalidPathException {
+        eventService.validateFilterJsonPathPredicate(jsonPathPredicate);
+        return ResponseEntity.ok().build();
     }
 
 
@@ -471,6 +479,5 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public String handleUnauthorized(final Exception e) {
         return "Unauthorized.\n" + e.getMessage();
     }
-
 
 }

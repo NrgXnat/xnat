@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.EvictingQueue;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import lombok.extern.slf4j.Slf4j;
@@ -152,14 +153,14 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<Subscription> getSubscriptions() {
         if (!prefs.getEnabled()) {
-            return Collections.emptyList();
+            return null;
         }
         return subscriptionService.getAllSubscriptions();
     }
 
     @Override
     public List<Subscription> getSubscriptions(@Nonnull String projectId) {
-        return prefs.getEnabled() ? subscriptionService.getSubscriptions(projectId) : Collections.emptyList();
+        return prefs.getEnabled() ? subscriptionService.getSubscriptions(projectId) : null;
     }
 
     @Override
@@ -505,6 +506,11 @@ public class EventServiceImpl implements EventService {
     @Override
     public String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters) {
         return eventPropertyService.generateJsonPathFilter(nodeFilters);
+    }
+
+    @Override
+    public void validateFilterJsonPathPredicate(String jsonPathPredicate) throws InvalidPathException {
+        subscriptionService.compileJsonPathFilter(jsonPathPredicate);
     }
 
     @Override

@@ -86,6 +86,7 @@ public interface EventService {
     List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request);
 
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
+    void validateFilterJsonPathPredicate(String jsonPathPredicate);
 
     List<String> getRecentTriggers(Integer count);
 
@@ -96,4 +97,5 @@ public interface EventService {
     void updatePrefs(EventServicePrefs prefs);
 
     void syncReactorRegistrations();
+
 }

@@ -1,4 +1,3 @@
-// Copyright 2019 Radiologics, Inc
 // Developer: Kate Alpert <kate@radiologics.com>
 
 package org.nrg.framework.ajax.sql;

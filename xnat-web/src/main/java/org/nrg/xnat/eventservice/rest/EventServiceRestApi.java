@@ -382,7 +382,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     //    return eventService.getActionsByProvider(provider, user);
     //}
 
-    @XapiRequestMapping(restrictTo = Admin, value = "/events/prefs", method = GET)
+    @XapiRequestMapping(restrictTo = Authenticated, value = "/events/prefs", method = GET)
     @ApiOperation(value = "Get Event Service Preferences")
     public EventServicePrefs getPrefs() {
         return eventService.getPrefsPojo();

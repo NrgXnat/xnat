@@ -302,7 +302,6 @@ dependencies {
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
-    runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"
     runtimeOnly "axis:axis-ant"

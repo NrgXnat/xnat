@@ -142,6 +142,21 @@ var XNAT = getObject(XNAT || {});
         })
     };
 
+    eventServicePanel.getStatus = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+
+        return XNAT.xhr.getJSON({
+            url: restUrl('/xapi/events/prefs'),
+            success: function(data){
+                if (data) return data;
+                callback.apply(this,arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve Event Service status','silent');
+            }
+        })
+    };
+
     eventServicePanel.getEvents = function(callback){
         callback = isFunction(callback) ? callback : function(){};
 
@@ -1321,8 +1336,7 @@ var XNAT = getObject(XNAT || {});
             $('#event-id-entry').focus();
         }
     };
-
-
+    
     historyTable.init = historyTable.refresh = function(container){
         var $container = $$(container || '#history-table-container');
 
@@ -1366,16 +1380,25 @@ var XNAT = getObject(XNAT || {});
      * Initialize tabs & Display *
      * ------------------------- */
 
-   eventServicePanel.populateDisplay = function(rootDiv) {
+   eventServicePanel.populateDisplay = function(status,rootDiv) {
         var $container = $(rootDiv || '#event-service-admin-tabs');
         $container.empty();
 
-        var subscriptionTab =  {
+        var eventSetupTab =  {
             kind: 'tab',
-            label: 'Event Subscriptions',
+            label: 'Event Setup',
             group: 'General',
             active: true,
             contents: {
+                enablePanel: {
+                    kind: 'panel',
+                    label: 'Enable Event Service',
+                    contents: {
+                        enableEsSetting: {
+                            tag: 'div#enableEventService'
+                        }
+                    }
+                },
                 subscriptionPanel: {
                     kind: 'panel',
                     label: 'Event Subscriptions',
@@ -1422,7 +1445,7 @@ var XNAT = getObject(XNAT || {});
             name: 'eventSettings',
             label: 'Event Service Administration',
             contents: {
-                subscriptionTab: subscriptionTab,
+                eventSetupTab: eventSetupTab,
                 historyTab: historyTab
             }
         };
@@ -1430,38 +1453,145 @@ var XNAT = getObject(XNAT || {});
         eventServicePanel.tabSet = XNAT.spawner.spawn({ eventSettings: eventTabSet });
         eventServicePanel.tabSet.render($container);
 
-        eventServicePanel.showSubscriptionList();
+        eventServicePanel.showSubscriptionList(false,status);
 
-        XNAT.ui.tab.activate('subscription-tab');
+        XNAT.ui.tab.activate('event-setup-tab');
     };
 
-   eventServicePanel.showSubscriptionList = eventServicePanel.refreshSubscriptionList = function(container){
+   eventServicePanel.showSubscriptionList = eventServicePanel.refreshSubscriptionList = function(container,status){
        var $container = $(container || '#subscriptionTableContainer');
+
+       if (status === undefined || status.toString() === 'true') {
+           $container
+               .empty()
+               .append( eventServicePanel.subscriptionTable() );
+           return;
+       }
        $container
            .empty()
-           .append( eventServicePanel.subscriptionTable() );
+           .append(spawn('p','Event Service subscriptions are disabled.'));
    };
+
+
+    /* ****************************** */
+    /* Enable / Disable Event Service */
+    /* ****************************** */
+
+    var prefs = eventServicePanel.prefs = {};
+
+    eventServicePanel.changeEventServiceStatus = function(prefs,enable){
+        var msg = (enable) ? 'Enabling Event Service' : 'Disabling Event Service';
+        eventServicePanel.prefs['enabled'] = enable;
+
+        xmodal.loading.open(msg);
+        XNAT.xhr.putJSON({
+            url: csrfUrl('/xapi/events/prefs'),
+            data: JSON.stringify(eventServicePanel.prefs),
+            processData: false,
+            fail: function(e){
+                errorHandler(e,'Could not store Event Service preferences');
+            },
+            success: function(prefs){
+                console.log(prefs);
+                eventServicePanel.prefs = prefs;
+                eventServicePanel.init(prefs);
+                xmodal.loading.close();
+                XNAT.ui.banner.top(3000,'Event Service status updated','success');
+            }
+        })
+    };
+
+    eventServicePanel.displayStatus = function(prefs,container){
+
+        function switchbox(status){
+            var enabled = (status === 'true'),
+                value = enabled;
+            return XNAT.ui.panel.switchbox({
+                name: 'eventServiceStatus',
+                label: 'Enable Event Service',
+                description: 'Enables or Disables all event subscriptions in the XNAT Event Service. (Note: Does not affect automations defined elsewhere.)',
+                onText: 'Enabled',
+                offText: 'Disabled',
+                checked: enabled,
+                value: value,
+                onchange: XNAT.admin.eventServicePanel.handleStatusSwitchbox
+            })
+        }
+
+        var $container = $(container || '#enableEventService'),
+           status = prefs.enabled.toString() || 'true';
+        $container
+           .empty()
+           .append(switchbox(status));
+    };
+
+    // $(document).on('change','input[name=eventServiceStatus]',function(e){
+    eventServicePanel.handleStatusSwitchbox = function(e){
+        e.preventDefault();
+        // at the moment of change being recorded, the input still has its value prior to change
+        var originalVal = ($(this).val().toString() === 'true'),
+           intendedVal = !originalVal;
+
+        var prefs = eventServicePanel.prefs;
+        prefs.enabled = intendedVal;
+
+        if (originalVal.toString === 'true') {
+           XNAT.ui.dialog.confirm({
+               title: 'Confirm Disabling of Event Service',
+               content: 'Are you sure you want to disable the Event Service for this XNAT site?',
+               buttons: [
+                   {
+                       label: 'Disable Event Service',
+                       isDefault: true,
+                       close: true,
+                       action: function(){
+                           XNAT.admin.eventServicePanel.changeEventServiceStatus(prefs,intendedVal)
+                       }
+                   },
+                   {
+                       label: 'Cancel',
+                       close: true,
+                       action: function(){
+
+                       }
+                   }
+               ]
+           })
+        }
+        else {
+            XNAT.admin.eventServicePanel.changeEventServiceStatus(prefs,intendedVal)
+        }
+    };
 
     eventServicePanel.init = function(){
 
-        // Prerequisite: Get known events
-        // translate events array into an object driven by the event ID
+        eventServicePanel.getStatus().done(function(prefs){
+            eventServicePanel.prefs = prefs;
+            var status = eventServicePanel.prefs.enabled;
 
-        eventServicePanel.getEvents().done(function(events){
-            events.forEach(function(event){
-                eventServicePanel.events[event.type] = event;
-            });
+            // Prerequisite: Get known events
+            // translate events array into an object driven by the event ID
 
-            eventServicePanel.getActions().done(function(actions){
-                actions.forEach(function(action){
-                    eventServicePanel.actions[action['action-key']] = action;
+            eventServicePanel.getEvents().done(function(events){
+                events.forEach(function(event){
+                    eventServicePanel.events[event.type] = event;
                 });
 
-                // Populate event subscription table
-                eventServicePanel.populateDisplay();
+                eventServicePanel.getActions().done(function(actions){
+                    actions.forEach(function(action){
+                        eventServicePanel.actions[action['action-key']] = action;
+                    });
 
-                // initialize history table
-                eventServicePanel.historyTable.init();
+                    // Populate event subscription table
+                    eventServicePanel.populateDisplay(status);
+
+                    // Display status
+                    eventServicePanel.displayStatus(prefs);
+
+                    // initialize history table
+                    eventServicePanel.historyTable.init(status);
+                });
+
             });
 
         });

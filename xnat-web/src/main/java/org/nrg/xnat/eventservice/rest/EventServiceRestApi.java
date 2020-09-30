@@ -269,7 +269,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
 
-    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = POST, consumes = JSON, produces = JSON)
+    @ApiOperation(value = "Get paginated event history results per request")
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,

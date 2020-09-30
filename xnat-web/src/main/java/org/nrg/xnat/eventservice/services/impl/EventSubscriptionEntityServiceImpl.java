@@ -14,7 +14,6 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
@@ -412,7 +411,8 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             EventFilter eventFilter = subscription.eventFilter();
             String eventName = componentManager.getEvent(eventFilter.eventType()).getDisplayName();
             String status = eventFilter.status();
-            String forProject = eventFilter.projectIds() == null || eventFilter.projectIds().isEmpty() ? "Site" : StringUtils.join(eventFilter.projectIds(), ',');
+            String forProject = eventFilter.projectIds() == null || eventFilter.projectIds().isEmpty() ? "Site" :
+                    eventFilter.projectIds().size() == 1 ? eventFilter.projectIds().get(0) : "Multiple Projects";
             uniqueName += Strings.isNullOrEmpty(actionName) ? "Action" : actionName;
             uniqueName += " on ";
             uniqueName += Strings.isNullOrEmpty(eventName) ? "Event" : eventName;
@@ -421,7 +421,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             uniqueName += forProject;
 
             String trialUniqueName = uniqueName;
-            for(Integer indx = 2; indx < 10000; indx++) {
+            for(Integer indx = 2; indx < 100000; indx++) {
                 if(this.getDao().findByName(trialUniqueName) == null){
                     return trialUniqueName;
                 }else {

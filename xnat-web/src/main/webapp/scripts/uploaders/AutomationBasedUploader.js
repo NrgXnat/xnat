@@ -1757,10 +1757,6 @@ XNAT.app.abu.runFunctionIfIdle = function(timeoutms, toRun) {
 
 XNAT.app.abu.completeFileUpload = function() {
 	XNAT.app.abu.updateResourceStats();
-	// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
-	if (!XNAT.app.abu.filesProcessed) {
-		XNAT.app.abu.sendWorkflowWhenDone();
-	}
 }
 
 $(document).ready(XNAT.app.abu.abuConfigs.load);

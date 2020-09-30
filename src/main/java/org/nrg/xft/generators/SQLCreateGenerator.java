@@ -7,13 +7,14 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.generators;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.references.XFTManyToManyReference;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -22,12 +23,10 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
+@Slf4j
 public class SQLCreateGenerator {
-    private static final Log logger = LogFactory.getLog(SQLCreateGenerator.class);
-
     /**
      * outputs all of the SQL needed to create the database, including CREATE,
      * ALTER, VIEW, AND INSERT statements.
@@ -38,55 +37,51 @@ public class SQLCreateGenerator {
     public static void generateDoc(String location) throws Exception {
         try {
             StringBuilder builder = new StringBuilder();
-            for (Object o : GetSQLCreate(true)) {
+            for (final Object o : GetSQLCreate(true)) {
                 builder.append(o).append("\n");
             }
             FileUtils.OutputToFile(builder.toString(), location);
             System.out.println("File Created: " + location);
-        } catch (org.nrg.xft.exception.XFTInitException e) {
-            logger.error("", e);
+        } catch (XFTInitException e) {
+            log.error(XDAT.XFT_INIT_EXCEPTION_MESSAGE, e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error(XDAT.ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT, e);
+        } catch (FieldNotFoundException e) {
+            log.error(XDAT.FIELD_NOT_FOUND_MESSAGE, e.FIELD, e);
         }
     }
 
-    public static List<String> GetSQLCreate(boolean includeFunctions) throws Exception {
-        List<String> creates = new ArrayList<String>();
-        List<String> alters = new ArrayList<String>();
+    public static List<String> GetSQLCreate(final boolean includeFunctions) throws Exception {
+        final List<String> creates = new ArrayList<>();
+        final List<String> alters  = new ArrayList<>();
 
-        for (Object o : XFTManager.GetInstance().getOrderedElements()) {
-            GenericWrapperElement element = (GenericWrapperElement) o;
+        for (final Object object : XFTManager.GetInstance().getOrderedElements()) {
+            final GenericWrapperElement element = (GenericWrapperElement) object;
             if (!(element.getName().equalsIgnoreCase("meta_data") || element.getName().equalsIgnoreCase("history") || element.isSkipSQL())) {
-                logger.debug("Generating the CREATE sql for '" + element.getDirectXMLName() + "'");
+                log.debug("Generating the CREATE sql for '{}'", element.getDirectXMLName());
                 creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(element));
 
-                for (Object o1 : GenericWrapperUtils.GetAlterTableStatements(element)) {
-                    alters.add("\n\n" + o1);
-                }
-            } else {
-                if (XFT.VERBOSE) {
-                    System.out.print(" ");
+                for (final Object object1 : GenericWrapperUtils.GetAlterTableStatements(element)) {
+                    alters.add("\n\n" + object1);
                 }
             }
         }
 
-        Iterator mappingTables = XFTReferenceManager.GetInstance().getUniqueMappings().iterator();
-        while (mappingTables.hasNext()) {
-            XFTManyToManyReference map = (XFTManyToManyReference) mappingTables.next();
-            logger.debug("Generating the CREATE sql for '" + map.getMappingTable() + "'");
+        for(final Object object : XFTReferenceManager.GetInstance().getUniqueMappings()) {
+            final XFTManyToManyReference map = (XFTManyToManyReference) object;
+            log.debug("Generating the CREATE sql for '{}'", map.getMappingTable());
             creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(map));
         }
 
-        mappingTables = XFTReferenceManager.GetInstance().getUniqueMappings().iterator();
-        while (mappingTables.hasNext()) {
-            XFTManyToManyReference map = (XFTManyToManyReference) mappingTables.next();
-            logger.debug("Generating the ALTER sql for '" + map.getMappingTable() + "'");
-            for (Object o : GenericWrapperUtils.GetAlterTableStatements(map)) {
-                alters.add("\n\n" + o);
+        for (final Object object : XFTReferenceManager.GetInstance().getUniqueMappings()) {
+            final XFTManyToManyReference map = (XFTManyToManyReference) object;
+            log.debug("Generating the ALTER sql for '{}'", map.getMappingTable());
+            for (final Object object1 : GenericWrapperUtils.GetAlterTableStatements(map)) {
+                alters.add("\n\n" + object1);
             }
         }
 
-        List<String> all = new ArrayList<String>();
+        final List<String> all = new ArrayList<>();
         all.add("--CREATE STATEMENTS");
         all.addAll(creates);
         all.add("\n\n--ALTER STATEMENTS");
@@ -103,16 +98,16 @@ public class SQLCreateGenerator {
         return all;
     }
 
-    public static void main(String args[]) {
+    public static void main(final String[] args) {
         if (args.length == 2) {
             try {
                 XFT.init(args[0]);
                 SQLCreateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("An error occurred", e);
             }
         } else {
-            System.out.println("Arguments: <Schema File location>");
+            log.error("Arguments: <Schema File location>");
         }
     }
 }

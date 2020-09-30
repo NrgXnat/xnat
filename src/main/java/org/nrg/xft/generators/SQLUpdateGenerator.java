@@ -10,6 +10,7 @@
 
 package org.nrg.xft.generators;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
@@ -26,15 +27,13 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class SQLUpdateGenerator {
-    private static final Logger logger = LoggerFactory.getLogger(SQLUpdateGenerator.class);
 
     /**
      * outputs all of the SQL needed to create the database, including CREATE,
@@ -45,7 +44,7 @@ public class SQLUpdateGenerator {
      */
     public static void generateDoc(String location) throws Exception {
         try {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder                          sb  = new StringBuilder();
             for (Object o : GetSQLCreate()) {
                 sb.append(o);
             }
@@ -60,9 +59,9 @@ public class SQLUpdateGenerator {
             FileUtils.OutputToFile(sb.toString(), location);
             System.out.println("File Created: " + location);
         } catch (XFTInitException e) {
-            logger.error("There was an error initializing XFT", e);
+            log.error("There was an error initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("Couldn't find the requested element " + e.ELEMENT, e);
+            log.error("Couldn't find the requested element " + e.ELEMENT, e);
         }
     }
 
@@ -87,9 +86,9 @@ public class SQLUpdateGenerator {
                 tables.add(t.getCellValue("relname").toString().toLowerCase());
             }
         } catch (SQLException ex) {
-            logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), ex);
+            log.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), ex);
         } catch (Exception ex) {
-            logger.error("An unknown error occurred.", ex);
+            log.error("An unknown error occurred.", ex);
         }
 
         //ITERATE THROUGH ELEMENTS
@@ -102,7 +101,7 @@ public class SQLUpdateGenerator {
                     if (updSts[0].size() > 0) {
                         for (Object updSt : updSts[0]) {
                             creates.add("\n\n" + updSt);
-                        }
+                    }
                     }
                     if (updSts[1].size() > 0) {
                         optional.addAll(updSts[1]);
@@ -116,10 +115,6 @@ public class SQLUpdateGenerator {
                     }
                 }
 
-            } else {
-                if (XFT.VERBOSE) {
-                    System.out.print(" ");
-                }
             }
         }
 
@@ -127,11 +122,11 @@ public class SQLUpdateGenerator {
         for (Object o : XFTReferenceManager.GetInstance().getUniqueMappings()) {
             XFTManyToManyReference map = (XFTManyToManyReference) o;
             if (!tables.contains(map.getMappingTable().toLowerCase())) {
-                logger.debug("Generating the CREATE sql for '" + map.getMappingTable() + "'");
+                log.debug("Generating the CREATE sql for '" + map.getMappingTable() + "'");
                 //delete.add("\n\nDELETE FROM "+ map.getMappingTable() + ";");
                 creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(map));
 
-                logger.debug("Generating the ALTER sql for '" + map.getMappingTable() + "'");
+                log.debug("Generating the ALTER sql for '" + map.getMappingTable() + "'");
                 //delete.add("\n\nDELETE FROM "+map.getMappingTable()+";");
                 for (Object o1 : GenericWrapperUtils.GetAlterTableStatements(map)) {
                     alters.add("\n\n" + o1);
@@ -146,13 +141,18 @@ public class SQLUpdateGenerator {
         return new List[]{all,optional};
     }
 
+    /**
+     * 2 lists of statements: 0=required, 1=optional (to be commented out).
+     * @return A list of two lists, the first a list of required statements, the second a list of optional statements.
+     * @throws Exception When an error occurs.
+     */
     public static List<String>[] GetUpdateStatements(GenericWrapperElement e) {
         List<String> statements = new ArrayList<>();
         List<String> optional = new ArrayList<>();
 
         List<String> lowerCaseColumns = new ArrayList<>();
         List<String> columnTypes = new ArrayList<>();
-        List<String> columnRequireds = new ArrayList<>();
+        List<String> columnsRequired = new ArrayList<>();
         PoolDBUtils con;
         try {
             con = new PoolDBUtils();
@@ -180,12 +180,12 @@ public class SQLUpdateGenerator {
                 }
 
                 String notnull = t.getCellValue("attnotnull").toString().toLowerCase();
-                columnRequireds.add(notnull);
+                columnsRequired.add(notnull);
             }
         } catch (SQLException ex) {
-            logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), e);
+            log.error("An SQL error occurred [{}]: {}", ex.getErrorCode(), ex.getSQLState(), ex);
         } catch (Exception ex) {
-            logger.error("An unknown error occurred.", e);
+            log.error("An unknown error occurred.", ex);
         }
 
         List<String> matched = new ArrayList<>();
@@ -204,7 +204,7 @@ public class SQLUpdateGenerator {
                                     final boolean             required = localKey != null && localKey.isRequired();
                                     if (!lowerCaseColumns.contains(spec.getLocalCol().toLowerCase())) {
                                         if (XFT.VERBOSE) {
-                                        	logger.error("WARNING: Database column " + e.getSQLName() + "." + spec.getLocalCol() + " is missing. Execute update sql.");
+                                        	log.error("WARNING: Database column " + e.getSQLName() + "." + spec.getLocalCol() + " is missing. Execute update sql.");
                                         }
                                         if (localKey != null) {
                                             if (localKey.getAutoIncrement().equalsIgnoreCase("true")) {
@@ -212,7 +212,7 @@ public class SQLUpdateGenerator {
                                             } else {
                                                 final StringBuilder statement         = new StringBuilder(prefix).append(" ADD COLUMN ").append(spec.getLocalCol());
                                                 if (!setTypeAndDefaultValue(statement, spec, converter)) {
-                                                    logger.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
+                                                    log.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
                                                 }
                                                 statement.append(";\n");
                                                 statements.add(statement.toString());
@@ -225,7 +225,7 @@ public class SQLUpdateGenerator {
                                         matched.add(fieldSQLName);
                                         int index = lowerCaseColumns.indexOf(fieldSQLName.toLowerCase());
                                         String t = columnTypes.get(index);
-                                        String req = columnRequireds.get(index);
+                                        String req = columnsRequired.get(index);
                                         String exptType;
                                         if (localKey != null) {
                                             if (localKey.getAutoIncrement().equalsIgnoreCase("true")) {
@@ -250,11 +250,11 @@ public class SQLUpdateGenerator {
 
                                         if (!t.equalsIgnoreCase(exptType)) {
                                             //COLUMN TYPE MIS-MATCH
-                                            logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " type mis-match ('" + exptType + "'!='" + t + "'). Unable to resolve.");
+                                            log.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " type mis-match ('" + exptType + "'!='" + t + "'). Unable to resolve.");
                                         }
 
                                         if (!required && req.equals("true")) {
-                                            logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required. Execute update sql.");
+                                            log.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required. Execute update sql.");
                                             statements.add("\n--Database column " + e.getSQLName() + "." + fieldSQLName + " is no longer required.\nALTER COLUMN " + fieldSQLName + " DROP NOT NULL;");
                                         }
                                     }
@@ -262,7 +262,7 @@ public class SQLUpdateGenerator {
                                 }
                             }
                         } catch (Exception ex) {
-                            logger.error("An exception occurred trying to process the reference field {}", field.getName(), ex);
+                            log.error("An exception occurred trying to process the reference field {}", field.getName(), ex);
                         }
                     }
                 } else {
@@ -271,7 +271,7 @@ public class SQLUpdateGenerator {
                         final boolean required    = field.isRequired();
                         if (!lowerCaseColumns.contains(fieldSQLName)) {
                             if (XFT.VERBOSE) {
-                                logger.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is missing. Execute update sql.");
+                                log.error("WARNING: Database column " + e.getSQLName() + "." + fieldSQLName + " is missing. Execute update sql.");
                             }
                             final StringBuilder statement = new StringBuilder(prefix);
                             statement.append(" ADD COLUMN ").append(fieldSQLName);
@@ -282,7 +282,7 @@ public class SQLUpdateGenerator {
                                 }
                             } else {
                                 if (!setTypeAndDefaultValue(statement, field, converter)) {
-                                    logger.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
+                                    log.warn("The property {}.{} is required but does not have a default value. This may cause issues when updating the database.", e.getName(), field.getName());
                                 }
                                 statement.append(";\n");
                                 statements.add(statement.toString());
@@ -291,7 +291,7 @@ public class SQLUpdateGenerator {
                             matched.add(fieldSQLName);
                             int index = lowerCaseColumns.indexOf(fieldSQLName);
                             String t = columnTypes.get(index);
-                            String req = columnRequireds.get(index);
+                            String req = columnsRequired.get(index);
 
                             String exptType;
                             if (!field.getType(converter).equals("")) {
@@ -388,7 +388,7 @@ public class SQLUpdateGenerator {
                                     }
                                 } catch (Exception e1) {
                                     e1.printStackTrace();
-                                    logger.error("", e1);
+                                    log.error("", e1);
                                 }
                             }
 
@@ -419,7 +419,7 @@ public class SQLUpdateGenerator {
                     if (!matched.contains(lowerCaseColumns.get(i))) {
                         String fieldSQLName = lowerCaseColumns.get(i);
 
-                        String req = columnRequireds.get(i);
+                        String req = columnsRequired.get(i);
                         if (req.equalsIgnoreCase("true")) {
                             if (XFT.VERBOSE) {
                                 System.out.println("WARNING: Required database column " + e.getSQLName() + "." + fieldSQLName + " is no longer valid. Execute update sql.");
@@ -430,9 +430,9 @@ public class SQLUpdateGenerator {
                 }
             }
         } catch (XFTInitException ex) {
-            logger.error("There was an error initializing XFT", ex);
+            log.error("There was an error initializing XFT", ex);
         } catch (ElementNotFoundException ex) {
-            logger.error("Couldn't find the requested element " + ex.ELEMENT, ex);
+            log.error("Couldn't find the requested element " + ex.ELEMENT, ex);
         }
 
         return new List[]{statements,optional};
@@ -456,7 +456,7 @@ public class SQLUpdateGenerator {
         return setTypeAndDefaultValue(statement, columnType, javaType, required, defaultValue);
     }
 
-    public static void main(String args[]) {
+    public static void main(final String[] args) {
         if (args.length == 2) {
             try {
                 XFT.init(args[0]);

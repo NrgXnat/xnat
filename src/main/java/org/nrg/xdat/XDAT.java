@@ -9,12 +9,8 @@
 
 package org.nrg.xdat;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import static org.nrg.xdat.security.helpers.Users.*;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -78,7 +74,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.annotation.Nullable;
 import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
@@ -87,9 +82,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import static org.nrg.xdat.security.helpers.Users.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Tim
@@ -98,11 +94,14 @@ import static org.nrg.xdat.security.helpers.Users.*;
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Slf4j
 public class XDAT {
-	public static final  String   IP_WHITELIST_TOOL               = "ipWhitelist";
-	public static final  String   IP_WHITELIST_PATH               = "/system/ipWhitelist";
-	public static final  String   ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-	public static final  String[] DATA_TYPE_ACCESS_FUNCTIONS      = new String[]{"data_type_views_element_access", "data_type_views_mismatched_mapping_elements", "data_type_views_missing_mapping_elements", "data_type_views_orphaned_field_sets", "data_type_views_secured_identified_data_types", "data_type_views_scan_data_types", "data_type_views_experiments_without_data_type", "data_type_views_member_edit_permissions", "data_type_fns_create_public_element_access", "data_type_fns_create_new_security", "data_type_fns_create_new_permissions", "data_type_fns_fix_missing_public_element_access_mappings", "data_type_fns_fix_mismatched_permissions", "data_type_fns_drop_xnat_hash_indices", "data_type_fns_object_exists_in_table", "data_type_fns_find_orphaned_data", "data_type_fns_resolve_orphaned_data", "data_type_fns_scan_exists_in_table", "data_type_fns_find_orphaned_scans", "data_type_fns_resolve_orphaned_scans", "data_type_fns_fix_orphaned_scans", "data_type_fns_correct_experiment_extension", "data_type_fns_correct_group_permissions"};
-	private static final String   ELEMENT_NOT_FOUND_MESSAGE       = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+	public static final String   IP_WHITELIST_TOOL               = "ipWhitelist";
+	public static final String   IP_WHITELIST_PATH               = "/system/ipWhitelist";
+	public static final String   ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+	public static final String[] DATA_TYPE_ACCESS_FUNCTIONS      = new String[]{"data_type_views_element_access", "data_type_views_mismatched_mapping_elements", "data_type_views_missing_mapping_elements", "data_type_views_orphaned_field_sets", "data_type_views_secured_identified_data_types", "data_type_views_scan_data_types", "data_type_views_experiments_without_data_type", "data_type_views_member_edit_permissions", "data_type_fns_create_public_element_access", "data_type_fns_create_new_security", "data_type_fns_create_new_permissions", "data_type_fns_fix_missing_public_element_access_mappings", "data_type_fns_fix_mismatched_permissions", "data_type_fns_drop_xnat_hash_indices", "data_type_fns_object_exists_in_table", "data_type_fns_find_orphaned_data", "data_type_fns_resolve_orphaned_data", "data_type_fns_scan_exists_in_table", "data_type_fns_find_orphaned_scans", "data_type_fns_resolve_orphaned_scans", "data_type_fns_fix_orphaned_scans", "data_type_fns_correct_experiment_extension", "data_type_fns_correct_group_permissions"};
+	public static final String   ELEMENT_NOT_FOUND_MESSAGE       = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+	public static final String   FIELD_NOT_FOUND_MESSAGE         = "Field not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+	public static final String   XFT_INIT_EXCEPTION_MESSAGE      = "An error occurred trying initialize or access XFT.";
+	private static final CharSequence[] STANDALONE_APP_KEYS = {"APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL"};
 
 	private static ContextService             _contextService;
 	private static DataSource                 _dataSource;
@@ -120,8 +119,8 @@ public class XDAT {
 	private static NotificationsPreferences   _notificationsPreferences;
 	private static File                       _screenTemplatesFolder;
 
-	private static String            _configFilesLocation    = null;
-	private static Map<String, File> _screenTemplatesFolders = new HashMap<>();
+	private static       String            _configFilesLocation    = null;
+	private static final Map<String, File> _screenTemplatesFolders = new HashMap<>();
 
 	private String instanceSettingsLocation = null;
 
@@ -141,7 +140,7 @@ public class XDAT {
 
 	public static Map<String, Long> getTotalCounts() {
 		final GroupsAndPermissionsCache cache = getContextService().getBeanSafely(GroupsAndPermissionsCache.class);
-		return cache != null ? cache.getTotalCounts(): Collections.<String, Long>emptyMap();
+		return cache != null ? cache.getTotalCounts(): Collections.emptyMap();
 	}
 
     public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
@@ -471,7 +470,7 @@ public class XDAT {
 	@SuppressWarnings("unused")
 	public static List<String> GenerateCreateSQL() throws Exception
 	{
-        List<String> sql=Lists.newArrayList();
+        List<String> sql= new ArrayList<>();
 
         sql.addAll(SQLCreateGenerator.GetSQLCreate(true));
 
@@ -653,12 +652,7 @@ public class XDAT {
 			if (service != null) {
 				_serializerService = service;
 			} else {
-				final Map<String, String> appInfo = Maps.filterKeys(System.getenv(), new Predicate<String>() {
-					@Override
-					public boolean apply(@Nullable final String key) {
-						return StringUtils.startsWithAny(key, "APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL");
-					}
-				});
+				final Map<String, String> appInfo = System.getenv().entrySet().stream().filter(entry -> StringUtils.startsWithAny(entry.getKey(), STANDALONE_APP_KEYS)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 				// We're running an application of some sort, not in a web application, so we need to
 				// strap on the serializer service by hand.
 				if (!appInfo.isEmpty()) {
@@ -889,7 +883,7 @@ public class XDAT {
 		}
 
 		// If we made it this far, there are no subscribers to the indicated site-wide event, so create the requested subscribers
-		final List<String> newSubscriberEmailList = StringUtils.isBlank(newSubscriberEmails) ? new ArrayList<String>() : Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*"));
+		final List<String> newSubscriberEmailList = StringUtils.isBlank(newSubscriberEmails) ? new ArrayList<>() : Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*"));
 		for(String newSubscriberEmailString : newSubscriberEmailList){
 			List<? extends UserI> users = Users.getUsersByEmail(newSubscriberEmailString);
 			if(users!=null && users.size()>0){
@@ -986,7 +980,7 @@ public class XDAT {
 	private static synchronized Configuration createDefaultWhitelist(final UserI user) throws ConfigServiceException {
 		final String username = user.getUsername();
 		final String reason   = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
-		return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
+		return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, String.join("\n", getLocalhostIPs()));
 	}
 
 	public static List<InetAddress> getInetAddresses() {
@@ -1003,25 +997,11 @@ public class XDAT {
 	}
 
     public static Set<String> getHostNames() {
-        return new HashSet<>(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
-            @Nullable
-            @Override
-            public String apply(final InetAddress address) {
-                return address.getCanonicalHostName();
-            }
-        }));
+		return getInetAddresses().stream().map(InetAddress::getCanonicalHostName).collect(Collectors.toSet());
     }
 
 	public static Set<String> getLocalhostIPs() {
-		final Set<String> localhostIPs = new HashSet<>(LOCALHOST_IPS);
-		localhostIPs.addAll(Lists.transform(getInetAddresses(), new Function<InetAddress, String>() {
-            @Nullable
-            @Override
-            public String apply(final InetAddress address) {
-                return StringUtils.substringBefore(address.getHostAddress(), "%");
-            }
-        }));
-		return localhostIPs;
+		return Stream.concat(LOCALHOST_IPS.stream(), getInetAddresses().stream().map(InetAddress::getHostAddress).map(address -> StringUtils.substringBefore(address, "%"))).collect(Collectors.toSet());
 	}
 
 	public static void logShortStackTrace(final String message, final int depth) {
@@ -1060,27 +1040,14 @@ public class XDAT {
 	}
 
 	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final String... regExes) {
-        final List<Pattern> patterns = Lists.transform(Arrays.asList(regExes), new Function<String, Pattern>() {
-            @Override
-            public Pattern apply(final String include) {
-                return Pattern.compile(include);
-            }
-        });
-        return formatShortStackTrace(stackTrace, new Predicate<StackTraceElement>() {
-            @Override
-            public boolean apply(final StackTraceElement element) {
-                if (StringUtils.equalsAny(element.getMethodName(), "logShortStackTrace", "formatShortStackTrace")) {
-                    return false;
-                }
-                final String fullyQualifiedMethodName = element.getClassName() + "." + element.getMethodName() + "()";
-                return Iterables.any(patterns, new Predicate<Pattern>() {
-                    @Override
-                    public boolean apply(final Pattern pattern) {
-                        return pattern.matcher(fullyQualifiedMethodName).matches();
-                    }
-                });
-            }
-        });
+		final List<Pattern> patterns = 		Arrays.stream(regExes).map(Pattern::compile).collect(Collectors.toList());
+        return formatShortStackTrace(stackTrace, element -> {
+			if (StringUtils.equalsAny(element.getMethodName(), "logShortStackTrace", "formatShortStackTrace")) {
+				return false;
+			}
+			final String fullyQualifiedMethodName = element.getClassName() + "." + element.getMethodName() + "()";
+			return patterns.stream().anyMatch(pattern -> pattern.matcher(fullyQualifiedMethodName).matches());
+		});
     }
 
     /**
@@ -1092,12 +1059,7 @@ public class XDAT {
      * @return A string containing the formatted stack trace elements from classes under the "org.nrg..." package structure.
      */
     public static String formatNrgShortStackTrace(final StackTraceElement[] stackTrace) {
-        return formatShortStackTrace(stackTrace, new Predicate<StackTraceElement>() {
-            @Override
-            public boolean apply(final StackTraceElement element) {
-                return StringUtils.startsWith(element.getClassName(), "org.nrg.");
-            }
-        });
+        return formatShortStackTrace(stackTrace, element -> StringUtils.startsWith(element.getClassName(), "org.nrg."));
     }
 
     /**
@@ -1110,12 +1072,7 @@ public class XDAT {
      * @return A string containing the formatted stack trace elements that met the predicate criteria.
      */
 	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final Predicate<StackTraceElement> predicate) {
-        return StringUtils.join(Lists.transform(Lists.newArrayList(Iterables.filter(Arrays.asList(stackTrace), predicate)), new Function<StackTraceElement, String>() {
-            @Override
-            public String apply(final StackTraceElement element) {
-                return "    at " + element.getClassName() + "." + element.getMethodName() + "():" + element.getLineNumber();
-            }
-        }), "\n");
+		return Arrays.stream(stackTrace).filter(predicate).map(element -> "    at " + element.getClassName() + "." + element.getMethodName() + "():" + element.getLineNumber()).collect(Collectors.joining("\n"));
 	}
 
     private static final List<String>      LOCALHOST_IPS  = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");

@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.AsyncResult;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 @Getter
@@ -58,7 +59,7 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
         if (handled) {
             log.debug("The {} method handled an XFT item event: {}", getName(), event);
         } else {
-            log.info("The {} method failed to handle an XFT item event: {}. Look for logging info in the appropriate place.", getName(), event);
+            log.warn("The {} method failed to handle an XFT item event: {}. Look for logging info in the appropriate place.", getName(), event);
         }
         return new AsyncResult<>(handled);
     }
@@ -73,13 +74,13 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
      */
     @Override
     public boolean matches(final XftItemEventI event) {
-        for (final XftItemEventCriteria criteria : getCriteria()) {
-            if (criteria.matches(event)) {
-                log.info("XFT item event criteria {} matches event {}", criteria, event);
-                return true;
-            }
+        final Optional<XftItemEventCriteria> match = getCriteria().stream().filter(criteria -> criteria.matches(event)).findAny();
+        if (!match.isPresent()) {
+            log.info("No current XFT item event criteria matches event {}", event);
+            return false;
         }
-        return false;
+        log.info("XFT item event criteria {} matches event {}", match.get(), event);
+        return true;
     }
 
     @Override

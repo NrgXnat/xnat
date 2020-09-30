@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
@@ -138,7 +139,6 @@ public class XDATServlet extends HttpServlet {
                 @SuppressWarnings("unchecked") final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
                 if (!sql.isEmpty()) {
                     final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
-                    _shouldUpdateViews = false;
                     System.out.println("===========================");
                     System.out.println("Database out of date... updating");
                     for (String s : sql) {
@@ -150,7 +150,9 @@ public class XDATServlet extends HttpServlet {
                     // the user can't use the site until these are
                     // completed.
                     databaseUpdater.addStatements(sql);
+                    //noinspection CallToThreadRun
                     databaseUpdater.run();// use run to prevent a second thread.
+                    _shouldUpdateViews = true;
                     return true;
                 } else {
                     System.out.println("Database up to date.");
@@ -178,6 +180,7 @@ public class XDATServlet extends HttpServlet {
                 final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
                 final List<String>    sql             = SQLCreateGenerator.GetSQLCreate(false);
                 databaseUpdater.addStatements(sql);
+                //noinspection CallToThreadRun
                 databaseUpdater.run();// start and wait for it
 
                 System.out.println("===========================");
@@ -193,7 +196,7 @@ public class XDATServlet extends HttpServlet {
         }
     }
 
-    public class DelayedSequenceChecker extends Thread {
+    public static class DelayedSequenceChecker extends Thread {
         public void run() {
             DBAction.AdjustSequences();
             Reflection.injectDynamicImplementations("org.nrg.xnat.extensions.server.startup.sync", null);
@@ -435,13 +438,10 @@ public class XDATServlet extends HttpServlet {
                 filtered.add(resource);
             }
         }
-        Collections.sort(filtered, new Comparator<Resource>() {
-            @Override
-            public int compare(final Resource resource1, final Resource resource2) {
-                final String ordered1 = SQL_PATTERN.matcher(resource1.getFilename()).group(1);
-                final String ordered2 = SQL_PATTERN.matcher(resource2.getFilename()).group(1);
-                return ordered1.compareTo(ordered2);
-            }
+        filtered.sort((resource1, resource2) -> {
+            final String ordered1 = SQL_PATTERN.matcher(resource1.getFilename()).group(1);
+            final String ordered2 = SQL_PATTERN.matcher(resource2.getFilename()).group(1);
+            return ordered1.compareTo(ordered2);
         });
         return filtered;
     }

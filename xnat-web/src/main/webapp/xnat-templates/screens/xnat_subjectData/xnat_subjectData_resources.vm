@@ -1,4 +1,10 @@
-					<!--BEGIN /screens/xnat_subjectData/xnat_subjectData_resources.vm -->
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_resources.vm -->
+<!--suppress CssUnusedSymbol -->
 <style>
     /* custom styles for inline instances */
     .yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
@@ -12,10 +18,10 @@
     #type_auto_div .yui-ac-content {max-height:20em;overflow:auto;overflow-x:hidden; /* set scrolling */ }
     .ie6 #type_auto_div .yui-ac-content { height:20em }
 </style>
-		<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
 <script type="text/javascript">
-  var obj={};
-  obj.uri=serverRoot + "/REST/projects/$!om.getProject()/subjects/$!om.getId()";
+  const obj = {};
+  obj.uri = serverRoot + "/data/subjects/$!om.getId()";
   obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/subjects/$!om.getId()";
   obj.objectId = "$!om.getId()";
   obj.objectType = "subject";
@@ -31,9 +37,9 @@
           obj.canDelete=false;
     #end
 
-  obj.catalogs={};
-  obj.catalogs.ids=[];
-  window.viewer=new FileViewer(obj);
+    obj.catalogs = {};
+    obj.catalogs.ids = [];
+    window.viewer = new FileViewer(obj);
     
   function showFiles(){
     window.viewer.render();
@@ -47,4 +53,4 @@
   .ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
   .ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
 </style>
-					<!--END /screens/xnat_subjectData/xnat_subjectData_resources.vm -->
+<!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_resources.vm -->

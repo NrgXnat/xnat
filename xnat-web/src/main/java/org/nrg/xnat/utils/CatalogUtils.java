@@ -838,7 +838,7 @@ public class CatalogUtils {
                     File f = file.toFile();
                     final String relative = catalogPath.relativize(file).toString();
                     final String format, content;
-                    if (resources.containsKey(relative)) {
+                    if (resources != null && resources.containsKey(relative)) {
                         format = resources.get(relative).getFormat();
                         content = resources.get(relative).getContent();
                     } else {

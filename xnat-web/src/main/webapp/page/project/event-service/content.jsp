@@ -30,7 +30,9 @@
     <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
     <script src="${SITE_ROOT}/scripts/project/projEventService.js"></script>
+    <script src="${SITE_ROOT}/scripts/project/projEventHistory.js"></script>
     <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceAdmin.css?v=event-service-1.0" />
+    <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/app/scanTable/scanTable.css?v=event-service-1.0" />
 
     <%-- if an 'id' param is passed, use its value to edit specified project data --%>
     <header id="project-eventservice-header">

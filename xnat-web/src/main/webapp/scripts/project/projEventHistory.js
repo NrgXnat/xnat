@@ -31,15 +31,14 @@ XNAT.admin = getObject(XNAT.admin || {});
     /* ================ *
      * GLOBAL FUNCTIONS *
      * ================ */
-
-    var eventServicePanel,
+    var projEventServicePanel,
         undefined,
         rootUrl = XNAT.url.rootUrl,
         restUrl = XNAT.url.restUrl,
         csrfUrl = XNAT.url.csrfUrl;
 
-    XNAT.admin.eventServicePanel = eventServicePanel =
-        getObject(XNAT.admin.eventServicePanel || {});
+    XNAT.admin.projEventServicePanel = projEventServicePanel =
+        getObject(XNAT.admin.projEventServicePanel || {});
 
     function spacer(width) {
         return spawn('i.spacer', {
@@ -75,19 +74,42 @@ XNAT.admin = getObject(XNAT.admin || {});
         });
     }
 
+    function getUrlParams(){
+        var paramObj = {};
+
+        // get the querystring param, redacting the '?', then convert to an array separating on '&'
+        var urlParams = window.location.search.substr(1,window.location.search.length);
+        urlParams = urlParams.split('&');
+
+        urlParams.forEach(function(param){
+            // iterate over every key=value pair, and add to the param object
+            param = param.split('=');
+            paramObj[param[0]] = param[1];
+        });
+
+        return paramObj;
+    }
+
+    function getProjectId(){
+        if (XNAT.data.context.projectID.length > 0) return XNAT.data.context.projectID;
+        return getUrlParams().id;
+    }
+
     /* =============== *
      * Command History *
      * =============== */
 
-    var historyTable, historyData;
+    var projectId = getProjectId(),
+        projHistoryTable,
+        projHistoryData;
 
-    XNAT.admin.eventServicePanel.historyTable = historyTable =
-        getObject(XNAT.admin.eventServicePanel.historyTable || {});
+    XNAT.admin.projEventServicePanel.projHistoryTable = projHistoryTable =
+        getObject(XNAT.admin.projEventServicePanel.projHistoryTable || {});
 
-    XNAT.admin.eventServicePanel.historyData = historyData =
-        getObject(XNAT.admin.eventServicePanel.historyData || {});
+    XNAT.admin.projEventServicePanel.projHistoryData = projHistoryData =
+        getObject(XNAT.admin.projEventServicePanel.projHistoryData || {});
 
-    const historyTableContainerId = 'history-table-container';
+    const projHistoryTableContainerId = 'history-table-container';
 
     function getHistoryUrl(project,sub){
         var params = [];
@@ -100,7 +122,7 @@ XNAT.admin = getObject(XNAT.admin || {});
     function viewHistoryDialog(e, onclose) {
         e.preventDefault();
         var historyId = $(this).data('id') || $(this).closest('tr').prop('title');
-        XNAT.admin.eventServicePanel.historyTable.viewHistory(historyId);
+        XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(historyId);
     }
 
     const labelMap = {
@@ -113,7 +135,7 @@ XNAT.admin = getObject(XNAT.admin || {});
         project:        {label: 'Project', column: 'project', show: true}
     };
 
-    function historyTableObject() {
+    function projHistoryTableObject() {
         return {
             table: {
                 classes: "fixed-header selectable scrollable-table compact",
@@ -126,13 +148,13 @@ XNAT.admin = getObject(XNAT.admin || {});
                 filterCss: {
                     tag: 'style|type=text/css',
                     content:
-                        '#' + historyTableContainerId + ' .id { max-width: 80px; } \n' +
-                        '#' + historyTableContainerId + ' .timestamp { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .subscription { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .eventtype { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .user { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .status { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .project { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n'
+                        '#' + projHistoryTableContainerId + ' .id { max-width: 80px; } \n' +
+                        '#' + projHistoryTableContainerId + ' .timestamp { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
+                        '#' + projHistoryTableContainerId + ' .subscription { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
+                        '#' + projHistoryTableContainerId + ' .eventtype { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
+                        '#' + projHistoryTableContainerId + ' .user { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
+                        '#' + projHistoryTableContainerId + ' .status { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
+                        '#' + projHistoryTableContainerId + ' .project { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n'
                 }
             },
             sortable: 'id, user, DATE, status',
@@ -218,8 +240,8 @@ XNAT.admin = getObject(XNAT.admin || {});
         }
     }
 
-    historyTable.$loadAllBtn = false;
-    historyTable.workflowModal = function(workflowIdOrEvent) {
+    projHistoryTable.$loadAllBtn = false;
+    projHistoryTable.workflowModal = function(workflowIdOrEvent) {
         var workflowId;
         if (workflowIdOrEvent.hasOwnProperty("data")) {
             // this is an event
@@ -231,7 +253,7 @@ XNAT.admin = getObject(XNAT.admin || {});
         rptModal.call(this, workflowId, "wrk:workflowData", "wrk:workflowData.wrk_workflowData_id");
     };
 
-    historyTable.viewHistoryEntry = function(historyEntry) {
+    projHistoryTable.viewHistoryEntry = function(historyEntry) {
         var historyDialogButtons = [
             {
                 label: 'Done',
@@ -315,7 +337,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                 // Allow pulling up detailed workflow info (can contain addl info in details field)
                 var curid = '#wfmodal' + val;
                 formattedVal = spawn('a' + curid, {}, val);
-                $(document).on('click', curid, {wfid: val}, historyTable.workflowModal);
+                $(document).on('click', curid, {wfid: val}, projHistoryTable.workflowModal);
             } else {
                 formattedVal = spawn('code', val);
             }
@@ -345,9 +367,9 @@ XNAT.admin = getObject(XNAT.admin || {});
         });
     };
 
-    historyTable.viewHistory = function (id) {
-        if (XNAT.admin.eventServicePanel.historyData.hasOwnProperty(id)) {
-            historyTable.viewHistoryEntry(XNAT.admin.eventServicePanel.historyData[id]);
+    projHistoryTable.viewHistory = function (id) {
+        if (XNAT.admin.projEventServicePanel.projHistoryData.hasOwnProperty(id)) {
+            projHistoryTable.viewHistoryEntry(XNAT.admin.projEventServicePanel.projHistoryData[id]);
         } else {
             console.log(id);
             XNAT.ui.dialog.open({
@@ -363,12 +385,12 @@ XNAT.admin = getObject(XNAT.admin || {});
         }
     };
 
-    historyTable.findById = function(e){
+    projHistoryTable.findById = function(e){
         e.preventDefault();
-        var validIds = Object.keys(XNAT.admin.eventServicePanel.historyData),
+        var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
             submittedId = $('#event-id-entry').val();
         if (submittedId && validIds.indexOf(submittedId) >= 0) {
-            XNAT.admin.eventServicePanel.historyTable.viewHistory(submittedId);
+            XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
             $('#event-id-entry').val('');
             return;
         }
@@ -378,9 +400,9 @@ XNAT.admin = getObject(XNAT.admin || {});
         }
     };
 
-    historyTable.init = historyTable.refresh = function (context) {
+    projHistoryTable.init = projHistoryTable.refresh = function (context) {
         if (context) {
-            historyTable.context = context;
+            projHistoryTable.context = context;
         }
         function setupParams() {
             if (context) {
@@ -389,42 +411,42 @@ XNAT.admin = getObject(XNAT.admin || {});
             }
         }
 
-        $('#' + historyTableContainerId).empty();
-        XNAT.admin.eventServicePanel.historyTable.eventHistory = XNAT.ui.ajaxTable.AjaxTable(getHistoryUrl(),
-            'event-history-table', historyTableContainerId, 'Event History', 'All Events',
-            historyTableObject(), setupParams, null, dataLoadCallback, null, labelMap);
+        $('#' + projHistoryTableContainerId).empty();
+        XNAT.admin.projEventServicePanel.projHistoryTable.eventHistory = XNAT.ui.ajaxTable.AjaxTable(getHistoryUrl(projectId),
+            'event-history-table', projHistoryTableContainerId, 'Event History', 'All Events',
+            projHistoryTableObject(), setupParams, null, dataLoadCallback, null, labelMap);
 
-        XNAT.admin.eventServicePanel.historyTable.eventHistory.load();
+        XNAT.admin.projEventServicePanel.projHistoryTable.eventHistory.load();
 
         // add a "find by ID" input field after the table renders
-            var target = $('#history-table-container'),
-                searchHistoryInput = spawn('input#event-id-entry', {
-                    type:'text',
-                    name: 'findbyid',
-                    placeholder: 'Find By ID',
-                    size: 12,
-                    style: {'font-size':'12px' }}
-                    ),
-                searchHistoryButton = spawn(
-                    'button.btn2.btn-sm',[
-                        spawn('i.fa.fa-search',{
-                            title: 'Find By ID',
-                            onclick: XNAT.admin.eventServicePanel.historyTable.findById
-                        })
-                    ]);
-            target.prepend(spawn('div.pull-right',[
-                searchHistoryInput,
-                spacer(4),
-                searchHistoryButton
-            ]));
+        var target = $('#history-table-container'),
+            searchHistoryInput = spawn('input#event-id-entry', {
+                type:'text',
+                name: 'findbyid',
+                placeholder: 'Find By ID',
+                size: 12,
+                style: {'font-size':'12px' }}
+            ),
+            searchHistoryButton = spawn(
+                'button.btn2.btn-sm',[
+                    spawn('i.fa.fa-search',{
+                        title: 'Find By ID',
+                        onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
+                    })
+                ]);
+        target.prepend(spawn('div.pull-right',[
+            searchHistoryInput,
+            spacer(4),
+            searchHistoryButton
+        ]));
 
     };
 
     function dataLoadCallback(data) {
         data.forEach(function (historyEntry) {
-            // data.filter(function(entry){ return entry.id === historyEntry.id })[0].context = historyTable.context;
-            historyEntry.context = historyTable.context;
-            historyData[historyEntry.id] = historyEntry;
+            // data.filter(function(entry){ return entry.id === historyEntry.id })[0].context = projHistoryTable.context;
+            historyEntry.context = projHistoryTable.context;
+            projHistoryData[historyEntry.id] = historyEntry;
         });
     }
 }));

@@ -3227,6 +3227,8 @@ span.spacer {
 .xnat-table.compact th,
 .xnat-table.compact td {
     padding: 4px 10px;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
 }
 
 .xnat-table.striped tr:nth-of-type(2n) {

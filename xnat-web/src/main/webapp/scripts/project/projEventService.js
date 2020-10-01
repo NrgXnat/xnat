@@ -968,354 +968,354 @@ var XNAT = getObject(XNAT || {});
      * Display Event Subscription History *
      * ---------------------------------- */
 
-    var projHistoryTable, projHistoryData;
-
-    XNAT.admin.projEventServicePanel.projHistoryTable = projHistoryTable =
-        getObject(XNAT.admin.projEventServicePanel.projHistoryTable || {});
-
-    XNAT.admin.projEventServicePanel.projHistoryData = projHistoryData =
-        getObject(XNAT.admin.projEventServicePanel.projHistoryData || {});
-
-    function viewHistoryDialog(e, onclose){
-        e.preventDefault();
-        var historyId = $(this).data('id') || $(this).closest('tr').prop('title');
-        projEventServicePanel.projHistoryTable.viewHistory(historyId);
-    }
-
-    function getHistoryUrl(project,sub){
-        var params = [];
-        if (project) params.push('project='+project);
-        if (sub) params.push('subscriptionid='+sub);
-        var appended = (params.length) ? '?'+params.join('&') : '';
-        return XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/summary' + appended);
-    }
-
-    projHistoryTable.getHistory = function(opts,callback){
-        callback = isFunction(callback) ? callback : function(){};
-        var project = (opts) ? opts.project : false;
-        var subscription = (opts) ? opts.subscription : false;
-
-        return XNAT.xhr.getJSON({
-            url: getHistoryUrl(project,subscription),
-            success: function(data){
-                if (data.length){
-                    data.forEach(function(entry){
-                        projHistoryData[entry.id] = entry;
-                    });
-
-                    data = data.sort(function(a,b){ return (a.id < b.id) ? 1 : -1 });
-
-                    return data;
-                }
-                callback.apply(this, arguments);
-            },
-            fail: function(e){
-                errorHandler(e,'Could Not Get History','silent');
-            }
-        })
-    };
-
-    var addColumnFilters = function ($datatable, dataTableColumns) {
-        var filterHeaderRowId = "filterHeaderRow";
-        var datatableId = $datatable.prop('id');
-        $datatable.find('thead').append('<tr id="' + filterHeaderRowId + '" class="filter">');
-
-        dataTableColumns.forEach(function(column,i){
-            if (column.mData) {
-                var inputId = filterHeaderRowId + "Input" + i;
-                jq("#" + filterHeaderRowId).append('<th class="noPointer"><input type="text" id="' + inputId + '" name="' + inputId + '" placeholder="Filter..." class="filter_init datatable-filter" /></th>');
-            } else {
-                jq("#" + filterHeaderRowId).append('<th class="noPointer"/>');
-            }
-        });
-
-        var asInitVals = [];
-
-        $datatable.find('thead input').each(function (i) {
-            asInitVals[i] = this.value;
-        });
-
-        $datatable.on('focus','.datatable-filter', function () {
-            if ($(this).hasClass("filter_init")) {
-                $(this).removeClass("filter_init");
-                $(this).val("");
-            }
-        });
-
-        $datatable.on('blur','.datatable-filter', function () {
-            if (this.value === "") {
-                $(this).addClass("filter_init");
-                $(this).val( asInitVals[$datatable.find('thead input').index(this)] );
-            }
-        });
-
-        $datatable.on('keyup','.datatable-filter', function () {
-            /* Filter on the column (the index) of this element, +1 to account for the row expander column */
-            var columnIndexOfThisFilter = $datatable.find('thead input').index(this);
-            $datatable.fnFilter(this.value, columnIndexOfThisFilter, false);
-        });
-
-        // we can't turn off filtering entirely on the table cause then our individual column filters won't work
-        // so just hide the global (all-column) filter
-        $("#" + datatableId + "_filter").css("display", "none");
-    };
-
-    projHistoryTable.datatable = function(data, $datatable){
-
-        // sample object returned with call to
-        // /xapi/projects/'+projectId+'/events/delivered/summary
-        var sampleData = {
-            'id': 1,
-            'event-name': 'Workflow Status',
-            'subscription-name': 'Workflow Status',
-            'user': 'admin',
-            'project': 'Cat_Imaging',
-            'trigger-label': 'WorkflowStatusEvent',
-            'status': 'ACTION_CALLED',
-            'timestamp': null
-        };
-
-        var dataLengthToDisplay = 100;
-        var datatableOptions = {
-            aaData: data,
-            aoColumns: [
-                {
-                    sTitle: '<b>Date</b>',
-                    sClass: 'left',
-                    mData: function(source){
-                        var timestamp  = source.timestamp || '';
-                        var dateString = '';
-                        if (timestamp) {
-                            timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
-                            if (timestamp.indexOf('UTC') < 0) {
-                                timestamp = timestamp.trim() + ' UTC';
-                            }
-                            dateString = (new Date(timestamp)).toLocaleString();
-                            // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
-
-                        } else {
-                            dateString = 'N/A';
-                        }
-                        return dateString
-                    },
-                    sWidth: '150px'
-                },
-                {
-                    sTitle: '<b>Subscription Name</b>',
-                    sWidth: '200px',
-                    mData: function(source){
-                        var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
-                        if (source['trigger-label']) {
-                            message = message + '<br>Trigger: ' + source['trigger-label'];
-                        }
-                        return message;
-                    }
-                },
-                {
-                    sTitle: '<b>Event Type</b>',
-                    mData: function(source){
-                        return (source['event-name']) ? source['event-name'] : 'Unknown';
-                    },
-                    sWidth: '120px'
-                },
-                {
-                    sTitle: '<b>Run As User</b>',
-                    mData: function(source){
-                        return source.user
-                    },
-                    sWidth: '120px'
-                },
-                {
-                    sTitle: '<b>Status</b>',
-                    mData: function(source){
-                        return source.status
-                    },
-                    sWidth: '150px'
-                }
-            ],
-            iDisplayLength: dataLengthToDisplay,
-            fnDrawCallback: function(){
-                console.log('drawn');
-                if (data.length < dataLengthToDisplay) {
-                    $(document).find('.dataTables_paginate').addClass('hidden');
-                }
-            },
-            aaSorting: [[ 0, "desc" ]]
-        };
-
-
-
-        $datatable.dataTable(datatableOptions);
-
-        addColumnFilters($datatable,datatableOptions.aoColumns);
-    };
-
-
-    function historyItemErrorDialog(id){
-        console.error('Error displaying history item width id: ' + id);
-        XNAT.ui.dialog.open({
-            content: 'Sorry, could not display this history item.',
-            buttons: [
-                {
-                    label: 'OK',
-                    isDefault: true,
-                    close: true
-                }
-            ]
-        });
-    }
-
-
-    projHistoryTable.viewHistory = function(id){
-
-        var historyItemRequest = XNAT.xhr.get({
-            url: XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/' + id),
-            dataType: 'json'
-        });
-
-        historyItemRequest.done(function(data){
-
-            if (!data) { historyItemErrorDialog(id); }
-
-            var historyEntry =
-                projEventServicePanel.projHistoryData[id] =
-                    data;
-
-            var historyDialogButtons = [
-                {
-                    label: 'OK',
-                    isDefault: true,
-                    close: true
-                }
-            ];
-
-            // build nice-looking history entry table
-            var pheTable = XNAT.table({
-                className: 'xnat-table compact',
-                style: {
-                    width: '100%',
-                    marginTop: '15px',
-                    marginBottom: '15px'
-                }
-            });
-
-            // add table header row
-            pheTable.tr()
-                .th({ addClass: 'left', html: '<b>Key</b>' })
-                .th({ addClass: 'left', html: '<b>Value</b>' });
-
-            for (var key in historyEntry){
-
-                var val = historyEntry[key], formattedVal = '';
-
-                if (Array.isArray(val)) {
-                    var items = val.map(function(item){
-                        return isPlainObject(item) ?
-                            spawn('li', [spawn('pre.mono.json', {
-                                style: { border: 'none', outline: 'none', padding: 0 }
-                            }, JSON.stringify(item, null, 2))]) :
-                            item;
-                    });
-                    formattedVal = spawn('ul', {
-                        style: {
-                            'list-style-type': 'none',
-                            'padding-left': '0'
-                        }
-                    }, items);
-                }
-                else if (isPlainObject(val)) {
-                    formattedVal = spawn('pre.mono.json', {
-                        style: { border: 'none', outline: 'none', padding: 0 }
-                    }, JSON.stringify(val, null, 2));
-                }
-                else if (!val) {
-                    formattedVal = spawn('pre', 'false');
-                }
-                else {
-                    formattedVal = spawn('pre', val);
-                }
-
-                pheTable.tr()
-                    .td('<b>'+key+'</b>')
-                    .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
-            }
-
-            // display history
-            XNAT.ui.dialog.open({
-                title: historyEntry['wrapper-name'],
-                width: 800,
-                scroll: true,
-                content: pheTable.table,
-                buttons: historyDialogButtons
-            });
-
-        });
-
-        historyItemRequest.fail(function(msg){
-            console.error(msg);
-            console.warn(arguments);
-            historyItemErrorDialog(id);
-        });
-
-    };
-
-    $(document).off('click','a.view-event-history').on('click','a.view-event-history',function(e){
-        e.preventDefault();
-        var historyEntry = $(this).data('id');
-        if (historyEntry) projHistoryTable.viewHistory(historyEntry);
-    });
-
-    projHistoryTable.findById = function(e){
-        e.preventDefault();
-        var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
-            submittedId = $('#event-id-entry').val();
-        if (submittedId && validIds.indexOf(submittedId) >= 0) {
-            XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
-            $('#event-id-entry').val('');
-            return;
-        }
-        else {
-            XNAT.ui.dialog.message('Please enter a valid event history ID');
-            $('#event-id-entry').focus();
-        }
-    };
-
-    projHistoryTable.init = projHistoryTable.refresh = function(container){
-        var $container = $$(container || '#history-table-container');
-
-        projHistoryTable.getHistory().done(function(data){
-            if (data.length){
-                var h3 = spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site');
-                var $datatable = $.spawn('table#event-history-table.xnat-table.data-table.compact', { style: { width: '100%' }});
-                $container.empty().append([h3, $datatable]);
-                projHistoryTable.datatable(data, $datatable);
-
-                // add a "find by ID" input field after the table renders
-                var target = $('#event-history-table_length'),
-                    searchHistoryInput = spawn('input#event-id-entry', {
-                        type:'text',
-                        name: 'findbyid',
-                        placeholder: 'Find By ID',
-                        size: 12,
-                        style: {'font-size':'12px' }}
-                    ),
-                    searchHistoryButton = spawn(
-                        'button.btn2.btn-sm',[
-                            spawn('i.fa.fa-search',{
-                                title: 'Find By ID',
-                                onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
-                            })
-                        ]);
-                target.append(spawn('div.pull-right',[
-                    searchHistoryInput,
-                    spacer(4),
-                    searchHistoryButton
-                ]));
-            } else {
-                $container.empty().append(spawn('p','No event history to display'));
-            }
-        })
-    };
+    // var projHistoryTable, projHistoryData;
+    //
+    // XNAT.admin.projEventServicePanel.projHistoryTable = projHistoryTable =
+    //     getObject(XNAT.admin.projEventServicePanel.projHistoryTable || {});
+    //
+    // XNAT.admin.projEventServicePanel.projHistoryData = projHistoryData =
+    //     getObject(XNAT.admin.projEventServicePanel.projHistoryData || {});
+    //
+    // function viewHistoryDialog(e, onclose){
+    //     e.preventDefault();
+    //     var historyId = $(this).data('id') || $(this).closest('tr').prop('title');
+    //     projEventServicePanel.projHistoryTable.viewHistory(historyId);
+    // }
+    //
+    // function getHistoryUrl(project,sub){
+    //     var params = [];
+    //     if (project) params.push('project='+project);
+    //     if (sub) params.push('subscriptionid='+sub);
+    //     var appended = (params.length) ? '?'+params.join('&') : '';
+    //     return XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/summary' + appended);
+    // }
+    //
+    // projHistoryTable.getHistory = function(opts,callback){
+    //     callback = isFunction(callback) ? callback : function(){};
+    //     var project = (opts) ? opts.project : false;
+    //     var subscription = (opts) ? opts.subscription : false;
+    //
+    //     return XNAT.xhr.getJSON({
+    //         url: getHistoryUrl(project,subscription),
+    //         success: function(data){
+    //             if (data.length){
+    //                 data.forEach(function(entry){
+    //                     projHistoryData[entry.id] = entry;
+    //                 });
+    //
+    //                 data = data.sort(function(a,b){ return (a.id < b.id) ? 1 : -1 });
+    //
+    //                 return data;
+    //             }
+    //             callback.apply(this, arguments);
+    //         },
+    //         fail: function(e){
+    //             errorHandler(e,'Could Not Get History','silent');
+    //         }
+    //     })
+    // };
+    //
+    // var addColumnFilters = function ($datatable, dataTableColumns) {
+    //     var filterHeaderRowId = "filterHeaderRow";
+    //     var datatableId = $datatable.prop('id');
+    //     $datatable.find('thead').append('<tr id="' + filterHeaderRowId + '" class="filter">');
+    //
+    //     dataTableColumns.forEach(function(column,i){
+    //         if (column.mData) {
+    //             var inputId = filterHeaderRowId + "Input" + i;
+    //             jq("#" + filterHeaderRowId).append('<th class="noPointer"><input type="text" id="' + inputId + '" name="' + inputId + '" placeholder="Filter..." class="filter_init datatable-filter" /></th>');
+    //         } else {
+    //             jq("#" + filterHeaderRowId).append('<th class="noPointer"/>');
+    //         }
+    //     });
+    //
+    //     var asInitVals = [];
+    //
+    //     $datatable.find('thead input').each(function (i) {
+    //         asInitVals[i] = this.value;
+    //     });
+    //
+    //     $datatable.on('focus','.datatable-filter', function () {
+    //         if ($(this).hasClass("filter_init")) {
+    //             $(this).removeClass("filter_init");
+    //             $(this).val("");
+    //         }
+    //     });
+    //
+    //     $datatable.on('blur','.datatable-filter', function () {
+    //         if (this.value === "") {
+    //             $(this).addClass("filter_init");
+    //             $(this).val( asInitVals[$datatable.find('thead input').index(this)] );
+    //         }
+    //     });
+    //
+    //     $datatable.on('keyup','.datatable-filter', function () {
+    //         /* Filter on the column (the index) of this element, +1 to account for the row expander column */
+    //         var columnIndexOfThisFilter = $datatable.find('thead input').index(this);
+    //         $datatable.fnFilter(this.value, columnIndexOfThisFilter, false);
+    //     });
+    //
+    //     // we can't turn off filtering entirely on the table cause then our individual column filters won't work
+    //     // so just hide the global (all-column) filter
+    //     $("#" + datatableId + "_filter").css("display", "none");
+    // };
+    //
+    // projHistoryTable.datatable = function(data, $datatable){
+    //
+    //     // sample object returned with call to
+    //     // /xapi/projects/'+projectId+'/events/delivered/summary
+    //     var sampleData = {
+    //         'id': 1,
+    //         'event-name': 'Workflow Status',
+    //         'subscription-name': 'Workflow Status',
+    //         'user': 'admin',
+    //         'project': 'Cat_Imaging',
+    //         'trigger-label': 'WorkflowStatusEvent',
+    //         'status': 'ACTION_CALLED',
+    //         'timestamp': null
+    //     };
+    //
+    //     var dataLengthToDisplay = 100;
+    //     var datatableOptions = {
+    //         aaData: data,
+    //         aoColumns: [
+    //             {
+    //                 sTitle: '<b>Date</b>',
+    //                 sClass: 'left',
+    //                 mData: function(source){
+    //                     var timestamp  = source.timestamp || '';
+    //                     var dateString = '';
+    //                     if (timestamp) {
+    //                         timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
+    //                         if (timestamp.indexOf('UTC') < 0) {
+    //                             timestamp = timestamp.trim() + ' UTC';
+    //                         }
+    //                         dateString = (new Date(timestamp)).toLocaleString();
+    //                         // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+    //
+    //                     } else {
+    //                         dateString = 'N/A';
+    //                     }
+    //                     return dateString
+    //                 },
+    //                 sWidth: '150px'
+    //             },
+    //             {
+    //                 sTitle: '<b>Subscription Name</b>',
+    //                 sWidth: '200px',
+    //                 mData: function(source){
+    //                     var message = '<a class="view-event-history" href="#!" data-id="' + source.id + '" style="font-weight: bold">' + source['subscription-name'] + '</a>';
+    //                     if (source['trigger-label']) {
+    //                         message = message + '<br>Trigger: ' + source['trigger-label'];
+    //                     }
+    //                     return message;
+    //                 }
+    //             },
+    //             {
+    //                 sTitle: '<b>Event Type</b>',
+    //                 mData: function(source){
+    //                     return (source['event-name']) ? source['event-name'] : 'Unknown';
+    //                 },
+    //                 sWidth: '120px'
+    //             },
+    //             {
+    //                 sTitle: '<b>Run As User</b>',
+    //                 mData: function(source){
+    //                     return source.user
+    //                 },
+    //                 sWidth: '120px'
+    //             },
+    //             {
+    //                 sTitle: '<b>Status</b>',
+    //                 mData: function(source){
+    //                     return source.status
+    //                 },
+    //                 sWidth: '150px'
+    //             }
+    //         ],
+    //         iDisplayLength: dataLengthToDisplay,
+    //         fnDrawCallback: function(){
+    //             console.log('drawn');
+    //             if (data.length < dataLengthToDisplay) {
+    //                 $(document).find('.dataTables_paginate').addClass('hidden');
+    //             }
+    //         },
+    //         aaSorting: [[ 0, "desc" ]]
+    //     };
+    //
+    //
+    //
+    //     $datatable.dataTable(datatableOptions);
+    //
+    //     addColumnFilters($datatable,datatableOptions.aoColumns);
+    // };
+    //
+    //
+    // function historyItemErrorDialog(id){
+    //     console.error('Error displaying history item width id: ' + id);
+    //     XNAT.ui.dialog.open({
+    //         content: 'Sorry, could not display this history item.',
+    //         buttons: [
+    //             {
+    //                 label: 'OK',
+    //                 isDefault: true,
+    //                 close: true
+    //             }
+    //         ]
+    //     });
+    // }
+    //
+    //
+    // projHistoryTable.viewHistory = function(id){
+    //
+    //     var historyItemRequest = XNAT.xhr.get({
+    //         url: XNAT.url.restUrl('/xapi/projects/'+projectId+'/events/delivered/' + id),
+    //         dataType: 'json'
+    //     });
+    //
+    //     historyItemRequest.done(function(data){
+    //
+    //         if (!data) { historyItemErrorDialog(id); }
+    //
+    //         var historyEntry =
+    //             projEventServicePanel.projHistoryData[id] =
+    //                 data;
+    //
+    //         var historyDialogButtons = [
+    //             {
+    //                 label: 'OK',
+    //                 isDefault: true,
+    //                 close: true
+    //             }
+    //         ];
+    //
+    //         // build nice-looking history entry table
+    //         var pheTable = XNAT.table({
+    //             className: 'xnat-table compact',
+    //             style: {
+    //                 width: '100%',
+    //                 marginTop: '15px',
+    //                 marginBottom: '15px'
+    //             }
+    //         });
+    //
+    //         // add table header row
+    //         pheTable.tr()
+    //             .th({ addClass: 'left', html: '<b>Key</b>' })
+    //             .th({ addClass: 'left', html: '<b>Value</b>' });
+    //
+    //         for (var key in historyEntry){
+    //
+    //             var val = historyEntry[key], formattedVal = '';
+    //
+    //             if (Array.isArray(val)) {
+    //                 var items = val.map(function(item){
+    //                     return isPlainObject(item) ?
+    //                         spawn('li', [spawn('pre.mono.json', {
+    //                             style: { border: 'none', outline: 'none', padding: 0 }
+    //                         }, JSON.stringify(item, null, 2))]) :
+    //                         item;
+    //                 });
+    //                 formattedVal = spawn('ul', {
+    //                     style: {
+    //                         'list-style-type': 'none',
+    //                         'padding-left': '0'
+    //                     }
+    //                 }, items);
+    //             }
+    //             else if (isPlainObject(val)) {
+    //                 formattedVal = spawn('pre.mono.json', {
+    //                     style: { border: 'none', outline: 'none', padding: 0 }
+    //                 }, JSON.stringify(val, null, 2));
+    //             }
+    //             else if (!val) {
+    //                 formattedVal = spawn('pre', 'false');
+    //             }
+    //             else {
+    //                 formattedVal = spawn('pre', val);
+    //             }
+    //
+    //             pheTable.tr()
+    //                 .td('<b>'+key+'</b>')
+    //                 .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
+    //         }
+    //
+    //         // display history
+    //         XNAT.ui.dialog.open({
+    //             title: historyEntry['wrapper-name'],
+    //             width: 800,
+    //             scroll: true,
+    //             content: pheTable.table,
+    //             buttons: historyDialogButtons
+    //         });
+    //
+    //     });
+    //
+    //     historyItemRequest.fail(function(msg){
+    //         console.error(msg);
+    //         console.warn(arguments);
+    //         historyItemErrorDialog(id);
+    //     });
+    //
+    // };
+    //
+    // $(document).off('click','a.view-event-history').on('click','a.view-event-history',function(e){
+    //     e.preventDefault();
+    //     var historyEntry = $(this).data('id');
+    //     if (historyEntry) projHistoryTable.viewHistory(historyEntry);
+    // });
+    //
+    // projHistoryTable.findById = function(e){
+    //     e.preventDefault();
+    //     var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
+    //         submittedId = $('#event-id-entry').val();
+    //     if (submittedId && validIds.indexOf(submittedId) >= 0) {
+    //         XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
+    //         $('#event-id-entry').val('');
+    //         return;
+    //     }
+    //     else {
+    //         XNAT.ui.dialog.message('Please enter a valid event history ID');
+    //         $('#event-id-entry').focus();
+    //     }
+    // };
+    //
+    // projHistoryTable.init = projHistoryTable.refresh = function(container){
+    //     var $container = $$(container || '#history-table-container');
+    //
+    //     projHistoryTable.getHistory().done(function(data){
+    //         if (data.length){
+    //             var h3 = spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site');
+    //             var $datatable = $.spawn('table#event-history-table.xnat-table.data-table.compact', { style: { width: '100%' }});
+    //             $container.empty().append([h3, $datatable]);
+    //             projHistoryTable.datatable(data, $datatable);
+    //
+    //             // add a "find by ID" input field after the table renders
+    //             var target = $('#event-history-table_length'),
+    //                 searchHistoryInput = spawn('input#event-id-entry', {
+    //                     type:'text',
+    //                     name: 'findbyid',
+    //                     placeholder: 'Find By ID',
+    //                     size: 12,
+    //                     style: {'font-size':'12px' }}
+    //                 ),
+    //                 searchHistoryButton = spawn(
+    //                     'button.btn2.btn-sm',[
+    //                         spawn('i.fa.fa-search',{
+    //                             title: 'Find By ID',
+    //                             onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
+    //                         })
+    //                     ]);
+    //             target.append(spawn('div.pull-right',[
+    //                 searchHistoryInput,
+    //                 spacer(4),
+    //                 searchHistoryButton
+    //             ]));
+    //         } else {
+    //             $container.empty().append(spawn('p','No event history to display'));
+    //         }
+    //     })
+    // };
 
     /* ------------------------- *
      * Initialize tabs & Display *

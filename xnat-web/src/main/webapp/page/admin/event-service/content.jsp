@@ -36,6 +36,7 @@
                 <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
                 <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceHistory.js"></script>
                 <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceAdmin.css?v=event-service-1.0" />
+                <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/app/scanTable/scanTable.css?v=event-service-1.0" />
                 <script>
                     $(document).ready(function(){
                         XNAT.admin.eventServicePanel.init();

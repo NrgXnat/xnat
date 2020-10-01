@@ -1,7 +1,5 @@
 package org.nrg.xnat.eventservice.daos;
 
-import static org.nrg.framework.generics.GenericUtils.convertToTypedList;
-
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.Query;
@@ -9,7 +7,6 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
-import org.nrg.framework.ajax.sql.NumericFilter;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
@@ -20,6 +17,8 @@ import org.springframework.stereotype.Repository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.nrg.framework.generics.GenericUtils.convertToTypedList;
 
 @Repository
 public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<SubscriptionDeliveryEntity> {
@@ -42,7 +41,7 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
             filters.put("subscription.id", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(subscriptionId).build());
         }
         if (statusToExclude != null) {
-            filters.put("status", NumericFilter.builder().neq(statusToExclude.ordinal()).build());
+            filters.put("status", HibernateFilter.builder().operator(HibernateFilter.Operator.NE).value(statusToExclude).build());
         }
         request.setFiltersMap(filters);
         // Previous code had this. May need to add code in PaginatedRequest handling to set fetch mode.

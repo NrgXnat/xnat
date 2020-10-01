@@ -47,83 +47,15 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
         }
     }
 
-    // ** Enable/Disable triggering events from core XNAT operations ** //
-    @NrgPreference(defaultValue = "true")
-    public Boolean getTriggerCoreEvents() {
-        return getBooleanValue("triggerCoreEvents") && getEnabled();
-    }
-    public void setTriggerCoreEvents(final Boolean enabled) {
-        if (enabled != null) {
-            try {
-                setBooleanValue(enabled, "triggerCoreEvents");
-
-            } catch (InvalidPreferenceName e) {
-                _log.error("Error setting Event Service preference \"name\".", e.getMessage());
-            }
-        }
-    }
-
-    // ** Enable/Disable triggering events from XNAT workflow status updates ** //
-    @NrgPreference(defaultValue = "true")
-    public Boolean getTriggerWorkflowStatusEvents() {
-        return getBooleanValue("triggerWorkflowStatusEvents") && getEnabled();
-    }
-    public void setTriggerWorkflowStatusEvents(final Boolean enabled) {
-        if (enabled != null) {
-            try {
-                setBooleanValue(enabled, "triggerWorkflowStatusEvents");
-            } catch (InvalidPreferenceName e) {
-                _log.error("Error setting Event Service preference \"name\".", e.getMessage());
-            }
-        }
-    }
-
-    // ** Enable/Disable triggering events from XNAT plugins ** //
-    @NrgPreference(defaultValue = "true")
-    public Boolean getTriggerPluginEvents() {
-        return getBooleanValue("triggerPluginEvents") && getEnabled();
-    }
-    public void setTriggerPluginEvents(final Boolean enabled) {
-        if (enabled != null) {
-            try {
-                setBooleanValue(enabled, "triggerPluginEvents");
-            } catch (InvalidPreferenceName e) {
-                _log.error("Error setting Event Service preference \"name\".", e.getMessage());
-            }
-        }
-    }
-
-    // ** Enable/Disable responding to triggered events ** //
-    @NrgPreference(defaultValue = "true")
-    public Boolean getRespondToEvents() {
-        return getBooleanValue("respondToEvents") && getEnabled();
-    }
-    public void setRespondToEvents(final Boolean enabled) {
-        if (enabled != null) {
-            try {
-                setBooleanValue(enabled, "respondToEvents");
-            } catch (InvalidPreferenceName e) {
-                _log.error("Error setting Event Service preference \"name\".", e.getMessage());
-            }
-        }
-    }
 
     public EventServicePrefs toPojo(){
         return EventServicePrefs.builder()
                 .enabled(this.getEnabled())
-                .triggerCoreEvents(this.getTriggerCoreEvents())
-                .respondToEvents(this.getRespondToEvents())
-                .triggerPluginEvents(this.getTriggerPluginEvents())
-                .triggerWorkflowStatusEvents(this.getTriggerWorkflowStatusEvents())
                 .build();
     }
 
     public void update(EventServicePrefs prefs){
         if(prefs.enabled() != null) this.setEnabled(prefs.enabled());
-        if(prefs.respondToEvents() != null) this.setRespondToEvents(prefs.respondToEvents());
-        if(prefs.triggerCoreEvents() != null) this.setTriggerCoreEvents(prefs.triggerCoreEvents());
-        if(prefs.triggerWorkflowStatusEvents() != null) this.setTriggerWorkflowStatusEvents(prefs.triggerWorkflowStatusEvents());
-        if(prefs.triggerPluginEvents() != null) this.setTriggerPluginEvents(prefs.triggerPluginEvents());
     }
 
 
@@ -131,10 +63,6 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                           .add("enabled", getEnabled())
-                          .add("triggeringCoreEvents", getTriggerCoreEvents())
-                          .add("triggeringWorkflowStatusEvents", getTriggerWorkflowStatusEvents())
-                          .add("triggeringPluginEvents", getTriggerPluginEvents())
-                          .add("respondToEvents", getRespondToEvents())
                           .toString();
     }
 }

@@ -69,7 +69,7 @@ public class EventServiceItemSaveAspect {
    @Around(value = "execution(* org.nrg.xft.utils.SaveItemHelper.save(..)) && @annotation(org.nrg.xft.utils.EventServiceTrigger) && args(item, user,..)")
     public Object processItemSaveTrigger(final ProceedingJoinPoint joinPoint, ItemI item, UserI user) throws Throwable {
 
-        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getTriggerCoreEvents()){
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getEnabled()){
            return joinPoint.proceed();
        }
 
@@ -303,7 +303,7 @@ public class EventServiceItemSaveAspect {
             "&& execution(* org.nrg.xft.utils.SaveItemHelper.delete(..))")
     public void triggerOnItemDelete(final JoinPoint joinPoint, ItemI item, UserI user) throws Throwable{
 
-        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getTriggerCoreEvents()){
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getEnabled()){
             return;
         }
 

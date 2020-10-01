@@ -10,35 +10,18 @@ import javax.annotation.Nullable;
 
 @AutoValue
 public abstract class EventServicePrefs {
-    @Nullable @JsonProperty("enabled")                     public abstract Boolean enabled();
-    @Nullable @JsonProperty("respondToEvents")             public abstract Boolean respondToEvents();
-    @Nullable @JsonProperty("triggerCoreEvents")           public abstract Boolean triggerCoreEvents();
-    @Nullable @JsonProperty("triggerPluginEvents")         public abstract Boolean triggerPluginEvents();
-    @Nullable @JsonProperty("triggerWorkflowStatusEvents") public abstract Boolean triggerWorkflowStatusEvents();
-
+    @Nullable @JsonProperty("enabled")  public abstract Boolean enabled();
 
     @JsonCreator
-    public static EventServicePrefs create(@Nullable @JsonProperty("enabled")                     Boolean enabled,
-                                           @Nullable @JsonProperty("respondToEvents")             Boolean respondToEvents,
-                                           @Nullable @JsonProperty("triggerCoreEvents")           Boolean triggerCoreEvents,
-                                           @Nullable @JsonProperty("triggerPluginEvents")         Boolean triggerPluginEvents,
-                                           @Nullable @JsonProperty("triggerWorkflowStatusEvents") Boolean triggerWorkflowStatusEvents) {
+    public static EventServicePrefs create(@Nullable @JsonProperty("enabled") Boolean enabled){
         return builder()
                 .enabled(enabled)
-                .respondToEvents(respondToEvents)
-                .triggerCoreEvents(triggerCoreEvents)
-                .triggerPluginEvents(triggerPluginEvents)
-                .triggerWorkflowStatusEvents(triggerWorkflowStatusEvents)
                 .build();
     }
 
     public static EventServicePrefs create(EventServicePrefsBean prefsBean){
         return builder()
                 .enabled(prefsBean.getEnabled())
-                .respondToEvents(prefsBean.getRespondToEvents())
-                .triggerCoreEvents(prefsBean.getTriggerCoreEvents())
-                .triggerPluginEvents(prefsBean.getTriggerPluginEvents())
-                .triggerWorkflowStatusEvents(prefsBean.getTriggerWorkflowStatusEvents())
                 .build();
 
     }
@@ -49,14 +32,6 @@ public abstract class EventServicePrefs {
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder enabled(Boolean enabled);
-
-        public abstract Builder respondToEvents(Boolean respondToEvents);
-
-        public abstract Builder triggerCoreEvents(Boolean triggerCoreEvents);
-
-        public abstract Builder triggerPluginEvents(Boolean triggerPluginEvents);
-
-        public abstract Builder triggerWorkflowStatusEvents(Boolean triggerWorkflowStatusEvents);
 
         public abstract EventServicePrefs build();
     }

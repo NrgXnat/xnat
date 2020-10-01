@@ -335,9 +335,9 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void processEvent(EventServiceListener listener, Event event) {
-        if (prefs != null && !prefs.getRespondToEvents()) {
+        if (prefs != null && !prefs.getEnabled()) {
             if (log.isDebugEnabled()) {
-                log.debug("Preference: respondToEvents == false. Skipping Event Service response");
+                log.debug("Preference: enabled == false. Skipping Event Service response");
             }
             return;
         }

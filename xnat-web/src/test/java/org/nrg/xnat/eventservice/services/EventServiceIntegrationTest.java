@@ -233,10 +233,7 @@ public class EventServiceIntegrationTest {
 
         // Mock prefs bean
         when(mockEventServicePrefsBean.getEnabled()).thenReturn(true);
-        when(mockEventServicePrefsBean.getTriggerCoreEvents()).thenReturn(true);
-        when(mockEventServicePrefsBean.getTriggerPluginEvents()).thenReturn(true);
-        when(mockEventServicePrefsBean.getTriggerWorkflowStatusEvents()).thenReturn(true);
-        when(mockEventServicePrefsBean.getRespondToEvents()).thenReturn(true);
+
 
     }
 

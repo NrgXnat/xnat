@@ -384,48 +384,9 @@ eventServiceConfig:
             label: Enable Event Service
             onText: Enabled
             offText: Disabled
-            info: >
+            description: >
                 <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
                 If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
-        respondToEvents:
-          kind: panel.input.switchbox
-          name: respondToEvents
-          label: Subscription Response
-          onText: Enabled
-          offText: Disabled
-          description: >
-                Event Service will execute Actions based on active Subscriptions.
-
-        triggerCoreEvents:
-          kind: panel.input.switchbox
-          name: triggerCoreEvents
-          label: Trigger on Core Events
-          onText: Enabled
-          offText: Disabled
-          description: >
-                Subscription triggers will be created for supported XNAT datatype operations.
-
-        triggerPluginEvents:
-          kind: panel.input.switchbox
-          name: triggerPluginEvents
-          label: Plugin Events
-          onText: Enabled
-          offText: Disabled
-          description: >
-              Subscription triggers originating from plugins will be enabled.
-
-        triggerWorkflowStatusEvents:
-          kind: panel.input.switchbox
-          name: triggerWorkflowStatusEvents
-          label: Workflow Status Update Events
-          onText: Enabled
-          offText: Disabled
-          description: >
-              Subscription triggers will be generated to duplicate Workflow Status updates.
-          info: >
-              <p>This setting does not affect functionality of Workflow Status Update events as
-              used in the Automation Service. Rather, if enabled, these events are propagated</p>
-              to the Event Service upon creation.
 
 adminInfo:
     kind: panel.form

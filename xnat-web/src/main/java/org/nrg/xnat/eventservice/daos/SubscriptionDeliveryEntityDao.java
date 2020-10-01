@@ -2,11 +2,15 @@ package org.nrg.xnat.eventservice.daos;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Criteria;
+import org.hibernate.FetchMode;
 import org.hibernate.Query;
+import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.metadata.ClassMetadata;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
@@ -44,10 +48,30 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
             filters.put("status", HibernateFilter.builder().operator(HibernateFilter.Operator.NE).value(statusToExclude).build());
         }
         request.setFiltersMap(filters);
-        // Previous code had this. May need to add code in PaginatedRequest handling to set fetch mode.
-        // cr.setFetchMode("timedEventStatuses", FetchMode.SELECT);
+
         return findPaginated(request);
     }
+
+    @Override
+    public List<SubscriptionDeliveryEntity> findPaginated(HibernatePaginatedRequest paginatedRequest) {
+        final Criteria criteria = getCriteriaForType();
+        if (paginatedRequest.hasFilters()) {
+            ClassMetadata classMetadata = getSession().getSessionFactory().getClassMetadata(getParameterizedType());
+            for (Criterion criterion : paginatedRequest.getCriterion(classMetadata)) {
+                criteria.add(criterion);
+            }
+        }
+
+        // Override findPaginated to add fetchMode to criteria
+        criteria.setFetchMode("timedEventStatuses", FetchMode.SELECT);
+
+        criteria.addOrder(paginatedRequest.getOrder());
+        criteria.setMaxResults(paginatedRequest.getPageSize());
+        criteria.setFirstResult(paginatedRequest.getOffset());
+        return criteria.list();
+    }
+
+
 
     public Integer count(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude) {
         final Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);

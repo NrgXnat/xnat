@@ -153,13 +153,15 @@ var XNAT = getObject(XNAT||{});
 
     // uri encode (key): (value)
     // optionally returning an array
-    url.processQueryObject = function(query, arr){
+    url.processQueryObject = function(query, arr, encode){
 
         var queryObject = {},
             qsArray = [];
 
+        encode = (encode !== undefined) ? encode : XNAT.url.encode;
+
         forOwn(query, function(key, val){
-            if (XNAT.url.encode){
+            if (encode){
                 key = XNAT.url.encodeURIComponent(key);
                 val = XNAT.url.encodeURIComponent(val);
             }
@@ -190,18 +192,20 @@ var XNAT = getObject(XNAT||{});
     };
 
 
-    url.toQueryObject = function(query, arr){
+    url.toQueryObject = function(query, arr, encode){
 
         var qsArray = [],
             qsObject = {},
             qsOutput = isArray(arr) ? arr : [];
 
+        encode = (encode !== undefined) ? encode : XNAT.url.encode;
+
         // passing 'query' as a {key: value}
         // object will be the most reliable
         // { format: 'json', sort: 'asc' }
         if (isPlainObject(query)){
-            // returns encoded data as query string params array
-            qsArray = XNAT.url.processQueryObject(query, []);
+            // returns unencoded data as query string params array
+            qsArray = XNAT.url.processQueryObject(query, [], encode);
         }
         // an array of parameters
         // ['format=json','sort=asc']
@@ -484,7 +488,7 @@ var XNAT = getObject(XNAT||{});
         // need to get a query object first
         // so we can add the XNAT_CSRF and
         // XNAT_XHR params to the end
-        params = extend(urlParts.params, XNAT.url.toQueryObject(params));
+        params = extend(urlParts.params, XNAT.url.toQueryObject(params,[],false));
 
         if ((window.csrfToken || XNAT.csrfToken) && (isTrue(csrf))) {
             params.XNAT_CSRF = (window.csrfToken || XNAT.csrfToken);

@@ -1103,6 +1103,7 @@ var XNAT = getObject(XNAT || {});
        $container
            .empty()
            .append(spawn('p','Event Service subscriptions are disabled.'));
+       $('#subscriptionFilters').empty();
    };
 
 

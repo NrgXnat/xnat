@@ -8,7 +8,7 @@
  */
 
 /*!
- * History Table Generator for Container Services
+ * History Table Generator for Event Service
  */
 
 console.log('EventServiceHistory.js');
@@ -171,7 +171,8 @@ XNAT.admin = getObject(XNAT.admin || {});
                     label: labelMap.DATE['label'],
                     th: {className: 'DATE'},
                     apply: function () {
-                        let timestamp = this['subscription']['created'];
+                        if (!this['status'].length) return 'N/A';
+                        let timestamp = this['status'][0]['timestamp'];
                         let dateString = '';
                         if (timestamp) {
                             timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
@@ -350,7 +351,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                 allTables.push(
                     spawn('div', {style: {'word-break': 'break-all', 'overflow':'auto', 'margin-bottom': '10px', 'max-width': 'max-content'}},
                         [spawn('div.data-table-actionsrow', {}, spawn('strong', {class: "textlink-sm data-table-action"},
-                            'Container ' + key)), formattedVal])
+                            'History Entry ' + key)), formattedVal])
                 );
             }
         }
@@ -387,17 +388,32 @@ XNAT.admin = getObject(XNAT.admin || {});
 
     projHistoryTable.findById = function(e){
         e.preventDefault();
-        var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
-            submittedId = $('#event-id-entry').val();
-        if (submittedId && validIds.indexOf(submittedId) >= 0) {
-            XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
-            $('#event-id-entry').val('');
-            return;
-        }
-        else {
-            XNAT.ui.dialog.message('Please enter a valid event history ID');
-            $('#event-id-entry').focus();
-        }
+        // var validIds = Object.keys(XNAT.admin.projEventServicePanel.projHistoryData),
+        //     submittedId = $('#event-id-entry').val();
+        // if (submittedId && validIds.indexOf(submittedId) >= 0) {
+        //     XNAT.admin.projEventServicePanel.projHistoryTable.viewHistory(submittedId);
+        //     $('#event-id-entry').val('');
+        //     return;
+        // }
+        // else {
+        //     XNAT.ui.dialog.message('Please enter a valid event history ID');
+        //     $('#event-id-entry').focus();
+        // }
+
+        var id = $('#event-id-entry').val();
+        if (!id) return false;
+        XNAT.xhr.getJSON({
+            url: restUrl('/xapi/events/delivered/'+id),
+            error: function(e){
+                console.warn(e);
+                XNAT.ui.dialog.message('Please enter a valid event history ID');
+                $('#event-id-entry').focus();
+            },
+            success: function(data){
+                $('#event-id-entry').val('');
+                projHistoryTable.viewHistoryEntry(data);
+            }
+        })
     };
 
     projHistoryTable.init = projHistoryTable.refresh = function (context) {

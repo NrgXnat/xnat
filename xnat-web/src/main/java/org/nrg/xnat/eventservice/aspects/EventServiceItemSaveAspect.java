@@ -120,6 +120,8 @@ public class EventServiceItemSaveAspect {
                 } else {
                     log.debug("Existing Subject Data Save" + " : xsiType:" + item.getXSIType());
                     final List<String> preSubjectAssessorIds = xnatObjectIntrospectionService.getStoredSubjectAssessorIds(subject);
+                    final List<String> preSessionIds = xnatObjectIntrospectionService.getStoredImageSessionIds(subject);
+                    //final List<String> preNonImageSubjectAssessorIds = xnatObjectIntrospectionService.getStoredNonImageSubjectAssessorIds(subject);
                     final List<XnatSubjectassessordataI> currentSubjectAssessors = subject.getExperiments_experiment();
                     final List<String> currentSubjectAssessorIds = currentSubjectAssessors.stream()
                                                                         .map(XnatSubjectassessordataI::getId).collect(Collectors.toList());
@@ -128,14 +130,14 @@ public class EventServiceItemSaveAspect {
                                                                         .map(XnatSubjectassessordataI::getId).collect(Collectors.toList());
                     final List<String> removedSubjectAssessorIds = preSubjectAssessorIds.stream()
                                                                         .filter(id -> !currentSubjectAssessorIds.contains(id)).collect(Collectors.toList());
-                    final List<String> removedSessionIds = (removedSubjectAssessorIds == null || removedSubjectAssessorIds.isEmpty())
+                    final List<String> removedSessionIds = (preSessionIds == null || preSessionIds.isEmpty())
                                                         ? Arrays.asList()
-                                                        : currentSessionIds.stream()
-                                                                            .filter(sid -> removedSubjectAssessorIds.contains(sid)).collect(Collectors.toList());
-                    final List<String> removeNonImageAssesorIds = (removedSubjectAssessorIds == null || removedSubjectAssessorIds.isEmpty())
-                                                        ? Arrays.asList()
-                                                        : removedSubjectAssessorIds.stream()
-                                                                           .filter(asid -> !removedSessionIds.contains(asid)).collect(Collectors.toList());
+                                                        : preSessionIds.stream()
+                                                                       .filter(sid -> !currentSessionIds.contains(sid)).collect(Collectors.toList());
+                    //final List<String> removeNonImageAssesorIds = (removedSubjectAssessorIds == null || removedSubjectAssessorIds.isEmpty())
+                    //                                    ? Arrays.asList()
+                    //                                    : removedSubjectAssessorIds.stream()
+                    //                                                       .filter(asid -> !removedSessionIds.contains(asid)).collect(Collectors.toList());
 
                     final List<String> addedSubjectAssessorIds = currentSubjectAssessorIds.stream()
                                                                         .filter(id -> !preSubjectAssessorIds.contains(id)).collect(Collectors.toList());

@@ -840,7 +840,7 @@ var XNAT = getObject(XNAT);
                                 type: 'text',
                                 title: 'Use the enter key to filter on ' + name,
                                 placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : ''),
-                                style: 'width: 90%;'
+                                style: 'width: 100%;'
                             });
                             $filterSubmit = $.spawn(
                                 'div.filter-submit.hidden',
@@ -861,7 +861,7 @@ var XNAT = getObject(XNAT);
 
                                 var filterFn = opts.filterAjax;
                                 if (typeof opts.sortAndFilterAjax === 'function') {
-                                    filterFn = function(fname, fval) {
+                                    filterFn = function(newTable, fname, fval) {
                                         opts.sortAndFilterAjax.call(newTable, "filter", fname, fval)
                                     };
                                 }

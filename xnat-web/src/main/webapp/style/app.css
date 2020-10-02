@@ -1304,7 +1304,7 @@ body input[type="reset"]:focus {
     opacity: 0.8;
     padding: 4px;
     position: absolute;
-    right: 32px;
+    right: 14px;
     top: calc(50% - 9px);
     z-index: 100;
 }

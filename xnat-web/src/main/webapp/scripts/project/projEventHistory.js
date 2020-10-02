@@ -128,8 +128,8 @@ XNAT.admin = getObject(XNAT.admin || {});
     const labelMap = {
         // id:             {label: 'ID', op: 'eq', type: 'number', show: false},
         DATE:           {label: 'Date', column: 'timestamp', show: true},
-        subscription:   {label: 'Subscription Name', column: 'subscription-name', show: true},
-        eventtype:      {label: 'Event Type', column: 'event-name', show: true},
+        subscription:   {label: 'Subscription Name', column: 'subscription', show: true},
+        eventtype:      {label: 'Event Type', column: 'eventtype', show: true},
         user:           {label: 'Run As User', column: 'user', show: true},
         status:         {label: 'Status', column: 'status', show: true},
         project:        {label: 'Project', column: 'project', show: true}

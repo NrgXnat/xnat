@@ -444,12 +444,12 @@ XNAT.admin = getObject(XNAT.admin || {});
                 style: {'font-size':'12px' }}
             ),
             searchHistoryButton = spawn(
-                'button.btn2.btn-sm',[
-                    spawn('i.fa.fa-search',{
-                        title: 'Find By ID',
-                        onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
-                    })
-                ]);
+                'button.btn2.btn-sm',
+                {
+                    title: 'Find By ID',
+                    onclick: XNAT.admin.projEventServicePanel.projHistoryTable.findById
+                },
+                [spawn('i.fa.fa-search')]);
         target.prepend(spawn('div.pull-right',[
             searchHistoryInput,
             spacer(4),

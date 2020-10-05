@@ -248,7 +248,7 @@
 
 .scrollable-table tbody, .scrollable-table thead {
     display: block;
-    /*overflow-y: scroll; !* XNAT-6500 *!*/
+    overflow-y: scroll; /* XNAT-6500 */
 }
 .scrollable-table tbody {
     overflow-y: auto;

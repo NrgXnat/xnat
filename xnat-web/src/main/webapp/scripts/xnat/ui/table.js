@@ -570,8 +570,8 @@ var XNAT = getObject(XNAT);
                 var sourceCellWidth = source$.offsetWidth;
                 var targetCellWidth = target$.offsetWidth;
                 if (sourceCellWidth > targetCellWidth) {
-                    target$.style.width = sourceCellWidth + 'pt';
-                    // other$.style.width = sourceCellWidth + 'pt';
+                    target$.style.width = sourceCellWidth + 'px';
+                    // other$.style.width = sourceCellWidth + 'px';
                 }
             });
         }
@@ -593,7 +593,7 @@ var XNAT = getObject(XNAT);
 
                 // set min-width to 100/colCount %
                 // should be able to just apply this to the header
-                //headerCells$.css('width', minWidth + 'pt');
+                //headerCells$.css('width', minWidth + 'px');
 
                 adjustCellWidths(headerCells$, bodyCells$);
                 adjustCellWidths(bodyCells$, headerCells$);
@@ -1646,7 +1646,7 @@ var XNAT = getObject(XNAT);
                 $(this).find("i").removeClass("fa-caret-down").addClass("fa-caret-up");
                 $dropdown.css({
                     visibility: "visible",
-                    transform: "translate3d(" + leftt + "pt, " + topt + "pt, 0)"
+                    transform: "translate3d(" + leftt + "px, " + topt + "px, 0)"
                 });
             }
             return false;
@@ -1657,10 +1657,11 @@ var XNAT = getObject(XNAT);
         });
     };
 
-    ajaxTable.resizeTableCols = function($table){
+    ajaxTable.resizeTableCols = function($table,reloadFF = false){
+        if (reloadFF && navigator.userAgent.toLowerCase().indexOf('firefox') > -1) this.reload()
         if ($table.is(':hidden')) {
             $table.on('nowVisible', function() {
-                ajaxTable.resizeTableCols($(this));
+                ajaxTable.resizeTableCols($(this),'reload');
             });
         }
         let $headerCells = $table.find("thead tr:first").children(),
@@ -1675,9 +1676,6 @@ var XNAT = getObject(XNAT);
                 ajaxTable.cssToNumber($($headerCells[i]), "width")
             );
             if (wid){
-                // Fix bug in Firefox where detected cell widths are far too small (XNAT-6504)
-                if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) wid = wid*2;
-
                 $(v).css("width", wid.toString()+'px');
                 $($headerCells[i]).css("width", wid.toString()+'px');
                 $($filterCells[i]).css("width", wid.toString()+'px');

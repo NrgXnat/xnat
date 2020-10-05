@@ -570,8 +570,8 @@ var XNAT = getObject(XNAT);
                 var sourceCellWidth = source$.offsetWidth;
                 var targetCellWidth = target$.offsetWidth;
                 if (sourceCellWidth > targetCellWidth) {
-                    target$.style.width = sourceCellWidth + 'px';
-                    // other$.style.width = sourceCellWidth + 'px';
+                    target$.style.width = sourceCellWidth + 'pt';
+                    // other$.style.width = sourceCellWidth + 'pt';
                 }
             });
         }
@@ -593,7 +593,7 @@ var XNAT = getObject(XNAT);
 
                 // set min-width to 100/colCount %
                 // should be able to just apply this to the header
-                //headerCells$.css('width', minWidth + 'px');
+                //headerCells$.css('width', minWidth + 'pt');
 
                 adjustCellWidths(headerCells$, bodyCells$);
                 adjustCellWidths(bodyCells$, headerCells$);
@@ -1646,7 +1646,7 @@ var XNAT = getObject(XNAT);
                 $(this).find("i").removeClass("fa-caret-down").addClass("fa-caret-up");
                 $dropdown.css({
                     visibility: "visible",
-                    transform: "translate3d(" + leftt + "px, " + topt + "px, 0)"
+                    transform: "translate3d(" + leftt + "pt, " + topt + "pt, 0)"
                 });
             }
             return false;
@@ -1674,15 +1674,21 @@ var XNAT = getObject(XNAT);
                 ajaxTable.cssToNumber($(v), "width"),
                 ajaxTable.cssToNumber($($headerCells[i]), "width")
             );
-            $(v).css("width", wid);
-            $($headerCells[i]).css("width", wid);
-            $($filterCells[i]).css("width", wid);
-            colWidths.push(wid);
+            if (wid){
+                // Fix bug in Firefox where detected cell widths are far too small (XNAT-6504)
+                if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) wid = wid*2;
+
+                $(v).css("width", wid.toString()+'px');
+                $($headerCells[i]).css("width", wid.toString()+'px');
+                $($filterCells[i]).css("width", wid.toString()+'px');
+                colWidths.push(wid);
+            }
         });
 
         $table.find("tbody tr").each(function(rind, row) {
             $(row).children().each(function (i, v) {
-                $(v).css("width", colWidths[i]);
+                let wid = colWidths[i];
+                if (wid) $(v).css("width", wid.toString()+'px');
             });
         });
     };

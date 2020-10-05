@@ -3082,12 +3082,16 @@ span.spacer {
     border-spacing: 0;
     border: 1px solid #aaa;
     box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
 }
 
 .xnat-table th,
 .xnat-table td {
     padding: 6px 12px;
     box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
     border: 1px solid #ccc;
     border-top: none;
     border-left: none;

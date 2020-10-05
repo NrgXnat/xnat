@@ -10,15 +10,11 @@
 package org.nrg.xnat.initialization.tasks.transforms;
 
 import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +26,7 @@ import java.util.concurrent.Callable;
  * target column has a foreign key constraint on it!
  */
 @SuppressWarnings("unused")
+@Slf4j
 public class ConvertProjectDataInfoToId implements Callable<String> {
     public ConvertProjectDataInfoToId(final DatabaseHelper helper, final String table, final String column) {
         _helper = helper;
@@ -50,13 +47,13 @@ public class ConvertProjectDataInfoToId implements Callable<String> {
             // If typeName isn't some kind of int, we don't really know what to do with it.
             if (!INT_DATA_TYPES.contains(typeName)) {
                 final String message = String.format("Request to transform column %s.%s failed: column is type %s, should be one of %s.", _table, _column, typeName, Joiner.on(", ").join(INT_DATA_TYPES));
-                _log.warn(message);
+                log.warn(message);
                 return message;
             }
 
             // Get the template and let's see if there are any values in the table.
             final JdbcTemplate template = _helper.getJdbcTemplate();
-            final int count = template.queryForObject(COUNT_ASSOC_ENTITIES_QUERY, Integer.class);
+            final int          count    = template.queryForObject(COUNT_ASSOC_ENTITIES_QUERY, Integer.class);
 
             // If there are no values in the table, there's no conversion to do so we can just do the change the data type.
             if (count == 0) {
@@ -71,18 +68,13 @@ public class ConvertProjectDataInfoToId implements Callable<String> {
             }
 
             // Get all of the project data info values.
-            final List<Long> projectDataInfos = template.query(FIND_ASSOC_ENTITIES_QUERY, new RowMapper<Long>() {
-                @Override
-                public Long mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
-                    return resultSet.getLong(1);
-                }
-            });
+            final List<Long> projectDataInfos = template.query(FIND_ASSOC_ENTITIES_QUERY, (resultSet, rowNum) -> resultSet.getLong("assoc_entities"));
 
             // Walk through each project data info, find the corresponding project ID, and insert the ID into the temp column.
             for (final Long projectDataInfo : projectDataInfos) {
                 final String projectId = template.queryForObject("SELECT id FROM xnat_projectdata WHERE projectdata_info = ?", String.class, projectDataInfo);
-                final int total = template.update("UPDATE " + _table + " SET " + _column + "_temp = ? WHERE " + _column + " = ?", projectId, projectDataInfo);
-                _log.info("Converted {} rows from projectdata_info value {} to project ID {}.", total, projectDataInfo, projectId);
+                final int    total     = template.update("UPDATE " + _table + " SET " + _column + "_temp = ? WHERE " + _column + " = ?", projectId, projectDataInfo);
+                log.info("Converted {} rows from projectdata_info value {} to project ID {}.", total, projectDataInfo, projectId);
             }
 
             // Drop the old column
@@ -97,9 +89,7 @@ public class ConvertProjectDataInfoToId implements Callable<String> {
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(ConvertProjectDataInfoToId.class);
-
-    private static final String       FIND_ASSOC_ENTITIES_QUERY  = "SELECT DISTINCT(associated_entities) FROM xhbm_script_trigger_template_associated_entities";
+    private static final String       FIND_ASSOC_ENTITIES_QUERY  = "SELECT DISTINCT(associated_entities) AS assoc_entities FROM xhbm_script_trigger_template_associated_entities";
     private static final String       COUNT_ASSOC_ENTITIES_QUERY = "SELECT COUNT(*) FROM (" + FIND_ASSOC_ENTITIES_QUERY + ") AS entities";
     private static final List<String> INT_DATA_TYPES             = Arrays.asList("bigint", "int8", "bigserial", "integer", "int4", "serial");
 

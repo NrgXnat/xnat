@@ -601,8 +601,36 @@ th.first-td {
 }
 
 td.ext-content {
-    width: 300px;
+    min-width: 300px !important;
     white-space: normal;
+}
+td.xxl-content {
+    cursor: zoom-in;
+    display: inline-block;
+    max-height: 90px !important;
+    overflow-y: auto;
+    position: relative;
+}
+td.xxl-content:hover {
+    box-shadow: inset 0 0 3px #1A75BB;
+    -moz-box-shadow: inset 0 0 3px #1A75BB;
+    -webkit-box-shadow: inset 0 0 3px #1A75BB;
+}
+.xxl-highlight {
+    background-color: #1A75BB;
+    color: #fff;
+    font-weight: normal;
+    opacity: 0.85;
+    padding: 1px 4px;
+    position:absolute; top: 0; right: 0;
+}
+.xxl-highlight:before {
+    font-family: 'FontAwesome','Font Awesome';
+    content: "\f00e";
+    padding-right: 3px;
+}
+.xxl-highlight:after {
+    content: 'EXPAND';
 }
 
 /* yellow text = NOPE */

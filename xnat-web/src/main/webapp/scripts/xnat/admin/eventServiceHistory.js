@@ -127,12 +127,12 @@ XNAT.admin = getObject(XNAT.admin || {});
                     tag: 'style|type=text/css',
                     content:
                         '#' + historyTableContainerId + ' .id { max-width: 80px; } \n' +
-                        '#' + historyTableContainerId + ' .timestamp { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .subscription { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .eventtype { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .user { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .status { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + historyTableContainerId + ' .project { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n'
+                        '#' + historyTableContainerId + ' .timestamp { max-width: 150px; }  \n' +
+                        '#' + historyTableContainerId + ' .subscription { max-width: 200px; }  \n' +
+                        '#' + historyTableContainerId + ' .eventtype { max-width: 120px; }  \n' +
+                        '#' + historyTableContainerId + ' .user { max-width: 120px; }  \n' +
+                        '#' + historyTableContainerId + ' .status { max-width: 200px; }  \n' +
+                        '#' + historyTableContainerId + ' .project { max-width: 150px; }  \n'
                 }
             },
             sortable: 'id, user, DATE, status',
@@ -168,6 +168,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                 },
                 subscription: {
                     th: {className: 'subscription'},
+                    td: {className: 'subscription word-wrapped'},
                     label: labelMap.subscription['label'],
                     apply: function () {
                         var message = '';
@@ -189,6 +190,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                 },
                 eventtype: {
                     th: { className: 'eventtype' },
+                    td: { className: 'eventtype word-wrapped' },
                     label: labelMap.eventtype['label'],
                     apply: function(){
                         return this['event']['description']
@@ -203,6 +205,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                 },
                 status: {
                     th: {className: 'status'},
+                    td: {className: 'status word-wrapped'},
                     label: labelMap.status['label'],
                     apply: function(){
                         return this['status'][this['status'].length-1]['message'];
@@ -409,7 +412,7 @@ XNAT.admin = getObject(XNAT.admin || {});
         XNAT.admin.eventServicePanel.historyTable.eventHistory.load();
 
         // add a "find by ID" input field after the table renders
-            var target = $('#history-table-container'),
+            var target = $('#'+historyTableContainerId),
                 searchHistoryInput = spawn('input#event-id-entry', {
                     type:'text',
                     name: 'findbyid',

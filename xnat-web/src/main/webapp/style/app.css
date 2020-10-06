@@ -3389,6 +3389,11 @@ table.data-table thead input {
     width: 100%;
 }
 
+.word-wrapped {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 /* container for data tables in report page panels */
 .panel-table-container {
     overflow-x: auto;

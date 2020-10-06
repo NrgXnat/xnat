@@ -113,10 +113,9 @@ XNAT.admin = getObject(XNAT.admin || {});
 
     function getHistoryUrl(project,sub){
         var params = [];
-        if (project) params.push('project='+project);
         if (sub) params.push('subscriptionid='+sub);
         var appended = (params.length) ? '?'+params.join('&') : '';
-        return XNAT.url.restUrl('/xapi/events/delivered' + appended);
+        return XNAT.url.restUrl('/xapi/projects/' + project + '/events/delivered' + appended);
     }
 
     function viewHistoryDialog(e, onclose) {

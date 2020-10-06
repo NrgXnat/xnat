@@ -254,6 +254,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
 
+    @Deprecated
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/summary", method = GET)
     @ResponseBody
     public List<SubscriptionDeliverySummary> getDeliveredSubscriptionsSummary(
@@ -298,13 +299,14 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDelivery(id, project);
     }
 
+    @Deprecated
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/summary", method = GET)
     @ResponseBody
     public List<SubscriptionDeliverySummary> getDeliveredProjectSubscriptionsSummary(final @PathVariable @Project String project) {
         return eventService.getSubscriptionDeliverySummary(project);
     }
 
-    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered", method = GET, params = {"subscription-id"})
+    @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered", method = POST, consumes = JSON, produces = JSON)
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredProjectSubscriptions(
             final @PathVariable @Project String project,

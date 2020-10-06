@@ -483,6 +483,7 @@ public class EventServiceImpl implements EventService {
         return subscriptionDeliveryEntityService.count(projectId, subscriptionId, includeFilterMismatches);
     }
 
+    @Deprecated
     @Override
     public List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId) {
         return subscriptionDeliveryEntityService.getSummaries(projectId);

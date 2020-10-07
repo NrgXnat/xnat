@@ -8,6 +8,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.nrg.xdat.model.XnatAbstractprojectassetI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -30,6 +31,7 @@ import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
+import org.nrg.xnat.eventservice.events.ProjectAssetEvent;
 import org.nrg.xnat.eventservice.events.ProjectEvent;
 import org.nrg.xnat.eventservice.events.ResourceEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
@@ -103,7 +105,19 @@ public class EventServiceItemSaveAspect {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
-            } else if (isItemA(item, XnatType.SUBJECT)) {
+            } else if (isItemA(item, XnatType.PROJECT_ASSET)) {
+                log.debug("Project Asset Data Save" + " : xsiType:" + item.getXSIType());
+                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ? (XnatAbstractprojectassetI) item : null;
+                if (projectAsset != null) {
+                    triggerProjectAssetCreate(projectAsset, user);
+                } else {
+                    log.error("Event Service could not cast item " + item.getXSIType() + " to XnatAbstractprojectassetI");
+                }
+                if(log.isDebugEnabled() && sw.isRunning()) {
+                    sw.stop();
+                    log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
+                }
+            }else if (isItemA(item, XnatType.SUBJECT)) {
                 XnatSubjectdataI subject = item instanceof XnatSubjectdataI ? (XnatSubjectdataI) item : new XnatSubjectdata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subject);
                 if (!alreadyStored) {
@@ -344,6 +358,11 @@ public class EventServiceItemSaveAspect {
         eventService.triggerEvent(new ProjectEvent(project, user.getLogin(), ProjectEvent.Status.DELETED, project.getId()));
     }
 
+    //** Project Asset Create **//
+    private void triggerProjectAssetCreate(XnatAbstractprojectassetI projectAsset, UserI user){
+        eventService.triggerEvent(new ProjectAssetEvent(projectAsset, user.getLogin(), ProjectAssetEvent.Status.CREATED, projectAsset.getProject()));
+    }
+
     //** Subject Triggers **//
     private void triggerSubjectCreate(XnatSubjectdataI subject, UserI user){
         eventService.triggerEvent(new SubjectEvent(subject, user.getLogin(), SubjectEvent.Status.CREATED, subject.getProject()));
@@ -459,7 +478,8 @@ public class EventServiceItemSaveAspect {
         SESSION,
         SCAN,
         IMAGE_ASSESSOR,
-        SUBJECT_ASSESSOR
+        SUBJECT_ASSESSOR,
+        PROJECT_ASSET
     }
 
     private Boolean isItemA(ItemI item, XnatType type){
@@ -516,7 +536,11 @@ public class EventServiceItemSaveAspect {
                     return true;
                 }
                 return false;
-
+            case PROJECT_ASSET:
+                if (item instanceof XnatAbstractprojectassetI){
+                    return true;
+                }
+                return false;
             default:
                 log.error("No detection implementation for type: " + type.name());
                 return false;

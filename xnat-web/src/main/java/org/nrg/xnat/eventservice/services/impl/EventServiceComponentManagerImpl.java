@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.bean.ClassMappingFactory;
+import org.nrg.xdat.model.XnatAbstractprojectassetI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
@@ -22,6 +23,7 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.xnat.Assessor;
 import org.nrg.xnat.eventservice.model.xnat.Project;
+import org.nrg.xnat.eventservice.model.xnat.ProjectAsset;
 import org.nrg.xnat.eventservice.model.xnat.Scan;
 import org.nrg.xnat.eventservice.model.xnat.Session;
 import org.nrg.xnat.eventservice.model.xnat.Subject;
@@ -142,6 +144,9 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         }
         else if(XnatProjectdata.class.isAssignableFrom(object.getClass())) {
             return new Project((XnatProjectdata) object);
+        }
+        else if(XnatAbstractprojectassetI.class.isAssignableFrom(object.getClass())){
+            return new ProjectAsset(((XnatAbstractprojectassetI) object).getId(), user);
         }
         else if(XnatResourcecatalog.class.isAssignableFrom(object.getClass())) {
             return new org.nrg.xnat.eventservice.model.xnat.Resource((XnatResourcecatalog) object);

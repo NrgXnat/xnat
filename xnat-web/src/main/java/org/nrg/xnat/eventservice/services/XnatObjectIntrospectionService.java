@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.services;
 
+import org.nrg.xdat.model.XnatAbstractprojectassetI;
 import org.nrg.xdat.model.XnatExperimentdataI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -37,6 +38,8 @@ public interface XnatObjectIntrospectionService {
     boolean storedInDatabase(XnatImageassessordataI assessor);
 
     boolean storedInDatabase(XnatSubjectassessordataI subjectassessor);
+
+    boolean storedInDatabase(XnatAbstractprojectassetI projectAsset);
 
     Integer getResourceCount(XnatProjectdataI project);
 

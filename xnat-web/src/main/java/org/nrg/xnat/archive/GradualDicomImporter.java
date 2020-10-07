@@ -560,7 +560,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private static final Logger  logger                  = LoggerFactory.getLogger(GradualDicomImporter.class);
-    private static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ImplicitVRLittleEndian.uid();
+    private static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ExplicitVRLittleEndian.uid();
     private static final String  RENAME_PARAM            = "rename";
     private static final boolean canDecompress           = initializeCanDecompress();
 

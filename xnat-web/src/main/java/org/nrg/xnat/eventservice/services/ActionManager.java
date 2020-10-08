@@ -31,7 +31,7 @@ public interface ActionManager {
     boolean validateAction(String actionKey, String projectId, UserI user);
     boolean validateAction(String actionKey, List<String> projectIds, UserI user);
 
-    PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, EventServiceEvent esEvent, UserI user);
+    PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, Long deliveryId, EventServiceEvent esEvent, UserI user);
     void processEvent(Subscription subscription, EventServiceEvent esEvent, UserI user, Long deliveryId);
 
     @Async

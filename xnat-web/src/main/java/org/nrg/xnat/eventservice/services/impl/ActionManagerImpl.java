@@ -199,18 +199,28 @@ public class ActionManagerImpl implements ActionManager {
     //    WorkflowUtils.fail(workflow, event);
     //}
     @Override
-    public PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, EventServiceEvent esEvent, UserI user) {
+    public PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, Long deliveryId, EventServiceEvent esEvent, UserI user) {
         try {
             if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem() instanceof XFTItem) {
                 XFTItem eventXftItem = getRootWorkflowObject(esEvent);
+                String workflowActionLabel =
+                        subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_") +
+                                " UID:" + Long.toString(deliveryId);
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
-                        EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
-                                subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_"), "Event Service Action Called", subscription.actionKey()));
+                        EventUtils.newEventInstance(
+                                EventUtils.CATEGORY.DATA,
+                                EventUtils.TYPE.PROCESS,
+                                workflowActionLabel,
+                                "Event: " + esEvent.getDisplayName() + " Action: " + subscription.actionKey(),
+                                ""
+                        ));
                 if(workflow != null) {
                     WorkflowUtils.save(workflow, workflow.buildEvent());
                     log.debug("Created workflow " + workflow.getId());
                     return workflow;
+                } else {
+                    log.error("Unable to create PersistentWorkflow entry for ES Event: " + esEvent.getDisplayName());
                 }
 
             }
@@ -257,7 +267,7 @@ public class ActionManagerImpl implements ActionManager {
     @Override
     public void processEvent(Subscription subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId) {
         log.debug("ActionManager.processEvent started on Thread: " + Thread.currentThread().getName());
-        PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
+        PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, deliveryId, esEvent, user);
         EventServiceActionProvider provider = getActionProviderByKey(subscription.actionKey());
         if(provider!= null) {
             if(workflow !=null){

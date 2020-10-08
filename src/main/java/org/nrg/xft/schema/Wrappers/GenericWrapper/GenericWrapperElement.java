@@ -2373,23 +2373,16 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @throws ElementNotFoundException When a specified element isn't found on the object.
 	 * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
-	public static GenericWrapperField GetFieldForXMLPath(String path) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
-	{
-	    path= XftStringUtils.StandardizeXMLPath(path);
-            String rootElement = path.substring(0,path.indexOf(XFT.PATH_SEPARATOR));
-            path = path.substring(path.indexOf(XFT.PATH_SEPARATOR) + 1);
-            GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
-            try {
-                Object [] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(path);
-                if (fieldInfo != null)
-                {
-				return (GenericWrapperField) fieldInfo[1];
-                }else{
-                    return null;
-                }
-            } catch (FieldNotFoundException e) {
-                throw e;
-            }
+	public static GenericWrapperField GetFieldForXMLPath(final String path) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
+		final String standardized = XftStringUtils.StandardizeXMLPath(path);
+		final String rootElement = standardized.substring(0, standardized.indexOf(XFT.PATH_SEPARATOR));
+		final GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
+		final String element = standardized.substring(standardized.indexOf(XFT.PATH_SEPARATOR) + 1);
+		final Object[] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(element);
+		if (fieldInfo != null) {
+			return (GenericWrapperField) fieldInfo[1];
+		}
+		throw new FieldNotFoundException(path);
 	}
 	
 //	public String getGrandColumnNameForField(GenericWrapperField f) throws XFTInitException,ElementNotFoundException,Exception

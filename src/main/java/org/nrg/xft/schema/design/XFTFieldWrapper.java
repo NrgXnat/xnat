@@ -9,7 +9,7 @@
 
 
 package org.nrg.xft.schema.design;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.XFTDataField;
 import org.nrg.xft.schema.XFTField;
@@ -17,9 +17,9 @@ import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 
-public abstract class XFTFieldWrapper implements Identifier{
-	static org.apache.log4j.Logger logger = Logger.getLogger(XFTFieldWrapper.class);
-	protected XFTField wrapped = null;
+@Slf4j
+public abstract class XFTFieldWrapper implements Identifier, SchemaFieldI {
+	protected XFTField             wrapped = null;
 	
 	private ArrayList childElements = null;
 	private Boolean hasChildElements = null;
@@ -99,7 +99,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 					return true;
 				}
 			} catch (Exception e) {
-				logger.error("'" + this.getParentE().getFullXMLName() + "' -> '" + this.getName() + "'",e);
+				log.error("'" + this.getParentE().getFullXMLName() + "' -> '" + this.getName() + "'", e);
 			}
 			return false;
 		}else

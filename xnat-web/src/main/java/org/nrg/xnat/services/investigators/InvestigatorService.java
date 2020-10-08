@@ -1,12 +1,9 @@
 package org.nrg.xnat.services.investigators;
 
-import org.nrg.xapi.exceptions.InitializationException;
-import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
-import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
-import org.nrg.xapi.model.investigators.Investigator;
+import org.nrg.xapi.exceptions.*;
 import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.eventservice.model.xnat.Investigator;
 
 import java.util.List;
 
@@ -22,10 +19,29 @@ public interface InvestigatorService {
      *
      * @return The newly created investigator.
      *
-     * @throws XftItemException When an error occurs trying to create the investigator.
+     * @throws XftItemException               When an error occurs trying to create the investigator.
      * @throws ResourceAlreadyExistsException If an investigator with the same attributes already exists.
      */
-    Investigator createInvestigator(Investigator investigator, UserI user) throws XftItemException, ResourceAlreadyExistsException;
+    Investigator createInvestigator(Investigator investigator, UserI user) throws ResourceAlreadyExistsException, DataFormatException, XftItemException;
+
+    /**
+     * Tests whether an investigator with the specified ID exists.
+     *
+     * @param investigatorId The ID of the investigator to test.
+     *
+     * @return Returns <b>true</b> if an investigator with the specified ID exists, <b>false</b> otherwise.
+     */
+    boolean exists(final int investigatorId);
+
+    /**
+     * Tests whether an investigator with the specified first and last names exists.
+     *
+     * @param firstName The first name of the investigator to test.
+     * @param lastName  The last name of the investigator to test.
+     *
+     * @return Returns <b>true</b> if an investigator with the specified first and last names exists, <b>false</b> otherwise.
+     */
+    boolean exists(final String firstName, final String lastName);
 
     /**
      * Gets the investigator with the submitted ID.

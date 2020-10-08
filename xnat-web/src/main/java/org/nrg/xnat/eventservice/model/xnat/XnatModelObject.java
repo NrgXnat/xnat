@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
-import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 

@@ -13,29 +13,27 @@
 
 var XNAT = getObject(XNAT);
 
-(function(factory){
+(function (factory) {
     if (typeof define === 'function' && define.amd) {
         define(factory);
-    }
-    else if (typeof exports === 'object') {
+    } else if (typeof exports === 'object') {
         module.exports = factory();
-    }
-    else {
+    } else {
         return factory();
     }
-}(function(){
+}(function () {
 
     var undef, investigators,
         BASE_URL = '/xapi/investigators',
-        ui       = XNAT.ui,
-        xhr      = XNAT.xhr;
+        ui = XNAT.ui,
+        xhr = XNAT.xhr;
 
-    XNAT.app = getObject(XNAT.app||{});
-    XNAT.xapi = getObject(XNAT.xapi||{});
+    XNAT.app = getObject(XNAT.app || {});
+    XNAT.xapi = getObject(XNAT.xapi || {});
 
     console.log('investigators.js');
 
-    function setupUrl(part, cacheParam, csrf){
+    function setupUrl(part, cacheParam, csrf) {
         var URL = BASE_URL + (part ? '/' + part : '');
         return XNAT.url.restUrl(URL, '', cacheParam, csrf);
     }
@@ -82,45 +80,45 @@ var XNAT = getObject(XNAT);
     };
 
 
-    function Investigators(opts){
+    function Investigators(opts) {
         extend(true, this, opts);
         this.menu = null; // this will be updated when a menu is created
     }
 
     Investigators.fn = Investigators.prototype;
 
-    Investigators.fn.getAll = function(opts){
+    Investigators.fn.getAll = function (opts) {
         var self = this;
         this.isReady = false;
         this.xhr = xhr.getFormatJSON(extend({
             url: setupUrl('', true, false)
-        }, opts || {})).done(function(data){
+        }, opts || {})).done(function (data) {
             self.isReady = true;
             self.data = data;
         });
         return this;
     };
 
-    Investigators.fn.get = function(id){
-        this.getAll({ url: setupUrl(id, true, false) });
+    Investigators.fn.get = function (id) {
+        this.getAll({url: setupUrl(id, true, false)});
         return this;
     };
 
-    Investigators.fn.ready = function(callback){
+    Investigators.fn.ready = function (callback) {
         var self = this;
-        return this.xhr.done(callback).done(function(){
+        return this.xhr.done(callback).done(function () {
             self.isReady = true;
         });
     };
     Investigators.fn.done = Investigators.fn.ready;
 
-    Investigators.fn.setContainer = function(container){
+    Investigators.fn.setContainer = function (container) {
         this.container$ = $$(container);
         this.container = this.container$[0];
         return this;
     };
 
-    Investigators.fn.setMenu = function(menu){
+    Investigators.fn.setMenu = function (menu) {
         this.menu$ = $$(menu);
         this.menu = this.menu$[0];
         this.isMulti = this.menu.multiple;
@@ -128,11 +126,11 @@ var XNAT = getObject(XNAT);
     };
 
     // sets the selected menu item and updates the .chosen() stuff
-    Investigators.fn.setSelected = function(selected){
+    Investigators.fn.setSelected = function (selected) {
         var self = this;
         selected = selected || self.selected;
-        [].concat(selected).forEach(function(id){
-            self.menu$.filter('[value="' + id + '"]').each(function(){
+        [].concat(selected).forEach(function (id) {
+            self.menu$.filter('[value="' + id + '"]').each(function () {
                 this.selected = true;
             });
         });
@@ -142,28 +140,28 @@ var XNAT = getObject(XNAT);
     };
 
     // return array of ids of selected investigators
-    Investigators.fn.getSelected = function(i){
+    Investigators.fn.getSelected = function (i) {
         var self = this;
         this.selected = [];
-        this.menu$.find(':selected').each(function(){
+        this.menu$.find(':selected').each(function () {
             self.selected.push(this.value)
         });
         return i || i === 0 ? this.selected[i] : this.selected;
     };
 
     // renders the <option> elements
-    Investigators.fn.createMenuItems = function(selected){
+    Investigators.fn.createMenuItems = function (selected) {
         var self = this;
         // retain current selection, if nothing specified
         selected = selected || this.getSelected();
-        selected = [].concat(selected).map(function(item){
+        selected = [].concat(selected).map(function (item) {
             if (isDefined(item)) {
-                return item+'';
+                return item + '';
             }
         });
         console.log('selected: ' + selected.join('; '));
         this.getAll();
-        this.xhr.done(function(data){
+        this.xhr.done(function (data) {
 
             var _selected = [],
                 options = [];
@@ -175,8 +173,8 @@ var XNAT = getObject(XNAT);
                 options.push(spawn('option|value=NULL', 'None'));
             }
 
-            data.forEach(function(item){
-                var id = item.xnatInvestigatordataId+'';
+            data.forEach(function (item) {
+                var id = item.xnatInvestigatordataId + '';
                 var menuOption = spawn('option', {
                     value: id,
                     html: escapeHtml(item.lastname + ', ' + item.firstname)
@@ -198,7 +196,7 @@ var XNAT = getObject(XNAT);
     };
 
     // creates the <select> element, but doesn't put it on the page yet
-    Investigators.fn.createMenu = function(opts){
+    Investigators.fn.createMenu = function (opts) {
         var menu$ = $.spawn('select.investigator', opts);
         this.setMenu(menu$);
         // menuInit(this.menu, null, width||200);
@@ -206,17 +204,17 @@ var XNAT = getObject(XNAT);
     };
 
     // display confirmation dialog then delete investigator
-    Investigators.fn.deleteInvestigator = function(id, name){
+    Investigators.fn.deleteInvestigator = function (id, name) {
         var self = this;
         xmodal.confirm({
             title: 'Delete Investigator?',
             content: 'Delete investigator: ' + '<b>' + name + '</b>?',
             okLabel: 'Delete',
             okClose: false,
-            okAction: function(dlg){
+            okAction: function (dlg) {
                 XNAT.xhr['delete']({
                     url: setupUrl(id, false, true),
-                    success: function(){
+                    success: function () {
                         XNAT.ui.banner.top(2000, 'Investigator deleted.', 'success');
                         dlg.close();
                         investigators.dataTable(self.tableContainer);
@@ -228,25 +226,25 @@ var XNAT = getObject(XNAT);
     };
 
     // renders the <select> element into the container
-    Investigators.fn.render = function(container, width){
+    Investigators.fn.render = function (container, width) {
         var self = this;
         if (container !== undef) {
             this.setContainer(container);
         }
         // make sure the request is done before rendering
-        this.xhr.done(function(){
+        this.xhr.done(function () {
             $$(container).append(self.menu);
-            menuInit(self.menu, null, width||200);
+            menuInit(self.menu, null, width || 200);
         });
         return this;
     };
 
-    Investigators.fn.updateMenu = function(selected){
+    Investigators.fn.updateMenu = function (selected) {
         var self = this;
         // save currently selected items, if 'selected' is undefined
         selected = selected || this.getSelected();
         this.createMenuItems(selected);
-        this.xhr.done(function(){
+        this.xhr.done(function () {
             //self.menu$.val(selected).change();
             menuUpdate(self.menu);
         });
@@ -255,14 +253,14 @@ var XNAT = getObject(XNAT);
 
     // putting the .dialog() method on the prototype
     // ties it to the associated menu
-    Investigators.fn.dialog = function(id, menus){
+    Investigators.fn.dialog = function (id, menus) {
 
         // the menu that gets updated on save
         menus = menus || null;
 
         var self = this;
 
-        function createInput(label, name, validate){
+        function createInput(label, name, validate) {
             return {
                 kind: 'panel.input.text',
                 name: name,
@@ -271,9 +269,9 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        var isPrimary = self.menu ? self.menu.value == investigators.primary : false;
+        const isPrimary = self.menu ? self.menu.value === investigators.primary : false;
 
-        function investigatorForm(){
+        function investigatorForm() {
             return {
                 investigatorForm: {
                     kind: 'panel.form',
@@ -284,7 +282,7 @@ var XNAT = getObject(XNAT);
                     contentType: 'json',
                     header: false,
                     footer: false,
-                    element: { style: { border: 'none', marginBottom: 0 }},
+                    element: {style: {border: 'none', marginBottom: 0}},
                     contents: {
                         title: createInput('Title', 'title'),
                         first: createInput('First Name', 'firstname', 'name-safe required'),
@@ -293,6 +291,10 @@ var XNAT = getObject(XNAT);
                         department: createInput('Department', 'department', 'allow-empty'),
                         email: createInput('Email', 'email', 'allow-empty email'),
                         phone: createInput('Phone', 'phone', 'allow-empty numeric-dash'),
+                        type: {
+                            kind: 'panel.input.hidden',
+                            value: 'Investigator'
+                        },
                         primary: self.menu ? {
                             kind: 'panel.element',
                             label: false,
@@ -313,119 +315,139 @@ var XNAT = getObject(XNAT);
         // var invForm = XNAT.spawner.spawn(investigatorForm());
 
         var dialog =
-                XNAT.dialog.open({
-                    title: (id ? 'Edit' : 'Create') + ' Investigator',
-                    content: XNAT.spawner.spawn(investigatorForm()).get(),
-                    // beforeShow: function(obj){
-                    //     XNAT.spawner
-                    //         .spawn(investigatorForm())
-                    //         .render(obj.$modal.find('div.add-edit-investigator'));
-                    // },
-                    afterShow: function(obj){
-                        if (self.menu) {
-                            obj.$modal.find('input.set-primary').prop('checked', isPrimary);
-                        }
-                    },
-                    okLabel: 'Submit',
-                    okClose: false,
-                    okAction: function(obj){
-                        var _form = obj.$modal.find('form[name="editInvestigator"]'),
-                            setPrimary = self.menu ? _form.find('input.set-primary')[0].checked : false;
-                        $(_form).submitJSON({
-                            delim: '!',
-                            validate: function(){
-                                var $form = $(this);
-                                var errors = 0;
+            XNAT.dialog.open({
+                title: (id ? 'Edit' : 'Create') + ' Investigator',
+                content: XNAT.spawner.spawn(investigatorForm()).get(),
+                // beforeShow: function(obj){
+                //     XNAT.spawner
+                //         .spawn(investigatorForm())
+                //         .render(obj.$modal.find('div.add-edit-investigator'));
+                // },
+                afterShow: function (obj) {
+                    if (self.menu) {
+                        obj.$modal.find('input.set-primary').prop('checked', isPrimary);
+                    }
+                },
+                okLabel: 'Submit',
+                okClose: false,
+                okAction: function (obj) {
+                    var _form = obj.$modal.find('form[name="editInvestigator"]');
+                    var setPrimary = self.menu ? _form.find('input.set-primary')[0].checked : false;
+                    var errorMessages = [];
+                    $(_form).submitJSON({
+                        delim: '!',
+                        validate: function () {
+                            var $form = $(this);
 
-                                var $required = $form.find('input.required');
-                                if (!XNAT.validate($required).all('not-empty').check()){
-                                    errors++
-                                }
-
-                                var $emailInputs = $form.find('input.email').filter(function(){
+                            [XNAT.validate($form.find('input.required')).all('not-empty').failure("You must provide a value for all fields"),
+                                XNAT.validate($form.find('input.email').filter(function () {
                                     return !!this.value.trim();
-                                });
-                                if (!XNAT.validate($emailInputs).all('email').check()){
-                                    errors++
+                                })).all('email').failure("Invalid email address"),
+                                XNAT.validate($form.find('input#title')).minLength(1).maxLength(64).failure("The title must be between 1 and 64 characters")].forEach(function (validator) {
+                                if (!validator.check()) {
+                                    validator.messages.forEach(function (message) {
+                                        errorMessages.push(message)
+                                    });
                                 }
+                            });
 
-                                return errors === 0;
-                            },
-                            success: function(data, status, xhrObj){
-                                var selected;
-                                // just close the dialog if saved but not modified
-                                if (status === "notmodified") {
-                                    dialog.close();
-                                    return;
-                                }
-                                selected = data.xnatInvestigatordataId;
-                                ui.banner.top(2000, 'Investigator data saved.', 'success');
-                                // update other menus, if specified
-                                if (self.menu) {
-                                    if (menus) {
-                                        [].concat(menus).forEach(function(menu){
-                                            menu.updateMenu(setPrimary ? selected : '');
-                                        })
-                                    }
-                                    // update the menu associated with the dialog
-                                    self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
-                                    // set the PI if editing/creating PI
-                                    if (setPrimary) {
-                                        investigators.primary = selected;
-                                    }
-                                }
-                                // update the investigator table (in site admin)
-                                if (self.tableContainer){
-                                    self.dataTable();
-                                }
-                                dialog.close();
-                            },
-                            fail: function(){
-                                ui.banner.top(5000, 'Unable to save Investigator.', 'error');
+                            let errorCount = errorMessages.length;
+                            switch (errorCount) {
+                                case 0:
+                                    // Nothing, this is fine!
+                                    break;
+                                case 1:
+                                    ui.banner.top(5000, `Unable to save investigator: ${errorMessages[0]}`, 'error');
+                                    break;
+                                default:
+                                    ui.banner.top(5000, `<p>Unable to save investigator due to the following errors:</p><ul><li>${errorMessages.join("</li><li>")}</li></ul>`, 'error');
                             }
-                        });
-                        //xhr.form(obj.$modal.find('form'))
-                    },
-                    width: 500,
-                    // height: 500,
-                    padding: 0,
-                    scroll: false
-                });
+
+                            return errorCount === 0;
+                        },
+                        success: function (data, status, xhrObj) {
+                            var selected;
+                            // just close the dialog if saved but not modified
+                            if (status === "notmodified") {
+                                dialog.close();
+                                return;
+                            }
+                            selected = data.xnatInvestigatordataId;
+                            ui.banner.top(2000, 'Investigator data saved.', 'success');
+                            // update other menus, if specified
+                            if (self.menu) {
+                                if (menus) {
+                                    [].concat(menus).forEach(function (menu) {
+                                        menu.updateMenu(setPrimary ? selected : '');
+                                    })
+                                }
+                                // update the menu associated with the dialog
+                                self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
+                                // set the PI if editing/creating PI
+                                if (setPrimary) {
+                                    investigators.primary = selected;
+                                }
+                            }
+                            // update the investigator table (in site admin)
+                            if (self.tableContainer) {
+                                self.dataTable();
+                            }
+                            dialog.close();
+                        },
+                        fail: function (error) {
+                            switch (errorMessages.length) {
+                                case 0:
+                                    ui.banner.top(5000, 'Unable to save investigator due to unknown errors', 'error');
+                                    break;
+                                case 1:
+                                    ui.banner.top(5000, `Unable to save investigator: ${errorMessages[0]}`, 'error');
+                                    break;
+                                default:
+                                    ui.banner.top(5000, `<p>Unable to save investigator due to the following errors:</p><ul><li>${errorMessages.join("</li><li>")}</li></ul>`, 'error');
+                            }
+                        }
+                    });
+                    //xhr.form(obj.$modal.find('form'))
+                },
+                width: 500,
+                // height: 500,
+                padding: 0,
+                scroll: false
+            });
 
         return this;
 
     };
 
 
-    Investigators.fn.dataTable = function(container){
+    Investigators.fn.dataTable = function (container) {
 
         var self = this;
 
         this.tableContainer = $$(container || '#investigators-list-container');
 
-        function investigatorFieldValue(val){
+        function investigatorFieldValue(val) {
             if (val) {
                 var escVal = escapeHtml(val + '');
                 return "<span class='truncate truncateCellNarrow' title='" + escVal + "'>" + escVal + "</span>";
-            }
-            else {
+            } else {
                 return '<div class="center">&mdash;</div>';
             }
             //return val || '<div class="center">&mdash;</div>'
         }
 
-        function investigatorProjectList(){
+        function investigatorProjectList() {
             var _data = this;
             var projects = _data.primaryProjects;
             return '' +
                 '<div class="primaryProjects center">' +
-                    (isArray(projects) && projects.length ? projects.map(function(proj){
-                        var escProj = escapeHtml(proj);
-                        return '<a title="Go to project page for ' + escProj + '" class="link" href="/data/projects/' + escProj + '">' + escProj + '</a>'
-                    }).join(', ') : '&mdash;') +
+                (isArray(projects) && projects.length ? projects.map(function (proj) {
+                    var escProj = escapeHtml(proj);
+                    return '<a title="Go to project page for ' + escProj + '" class="link" href="/data/projects/' + escProj + '">' + escProj + '</a>'
+                }).join(', ') : '&mdash;') +
                 '</div>' +
                 '<div title="investigatorProjects" class="hidden">' +
-                    escapeHtml([].concat(_data.investigatorProjects).join(', ')) +
+                escapeHtml([].concat(_data.investigatorProjects).join(', ')) +
                 '</div>';
         }
 
@@ -435,7 +457,7 @@ var XNAT = getObject(XNAT);
                 id: 'xnat-investigators-list',
                 load: '/xapi/investigators',
                 messages: {
-                    noData: 'There are no investigators defined in this system. Click the button below to create one.' ,
+                    noData: 'There are no investigators defined in this system. Click the button below to create one.',
                     error: 'An error occurred retrieving investigator information.'
                 },
                 items: {
@@ -443,16 +465,18 @@ var XNAT = getObject(XNAT);
                     viewInvestigator: {
                         label: '<div class="hidden"></div>',
                         className: "center",
-                        call: function(){
+                        call: function () {
                             var ID = this.xnatInvestigatordataId;
                             return spawn('a.view-investigator.link', {
                                 href: '#!',
-                                data: { id: ID },
-                                on: { click: function(e){
-                                    e.preventDefault();
-                                    console.log(ID);
-                                    self.dialog(ID)
-                                }}
+                                data: {id: ID},
+                                on: {
+                                    click: function (e) {
+                                        e.preventDefault();
+                                        console.log(ID);
+                                        self.dialog(ID)
+                                    }
+                                }
                             }, 'View')
                         }//,
                         //content: '<a href="#!" class="view-investigator" data-id="__VALUE__">View</a>'
@@ -464,7 +488,7 @@ var XNAT = getObject(XNAT);
                     fullName: {
                         label: 'Name',
                         sort: true,
-                        apply: function(){
+                        apply: function () {
                             return escapeHtml(this.lastname + ', ' + this.firstname)
                         }
                     },
@@ -499,13 +523,15 @@ var XNAT = getObject(XNAT);
                     deleteInvestigator: {
                         label: 'Delete',
                         className: 'center',
-                        apply: function(){
+                        apply: function () {
                             var ID = this.xnatInvestigatordataId;
                             var NAME = escapeHtml(this.firstname + ' ' + this.lastname);
                             return spawn('button.delete-investigator.btn2.btn-sm.center|type=button', {
-                                on: { click: function(){
-                                    self.deleteInvestigator(ID, NAME);
-                                }}
+                                on: {
+                                    click: function () {
+                                        self.deleteInvestigator(ID, NAME);
+                                    }
+                                }
                             }, 'Delete')
                         }
                     }
@@ -525,58 +551,58 @@ var XNAT = getObject(XNAT);
         var new_investigator_click = 'click.newInvestigator';
 
         $('body').off(new_investigator_click, new_investigator_btn)
-                 .on(new_investigator_click, new_investigator_btn, function(){
-                     self.dialog();
-                 });
+            .on(new_investigator_click, new_investigator_btn, function () {
+                self.dialog();
+            });
 
         return this;
 
     };
 
     // MAIN INIT FUNCTION
-    investigators.init = function(opts){
+    investigators.init = function (opts) {
         return new Investigators(opts);
     };
 
-    investigators.dataTable = function(container){
+    investigators.dataTable = function (container) {
         var $container = $$(container).empty();
         var _dataTable = investigators.init().dataTable($container);
         return {
             spawned: _dataTable.table,
             element: _dataTable.table,
-            get: function(){
+            get: function () {
                 return _dataTable.table
             }
-        } ;
+        };
     };
 
-    investigators.getAll = function(opts){
+    investigators.getAll = function (opts) {
         return investigators.init().getAll(opts).xhr;
     };
 
-    investigators.get = function(id){
+    investigators.get = function (id) {
         return investigators.init().get(id).xhr;
     };
 
     // JUST the REST call to create new investigator
-    investigators.createNew = function(opts){
+    investigators.createNew = function (opts) {
         //
     };
 
     // JUST the REST call to update the investigator
-    investigators.update = function(){
+    investigators.update = function () {
         //
     };
 
-    investigators.updateMenus = function(selected){
+    investigators.updateMenus = function (selected) {
         if (investigators.menus && !investigators.menus.length) {
-            investigators.menus.forEach(function(menu){
+            investigators.menus.forEach(function (menu) {
                 menu.updateMenu(selected);
             })
         }
     };
 
-    investigators.delete = function(id, opts){
+    investigators.delete = function (id, opts) {
         if (!id) return false;
         return xhr.delete(extend, {
             url: setupUrl(id, false, true)

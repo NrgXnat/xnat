@@ -773,6 +773,10 @@ var XNAT = getObject(XNAT || {});
 
                 var $form = obj.$modal.find('form');
 
+                if (action.toLowerCase() === "view") {
+                    $form.find('div[data-name=active]').remove();
+                }
+
                 $form.find('#subscription-project-selector').val(getProjectId());
 
                 // when editing an existing event subscription, always show the attributes preview panel

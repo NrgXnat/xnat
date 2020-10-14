@@ -843,20 +843,14 @@ var XNAT = getObject(XNAT);
                                 style: 'width: 100%;'
                             });
                             $filterSubmit = $.spawn(
-                                'div.filter-submit.hidden',
+                                'div.filter-submit',
                                 '<i class="fa fa-arrow-right"></i>'
                             );
                             filterInputs.push($filterInput);
 
                             if (typeof opts.filterAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
                                 $filterInput.on('focus', function(){
-                                    $(this).parents('td').find('.filter-submit').removeClass('hidden');
-
                                     $(this).select();
-                                });
-
-                                $filterInput.on('blur',function(){
-                                    $(this).parents('td').find('.filter-submit').addClass('hidden');
                                 });
 
                                 var filterFn = opts.filterAjax;
@@ -876,7 +870,6 @@ var XNAT = getObject(XNAT);
                                     var val = this.value;
                                     if (e.key === 'Enter' || e.keyCode === '13') {
                                         filterFn.call(newTable, name, val);
-                                        $(this).parents('td').find('.filter-submit').addClass('hidden');
                                     }
                                 })
 
@@ -889,7 +882,6 @@ var XNAT = getObject(XNAT);
                             }
                             else {
                                 $filterInput.on('focus', function(){
-                                    $(this).parents('td').find('.filter-submit').removeClass('hidden');
 
                                     $(this).select();
                                     // clear all filters on focus
@@ -898,10 +890,6 @@ var XNAT = getObject(XNAT);
                                     // (should make filtering slightly faster)
                                     // $dataRows = $table.find('tr[data-filter]');
                                     cacheRows();
-                                });
-
-                                $filterInput.on('blur',function(){
-                                    $(this).find('.filter-submit').remove();
                                 });
 
                                 $filterInput.on('keyup', function(e){

@@ -158,7 +158,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                                 timestamp = timestamp.trim() + ' UTC';
                             }
                             dateString = (new Date(timestamp)).toLocaleString();
-                            // dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+                            dateString = dateString.replace(', ','<br>');
 
                         } else {
                             dateString = 'N/A';

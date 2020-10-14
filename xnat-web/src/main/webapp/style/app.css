@@ -3332,11 +3332,18 @@ th.sort:hover {
 .xnat-table.data-table tr.filter > th {
     background: #f0f0f0;
     border-bottom: 1px solid #ccc;
+    position: relative;
 }
 
 .xnat-table.data-table .filter > input {
     box-sizing: border-box;
     width: 100%;
+}
+.xnat-table.data-table .filter > input + .filter-submit {
+    visibility: hidden;
+}
+.xnat-table.data-table .filter > input:focus + .filter-submit {
+    visibility: visible;
 }
 
 .data-table-wrapper {

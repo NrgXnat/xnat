@@ -214,27 +214,8 @@ var XNAT = getObject(XNAT || {});
     /* -------------------------- *
      * Subscription Display Table *
      * -------------------------- */
-    projEventServicePanel.subscriptionTable = function(){
-        // initialize the table
-        var subTable = XNAT.table({
-            addClass: 'xnat-table compact',
-            style: {
-                width: '100%',
-                marginTop: '15px',
-                marginBottom: '15px'
-            }
-        });
 
-        // add table header row
-        subTable.tr()
-            // .th('<b>ID</b>')
-            .th({ addClass: 'left', html: '<b>Name</b>' })
-            .th('<b>Trigger Event</b>')
-            .th('<b>Action</b>')
-            .th('<b>Created By</b>')
-            .th('<b>Enabled</b>')
-            .th({ style: { width: '125px' }, html: '<b>Action</b>' });
-
+    var subTable = function(subscriptions){
         /* Formatted table cells */
         function subscriptionNiceLabel(subscription){
             var action = (subscription.editable) ? 'Edit' : 'View';
@@ -330,30 +311,82 @@ var XNAT = getObject(XNAT || {});
             }, [ spawn('span.fa.fa-trash') ]);
         }
 
-        projEventServicePanel.getSubscriptions().done(function(data){
-            if (data.length) {
-                data = data.sort(function(a,b){ return (a.id > b.id) ? 1 : -1 });
-
-                data.forEach(function(subscription){
-                    subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
-                        // .td(subscription['id'])
-                        .td([ subscriptionNiceLabel(subscription) ])
-                        .td([ eventNiceName(subscription) ])
-                        .td([ actionNiceName(subscription['action-key']) ])
-                        .td(subscription['subscription-owner'])
-                        .td([ subscriptionEnabledCheckbox(subscription) ])
-                        .td({ addClass: 'center' },[ editSubscriptionButton(subscription), spacer(4), cloneSubscriptionButton(subscription), spacer(4), deleteSubscriptionButton(subscription) ])
-                })
+        return {
+            kind: 'table.dataTable',
+            name: 'adminEventSubscriptionList',
+            id: 'adminEventSubscriptionList',
+            data: subscriptions,
+            table: {},
+            before: {
+                filterCss: {
+                    tag: 'style|type=text/css',
+                    content: '\n' +
+                        'td.align-top { vertical-align: top } \n'
+                }
+            },
+            trs: function(tr, data){
+                tr.id = "tr-" + data.id;
+                addDataAttrs(tr, { filter: '0', data: data.id })
+            },
+            sortable: 'name, event, action, owner',
+            items: {
+                name: {
+                    label: 'Name',
+                    filter: true,
+                    td: { className: 'subscription-name word-wrapped align-top' },
+                    apply: function(){
+                        return subscriptionNiceLabel(this)
+                    }
+                },
+                event: {
+                    label: 'Trigger Event',
+                    filter: true,
+                    td: { className: 'event word-wrapped align-top' },
+                    apply: function(){
+                        return eventNiceName(this)
+                    }
+                },
+                action: {
+                    label: 'Action',
+                    filter: true,
+                    td: { className: 'action word-wrapped align-top' },
+                    apply: function(){
+                        return actionNiceName(this['action-key'])
+                    }
+                },
+                owner: {
+                    label: 'Owner',
+                    filter: true,
+                    td: { className: 'owner' },
+                    apply: function(){
+                        return this['subscription-owner']
+                    }
+                },
+                enabled: {
+                    label: 'Enabled',
+                    filter: false,
+                    td: { className: 'enabled' },
+                    apply: function(){
+                        return subscriptionEnabledCheckbox(this)
+                    }
+                },
+                ACTIONS: {
+                    label: 'Actions',
+                    filter: false,
+                    td: { className: 'ACTIONS nowrap' },
+                    apply: function(){
+                        return spawn('div.center',[
+                            editSubscriptionButton(this),
+                            spacer(4),
+                            cloneSubscriptionButton(this),
+                            spacer(4),
+                            deleteSubscriptionButton(this)
+                        ]);
+                    }
+                }
             }
-            else {
-                subTable.tr().td({ colSpan: '7', html: 'No event subscriptions have been created' })
-            }
+        }
 
-        });
-
-        projEventServicePanel.$table = $(subTable.table);
-
-        return subTable.table;
     };
 
     /* ---------------------------------- *
@@ -1003,6 +1036,9 @@ var XNAT = getObject(XNAT || {});
                                 }
                             }
                         },
+                        subscriptionVerticalSpacer: {
+                            tag: 'br'
+                        },
                         subscriptionTableContainer: {
                             tag: 'div#subscriptionTableContainer'
                         }
@@ -1047,9 +1083,32 @@ var XNAT = getObject(XNAT || {});
 
     projEventServicePanel.showSubscriptionList = projEventServicePanel.refreshSubscriptionList = function(container){
         var $container = $(container || '#subscriptionTableContainer');
-        $container
-            .empty()
-            .append( projEventServicePanel.subscriptionTable() );
+
+        projEventServicePanel.getSubscriptions().done(function(data) {
+            var subscriptionTable;
+
+            if (data.length) {
+                data = data.sort(function (a, b) {
+                    return (a.id > b.id) ? 1 : -1
+                });
+                subscriptionTable = XNAT.spawner.spawn({
+                    sTable: subTable(data)
+                });
+                subscriptionTable.done(function(){
+                    $container.empty();
+                    this.render($container)
+                });
+            }
+            else {
+                $container.empty().append('<p>No event subscriptions have been created.</p>');
+            }
+
+            return;
+        })
+
+        // $container
+        //     .empty()
+        //     .append( projEventServicePanel.subscriptionTable() );
     };
 
     projEventServicePanel.init = function(){

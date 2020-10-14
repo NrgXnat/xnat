@@ -139,32 +139,14 @@ public class FileExtractor {
             return UNKNOWN;
         }
 
+        /**
+         * Return fileName without suffix.
+         *
+         * @param fileNameWithSuffix
+         * @return
+         */
         public String getFileName( String fileNameWithSuffix) {
-            String fileName;
-            switch( this) {
-                case TAR:
-                    fileName = fileNameWithSuffix.replace(".tar", "");
-                    break;
-                case TAR_GZIP:
-                    fileName = fileNameWithSuffix.replace(".tar.gz", "");
-                    break;
-                case TAR_TGZ:
-                    fileName = fileNameWithSuffix.replace(".tgz", "");
-                    break;
-                case ZIP:
-                    fileName = fileNameWithSuffix.replace(".zip", "");
-                    break;
-                case ZAR:
-                    fileName = fileNameWithSuffix.replace(".zar", "");
-                    break;
-                case GZIP:
-                    fileName = fileNameWithSuffix.replace(".gz", "");
-                    break;
-                default:
-                    fileName = fileNameWithSuffix;
-                    break;
-            }
-            return fileName;
+            return (this == UNKNOWN) ? fileNameWithSuffix : fileNameWithSuffix.replace(suffixes[0], "");
         }
     }
 

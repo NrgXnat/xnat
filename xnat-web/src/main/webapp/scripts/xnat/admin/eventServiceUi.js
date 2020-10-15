@@ -319,7 +319,7 @@ var XNAT = getObject(XNAT || {});
                 name: {
                     label: 'Name',
                     filter: true,
-                    td: { className: 'subscription-name word-wrapped align-top' },
+                    td: { className: 'name word-wrapped align-top' },
                     apply: function(){
                         return subscriptionNiceLabel(this.name,this.id)
                     }

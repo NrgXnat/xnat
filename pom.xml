@@ -69,7 +69,7 @@
         <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
-        <spawner.version>${xnat.version}</spawner.version>
+        <spawner.version>${xnatdev.version}</spawner.version>
         <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev.version}</xdat.version>
@@ -101,7 +101,7 @@
         <data-client.version>${xnat.version}</data-client.version>
     
         <!-- XNAT plugin versions -->
-        <ohif-viewer.version>2.2.0-SNAPSHOT</ohif-viewer.version>
+        <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
         <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
         <dqr.version>1.0.0-SNAPSHOT</dqr.version>
         <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>

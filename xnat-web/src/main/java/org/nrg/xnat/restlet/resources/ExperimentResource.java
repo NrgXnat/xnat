@@ -257,7 +257,7 @@ public class ExperimentResource extends ItemResource {
                         _experiment.setId(XnatExperimentdata.CreateNewID());
                     }
 
-                    setSubject(_existing.getItem());
+                    setSubject(_experiment.getItem());
                 } else {
                     if (StringUtils.isBlank(_experiment.getId())) {
                         _experiment.setId(_existing.getId());

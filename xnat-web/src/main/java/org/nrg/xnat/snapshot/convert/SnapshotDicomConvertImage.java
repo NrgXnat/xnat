@@ -49,14 +49,67 @@ public class SnapshotDicomConvertImage {
     private int          height = 0;
 
     public SnapshotDicomConvertImage(final Path path) {
-        this(path.toString());
-    }
-
-    public SnapshotDicomConvertImage(final String dir) {
-        directory = Paths.get(dir);
+        directory = path;
         list = FileUtils.listFiles(directory.toFile(), TrueFileFilter.INSTANCE, FalseFileFilter.INSTANCE).stream().map(file -> directory.relativize(file.toPath())).map(Path::toString).collect(Collectors.toList());
         zipped = list.stream().anyMatch(file -> StringUtils.endsWith(file, ".gz"));
         unzip();
+    }
+
+    public SnapshotDicomConvertImage(final String dir) {
+        this(Paths.get(dir));
+    }
+
+    /**
+     * Calculates the snapshot file names, with the original snapshot name as the pair key and the thumbnail name as the
+     * pair value.
+     *
+     * @param scan The scan.
+     *
+     * @return A pair of strings, with the key as the original snapshot filename and the value as the thumbnail filename
+     */
+    public static Pair<String, String> getSnapshotName(final XnatImagescandataBean scan) {
+        return getSnapshotName(scan.getImageSessionId(), scan.getId(), null);
+    }
+
+    /**
+     * Calculates the snapshot file names, with the original snapshot name as the pair key and the thumbnail name as the
+     * pair value.
+     *
+     * @param scan     The scan.
+     * @param gridView The grid view to render.
+     *
+     * @return A pair of strings, with the key as the original snapshot filename and the value as the thumbnail filename
+     */
+    public static Pair<String, String> getSnapshotName(final XnatImagescandataBean scan, final String gridView) {
+        return getSnapshotName(scan.getImageSessionId(), scan.getId(), gridView);
+    }
+
+    /**
+     * Calculates the snapshot file names, with the original snapshot name as the pair key and the thumbnail name as the
+     * pair value.
+     *
+     * @param sessionId The ID of the session.
+     * @param scanId    The ID of the scan.
+     *
+     * @return A pair of strings, with the key as the original snapshot filename and the value as the thumbnail filename
+     */
+    public static Pair<String, String> getSnapshotName(final String sessionId, final String scanId) {
+        return getSnapshotName(sessionId, scanId, null);
+    }
+
+    /**
+     * Calculates the snapshot file names, with the original snapshot name as the pair key and the thumbnail name as the
+     * pair value.
+     *
+     * @param sessionId The ID of the session.
+     * @param scanId    The ID of the scan.
+     * @param gridView  The grid view to render.
+     *
+     * @return A pair of strings, with the key as the original snapshot filename and the value as the thumbnail filename
+     */
+    public static Pair<String, String> getSnapshotName(final String sessionId, final String scanId, final String gridView) {
+        final String root = sessionId + "_" + scanId + (StringUtils.isNotBlank(gridView) ? "_" + gridView.toUpperCase() : "") + "_qc";
+        return Pair.of(root + ".gif", root + "_t.gif");
     }
 
     /**
@@ -233,20 +286,15 @@ public class SnapshotDicomConvertImage {
         if (snapshot != null) {
             BitConverter converter = new BitConverter();
             converter.convertTo8BitColor(snapshot);
-            final StringBuilder filenameRoot = new StringBuilder(scan.getImageSessionId()).append("_").append(scan.getId());
-            if (!gridview.isEmpty()) {
-                filenameRoot.append("_").append(gridview.toUpperCase());
-            }
-            filenameRoot.append("_qc");
-            final String  fileName = filenameRoot.toString() + ".gif";
+            final Pair<String, String> names    = getSnapshotName(scan, gridview);
+            final String               fileName = names.getKey();
             final String  filePath = Paths.get(cachepaths, fileName).toString();
             final boolean saved    = new PlexiFileSaver(snapshot.getImage()).saveImageAsGif(filePath);
             if (!saved) {
                 throw new Exception("Couldn't save file snapshot for session " + scan.getImageSessionId() + " scan " + scan.getId() + " at the location " + filePath);
             }
             snapshotFile = Paths.get(filePath).toFile();
-            filenameRoot.append("_t");
-            final String thumbnailPath = Paths.get(cachepaths, filenameRoot.toString() + ".gif").toString();
+            final String thumbnailPath = Paths.get(cachepaths, names.getValue()).toString();
             if (!generateThumbnail(snapshot, thumbnailPath)) {
                 log.warn("Couldn't save file thumbnail for session " + scan.getImageSessionId() + " scan " + scan.getId() + " at the location " + thumbnailPath + ", although I think the snapshot image is there.");
             }

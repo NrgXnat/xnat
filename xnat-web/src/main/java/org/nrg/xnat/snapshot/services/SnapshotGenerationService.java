@@ -1,6 +1,9 @@
 package org.nrg.xnat.snapshot.services;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xapi.exceptions.NotFoundException;
+
+import java.io.File;
 
 /**
  * @author pradeep.d
@@ -15,7 +18,7 @@ public interface SnapshotGenerationService {
      *
      * @return The URI to the specified snapshot.
      */
-    String generateSnapshot(final String sessionId, final String scanId) throws NotFoundException;
+    Pair<File, File> getSnapshot(final String sessionId, final String scanId) throws NotFoundException;
 
     /**
      * Gets the URI to the specified snapshot. If the snapshot doesn't already exist, it is generated and added to the
@@ -27,5 +30,5 @@ public interface SnapshotGenerationService {
      *
      * @return The URI to the specified snapshot.
      */
-    String generateSnapshot(final String sessionId, final String scanId, final String gridView) throws NotFoundException;
+    Pair<File, File> getSnapshot(final String sessionId, final String scanId, final String gridView) throws NotFoundException;
 }

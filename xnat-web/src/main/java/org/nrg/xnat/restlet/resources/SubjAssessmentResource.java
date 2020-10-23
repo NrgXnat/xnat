@@ -36,8 +36,8 @@ import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
-import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.PipelineService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -437,7 +437,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
                     if (isQueryVariableTrue(XNATRestConstants.FIX_SCAN_TYPES) || containsAction(XNATRestConstants.FIX_SCAN_TYPES)) {
                         if (expt instanceof XnatImagesessiondata) {
-                            new FixScanTypes(expt, user, proj, false, meta).call();
+                            FixScanTypes.builder().experiment(expt).user(user).project(proj).allowSave(false).eventMeta(meta).build().call();
                         }
                     }
 
@@ -519,7 +519,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                         }
 
                         if (this.isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || this.containsAction(XNATRestConstants.TRIGGER_PIPELINES)) {
-                            new TriggerPipelines(expt, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user).call();
+                            XDAT.getContextService().getBean(PipelineService.class).launchAutoRun(expt, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
                         }
                     }
                 }
@@ -633,7 +633,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                     t.rows().add(row);
                 }
 
-                return representTable(t, mt, new Hashtable<String, Object>());
+                return representTable(t, mt, new Hashtable<>());
             } else {
                 return this.representItem(expt.getItem(), mt);
             }

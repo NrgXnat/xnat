@@ -3,6 +3,7 @@ package org.nrg.xnat.snapshot.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagescandataBean;
@@ -34,25 +35,24 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      * {@inheritDoc}
      */
     @Override
-    public String generateSnapshot(final String sessionId, final String scanId) {
-        return generateSnapshot(sessionId, scanId, null);
+    public Pair<File, File> getSnapshot(final String sessionId, final String scanId) {
+        return getSnapshot(sessionId, scanId, null);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String generateSnapshot(final String sessionId, final String scanId, final String gridView) {
+    public Pair<File, File> getSnapshot(final String sessionId, final String scanId, final String gridView) {
         log.debug("Starting snapshot generation for scan {} of session {} with {} grid view", sessionId, scanId, StringUtils.defaultIfBlank(gridView, "default"));
         final XnatResourcecatalog snapshotCatalog = createOrGetSnapshotCatalog(sessionId, scanId);
-        if (snapshotCatalog != null) {
-            final String path = getSnapshotsImage(snapshotCatalog, sessionId, scanId, gridView);
-            log.debug("Found or created snapshot for scan {} of session {} with {} grid view at path {}", sessionId, scanId, StringUtils.defaultIfBlank(gridView, "default"), path);
-            return path;
+        if (snapshotCatalog == null) {
+            log.error("Snapshot folder for scan {} of session {} does not exist", scanId, sessionId);
+            return ImmutablePair.nullPair();
         }
-
-        log.error("Snapshot folder for scan {} of session {} does not exist", scanId, sessionId);
-        return null;
+        final Pair<File, File> images = getSnapshotsImage(snapshotCatalog, sessionId, scanId, gridView);
+        log.debug("Found or created snapshot and thumbnail for scan {} of session {} with {} grid view at paths {} and {}", sessionId, scanId, StringUtils.defaultIfBlank(gridView, "default"), images.getKey(), images.getValue());
+        return images;
     }
 
     /**
@@ -81,17 +81,17 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      *
      * @return The URI path to the snapshot image.
      */
-    private String getSnapshotsImage(final XnatResourcecatalog snapshotCatalog, final String sessionId, final String scanId, final String gridView) {
+    private Pair<File, File> getSnapshotsImage(final XnatResourcecatalog snapshotCatalog, final String sessionId, final String scanId, final String gridView) {
         log.debug("Getting snapshot image for scan {} of session {} with {} grid view", sessionId, scanId, StringUtils.defaultIfBlank(gridView, "default"));
-        final String imageName = sessionId + "_" + scanId + StringUtils.defaultIfBlank(gridView, "").toUpperCase() + ".gif";
-        final Path   path      = Paths.get(snapshotCatalog.getUri()).getParent();
+        final Path                 path       = Paths.get(snapshotCatalog.getUri()).getParent();
+        final Pair<String, String> imageNames = SnapshotDicomConvertImage.getSnapshotName(sessionId, scanId, gridView);
+        final File                 snapshot   = path.resolve(imageNames.getKey()).toFile();
+        final File                 thumbnail  = path.resolve(imageNames.getValue()).toFile();
         try {
-            final File    target      = path.resolve(imageName).toFile();
-            final boolean imageVerify = target.exists() && target.isFile();
-            return imageVerify ? target.getAbsolutePath() : insertSnapshot(snapshotCatalog, sessionId, scanId, gridView, imageName);
+            return snapshot.exists() && snapshot.isFile() && thumbnail.exists() && thumbnail.isFile() ? Pair.of(snapshot, thumbnail) : insertSnapshot(snapshotCatalog, sessionId, scanId, gridView, imageNames);
         } catch (Exception e) {
-            log.error("An error occurred trying to upload snapshot image {} to the URI {}", imageName, path, e);
-            return null;
+            log.error("An error occurred trying to upload snapshot images {} and {} to the URI {}", imageNames.getKey(), imageNames.getValue(), path, e);
+            return ImmutablePair.nullPair();
         }
     }
 
@@ -102,7 +102,7 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      *
      * @return The URI to the snapshot.
      */
-    private String insertSnapshot(final XnatResourcecatalog snapshotCatalog, final String sessionId, final String scanId, final String gridView, final String imageName) {
+    private Pair<File, File> insertSnapshot(final XnatResourcecatalog snapshotCatalog, final String sessionId, final String scanId, final String gridView, final Pair<String, String> imageNames) {
         final String parentUri = ROOT_URI + sessionId + "/scans/" + scanId;
         try {
             final XnatResourcecatalog dicomCatalog = _catalogService.getResourceDataFromUri(parentUri + DICOM_RESOURCE, true).getCatalogResource();
@@ -119,18 +119,17 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
 
             final Pair<File, File> snapshots = StringUtils.isNotBlank(gridView) ? converter.createSnapshotImage(scan, tempImagePath, true, gridView) : converter.createSnapshotImage(scan, tempImagePath, false, "");
             log.debug("Uploading snapshot {} and thumbnail {} into snapshots folder {}", snapshots.getLeft().getAbsolutePath(), snapshots.getRight().getAbsolutePath(), snapshotCatalog.getUri());
-            final File snapshot = snapshots.getKey();
-            final File thumbnail = snapshots.getValue();
-            _catalogService.insertResources(XDAT.getUserDetails(), snapshotCatalog, XnatResourceInfoMap.builder().resource(snapshot.getName(), snapshot, GIF, ORIGINAL).resource(thumbnail.getName(), thumbnail, GIF, THUMBNAIL).build());
+            final File                snapshot  = snapshots.getKey();
+            final File                thumbnail = snapshots.getValue();
+            final XnatResourcecatalog updated   = _catalogService.insertResources(XDAT.getUserDetails(), snapshotCatalog, XnatResourceInfoMap.builder().resource(snapshot.getName(), snapshot, GIF, ORIGINAL).resource(thumbnail.getName(), thumbnail, GIF, THUMBNAIL).build());
             FileUtils.deleteQuietly(snapshot);
             FileUtils.deleteQuietly(thumbnail);
 
-            final Path snapshotPath = Paths.get(snapshotCatalog.getUri()).getParent();
-            final Path imagePath    = snapshotPath.resolve(imageName);
-            return imagePath.toFile().exists() ? imagePath.toString() : snapshotPath.toString();
+            final Path snapshotPath = Paths.get(updated.getUri()).getParent();
+            return Pair.of(snapshotPath.resolve(imageNames.getKey()).toFile(), snapshotPath.resolve(imageNames.getValue()).toFile());
         } catch (Exception e) {
             log.error("An error occurred trying to upload snapshot images to the URI {}", parentUri, e);
-            return null;
+            return ImmutablePair.nullPair();
         }
     }
 

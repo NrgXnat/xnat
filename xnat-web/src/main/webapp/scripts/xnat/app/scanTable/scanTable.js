@@ -63,16 +63,17 @@ var XNAT = getObject(XNAT);
         }, 5000);
     }
 
-    function loadSnapshotImageNoBlocking(scanID,gridVal) {
-        var element = $(".span-" + "scan" + scanID + "snapshot"),
-            exprId = element ? element.data('expt-id') : null,
-            elementLoaded = element ? element.data('loaded') : false;
+    function loadSnapshotImageNoBlocking(scanID, view) {
+        const element = $(".span-" + "scan" + scanID + "snapshot");
+        const exprId = element ? element.data('expt-id') : null;
+        const elementLoaded = element ? element.data('loaded') : false;
         if (exprId) {
-            if (elementLoaded && !gridVal) {
+            if (elementLoaded && !view) {
                 return true;
             }
-            const src = gridVal ? '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot/grid/'+ gridVal
-                                : '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
+            const src = view
+                ? '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot/' + view
+                : '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
             $.ajax({
                 url: XNAT.url.restUrl(src),
                 type: 'HEAD',
@@ -152,10 +153,14 @@ var XNAT = getObject(XNAT);
 
     };
 
-    scanTable.displayScanDetailsGrid = function(scanId,gridVal){
-        if (!scanId) return false;
-        if(scanTable.scanDetailsOpen.includes(scanId)) return false;
-        loadSnapshotImageNoBlocking(scanId,gridVal);
+    scanTable.displayScanDetailsGrid = function(scanId, view){
+        if (!scanId) {
+            return false;
+        }
+        if (scanTable.scanDetailsOpen.includes(scanId)) {
+            return false;
+        }
+        loadSnapshotImageNoBlocking(scanId, view);
      }
      
     // download all selected scans

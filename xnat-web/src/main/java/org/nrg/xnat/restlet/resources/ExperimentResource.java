@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -36,8 +37,8 @@ import org.nrg.xnat.archive.ValidationException;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
-import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.PipelineService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -304,8 +305,7 @@ public class ExperimentResource extends ItemResource {
 
                 if (isQueryVariableTrue(XNATRestConstants.FIX_SCAN_TYPES) || containsAction(XNATRestConstants.FIX_SCAN_TYPES)) {
                     if (_experiment instanceof XnatImagesessiondata) {
-                        FixScanTypes fst = new FixScanTypes(_experiment, user, _project, false, c);
-                        fst.call();
+                        FixScanTypes.builder().experiment(_experiment).user(user).project(_project).allowSave(false).eventMeta(c).build().call();
                     }
                 }
 
@@ -387,8 +387,7 @@ public class ExperimentResource extends ItemResource {
                     }
 
                     if (isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || containsAction(XNATRestConstants.TRIGGER_PIPELINES)) {
-                        TriggerPipelines tp = new TriggerPipelines(_experiment, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
-                        tp.call();
+                        XDAT.getContextService().getBean(PipelineService.class).launchAutoRun(_experiment, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
                     }
                 }
             }

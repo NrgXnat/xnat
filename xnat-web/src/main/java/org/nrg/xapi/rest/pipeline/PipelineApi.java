@@ -1,53 +1,50 @@
 package org.nrg.xapi.rest.pipeline;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
-import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.nrg.xdat.security.helpers.AccessLevel.*;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.*;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.pipeline.PipelineDetailsHelper;
-import org.nrg.pipeline.PipelineLaunchHandler;
-import org.nrg.pipeline.PipelineLaunchReport;
-import org.nrg.pipeline.PipelineLaunchStatus;
-import org.nrg.pipeline.PipelineRepositoryManager;
-import org.nrg.pipeline.ProcessLauncher;
+import org.nrg.pipeline.*;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.om.ArcPipelineparameterdata;
 import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.PipePipelinedetailsParameter;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ResourceData;
+import org.nrg.xnat.preferences.PipelinePreferences;
 import org.nrg.xnat.restlet.representations.JSONTableRepresentation;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -56,380 +53,373 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import lombok.extern.slf4j.Slf4j;
-
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author Mohana Ramaratnam
  */
-@Api(description = "XNAT Traditional Pipeline Management API")
+@Api("XNAT Traditional Pipeline Management API")
 @XapiRestController
 @RequestMapping(value = "/pipelines")
 @Slf4j
 public class PipelineApi extends AbstractXapiRestController {
-
-    private static final org.slf4j.Logger launchLogger = LoggerFactory.getLogger("org.nrg.pipeline.launch");
-
-
     @Autowired
-    public PipelineApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService catalogService, final JdbcTemplate jdbcTemplate, final SerializerService serializerService) {
+    public PipelineApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService catalogService, final JdbcTemplate jdbcTemplate, final SerializerService serializerService, final SiteConfigPreferences siteConfigPreferences, final PipelinePreferences pipelinePreferences, final AliasTokenService aliasTokenService) {
         super(userManagementService, roleHolder);
-        this.catalogService = catalogService;
+        this._catalogService = catalogService;
         _jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
         _serializerService = serializerService;
+        _siteConfigPreferences = siteConfigPreferences;
+        _pipelinePreferences = pipelinePreferences;
+        _aliasTokenService = aliasTokenService;
+        _isWindows = System.getProperty("os.name").toUpperCase().startsWith("WINDOWS");
     }
 
     @XapiRequestMapping(value = {"/site"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get a list of site wide pipelines for a given datatype (optional)")
-    public ResponseEntity<String> getSitePipelines(@RequestParam(value = "xsiType", required = false) final String xsiType) {
+    public String getSitePipelines(@RequestParam(value = "xsiType", required = false) final String xsiType) throws InitializationException {
+        final ArcProject arcProject;
         try {
-            ArcProject arcProject;
-            if (xsiType == null) {
-                arcProject = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject();
-            } else {
-                arcProject = PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject(xsiType);
-            }
-            if (arcProject != null) {
-                final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
-                return getJsonAsStringResponse(table);
-            } else {
-                return new ResponseEntity<>("Unable to generate generic arc project", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            arcProject = xsiType == null ? PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject() : PipelineRepositoryManager.GetInstance().createNewArcProjectForDummyProject(xsiType);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new InitializationException("Unable to generate generic arc project", e);
+        }
+        if (arcProject == null) {
+            throw new InitializationException("Unable to generate generic arc project");
+        }
+        final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
+        try {
+            return getJsonAsStringResponse(table);
+        } catch (IOException e) {
+            throw new InitializationException("Unable to generate generic arc project", e);
         }
     }
 
     @XapiRequestMapping(value = {"/project/{projectId}"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
-	@ApiOperation(value = "Get a list of project-enabled pipelines for a given datatype (optional)")
-	public ResponseEntity<String> getProjectPipelines(@PathVariable(value = "projectId") final String projectId,
-                                                      @RequestParam(value = "xsiType", required = false) final String xsiType) {
-		try {
-		    XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, getSessionUser(), false);
-		    if (project == null) {
-                return new ResponseEntity<>("No such project", HttpStatus.BAD_REQUEST);
-            }
-			ArcProject arcProject = project.getArcSpecification();
-		    if (arcProject == null) {
-                return new ResponseEntity<>("Invalid configuration for project " + projectId,
-                        HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
-		    if (xsiType != null) {
-		        // filter for only pipelines that apply to the datatype
-                ArrayList<String> cols = new ArrayList<>();
-                Collections.addAll(cols, table.getColumns());
-		        ArrayList<Object[]> rows = new ArrayList<>();
-		        while (table.hasMoreRows()) {
-                    Object[] row = table.nextRow();
-                    String pipelineDataType = (String) row[5];
-                    if (StringUtils.isNotBlank(pipelineDataType) &&
-                            (pipelineDataType.equals("All Datatypes") || pipelineDataType.equals(xsiType))) {
-                        rows.add(row);
-                    }
+    @ApiOperation(value = "Get a list of project-enabled pipelines for a given datatype (optional)")
+    public String getProjectPipelines(@PathVariable(value = "projectId") final String projectId, @RequestParam(value = "xsiType", required = false) final String xsiType) throws NotFoundException, InitializationException {
+        final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, getSessionUser(), false);
+        if (project == null) {
+            throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
+        }
+        final ArcProject arcProject = project.getArcSpecification();
+        if (arcProject == null) {
+            throw new InitializationException("Invalid configuration for project " + projectId);
+        }
+        final XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
+        if (StringUtils.isNotBlank(xsiType)) {
+            // filter for only pipelines that apply to the datatype
+            final ArrayList<String> cols = new ArrayList<>();
+            Collections.addAll(cols, table.getColumns());
+            final ArrayList<Object[]> rows = new ArrayList<>();
+            while (table.hasMoreRows()) {
+                final Object[] row              = table.nextRow();
+                final String   pipelineDataType = (String) row[5];
+                if (StringUtils.equalsAny(pipelineDataType, ALL_DATATYPES, xsiType)) {
+                    rows.add(row);
                 }
-		        table.initTable(cols, rows);
             }
+            table.initTable(cols, rows);
+        }
+        try {
             return getJsonAsStringResponse(table);
         } catch (Exception e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+            throw new InitializationException("An error occurred trying to return the pipelines for the project " + projectId, e);
+        }
+    }
 
-    @XapiRequestMapping(value = {"/parameters"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
+    @XapiRequestMapping(value = "/parameters", method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get the site-wide parameter details for the pipeline identified by its name; optionally pass the project id to get the project specific parameters")
-    public ResponseEntity<String> getSitePipelineParameters(@RequestParam("pipelinename") final String pipelineName,
-                                                            @RequestParam(value = "project", required = false) final String projectId) {
-        PipelineDetailsHelper pipelineDetailsHelper = new PipelineDetailsHelper(projectId);
+    public String getSitePipelineParameters(@RequestParam("pipelinename") final String pipelineName, @RequestParam(value = "project", required = false) final String projectId) throws InitializationException {
+        final PipelineDetailsHelper pipelineDetailsHelper = new PipelineDetailsHelper(projectId);
         try {
-            Map<String, Object> pipelineDetails = pipelineDetailsHelper.getPipelineDetailsMap(pipelineName, true);
+            final Map<String, Object> pipelineDetails = pipelineDetailsHelper.getPipelineDetailsMap(pipelineName, true);
             // Make a json object from the pipelineDetails map
-            String json = _serializerService.toJson(pipelineDetails);
-            return new ResponseEntity<>(json, HttpStatus.OK);
+            return _serializerService.toJson(pipelineDetails);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            final String message = StringUtils.isNotBlank(projectId)
+                                   ? "An error occurred trying to retrieve the parameters for the pipeline " + pipelineName + " for the project " + projectId
+                                   : "An error occurred trying to retrieve the site-wide parameters for the pipeline " + pipelineName;
+            throw new InitializationException(message, e);
         }
     }
 
     @XapiRequestMapping(value = {"/launch/{pipelineNameOrStep}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Resolve the parameters and launch the pipeline")
-    public ResponseEntity<PipelineLaunchReport> launchPipelineWQueryParams(@RequestParam(value = "project", required = false) final String projectId,
-                                                                           @PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
-                                                                           final @RequestBody Map<String, String> allRequestParams) {
-        UserI user = getSessionUser();
-        PipelineLaunchReport launchReport = new PipelineLaunchReport();
-        _log.info("Launch requested for pipeline " + pipelineNameOrStep);
-
-        List<PipelineLaunchStatus> pipelineLaunch = new ArrayList<PipelineLaunchStatus>();
-        int successCount = 0;
-        int failureCount = 0;
+    public PipelineLaunchReport launchPipelineWQueryParams(@RequestParam(value = "project", required = false) final String projectId,
+                                                           @PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
+                                                           final @RequestBody Map<String, String> allRequestParams) throws DataFormatException, NotFoundException {
+        if (StringUtils.isNotBlank(projectId) && !Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
+            throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
+        }
 
         //This JSON may look like
         //{"Experiments":"[\"/archive/experiments/XNAT_E00001\",\"/archive/experiments/XNAT_E00003\"]","create_nii":"Y","overwrite":"Y"}
-        String experimentIdOrUri = allRequestParams.get(EXPERIMENTS);
-        if (experimentIdOrUri == null) {
-            experimentIdOrUri = allRequestParams.get(EXPERIMENTS.toLowerCase());
-        }
-        if (experimentIdOrUri == null) {
-            experimentIdOrUri = allRequestParams.get(EXPERIMENTS.toUpperCase());
+        final String experimentIdOrUri = getExperiments(allRequestParams);
+        if (StringUtils.isBlank(experimentIdOrUri)) {
+            throw new DataFormatException(NO_EXPERIMENTS_FOUND);
         }
 
-        if (experimentIdOrUri == null) {
-            launchReport.setSuccesses(0);
-            launchReport.setFailures(0);
-            return new ResponseEntity<>(launchReport, HttpStatus.BAD_REQUEST);
-        }
-        Map<String, String> queryParams = extractJustParameters(allRequestParams);
-        Map<String, String> schemaLinkParams = extractSchemaLinkParameters(allRequestParams);
+        log.info("Launch requested for pipeline {} on experiment {}", pipelineNameOrStep, experimentIdOrUri);
 
-        String[] splits = experimentIdOrUri.replace("[", "").replace("]", "").split(",");
-        ArrayList<String> uriAsList = new ArrayList<>(Arrays.asList(splits));
+        final UserI                      user             = getSessionUser();
+        final List<PipelineLaunchStatus> pipelineLaunch   = new ArrayList<>();
+        final AtomicInteger              successCount     = new AtomicInteger();
+        final AtomicInteger              failureCount     = new AtomicInteger();
+        final Map<String, String>        queryParams      = extractJustParameters(allRequestParams);
+        final Map<String, String>        schemaLinkParams = extractSchemaLinkParameters(allRequestParams);
 
-        for (String expIdOrUri : uriAsList) {
+        for (final String expIdOrUri : getExperimentsFromIdOrUri(experimentIdOrUri)) {
             try {
-                String experimentId = getExperimentIdFromUri(expIdOrUri.replace("\"", ""));
-                XnatExperimentdata exp = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
-                String _projectId = projectId;
-                if (_projectId == null) {
-                    _projectId = exp.getProject();
-                }
-                XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(_projectId, user, false);
-                if (project == null) {
+                final String             experimentId = getExperimentIdFromUri(expIdOrUri);
+                final XnatExperimentdata experiment   = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
+                if (experiment == null) {
                     pipelineLaunch.add(markLaunchFailure(projectId, experimentId, ""));
-                    failureCount++;
+                    failureCount.incrementAndGet();
+                    break;
+                }
+                final String _projectId = StringUtils.defaultIfBlank(projectId, experiment.getProject());
+                if (!Permissions.verifyProjectExists(_jdbcTemplate, _projectId)) {
+                    pipelineLaunch.add(markLaunchFailure(_projectId, experimentId, ""));
+                    failureCount.incrementAndGet();
                     break;
                 }
 
-                if (exp == null) {
-                    pipelineLaunch.add(markLaunchFailure(projectId, experimentId, ""));
-                    failureCount++;
-                } else {
-                    Map<String, String> qParams = new HashMap<String, String>();
-                    Map<String, String> bodyParams = new HashMap<String, String>();
-                    Map<String, String> xmlDocumentParams = new HashMap<String, String>();
-                    String XMLbody = "";
-                    qParams.putAll(queryParams);
-                    Map<String, String> resolvedSchemaLink = resolveSchemaLink(exp, schemaLinkParams);
-                    qParams.putAll(resolvedSchemaLink);
+                final XnatProjectdata     project           = XnatProjectdata.getProjectByIDorAlias(_projectId, user, false);
+                final Map<String, String> xmlDocumentParams = new HashMap<>();
+                final Map<String, String> bodyParams        = new HashMap<>();
+                final Map<String, String> qParams           = new HashMap<>(queryParams);
+                qParams.putAll(resolveSchemaLink(experiment, schemaLinkParams));
 
-                    PipelineLaunchHandler pipelineLaunchHandler = new PipelineLaunchHandler(project, exp, pipelineNameOrStep);
-                    boolean status = pipelineLaunchHandler.handleLaunch(bodyParams, qParams, xmlDocumentParams, XMLbody, user);
-                    if (status) {
-                        successCount++;
-                        pipelineLaunch.add(markLaunchSuccess(projectId, experimentId, exp.getLabel()));
-                    } else {
-                        failureCount++;
-                        pipelineLaunch.add(markLaunchFailure(projectId, experimentId, exp.getLabel()));
-                    }
+                final PipelineLaunchHandler pipelineLaunchHandler = new PipelineLaunchHandler(project, experiment, pipelineNameOrStep);
+                final boolean               status                = pipelineLaunchHandler.handleLaunch(bodyParams, qParams, xmlDocumentParams, "", user);
+                if (status) {
+                    successCount.incrementAndGet();
+                    pipelineLaunch.add(markLaunchSuccess(projectId, experimentId, experiment.getLabel()));
+                } else {
+                    failureCount.incrementAndGet();
+                    pipelineLaunch.add(markLaunchFailure(projectId, experimentId, experiment.getLabel()));
                 }
             } catch (Exception ce) {
-                failureCount++;
+                failureCount.incrementAndGet();
                 pipelineLaunch.add(markLaunchFailure(projectId, expIdOrUri, ""));
             }
 
         }
-        launchReport.setSuccesses(successCount);
-        launchReport.setFailures(failureCount);
+
+        final PipelineLaunchReport launchReport = new PipelineLaunchReport();
+        launchReport.setSuccesses(successCount.get());
+        launchReport.setFailures(failureCount.get());
         launchReport.setExperimentLaunchStatuses(pipelineLaunch);
         launchReport.setParams(queryParams);
-
-        return new ResponseEntity<>(launchReport, HttpStatus.OK);
+        return launchReport;
     }
 
-
-    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit,
-            produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Resolve the parameters and terminate the pipeline")
-    public ResponseEntity<PipelineLaunchReport> terminate(@PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
-                                                          @PathVariable("projectId") @Project final String projectId,
-                                                          final @RequestBody Map<String, String> allRequestParams) {
-        UserI user = getSessionUser();
-        PipelineLaunchReport launchReport = new PipelineLaunchReport();
-        int successCount = 0;
-        int failureCount = 0;
-        List<PipelineLaunchStatus> pipelineLaunch = new ArrayList<PipelineLaunchStatus>();
-        Map<String, String> idToLabel = new HashMap<String, String>();
+    @ApiResponses({@ApiResponse(code = 200, message = "Parameters resolved and pipeline successfully terminated."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to terminate the specified pipeline."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit,
+                        produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public PipelineLaunchReport terminate(@PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
+                                          @PathVariable("projectId") @Project final String projectId,
+                                          final @RequestBody Map<String, String> allRequestParams) throws DataFormatException {
+        log.debug("Terminating pipeline name or step {} for project {} with the following parameters: {}", pipelineNameOrStep, projectId, allRequestParams);
 
         //This JSON may look like
         //{"experiments":"[\"/archive/experiments/XNAT_E00001\",\"/archive/experiments/XNAT_E00003\"]", "pipelinePath":"/data/pipeline/catalog/dicom/DicomToNifti.xml"}
-        String experimentIdOrUri = allRequestParams.get(EXPERIMENTS);
-        String pipelinePath = allRequestParams.get("pipelinePath");
-
-
-        if (experimentIdOrUri == null) {
-            experimentIdOrUri = allRequestParams.get(EXPERIMENTS.toLowerCase());
+        final String experimentIdOrUri = getExperiments(allRequestParams);
+        final String pipelinePath      = allRequestParams.get(PIPELINE_PATH);
+        if (StringUtils.isBlank(experimentIdOrUri)) {
+            throw new DataFormatException(NO_EXPERIMENTS_FOUND);
         }
-        if (experimentIdOrUri == null) {
-            experimentIdOrUri = allRequestParams.get(EXPERIMENTS.toUpperCase());
+        if (StringUtils.isBlank(pipelinePath)) {
+            throw new DataFormatException(NO_PIPELINE_PATH_FOUND);
         }
 
-        if (experimentIdOrUri == null || pipelinePath == null) {
-            launchReport.setSuccesses(0);
-            launchReport.setFailures(0);
-            return new ResponseEntity<>(launchReport, HttpStatus.BAD_REQUEST);
-        }
-
-        String[] splits = experimentIdOrUri.replace("[", "").replace("]", "").split(",");
-        ArrayList<String> uriAsList = new ArrayList<>(Arrays.asList(splits));
-        ArrayList<String> experimentIds = new ArrayList<String>();
-        for (String expIdOrUri : uriAsList) {
+        final UserI                      user           = getSessionUser();
+        final AtomicInteger              successCount   = new AtomicInteger();
+        final AtomicInteger              failureCount   = new AtomicInteger();
+        final List<PipelineLaunchStatus> pipelineLaunch = new ArrayList<>();
+        final Map<String, String>        idToLabel      = new HashMap<>();
+        final List<String>               experimentIds  = new ArrayList<>();
+        for (final String expIdOrUri : getExperimentsFromIdOrUri(experimentIdOrUri)) {
             try {
-                String experimentId = getExperimentIdFromUri(expIdOrUri.replace("\"", ""));
-                XnatExperimentdata exp = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
-                if (exp == null) {
+                final String             experimentId = getExperimentIdFromUri(expIdOrUri);
+                final XnatExperimentdata experiment   = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
+                if (experiment == null) {
                     pipelineLaunch.add(markLaunchFailure(projectId, experimentId, ""));
-                    failureCount++;
-                } else {
-                    experimentIds.add(experimentId);
-                    idToLabel.put(experimentId, exp.getLabel());
+                    failureCount.incrementAndGet();
+                    break;
                 }
+                experimentIds.add(experimentId);
+                idToLabel.put(experimentId, experiment.getLabel());
             } catch (ClientException ce) {
-                failureCount++;
+                failureCount.incrementAndGet();
                 pipelineLaunch.add(markLaunchFailure(projectId, expIdOrUri, ""));
             }
         }
 
-        List<Map<String, Object>> dbWorkflowRows = geLatestWorkflow(user, pipelinePath, experimentIds, projectId);
-        for (Map row : dbWorkflowRows) {
-            Integer wId = (Integer) row.get("wrk_workflowdata_id");
-            String jId = (String) row.get("jobId");
-            String experimentId = (String) row.get("id");
-            String label = idToLabel.get(experimentId);
-            boolean successStatus = triggerTerminate(user, experimentId, wId.toString(), jId, label, projectId, pipelinePath);
-            if (successStatus) {
-                successCount++;
+        final List<Map<String, Object>> dbWorkflowRows = getLatestWorkflow(pipelinePath, projectId, experimentIds);
+        for (final Map<String, Object> row : dbWorkflowRows) {
+            final Integer wId          = (Integer) row.get("wrk_workflowdata_id");
+            final String  jId          = (String) row.get("jobId");
+            final String  experimentId = (String) row.get("id");
+            final String  label        = idToLabel.get(experimentId);
+            if (triggerTerminate(user, experimentId, wId.toString(), jId, label, projectId, pipelinePath)) {
+                successCount.incrementAndGet();
                 pipelineLaunch.add(markLaunchSuccess(projectId, experimentId, ""));
             } else {
-                failureCount++;
+                failureCount.incrementAndGet();
                 pipelineLaunch.add(markLaunchFailure(projectId, experimentId, ""));
             }
         }
 
         idToLabel.put("pipelinePath", pipelinePath);
-        launchReport.setSuccesses(successCount);
-        launchReport.setFailures(failureCount);
-        launchReport.setParams(idToLabel);
-        return new ResponseEntity<>(launchReport, HttpStatus.OK);
 
+        final PipelineLaunchReport launchReport = new PipelineLaunchReport();
+        launchReport.setSuccesses(successCount.get());
+        launchReport.setFailures(failureCount.get());
+        launchReport.setExperimentLaunchStatuses(pipelineLaunch);
+        launchReport.setParams(idToLabel);
+        return launchReport;
     }
 
-    private boolean terminateFileExists(String command) {
-        File f = new File(command);
-        return (f.exists() && f.canExecute());
+    @ApiOperation(value = "Indicates whether the AutoRun pipeline is enabled or disabled on a site-wide or per-project basis")
+    @ApiResponses({@ApiResponse(code = 200, message = "AutoRun configuration for site or project successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to check AutoRun settings for the site or specified project."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = GET, restrictTo = Read, produces = MediaType.APPLICATION_JSON_VALUE)
+    public boolean isAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId) throws NotFoundException {
+        final boolean isProjectSpecified = StringUtils.isBlank(projectId);
+        if (isProjectSpecified) {
+            if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
+                throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
+            }
+            log.debug("User {} checking whether AutoRun pipeline is enabled for project {}", getSessionUser().getUsername(), projectId);
+            return _pipelinePreferences.isAutoRunEnabled(projectId);
+        }
+        log.debug("User {} checking whether AutoRun pipeline is enabled for site", getSessionUser().getUsername());
+        return _pipelinePreferences.isAutoRunEnabled();
+    }
+
+    @ApiOperation(value = "Sets whether the AutoRun pipeline is enabled or disabled on a site-wide or per-project basis")
+    @ApiResponses({@ApiResponse(code = 200, message = "AutoRun successfully configured for site or project."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to modify AutoRun settings for the site or specified project."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = PUT, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE)
+    public void setAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId, @RequestParam final boolean enable) throws NotFoundException {
+        final boolean isProjectSpecified = StringUtils.isBlank(projectId);
+        if (isProjectSpecified) {
+            if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
+                throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
+            }
+            log.debug("User {} {} AutoRun pipeline for project {}", getSessionUser().getUsername(), enable ? "enabling" : "disabling", projectId);
+            _pipelinePreferences.setAutoRunEnabled(projectId, enable);
+        }
+        log.debug("User {} {} AutoRun pipeline for site", getSessionUser().getUsername(), enable ? "enabling" : "disabling");
+        _pipelinePreferences.setAutoRunEnabled(enable);
+    }
+
+    private boolean terminateFileExists(final String command) {
+        final File file = new File(command);
+        return file.exists() && file.canExecute();
     }
 
     private boolean triggerTerminate(UserI user, String xnatId, String workflowId, String jobId, String label, String projectId, String pipelinePath) {
-        boolean success = false;
-        String command = Paths.get(XDAT.getSiteConfigPreferences().getPipelinePath(), "bin", "killxnatpipeline").toString();
-        if (System.getProperty("os.name").toUpperCase().startsWith("WINDOWS")) {
-            command += ".bat";
-        }
-
-        boolean fileExists = terminateFileExists(command);
+        final String  command    = Paths.get(_siteConfigPreferences.getPipelinePath(), "bin", "killxnatpipeline").toString() + (_isWindows ? ".bat" : "");
+        final boolean fileExists = terminateFileExists(command);
         if (!fileExists) {
             return false;
         }
 
-        final String pipelineUrl = XDAT.safeSiteConfigProperty("processingUrl", "");
-        String host = StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
+        final String pipelineUrl = _siteConfigPreferences.getProcessingUrl();
+        final String host        = StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
 
 
-        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user);
-        List<String> arguments = new ArrayList<>();
-        arguments.add("-id");
-        arguments.add(xnatId);
-        arguments.add("-host");
-        arguments.add(host);
-        arguments.add("-u");
-        arguments.add(token.getAlias());
-        arguments.add("-pwd");
-        arguments.add(token.getSecret());
-        arguments.add("-workflowId");
-        arguments.add(workflowId);
-        arguments.add("-jobId");
-        arguments.add(jobId == null ? "null" : jobId);
-        arguments.add("-pipelinePath");
-        arguments.add(pipelinePath);
-        arguments.add("-project");
-        arguments.add(projectId);
-        arguments.add("-label");
-        arguments.add(label);
+        final AliasToken    token  = _aliasTokenService.issueTokenForUser(user);
+        final StringBuilder buffer = new StringBuilder(command);
+        buffer.append(" -id ");
+        buffer.append(xnatId);
+        buffer.append(" -host ");
+        buffer.append(host);
+        buffer.append(" -u ");
+        buffer.append(token.getAlias());
+        buffer.append(" -pwd ");
+        buffer.append(token.getSecret());
+        buffer.append(" -workflowId ");
+        buffer.append(workflowId);
+        buffer.append(" -jobId ");
+        buffer.append(jobId == null ? " null " : jobId);
+        buffer.append(" -pipelinePath ");
+        buffer.append(pipelinePath);
+        buffer.append(" -project ");
+        buffer.append(projectId);
+        buffer.append(" -label ");
+        buffer.append(label);
 
-        StringBuilder commandWithArguments = new StringBuilder();
-        commandWithArguments.append(command + "  ");
-        for (String argument : arguments) {
-            commandWithArguments.append(argument).append(" ");
-        }
-
+        final String commandWithArguments = buffer.toString().trim();
         try {
-
-            if (launchLogger.isInfoEnabled()) {
-                launchLogger.info("Terminating pipeline with command: " + commandWithArguments);
-            }
-
-            ProcessLauncher processLauncher = new ProcessLauncher();
-            processLauncher.setCommand(commandWithArguments.toString().trim());
+            launchLogger.info("Terminating pipeline with command: {}", commandWithArguments);
+            final ProcessLauncher processLauncher = new ProcessLauncher();
+            processLauncher.setCommand(commandWithArguments);
             processLauncher.start();
+            return true;
         } catch (Exception e) {
-            launchLogger.error(e.getMessage() + " for command " + commandWithArguments, e);
-            success = false;
+            launchLogger.error("An error occurred trying to run a pipeline with command {}", buffer, e);
+            return false;
         }
-        return success;
     }
 
+    private Map<String, String> extractJustParameters(Map<String, String> parameters) {
+        return extractParameters(parameters, key -> !StringUtils.equalsIgnoreCase(key, EXPERIMENTS) && !StringUtils.startsWith(key, SCHEMALINK_NAME_START));
+    }
 
-    private HashMap<String, String> extractJustParameters(Map<String, String> allRequestParams) {
-        HashMap<String, String> params = new HashMap<String, String>();
-        for (Map.Entry<String, String> entry : allRequestParams.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (!EXPERIMENTS.equalsIgnoreCase(key) && !key.startsWith(SCHEMALINK_NAME_START)) {
-                params.put(key, value);
+    private Map<String, String> extractSchemaLinkParameters(final Map<String, String> parameters) {
+        return extractParameters(parameters, key -> StringUtils.startsWith(key, SCHEMALINK_NAME_START));
+    }
+
+    private Map<String, String> extractParameters(final Map<String, String> parameters, final Predicate<String> predicate) {
+        return parameters.keySet().stream().filter(predicate).collect(Collectors.toMap(key -> StringUtils.strip(key, SCHEMALINK_NAME_START), parameters::get));
+    }
+
+    private Map<String, String> resolveSchemaLink(final ItemI om, final Map<String, String> schemaLinkParam) {
+        return schemaLinkParam.keySet().stream().collect(Collectors.toMap(Function.identity(), key -> resolveValues(om, key)));
+    }
+
+    private static String resolveValues(final ItemI om, final String schemaLink) {
+        final Object object;
+        try {
+            object = om.getItem().getProperty(schemaLink, true);
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+            throw new RuntimeException("An error occurred trying to resolve the " + schemaLink + " property on object " + om, e);
+        }
+        if (object == null) {
+            return "";
+        }
+        try {
+            //noinspection unchecked
+            final ArrayList<? extends Class<?>> matches = (ArrayList<? extends Class<?>>) object;
+            if (matches.size() == 1) {
+                return matches.get(0).toString();
             }
+            return "[" + matches.stream().map(Object::toString).collect(Collectors.joining(",")) + "]";
+        } catch (ClassCastException cce) {
+            return object.toString();
         }
-        return params;
-    }
-
-    private HashMap<String, String> extractSchemaLinkParameters(Map<String, String> allRequestParams) {
-        HashMap<String, String> params = new HashMap<String, String>();
-        for (Map.Entry<String, String> entry : allRequestParams.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (!EXPERIMENTS.equalsIgnoreCase(key) && key.startsWith(SCHEMALINK_NAME_START)) {
-                params.put(key.substring(SCHEMALINK_NAME_START.length()), value);
-            }
-        }
-        return params;
-    }
-
-    private Map<String, String> resolveSchemaLink(ItemI om, Map<String, String> schemaLinkParam) throws Exception {
-        Map<String, String> resolvedValues = new HashMap<String, String>();
-        for (Map.Entry<String, String> entry : schemaLinkParam.entrySet()) {
-            String schemaLink = entry.getKey();
-            String resolvedValue = resolveValues(om, schemaLink);
-        }
-        return resolvedValues;
-    }
-
-    private String resolveValues(ItemI om, String schemaLink) throws Exception {
-        String rtn = "";
-        Object o = om.getItem().getProperty(schemaLink, true);
-        if (o != null) {
-            try {
-                ArrayList<? extends Class> matches = (ArrayList<? extends Class>) o;
-                if (matches.size() == 1) {
-                    rtn = "" + matches.get(0);
-                } else {
-                    rtn = "[" + StringUtils.join(matches.toArray(), ",") + "]";
-                }
-            } catch (ClassCastException cce) {
-                rtn = "" + o;
-            }
-        }
-        return rtn;
     }
 
     private PipelineLaunchStatus markLaunchSuccess(String projectId, String expId, String label) {
@@ -450,78 +440,91 @@ public class PipelineApi extends AbstractXapiRestController {
         return pStatus;
     }
 
-
-    private String getExperimentIdFromUri(String xnatIdOrUri) throws ClientException {
-        String xnatId = null;
-        ResourceData resourceData = catalogService.getResourceDataFromUri(xnatIdOrUri);
-        ArchivableItem item = resourceData.getItem();
-        xnatId = item.getId();
-        return xnatId;
-    }
-
-    private List<Map<String, Object>> geLatestWorkflow(final UserI user, final String pipeline_name, List<String> experimentIds, final String projectId) {
-
-        String query = "SELECT inn.wrk_workflowdata_id, inn.jobid, inn.launch_time, inn.externalid,  inn.id";
-        query += " FROM ";
-        query += "  ( ";
-        query += " SELECT t.wrk_workflowdata_id, t.jobid, t.launch_time, t.externalid,  t.id, ";
-        query += " ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY t.launch_time desc) num";
-        query += " FROM wrk_workflowdata t where pipeline_name=:PIPELINE_NAME and externalid=:PROJECT and id in (:IDS)";
-        query += "  ) inn ";
-        query += " WHERE inn.num = 1";
-
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("PIPELINE_NAME", pipeline_name);
-        parameters.addValue("PROJECT", projectId);
-        parameters.addValue("IDS", experimentIds);
-
-        return _jdbcTemplate.queryForList(query, parameters);
-    }
-
-    private String getName(String path) {
-        String rtn = path;
-        //int index = path.lastIndexOf(File.separator);
-        int index = path.lastIndexOf("/");
-        if (index != -1) {
-            rtn = path.substring(index + 1);
-        }
-        index = rtn.lastIndexOf(".xml");
-        if (index != -1) {
-            rtn = rtn.substring(0, index);
-        }
-        return rtn;
-    }
-
-    private ArcPipelineparameterdata extractArcPipelineParameter(PipePipelinedetailsParameter pipeParameter) {
-        ArcPipelineparameterdata rtn = new ArcPipelineparameterdata();
-        rtn.setName(pipeParameter.getName());
-        rtn.setDescription(pipeParameter.getDescription());
-        String schemaLink = pipeParameter.getValues_schemalink();
-        String csvValue = pipeParameter.getValues_csvvalues();
-        if (schemaLink != null) {
-            rtn.setSchemalink(schemaLink);
-        } else {
-            rtn.setCsvvalues(csvValue);
-        }
-        return rtn;
+    private List<Map<String, Object>> getLatestWorkflow(final String pipelineName, final String projectId, final List<String> experimentIds) {
+        return _jdbcTemplate.queryForList(WORKFLOW_QUERY, new MapSqlParameterSource(PIPELINE_NAME, pipelineName).addValue(PROJECT, projectId).addValue(EXPERIMENT_IDS, experimentIds));
     }
 
     @Nonnull
-    private ResponseEntity<String> getJsonAsStringResponse(XFTTable table) throws IOException {
-        JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
-        String responseString;
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+    private String getJsonAsStringResponse(final XFTTable table) throws IOException {
+        final JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
+        try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             jsonTableRep.write(stream);
-            responseString = new String(stream.toByteArray());
+            return new String(stream.toByteArray());
         }
-        return new ResponseEntity<>(responseString, HttpStatus.OK);
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(PipelineApi.class);
-    private final String EXPERIMENTS = "Experiments";
+    private String[] getExperimentsFromIdOrUri(final String experimentIdOrUri) {
+        return StringUtils.split(RegExUtils.removeAll(experimentIdOrUri, "[\\[\\]]"), ",");
+    }
 
-    private final String SCHEMALINK_NAME_START = "xnatschemaLink-";
-    private final CatalogService catalogService;
+    private String getExperimentIdFromUri(final String xnatIdOrUri) throws ClientException {
+        final ResourceData resourceData = _catalogService.getResourceDataFromUri(xnatIdOrUri.replace("\"", ""));
+        if (resourceData != null) {
+            final ArchivableItem item = resourceData.getItem();
+            if (item != null) {
+                return item.getId();
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private String getExperiments(final Map<String, String> parameters) {
+        if (parameters.containsKey(EXPERIMENTS)) {
+            return parameters.get(EXPERIMENTS);
+        }
+        if (parameters.containsKey(EXPERIMENTS_LC)) {
+            return parameters.get(EXPERIMENTS_LC);
+        }
+        if (parameters.containsKey(EXPERIMENTS_UC)) {
+            return parameters.get(EXPERIMENTS_UC);
+        }
+        return null;
+    }
+
+    private static final Logger launchLogger           = LoggerFactory.getLogger("org.nrg.pipeline.launch");
+    private static final String ALL_DATATYPES          = "All Datatypes";
+    private static final String PIPELINE_PATH          = "pipelinePath";
+    private static final String EXPERIMENTS            = "Experiments";
+    private static final String EXPERIMENTS_LC         = EXPERIMENTS.toLowerCase();
+    private static final String EXPERIMENTS_UC         = EXPERIMENTS.toUpperCase();
+    private static final String NO_EXPERIMENTS_FOUND   = "No data for experiment list found under keys \"" + EXPERIMENTS + "\", \"" + EXPERIMENTS_LC + "\", or \"" + EXPERIMENTS_UC + "\"";
+    private static final String NO_PIPELINE_PATH_FOUND = "No data for pipeline path found under key \"" + PIPELINE_PATH + "\"";
+    private static final String SCHEMALINK_NAME_START  = "xnatschemaLink-";
+    private static final String PIPELINE_NAME          = "pipelineName";
+    private static final String PROJECT                = "project";
+    private static final String EXPERIMENT_IDS         = "experimentIds";
+    private static final String WORKFLOW_QUERY         = "WITH " +
+                                                         "    inn AS (SELECT " +
+                                                         "                t.wrk_workflowdata_id, " +
+                                                         "                t.jobid, " +
+                                                         "                t.launch_time, " +
+                                                         "                t.externalid, " +
+                                                         "                t.id, " +
+                                                         "                ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY t.launch_time DESC) num " +
+                                                         "            FROM " +
+                                                         "                wrk_workflowdata t " +
+                                                         "            WHERE " +
+                                                         "                pipeline_name = :" + PIPELINE_NAME + " AND " +
+                                                         "                externalid = :" + PROJECT + " AND " +
+                                                         "                id IN (:" + EXPERIMENT_IDS + ") " +
+                                                         "    ) " +
+                                                         "SELECT " +
+                                                         "    wrk_workflowdata_id, " +
+                                                         "    jobid, " +
+                                                         "    launch_time, " +
+                                                         "    externalid, " +
+                                                         "    id " +
+                                                         "FROM " +
+                                                         "    inn " +
+                                                         "WHERE " +
+                                                         "    num = 1";
+
+    private final CatalogService             _catalogService;
     private final NamedParameterJdbcTemplate _jdbcTemplate;
-    private final SerializerService _serializerService;
+    private final SerializerService          _serializerService;
+    private final SiteConfigPreferences      _siteConfigPreferences;
+    private final PipelinePreferences        _pipelinePreferences;
+    private final AliasTokenService          _aliasTokenService;
+    private final boolean                    _isWindows;
 }

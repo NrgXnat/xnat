@@ -25,6 +25,8 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private UUID eventUUID;
     private String eventType;
     private SubscriptionEntity subscription;
+    private Long subscriptionId;
+    private String description;
     private String actionUserLogin;
     private String projectId;
     private String actionInputs;
@@ -32,11 +34,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private Set<TimedEventStatusEntity> timedEventStatuses = new LinkedHashSet<>();
     private TimedEventStatusEntity.Status status;
     private Date statusTimestamp;
+    private String statusMessage;
     private Boolean errorState = null;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
                                       String projectId, String actionInputs) {
         this.subscription = subscription;
+        this.description = subscription.getName();
+        this.subscriptionId = subscription.getId();
         this.eventType = eventType;
         this.actionUserLogin = actionUserLogin;
         this.projectId = projectId;
@@ -65,6 +70,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     public void setSubscription(SubscriptionEntity subscription) {
         this.subscription = subscription;
     }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public String getDescription() { return this.description; }
+
+    public Long getSubscriptionId() { return subscriptionId; }
+
+    public void setSubscriptionId(Long subscriptionId) { this.subscriptionId = subscriptionId; }
 
     public String getActionUserLogin() {
         return actionUserLogin;
@@ -113,6 +126,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message, Object payload){
         TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, payload, this);
         this.setStatus(status);
+        this.setStatusMessage(message);
         this.setStatusTimestamp(statusTimestamp);
         this.timedEventStatuses.add(timedEventStatus);
     }
@@ -132,6 +146,15 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public void setStatusTimestamp(Date statusTimestamp) {
         this.statusTimestamp = statusTimestamp;
+    }
+
+    @Column(name = "status_message")
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
     }
 
     public Boolean getErrorState() { return errorState; }

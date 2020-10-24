@@ -212,7 +212,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     th: { className: 'eventtype' },
                     label: labelMap.eventtype['label'],
                     apply: function(){
-                        return this['event']['description']
+                        return titleCase(this['event-type'])
                     }
                 },
                 user: {

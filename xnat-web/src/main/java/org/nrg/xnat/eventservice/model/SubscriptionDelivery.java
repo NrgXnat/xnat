@@ -14,12 +14,14 @@ public abstract class SubscriptionDelivery {
 
     @JsonProperty("id") public abstract Long id();
     @Nullable @JsonProperty("event") public abstract SimpleEvent event();
+    @Nullable @JsonProperty("event-type") public abstract String eventType();
     @JsonProperty("subscription") public abstract Subscription subscription();
     @JsonProperty("user") public abstract String actionUser();
     @JsonProperty("project") public abstract String projectId();
     @JsonProperty("inputs") public abstract String actionInputs();
     @Nullable @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
     @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
+    @Nullable @JsonProperty("status-message") public abstract String statusMessage();
     @JsonProperty(value = "error", defaultValue = "false") public abstract Boolean errorState();
 
     
@@ -30,18 +32,21 @@ public abstract class SubscriptionDelivery {
 
     public abstract SubscriptionDelivery.Builder toBuilder();
 
-    public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser,
-                                              String projectId, String actionInputs, TriggeringEvent triggeringEvent,
-                                              List<TimedEventStatus> timedEventStatuses, Boolean errorState) {
+    public static SubscriptionDelivery create(Long id, SimpleEvent event, String eventType ,Subscription subscription,
+                                              String actionUser, String projectId, String actionInputs,
+                                              TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses,
+                                              String statusMessage, Boolean errorState) {
         return builder()
                 .id(id)
                 .event(event)
+                .eventType(eventType)
                 .subscription(subscription)
                 .actionUser(actionUser)
                 .projectId(projectId)
                 .actionInputs(actionInputs)
                 .triggeringEvent(triggeringEvent)
                 .timedEventStatuses(timedEventStatuses)
+                .statusMessage(statusMessage)
                 .errorState(errorState)
                 .build();
     }
@@ -51,6 +56,8 @@ public abstract class SubscriptionDelivery {
         public abstract Builder id(Long id);
 
         public abstract Builder event(SimpleEvent event);
+
+        public abstract Builder eventType(String eventType);
 
         public abstract Builder subscription(Subscription subscription);
 
@@ -63,7 +70,9 @@ public abstract class SubscriptionDelivery {
         public abstract Builder triggeringEvent(TriggeringEvent triggeringEvent);
 
         public abstract Builder timedEventStatuses(List<TimedEventStatus> timedEventStatuses);
-        
+
+        public abstract Builder statusMessage(String statusMessage);
+
         public abstract Builder errorState(Boolean errorState);
 
         public abstract SubscriptionDelivery build();

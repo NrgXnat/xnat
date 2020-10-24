@@ -10,7 +10,6 @@ import org.hibernate.criterion.Restrictions;
 import org.hibernate.metadata.ClassMetadata;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
-import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
@@ -36,24 +35,51 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
         return convertToTypedList(query.list(), SubscriptionDeliverySummaryEntity.class);
     }
 
-    public List<SubscriptionDeliveryEntity> get(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude, final SubscriptionDeliveryEntityPaginatedRequest request) {
-        final Map<String, Filter> filters = new HashMap<>();
+    public List<SubscriptionDeliveryEntity> get(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude, final SubscriptionDeliveryEntityPaginatedRequest paginatedRequest) {
+
+        final Map<String, Filter> newFilters = new HashMap();
+        final Map<String, Filter> requestFilters = paginatedRequest.getFiltersMap();
+
+        // Method parameter filters
         if (StringUtils.isNotBlank(projectId)) {
-            filters.put("projectId", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(projectId).build());
+            newFilters.put("projectId", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(projectId).build());
         }
         if (subscriptionId != null) {
-            filters.put("subscription.id", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(subscriptionId).build());
+            newFilters.put("subscriptionId", HibernateFilter.builder().operator(HibernateFilter.Operator.EQ).value(subscriptionId).build());
         }
         if (statusToExclude != null) {
-            filters.put("status", HibernateFilter.builder().operator(HibernateFilter.Operator.NE).value(statusToExclude).build());
+            newFilters.put("status", HibernateFilter.builder().operator(HibernateFilter.Operator.NE).value(statusToExclude).build());
         }
-        request.setFiltersMap(filters);
 
-        return findPaginated(request);
+        // Request filters
+        if (paginatedRequest.hasFilters()) {
+
+            // Method projectId parameter supersedes request project filter
+            if (projectId == null && requestFilters != null && requestFilters.containsKey("project")){
+                newFilters.put("projectId", requestFilters.get("project"));
+            }
+            if (paginatedRequest.getFiltersMap().containsKey("subscription")){
+                newFilters.put("description", requestFilters.get("subscription"));
+            }
+            if (requestFilters != null && requestFilters.containsKey("eventtype")){
+                newFilters.put("eventType", requestFilters.get("eventtype"));
+            }
+            if (requestFilters != null && requestFilters.containsKey("user")){
+                newFilters.put("actionUserLogin", requestFilters.get("user"));
+            }
+            if (requestFilters != null && requestFilters.containsKey("status")){
+                newFilters.put("statusMessage", requestFilters.get("status"));
+            }
+        }
+
+        paginatedRequest.setFiltersMap(newFilters);
+
+        return findPaginated(paginatedRequest);
+
     }
 
-    @Override
-    public List<SubscriptionDeliveryEntity> findPaginated(HibernatePaginatedRequest paginatedRequest) {
+
+    private List<SubscriptionDeliveryEntity> findPaginated(SubscriptionDeliveryEntityPaginatedRequest paginatedRequest) {
         final Criteria criteria = getCriteriaForType();
         if (paginatedRequest.hasFilters()) {
             ClassMetadata classMetadata = getSession().getSessionFactory().getClassMetadata(getParameterizedType());

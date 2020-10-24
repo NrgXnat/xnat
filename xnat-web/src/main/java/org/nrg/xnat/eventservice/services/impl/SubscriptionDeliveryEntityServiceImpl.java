@@ -1,8 +1,5 @@
 package org.nrg.xnat.eventservice.services.impl;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_DETECTED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_TRIGGERED;
-
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +30,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_DETECTED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.EVENT_TRIGGERED;
+
 @Slf4j
 @Service
 @Transactional
@@ -49,7 +49,9 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
     @Override
     public Long create(SubscriptionEntity subscription, final EventServiceEvent<?> event, EventServiceListener<?> listener, String actionUserLogin, String projectId, String actionInputs) {
         try {
-            final SubscriptionDeliveryEntity delivery = new SubscriptionDeliveryEntity(subscription, event.getType(), actionUserLogin, projectId, actionInputs);
+            final SubscriptionDeliveryEntity delivery = new SubscriptionDeliveryEntity(subscription,
+                    (event.getDisplayName() + " : " + event.getCurrentStatus().toString()),
+                    actionUserLogin, projectId, actionInputs);
             log.debug("Created new SubscriptionDeliveryEntity for subscription: {} and eventUUID {}", subscription.getName(), event.getEventUUID());
             super.create(delivery);
             addStatus(delivery.getId(), EVENT_TRIGGERED, event.getEventTimestamp(), "Event triggered.");
@@ -110,11 +112,6 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
     }
 
     @Override
-    public List<SubscriptionDelivery> getAll(final String projectId, final Long subscriptionId, final Boolean includeFilterMismatches) {
-        return null;
-    }
-
-    @Override
     public List<SubscriptionDelivery> get(final String projectId, final Long subscriptionId, final @Nonnull Boolean includeFilterMismatches, final SubscriptionDeliveryEntityPaginatedRequest request) {
         return toDeliveries(getDao().get(projectId, subscriptionId, !includeFilterMismatches ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT : null, request));
     }
@@ -149,25 +146,16 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
         if (entity != null) {
             subscriptionDelivery = SubscriptionDelivery.builder()
                                                        .id(entity.getId())
+                                                       .eventType(entity.getEventType())
                                                        .actionUser(entity.getActionUserLogin())
                                                        .projectId(entity.getProjectId())
                                                        .actionInputs(entity.getActionInputs())
                                                        .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
                                                        .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
+                                                       .statusMessage(entity.getStatusMessage())
                                                        .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
                                                        .errorState(entity.getErrorState())
                                                        .build();
-            try {
-                if (!Strings.isNullOrEmpty(entity.getEventType())) {
-                    subscriptionDelivery = subscriptionDelivery.toBuilder()
-                                                               .event(eventService.getEvent(entity.getEventType(), false))
-                                                               .build();
-                } else {
-                    log.error("EventType not stored is subscription delivery history table. Skipping creation of event for display.");
-                }
-            } catch (Exception e) {
-                log.error("Exception while attempting to load Event for delivery display. {}" + e.getMessage());
-            }
         }
         return subscriptionDelivery;
     }

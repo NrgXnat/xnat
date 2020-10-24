@@ -193,7 +193,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     td: { className: 'eventtype word-wrapped' },
                     label: labelMap.eventtype['label'],
                     apply: function(){
-                        return this['event']['description']
+                        return titleCase(this['event-type'])
                     }
                 },
                 user: {

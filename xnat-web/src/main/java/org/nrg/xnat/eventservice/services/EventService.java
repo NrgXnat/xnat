@@ -12,7 +12,6 @@ import org.nrg.xnat.eventservice.model.ActionProvider;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
 import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
-import org.nrg.xnat.eventservice.model.Listener;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
@@ -31,20 +30,11 @@ public interface EventService {
     //SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;
     SimpleEvent getEvent(String eventId, Boolean loadDetails) throws Exception;
 
-    @Deprecated
-    List<Listener> getInstalledListeners();
-
 
     List<ActionProvider> getActionProviders();
     List<ActionProvider> getActionProviders(String xnatType, String projectId);
 
     List<Action> getAllActions();
-
-    @Deprecated
-    List<Action> getActions(String xnatType, UserI user);
-    @Deprecated
-    List<Action> getActions(String projectId, String xnatType, UserI user);
-
 
     List<Action> getActions(List<String> xnatTypes, UserI user);
     List<Action> getActions(String projectId, List<String> xnatTypes, UserI user);

@@ -342,7 +342,9 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     public List<Action> getActions(final @RequestParam(value = "project", required = false) String projectId,
                                    final @RequestParam(value = "xnattype", required = false) String xnatType) {
         final UserI user = getSessionUser();
-        return StringUtils.isNotBlank(projectId) ? eventService.getActions(projectId, Collections.singletonList(xnatType), user) : eventService.getActions(xnatType, user);
+        return StringUtils.isNotBlank(projectId) ?
+                eventService.getActions(projectId, Collections.singletonList(xnatType), user) :
+                eventService.getActions(Collections.singletonList(xnatType), user);
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/actions", method = GET, params = {"!event-type"})
@@ -351,7 +353,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @PathVariable @Project String project,
             final @RequestParam(value = "xnattype", required = false) String xnatType) {
         final UserI user = getSessionUser();
-        return eventService.getActions(project, xnatType, user);
+        return eventService.getActions(project, Collections.singletonList(xnatType), user);
     }
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/allactions", method = GET, params = {"!projectid", "!xnattype"})
@@ -406,7 +408,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                             final @RequestParam(value = "project", required = false) String projectId,
                             final @RequestParam(value = "xnattype", required = false) String xnatType) {
         final UserI user = getSessionUser();
-        return eventService.getActions(projectId, xnatType, user).stream().filter(a -> actionkey.contentEquals(a.actionKey())).findFirst().orElse(null);
+        return eventService.getActions(projectId, Collections.singletonList(xnatType), user).stream()
+                           .filter(a -> actionkey.contentEquals(a.actionKey())).findFirst().orElse(null);
     }
 
     private void checkProjectSubscriptionAccess(@Nonnull Long subscriptionId, @Nonnull String project, @Nonnull UserI userI) throws UnauthorizedException, NotFoundException, SubscriptionAccessException {

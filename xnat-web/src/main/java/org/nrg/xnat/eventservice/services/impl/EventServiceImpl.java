@@ -27,7 +27,6 @@ import org.nrg.xnat.eventservice.model.EventPropertyNode;
 import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.nrg.xnat.eventservice.model.EventSignature;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
-import org.nrg.xnat.eventservice.model.Listener;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
@@ -192,16 +191,6 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Action> getActions(String xnatType, UserI user) {
-        return getActions(Collections.singletonList(xnatType), user);
-    }
-
-    @Override
-    public List<Action> getActions(String projectId, String xnatType, UserI user) {
-        return getActions(projectId, Collections.singletonList(xnatType), user);
-    }
-
-    @Override
     public List<Action> getActions(List<String> xnatTypes, UserI user) {
         return actionManager.getActions(xnatTypes, user);
     }
@@ -279,12 +268,6 @@ public class EventServiceImpl implements EventService {
         return null;
     }
 
-    @Override
-    @Deprecated
-    public List<Listener> getInstalledListeners() {
-
-        return null;
-    }
 
     @Override
     public void reactivateAllSubscriptions() {

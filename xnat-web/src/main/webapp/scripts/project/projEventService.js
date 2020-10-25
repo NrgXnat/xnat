@@ -138,6 +138,11 @@ var XNAT = getObject(XNAT || {});
         return restUrl(path);
     }
 
+    function getAllActionsUrl(){
+        var path = '/xapi/events/allactions';
+        return restUrl(path);
+    }
+
     function getEventSubscriptionUrl(id){
         id = id || false;
         var path = (id) ?
@@ -191,13 +196,11 @@ var XNAT = getObject(XNAT || {});
     };
 
     projEventServicePanel.getActions = function(opts,callback){
-        // var project = (opts) ? opts.project : false;
-        var xsiType = (opts) ? opts.xsiType : false;
 
         callback = isFunction(callback) ? callback : function(){};
 
         return XNAT.xhr.getJSON({
-            url: getEventActionsUrl(xsiType),
+            url: getAllActionsUrl(),
             success: function(data){
                 if (data) {
                     return data;

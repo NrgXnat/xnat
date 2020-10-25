@@ -5,7 +5,9 @@ import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
@@ -204,8 +206,7 @@ public class ActionManagerImpl implements ActionManager {
             if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem() instanceof XFTItem) {
                 XFTItem eventXftItem = getRootWorkflowObject(esEvent);
                 String workflowActionLabel =
-                        subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_") +
-                                " UID:" + Long.toString(deliveryId);
+                        subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_");
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
                         EventUtils.newEventInstance(
@@ -216,7 +217,13 @@ public class ActionManagerImpl implements ActionManager {
                                 ""
                         ));
                 if(workflow != null) {
-                    WorkflowUtils.save(workflow, workflow.buildEvent());
+                    EventMetaI eventMetaI = workflow.buildEvent();
+
+                    // Check for existing workflow with matching pipeline name and timestamp - if found, regenerate eventMeta after delay
+                    WrkWorkflowdata existingWorkflow = (WrkWorkflowdata) WorkflowUtils.getUniqueWorkflow(user, workflow.getPipelineName(),
+                            workflow.getId(), eventMetaI.getEventDate());
+                    if (existingWorkflow != null) {Thread.sleep(1); eventMetaI = workflow.buildEvent();}
+                    WorkflowUtils.save(workflow, eventMetaI);
                     log.debug("Created workflow " + workflow.getId());
                     return workflow;
                 } else {

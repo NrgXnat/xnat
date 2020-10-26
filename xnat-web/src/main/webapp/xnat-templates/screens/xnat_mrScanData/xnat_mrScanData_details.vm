@@ -6,7 +6,9 @@
         <th>Image</th>
         <td align="left">
             #scanSnapshotImage($content $om $scan)
-        </td>
+            <br>
+            #scanSnapshotImageGrid($grids $scan)
+	</td>
     </tr>
     #if($scan.getProperty("quality"))
         <tr>

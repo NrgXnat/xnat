@@ -2154,3 +2154,17 @@ then adds any subsequent strings to a block of text to use as a pop-over.
           <div ID="div_img" style="display:inline"></div>
      </DIV>
 #end
+
+#macro (scanSnapshotImageGrid $grids $scan)
+  <!-- BEGIN scanSnapshotImageGrid macro -->
+  <script type="application/javascript">console.log("Loading /scripts/xnat/app/scanTable/scanTable.js from scanSnapshotImageGrid macro")</script>
+  <script src="$content.getURI("/scripts/xnat/app/scanTable/scanTable.js")"></script>
+  #set($grids = ["Switch to Montage View","1X1","1X2","1X3","2X2", "2X3", "3X3"])
+  <select class="select-montage" name=$scan.getId()>
+    #foreach ($grid in $grids)
+      <option value="$grid">$grid</option>
+    #end
+  </select>
+  <!-- END scanSnapshotImageGrid macro -->
+#end
+

@@ -671,14 +671,14 @@ $_$
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_object_exists_in_table(id VARCHAR(255), data_type TEXT)
     RETURNS BOOLEAN AS
-$$
+$_$
 DECLARE
     exists_in_table BOOLEAN;
 BEGIN
     EXECUTE format('SELECT EXISTS(SELECT TRUE FROM %s WHERE id = ''%s'')', regexp_replace(data_type, '[^A-z0-9]', '_', 'g'), id) INTO exists_in_table;
     RETURN exists_in_table;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_data()
@@ -688,7 +688,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_data()
         label        VARCHAR(255),
         element_name VARCHAR(250))
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY SELECT
                      x.project,
@@ -700,7 +700,7 @@ BEGIN
                      LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id
                  WHERE NOT data_type_fns_object_exists_in_table(x.id, e.element_name);
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_data()
@@ -711,7 +711,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_data()
         actual_element_name   VARCHAR(250),
         expected_element_name VARCHAR(255))
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY WITH
                      data_types AS (SELECT * FROM data_type_views_secured_identified_data_types)
@@ -726,19 +726,19 @@ BEGIN
                      LEFT JOIN data_types t ON o.element_name != t.element_name
                  WHERE data_type_fns_object_exists_in_table(o.id, t.element_name);
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_scan_exists_in_table(xnat_imagescandata_id INTEGER, data_type TEXT)
     RETURNS BOOLEAN AS
-$$
+$_$
 DECLARE
     exists_in_table BOOLEAN;
 BEGIN
     EXECUTE format('SELECT EXISTS(SELECT TRUE FROM %s WHERE xnat_imagescandata_id = %s)', regexp_replace(data_type, '[^A-z0-9]', '_', 'g'), xnat_imagescandata_id) INTO exists_in_table;
     RETURN exists_in_table;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_scans()
@@ -752,7 +752,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_find_orphaned_scans()
         series_description    VARCHAR(255),
         element_name          VARCHAR(250))
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY SELECT
                      s.project,
@@ -770,7 +770,7 @@ BEGIN
                      LEFT JOIN xnat_experimentdata x ON i.id = x.id
                  WHERE NOT data_type_fns_scan_exists_in_table(s.xnat_imagescandata_id, e.element_name);
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_scans()
@@ -785,7 +785,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_resolve_orphaned_scans()
         actual_element_name   VARCHAR(250),
         expected_element_name VARCHAR(255))
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY WITH
                      data_types AS (SELECT *
@@ -808,12 +808,12 @@ BEGIN
                      LEFT JOIN data_types t ON o.element_name != t.element_name
                  WHERE data_type_fns_scan_exists_in_table(o.xnat_imagescandata_id, t.element_name);
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_fix_orphaned_scans()
     RETURNS INTEGER AS
-$$
+$_$
 DECLARE
     fixed_orphan_count INTEGER;
 BEGIN
@@ -831,7 +831,7 @@ BEGIN
     GET DIAGNOSTICS fixed_orphan_count = ROW_COUNT;
     RETURN fixed_orphan_count;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_correct_experiment_extension()
@@ -839,7 +839,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_correct_experiment_extension()
         orphaned_experiment VARCHAR(255),
         original_data_type  VARCHAR(255))
 AS
-$$
+$_$
 BEGIN
     WITH
         orphans AS (SELECT * FROM data_type_views_experiments_without_data_type WHERE xdat_meta_element_id IS NOT NULL)
@@ -857,7 +857,7 @@ BEGIN
                      data_type_views_experiments_without_data_type
                  WHERE xdat_meta_element_id IS NULL;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_correct_group_permissions()
@@ -886,7 +886,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_projects(entityId VAR
         element_name VARCHAR(255),
         field        VARCHAR(255))
 AS
-$$
+$_$
 DECLARE
     resolvedEntityId VARCHAR(255) DEFAULT NULL;
 BEGIN
@@ -976,7 +976,7 @@ BEGIN
 
     RETURN;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username VARCHAR(255), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
@@ -990,7 +990,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_get_entity_permissions(username 
         can_delete  BOOLEAN,
         can_active  BOOLEAN)
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY
         WITH
@@ -1017,13 +1017,13 @@ BEGIN
             p.field IS NOT NULL AND
             (gu.login = username OR u.login IN ('guest', username));
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_can_action_entity(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255))
     RETURNS BOOLEAN
 AS
-$$
+$_$
 DECLARE
     found_can BOOLEAN;
 BEGIN
@@ -1031,7 +1031,7 @@ BEGIN
         INTO found_can;
     RETURN found_can;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_get_secured_property_permissions(username VARCHAR(255), projectId VARCHAR(255), securedProperty VARCHAR(255))
@@ -1042,7 +1042,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_get_secured_property_permissions
         can_delete BOOLEAN,
         can_active BOOLEAN)
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY
         SELECT
@@ -1063,13 +1063,13 @@ BEGIN
                 m.field_value IN (projectId, '*') AND
                 m.field = securedProperty;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_can(username VARCHAR(255), action VARCHAR(15), entityId VARCHAR(255), projectId VARCHAR(255) DEFAULT NULL)
     RETURNS BOOLEAN
 AS
-$$
+$_$
 DECLARE
     found_can    BOOLEAN;
     field_count  INTEGER;
@@ -1110,7 +1110,7 @@ BEGIN
     END IF;
     RETURN found_can;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE VIEW public.data_type_views_get_all_expts AS
@@ -1152,7 +1152,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_get_all_accessible_expts_of_type
         can_delete   BOOLEAN,
         can_active   BOOLEAN)
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY
         WITH
@@ -1185,7 +1185,7 @@ BEGIN
         ORDER BY
             id;
 END
-$$
+$_$
     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.data_type_fns_get_user_access_by_project(username VARCHAR(255))
@@ -1200,7 +1200,7 @@ CREATE OR REPLACE FUNCTION public.data_type_fns_get_user_access_by_project(usern
                       can_delete   BOOLEAN,
                       can_active   BOOLEAN)
 AS
-$$
+$_$
 BEGIN
     RETURN QUERY
         WITH fa AS
@@ -1246,5 +1246,5 @@ BEGIN
         WHERE fa.field ~ '(/sharing/share)?/project$'
     ;
 END
-$$
+$_$
     LANGUAGE plpgsql;

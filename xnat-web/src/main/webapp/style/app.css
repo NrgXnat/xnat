@@ -3043,7 +3043,7 @@ td.quality-unusable {
 }
 
 img.scan-snapshot {
-    max-width: 500px;
+    width: 50%;
 }
 
 /* not sure what these spacers do but pretty sure they should go away - let's see what breaks */

@@ -9,7 +9,11 @@
 
 package org.nrg.xnat.restlet.actions;
 
-import org.apache.log4j.Logger;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -21,45 +25,32 @@ import org.nrg.xft.utils.SaveItemHelper;
 
 /**
  * @author Timothy R. Olsen <olsent@wustl.edu>
- *
  */
+@Getter(AccessLevel.PRIVATE)
+@Accessors(prefix = "_")
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class FixScanTypes {
-	static Logger logger = Logger.getLogger(FixScanTypes.class);
+    public Boolean call() throws Exception {
+        if (_experiment instanceof XnatImagesessiondata) {
+            ((XnatImagesessiondata) _experiment).fixScanTypes();
+        }
+        if (isAllowSave()) {
+            if (!SaveItemHelper.authorizedSave(getExperiment(), getUser(), false, false, getEventMeta())) {
+                return Boolean.FALSE;
+            }
+            MaterializedView.deleteByUser(getUser());
+            final Integer quarantineCode = getProject().getArcSpecification().getQuarantineCode();
+            if (quarantineCode != null && quarantineCode.equals(1)) {
+                _experiment.quarantine(getUser());
+            }
+        }
+        return Boolean.TRUE;
+    }
 
-	private final XnatExperimentdata expt;
-	private final UserI user;
-	private final XnatProjectdata proj;
-	private final boolean allowSave;
-	private final EventMetaI c;
-	
-	public FixScanTypes( final XnatExperimentdata expt, final UserI user, final XnatProjectdata proj, final Boolean allowSave, EventMetaI c){
-		this.expt=expt;
-		this.user=user;
-		this.proj=proj;
-		this.allowSave=allowSave;
-		this.c=c;
-	}
-	
-	public Boolean call() throws Exception{
-		if(expt instanceof XnatImagesessiondata){
-			((XnatImagesessiondata)expt).fixScanTypes();
-		}
-		
-
-		if(allowSave){
-			if(SaveItemHelper.authorizedSave(expt,user,false,false,c)){
-				MaterializedView.deleteByUser(user);
-
-				if(this.proj.getArcSpecification().getQuarantineCode()!=null && this.proj.getArcSpecification().getQuarantineCode().equals(1)){
-					expt.quarantine(user);
-				}
-				
-				return Boolean.TRUE;
-			}else{
-				return Boolean.FALSE;
-			}
-		}else{
-			return Boolean.TRUE;
-		}
-	}
+    private final XnatExperimentdata _experiment;
+    private final UserI              _user;
+    private final XnatProjectdata    _project;
+    private final boolean            _allowSave;
+    private final EventMetaI         _eventMeta;
 }

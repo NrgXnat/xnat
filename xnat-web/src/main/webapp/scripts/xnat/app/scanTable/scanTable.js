@@ -18,20 +18,15 @@ var XNAT = getObject(XNAT);
     }
 }(function() {
 
-    var undef, scanTable;
+    XNAT.app = getObject(XNAT.app || {});
+    const scanTable = XNAT.app.scanTable = getObject(XNAT.app.scanTable || {});
 
-    XNAT.app =
-        getObject(XNAT.app || {});
+    let projectId = XNAT.data.context.project;
+    let subjectId = XNAT.data.context.subjectID;
+    let exptId    = XNAT.data.context.ID;
 
-    XNAT.app.scanTable = scanTable =
-        getObject(XNAT.app.scanTable || {});
-
-    var projectId = XNAT.data.context.project;
-    var subjectId = XNAT.data.context.subjectID;
-    var exptId    = XNAT.data.context.ID;
-
-    var htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
-    var zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
+    // const htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
+    // const zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
 
     scanTable.container$ = $('#selectable-table-scans');
     scanTable.dataTable$ = $('#scan-data-table');
@@ -68,25 +63,25 @@ var XNAT = getObject(XNAT);
         }, 5000);
     }
 
-    function loadSnapshotImageNoBlocking(scanID) {
-        var element = $(".span-" + "scan" + scanID + "snapshot"),
-            exprId = element ? element.data('expt-id') : null,
-            elementLoaded = element ? element.data('loaded') : false;
+    function loadSnapshotImageNoBlocking(scanID, view) {
+        const element = $(".span-" + "scan" + scanID + "snapshot");
+        const exprId = element ? element.data('expt-id') : null;
+        const elementLoaded = element ? element.data('loaded') : false;
         if (exprId) {
-            if (elementLoaded) {
+            if (elementLoaded && !view) {
                 return true;
             }
-            var src = serverRoot + '/data/experiments/' + exprId + '/scans/' + scanID + '/resources/SNAPSHOTS/files';
-            var origSrc = src + '?file_content=ORIGINAL&index=0';
-            var thumbSrc = src + '?file_content=THUMBNAIL&index=0';
+            const src = view
+                ? '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot/' + view
+                : '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
             $.ajax({
-                url: XNAT.url.restUrl(origSrc),
+                url: XNAT.url.restUrl(src),
                 type: 'HEAD',
                 success: function() {
                     element.data('loaded', true);
                     element.html(
-                        '<a target="_blank" class="scan-original-link" href="' + origSrc + '">' +
-                        '<img class="scan-snapshot" src="' + thumbSrc + '"/>' +
+                        '<a target="_blank" class="scan-original-link" href="' + src + '">' +
+                        '<img class="scan-snapshot" src="' + src + '"/>' +
                         '</a>');
                 },
                 error: function() {
@@ -99,7 +94,33 @@ var XNAT = getObject(XNAT);
 
         return true;
     }
-
+    
+    function closeGridImage(scanID) {
+        var element = $(".span-" + "scan" + scanID + "snapshot"),
+            exprId = element ? element.data('expt-id') : null,
+            elementLoaded = element ? element.data('loaded') : false;
+        if (exprId) {
+            var src = '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
+            $.ajax({
+                url: XNAT.url.restUrl(src),
+                type: 'HEAD',
+                success: function() {
+                    element.data('loaded', true);
+                    element.html(
+                        '<a target="_blank" class="scan-original-link" href="' + src + '">' +
+                        '<img class="scan-snapshot" src="' + src + '"/>' +
+                        '</a>');
+                },
+                error: function() {
+                    element.html('No snapshot available');
+                }
+            });
+        } else if (element) {
+            element.html('No snapshot available');
+        }
+        return true;
+    }
+    
     // inline scan table functions
     scanTable.displayScanDetails = function(scanId){
 
@@ -123,7 +144,7 @@ var XNAT = getObject(XNAT);
                 loadSnapshotImageNoBlocking(scanId);
             },
             afterClose: function(){
-                delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
+                closeGridImage(scanId);
             },
             footer: {
                 content: 'Click in the header to move this dialog around the page'
@@ -132,6 +153,16 @@ var XNAT = getObject(XNAT);
 
     };
 
+    scanTable.displayScanDetailsGrid = function(scanId, view){
+        if (!scanId) {
+            return false;
+        }
+        if (scanTable.scanDetailsOpen.includes(scanId)) {
+            return false;
+        }
+        loadSnapshotImageNoBlocking(scanId, view);
+     }
+     
     // download all selected scans
     function downloadSelectedScans(){
         var selectedScans = [];
@@ -402,7 +433,7 @@ var XNAT = getObject(XNAT);
 
     $(document).ready(scanTable.init);
 
-    $(document).on('click', 'table.scan-details a.view-dicom-headers', function(e){
+    $(document).off().on('click', 'table.scan-details a.view-dicom-headers', function(e){
         e.preventDefault();
         XNAT.dialog.load($(this).attr('href') + ' #layout_content table.dump', { minWidth: 800, width: '80%', esc: true, enter: true });
     });
@@ -411,13 +442,22 @@ var XNAT = getObject(XNAT);
         if (scanId) { scanTable.displayScanDetails(scanId) }
         else { console.log('No Scan ID found') }
     });
-    
-    // Array that keeps track of which scan details modals are open.
+      
+    $(document).ready(function(){
+      $(".select-montage").change(function(){
+        var gridVal = $(this).children("option:selected").val();
+        var scanId = $(this).attr('name').toString();
+        if (scanId ) { 
+            scanTable.displayScanDetailsGrid(scanId,gridVal);
+         }
+        else { console.log('No Scan ID found') } 
+      });
+   });
+      
+   // Array that keeps track of which scan details modals are open.
     scanTable.scanDetailsOpen = [];
 
     // this script has loaded
     scanTable.loaded = true;
-
     return XNAT.app.scanTable = scanTable;
-
 }));

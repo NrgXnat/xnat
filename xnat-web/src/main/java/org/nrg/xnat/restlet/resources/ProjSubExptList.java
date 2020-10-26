@@ -11,6 +11,7 @@ package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.om.*;
@@ -29,8 +30,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
-import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.PipelineService;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -248,11 +249,8 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 
 				postSaveManageStatus(expt);
 
-				if (Permissions.canEdit(user, expt.getItem())) {
-					if (this.isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || this.containsAction(XNATRestConstants.TRIGGER_PIPELINES)) {
-						TriggerPipelines tp = new TriggerPipelines(expt, this.isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
-						tp.call();
-					}
+				if (Permissions.canEdit(user, expt.getItem()) && (this.isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || this.containsAction(XNATRestConstants.TRIGGER_PIPELINES))) {
+					XDAT.getContextService().getBean(PipelineService.class).launchAutoRun(expt, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
 				}
 
 				this.returnSuccessfulCreateFromList(expt.getId());
@@ -261,7 +259,6 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 			}
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(), e.getMessage());
-			return;
 		} catch (InvalidValueException e) {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			logger.error("", e);

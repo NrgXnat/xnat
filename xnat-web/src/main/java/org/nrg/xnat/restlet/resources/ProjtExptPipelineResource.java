@@ -9,15 +9,10 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.pipeline.PipelineLaunchHandler;
-import org.nrg.xdat.om.ArcPipelinedata;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -27,8 +22,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.ValidationException;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
-import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.PipelineService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
@@ -40,6 +35,10 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXException;
 
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
 public class ProjtExptPipelineResource extends SecureResource {
 	XnatProjectdata proj=null;
 	XnatExperimentdata expt=null;
@@ -80,29 +79,24 @@ public class ProjtExptPipelineResource extends SecureResource {
 	}
 
 
-    public Representation represent(Variant variant) {
-		if(proj!=null && step!=null){
-			ArcPipelinedata arcPipeline = null;
-			ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
-			//arcProject.setItem(arcProject.getCurrentDBVersion());
+	public Representation represent(Variant variant) {
+		if (proj == null || step == null) {
+			getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return null;
+		}
+
+		final ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
+		if (arcProject != null) {
 			try {
-				if (expt == null) { // Look for Project level pipeline
-					arcPipeline = (ArcPipelinedata)arcProject.getPipeline(step);
-				}else { //Look for experiment level pipeline
-					arcPipeline = (ArcPipelinedata)arcProject.getPipelineForDescendant(expt.getXSIType(), step);
-				}
-				MediaType mt = overrideVariant(variant);
-				if (mt.equals(MediaType.TEXT_XML)) {
-					return representItem(arcPipeline.getItem(), mt, null,false, true);
-				}else {
-					return representItem(arcPipeline.getItem(), mt);
-				}
-			}catch(Exception e) {
-				e.printStackTrace();
+				final ArcPipelinedata arcPipeline = expt == null ? (ArcPipelinedata) arcProject.getPipeline(step) : (ArcPipelinedata) arcProject.getPipelineForDescendant(expt.getXSIType(), step);
+				final MediaType       mediaType   = overrideVariant(variant);
+				return mediaType.equals(MediaType.TEXT_XML)
+					   ? representItem(arcPipeline.getItem(), mediaType, null, false, true)
+					   : representItem(arcPipeline.getItem(), mediaType);
+			} catch (Exception e) {
+				log.error("An error occurred", e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			}
-		}else {
-			getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 		}
 		return null;
 	}
@@ -125,11 +119,8 @@ public class ProjtExptPipelineResource extends SecureResource {
 						EventMetaI c=wrk.buildEvent();
 
 						try {
-							FixScanTypes fst=new FixScanTypes(expt, user, proj, true, c);
-							fst.call();
-
-							TriggerPipelines tp = new TriggerPipelines(expt, this.isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
-							tp.call();
+							FixScanTypes.builder().experiment(expt).user(user).project(proj).allowSave(true).eventMeta(c).build().call();
+							XDAT.getContextService().getBean(PipelineService.class).launchAutoRun(expt, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
 							PersistentWorkflowUtils.complete(wrk,c);
 						} catch (Exception e) {
 							WorkflowUtils.fail(wrk, c);
@@ -149,16 +140,12 @@ public class ProjtExptPipelineResource extends SecureResource {
 								WorkflowUtils.fail(wrk, c);
 								throw e;
 							}
-						} catch (SAXException e){
-							logger.error("",e);
-							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage());
-						} catch (ValidationException e){
+						} catch (SAXException | ValidationException e){
 							logger.error("",e);
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage());
 						} catch (Exception e) {
 							logger.error("",e);
 							this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-							return;
 						}
 					}else{
 						getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
@@ -171,8 +158,7 @@ public class ProjtExptPipelineResource extends SecureResource {
 						PersistentWorkflowUtils.save(wrk,c);
 
 						try {
-							FixScanTypes fst=new FixScanTypes(expt, user, proj, true, c);
-							fst.call();
+							FixScanTypes.builder().experiment(expt).user(user).project(proj).allowSave(true).eventMeta(c).build().call();
 							WorkflowUtils.complete(wrk, c);
 						} catch (Exception e) {
 							WorkflowUtils.fail(wrk, c);
@@ -184,11 +170,15 @@ public class ProjtExptPipelineResource extends SecureResource {
 				}else{
 					Map<String,String> bodyParams = getBodyVariableMap();
 					Map<String,String> queryParams = getQueryVariableMap();
-					Map<String,String> xmlDocumentParams = new HashMap<String,String>();
+					Map<String,String> xmlDocumentParams = new HashMap<>();
 	                String XMLbody = getRequest().getEntity().getText();
-	                
-					PipelineLaunchHandler launchHandler = new PipelineLaunchHandler(proj, expt, step);
-					boolean launchSuccess = launchHandler.handleLaunch(bodyParams, queryParams, xmlDocumentParams, XMLbody, user);
+
+					final boolean launchSuccess = new PipelineLaunchHandler(proj, expt, step).handleLaunch(bodyParams, queryParams, xmlDocumentParams, XMLbody, user);
+					if (launchSuccess) {
+						log.info("Successfully launched pipeline {} for user {} on project {} and experiment {}", step, user.getUsername(), proj.getId(), expt.getId());
+					} else {
+						log.warn("There appears to have been an issue launching pipeline {} for user {} on project {} and experiment {}", step, user.getUsername(), proj.getId(), expt.getId());
+					}
 				}
 			} catch (Exception e) {
 				logger.error(e);

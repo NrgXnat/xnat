@@ -3,10 +3,7 @@ package org.nrg.xapi.rest.pipeline;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +11,7 @@ import org.nrg.action.ClientException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.pipeline.*;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -48,10 +46,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -76,13 +71,35 @@ public class PipelineApi extends AbstractXapiRestController {
     @Autowired
     public PipelineApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService catalogService, final JdbcTemplate jdbcTemplate, final SerializerService serializerService, final SiteConfigPreferences siteConfigPreferences, final PipelinePreferences pipelinePreferences, final AliasTokenService aliasTokenService) {
         super(userManagementService, roleHolder);
-        this._catalogService = catalogService;
+        _catalogService = catalogService;
         _jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
         _serializerService = serializerService;
         _siteConfigPreferences = siteConfigPreferences;
         _pipelinePreferences = pipelinePreferences;
         _aliasTokenService = aliasTokenService;
         _isWindows = System.getProperty("os.name").toUpperCase().startsWith("WINDOWS");
+    }
+
+    @XapiRequestMapping(method = GET, restrictTo = Admin, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Get all pipeline preference settings")
+    public Map<String, Object> getPipelinePreferences() {
+        return _pipelinePreferences;
+    }
+
+    @ApiOperation(value = "Sets a map of pipeline preference settings.", notes = "Sets the pipeline preferences specified in the map.")
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline preferences successfully set."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to set pipeline preferences."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
+    public void setPipelinePreferences(@ApiParam(value = "The map of pipeline preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) throws DataFormatException {
+        for (final String preference : preferences.keySet()) {
+            try {
+                _pipelinePreferences.set(preferences.get(preference).toString(), preference);
+            } catch (InvalidPreferenceName invalidPreferenceName) {
+                throw new DataFormatException("The preference " + preference + " is invalid, can't set to value.");
+            }
+        }
     }
 
     @XapiRequestMapping(value = {"/site"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -303,7 +320,7 @@ public class PipelineApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = GET, restrictTo = Read, produces = MediaType.APPLICATION_JSON_VALUE)
     public boolean isAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId) throws NotFoundException {
-        final boolean isProjectSpecified = StringUtils.isBlank(projectId);
+        final boolean isProjectSpecified = StringUtils.isNotBlank(projectId);
         if (isProjectSpecified) {
             if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
                 throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
@@ -320,18 +337,18 @@ public class PipelineApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to modify AutoRun settings for the site or specified project."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = PUT, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE)
-    public void setAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId, @RequestParam final boolean enable) throws NotFoundException {
-        final boolean isProjectSpecified = StringUtils.isBlank(projectId);
+    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = {PUT, POST}, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE)
+    public void setAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId, @RequestBody final boolean value) throws NotFoundException {
+        final boolean isProjectSpecified = StringUtils.isNotBlank(projectId);
         if (isProjectSpecified) {
             if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
                 throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
             }
-            log.debug("User {} {} AutoRun pipeline for project {}", getSessionUser().getUsername(), enable ? "enabling" : "disabling", projectId);
-            _pipelinePreferences.setAutoRunEnabled(projectId, enable);
+            log.debug("User {} {} AutoRun pipeline for project {}", getSessionUser().getUsername(), value ? "enabling" : "disabling", projectId);
+            _pipelinePreferences.setAutoRunEnabled(projectId, value);
         }
-        log.debug("User {} {} AutoRun pipeline for site", getSessionUser().getUsername(), enable ? "enabling" : "disabling");
-        _pipelinePreferences.setAutoRunEnabled(enable);
+        log.debug("User {} {} AutoRun pipeline for site", getSessionUser().getUsername(), value ? "enabling" : "disabling");
+        _pipelinePreferences.setAutoRunEnabled(value);
     }
 
     private boolean terminateFileExists(final String command) {
@@ -346,11 +363,10 @@ public class PipelineApi extends AbstractXapiRestController {
             return false;
         }
 
-        final String pipelineUrl = _siteConfigPreferences.getProcessingUrl();
-        final String host        = StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
+        final String     pipelineUrl = _siteConfigPreferences.getProcessingUrl();
+        final String     host        = StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
+        final AliasToken token       = _aliasTokenService.issueTokenForUser(user);
 
-
-        final AliasToken    token  = _aliasTokenService.issueTokenForUser(user);
         final StringBuilder buffer = new StringBuilder(command);
         buffer.append(" -id ");
         buffer.append(xnatId);

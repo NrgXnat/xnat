@@ -1410,6 +1410,28 @@ petMr:
                 pet: Create as PET session
                 separate: Separate into PET and MR sessions
 
+autoRunSettings:
+    kind: panel.form
+    label: AutoRun
+    method: POST
+    contentType: json
+    url: /xapi/pipelines
+    contents:
+        autoRun:
+            kind: panel.input.switchbox
+            name: autoRun
+            label: Launch AutoRun
+            description: >
+                Indicates whether XNAT should launch the AutoRun pipeline as new sessions are archived. When enabled, you must
+                have the pipeline engine installed at the location stored in the <b>pipelinePath</b> site configuration option.
+
+        allowAutoRunProjectOverride:
+            kind: panel.input.switchbox
+            name: allowAutoRunProjectOverride
+            label: Allow Project Override
+            description: >
+                Indicates whether the AutoRun pipeline can be enabled or disabled for specific projects.
+
 pipelineSettings:
     kind: panel.form
     label: Pipeline Settings
@@ -1793,6 +1815,7 @@ root:
             group: advanced
             contents:
                 ${pipelineSettings}
+                ${autoRunSettings}
         dicomScpReceiversTab:
             kind: tab
             label: DICOM SCP Receivers

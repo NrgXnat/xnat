@@ -31,8 +31,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                    description = "Manages preferences and settings for the XNAT traditional pipeline engine integration.")
 @Slf4j
 public class PipelinePreferences extends EventTriggeringAbstractPreferenceBean {
-    public static final String TOOL_ID          = "pipelines";
-    public static final String AUTO_RUN_ENABLED = "autoRunEnabled";
+    public static final String TOOL_ID                         = "pipelines";
+    public static final String AUTO_RUN_ENABLED                = "autoRunEnabled";
+    public static final String ALLOW_AUTO_RUN_PROJECT_OVERRIDE = "allowAutoRunProjectOverride";
 
     @Autowired
     public PipelinePreferences(final NamedParameterJdbcTemplate template, final NrgPreferenceService preferenceService, final DataTypeAwareEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
@@ -102,6 +103,29 @@ public class PipelinePreferences extends EventTriggeringAbstractPreferenceBean {
             setBooleanValue(Scope.Project, projectId, autoRunEnabled, AUTO_RUN_ENABLED);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name autoRunEnabled: something is very wrong here.", e);
+        }
+    }
+
+    /**
+     * Checks whether AutoRun can be enabled or disabled for specific projects.
+     *
+     * @return Returns <b>true</b> if autorun can be enabled or disabled for specific projects, <b>false</b> otherwise.
+     */
+    @NrgPreference(defaultValue = "false")
+    public boolean isAllowAutoRunProjectOverride() {
+        return getBooleanValue(ALLOW_AUTO_RUN_PROJECT_OVERRIDE);
+    }
+
+    /**
+     * Specifies whether AutoRun can be enabled or disabled for specific projects.
+     *
+     * @param allowAutoRunProjectOverride Whether autorun can be enabled or disabled on a project-by-project basis
+     **/
+    public void setAllowAutoRunProjectOverride(final boolean allowAutoRunProjectOverride) {
+        try {
+            setBooleanValue(allowAutoRunProjectOverride, AUTO_RUN_ENABLED);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name allowAutoRunProjectOverride: something is very wrong here.", e);
         }
     }
 

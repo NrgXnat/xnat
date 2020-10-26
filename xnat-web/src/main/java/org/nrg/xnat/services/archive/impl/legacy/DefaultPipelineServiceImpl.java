@@ -20,10 +20,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class DefaultPipelineServiceImpl implements PipelineService {
     @Autowired
-    public DefaultPipelineServiceImpl(final PipelinePreferences preferences, final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences) {
+    public DefaultPipelineServiceImpl(final PipelinePreferences preferences, final SiteConfigPreferences siteConfigPreferences) {
         _preferences = preferences;
         _siteConfigPreferences = siteConfigPreferences;
-        _notificationsPreferences = notificationsPreferences;
     }
 
     @Override
@@ -70,5 +69,4 @@ public class DefaultPipelineServiceImpl implements PipelineService {
 
     private final PipelinePreferences      _preferences;
     private final SiteConfigPreferences    _siteConfigPreferences;
-    private final NotificationsPreferences _notificationsPreferences;
 }

@@ -1,5 +1,5 @@
 <!-- START /xnat-templates/screens/xnat_mrScanData/xnat_mrScanData_details.vm -->
-#macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
+#macro(escapeProperty $prop)#escapeCleanHTML("$!scan.getProperty($prop)")#end
 
 <table class="xnat-table alt1 compact rows-only scan-details" style="border: none;">
     <tr>
@@ -127,32 +127,32 @@
     #if($scan.getProperty("validation.status"))
         <tr>
             <th>Validity</th>
-            <td align="left">#escapeHTML($!scan.getStringProperty("validation.status"))</td>
+            <td align="left">#escapeCleanHTML($!scan.getStringProperty("validation.status"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.method"))
         <tr>
             <th>Validation Method</th>
-            <td align="left">#escapeHTML($!scan.getStringProperty("validation.method"))</td>
+            <td align="left">#escapeCleanHTML($!scan.getStringProperty("validation.method"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.date"))
         <tr>
             <th>Validation Date</th>
-            <td align="left">#escapeHTML($!scan.getStringProperty("validation.date"))</td>
+            <td align="left">#escapeCleanHTML($!scan.getStringProperty("validation.date"))</td>
         </tr>
     #end
     #if($scan.getProperty("validation.notes"))
         <tr>
             <th>Validation Notes</th>
-            <td align="left">#escapeHTML($!scan.getStringProperty("validation.notes"))</td>
+            <td align="left">#escapeCleanHTML($!scan.getStringProperty("validation.notes"))</td>
         </tr>
     #end
 
     #foreach($addP in $scan.getParameters_addparam())
         <tr>
             <th>$!addP.getName()</th>
-            <td align="left">#escapeHTML($!addP.getAddfield())</td>
+            <td align="left">#escapeCleanHTML($!addP.getAddfield())</td>
         </tr>
     #end
 
@@ -165,7 +165,7 @@
             #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
             #if($scanById)
                 <tr>
-                    <th><a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeHTML($!scanAssessor.getHeader()):</a>
+                    <th><a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeCleanHTML($!scanAssessor.getHeader()):</a>
                     </th>
                     <td border=0 style="font-weight:bold; text-align:left;" NOWRAP>
                         $!scanAssessor.getScanById($scanID).getSummary()

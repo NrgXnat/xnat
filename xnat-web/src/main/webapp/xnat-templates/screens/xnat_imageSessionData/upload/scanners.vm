@@ -67,7 +67,7 @@
         $scannerTmp.concat(" ").concat($!item.getStringProperty("${datatype}/scanner"))
     #end
     #if ($scannerTmp != "")
-    &nbsp; (#escapeHTML("$scannerTmp"))
+    &nbsp; (#escapeCleanHTML("$scannerTmp"))
     #end
 #end
 

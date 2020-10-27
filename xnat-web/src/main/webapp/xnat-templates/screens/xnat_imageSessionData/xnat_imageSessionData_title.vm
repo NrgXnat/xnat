@@ -11,7 +11,7 @@
 #end
 
 <div id="report_title" class="edit_title">
-    $displayManager.getSingularDisplayNameForImageSession(): #escapeHTML($reportTitle)
+    $displayManager.getSingularDisplayNameForImageSession(): #escapeCleanHTML($reportTitle)
 </div>
 
 <!-- END /xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_title.vm -->

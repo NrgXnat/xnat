@@ -49,10 +49,10 @@
     #end
 
     #if($session.getDcmpatientid())
-        <tr><th align="left">Patient ID:</th><td>#escapeHTML("$!session.getDcmpatientid()")</td></tr>
+        <tr><th align="left">Patient ID:</th><td>#escapeCleanHTML("$!session.getDcmpatientid()")</td></tr>
     #end
     #if($session.getDcmpatientname())
-        <tr><th align="left">Patient Name:</th><td>#escapeHTML("$!session.getDcmpatientname()")</td></tr>
+        <tr><th align="left">Patient Name:</th><td>#escapeCleanHTML("$!session.getDcmpatientname()")</td></tr>
     #end
     #if($session.getUid())
         <tr><th align="left">UID:</th><td>#escapeHTML("$!session.getUid()")</td></tr>
@@ -95,7 +95,7 @@
         #define($scanId)#escapeAll("$!scan.getId()")#end
         <tr id="scanTR$!{scanId}">
 			<td>$!{scanId}</td>
-			<td>#escapeHTML("$!scan.getSeriesDescription()")</td>
+			<td>#escapeCleanHTML("$!scan.getSeriesDescription()")</td>
 			<td nowrap><div id="scan$!{scanId}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
 			<td nowrap>
 				&nbsp;&nbsp;<button id="scanB1$$!{scanId}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$!{scanId}')">Download Files</button>

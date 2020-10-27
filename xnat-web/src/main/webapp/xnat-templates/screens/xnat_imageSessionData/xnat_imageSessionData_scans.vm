@@ -123,38 +123,38 @@
                                 #end
                             </span>
                             <a href="#!" class="view-scan-details" data-id="${scanID}">
-                                #escapeHTML(${scanID})
+                                #escapeCleanHTML(${scanID})
                             </a>
                         </td>
                         <td class="scan-${scanID}-type" style="width: 200px;">
                             #if($!scan.getProperty("type"))
-                                #escapeHTML($!scan.getProperty("type"))
+                                #escapeCleanHTML($!scan.getProperty("type"))
                             #end
                         </td>
                         #if($siteConfig.uiDisplaySeriesClass)
                             <td class="scan-${scanID}-series_class" style="width: 200px;">
                                 #if($!scan.getProperty("series_class"))
-                                    #escapeHTML($!scan.getProperty("series_class"))
+                                    #escapeCleanHTML($!scan.getProperty("series_class"))
                                 #end
                             </td>
                         #end
                         #if($siteConfig.uiDisplayScanModality)
                             <td class="scan-${scanID}-modality" style="width: 200px;">
                                 #if($!scan.getProperty("modality"))
-                                    #escapeHTML($!scan.getProperty("modality"))
+                                    #escapeCleanHTML($!scan.getProperty("modality"))
                                 #end
                             </td>
                         #end
                         #if($siteConfig.uiDisplaySeriesDescription)
                             <td class="scan-${scanID}-description" style="width: 200px;">
                                 #if($!scan.getProperty("series_description"))
-                                    #escapeHTML($!scan.getProperty("series_description"))
+                                    #escapeCleanHTML($!scan.getProperty("series_description"))
                                 #end
                             </td>
                         #end
                         <td class="scan-${scanID}-quality left quality-$!scan.getProperty("quality")" style="font-weight:bold; width: 125px" >
                             #if($!scan.getProperty("quality"))
-                                #escapeHTML($!scan.getProperty("quality"))
+                                #escapeCleanHTML($!scan.getProperty("quality"))
                             #end
                         </td>
 
@@ -179,7 +179,7 @@
                             <div class="scan-note-content pull-left text-left" style="width:85%;" title="$!scan.getProperty("note")">
                                 <span class="truncate">
                                 #if($!scan.getProperty("note"))
-                                    #escapeHTML($!scan.getProperty("note"))
+                                    #escapeCleanHTML($!scan.getProperty("note"))
                                 #end
                                 </span>
                             </div>

@@ -5,19 +5,19 @@
 #if($subject.DOBDisplay)
 <tr>
     <th align="left">Birth year</th>
-    <td>$turbineUtils.escapeHTML($!subject.DOBDisplay)</td>
+    <td>#escapeCleanHTML($!subject.DOBDisplay)</td>
 </tr>
 #end
 #if($subject.GenderText)
 <tr>
     <th align="left">Gender</th>
-    <td>$turbineUtils.escapeHTML($!subject.GenderText)</td>
+    <td>#escapeCleanHTML($!subject.GenderText)</td>
 </tr>
 #end
 #if($subject.HandedText)
 <tr>
     <th align="left">Handedness</th>
-    <td>$turbineUtils.escapeHTML($!subject.HandedText)</td>
+    <td>#escapeCleanHTML($!subject.HandedText)</td>
 </tr>
 #end
 

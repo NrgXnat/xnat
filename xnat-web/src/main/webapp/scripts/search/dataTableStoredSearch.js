@@ -11,7 +11,9 @@ function DataTableStoredSearch(_div_table_id,_obj,_config,_options){
 	//fired after Search XML has beens successfully loaded.
 	this.onInit=new YAHOO.util.CustomEvent("init",this);
 	this.onComplete=new YAHOO.util.CustomEvent("complete",this);
-	
+	this.onTableInit=new YAHOO.util.CustomEvent("table-init",this);
+	this.onChange=new YAHOO.util.CustomEvent("change",this);
+
 	if(_obj!=undefined){
 		this.obj=_obj;
 		this.div_table_id=_div_table_id;
@@ -27,7 +29,7 @@ function DataTableStoredSearch(_div_table_id,_obj,_config,_options){
 		var questOrAmper = "?";
 		if(!(URL===undefined)){
 			var questOrAmper = URL.indexOf("?") == -1 ? "?" : "&";
-						
+
 		}
 		URL += questOrAmper + 'XNAT_CSRF=' + csrfToken;
 		if(this.obj.XML){
@@ -52,9 +54,9 @@ function DataTableStoredSearch(_div_table_id,_obj,_config,_options){
 		this.loaderGIF.render();
 
 		var URL = this.obj.URL;
-		
+
 		URL += '?XNAT_CSRF=' + csrfToken;
-		
+
 		if(this.obj.XML){
 			this.load();
 		}else{
@@ -89,15 +91,20 @@ function DataTableStoredSearch(_div_table_id,_obj,_config,_options){
 
 	this.onRemoveRequest=new YAHOO.util.CustomEvent("remove-request",this);
 	this.onSavedSearch=new YAHOO.util.CustomEvent("saved-search",this);
+	this.onLoad=new YAHOO.util.CustomEvent("load",this);
 
 	this.load=function(){
 		this.dataTable=new DataTableSearch(this.div_table_id,this.obj,this.config,this.options);
 		this.dataTable.onInit.subscribe(this.complete,this,this);
+		this.dataTable.onTableInit.subscribe(this.tableInit,this,this);
 		this.dataTable.onRemoveRequest.subscribe(function(o){
 			return this.onRemoveRequest.fire();
 		},this,this);
 		this.dataTable.onSavedSearch.subscribe(function(o){
 			return this.onSavedSearch.fire();
+		},this,this);
+		this.dataTable.onXMLChange.subscribe(function(o){
+			return this.onXMLChange.fire();
 		},this,this);
 
 	  	 if(this.height!=undefined){
@@ -108,6 +115,11 @@ function DataTableStoredSearch(_div_table_id,_obj,_config,_options){
 	  	 }
 
 		this.dataTable.init({reload:true});
+		this.onLoad.fire();
+	};
+
+	this.tableInit=function(){
+		this.onTableInit.fire();
 	};
 
 	this.complete=function(){

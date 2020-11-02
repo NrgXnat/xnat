@@ -19,6 +19,7 @@ import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XdatUsergroupI;
+import org.nrg.xdat.om.XnatAbstractprojectasset;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -107,7 +108,8 @@ public class EventServiceItemSaveAspect {
                 }
             } else if (isItemA(item, XnatType.PROJECT_ASSET)) {
                 log.debug("Project Asset Data Save" + " : xsiType:" + item.getXSIType());
-                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ? (XnatAbstractprojectassetI) item : null;
+                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ? (XnatAbstractprojectassetI) item : new XnatAbstractprojectasset(item) {
+                };
                 if (projectAsset != null) {
                     triggerProjectAssetCreate(projectAsset, user);
                 } else {
@@ -539,6 +541,14 @@ public class EventServiceItemSaveAspect {
             case PROJECT_ASSET:
                 if (item instanceof XnatAbstractprojectassetI){
                     return true;
+                } else {
+                    // Attempt xsiType lookup
+                    List<String> projectAssetXsiTypes = componentManager.getXsiTypes(XnatAbstractprojectassetI.class);
+                    if (projectAssetXsiTypes != null &&
+                            !projectAssetXsiTypes.isEmpty() &&
+                            xsiTypeContainsSimilar(projectAssetXsiTypes, item.getXSIType())){
+                        return true;
+                    }
                 }
                 return false;
             default:
@@ -551,10 +561,10 @@ public class EventServiceItemSaveAspect {
     // ** xnat_assessor:someotherstring might be reported as xnat_a:someotherstring
     // ** if there are no exact matches, we check for matches that are close
     private Boolean xsiTypeContainsSimilar(List<String> xsiTypes, String itemXsiType){
-        if (xsiTypes.contains(xsiTypes)){
+        if (xsiTypes.contains(itemXsiType)){
             return true;
         }
-        if (itemXsiType.contains(":")){
+        if (itemXsiType != null && itemXsiType.contains(":")){
             String[] parts = itemXsiType.split(":",2);
             if(parts.length == 2) {
                 String ns = parts[0];

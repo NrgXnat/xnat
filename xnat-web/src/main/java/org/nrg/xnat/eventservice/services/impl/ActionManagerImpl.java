@@ -213,8 +213,8 @@ public class ActionManagerImpl implements ActionManager {
                                 EventUtils.CATEGORY.DATA,
                                 EventUtils.TYPE.PROCESS,
                                 workflowActionLabel,
-                                "Event: " + esEvent.getDisplayName() + " Action: " + subscription.actionKey(),
-                                ""
+                                "Event Service triggered.",
+                                subscription.name()
                         ));
                 if(workflow != null) {
                     EventMetaI eventMetaI = workflow.buildEvent();

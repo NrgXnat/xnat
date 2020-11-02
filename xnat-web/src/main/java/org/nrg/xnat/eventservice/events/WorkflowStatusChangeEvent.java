@@ -29,8 +29,9 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
     ;
 
     public WorkflowStatusChangeEvent(final WorkflowStatusEvent payload, final String eventUser,
-                                     final WorkflowStatusChangeEvent.Status status, final String projectId) {
-        super(payload, eventUser, status, projectId);
+                                     final WorkflowStatusChangeEvent.Status status, final String projectId,
+                                     final String xsiType) {
+        super(payload, eventUser, status, projectId, xsiType);
     }
 
     @Override

@@ -54,7 +54,8 @@ public class WorkflowStatusTapListener implements Consumer<Event<WorkflowStatusE
 
                 final UserI user = Users.getUser(wfsEvent.getUserId());
 
-                eventService.triggerEvent(new WorkflowStatusChangeEvent(wfsEvent, user.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, project));
+                eventService.triggerEvent(new WorkflowStatusChangeEvent(
+                        wfsEvent, user.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, project, "wrk:workflowData"));
             } catch (UserNotFoundException e) {
                 log.warn("The specified user was not found: {}", wfsEvent.getUserId());
             } catch (UserInitException e) {

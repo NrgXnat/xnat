@@ -9,6 +9,8 @@
 
 package org.nrg.framework.ajax;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -23,20 +25,9 @@ import javax.validation.constraints.Size;
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"name"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@AllArgsConstructor
+@NoArgsConstructor
 public class SimpleEntity extends AbstractHibernateEntity {
-
-    /**
-     * for Hibernate
-     */
-    public SimpleEntity() {
-    }
-
-    public SimpleEntity(final String name, final String description, final Integer total) {
-        _name = name;
-        _description = description;
-        _total = total;
-    }
-
     @NotEmpty
     @Size(max = 100)
     public String getName() {
@@ -53,8 +44,8 @@ public class SimpleEntity extends AbstractHibernateEntity {
         return _description;
     }
 
-    public void setDescription(final String host) {
-        _description = host;
+    public void setDescription(final String description) {
+        _description = description;
     }
 
     @NotNull
@@ -62,11 +53,26 @@ public class SimpleEntity extends AbstractHibernateEntity {
         return _total;
     }
 
-    public void setTotal(final Integer storagePort) {
-        _total = storagePort;
+    public void setTotal(final Integer total) {
+        _total = total;
     }
+
+    /*
+    Support for JSON types across PostgreSQL and H2 doesn't work properly with the current way of configuring json and jsonb columns: see https://github.com/vladmihalcea/hibernate-types/issues/179 for info on possible fixes
+
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    public JsonNode getAttributes() {
+        return _attributes;
+    }
+
+    public void setAttributes(final JsonNode attributes) {
+        _attributes = attributes;
+    }
+    */
 
     private String  _name;
     private String  _description;
     private Integer _total;
+    // private JsonNode _attributes;
 }

@@ -19,8 +19,8 @@ import java.util.List;
 
 /**
  * Provides filtering for {@link PaginatedRequest pure SQL-based paginated requests}. You can also use {@link
- * {@link StringFilter} and {@link TimestampFilter}, but not {@link HibernateFilter}, which is solely for filtering
- * Hibernate services and DAOs that extend {@link AbstractHibernateDAO}.
+ * StringFilter} and {@link TimestampFilter}, but not {@link HibernateFilter}, which is solely for filtering Hibernate
+ * services and DAOs that extend {@link AbstractHibernateDAO}.
  */
 @Data
 @AllArgsConstructor

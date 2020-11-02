@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
@@ -119,6 +120,23 @@ public class SimpleEntityServiceTest {
         assertThat(results3).isNotNull().isNotEmpty().hasSize(10).containsExactlyInAnyOrderElementsOf(first50Entities.subList(0, 10));
     }
 
+    @Test
+    @Ignore("Support for JSON types across PostgreSQL and H2 doesn't work properly with the current way of configuring json and jsonb columns: see https://github.com/vladmihalcea/hibernate-types/issues/179 for info on possible fixes")
+    public void testAttributes() {
+        final SimpleEntity entity = buildTestSimpleEntity();
+        // entity.setAttributes(_serializer.deserializeJson(JSON));
+        _service.create(entity);
+        final SimpleEntity retrieved = _service.findByName(DEFAULT_NAME);
+        assertThat(retrieved).isNotNull()
+                             .hasFieldOrPropertyWithValue("name", DEFAULT_NAME)
+                             .hasFieldOrPropertyWithValue("description", DESCRIPTION)
+                             .hasFieldOrPropertyWithValue("total", TOTAL)
+                             .hasFieldOrProperty("attributes");
+        // final JsonNode            attributes = retrieved.getAttributes();
+        // final Map<String, String> map        = _serializer.getObjectMapper().convertValue(attributes, TYPE_REF_MAP_STRING_STRING);
+        // assertThat(map).isNotNull().hasSize(3).containsOnlyKeys("1", "2", "3").containsEntry("1", "one").containsEntry("2", "two").containsEntry("3", "three");
+    }
+
     private String toJson(final PaginatedRequest request) {
         try {
             return _serializer.toJson(request);
@@ -148,6 +166,7 @@ public class SimpleEntityServiceTest {
     private static final int    TOTAL        = 1234;
     private static final String NULL_NAME    = "testNullSimpleEntity";
     private static final String FOO_NAME     = "FOO";
+    // private static final String JSON         = "{\"1\": \"one\", \"2\": \"two\", \"3\": \"three\"}";
 
     @Autowired
     private SimpleEntityService _service;

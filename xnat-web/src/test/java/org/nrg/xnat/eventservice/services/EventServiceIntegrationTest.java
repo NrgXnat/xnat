@@ -767,7 +767,7 @@ public class EventServiceIntegrationTest {
         workflow.setStatus("In Progress");
         workflow.setJustification("Unit Test");
         workflow.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId);
+        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
 
         eventService.triggerEvent(workflowStatusChangeEvent);
 
@@ -794,7 +794,7 @@ public class EventServiceIntegrationTest {
         workflow.setStatus("Complete");
         workflow.setJustification("Unit Test");
         workflow.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId);
+        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
 
         eventService.triggerEvent(workflowStatusChangeEvent);
 

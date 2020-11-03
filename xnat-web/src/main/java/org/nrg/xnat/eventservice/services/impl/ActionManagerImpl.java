@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.WrkWorkflowdata;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -204,7 +205,7 @@ public class ActionManagerImpl implements ActionManager {
     public PersistentWorkflowI generateWorkflowEntryIfAppropriate(Subscription subscription, Long deliveryId, EventServiceEvent esEvent, UserI user) {
         try {
             if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem() instanceof XFTItem) {
-                XFTItem eventXftItem = getRootWorkflowObject(esEvent);
+                XFTItem eventXftItem = getRootWorkflowObject(esEvent, user);
                 String workflowActionLabel =
                         subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_");
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
@@ -213,8 +214,7 @@ public class ActionManagerImpl implements ActionManager {
                                 EventUtils.CATEGORY.DATA,
                                 EventUtils.TYPE.PROCESS,
                                 workflowActionLabel,
-                                "Event Service triggered.",
-                                subscription.name()
+                                "Event Service triggered.", ""
                         ));
                 if(workflow != null) {
                     EventMetaI eventMetaI = workflow.buildEvent();
@@ -240,14 +240,19 @@ public class ActionManagerImpl implements ActionManager {
         return null;
     }
 
-    private XFTItem getRootWorkflowObject(EventServiceEvent event){
+    private XFTItem getRootWorkflowObject(EventServiceEvent event, UserI user){
         XFTItem eventXftItem = ((BaseElement)event.getObject()).getItem();
         if(event.getObject() != null && (event.getObject() instanceof XnatImagescandataI)){
             // If the event object is a scan, the workflow will not show up anywhere.
             // If possible, we use its parent session as the root object instead.
+            // Note that if we simply use  eventXftItem.getParent() as the parent session, xsiType is not retained
             if (eventXftItem.getParent() != null){
                 try {
-                    eventXftItem = (XFTItem) eventXftItem.getParent();
+                     return XnatExperimentdata.getXnatExperimentdatasById(
+                             ((XnatImagescandataI)event.getObject()).getImageSessionId(),
+                             user,
+                             false)
+                                              .getItem();
                 }catch (Throwable t){
                     // just ignore and use the original item.
                 }
@@ -279,7 +284,7 @@ public class ActionManagerImpl implements ActionManager {
         if(provider!= null) {
             if(workflow !=null){
                 try {
-                    WorkflowUtils.setStep(workflow, (provider.getName() != null ? provider.getName() : "Provider") + " action called.");
+                    WorkflowUtils.setStep(workflow, (provider.getDisplayName() != null ? provider.getDisplayName() : "Provider") + " action called.");
                 } catch (Exception e) {
                     log.error("Workflow completion exception for workflow:" + workflow.getId());
                     log.error(e.getMessage());

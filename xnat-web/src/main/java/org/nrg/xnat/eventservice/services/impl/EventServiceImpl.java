@@ -309,9 +309,13 @@ public class EventServiceImpl implements EventService {
         try {
             log.debug("Firing EventService Event for Label: " + event.getDisplayName() + " : " + event.toString());
             eventBus.notify(event, Event.wrap(event));
+        } catch (Throwable e) {
+            log.error("Exception trigger event: " + e.getMessage());
+        }
+        try {
             recentTriggers.add(event);
         } catch (Throwable e) {
-            log.error("Exception Triggering Event: " + e.getMessage());
+            log.error("Exception adding event to recentTriggers: " + e.getMessage());
         }
     }
 

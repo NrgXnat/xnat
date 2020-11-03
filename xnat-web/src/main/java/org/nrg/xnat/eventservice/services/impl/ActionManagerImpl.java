@@ -5,9 +5,9 @@ import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -31,9 +31,11 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_CALLED;
@@ -208,24 +210,36 @@ public class ActionManagerImpl implements ActionManager {
                 XFTItem eventXftItem = getRootWorkflowObject(esEvent, user);
                 String workflowActionLabel =
                         subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_");
+                String workflowReasonLabel = "Event Service triggered.";
+                String workflowComment = "";
+                EventDetails eventDetails = EventUtils.newEventInstance(
+                        EventUtils.CATEGORY.DATA,
+                        EventUtils.TYPE.PROCESS,
+                        workflowActionLabel,
+                        workflowReasonLabel,
+                        workflowComment
+                );
                 log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.name() + ".");
-                final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
-                        EventUtils.newEventInstance(
-                                EventUtils.CATEGORY.DATA,
-                                EventUtils.TYPE.PROCESS,
-                                workflowActionLabel,
-                                "Event Service triggered.", ""
-                        ));
-                if(workflow != null) {
-                    EventMetaI eventMetaI = workflow.buildEvent();
+                final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem, eventDetails);
 
-                    // Check for existing workflow with matching pipeline name and timestamp - if found, regenerate eventMeta after delay
-                    WrkWorkflowdata existingWorkflow = (WrkWorkflowdata) WorkflowUtils.getUniqueWorkflow(user, workflow.getPipelineName(),
-                            workflow.getId(), eventMetaI.getEventDate());
-                    if (existingWorkflow != null) {Thread.sleep(1); eventMetaI = workflow.buildEvent();}
-                    WorkflowUtils.save(workflow, eventMetaI);
-                    log.debug("Created workflow " + workflow.getId());
-                    return workflow;
+                if(workflow != null) {
+                    Boolean successfulSave = false;
+                    AtomicInteger saveAttempts = new AtomicInteger(0);
+                    Exception wrkflwException = new Exception();
+                    // TODO: There must be a better way to create workflow entries with unique timestamps
+                    while (!successfulSave && saveAttempts.incrementAndGet() < 100)
+                    try {
+                        workflow.setLaunchTime(Calendar.getInstance().getTime());
+                        EventMetaI eventMetaI = workflow.buildEvent();
+                        WorkflowUtils.save(workflow, eventMetaI);
+                        successfulSave = true;
+                        log.debug("Created workflow " + workflow.getId());
+                    } catch (Exception e) {
+                        wrkflwException = e;
+                        log.debug("Event Service workflow save failed. Trying again.");
+                    }
+                    if (successfulSave) { return workflow; }
+                    else { throw wrkflwException; }
                 } else {
                     log.error("Unable to create PersistentWorkflow entry for ES Event: " + esEvent.getDisplayName());
                 }

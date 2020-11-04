@@ -16,6 +16,7 @@ import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
@@ -149,13 +150,14 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                         final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
                             new Function<DicomObject, DicomObject>() {
                                 public DicomObject apply(final DicomObject o) {
+                                    DicomObjectI di = DicomObjectFactory.newInstance(o);
                                     try {
-                                        mizerService.anonymize(DicomObjectFactory.newInstance(o), context);
+                                        mizerService.anonymize( di, context);
                                     }
                                     catch ( MizerException e) {
                                         throw new RuntimeException(e);
                                     }
-                                    return o;
+                                    return di.getDcm4che2Object();
                                 }
                             });
                         doc = db.call();

@@ -431,7 +431,13 @@
     <logger name="org.nrg.dcm.id" additivity="false" level="WARN">
         <appender-ref ref="identifiers"/>
     </logger>
-    <logger name="org.nrg.dcm.edit" additivity="false" level="WARN">
+    <logger name="org.nrg.dicom.dicomedit" additivity="false" level="WARN">
+        <appender-ref ref="anon"/>
+    </logger>
+    <logger name="org.nrg.dicom.pixeledit" additivity="false" level="WARN">
+        <appender-ref ref="anon"/>
+    </logger>
+    <logger name="org.nrg.dicom.mizer" additivity="false" level="WARN">
         <appender-ref ref="anon"/>
     </logger>
     <logger name="org.apache.regexp" additivity="false" level="ERROR">

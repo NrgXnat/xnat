@@ -3,7 +3,6 @@ package org.nrg.xnat.eventservice.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.google.common.collect.EvictingQueue;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
@@ -25,7 +24,6 @@ import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionProvider;
 import org.nrg.xnat.eventservice.model.EventPropertyNode;
 import org.nrg.xnat.eventservice.model.EventServicePrefs;
-import org.nrg.xnat.eventservice.model.EventSignature;
 import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
 import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.Subscription;
@@ -81,7 +79,6 @@ public class EventServiceImpl implements EventService {
     private final EventPropertyService                eventPropertyService;
     private final ObjectMapper                        mapper;
     private final Configuration                       jaywayConf     = Configuration.builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
-    private final EvictingQueue<EventServiceEvent<?>> recentTriggers = EvictingQueue.create(100);
     private final EventServicePrefsBean               prefs;
 
     @Autowired
@@ -312,11 +309,6 @@ public class EventServiceImpl implements EventService {
         } catch (Throwable e) {
             log.error("Exception trigger event: " + e.getMessage());
         }
-        try {
-            recentTriggers.add(event);
-        } catch (Throwable e) {
-            log.error("Exception adding event to recentTriggers: " + e.getMessage());
-        }
     }
 
 
@@ -502,31 +494,6 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<String> getRecentTriggers(Integer count) {
-        List<EventServiceEvent<?>> triggerEvents;
-        if (count != null && count > 0 && recentTriggers != null && !recentTriggers.isEmpty()) {
-            triggerEvents = recentTriggers.stream().limit(count).collect(Collectors.toList());
-        } else {
-            triggerEvents = recentTriggers.stream().collect(Collectors.toList());
-        }
-        List<String> triggers = new ArrayList<>();
-        try {
-            for (EventServiceEvent event : triggerEvents) {
-                EventSignature eventSignature = EventSignature.builder()
-                                                              .eventType(event.getType())
-                                                              .projectId(Strings.isNullOrEmpty(event.getProjectId()) ? null : event.getProjectId())
-                                                              .status(event.getCurrentStatus() != null ? event.getCurrentStatus().name() : null)
-                                                              .payload(event.filterablePayload() ? event.getPayloadSignatureObject() : null)
-                                                              .build();
-                triggers.add(mapper.writeValueAsString(eventSignature));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return triggers;
-    }
-
-    @Override
     public EventServiceComponentManager getComponentManager() {
         return componentManager;
     }
@@ -602,7 +569,8 @@ public class EventServiceImpl implements EventService {
                           .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                           .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                           .isXsiType(event.isPayloadXsiType() != null && event.isPayloadXsiType())
-                          .eventScope(event.getEventScope() == null ? "" : event.getEventScope().name())
+                          .eventScope(event.getEventScope() == null || event.getEventScope().isEmpty() ?
+                                  Collections.emptyList() : event.getEventScope().stream().map(Enum::name).collect(Collectors.toList()))
                           .payloadSignature(event.filterablePayload() ? event.getPayloadSignatureObject() : null)
                           .build();
     }

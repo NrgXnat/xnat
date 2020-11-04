@@ -15,6 +15,7 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.exceptions.UnauthorizedException;
@@ -73,13 +74,6 @@ public class EventServiceRestApi extends AbstractXapiRestController {
                                final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         this.eventService = eventService;
-    }
-
-    @XapiRequestMapping(restrictTo = Admin, value = {"/events/triggers/{count}"}, method = GET, produces = JSON)
-    @ApiOperation(value = "Get recent Event Service triggers.")
-    @ResponseBody
-    public List<String> getRecentTriggers(final @PathVariable Integer count) {
-        return eventService.getRecentTriggers(count);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST)
@@ -316,6 +310,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, request);
     }
 
+
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/events", method = GET)
     @ResponseBody
     public List<SimpleEvent> getEvents(final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
@@ -324,6 +319,21 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         } else {
             return eventService.getEvents();
         }
+    }
+
+    @XapiRequestMapping(restrictTo = Authenticated, value = "/projects/{project}/events/events", method = GET)
+    @ResponseBody
+    public List<SimpleEvent> getProjectEvents(final @RequestParam(value = "load-details", required = false) Boolean loadDetails) throws Exception {
+        List<SimpleEvent> events;
+        if (loadDetails != null) {
+            events = eventService.getEvents(loadDetails);
+        } else {
+            events = eventService.getEvents();
+        }
+        return events == null ? null :
+                events.stream()
+                      .filter(e -> e.eventScope().contains(EventServiceEvent.EventScope.PROJECT.name()))
+                      .collect(Collectors.toList());
     }
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/event", method = GET, params = {"event-type"})

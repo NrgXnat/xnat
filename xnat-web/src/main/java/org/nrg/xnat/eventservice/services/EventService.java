@@ -78,8 +78,6 @@ public interface EventService {
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
     void validateFilterJsonPathPredicate(String jsonPathPredicate);
 
-    List<String> getRecentTriggers(Integer count);
-
     EventServiceComponentManager getComponentManager();
 
     EventServicePrefsBean getPrefs();

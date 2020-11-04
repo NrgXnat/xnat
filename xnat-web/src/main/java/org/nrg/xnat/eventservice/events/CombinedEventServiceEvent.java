@@ -14,7 +14,9 @@ import reactor.bus.Event;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -132,7 +134,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
 
 
     @Override
-    public EventScope getEventScope() { return EventScope.PROJECT; }
+    public List<EventScope> getEventScope() { return Arrays.asList(EventScope.PROJECT, EventScope.SITE); }
 
     @Override
     public void accept(Event<EventT> event){

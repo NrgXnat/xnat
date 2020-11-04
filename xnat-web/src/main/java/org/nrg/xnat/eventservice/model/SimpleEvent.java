@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,7 @@ public abstract class SimpleEvent {
     @Nullable @JsonProperty("filter-nodes") public abstract Map<String, JsonPathFilterNode> nodeFilters();
     @Nullable @JsonProperty("event-properties") public abstract List<EventPropertyNode> eventProperties();
     @JsonIgnore @Nullable @JsonProperty("payload-signature") public abstract Object payloadSignature();
-    @JsonProperty("event-scope") public abstract String eventScope();
+    @JsonProperty("event-scope") public abstract List<String> eventScope();
 
 
     public static SimpleEvent create(@JsonProperty("id") String id,
@@ -36,7 +35,7 @@ public abstract class SimpleEvent {
                                      @JsonProperty("description") String description,
                                      @JsonProperty("payload") String payloadClass,
                                      @JsonProperty("xnat-type") String xnatType,
-                                     @JsonProperty("event-scope") String eventScope,
+                                     @JsonProperty("event-scope") List<String> eventScope,
                                      @JsonProperty("is-xsi-type") boolean isXsiType) {
         return builder()
                 .id(id)
@@ -81,7 +80,7 @@ public abstract class SimpleEvent {
 
         public abstract Builder payloadSignature(Object payloadSignature);
 
-        public abstract Builder eventScope(String xnatType);
+        public abstract Builder eventScope(List<String> eventScope);
 
         public abstract SimpleEvent build();
     }

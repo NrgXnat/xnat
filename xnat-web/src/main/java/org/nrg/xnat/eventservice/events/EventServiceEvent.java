@@ -44,7 +44,7 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     String getProjectId();
     // Get the event scope - project scoped events might be triggered from a certain project,
     // while SITE scoped events will never be confined to acting on a certain project. e.g. Project Created Event
-    EventScope getEventScope();
+    List<EventScope> getEventScope();
 
     String toString();
 }

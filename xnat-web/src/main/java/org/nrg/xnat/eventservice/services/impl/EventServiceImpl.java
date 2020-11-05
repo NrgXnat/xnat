@@ -426,8 +426,17 @@ public class EventServiceImpl implements EventService {
                                     deliveryId, esEvent.getDisplayName(), esEvent.getCurrentStatus().name(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel);
                         } catch (Throwable e){
                             log.error("Could not build TriggeringEventEntity ", e.getMessage(), e);
+
                         }
-                        actionManager.processEvent(subscription, esEvent, actionUser, deliveryId);
+
+                       try {
+                           validateSubscription(subscription);
+                       } catch (SubscriptionValidationException e) {
+                           subscription.toBuilder().valid(false).validationMessage(e.getMessage());
+                           subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), "Invalid subscription.\n" + e.getMessage());
+                           return;
+                       }
+                       actionManager.processEvent(subscription, esEvent, actionUser, deliveryId);
                     } catch (UserNotFoundException | UserInitException e) {
                         log.error("Failed to process subscription:" + subscription.name());
                         log.error(e.getMessage());

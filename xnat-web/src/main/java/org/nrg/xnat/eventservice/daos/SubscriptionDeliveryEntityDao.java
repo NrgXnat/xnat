@@ -70,12 +70,25 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
             if (requestFilters != null && requestFilters.containsKey("status")){
                 newFilters.put("statusMessage", requestFilters.get("status"));
             }
+            paginatedRequest.setFiltersMap(newFilters);
         }
 
-        paginatedRequest.setFiltersMap(newFilters);
+        //Sort column
+        if (paginatedRequest.getSortColumn() != null && !paginatedRequest.getSortColumn().isEmpty()) {
+            String sortColumn = paginatedRequest.getSortColumn();
+            if (sortColumn.contentEquals("user")) {
+                sortColumn = "actionUserLogin";
+            } else if (sortColumn.contentEquals("status")) {
+                sortColumn = "statusMessage";
+            } else if (sortColumn.contentEquals("project")) {
+                sortColumn = "projectId";
+            } else if (sortColumn.contentEquals("eventtype")) {
+                sortColumn = "eventType";
+            }
+            paginatedRequest.setSortColumn(sortColumn);
+        }
 
         return findPaginated(paginatedRequest);
-
     }
 
 

@@ -70,8 +70,8 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
             if (requestFilters != null && requestFilters.containsKey("status")){
                 newFilters.put("statusMessage", requestFilters.get("status"));
             }
-            paginatedRequest.setFiltersMap(newFilters);
         }
+        paginatedRequest.setFiltersMap(newFilters);
 
         //Sort column
         if (paginatedRequest.getSortColumn() != null && !paginatedRequest.getSortColumn().isEmpty()) {

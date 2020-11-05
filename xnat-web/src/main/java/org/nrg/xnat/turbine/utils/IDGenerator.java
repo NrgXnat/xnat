@@ -23,6 +23,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.identifier.IDGeneratorFactory;
 import org.nrg.xft.identifier.IDGeneratorI;
 import org.nrg.xnat.services.system.HostInfoService;
+import org.python.apache.commons.compress.utils.Lists;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -65,21 +66,18 @@ public class IDGenerator implements IDGeneratorI {
      */
     @Override
     public synchronized String generateIdentifier() {
-        final String template = _siteId + ObjectUtils.defaultIfNull(_hostInfo, "") + "_" + getCode();
-
-        final Set<String> offLimits = new HashSet<>(getClaimedIds());
-        offLimits.addAll(_template.queryForList(getQuery(template), String.class));
+        final Set<String> offLimits = getClaimedIds();
 
         if (log.isTraceEnabled() && !offLimits.isEmpty()) {
-            log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs:\n * {}", getSiteId(), getTable(), template, offLimits.size(), StringUtils.join(offLimits, "\n * "));
+            log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs:\n * {}", getSiteId(), getTable(), getIdTemplate(), offLimits.size(), StringUtils.join(offLimits, "\n * "));
         } else {
-            log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs", getSiteId(), getTable(), template, offLimits.size());
+            log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs", getSiteId(), getTable(), getIdTemplate(), offLimits.size());
         }
 
         final AtomicInteger count = new AtomicInteger(offLimits.size() + 1);
         String              candidate;
         do {
-            candidate = format(template, count.getAndIncrement());
+            candidate = format(getIdTemplate(), count.getAndIncrement());
             log.trace("Generated candidate ID {}", candidate);
         } while (offLimits.contains(candidate));
 
@@ -138,13 +136,26 @@ public class IDGenerator implements IDGeneratorI {
     @Getter(PRIVATE)
     private final String       _siteId;
 
-    @Getter(PRIVATE)
-    private final List<String> _claimedIds = new ArrayList<>();
+    private Set<String> getClaimedIds(){
+        if(_claimedIds==null){
+            _claimedIds=new HashSet<>(_template.queryForList(getQuery(getIdTemplate()), String.class));
+        }
+        return _claimedIds;
+    }
+
+    private String getIdTemplate(){
+        if(_iDtemplate==null) {
+            _iDtemplate = _siteId + ObjectUtils.defaultIfNull(_hostInfo, "") + "_" + getCode();
+        }
+        return _iDtemplate;
+    }
+    private Set<String> _claimedIds = null;
 
     private String  _column;
     private String  _table;
     private Integer _digits;
     private String  _code;
+    private String _iDtemplate = null;
 
     private String _format;
 }

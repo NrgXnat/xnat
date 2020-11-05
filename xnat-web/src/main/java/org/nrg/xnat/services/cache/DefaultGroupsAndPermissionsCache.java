@@ -1354,7 +1354,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (cachedReadableCounts != null) {
             try {
                 log.debug("Found a cache entry for user '{}' readable counts by ID '{}', updating cache entry", username, cacheId);
-                final XDATUser user = new XDATUser(username);
+                final XDATUser user = (XDATUser)Users.getUser(username);
                 initReadableCountsForUser(cacheId, user);
                 initBrowseableElementDisplaysForUser(getCacheIdForUserElements(username, BROWSEABLE), user);
             } catch (UserNotFoundException e) {

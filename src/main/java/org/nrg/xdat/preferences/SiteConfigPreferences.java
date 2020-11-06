@@ -1575,6 +1575,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
         }
     }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiHideCompressedUploaderUploadOption() {
+        return getBooleanValue("uiHideCompressedUploaderUploadOption");
+    }
+
+    public void setUiHideCompressedUploaderUploadOption(final boolean uiHideCompressedUploaderUploadOption) {
+        try {
+            setBooleanValue(uiHideCompressedUploaderUploadOption, "uiHideCompressedUploaderUploadOption");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiHideCompressedUploaderUploadOption': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiHideXnatUploadAssistantDownload() {
+        return getBooleanValue("uiHideXnatUploadAssistantDownload");
+    }
+
+    public void setUiHideXnatUploadAssistantDownload(final boolean uiHideXnatUploadAssistantDownload) {
+        try {
+            setBooleanValue(uiHideXnatUploadAssistantDownload, "uiHideXnatUploadAssistantDownload");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiHideXnatUploadAssistantDownload': something is very wrong here.", e);
+        }
+    }
     
     @NrgPreference(defaultValue = "true")
     public boolean getUiShowPrearchiveFileActions() {

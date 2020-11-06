@@ -1195,6 +1195,34 @@ manageDataTypes:
             name: imageSessionDisplayNamePlural
             label: "Plural Display Name For Generic Image Session Singular"
 
+uploadChannels:
+    kind: panel.form
+    name: uploadChannels
+    label: "Image Session Upload Methods"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiHideCompressedUploaderUploadOption:
+            kind: panel.input.switchbox
+            label: "Hide Compressed Uploader?"
+            onText: Hidden
+            offText: Available
+            description: >
+                This controls whether the Compressed Uploader is made available in the "Upload > Images" menu.
+                By default, this is set to "false", which makes the Compressed Uploader available in the UI. (Note that
+                the DICOM-zip importer is enabled regardless of this setting.)
+        uiHideXnatUploadAssistantDownload:
+            kind: panel.input.switchbox
+            label: "Hide XNAT Upload Assistant?"
+            onText: Hidden
+            offText: Available
+            description: >
+                The XNAT Upload Assistant has been deprecated in favor of the XNAT Desktop Client. However,
+                some legacy sites may prefer to make it available as an option. This setting controls whether
+                the Upload Assistant is hidden from the options in the "Upload > Images" menu. By default, this is
+                set to "true", which hides the Upload Assistant from view.
+
 sessionBuilder:
     kind: panel.form
     name: sessionBuilder
@@ -1801,14 +1829,21 @@ root:
             label: "Session Upload, Import & Anonymization"
             group: manageData
             contents:
+                ${uploadChannels}
                 ${sessionBuilder}
-                ${projectRouting}
-                ${subjectRouting}
-                ${sessionRouting}
                 ${anonymization}
                 ${seriesImportFilter}
                 ${petTracers}
                 ${petMr}
+        customRoutingRules:
+            kind: tab
+            name: customRoutingRules
+            label: "Custom DICOM Routing"
+            group: manageData
+            contents:
+                ${projectRouting}
+                ${subjectRouting}
+                ${sessionRouting}
         pipelinesTab:
             kind: tab
             label: Pipeline Settings

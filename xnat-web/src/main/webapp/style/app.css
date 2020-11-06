@@ -3350,6 +3350,10 @@ th.sort:hover {
     box-sizing: border-box;
     border: 1px solid #ccc;
     /*background: #f0f0f0;*/
+    overflow-x: auto;
+}
+.data-table-wrapper.clean {
+    border: none;
 }
 
 .data-table-wrapper.loading {

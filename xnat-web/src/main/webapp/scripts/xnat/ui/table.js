@@ -519,8 +519,7 @@ var XNAT = getObject(XNAT);
                 height: opts.height || 'auto',
                 minHeight: opts.minHeight || 'auto',
                 maxHeight: opts.maxHeight || 'auto',
-                overflowX: opts.overflowX || 'hidden',
-                overflowY: opts.overflowY || 'auto'
+                'overflow-y': 'auto'
             }
         });
         var tableWrapper = $tableWrapper[0];

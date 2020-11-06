@@ -258,7 +258,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                 });
             },
             success: function(data){
-                var token = JSON.parse(data);
+                var token =  (!isObject(data)) ? JSON.parse(data) : data;
                 const prms = new URLSearchParams();
                 prms.append('a', token.alias);
                 prms.append('s', token.secret);

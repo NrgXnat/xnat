@@ -130,9 +130,9 @@ XNAT.admin = getObject(XNAT.admin || {});
                         '#' + historyTableContainerId + ' .timestamp { max-width: 150px; }  \n' +
                         '#' + historyTableContainerId + ' .subscription { max-width: 200px; }  \n' +
                         '#' + historyTableContainerId + ' .eventtype { max-width: 120px; }  \n' +
-                        '#' + historyTableContainerId + ' .user { max-width: 120px; }  \n' +
-                        '#' + historyTableContainerId + ' .status { max-width: 200px; }  \n' +
-                        '#' + historyTableContainerId + ' .project { max-width: 150px; }  \n'
+                        '#' + historyTableContainerId + ' .user { max-width: 120px; min-width: 100px; }  \n' +
+                        '#' + historyTableContainerId + ' .status { max-width: 200px; min-width: 150px; }  \n' +
+                        '#' + historyTableContainerId + ' .project { max-width: 150px; min-width: 100px; }  \n'
                 }
             },
             sortable: 'id, user, DATE, status',

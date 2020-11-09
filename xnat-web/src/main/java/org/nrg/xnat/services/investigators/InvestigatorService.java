@@ -1,9 +1,9 @@
 package org.nrg.xnat.services.investigators;
 
 import org.nrg.xapi.exceptions.*;
+import org.nrg.xapi.model.xft.Investigator;
 import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.model.xnat.Investigator;
 
 import java.util.List;
 

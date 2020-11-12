@@ -79,7 +79,7 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
         }
 
-        final Pair<File, File> images = isGridView ? _snapshotService.getSnapshot(sessionId, scanId, gridView) : _snapshotService.getSnapshot(sessionId, scanId);
+        final Pair<File, File> images = isGridView ? _snapshotService.getSnapshot( sessionId, scanId, gridView) : _snapshotService.getSnapshot( sessionId, scanId);
         if (images.equals(ImmutablePair.nullPair())) {
             throw new InitializationException("Something went wrong trying to retrieve snapshots for session ID {}: no exception was thrown but no valid files were returned by the snapshot service");
         }

@@ -15,13 +15,19 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.nrg.action.ServerException;
+import org.nrg.xdat.bean.CatDcmcatalogBean;
+import org.nrg.xdat.bean.CatDcmentryBean;
 import org.nrg.xdat.bean.XnatImagescandataBean;
+import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.plexiviewer.lite.io.PlexiFileSaver;
 import org.nrg.xnat.plexiviewer.utils.ImageUtils;
 import org.nrg.xnat.plexiviewer.utils.UnzipFile;
 import org.nrg.xnat.plexiviewer.utils.transform.BitConverter;
 import org.nrg.xnat.plexiviewer.utils.transform.IntensitySetter;
 import org.nrg.xnat.plexiviewer.utils.transform.PlexiMontageMaker;
+import org.nrg.xnat.utils.CatalogUtils;
 
 import java.awt.*;
 import java.awt.image.ColorModel;
@@ -34,24 +40,56 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author pradeep.d
+ * Generate snapshot and thumbnail images for DICOM series.
+ *
+ * Montage grid dimensions can be specified.
+ * This implementation uses ImageJ.
  */
 @Slf4j
 public class SnapshotDicomConvertImage {
-    private int          start;
-    private FileInfo     fi;
-    private String       info1;
-    private Path         directory;
-    private List<String> list;
-    private String       title;
+    // variables used by ImageJ. May be null.
+    private FileInfo     fi = null;
+    private String       info1 = null;
+    private String       title = null;
+
+    private Path         rootPath;
+    private List<String> files;
     private boolean      zipped = false;
     private int          width  = 0;
     private int          height = 0;
 
+    /**
+     * Constructor for DICOM images found in Dicom Catalog file.
+     *
+     * @param dicomCatalog
+     * @throws ServerException if dicomCatalog is not found.
+     */
+    public SnapshotDicomConvertImage( final XnatResourcecatalog dicomCatalog) throws ServerException {
+        // project can be null.  CatalogUtils will sort it out.
+        String project = null;
+        rootPath = Paths.get( dicomCatalog.getUri()).getParent();
+        files = new ArrayList<>();
+        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate( rootPath.toString(), dicomCatalog, project);
+        if( catalogData.catBean instanceof CatDcmcatalogBean) {
+
+            CatDcmcatalogBean dcmcatalogBean = (CatDcmcatalogBean) catalogData.catBean;
+            Collection<CatEntryI> entries = CatalogUtils.getEntriesByFilter(dcmcatalogBean, e -> e instanceof CatDcmentryBean);
+            for (CatEntryI entry : entries) {
+                File f = new File( rootPath.toString(), entry.getUri());
+                files.add( f.getAbsolutePath());
+            }
+        }
+    }
+
+    /**
+     * Constructor for DICOM files found at the specified path or the contents of a gzipped file on the path.
+     *
+     * @param path
+     */
     public SnapshotDicomConvertImage(final Path path) {
-        directory = path;
-        list = FileUtils.listFiles(directory.toFile(), TrueFileFilter.INSTANCE, FalseFileFilter.INSTANCE).stream().map(file -> directory.relativize(file.toPath())).map(Path::toString).collect(Collectors.toList());
-        zipped = list.stream().anyMatch(file -> StringUtils.endsWith(file, ".gz"));
+        rootPath = path;
+        files = FileUtils.listFiles(rootPath.toFile(), TrueFileFilter.INSTANCE, FalseFileFilter.INSTANCE).stream().map(file -> rootPath.relativize(file.toPath())).map(Path::toString).collect(Collectors.toList());
+        zipped = files.stream().anyMatch(file -> StringUtils.endsWith(file, ".gz"));
         unzip();
     }
 
@@ -125,16 +163,16 @@ public class SnapshotDicomConvertImage {
                     dir.delete();
                 }
                 boolean success = dir.mkdir();
-                for (final String s : list) {
-                    new UnzipFile().gunzip(directory + File.separator + s, dir.getPath());
+                for (final String s : files) {
+                    new UnzipFile().gunzip(rootPath + File.separator + s, dir.getPath());
                 }
-                directory = dir.toPath();
-                list.clear();
-                list.addAll(FileUtils.listFilesAndDirs(directory.toFile(), TrueFileFilter.INSTANCE, FalseFileFilter.INSTANCE).stream().map(file -> directory.relativize(file.toPath())).map(Path::toString).collect(Collectors.toList()));
+                rootPath = dir.toPath();
+                files.clear();
+                files.addAll(FileUtils.listFilesAndDirs(rootPath.toFile(), TrueFileFilter.INSTANCE, FalseFileFilter.INSTANCE).stream().map(file -> rootPath.relativize(file.toPath())).map(Path::toString).collect(Collectors.toList()));
             } catch (IOException e) {
-                log.error("An error occurred while unzipping files in the folder {}", directory, e);
+                log.error("An error occurred while unzipping files in the folder {}", rootPath, e);
             } catch (Exception e) {
-                log.error("An unexpected error occurred while unzipping files in the folder {}", directory, e);
+                log.error("An unexpected error occurred while unzipping files in the folder {}", rootPath, e);
             }
         }
     }
@@ -144,7 +182,7 @@ public class SnapshotDicomConvertImage {
      */
     public ImagePlus getImagePlus() {
         ImagePlus   imagesPlus         = null;
-        final int   n                  = list.size();
+        final int   n                  = files.size();
         ImageStack  stack              = null;
         double      min                = Double.MAX_VALUE;
         double      max                = -Double.MAX_VALUE;
@@ -163,10 +201,10 @@ public class SnapshotDicomConvertImage {
                 log.debug("Different dimension is found " + dimResult);
             }
 
-            for (final String file : list) {
+            for (final String file : files) {
                 Opener opener = new Opener();
                 opener.setSilentMode(true);
-                ImagePlus imp = opener.openImage(directory.resolve(file).toString());
+                ImagePlus imp = opener.openImage(rootPath.resolve(file).toString());
                 if (imp != null && stack == null) {
                     width = imp.getWidth();
                     height = imp.getHeight();
@@ -261,7 +299,7 @@ public class SnapshotDicomConvertImage {
             log.warn("Got an out of memory error", e);
         } finally {
             if (zipped) {
-                FileUtils.deleteQuietly(directory.toFile());
+                FileUtils.deleteQuietly(rootPath.toFile());
             }
         }
         return imagesPlus;
@@ -384,10 +422,10 @@ public class SnapshotDicomConvertImage {
     private String getResizeDimensionCalc() {
         Map<String, Integer> dimList   = new HashMap<>();
         String               dimResult = null;
-        for (final String file : list) {
+        for (final String file : files) {
             Opener opener = new Opener();
             opener.setSilentMode(true);
-            ImagePlus impagePlug = opener.openImage(directory.resolve(file).toString());
+            ImagePlus impagePlug = opener.openImage(rootPath.resolve(file).toString());
             Integer   maxCount   = 0;
             if (impagePlug != null) {
                 String  dimension = impagePlug.getWidth() + "X" + impagePlug.getHeight();

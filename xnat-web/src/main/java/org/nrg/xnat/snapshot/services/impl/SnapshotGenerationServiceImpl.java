@@ -112,7 +112,7 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
 
             final Path                      dicomPath     = Paths.get(dicomCatalog.getUri()).getParent();
             final String                    tempImagePath = dicomPath.getParent().toString();
-            final SnapshotDicomConvertImage converter     = new SnapshotDicomConvertImage(dicomPath);
+            final SnapshotDicomConvertImage converter     = new SnapshotDicomConvertImage( dicomCatalog);
             final XnatImagescandataBean     scan          = new XnatImagescandataBean();
             scan.setId(scanId);
             scan.setImageSessionId(sessionId);

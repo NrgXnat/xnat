@@ -73,19 +73,23 @@ var XNAT = getObject(XNAT);
         "3x3 Montage":"3X3"
     };
 
+    function getElementHtmlForSrc(src) {
+        return '<a target="_blank" class="scan-original-link" href="' + src + '">' +
+               '   <img class="scan-snapshot" src="' + src + '"/>' +
+               '</a>';
+    }
+
     function loadSnapshotImageNoBlocking(scanID, view) {
         const element = $(".span-scan" + scanID + "snapshot");
         const exprId = element ? element.data('expt-id') : null;
         const elementLoaded = element ? element.data('loaded') : false;
         if (exprId) {
-            const src = view
-                ? '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot/' + view
-                : '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
+            const src = serverRoot +
+                '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot' +
+                (view ? '/' + view : '');
+
             if (elementLoaded && !view) {
-                element.html(
-                    '<a target="_blank" class="scan-original-link" href="' + src + '">' +
-                    '<img class="scan-snapshot" src="' + src + '"/>' +
-                    '</a>');
+                element.html(getElementHtmlForSrc(src));
                 return true;
             }
 
@@ -95,10 +99,7 @@ var XNAT = getObject(XNAT);
                 type: 'HEAD',
                 success: function() {
                     element.data('loaded', true);
-                    element.html(
-                        '<a target="_blank" class="scan-original-link" href="' + src + '">' +
-                        '<img class="scan-snapshot" src="' + src + '"/>' +
-                        '</a>');
+                    element.html(getElementHtmlForSrc(src));
                     if (!elementLoaded) {
                         let montageSel = $('<select class="select-montage" name='+scanID+'></select>');
                         $.each(grids, function(key, value) {
@@ -118,32 +119,6 @@ var XNAT = getObject(XNAT);
             element.html('No snapshot available');
         }
 
-        return true;
-    }
-    
-    function closeGridImage(scanID) {
-        var element = $(".span-" + "scan" + scanID + "snapshot"),
-            exprId = element ? element.data('expt-id') : null,
-            elementLoaded = element ? element.data('loaded') : false;
-        if (exprId) {
-            var src = '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot';
-            $.ajax({
-                url: XNAT.url.restUrl(src),
-                type: 'HEAD',
-                success: function() {
-                    element.data('loaded', true);
-                    element.html(
-                        '<a target="_blank" class="scan-original-link" href="' + src + '">' +
-                        '<img class="scan-snapshot" src="' + src + '"/>' +
-                        '</a>');
-                },
-                error: function() {
-                    element.html('No snapshot available');
-                }
-            });
-        } else if (element) {
-            element.html('No snapshot available');
-        }
         return true;
     }
     
@@ -170,7 +145,6 @@ var XNAT = getObject(XNAT);
                 loadSnapshotImageNoBlocking(scanId);
             },
             afterClose: function(){
-                closeGridImage(scanId);
                 delete scanTable.scanDetailsOpen[scanTable.scanDetailsOpen.indexOf(scanId)];
             },
             footer: {

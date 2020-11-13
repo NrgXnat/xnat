@@ -14,6 +14,7 @@ import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.CatCatalogI;
+import org.nrg.xdat.om.XnatResource;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
@@ -948,4 +949,26 @@ public interface CatalogService {
      * @return T/F
      */
     boolean hasRemoteFiles(final UserI user, final String uriString) throws ClientException, ServerException;
+
+    /**
+     * Return the DICOM-image resource catalog. "DICOM" or "secondary" as needed. No need to know uri formats.
+     *
+     * @param sessionId The sessionId
+     * @param scanId    The scanId
+     * @return          XnatResourcecatalog
+     * @throws ClientException
+     */
+    XnatResourcecatalog getDicomResourceCatalog( final String sessionId, final String scanId) throws ClientException;
+
+    /**
+     * Return the Resource catalog for the scan's resource with given label.
+     *
+     * @param sessionId The sessionId
+     * @param scanId    The scanId
+     * @param label     The resource label
+     * @return          XnatResourceCatalog
+     * @throws ClientException
+     */
+    XnatResourcecatalog getResourceCatalog( final String sessionId, final String scanId, final String label) throws ClientException;
+
 }

@@ -742,6 +742,28 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
+    public XnatResourcecatalog getDicomResourceCatalog( final String sessionId, final String scanId) throws ClientException {
+        XnatResourcecatalog catalog = getResourceCatalog( sessionId, scanId, "DICOM");
+        return (catalog != null)? catalog: getResourceCatalog( sessionId, scanId, "secondary");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public XnatResourcecatalog getResourceCatalog( final String sessionId, final String scanId, final String label) throws ClientException {
+        final String uriString = EXPERIMENT_ROOT_URI + sessionId + "/scans/" + scanId + "/resources/" + label;
+
+        ResourceData resourceData = getResourceDataFromUri( uriString, true);
+        return (resourceData != null)? resourceData.getCatalogResource(): null;
+    }
+
+    private static final String EXPERIMENT_ROOT_URI = "/archive/experiments/";
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ResourceData getResourceDataFromUri(String uriString, boolean acceptFileUri) throws ClientException {
         //Is it a valid resource?
         final URIManager.DataURIA uri;

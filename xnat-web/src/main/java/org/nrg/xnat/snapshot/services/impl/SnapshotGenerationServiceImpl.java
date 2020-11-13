@@ -105,7 +105,8 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
     private Pair<File, File> insertSnapshot(final XnatResourcecatalog snapshotCatalog, final String sessionId, final String scanId, final String gridView, final Pair<String, String> imageNames) {
         final String parentUri = ROOT_URI + sessionId + "/scans/" + scanId;
         try {
-            final XnatResourcecatalog dicomCatalog = _catalogService.getResourceDataFromUri(parentUri + DICOM_RESOURCE, true).getCatalogResource();
+//            final XnatResourcecatalog dicomCatalog = _catalogService.getResourceDataFromUri(parentUri + DICOM_RESOURCE, true).getCatalogResource();
+            final XnatResourcecatalog dicomCatalog = _catalogService.getDicomResourceCatalog( sessionId, scanId);
             if (dicomCatalog == null) {
                 throw new RuntimeException("Expected to get a resource catalog from the URI " + parentUri + DICOM_RESOURCE + " but it's null.");
             }

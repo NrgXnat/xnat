@@ -20,6 +20,7 @@ import org.nrg.xdat.bean.CatDcmcatalogBean;
 import org.nrg.xdat.bean.CatDcmentryBean;
 import org.nrg.xdat.bean.XnatImagescandataBean;
 import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.om.CatDcmentry;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.plexiviewer.lite.io.PlexiFileSaver;
 import org.nrg.xnat.plexiviewer.utils.ImageUtils;
@@ -74,10 +75,11 @@ public class SnapshotDicomConvertImage {
 
             CatDcmcatalogBean dcmcatalogBean = (CatDcmcatalogBean) catalogData.catBean;
             Collection<CatEntryI> entries = CatalogUtils.getEntriesByFilter(dcmcatalogBean, e -> e instanceof CatDcmentryBean);
-            for (CatEntryI entry : entries) {
-                File f = new File( rootPath.toString(), entry.getUri());
-                files.add( f.getAbsolutePath());
-            }
+            files = entries.stream()
+                    .map( e -> (CatDcmentryBean) e)
+                    .sorted( Comparator.comparing( CatDcmentryBean::getInstancenumber))
+                    .map( e -> (new File( rootPath.toString(), e.getUri())).getAbsolutePath())
+                    .collect(Collectors.toList());
         }
     }
 
@@ -356,11 +358,11 @@ public class SnapshotDicomConvertImage {
             rtn = createMontage(baseimage, gridview);
         } else {
             if (baseimage != null) {
-                int sliceNo = 5;
+                int sliceNo;
                 if (baseimage.getStackSize() == 1) {
                     sliceNo = 1;
-                } else if (baseimage.getStackSize() < sliceNo) {
-                    sliceNo = 2;
+                } else  {
+                    sliceNo = baseimage.getStackSize() / 2;
                 }
                 baseimage.setSlice(sliceNo);
                 baseimage.updateImage();
@@ -373,6 +375,25 @@ public class SnapshotDicomConvertImage {
             }
         }
         return rtn;
+    }
+
+    /**
+     * Compute the properties needed to create the montage image.
+     * This implementation takes the slices from the middle of the range of slices in each panel.
+     *
+     * For example a 2x2 montage of a 200 slice scan will use slices 25, 75, 125 and 175.
+     */
+    private class MontageProperties {
+        int stacksize, npanels;
+        int increment, firstSlice, endSlice;
+
+        public MontageProperties( int stacksize, int npanels) {
+            this.stacksize = stacksize;
+            this.npanels = npanels;
+            increment = Math.max( stacksize / npanels, 1);
+            firstSlice = Math.max( increment / 2, 1);
+            endSlice = Math.min( firstSlice + (npanels-1)*increment, stacksize);
+        }
     }
 
     /**
@@ -407,11 +428,13 @@ public class SnapshotDicomConvertImage {
             throw new Exception("DICOM Image does not exist");
         }
 
-        final Hashtable<?, ?> attribs = ImageUtils.getSliceIncrement(image, columns * rows);
+//        final Hashtable<?, ?> attribs = ImageUtils.getSliceIncrement(image, columns * rows);
+        int npanels = columns * rows;
+        final MontageProperties montageProperties = new MontageProperties( image.getStackSize(), npanels);
         final IntensitySetter is      = new IntensitySetter(image, true);
         is.autoAdjust(image, image.getProcessor());
 
-        image = mm.makeMontage(image, columns, rows, 1.0, (Integer) attribs.get("startslice"), rows == 1 && columns == 1 ? image.getStackSize() : (Integer) attribs.get("endslice"), (Integer) attribs.get("increment"), true, false);
+        image = mm.makeMontage(image, columns, rows, 1.0, montageProperties.firstSlice, montageProperties.endSlice, montageProperties.increment, true, false);
         image.getProcessor().resetMinAndMax();
         return image;
     }

@@ -9,12 +9,11 @@
 
 package org.nrg.xdat.servlet;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.OrderedProperties;
@@ -59,6 +58,7 @@ import java.util.regex.Pattern;
 public class XDATServlet extends HttpServlet {
     private static final Logger  logger      = LoggerFactory.getLogger(XDATServlet.class);
     private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
+    private static final Pattern CANNOT_DROP_MESSAGE = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
 
     private static Boolean _shouldUpdateViews;
     private static Boolean _isDatabasePopulateOrUpdateCompleted = false;
@@ -278,15 +278,10 @@ public class XDATServlet extends HttpServlet {
                         execute(transaction, writer, _sql);
                     } catch (Throwable t) {
                         String errMessage = t.getMessage();
-                        if (Pattern.compile(".*cannot\\sdrop\\stable(?s).*view.*depends\\son\\stable.*").matcher(errMessage).find()) {
+                        if (CANNOT_DROP_MESSAGE.matcher(errMessage).find()) {
                             //In cases where it is failing to modify a table because one or more views depend on it, simply drop all XNAT views and try again.
                             transaction.rollback();
-                            String dbName     = "xnat";
-                            Object dbUsername = XDAT.getContextService().getBean("dbUsername", String.class);
-                            if (dbUsername != null) {
-                                dbName = dbUsername.toString();
-                            }
-                            transaction.execute(getViewDropSql(dbName));
+                            transaction.execute(getViewDropSql(StringUtils.defaultIfBlank(XDAT.getContextService().getBean("dbUsername", String.class), "xnat")));
                             execute(transaction, writer, GenericWrapperUtils.GetExtensionTables());
                             execute(transaction, writer, _sql);
                         } else {
@@ -297,11 +292,10 @@ public class XDATServlet extends HttpServlet {
 
                 //update the stored functions used for retrieving XFTItems and manipulating them
                 //this used to build one big file of sql... but it was way to big.  So now it will do one element at at time.
-                List<String> runAfter = Lists.newArrayList();
+                final List<String> runAfter = new ArrayList<>();
                 logger.info("Initializing database functions...");
-                for (Object o : XFTManager.GetInstance().getOrderedElements()) {
-                    GenericWrapperElement element = (GenericWrapperElement) o;
-                    List<String>[]        func    = GenericWrapperUtils.GetFunctionStatements(element);
+                for (final GenericWrapperElement element : GenericUtils.convertToTypedList(XFTManager.GetInstance().getOrderedElements(), GenericWrapperElement.class)) {
+                    final List<String>[] func = GenericWrapperUtils.GetFunctionStatements(element);
                     execute(transaction, writer, func[0]);
                     runAfter.addAll(func[1]);
                 }
@@ -524,48 +518,42 @@ public class XDATServlet extends HttpServlet {
         }
     }
 
-    private List<String> getViewDropSql(String user) {
-        final List<String> dropSql = Lists.newArrayList();
-        dropSql.add(
-            "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-            "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-            "BEGIN " +
-            "RETURN QUERY " +
-            "SELECT " +
-            "n.nspname AS table_schema, " +
-            "c.relname AS view_name " +
-            "FROM pg_catalog.pg_class c " +
-            "LEFT JOIN pg_catalog.pg_namespace n " +
-            "ON (n.oid = c.relnamespace) " +
-            "WHERE c.relkind = 'v' " +
-            "AND c.relowner = (SELECT usesysid " +
-            "FROM pg_catalog.pg_user " +
-            "WHERE usename = $1); " +
-            "END$$ LANGUAGE plpgsql;");
-        dropSql.add(
-            "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-            "RETURNS INTEGER AS $$ " +
-            "DECLARE " +
-            "r RECORD; " +
-            "s TEXT; " +
-            "c INTEGER := 0; " +
-            "BEGIN " +
-            "RAISE NOTICE 'Dropping views for user %', $1; " +
-            "FOR r IN " +
-            "SELECT * FROM find_user_views($1) " +
-            "LOOP " +
-            "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-            "EXECUTE s; " +
-            "c := c + 1; " +
-            "RAISE NOTICE 's = % ', S; " +
-            "END LOOP; " +
-            "RETURN c; " +
-            "END$$ LANGUAGE plpgsql;"
-                   );
-        dropSql.add(
-            "SELECT drop_user_views('" + user + "');"
-                   );
-        return dropSql;
+    private List<String> getViewDropSql(final String user) {
+        return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, String.format(QUERY_EXEC_DROP_USER_VIEWS, user));
     }
-}
 
+    private static final String QUERY_FIND_USER_VIEWS      = "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
+                                                             "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+                                                             "BEGIN " +
+                                                             "RETURN QUERY " +
+                                                             "SELECT " +
+                                                             "n.nspname AS table_schema, " +
+                                                             "c.relname AS view_name " +
+                                                             "FROM pg_catalog.pg_class c " +
+                                                             "LEFT JOIN pg_catalog.pg_namespace n " +
+                                                             "ON (n.oid = c.relnamespace) " +
+                                                             "WHERE c.relkind = 'v' " +
+                                                             "AND c.relowner = (SELECT usesysid " +
+                                                             "FROM pg_catalog.pg_user " +
+                                                             "WHERE usename = $1); " +
+                                                             "END$$ LANGUAGE plpgsql;";
+    private static final String QUERY_DROP_USER_VIEWS      = "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
+                                                             "RETURNS INTEGER AS $$ " +
+                                                             "DECLARE " +
+                                                             "r RECORD; " +
+                                                             "s TEXT; " +
+                                                             "c INTEGER := 0; " +
+                                                             "BEGIN " +
+                                                             "RAISE NOTICE 'Dropping views for user %', $1; " +
+                                                             "FOR r IN " +
+                                                             "SELECT * FROM find_user_views($1) " +
+                                                             "LOOP " +
+                                                             "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+                                                             "EXECUTE s; " +
+                                                             "c := c + 1; " +
+                                                             "RAISE NOTICE 's = % ', S; " +
+                                                             "END LOOP; " +
+                                                             "RETURN c; " +
+                                                             "END$$ LANGUAGE plpgsql;";
+    private static final String QUERY_EXEC_DROP_USER_VIEWS = "SELECT drop_user_views('%s');";
+}

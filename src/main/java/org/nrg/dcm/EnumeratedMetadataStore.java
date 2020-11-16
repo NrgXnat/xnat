@@ -479,7 +479,8 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                 if (null != v) {
                     assignments.put(index.getColumnName(), v);
                 }
-            } catch (ConversionFailureException ignored) {
+            } catch (ConversionFailureException | UnsupportedOperationException e) {
+                logger.error("Unable to get {}", index.getColumnName(), e);
             }
         }
         if (null != addCols) {

@@ -369,7 +369,7 @@ var XNAT = getObject(XNAT);
                                             });
                                         },
                                         success: function(data){
-                                            var token = JSON.parse(data);
+                                            var token = (!isObject(data)) ? JSON.parse(data) : data;
                                             var url = XNAT.url.xnatUrl('/download/'+ID+'.xml?a='+token.alias+'&s='+token.secret);
                                             window.location.assign(url);
                                             XNAT.ui.dialog.closeAll();

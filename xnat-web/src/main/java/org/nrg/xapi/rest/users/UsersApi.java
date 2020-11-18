@@ -61,6 +61,7 @@ import java.util.*;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
@@ -833,6 +834,12 @@ public class UsersApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "projects", produces = APPLICATION_JSON_VALUE, method = GET)
     public ResponseEntity<List<String>> getProjectsByUser() {
         return new ResponseEntity<>(_permissionsService.getUserEditableProjects(getSessionUser()), OK);
+    }
+
+    @ApiOperation(value = "Returns username for signed-in user", response = String.class)
+    @XapiRequestMapping(value = "username", produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = Authenticated)
+    public ResponseEntity<String> getUsername() {
+        return new ResponseEntity<>(getSessionUser().getUsername(), OK);
     }
 
     @SuppressWarnings("unused")
